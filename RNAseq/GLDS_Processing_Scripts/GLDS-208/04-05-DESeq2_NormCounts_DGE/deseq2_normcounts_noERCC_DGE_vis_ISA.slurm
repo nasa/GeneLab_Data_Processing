@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+#SBATCH --job-name="GLDS-208_deseq2_normcounts_noERCC_DGE_vis_ISA"
+#SBATCH --output=deseq2_normcounts_noERCC_DGE_vis_ISA.out
+#SBATCH --mem=40000
+#
+
+start=$(date +%s)
+echo "start time: $start"
+echo $HOSTNAME
+
+Rscript --save deseq2_normcounts_noERCC_DGE_vis_ISA.R
+
+end=$(date +%s)
+echo "end time: $end"
+runtime_s=$(echo $(( end - start )))
+echo "total run time(s): $runtime_s"
+sec_per_min=60
+sec_per_hr=3600
+runtime_m=$(echo "scale=2; $runtime_s / $sec_per_min;" | bc)
+echo "total run time(m): $runtime_m"
+runtime_h=$(echo "scale=2; $runtime_s / $sec_per_hr;" | bc)
+echo "total run time(h): $runtime_h"

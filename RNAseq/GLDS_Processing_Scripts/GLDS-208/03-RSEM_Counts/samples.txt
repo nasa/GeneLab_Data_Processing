@@ -1,0 +1,6 @@
+Atha_Col-0_Root_Zone-II_Rep1_SRR7287373-6
+Atha_Col-0_Root_Zone-II_Rep2_SRR7287377-80
+Atha_Col-0_Root_Zone-II_Rep3_SRR7287381-4
+Atha_Col-0_Root_Zone-I_Rep1_SRR7287361-4
+Atha_Col-0_Root_Zone-I_Rep2_SRR7287365-8
+Atha_Col-0_Root_Zone-I_Rep3_SRR7287369-72
