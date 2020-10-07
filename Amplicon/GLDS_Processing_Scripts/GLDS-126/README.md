@@ -1,9 +1,9 @@
 # GeneLab processing code for GLDS-126
-This dataset was processed with [GL-DPPD-7104-A](https://github.com/asaravia-butler/GeneLab_Data_Processing/blob/master/Amplicon/GL-DPPD-7104-A.md).
+This dataset was processed with [GL-DPPD-7104-A](../../GL-DPPD-7104-A.md).
 
 The raw and processed data are available from: [https://genelab-data.ndc.nasa.gov/genelab/accession/GLDS-126/](https://genelab-data.ndc.nasa.gov/genelab/accession/GLDS-126/)
 
-The `full-command-line-log.sh` file holds all commands as the processing was performed, which calls the two R scripts `16S-universal-full-R-processing.R` and `16S-archaeal-full-R-processing.R`. 
+The [full-command-line-log.sh](full-command-line-log.sh) file holds all commands as the processing was performed, which calls the two R scripts [16S-universal-full-R-processing.R](16S-universal-full-R-processing.R) and [16S-archaeal-full-R-processing.R](16S-archaeal-full-R-processing.R). 
 
 
 ## Software used  
