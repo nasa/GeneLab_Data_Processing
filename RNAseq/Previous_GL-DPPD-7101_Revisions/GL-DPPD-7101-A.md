@@ -1,6 +1,6 @@
 # GeneLab bioinformatics processing pipeline for Illumina RNA-sequencing data
 
-> **This page holds an overview and example code of how GeneLab processes RNAseq datasets. Exact processing code and GL-DPPD-7101 revision used for specific datasets are available in the [GLDS_Processing_Scripts](https://github.com/asaravia-butler/GeneLab_Data_Processing/tree/master/RNAseq/GLDS_Processing_Scripts) sub-directory and are also provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
+> **This page holds an overview and example code of how GeneLab processes RNAseq datasets. Exact processing code and GL-DPPD-7101 revision used for specific datasets are available in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory and are also provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
 
 ---
 
@@ -73,13 +73,13 @@ Note that steps 1-6 are identical to the original pipeline and since all RNAseq 
 |org.EcK12.eg.db|`packageVersion("org.EcK12.eg.db")`|[https://bioconductor.org/packages/release/data/annotation/html/org.EcK12.eg.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.EcK12.eg.db.html)|
 |org.Sc.sgd.db|`packageVersion("org.Sc.sgd.db")`|[https://bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html)|
 
->**\*** Exact versions are available along with the processing code for each specific dataset in the [GLDS_Processing_Scripts](https://github.com/asaravia-butler/GeneLab_Data_Processing/tree/master/RNAseq/GLDS_Processing_Scripts) sub-directory. 
+>**\*** Exact versions are available along with the processing code for each specific dataset in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory. 
 
 ---
 
 # General processing overview with example code  
 
-> Exact processing code for specific datasets is provided in the [GLDS_Processing_Scripts](https://github.com/asaravia-butler/GeneLab_Data_Processing/tree/master/RNAseq/GLDS_Processing_Scripts) sub-directory and are also provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).  
+> Exact processing code for specific datasets is provided in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory and are also provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).  
 
 ---
 
@@ -232,7 +232,7 @@ STAR --runThreadN NumberOfThreads \
 - *.fasta (genome sequence\#)
 - *.gtf (genome annotation\#)
 
-\#See document(s) in the [GeneLab_Reference_and_Annotation_Files](https://github.com/asaravia-butler/GeneLab_Data_Processing/tree/master/RNAseq/GeneLab_Reference_and_Annotation_Files) sub-directory for a list of the ensembl fasta genome sequences and associated gtf annotation files used to generate the RNAseq processed data available in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
+\#See document(s) in the [GeneLab_Reference_and_Annotation_Files](../GeneLab_Reference_and_Annotation_Files) sub-directory for a list of the ensembl fasta genome sequences and associated gtf annotation files used to generate the RNAseq processed data available in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
 
 **Output Data:**
 
@@ -357,7 +357,7 @@ rsem-prepare-reference --gtf /path/to/annotation/gtf/file \
 - *.fasta (genome sequence\#)
 - *.gtf (genome annotation\#)
 
-\#See document(s) in the [GeneLab_Reference_and_Annotation_Files](https://github.com/asaravia-butler/GeneLab_Data_Processing/tree/master/RNAseq/GeneLab_Reference_and_Annotation_Files) sub-directory for a list of the ensembl fasta genome sequences and associated gtf annotation files used to generate the RNAseq processed data available in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
+\#See document(s) in the [GeneLab_Reference_and_Annotation_Files](../GeneLab_Reference_and_Annotation_Files) sub-directory for a list of the ensembl fasta genome sequences and associated gtf annotation files used to generate the RNAseq processed data available in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
 
 **Output Data:**
 
@@ -890,7 +890,7 @@ rm(exp_raw,PCA_raw)
 
 **Input Data:**
 - *metadata.csv (csv file identifying which group each sample belongs to for the respective GLDS dataset)
-- [organisms.csv](https://github.com/asaravia-butler/GeneLab_Data_Processing/blob/master/RNAseq/organisms.csv) (csv file containing short name, species name, taxon ID, and annotation db object of model organisms hosted on GeneLab)
+- [organisms.csv](../organisms.csv) (csv file containing short name, species name, taxon ID, and annotation db object of model organisms hosted on GeneLab)
 - *genes.results (RSEM counts per gene, output from step 6)
 
 **Output Data:**
@@ -1214,7 +1214,7 @@ rm(exp_raw,PCA_raw)
 
 **Input Data:**
 - *metadata.csv (csv file identifying which group each sample belongs to for the respective GLDS dataset)
-- [organisms.csv](https://github.com/asaravia-butler/GeneLab_Data_Processing/blob/master/RNAseq/organisms.csv) (csv file containing short name, species name, taxon ID, and annotation db object of model organisms hosted on GeneLab)
+- [organisms.csv](../organisms.csv) (csv file containing short name, species name, taxon ID, and annotation db object of model organisms hosted on GeneLab)
 - *genes.results (RSEM counts per gene, output from step 6)
 
 **Output Data:**
