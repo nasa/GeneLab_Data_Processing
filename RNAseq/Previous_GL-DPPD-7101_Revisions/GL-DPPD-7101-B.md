@@ -1,6 +1,6 @@
 # GeneLab bioinformatics processing pipeline for Illumina RNA-sequencing data
 
-> **This page holds an overview and example code of how GeneLab processes RNAseq datasets. Exact processing code and GL-DPPD-7101 revision used for specific datasets are available in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory and are also provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
+> **This page holds an overview and instructions for how GeneLab processes RNAseq datasets. Exact processing commands and GL-DPPD-7101 revision used for specific datasets are available in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory and are also provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
 
 ---
 
@@ -21,18 +21,18 @@ Jonathan Galazka (GeneLab Project Scientist)
 
 ## Updates from previous revision
 
-- The multiqc code blocks for steps [1b](#1b-compile-raw-data-qc) and [2c](#2c-compile-trimmed-data-qc) have been revised to include the `-n` option to avoid having to rename output files after they're generated
-- In step 7, the following revisions were made to both the code block for datasets with ERCC Spike-In ([step 7a](#7a-for-datasets-with-ercc-spike-in)) and the code block for datasets without ERCC Spike-In ([step 7b](#7b-for-datasets-without-ercc-spike-in)):
+- The multiqc commands for steps [1b](#1b-compile-raw-data-qc) and [2c](#2c-compile-trimmed-data-qc) have been revised to include the `-n` option to avoid having to rename output files after they're generated
+- In step 7, the following revisions were made to both the section for datasets with ERCC Spike-In ([step 7a](#7a-for-datasets-with-ercc-spike-in)) and the section for datasets without ERCC Spike-In ([step 7b](#7b-for-datasets-without-ercc-spike-in)):
 	- lines were added to print ERCC raw unfiltered and filtered counts when applicable for use interally for quality control
 	- lines were added to pull metadata info from the ISA.zip file of the dataset being processed to indicate which group each sample belongs to (thus the data processor no longer has to manually create a *metadata.csv file)
-	- a line was added at the end of each code block to print the session info to ensure all tools and respective versions used are documented 
+	- a line was added at the end of each section to print the session info to ensure all tools and respective versions used are documented 
 
 ---
 
 # Table of contents  
 
 - [**Software used**](#software-used)
-- [**General processing overview with example code**](#general-processing-overview-with-example-code)
+- [**General processing overview with example commands**](#general-processing-overview-with-example-commands)
   - **1. Raw Data QC**
     - [**1a. Raw Data QC**](#1a-raw-data-qc)
     - [**1b. Compile Raw Data QC**](#1b-compile-raw-data-qc)
@@ -75,13 +75,13 @@ Jonathan Galazka (GeneLab Project Scientist)
 |org.EcK12.eg.db|`packageVersion("org.EcK12.eg.db")`|[https://bioconductor.org/packages/release/data/annotation/html/org.EcK12.eg.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.EcK12.eg.db.html)|
 |org.Sc.sgd.db|`packageVersion("org.Sc.sgd.db")`|[https://bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html)|
 
->**\*** Exact versions are available along with the processing code for each specific dataset in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory. 
+>**\*** Exact versions are available along with the processing commands for each specific dataset in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory. 
 
 ---
 
-# General processing overview with example code  
+# General processing overview with example commands  
 
-> Exact processing code for specific datasets is provided in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory and are also provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).  
+> Exact processing commands for specific datasets is provided in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory and are also provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).  
 
 ---
 
