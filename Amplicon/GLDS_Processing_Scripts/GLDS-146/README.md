@@ -1,4 +1,4 @@
-# GeneLab processing code for GLDS-146
+# GeneLab processing commands for GLDS-146
 
 This dataset was processed with [GL-DPPD-7104-A](../../GL-DPPD-7104-A.md).
 
