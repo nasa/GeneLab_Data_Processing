@@ -1,6 +1,6 @@
 # Bioinformatics pipeline for amplicon Illumina sequencing data  
 
-> **This page holds an overview and some example code of how GeneLab processes Illumina amplicon datasets. Exact processing code for specific datasets that have been released is available in the [GLDS_Processing_Scripts](GLDS_Processing_Scripts) sub-directory and is also provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
+> **This page holds an overview and instructions for how GeneLab processes Illumina amplicon datasets. Exact processing commands for specific datasets that have been released is available in the [GLDS_Processing_Scripts](GLDS_Processing_Scripts) sub-directory and is also provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
 
 ---
 
@@ -23,7 +23,7 @@ Anushree Sonic (Genelab Configuration Manager)
 # Table of contents  
 
 - [**Software used**](#software-used)
-- [**General processing overview with example code**](#general-processing-overview-with-example-code)
+- [**General processing overview with example commands**](#general-processing-overview-with-example-commands)
   - [**1. Raw Data QC**](#1-raw-data-qc)
     - [Compile Raw Data QC](#compile-raw-data-qc)
   - [**2. Trim Primers**](#2-trim-primers)
@@ -52,13 +52,13 @@ Anushree Sonic (Genelab Configuration Manager)
 |DECIPHER|`packageVersion("DECIPHER")`|[https://bioconductor.org/packages/release/bioc/html/DECIPHER.html](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html)|
 |biomformat|`packageVersion("biomformat")`|[https://github.com/joey711/biomformat](https://github.com/joey711/biomformat)|
 
->**\*** Exact versions are available along with the processing code for each specific dataset.
+>**\*** Exact versions are available along with the processing commands for each specific dataset.
 
 ---
 
-# General processing overview with example code  
+# General processing overview with example commands  
 
-> Exact processing code for specific datasets is available in the [GLDS_Processing_Scripts](GLDS_Processing_Scripts) sub-directory of this repository, as well as being provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).  
+> Exact processing commands for specific datasets are available in the [GLDS_Processing_Scripts](GLDS_Processing_Scripts) sub-directory of this repository, as well as being provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).  
 
 ---
 
