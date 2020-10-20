@@ -5,7 +5,6 @@
 #SBATCH --mem=6000
 #SBATCH --array=1-9
 #
-#SBATCH --mail-user=amanda.m.saravia-butler@nasa.gov
 #SBATCH --mail-type=END
 
 start=$(date +%s)
