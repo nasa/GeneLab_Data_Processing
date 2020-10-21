@@ -15,7 +15,7 @@ echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
 out_dir="/path/to/GLDS-47/02-STAR_Alignment"
 in_dir="/path/to/GLDS-47/01-TG_Preproc/Fastq"
 
-REF="/path/to/STAR_Indicies/Mus_musculus_RL-50"
+REF="/path/to/STAR_Indices/Mus_musculus_RL-50"
 GTF="/path/to/Genomes/Mus_musculus/Mus_musculus.GRCm38.96.gtf"
 
 sample=$(cat samples.txt | sed -n ${SLURM_ARRAY_TASK_ID}p)
