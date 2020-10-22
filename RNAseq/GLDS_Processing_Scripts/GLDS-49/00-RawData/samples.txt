@@ -1,0 +1,9 @@
+Mmus_C57-6J_LVR_DI_1y_Rep1
+Mmus_C57-6J_LVR_DI_1y_Rep2
+Mmus_C57-6J_LVR_DI_1y_Rep3
+Mmus_C57-6J_LVR_LN2_1y_Rep1
+Mmus_C57-6J_LVR_LN2_1y_Rep2
+Mmus_C57-6J_LVR_LN2_1y_Rep3
+Mmus_C57-6J_LVR_LN2_3d_Rep1
+Mmus_C57-6J_LVR_LN2_3d_Rep2
+Mmus_C57-6J_LVR_LN2_3d_Rep3
