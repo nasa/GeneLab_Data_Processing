@@ -3,15 +3,15 @@ library(DESeq2)
 library(tidyverse)
 
 ## Install annotation package created with the makeOrgPackageFromNCBI function of the AnnotationForge Bioconductor package
-package_dir <- "/netapp/disk1/scratch/annotation_DBI_packages"
+package_dir <- "/path/to/annotation_DBI_packages"
 install.packages(file.path(package_dir,"org.Bsubtilis.eg.db.tar.gz"), repos=NULL)
 
 organism <- "BACSU"
 
-work_dir="/netapp/disk1/Data_Processing/RNAseq_Datasets/GLDS_datasets/GLDS-138/processing_scripts/04-05-DESeq2_NormCounts_DGE"
-counts_dir="/netapp/disk1/Data_Processing/RNAseq_Datasets/GLDS_datasets/GLDS-138/03-RSEM_Counts"
-norm_output="/netapp/disk1/Data_Processing/RNAseq_Datasets/GLDS_datasets/GLDS-138/04-DESeq2_NormCounts"
-DGE_output="/netapp/disk1/Data_Processing/RNAseq_Datasets/GLDS_datasets/GLDS-138/05-DESeq2_DGE"
+work_dir="/path/to/GLDS-138/processing_scripts/04-05-DESeq2_NormCounts_DGE"
+counts_dir="/path/to/GLDS-138/03-RSEM_Counts"
+norm_output="/path/to/GLDS-138/04-DESeq2_NormCounts"
+DGE_output="/path/to/GLDS-138/05-DESeq2_DGE"
 
 setwd(file.path(work_dir))
 
