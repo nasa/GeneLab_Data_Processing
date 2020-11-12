@@ -469,6 +469,12 @@ biom_object <- make_biom(data=asv_tab, observation_metadata=tax_tab)
 write_biom(biom_object, "Taxonomy_and_counts.biom")
 ```
 
+Making a combined taxonomy and count table
+```R
+tax_and_count_tab <- merge(tax_tab, asv_tab)
+write.table(tax_and_count_tab, "Taxonomy_and_counts.tsv", sep="\t", quote=FALSE, row.names=FALSE)
+```
+
 **Input Data:**
 
 * fastq, compressed or uncompressed (filtered reads)
@@ -478,6 +484,7 @@ write_biom(biom_object, "Taxonomy_and_counts.biom")
 * fasta (inferred sequences)
 * count_table.tsv (count table)
 * taxonomy_table.tsv (taxonomy table)
+* taxonomy_and_counts.tsv (combined taxonomy and count table)
 * biom (count and taxonomy table in biom format)
 * read_count_tracking.tsv (read counts at each processing step)
 
