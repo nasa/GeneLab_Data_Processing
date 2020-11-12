@@ -25,11 +25,11 @@ rm ../Raw_Data/*fastqc*
 Rscript full-R-processing.R
 
   # running fastqc on filtered reads
-fastqc ../Filtered_Reads/*.gz -t 20
+fastqc ../Filtered_Sequence_Data/*.gz -t 20
   # summarizing fastqc results with multiqc
-multiqc -z -o ../FastQC_Outputs/ ../Filtered_Reads/ --interactive
+multiqc -z -o ../FastQC_Outputs/ ../Filtered_Sequence_Data/ --interactive
   # renaming the outputs
 mv ../FastQC_Outputs/multiqc_data.zip ../FastQC_Outputs/filtered_multiqc_data.zip
 mv ../FastQC_Outputs/multiqc_report.html ../FastQC_Outputs/filtered_multiqc_report.html
   # removing the individual fastqc files now that summarized in multiqc output
-rm ../Filtered_Reads/*fastqc*
+rm ../Filtered_Sequence_Data/*fastqc*

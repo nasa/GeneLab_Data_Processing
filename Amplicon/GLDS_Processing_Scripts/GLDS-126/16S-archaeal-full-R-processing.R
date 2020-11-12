@@ -22,12 +22,12 @@ library(biomformat); packageVersion("biomformat") # 1.12.0
 sample.names <- scan("16S-archaeal-unique-sample-IDs.txt", what="character")
 
   # setting variables holding the paths to the cutadapt-trimmed forward and reverse reads
-forward_trimmed_reads <- paste0("../Trimmed_Reads/", sample.names, "-R1-primer-trimmed.fastq.gz")
-reverse_trimmed_reads <- paste0("../Trimmed_Reads/", sample.names, "-R2-primer-trimmed.fastq.gz")
+forward_trimmed_reads <- paste0("../Trimmed_Sequence_Data/", sample.names, "-R1-primer-trimmed.fastq.gz")
+reverse_trimmed_reads <- paste0("../Trimmed_Sequence_Data/", sample.names, "-R2-primer-trimmed.fastq.gz")
 
   # setting variables holding what will be the output paths of all forward and reverse filtered reads
-forward_filtered_reads <- paste0("../Filtered_Reads/", sample.names, "-R1-filtered.fastq.gz")
-reverse_filtered_reads <- paste0("../Filtered_Reads/", sample.names, "-R2-filtered.fastq.gz")
+forward_filtered_reads <- paste0("../Filtered_Sequence_Data/", sample.names, "-R1-filtered.fastq.gz")
+reverse_filtered_reads <- paste0("../Filtered_Sequence_Data/", sample.names, "-R2-filtered.fastq.gz")
 
   # adding sample names to the vectors holding the filtered-reads' paths
 names(forward_filtered_reads) <- sample.names
@@ -41,7 +41,7 @@ filtered_out <- filterAndTrim(fwd=forward_trimmed_reads, forward_filtered_reads,
     # helper function
 getN <- function(x) sum(getUniques(x))
 filtered_count_summary_tab <- data.frame(sample=sample.names, cutadapt_trimmed=filtered_out[,1], dada2_filtered=filtered_out[,2])
-write.table(filtered_count_summary_tab, "../Filtered_Reads/16S-archaeal-filtered-read-counts.tsv", sep="\t", quote=F, row.names=F)
+write.table(filtered_count_summary_tab, "../Filtered_Sequence_Data/16S-archaeal-filtered-read-counts.tsv", sep="\t", quote=F, row.names=F)
 
   # learning errors step
 forward_errors <- learnErrors(forward_filtered_reads, multithread=TRUE)
@@ -65,10 +65,10 @@ sum(seqtab.nochim)/sum(seqtab) * 100
 
   # making and writing out a summary table that includes read counts at all steps
     # reading in raw and trimmed read counts
-raw_and_trimmed_read_counts <- read.table("../Trimmed_Reads/16S-archaeal-trimmed-read-counts.tsv", header=T, sep="\t")
+raw_and_trimmed_read_counts <- read.table("../Trimmed_Sequence_Data/16S-archaeal-trimmed-read-counts.tsv", header=T, sep="\t")
 
     # reading in filtered read counts
-filtered_read_counts <- read.table("../Filtered_Reads/16S-archaeal-filtered-read-counts.tsv", header=T, sep="\t")
+filtered_read_counts <- read.table("../Filtered_Sequence_Data/16S-archaeal-filtered-read-counts.tsv", header=T, sep="\t")
 
 count_summary_tab <- data.frame(raw_and_trimmed_read_counts, dada2_filtered=filtered_read_counts[,3],
                                 dada2_denoised_F=sapply(forward_seqs, getN),
@@ -136,3 +136,7 @@ write.table(tax_tab, "../Final_Outputs/16S-archaeal-taxonomy.tsv", sep = "\t", q
     ### generating and writing out biom file format ###
 biom_object <- make_biom(data=asv_tab, observation_metadata=tax_tab)
 write_biom(biom_object, "../Final_Outputs/16S-archaeal-taxonomy-and-counts.biom")
+
+   # making a tsv of combined tax and counts
+tax_and_count_tab <- merge(tax_tab, asv_tab)
+write.table(tax_and_count_tab, "../Final_Outputs/16S-archaeal-taxonomy-and-counts.tsv", quote=FALSE, row.names=FALSE, sep="\t")

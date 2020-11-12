@@ -24,13 +24,13 @@ rm ../Raw_Data/*fastqc*
 
   # running cutadapt to remove primers:
     # 16S
-for sample in $(cat 16S-unique-sample-IDs.txt); do cutadapt -a ^GTGCCAGCMGCCGCGGTAA...ATTAGATACCCSBGTAGTCC -A ^GGACTACVSGGGTATCTAAT...TTACCGCGGCKGCTGGCAC -o ../Trimmed_Reads/${sample}-R1-primer-trimmed.fastq.gz -p ../Trimmed_Reads/${sample}-R2-primer-trimmed.fastq.gz ../Raw_Data/${sample}_R1_raw.fastq.gz ../Raw_Data/${sample}_R2_raw.fastq.gz --discard-untrimmed; done > ../Trimmed_Reads/16S-cutadapt.log 2>&1
+for sample in $(cat 16S-unique-sample-IDs.txt); do cutadapt -a ^GTGCCAGCMGCCGCGGTAA...ATTAGATACCCSBGTAGTCC -A ^GGACTACVSGGGTATCTAAT...TTACCGCGGCKGCTGGCAC -o ../Trimmed_Sequence_Data/${sample}-R1-primer-trimmed.fastq.gz -p ../Trimmed_Sequence_Data/${sample}-R2-primer-trimmed.fastq.gz ../Raw_Data/${sample}_R1_raw.fastq.gz ../Raw_Data/${sample}_R2_raw.fastq.gz --discard-untrimmed; done > ../Trimmed_Sequence_Data/16S-cutadapt.log 2>&1
       # keeping track of reads maintained
-cat <( printf "sample\traw_reads\tcutadapt_trimmed\n" ) <( paste 16S-unique-sample-IDs.txt <( grep "read pairs processed" ../Trimmed_Reads/16S-cutadapt.log | tr -s " " "\t" | cut -f 5 | tr -d "," ) <( grep "Pairs written" ../Trimmed_Reads/16S-cutadapt.log | tr -s " " "\t" | cut -f 5 | tr -d "," ) ) > ../Trimmed_Reads/16S-trimmed-read-counts.tsv
+cat <( printf "sample\traw_reads\tcutadapt_trimmed\n" ) <( paste 16S-unique-sample-IDs.txt <( grep "read pairs processed" ../Trimmed_Sequence_Data/16S-cutadapt.log | tr -s " " "\t" | cut -f 5 | tr -d "," ) <( grep "Pairs written" ../Trimmed_Sequence_Data/16S-cutadapt.log | tr -s " " "\t" | cut -f 5 | tr -d "," ) ) > ../Trimmed_Sequence_Data/16S-trimmed-read-counts.tsv
     # ITS
-for sample in $(cat ITS-unique-sample-IDs.txt); do cutadapt -a ^CTTGGTCATTTAGAGGAAGTAA...GCATCGATGAAGAACGCAGC -A ^GCTGCGTTCTTCATCGATGC...TTACTTCCTCTAAATGACCAAG -o ../Trimmed_Reads/${sample}-R1-primer-trimmed.fastq.gz -p ../Trimmed_Reads/${sample}-R2-primer-trimmed.fastq.gz ../Raw_Data/${sample}_R1_raw.fastq.gz ../Raw_Data/${sample}_R2_raw.fastq.gz --discard-untrimmed; done > ../Trimmed_Reads/ITS-cutadapt.log 2>&1
+for sample in $(cat ITS-unique-sample-IDs.txt); do cutadapt -a ^CTTGGTCATTTAGAGGAAGTAA...GCATCGATGAAGAACGCAGC -A ^GCTGCGTTCTTCATCGATGC...TTACTTCCTCTAAATGACCAAG -o ../Trimmed_Sequence_Data/${sample}-R1-primer-trimmed.fastq.gz -p ../Trimmed_Sequence_Data/${sample}-R2-primer-trimmed.fastq.gz ../Raw_Data/${sample}_R1_raw.fastq.gz ../Raw_Data/${sample}_R2_raw.fastq.gz --discard-untrimmed; done > ../Trimmed_Sequence_Data/ITS-cutadapt.log 2>&1
       # keeping track of reads maintained
-cat <( printf "sample\traw_reads\tcutadapt_trimmed\n" ) <( paste ITS-unique-sample-IDs.txt <( grep "read pairs processed" ../Trimmed_Reads/ITS-cutadapt.log | tr -s " " "\t" | cut -f 5 | tr -d "," ) <( grep "Pairs written" ../Trimmed_Reads/ITS-cutadapt.log | tr -s " " "\t" | cut -f 5 | tr -d "," ) ) > ../Trimmed_Reads/ITS-trimmed-read-counts.tsv
+cat <( printf "sample\traw_reads\tcutadapt_trimmed\n" ) <( paste ITS-unique-sample-IDs.txt <( grep "read pairs processed" ../Trimmed_Sequence_Data/ITS-cutadapt.log | tr -s " " "\t" | cut -f 5 | tr -d "," ) <( grep "Pairs written" ../Trimmed_Sequence_Data/ITS-cutadapt.log | tr -s " " "\t" | cut -f 5 | tr -d "," ) ) > ../Trimmed_Sequence_Data/ITS-trimmed-read-counts.tsv
 
   # processing in R (quality filtering, ASV processing, taxonomic classification, and generating primary output files)
     # 16S
@@ -39,11 +39,11 @@ Rscript 16S-full-R-processing.R
 Rscript ITS-full-R-processing.R
 
   # running fastqc on filtered reads
-fastqc ../Filtered_Reads/*.gz -t 15
+fastqc ../Filtered_Sequence_Data/*.gz -t 15
   # summarizing fastqc results with multiqc
-multiqc -z -o ../FastQC_Outputs/ ../Filtered_Reads/
+multiqc -z -o ../FastQC_Outputs/ ../Filtered_Sequence_Data/
   # renaming the outputs
 mv ../FastQC_Outputs/multiqc_data.zip ../FastQC_Outputs/filtered_multiqc_data.zip
 mv ../FastQC_Outputs/multiqc_report.html ../FastQC_Outputs/filtered_multiqc_report.html
   # removing the individual fastqc files now that summarized in multiqc output
-rm ../Filtered_Reads/*fastqc*
+rm ../Filtered_Sequence_Data/*fastqc*
