@@ -5,8 +5,10 @@
 ---
 
 ### Install prerequisites
-  * Anaconda  
-    To install conda environments, you'll first have to install [Anaconda](https://www.anaconda.com/). CLick [here](https://docs.anaconda.com/anaconda/install/) for installation instructions.
+
+  * **Anaconda**  
+    To install conda environments, you'll first have to install [Anaconda](https://www.anaconda.com/). Click [here](https://docs.anaconda.com/anaconda/install/) for installation instructions.
+
 
 ### Install the **RNAseq_fq_to_counts_tools** conda environment by running the following command:
 
