@@ -1,0 +1,15 @@
+name: RNAseq_fq_to_counts
+channels:
+  - bioconda
+
+dependencies:
+  - bcftools
+  - fastqc
+  - multiqc
+  - qualimap
+  - rsem
+  - rseqc
+  - samtools
+  - star
+  - trim-galore
+  - umi_tools
