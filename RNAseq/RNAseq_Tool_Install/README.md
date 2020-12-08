@@ -17,6 +17,7 @@
   ```
 
   Activate the RNAseq_fq_to_counts_tools conda environment with the following command:
+  > This environment needs to be activated to run steps 1-6 of the [RNAseq processing pipeline](https://github.com/nasa/GeneLab_Data_Processing/blob/master/RNAseq/GL-DPPD-7101-C.md)
   
   ```
   conda activate RNAseq_fq_to_counts
