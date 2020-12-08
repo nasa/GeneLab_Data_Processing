@@ -70,7 +70,6 @@
   ./GL_RNAseq_mkdir.sh
   ``` 
   5. Your directory structure should now be set up. If you wish to process the dataset using the same scripts that were used to create the processed data for your select dataset in the [GeneLab Repository](https://genelab-data.ndc.nasa.gov/genelab/projects), you can do so by following the steps below: 
-  
    5a. Download the scripts and metadata files that were used to processes your select dataset into the respective subdirectories (aka grandchild directories) of the `processing_scripts` child directory you made in step 4. Note: The processing scripts for all GeneLab RNAseq processed datasets are provided in the [RNAseq/GLDS_Processing_Scripts](https://github.com/nasa/GeneLab_Data_Processing/tree/master/RNAseq/GLDS_Processing_Scripts) directory of this repository.  
    
    5b. Use a text editor such as [nano](https://www.nano-editor.org/) to change the paths indicated in each of the processing scripts you downloaded in step 5a to match the path to the top level (aka parent) directory you created in step 2.  
