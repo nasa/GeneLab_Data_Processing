@@ -83,14 +83,14 @@
       cat ./Genomes/Mus_musculus/Mus_musculus.GRCm38.101.gtf ./Genomes/ERCC/ERCC92.gtf > ./Genomes/Mus_musculus/Mus_musculus.GRCm38.101_and_ERCC92.gtf
       ```
   
-  4. You can now set up your scripts for creating STAR indices for each organism of interest in the `./STAR_Indices/STAR_index_scripts` subdirectory you created in step 2 by following the instructions in [step 3](#GL-DPPD-7101-C.md#3-build-star-reference) of the GL RNAseq processing pipeline. 
+  4. You can now set up your scripts for creating STAR indices for each organism of interest in the `./STAR_Indices/STAR_index_scripts` subdirectory you created in step 2 by following the instructions in [step 3](https://github.com/nasa/GeneLab_Data_Processing/blob/master/RNAseq/GL-DPPD-7101-C.md#3-build-star-reference) of the GL RNAseq processing pipeline. 
   
      > **Note:** Prior to creating a STAR index for your organizm of interest, you will need to create a subdirectory in the `./STAR_Indices` directory you created in step 2, where the STAR index will be outputted. At GeneLab, we title these directories with the organism name and the readlength of the raw sequence data. Below is an example for making a STAR index output directory for Mus musculus samples with ERCC spike-in having a readlength of 149: 
      ```
      mkdir ./STAR_Indices/Mus_musculus_w_ERCC_RL-149
      ```
   
-  5. You can now set up your scripts for creating RSEM indices for each organism of interest in the `./RSEM_Indices/RSEM_index_scripts` subdirectory you created in step 2 by following the instructions in [step 5](#GL-DPPD-7101-C.md#5-build-rsem-reference) of the GL RNAseq processing pipeline. 
+  5. You can now set up your scripts for creating RSEM indices for each organism of interest in the `./RSEM_Indices/RSEM_index_scripts` subdirectory you created in step 2 by following the instructions in [step 5](https://github.com/nasa/GeneLab_Data_Processing/blob/master/RNAseq/GL-DPPD-7101-C.md#5-build-rsem-reference) of the GL RNAseq processing pipeline. 
   
      > **Note:** Prior to creating a RSEM index for your organizm of interest, you will need to create a subdirectory in the `./RSEM_Indices` directory you created in step 2, where the RSEM index will be outputted. At GeneLab, we title these directories with the organism name. Below is an example for making a RSEM index output directory for Mus musculus samples with ERCC spike-in: 
      ```
