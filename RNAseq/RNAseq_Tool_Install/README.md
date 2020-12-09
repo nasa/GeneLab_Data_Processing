@@ -70,14 +70,14 @@
   
   4. Create all sub-directories (aka child and subsequent grandchild directories) within the top level directory using the GL_RNAseq_mkdir.sh script by executing the following command (make sure you first download the [GL_RNAseq_mkdir.sh](https://github.com/nasa/GeneLab_Data_Processing/blob/master/RNAseq/RNAseq_Tool_Install/GL_RNAseq_mkdir.sh) file and save it in the topy level direcroty you made in step 2):
   ```
-  ./GL_RNAseq_mkdir.sh
+  bash GL_RNAseq_mkdir.sh
   ``` 
 
 5. Your directory structure should now be set up. If you wish to process the dataset using the same scripts that were used to create the processed data for your select dataset in the [GeneLab Repository](https://genelab-data.ndc.nasa.gov/genelab/projects), you can do so by following the steps below:  
 
    1. Download the scripts and metadata files that were used to processes your select dataset into the respective subdirectories (aka grandchild directories) of the `processing_scripts` child directory you made in step 4. Note: The processing scripts for all GeneLab RNAseq processed datasets are provided in the [RNAseq/GLDS_Processing_Scripts](https://github.com/nasa/GeneLab_Data_Processing/tree/master/RNAseq/GLDS_Processing_Scripts) directory of this repository.  
 
-   2. Use a text editor such as [nano](https://www.nano-editor.org/) to change the paths indicated in each of the processing scripts you downloaded in step 5a to match the path to the top level (aka parent) directory you created in step 2.
+   2. Use a text editor such as [nano](https://www.nano-editor.org/) to change the paths indicated in each of the processing scripts you downloaded in step 5i to match the path to the top level (aka parent) directory you created in step 2.
 
       > **Note1:** If your system uses the [slurm](https://slurm.schedmd.com/overview.html) job scheduler, you will also have to customize the #SBATCH options to be consistent with your system's slurm settings (consult your system administrator regarding the settings needed for your system).  
       >
@@ -89,4 +89,4 @@
       >
       > **Note2:** GeneLab provides processed data files from each step of the RNAseq processing pipeline in the [GeneLab Repository](https://genelab-data.ndc.nasa.gov/genelab/projects), so you may start processing from any step of the pipeline by downloading the appropriate input data for that step.  
    
-   4. Once you've downloaded the scripts and input data you need to start processing (steps 5a and 5c, respectively) and have revised all of your processing scripts to indicate the correct paths and settings for your machine (step 5b), you may use the `cd` command to navigate to the appropriare subdirectory within the `processing_scripts` child directory and begin executing the scripts in the same order as indicated in the [RNAseq processing pipeline](https://github.com/nasa/GeneLab_Data_Processing/blob/master/RNAseq/GL-DPPD-7101-C.md).  
+   4. Once you've downloaded the scripts and input data you need to start processing (steps 5i and 5iii, respectively) and have revised all of your processing scripts to indicate the correct paths and settings for your machine (step 5ii), you may use the `cd` command to navigate to the appropriare subdirectory within the `processing_scripts` child directory and begin executing the scripts in the same order as indicated in the [RNAseq processing pipeline](https://github.com/nasa/GeneLab_Data_Processing/blob/master/RNAseq/GL-DPPD-7101-C.md).  
