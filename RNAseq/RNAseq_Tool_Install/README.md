@@ -57,18 +57,22 @@
 
   To generate the same directory structure that GeneLab uses to organize the RNAseq processing pipeline output files, follow the instructions below:
   1. Use the `cd` command to navigate to the location on your device where you want to create the RNAseq directory structure.
+  
   2. Set up the top level (aka parent) directory for the GLDS dataset you want to process using the `mkdir` command as follows (the example below is for GLDS-245):
   ```
   mkdir GLDS-245
   ```  
+  
   3. Go into the top level directory that you created in step 2 using the `cd` command as shown in the example below:
   ```
   cd GLDS-245
   ``` 
+  
   4. Create all sub-directories (aka child and subsequent grandchild directories) within the top level directory using the GL_RNAseq_mkdir.sh script by executing the following command (make sure you first download the [GL_RNAseq_mkdir.sh](https://github.com/nasa/GeneLab_Data_Processing/blob/master/RNAseq/RNAseq_Tool_Install/GL_RNAseq_mkdir.sh) file and save it in the topy level direcroty you made in step 2):
   ```
   ./GL_RNAseq_mkdir.sh
   ``` 
+
 5. Your directory structure should now be set up. If you wish to process the dataset using the same scripts that were used to create the processed data for your select dataset in the [GeneLab Repository](https://genelab-data.ndc.nasa.gov/genelab/projects), you can do so by following the steps below:  
 
    1. Download the scripts and metadata files that were used to processes your select dataset into the respective subdirectories (aka grandchild directories) of the `processing_scripts` child directory you made in step 4. Note: The processing scripts for all GeneLab RNAseq processed datasets are provided in the [RNAseq/GLDS_Processing_Scripts](https://github.com/nasa/GeneLab_Data_Processing/tree/master/RNAseq/GLDS_Processing_Scripts) directory of this repository.  
