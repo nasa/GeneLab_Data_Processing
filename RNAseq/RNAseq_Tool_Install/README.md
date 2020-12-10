@@ -65,11 +65,11 @@
   
 3. Your directory structure should now be set up. You'll next have to download the fasta and gtf files for your organism(s) of interest from [Ensembl](https://www.ensembl.org/) and save the fasta and gtf file in each respective organism's subdirectory in the 'Genomes' directory you made in step 2.  
 
-   1. For animals you can find these Ensembl files [here](https://uswest.ensembl.org/index.html), plant Ensembl references can be found [here](https://plants.ensembl.org/index.html), and Ensembl reference files for microbes can be found [here](https://bacteria.ensembl.org/index.html). The reference files for the ERCC genes GeneLab uses can be found [here](https://assets.thermofisher.com/TFS-Assets/LSG/manuals/ERCC92.zip). 
+   1. For animals you can find these Ensembl files [here](https://uswest.ensembl.org/index.html), plant Ensembl references can be found [here](https://plants.ensembl.org/index.html), and Ensembl reference files for microbes can be found [here](https://bacteria.ensembl.org/index.html). The reference files for the ERCC genes GeneLab uses can be downloaded [here](https://assets.thermofisher.com/TFS-Assets/LSG/manuals/ERCC92.zip). 
 
       > **Note:** Ensembl displays the current release of each organism's genome and annotation files; to use the exact release that was used to process data hosted in the [GeneLab Repository](https://genelab-data.ndc.nasa.gov/genelab/projects), download the files using the links provided in the [GeneLab_Reference_and_Annotation_Files](https://github.com/nasa/GeneLab_Data_Processing/tree/master/RNAseq/GeneLab_Reference_and_Annotation_Files) tables.
   
-   2. If samples from the dataset you want to process were spiked with ERCC genes, you'll have to create a reference fasta and gtf file containing both the organism of interest and ERCC genes by concatenating your organism of interest's fasta file with the ERCC fasta file, and your organism of interest's gtf file with the ERCC gtf file. Below are example commands for how to do this with Mus musculus (mouse) Ensembl realease 101:
+   2. If samples from the dataset you want to process were spiked with ERCC genes, you'll have to create a reference fasta and gtf file containing both the organism of interest and ERCC genes by concatenating your organism of interest's fasta file with the ERCC fasta file, and your organism of interest's gtf file with the ERCC gtf file. Below are example commands for how to do this with *Mus musculus* (mouse) Ensembl release 101:
       ```
       gunzip ./Genomes/Mus_musculus/Mus_musculus.GRCm38.dna.primary_assembly.fa.gz
       ```
