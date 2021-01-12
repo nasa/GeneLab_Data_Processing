@@ -1,4 +1,4 @@
-mkdir 00-RawData  01-TG_Preproc  02-STAR_Alignment  03-RSEM_Counts  04-DESeq2_NormCounts  05-DESeq2_DGE  processing_scripts
+mkdir 00-RawData  01-TG_Preproc  02-STAR_Alignment  03-RSEM_Counts  04-DESeq2_NormCounts  05-DESeq2_DGE  Metadata processing_scripts
 mkdir 00-RawData/Fastq
 mkdir 00-RawData/FastQC_Reports
 mkdir 00-RawData/FastQC_Reports/raw_multiqc_report
