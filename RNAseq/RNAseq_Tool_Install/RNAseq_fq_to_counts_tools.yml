@@ -1,8 +1,10 @@
 name: RNAseq_fq_to_counts
 channels:
+  - conda-forge
   - bioconda
 
 dependencies:
+  - python
   - bcftools
   - fastqc
   - multiqc
