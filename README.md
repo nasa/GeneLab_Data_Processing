@@ -15,7 +15,7 @@ Click on an assay type below for data processing information.
   - [454 and Ion-Torrent](Amplicon/454-and-IonTorrent)  
 - Metagenomics  
   - [Removing human reads](Metagenomics/Remove_human_reads_from_raw_data)  
-  - [Illumina](Metagenomic/Illumina)  
+  - [Illumina](Metagenomics/Illumina)  
 - [RNAseq](RNAseq)  
 
 ---
