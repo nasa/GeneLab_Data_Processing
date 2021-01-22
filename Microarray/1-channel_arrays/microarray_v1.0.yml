@@ -1,0 +1,25 @@
+name: microarray_v1.0
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base
+  - r-shiny
+  - r-markdown
+  - r-knitr
+  - r-dt
+  - r-r.utils
+  - r-dplyr
+  - r-tidyr
+  - r-statmod
+  - bioconductor-risa
+  - bioconductor-limma
+  - bioconductor-geoquery
+  - bioconductor-arrayexpress
+  - bioconductor-stringdb
+  - bioconductor-annotationdbi
+  - bioconductor-oligo
+  - bioconductor-affy
+  - bioconductor-illuminaio
+  - bioconductor-help

@@ -1,0 +1,78 @@
+<tool id="GeneLab-Visualize" name="GeneLab-Visualize" version="0.6.4">
+    <description>Visualization tool for generating interactive plots from processed GeneLab data.</description>
+    <requirements>
+    </requirements>
+    <code file="galaxy_tools.py" />
+    <command detect_errors="exit_code"><![CDATA[
+        #set $counts_filename = "counts_table.txt"
+        #set $meta_filename = "sample_metadata.txt"
+        ln -s "${counts_table}" "${counts_filename}" &&
+        ln -s "${sample_metadata}" "${meta_filename}" &&
+        GeneLab-Microarray --galaxy '$counts_filename',_,'$meta_filename',_,'$diff_analysis',_,'$condition1',_,'$condition2',_,$padj,_,'$outliers',_,'$html_file',_,'${html_file.extra_files_path}' .
+    ]]></command>
+    <inputs>
+      <param name="counts_table" type="data" format="txt" label="Counts table" help="A txt file containing sample counts for each gene" />
+      <param name="sample_metadata" type="data" format="txt" label="Metadata" help="A txt file containing sample metadata formatted in ISA. (S file needed specifically)" />
+      <param name="diff_analysis" type="select" label="Differential Analysis" help="Type of analysis to determine differential gene expression">
+        <option value="limma" selected="true">Limma (Microarray)</option>
+        <option value="voom">Limma-Voom (RNA-Seq)</option>
+      </param>
+      <param name="padj" type="float" value="0.01" label="P-adj" help="Cutoff value to determine significant gene list and for plotting." />
+      <param name="condition1" type="select" dynamic_options="get_conditions(sample_metadata.file_name,'Factor Value')" multiple="true" label="Condition1" help="First condition to be compared"/>
+      <param name="condition2" type="select" dynamic_options="get_conditions(sample_metadata.file_name,'Factor Value')" multiple="true" label="Condition2" help="Second condition to be compared"/>
+      <param name="outliers" type="select" refresh_on_change="true" dynamic_options="get_sample_names(counts_table.file_name)" multiple="true" label="Remove Outliers" help="Select which samples to remove as outliers"/>
+    </inputs>
+    <outputs>
+      <data name="html_file" format="html" from_work_dir="index.html" label="GeneLab-Visualize : ${condition1}-${condition2} : p&lt;${padj}" />
+    </outputs>
+    <tests>
+        <test>
+            <param name="counts_table" value="/Users/jonathanrubin/Google_Drive/NASA/home/GeneLab-Microarray/test-data/GLDS-21_microarray_normalized.txt"/>
+            <param name="sample_metadata" value="/Users/jonathanrubin/Google_Drive/NASA/home/GeneLab-Microarray/test-data/s_GLDS-21_microarray_metadata.txt"/>
+            <param name="padj" value="0.0000001"/>
+            <param name="condition1" value="spaceflight"/>
+            <param name="condition2" value="notreatment"/>
+            <output name="html_file" ftype="html" file="GeneLab-Visualize_spaceflight-notreatment_1e-07.html"/>
+        </test>
+    </tests>
+    <help><![CDATA[
+
+
+**Galaxy Usage**
+
+.. class:: infomark
+
+Files required
+
+1. Counts File: A .txt file containing normalized counts values (from RNA-Seq or microarray) where the first column corresponds to gene names (or probe IDs) and each subsequent column are the counts for a specific sample. 
+
+2. Metadata File: A .txt file containing ISA formatted metadata (S file needed specifically). GeneLab-Visualize will parse this file and return a list of possible condition options
+
+.. class:: infomark
+
+Other Inputs
+
+1. Differential Analysis: Determines type of analysis to perform on data to get differential gene expression. (options: Limma (Microarray), Limma-Voom (RNA-Seq))
+
+2. P-Adj: Adjusted p-value cutoff for generating list of significant genes and also for use with plotting.
+
+3. Condition 1: First condition to be compared.
+
+4. Condition 2: Second condition to be compared. 
+
+5. Remove Outliers: Choose which samples to remove as outliers.
+
+
+    ]]></help>
+    <citations>
+        <citation type="bibtex">
+        @misc{githubGeneLab-Microarray,
+          author = {Rubin, Jonathan},
+          year = {2018},
+          title = {GeneLab-Microarray},
+          publisher = {GitHub},
+          journal = {GitHub repository},
+          url = {https://github.com/jdrubin91/GeneLab-Microarray},
+        }</citation>
+    </citations>
+</tool>
