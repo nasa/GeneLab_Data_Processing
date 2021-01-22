@@ -54,7 +54,6 @@ kraken2-build --clean --db kraken2-human-db/
 * `--download-library` - specifies the references to download (here just the human reference genome)
 * `--db` - specifies the directory we are putting the database in
 * `--threads` - specifies the number of threads to use
-* `--no-masking` - prevents [masking](https://github.com/DerrickWood/kraken2/wiki/Manual#masking-of-low-complexity-sequences) of low-complexity sequences
 * `--download-taxonomy` - downloads taxonomic mapping information
 * `--build` - specifies to construct kraken2-formatted database
 * `--minimizer-spaces` – specifies the number of positions in the minimizer that will be masked out during all comparisons; must be fewer than the minimizer-len divided by 4
