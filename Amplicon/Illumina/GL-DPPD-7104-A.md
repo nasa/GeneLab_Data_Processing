@@ -114,8 +114,8 @@ multiqc -o raw_multiqc_output raw_fastqc_output
 The location and orientation of primers in the data is important to understand in deciding how to do this step. `cutadapt` has many options for primer identification and removal. They are described in detail on their documentation page here: [https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types](https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types)  
 
 The following example commands show how it was done for some samples of [GLDS-200](https://genelab-data.ndc.nasa.gov/genelab/accession/GLDS-200/), which was 2x250 sequencing of the 16S gene using these primers:  
-* forward: 5’-GTGCCAGCMGCCGCGGTAA-3’  ## Is there supposed to be a M in the sequence? If so, please define what M represents ##
-* reverse: 5’- GGACTACVSGGGTATCTAAT-3’  ## Is there supposed to be a V and S in the sequence? If so, please define what V and S represent ##
+* forward: 5’-GTGCCAGCMGCCGCGGTAA-3’  
+* reverse: 5’-GGACTACVSGGGTATCTAAT-3’  
 
 Due to the size of the target amplicon and the type of sequencing done here, both forward and reverse primers are expected to be on each of the forward and reverse reads. It therefore takes “linked” primers as input for forward and reverse reads, specified above by the `...` between them. It also expects that the primers start at the first position of the reads (“anchored”), specified with the leading `^` characters.  
 
