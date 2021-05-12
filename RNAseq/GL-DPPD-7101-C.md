@@ -21,9 +21,13 @@ Jonathan Galazka (GeneLab Project Scientist)
 
 ## Updates from previous revision
 
-In step 7, a line was added to both the section for datasets with ERCC Spike-In ([step 7a](#7a-for-datasets-with-ercc-spike-in)) and the section for datasets without ERCC Spike-In ([step 7b](#7b-for-datasets-without-ercc-spike-in)) to force the RSEM &ast;genes.results files to be imported in the same order that the samples are listed in the ISA files (this avoids the possibility of counts being associated with the wrong sample when generating counts tables). 
+In step 7, a line was added to both the section for datasets with ERCC Spike-In ([step 7a](#7a-for-datasets-with-ercc-spike-in)) and the section for datasets without ERCC Spike-In ([step 7b](#7b-for-datasets-without-ercc-spike-in)) to force the RSEM &ast;genes.results files to be imported in the same order that the samples are listed in the ISA files (this avoids the possibility of counts being associated with the wrong sample when generating counts tables).
 
-Note that all RNAseq datasets originally processed with [Revision B](Previous_GL-DPPD-7101_Revisions/GL-DPPD-7101-B.md) or [Revision A](Previous_GL-DPPD-7101_Revisions/GL-DPPD-7101-A.md) in which the &ast;genes.results files were not imported in the same order that the samples were listed in the ISA files (or &ast;metadata.csv file for datasets processed with Revision A) were re-processed with this line added to the respective step 7 scripts. 
+> Note that all RNAseq datasets originally processed with [Revision B](Previous_GL-DPPD-7101_Revisions/GL-DPPD-7101-B.md) or [Revision A](Previous_GL-DPPD-7101_Revisions/GL-DPPD-7101-A.md) in which the &ast;genes.results files were not imported in the same order that the samples were listed in the ISA files (or &ast;metadata.csv file for datasets processed with Revision A) were re-processed with this line added to the respective step 7 scripts.
+
+The DESeq2 script for datasets with ERCC spike-in, step 7a, was modified to only use size factors from ERCC group B genes for resclaing when performing ERCC normalization. This change was made because unlike the other ERCC genes, group B ERCC genes are the same concentration in both mix1 and mix2. 
+
+> Note that all RNAseq datasets with ERCC spike-in originally processed with [Revision B](Previous_GL-DPPD-7101_Revisions/GL-DPPD-7101-B.md) or [Revision A](Previous_GL-DPPD-7101_Revisions/GL-DPPD-7101-A.md) were re-processed with this change added to the respective step 7a scripts. 
 
 ---
 
