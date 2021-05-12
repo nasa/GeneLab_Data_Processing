@@ -1,0 +1,14 @@
+name: GL-Illumina-amplicon
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+    - fastqc=0.11.8
+    - multiqc=1.7
+    - cutadapt=2.3
+    - r-base=3.6.3
+    - bioconductor-dada2=1.12.1
+    - bioconductor-decipher=2.12.0
+    - bioconductor-biomformat=1.12.0
+    - snakemake=5.5.4

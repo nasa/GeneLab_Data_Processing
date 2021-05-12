@@ -1,0 +1,254 @@
+############################################################################################
+## Snakefile for GeneLab's Illumina amplicon workflow                                     ##
+## Two samples taken from: https://genelab-data.ndc.nasa.gov/genelab/accession/GLDS-280/  ##
+##                                                                                        ##
+## This file as written expects to be executed within the "processing_info/" directory    ##
+## with the raw starting fastq files present in the "../Raw_Data/" directory              ##
+## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##
+############################################################################################
+
+import os
+
+########################################
+############# General Info #############
+########################################
+
+"""
+Expected to be run in the following conda environment (or with specified programs versions accessible):
+
+# conda create -y -n GL-Illumina-amplicon -c conda-forge -c bioconda -c defaults fastqc=0.11.8 \
+#              multiqc=1.7 cutadapt=2.3 r-base=3.6.3 bioconductor-dada2=1.12.1 
+#              bioconductor-decipher=2.12.0 bioconductor-biomformat=1.12.0 snakemake=5.5.4
+
+Or can be created with the corresponding GLDS's environment.yml file like so:
+# conda env create -f environment.yml
+
+# conda activate GL-Illumina-amplicon
+
+Cutadapt command should be adjusted accordingly (primers, orientation) in the cutadapt rule below.
+"""
+
+########################################
+######## Setting some variables ########
+########################################
+
+  # current GLDS number
+curr_GLDS = "GLDS-280"
+
+  # values to be passed to dada2's filterAndTrim() function:
+left_trunc = "250"
+right_trunc = "200"
+left_maxEE = "1"
+right_maxEE = "1"
+
+  # single column file holding unique portion of sample names
+sample_IDs_file = "unique-sample-IDs.txt"
+
+  # useful prefixes and suffixes for filename structure
+  # filename prefix (what comes before the unique portion of the name that is provided in the "unique-sample-IDs.txt" file)
+filename_prefix = ""
+  # filename suffixes (what comes after the unique portion of the names, for R1 and R2 files)
+  # might need to adjust some of these in the full-R-processing.R file too as currently written
+filename_R1_suffix = "_R1_raw.fastq.gz"
+filename_R2_suffix = "_R2_raw.fastq.gz"
+primer_trimmed_filename_R1_suffix = "-R1-trimmed.fastq.gz"
+primer_trimmed_filename_R2_suffix = "-R2-trimmed.fastq.gz"
+filtered_filename_R1_suffix = "-R1-filtered.fastq.gz"
+filtered_filename_R2_suffix = "-R2-filtered.fastq.gz"
+raw_fastqc_R1_suffix = "_R1_raw_fastqc.zip"
+raw_fastqc_R2_suffix = "_R2_raw_fastqc.zip"
+filtered_fastqc_R1_suffix = "-R1-filtered_fastqc.zip"
+filtered_fastqc_R2_suffix = "-R2-filtered_fastqc.zip"
+
+  # directories (all relative to processing directory)
+raw_reads_dir = "../Raw_Data/"
+fastqc_out_dir = "../FastQC_Outputs/"
+trimmed_reads_dir = "../Trimmed_Sequence_Data/"
+filtered_reads_dir = "../Filtered_Sequence_Data/"
+final_outputs_dir = "../Final_Outputs/"
+
+needed_dirs = [fastqc_out_dir, trimmed_reads_dir, filtered_reads_dir, final_outputs_dir]
+
+  # number of threads to use PER snakemake job started (that's determined by the -j parameter passed to the snakemake call)
+    # passed to fastqc (since only fastqc here, 2 is fine as only 2 files are passed to each call; functions in R are currently on autodetect)
+num_threads = 2
+
+########################################
+#### Reading samples file into list ####
+########################################
+
+sample_ID_list = [line.strip() for line in open(sample_IDs_file)]
+
+
+########################################
+######## Setting up directories ########
+########################################
+
+for dir in needed_dirs:
+	try:
+		os.mkdir(dir)
+	except:
+		pass
+
+
+########################################
+############# Rules start ##############
+########################################
+
+rule all:
+    input:
+        expand(filtered_reads_dir + filename_prefix + "{ID}" + filtered_filename_R1_suffix, ID = sample_ID_list),
+        expand(filtered_reads_dir + filename_prefix + "{ID}" + filtered_filename_R2_suffix, ID = sample_ID_list),
+        expand(trimmed_reads_dir + filename_prefix + "{ID}" + primer_trimmed_filename_R1_suffix, ID = sample_ID_list),
+        expand(trimmed_reads_dir + filename_prefix + "{ID}" + primer_trimmed_filename_R2_suffix, ID = sample_ID_list),
+        trimmed_reads_dir + "cutadapt.log",
+        trimmed_reads_dir + "trimmed-read-counts.tsv",
+        final_outputs_dir + "taxonomy.tsv",
+        final_outputs_dir + "taxonomy-and-counts.biom.zip",
+        final_outputs_dir + "ASVs.fasta",
+        final_outputs_dir + "read-count-tracking.tsv",
+        final_outputs_dir + "counts.tsv",
+        final_outputs_dir + "taxonomy-and-counts.tsv",
+        fastqc_out_dir + "raw_multiqc_report.html.zip",
+        fastqc_out_dir + "raw_multiqc_data.zip",
+        fastqc_out_dir + "filtered_multiqc_report.html.zip",
+        fastqc_out_dir + "filtered_multiqc_data.zip"
+    shell:
+        """
+        # copying log file to store with processing info
+        cp .snakemake/log/$(ls -t .snakemake/log/ | head -n 1) snakemake-run.log
+        """
+
+
+rule cutadapt:
+    input:
+        R1 = raw_reads_dir + filename_prefix + "{ID}" + filename_R1_suffix,
+        R2 = raw_reads_dir + filename_prefix + "{ID}" + filename_R2_suffix
+    output:
+        R1 = trimmed_reads_dir + filename_prefix + "{ID}" + primer_trimmed_filename_R1_suffix,
+        R2 = trimmed_reads_dir + filename_prefix + "{ID}" + primer_trimmed_filename_R2_suffix,
+        log = trimmed_reads_dir + "{ID}-cutadapt.log",
+        trim_counts = trimmed_reads_dir + "{ID}-trimmed-counts.tsv"
+    log:
+        trimmed_reads_dir + "{ID}-cutadapt.log"
+    shell:
+        """
+        cutadapt -g CCTACGGGNGGCWGCAG -G GACTACHVGGGTATCTAATCC -o {output.R1} -p {output.R2} --discard-untrimmed -m 250 {input.R1} {input.R2} > {log} 2>&1
+        paste <( printf "{wildcards.ID}" ) <( grep "read pairs processed" {output.log} | tr -s " " "\t" | cut -f 5 | tr -d "," ) <( grep "Pairs written" {output.log} | tr -s " " "\t" | cut -f 5 | tr -d "," ) > {output.trim_counts}
+        """
+
+
+rule combine_cutadapt_logs_and_summarize:
+    input:
+        counts = expand(trimmed_reads_dir + "{ID}-trimmed-counts.tsv", ID = sample_ID_list),
+        logs = expand(trimmed_reads_dir + "{ID}-cutadapt.log", ID = sample_ID_list)
+    output:
+        combined_log = trimmed_reads_dir + "cutadapt.log",
+        combined_counts = trimmed_reads_dir + "trimmed-read-counts.tsv"
+    shell:
+        """
+        cat {input.logs} > {output.combined_log}
+        rm {input.logs}
+        
+        cat <( printf "sample\traw_reads\tcutadapt_trimmed\n" ) <( cat {input.counts} ) > {output.combined_counts}
+        rm {input.counts}
+        """
+
+
+rule zip_biom:
+    input:
+        final_outputs_dir + "taxonomy-and-counts.biom"
+    output:
+        final_outputs_dir + "taxonomy-and-counts.biom.zip"
+    shell:
+        """
+        zip -q {final_outputs_dir}taxonomy-and-counts.biom.zip {final_outputs_dir}taxonomy-and-counts.biom && rm {final_outputs_dir}taxonomy-and-counts.biom
+        """
+
+
+rule run_R:
+    input:
+        expand(trimmed_reads_dir + filename_prefix + "{ID}" + primer_trimmed_filename_R1_suffix, ID = sample_ID_list),
+        expand(trimmed_reads_dir + filename_prefix + "{ID}" + primer_trimmed_filename_R1_suffix, ID = sample_ID_list)
+    output:
+        expand(filtered_reads_dir + filename_prefix + "{ID}" + filtered_filename_R1_suffix, ID = sample_ID_list),
+        expand(filtered_reads_dir + filename_prefix + "{ID}" + filtered_filename_R2_suffix, ID = sample_ID_list),
+        final_outputs_dir + "taxonomy.tsv",
+        final_outputs_dir + "taxonomy-and-counts.biom",
+        final_outputs_dir + "ASVs.fasta",
+        final_outputs_dir + "read-count-tracking.tsv",
+        final_outputs_dir + "counts.tsv",
+        final_outputs_dir + "taxonomy-and-counts.tsv"
+    shell:
+        """
+        Rscript full-R-processing.R {left_trunc} {right_trunc} {left_maxEE} {right_maxEE}
+        """
+
+
+rule raw_fastqc:
+    input:
+        raw_reads_dir + filename_prefix + "{ID}" + filename_R1_suffix,
+        raw_reads_dir + filename_prefix + "{ID}" + filename_R2_suffix        
+    output:
+        raw_reads_dir + filename_prefix + "{ID}" + raw_fastqc_R1_suffix,
+        raw_reads_dir + filename_prefix + "{ID}" + raw_fastqc_R2_suffix
+    shell:
+        """
+		fastqc {input} -t {num_threads} -q
+		"""
+
+
+rule raw_multiqc:
+    input:
+        expand(raw_reads_dir + filename_prefix + "{ID}" + raw_fastqc_R1_suffix, ID = sample_ID_list),
+        expand(raw_reads_dir + filename_prefix + "{ID}" + raw_fastqc_R2_suffix, ID = sample_ID_list)
+    output:
+        fastqc_out_dir + "raw_multiqc_report.html.zip",
+        fastqc_out_dir + "raw_multiqc_data.zip"
+    shell:
+        """
+        multiqc -z -q -o {fastqc_out_dir}raw_tmp_qc {raw_reads_dir} > /dev/null 2>&1
+          # renaming the outputs and zipping html to enable uploading in GL framework
+        mv {fastqc_out_dir}raw_tmp_qc/multiqc_data.zip {fastqc_out_dir}raw_multiqc_data.zip
+        mv {fastqc_out_dir}raw_tmp_qc/multiqc_report.html {fastqc_out_dir}raw_multiqc_report.html
+        zip -q {fastqc_out_dir}raw_multiqc_report.html.zip {fastqc_out_dir}raw_multiqc_report.html && rm {fastqc_out_dir}raw_multiqc_report.html
+          # removing the individual fastqc files
+        rm -rf {raw_reads_dir}*fastqc* {fastqc_out_dir}raw_tmp_qc/
+        """
+
+
+rule filtered_fastqc:
+    input:
+        filtered_reads_dir + filename_prefix + "{ID}" + filtered_filename_R1_suffix,
+        filtered_reads_dir + filename_prefix + "{ID}" + filtered_filename_R2_suffix
+    output:
+        filtered_reads_dir + filename_prefix + "{ID}" + filtered_fastqc_R1_suffix,
+        filtered_reads_dir + filename_prefix + "{ID}" + filtered_fastqc_R2_suffix
+    shell:
+        """
+		fastqc {input} -t {num_threads} -q
+		"""
+
+
+rule filtered_multiqc:
+    input:
+        expand(filtered_reads_dir + filename_prefix + "{ID}" + filtered_fastqc_R1_suffix, ID = sample_ID_list),
+        expand(filtered_reads_dir + filename_prefix + "{ID}" + filtered_fastqc_R2_suffix, ID = sample_ID_list)
+    output:
+        fastqc_out_dir + "filtered_multiqc_report.html.zip",
+        fastqc_out_dir + "filtered_multiqc_data.zip"
+    shell:
+        """
+        multiqc -z -q -o {fastqc_out_dir}filtered_tmp_qc {filtered_reads_dir} > /dev/null 2>&1
+          # renaming the outputs and zipping html to enable uploading in GL framework
+        mv {fastqc_out_dir}filtered_tmp_qc/multiqc_data.zip {fastqc_out_dir}filtered_multiqc_data.zip
+        mv {fastqc_out_dir}filtered_tmp_qc/multiqc_report.html {fastqc_out_dir}filtered_multiqc_report.html
+        zip -q {fastqc_out_dir}filtered_multiqc_report.html.zip {fastqc_out_dir}filtered_multiqc_report.html && rm {fastqc_out_dir}filtered_multiqc_report.html
+          # removing the individual fastqc files and temp locations
+        rm -rf {filtered_reads_dir}*fastqc* {fastqc_out_dir}filtered_tmp_qc/
+        """
+
+
+rule clean_all:
+    shell:
+        "rm -rf {needed_dirs} .snakemake/"

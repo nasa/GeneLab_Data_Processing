@@ -1,0 +1,8 @@
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+    - r-base=3.6.3
+    - bioconductor-decipher=2.12.0
+    - bioconductor-biomformat=1.12.0

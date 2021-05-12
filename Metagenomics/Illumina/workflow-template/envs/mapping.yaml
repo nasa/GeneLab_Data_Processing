@@ -1,0 +1,8 @@
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+    - bowtie2=2.3.5.1
+    - bbmap=38.86
+    - samtools=1.9
