@@ -14,7 +14,7 @@ These samples were processed in batch using the SLURM job scheduler. The followi
 |Program|Version|Relevant Links|
 |:------|:------:|:-------------|
 |FastQC|0.11.8|[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
-|MultiQC|1.8|[https://multiqc.info/](https://multiqc.info/)|
+|MultiQC|1.7|[https://multiqc.info/](https://multiqc.info/)|
 |Cutadapt|2.3|[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
 |TrimGalore!|0.6.2|[https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/)|
 |STAR|2.7.1a|[https://github.com/alexdobin/STAR](https://github.com/alexdobin/STAR)|
@@ -22,7 +22,7 @@ These samples were processed in batch using the SLURM job scheduler. The followi
 |Bioconductor|3.9|[https://bioconductor.org](https://bioconductor.org)|
 |DESeq2|1.26.0|[https://bioconductor.org/packages/release/bioc/html/DESeq2.html](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)|
 |tximport|1.14.0|[https://bioconductor.org/packages/release/bioc/html/tximport.html](https://bioconductor.org/packages/release/bioc/html/tximport.html)|
-|tidyverse|1.3.0|[https://www.tidyverse.org](https://www.tidyverse.org)|
+|tidyverse|1.2.1|[https://www.tidyverse.org](https://www.tidyverse.org)|
 |STRINGdb|1.24.0|[https://www.bioconductor.org/packages/release/bioc/html/STRINGdb.html](https://www.bioconductor.org/packages/release/bioc/html/STRINGdb.html)|
 |PANTHER.db|1.0.4|[https://bioconductor.org/packages/release/data/annotation/html/PANTHER.db.html](https://bioconductor.org/packages/release/data/annotation/html/PANTHER.db.html)|
 |org.Mm.eg.db|3.8.2|[https://bioconductor.org/packages/release/data/annotation/html/org.Mm.eg.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.Mm.eg.db.html)|
