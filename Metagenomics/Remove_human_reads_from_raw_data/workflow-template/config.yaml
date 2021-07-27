@@ -1,0 +1,95 @@
+############################################################################################
+## Configuration file for GeneLab Illumina metagenomics processing workflow               ##
+## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##
+############################################################################################
+
+############################################################
+##################### VARIABLES TO SET #####################
+############################################################
+
+#############################################################
+##### These first 5 need to match what is on our system #####
+#############################################################
+
+## single-column file with unique sample identifiers:
+sample_info_file:
+    "unique-sample-names.txt"
+
+## input reads directory (can be relative to workflow directory, or needs to be full path)
+input_reads_dir:
+    "example-reads/"
+
+## raw read suffixes (region following the unique part of the sample names)
+  # e.g. for "Sample-1_R1_raw.fastq.gz" would be "_R1_raw.fastq.gz"
+input_R1_suffix:
+    "_R1.fastq.gz"
+input_R2_suffix:
+    "_R2.fastq.gz"
+
+## root directory of kraken2 reference database (or where it will be downloaded to if it doesn't exist yet)
+    # this should be provided as a full path (starting with `/` as the below example 
+    # (note that the the `~/` home shortcut is not expanded
+    # by snakemake's evaluation of files, so don't use that)
+REF_DB_ROOT_DIR:
+    "/path/to/ref-dbs/"
+
+
+######################################################################
+##### The rest only need to be altered if we want to change them #####
+######################################################################
+
+## output directory to hold human-removed reads
+output_reads_dir:
+    "human-removed-reads/"
+
+## wanted output R1 and R2 suffixes after human-read removal
+R1_out_suffix:
+    "_human_removed_R1.fastq.gz"
+R2_out_suffix:
+    "_human_removed_R2.fastq.gz"
+
+## Number of threads to pass to kraken2 call (will be multiplied by number of jobs running, set with the -j parameter in the snakemake call)
+num_threads:
+    10
+
+
+######################################################
+################# REFERENCE DATABASE #################
+######################################################
+# The below variables probably shouldn't be changed unless we really want to for some reason.
+# The workflow will check the location specified above and install the kraken2 database
+# if it is not already there. It looks for the file "KRAKEN2_DB_SETUP" as specified below 
+# in the directory, to know that it's already been setup. 
+
+## kraken2 database directory 
+kraken2_db_dir:
+    "kraken2-human-db"
+## trigger filename for checking on/setting up kraken2 reference db
+KRAKEN2_TRIGGER_FILE:
+    "KRAKEN2_DB_SETUP"
+
+
+############################################################
+###################### GENERAL INFO ########################
+############################################################
+# Workflow is currently equipped to work with paired-end data only, and reads are expected to be gzipped
+
+# Initial database construction done with kraken2 v2.1.1 on 29-Nov-2020
+  # - details of building can be found on the corresponding README.md of this repo, and at this page: https://hackmd.io/@astrobiomike/GL-kraken2-human-db-setup
+  # - that database can be downloaded and decompressed with the following:
+
+# curl -L -o kraken2-human-db.tar.gz https://ndownloader.figshare.com/files/25627058
+# tar -xzvf kraken2-human-db.tar.gz
+
+  # - By default, that database build will be downloaded and utilized with this workflow
+
+
+## example usage command ##
+# snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p
+
+# `--use-conda` – this specifies to use the conda environments included in the workflow
+# `--conda-prefix` – this allows us to point to where the needed conda environments should be stored. Including this means if we use the workflow on a different dataset somewhere else in the future, it will re-use the same conda environments rather than make new ones. The value listed here, `${CONDA_PREFIX}/envs`, is the default location for conda environments (the variable `${CONDA_PREFIX}` will be expanded to the appropriate location on whichever system it is run on).
+# `-j` – this lets us set how many jobs Snakemake should run concurrently (keep in mind that many of the thread and cpu parameters set in the config.yaml file will be multiplied by this)
+# `-p` – specifies to print out each command being run to the screen
+
+# See `snakemake -h` for more options and details.
