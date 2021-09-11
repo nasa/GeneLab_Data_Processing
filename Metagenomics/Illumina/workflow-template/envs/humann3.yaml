@@ -1,0 +1,7 @@
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+    - biobakery
+dependencies:
+    - humann=3.0.0
