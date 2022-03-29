@@ -5,4 +5,4 @@ channels:
     - astrobiomike
 dependencies:
     - vsearch=2.15.1
-    - bit=1.8.24
+    - bit=1.8.37

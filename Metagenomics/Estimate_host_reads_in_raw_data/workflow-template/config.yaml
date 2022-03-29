@@ -1,7 +1,7 @@
-############################################################################################
-## Configuration file for GeneLab removal of human reads from metagenomic data            ##
-## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##
-############################################################################################
+##################################################################################################
+## Configuration file for GeneLab for estimation of host reads in Illumina metagenomic datasets ##
+## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                              ##
+##################################################################################################
 
 ############################################################
 ##################### VARIABLES TO SET #####################
@@ -10,6 +10,7 @@
 ############################################################################
 ##### This first set of variables needs to match what is on our system #####
 ############################################################################
+
 
 ## single-column file with unique sample identifiers:
 sample_info_file:
@@ -34,31 +35,17 @@ input_R2_suffix:
 input_read_suffix:
     "_raw.fastq.gz"
 
-## root directory of kraken2 reference database (or where it will be downloaded to if it doesn't exist yet)
-    # this should be provided as a full path (starting with `/` as the below example 
+## directory holding kraken2 reference databas
+    # this should be provided as a full path (starting with `/` as the below example
     # (note that the the `~/` home shortcut is not expanded
     # by snakemake's evaluation of files, so don't use that)
-REF_DB_ROOT_DIR:
-    "/path/to/ref-dbs/"
+REF_DB_DIR:
+    "/path/to/kraken2/refdb/"
 
 
 ######################################################################
 ##### The rest only need to be altered if we want to change them #####
 ######################################################################
-
-## output directory to hold human-removed reads
-output_reads_dir:
-    "human-removed-reads/"
-
-## wanted output R1 and R2 suffixes after human-read removal
-R1_out_suffix:
-    "_R1_HRremoved_raw.fastq.gz"
-R2_out_suffix:
-    "_R2_HRremoved_raw.fastq.gz"
-
-    # if single-end data, set this one (others above don't matter)
-output_read_suffix:
-    "_HRremoved_raw.fastq.gz"
 
 ## Number of threads to pass to kraken2 call (will be multiplied by number of jobs running, set with the -j parameter in the snakemake call)
 num_threads:
@@ -72,35 +59,11 @@ logs_dir:
 kraken_outputs:
     "kraken-outputs/"
 
-######################################################
-################# REFERENCE DATABASE #################
-######################################################
-# The below variables probably shouldn't be changed unless we really want to for some reason.
-# The workflow will check the location specified above and install the kraken2 database
-# if it is not already there. It looks for the file "KRAKEN2_DB_SETUP" as specified below 
-# in the directory, to know that it's already been setup. 
-
-## kraken2 database directory 
-kraken2_db_dir:
-    "kraken2-human-db"
-## trigger filename for checking on/setting up kraken2 reference db
-KRAKEN2_TRIGGER_FILE:
-    "KRAKEN2_DB_SETUP"
-
 
 ############################################################
 ###################### GENERAL INFO ########################
 ############################################################
 # Workflow is currently equipped to work with paired-end data only, and reads are expected to be gzipped
-
-# Initial database construction done with kraken2 v2.1.1 on 29-Nov-2020
-  # - details of building can be found on the corresponding README.md of this repo, and at this page: https://hackmd.io/@astrobiomike/GL-kraken2-human-db-setup
-  # - that database can be downloaded and decompressed with the following:
-
-# curl -L -o kraken2-human-db.tar.gz https://ndownloader.figshare.com/files/25627058
-# tar -xzvf kraken2-human-db.tar.gz
-
-  # - By default, that database build will be downloaded and utilized with this workflow
 
 
 ## example usage command ##

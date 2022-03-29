@@ -7,9 +7,9 @@
 ##################### VARIABLES TO SET #####################
 ############################################################
 
-#############################################################
-##### These first 5 need to match what is on our system #####
-#############################################################
+############################################################################
+##### This first set of variables needs to match what is on our system #####
+############################################################################
 
 ## single-column file with unique portion of sample names
 sample_info_file:
@@ -19,12 +19,20 @@ sample_info_file:
 raw_reads_dir:
     "../Raw_Sequence_Data/"
 
+## if data are single-end only (only one read-file per sample), set this to "TRUE", anything else is considered paired-end
+single_end_data:
+    ""
+
 ## raw read suffixes (region following the unique part of the sample names)
     # e.g. for "Sample-1_R1_raw.fastq.gz" would be "_R1_raw.fastq.gz"
 raw_R1_suffix:
     "_R1_raw.fastq.gz"
 raw_R2_suffix:
     "_R2_raw.fastq.gz"
+
+    # if single-end data, set this one (others above don't matter)
+raw_suffix:
+    "_raw.fastq.gz"
 
 ## root directory of reference databases (or where they will be downloaded if they don't exist yet)
     # this should be provided as a full path (starting with `/`) and include the ending `/` as in the
@@ -36,6 +44,11 @@ REF_DB_ROOT_DIR:
 ######################################################################
 ##### The rest only need to be altered if we want to change them #####
 ######################################################################
+
+## run assembly-based workflow, read-based, or both
+# (values need to be one of: "assembly-based", "read-based", or "both")
+workflow:
+    "both"
 
 ## number of threads to use PER snakemake job (which is set with the -j parameter passed to snakemake call)
     # passed to megahit, bowtie2, samtools, metabat2, checkm-pplacer (many may be running concurrently)
@@ -58,7 +71,7 @@ gtdb_tk_num_cpus:
 ## scratch directory for gtdb-tk, if wanting to use disk space instead of RAM, can be memory intensive; see https://ecogenomics.github.io/GTDBTk/faq.html#gtdb-tk-reaches-the-memory-limit-pplacer-crashes
     # leave empty if wanting to use memory, the default, put in quotes the path to a directory that already exists if wanting to use disk space
 gtdb_tk_scratch_location:
-    "./gtdb-scratch"
+    ""
 
 ## maximum memory allowed passed to megahit assembler
     # can be set either by proportion of available on system, e.g. 0.5
@@ -71,9 +84,9 @@ block_size:
     4
 
 ## reduced_tree option for checkm, limits the RAM usage to 16GB; https://github.com/Ecogenomics/CheckM/wiki/Genome-Quality-Commands#tree
-    # "True" for yes, use reduced tree; "False" to use the default full tree
+    # "TRUE" for yes, anything will be considered "FALSE" and the default full tree will be used
 reduced_tree:
-    "False"
+    ""
 
 ## MAG filtering cutoffs based on checkm quality assessments (in percent); see https://github.com/Ecogenomics/CheckM/wiki/Reported-Statistics
 minimum_estimated_completion:
@@ -88,6 +101,10 @@ filtered_R1_suffix:
     "_R1_filtered.fastq.gz"
 filtered_R2_suffix:
     "_R2_filtered.fastq.gz"
+
+# if single-end
+filtered_suffix:
+    "_filtered.fastq.gz"
 
 ## output directories (all relative to processing directory, will be created)
 fastqc_out_dir:
@@ -115,12 +132,30 @@ read_based_dir:
 logs_dir:
     "logs/"
 
+
+## additional prefix to add to output files that describe more than one sample (to make them unique compared to other datasets)
+# leave as empty, i.e. "", if not wanted, include separator at end if adding one, e.g. "Swift1S_"
+additional_filename_prefix:
+    ""
+
+
 ## setting for trimming recommended when working with Swift 1S libraries
     # adds `swift=t` setting to bbduk quality trimming/filtering command
     # for info on this see, e.g., https://swiftbiosci.com/wp-content/uploads/2019/03/16-0853-Tail-Trim-Final-442019.pdf
     # set to "TRUE" if data was generated with Swift 1S library prep
 swift_1S:
     "FALSE"
+
+## memory used by bbmap's pileup.sh (within the get_cov_and_det rule)
+# passed as the -Xmx parameter, 20g means 20 gigs of RAM, 20m means 20 megabytes
+# 5g should be sufficient for most assemblies, but if that rule is failing, this may need to be increased
+pileup_mem:
+    "5g"
+    # that way is needed for telling the program, but to tell snakemake how much memory will be used, we need to provide it in megabytes
+    # e.g., 5g above, for 5 gigabytes, would be 5000 megabytes, so we need to set this variable to 5000
+    # this needs to be changed to match what is in the 'pileup_mem' variable above, if 20g, then 20000, if 20m, then 20
+snakemake_pileup_mem:
+    5000
 
 #######################################################
 ################# REFERENCE DATABASES #################

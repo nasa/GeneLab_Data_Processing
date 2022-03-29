@@ -1,0 +1,120 @@
+############################################################################################
+## Snakefile for GeneLab for estimation of host reads in Illumina metagenomic datasets    ##
+## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##
+############################################################################################
+
+import os
+
+configfile: "config.yaml"
+
+########################################
+############# General Info #############
+########################################
+
+"""
+See the corresponding 'config.yaml' file for general use information.
+Variables that may need to be adjusted should be changed there, not here.
+"""
+
+
+########################################
+#### Reading samples file into list ####
+########################################
+
+sample_IDs_file = config["sample_info_file"]
+sample_ID_list = [line.strip() for line in open(sample_IDs_file)]
+
+#####################################################
+### Creating output and log directories if needed ###
+#####################################################
+
+dirs_to_create = [config["logs_dir"], config["kraken_outputs"]]
+
+for dir in dirs_to_create:
+    try:
+        os.mkdir(dir)
+    except:
+        pass
+
+
+########################################
+############# Rules start ##############
+########################################
+
+
+rule all:
+    input:
+        "Host-read-count-summary.tsv"
+
+
+# kraken rule depends on if single-end or paired-end data
+if config["single_end_data"] != "TRUE":
+    # kraken rule if paired-end data 
+    rule kraken2_PE:
+        conda:
+            "envs/kraken2.yaml"
+        input:
+            R1 = config["input_reads_dir"] + "{ID}" + config["input_R1_suffix"],
+            R2 = config["input_reads_dir"] + "{ID}" + config["input_R2_suffix"]
+        output:
+            main = config["kraken_outputs"] + "{ID}-kraken2-output.txt",
+            report = config["kraken_outputs"] + "{ID}-kraken2-report.tsv",
+            summary = "{ID}-removal-info.tmp"
+        params:
+            kraken2_db_dir = config["REF_DB_DIR"]
+        resources:
+            cpus = config["num_threads"]
+        log:
+            config["logs_dir"] + "{ID}-kraken2-run.log"
+        shell:
+            """
+            kraken2 --db {params.kraken2_db_dir} --gzip-compressed --threads {resources.cpus} --use-names --paired --output {output.main} --report {output.report} {input.R1} {input.R2} > {log} 2>&1
+
+            # making summary info
+            total_fragments=$(wc -l {output.main} | sed 's/^ *//' | cut -f 1 -d " ")
+            fragments_classified=$(grep -w -c "^C" {output.main})
+            perc_host=$(printf "%.2f\n" $(echo "scale=4; ${{fragments_classified}} / ${{total_fragments}} * 100" | bc -l))
+
+            printf "{wildcards.ID}\t${{total_fragments}}\t${{fragments_classified}}\t${{perc_host}}\n" > {output.summary}
+            """
+
+else:
+    # kraken rule if single-end data
+    rule kraken2_SE:
+        conda:
+            "envs/kraken2.yaml"
+        input:
+            reads = config["input_reads_dir"] + "{ID}" + config["input_read_suffix"]
+        output:
+            main = config["kraken_outputs"] + "{ID}-kraken2-output.txt",
+            report = config["kraken_outputs"] + "{ID}-kraken2-report.tsv",
+            summary = "{ID}-removal-info.tmp"
+        params:
+            kraken2_db_dir = config["REF_DB_DIR"]
+        resources:
+            cpus = config["num_threads"]
+        log:
+            config["logs_dir"] + "{ID}-kraken2-run.log"
+        shell:
+            """
+            kraken2 --db {params.kraken2_db_dir} --gzip-compressed --threads {resources.cpus} --use-names --output {output.main} --report {output.report} {input.reads} > {log} 2>&1
+
+            # making summary info
+            total_fragments=$(wc -l {output.main} | sed 's/^ *//' | cut -f 1 -d " ")
+            fragments_classified=$(grep -w -c "^C" {output.main})
+            perc_host=$(printf "%.2f\n" $(echo "scale=4; ${{fragments_classified}} / ${{total_fragments}} * 100" | bc -l))
+
+            printf "{wildcards.ID}\t${{total_fragments}}\t${{fragments_classified}}\t${{perc_host}}\n" > {output.summary}
+            """
+
+
+rule combine_summary_info:
+    input:
+        expand("{ID}-removal-info.tmp", ID = sample_ID_list)
+    output:
+        "Host-read-count-summary.tsv"
+    shell:
+        """
+        cat <( printf "Sample_ID\tTotal_fragments\tTotal_host_fragments\tPercent_host\n" ) {input} > {output}
+        rm {input}
+        """

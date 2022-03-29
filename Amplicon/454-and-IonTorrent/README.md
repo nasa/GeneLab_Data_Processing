@@ -7,6 +7,12 @@ Michael D. Lee (Mike.Lee@nasa.gov)
 
 --- 
 
+<p align="center">
+<a href="../images/GL-amplicon-overview.pdf"><img src="../images/GL-amplicon-overview.png"></a>
+</p>
+
+--- 
+
 # Repository links
 
 * [Current processing protocol (GL-DPPD-7106.md)](GL-DPPD-7106.md)  

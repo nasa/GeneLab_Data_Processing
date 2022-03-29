@@ -16,16 +16,6 @@ See the corresponding 'config.yaml' file for general use information.
 Variables that may need to be adjusted should be changed there, not here.
 """
 
-## example usage command ##
-# snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p
-
-# `--use-conda` – this specifies to use the conda environments included in the workflow
-# `--conda-prefix` – this allows us to point to where the needed conda environments should be stored. Including this means if we use the workflow on a different dataset somewhere else in the future, it will re-use the same conda environments rather than make new ones. The value listed here, `${CONDA_PREFIX}/envs`, is the default location for conda environments (the variable `${CONDA_PREFIX}` will be expanded to the appropriate location on whichever system it is run on).
-# `-j` – this lets us set how many jobs Snakemake should run concurrently (keep in mind that many of the thread and cpu parameters set in the config.yaml file will be multiplied by this)
-# `-p` – specifies to print out each command being run to the screen
-
-# See `snakemake -h` for more options and details.
-
 
 ########################################
 #### Reading samples file into list ####
@@ -51,56 +41,106 @@ for dir in dirs_to_create:
 ############# Rules start ##############
 ########################################
 
+# primary outputs depend on if single-end or paired-end data
+if config["single_end_data"] != "TRUE":
+    # all rule if paired-end data 
+    rule all:
+        input:
+            expand(config["output_reads_dir"] + "{ID}{suffix}", ID = sample_ID_list, suffix = [config["R1_out_suffix"], config["R2_out_suffix"]]),
+            config["output_reads_dir"] + "Human-read-removal-summary.tsv"
 
-rule all:
-    input:
-        expand(config["output_reads_dir"] + "{ID}{suffix}", ID = sample_ID_list, suffix = [config["R1_out_suffix"], config["R2_out_suffix"]]),
-        config["output_reads_dir"] + "Human-read-removal-summary.tsv"
+else:
+    # all rule if single-end data
+    rule all:
+        input:
+            expand(config["output_reads_dir"] + "{ID}{suffix}", ID = sample_ID_list, suffix = config["output_read_suffix"]),
+            config["output_reads_dir"] + "Human-read-removal-summary.tsv"
 
 
-rule run_kraken2:
-    conda:
-        "envs/kraken2.yaml"
-    input:
-        R1 = config["input_reads_dir"] + "{ID}" + config["input_R1_suffix"],
-        R2 = config["input_reads_dir"] + "{ID}" + config["input_R2_suffix"],
-        kraken2_db_trigger = config["REF_DB_ROOT_DIR"] + config["kraken2_db_dir"] + "/" + config["KRAKEN2_TRIGGER_FILE"]
-    output:
-        main = config["kraken_outputs"] + "{ID}-kraken2-output.txt",
-        report = config["kraken_outputs"] + "{ID}-kraken2-report.tsv",
-        R1 = config["output_reads_dir"] + "{ID}" + config["R1_out_suffix"],
-        R2 = config["output_reads_dir"] + "{ID}" + config["R2_out_suffix"],
-        summary = config["output_reads_dir"] + "{ID}-removal-info.tmp"
-    params:
-        reads_out_arg = config["output_reads_dir"] + "{ID}_R#.fastq",
-        R1_tmp_out = config["output_reads_dir"] + "{ID}_R_1.fastq",
-        R2_tmp_out = config["output_reads_dir"] + "{ID}_R_2.fastq",
-        R1_tmp_out_compressed = config["output_reads_dir"] + "{ID}_R_1.fastq.gz",
-        R2_tmp_out_compressed = config["output_reads_dir"] + "{ID}_R_2.fastq.gz",
-        kraken2_db_dir = config["REF_DB_ROOT_DIR"] + config["kraken2_db_dir"]
-    resources:
-        cpus = config["num_threads"]
-    log:
-        config["logs_dir"] + "{ID}-kraken2-run.log"
-    shell:
-        """
-        kraken2 --db {params.kraken2_db_dir} --gzip-compressed --threads {resources.cpus} --use-names --paired --output {output.main} --report {output.report} --unclassified-out {params.reads_out_arg} {input.R1} {input.R2} > {log} 2>&1
+# kraken rule depends on if single-end or paired-end data
+if config["single_end_data"] != "TRUE":
+    # kraken rule if paired-end data 
+    rule kraken2_PE:
+        conda:
+            "envs/kraken2.yaml"
+        input:
+            R1 = config["input_reads_dir"] + "{ID}" + config["input_R1_suffix"],
+            R2 = config["input_reads_dir"] + "{ID}" + config["input_R2_suffix"],
+            kraken2_db_trigger = config["REF_DB_ROOT_DIR"] + config["kraken2_db_dir"] + "/" + config["KRAKEN2_TRIGGER_FILE"]
+        output:
+            main = config["kraken_outputs"] + "{ID}-kraken2-output.txt",
+            report = config["kraken_outputs"] + "{ID}-kraken2-report.tsv",
+            R1 = config["output_reads_dir"] + "{ID}" + config["R1_out_suffix"],
+            R2 = config["output_reads_dir"] + "{ID}" + config["R2_out_suffix"],
+            summary = config["output_reads_dir"] + "{ID}-removal-info.tmp"
+        params:
+            reads_out_arg = config["output_reads_dir"] + "{ID}_R#.fastq",
+            R1_tmp_out = config["output_reads_dir"] + "{ID}_R_1.fastq",
+            R2_tmp_out = config["output_reads_dir"] + "{ID}_R_2.fastq",
+            R1_tmp_out_compressed = config["output_reads_dir"] + "{ID}_R_1.fastq.gz",
+            R2_tmp_out_compressed = config["output_reads_dir"] + "{ID}_R_2.fastq.gz",
+            kraken2_db_dir = config["REF_DB_ROOT_DIR"] + config["kraken2_db_dir"]
+        resources:
+            cpus = config["num_threads"]
+        log:
+            config["logs_dir"] + "{ID}-kraken2-run.log"
+        shell:
+            """
+            kraken2 --db {params.kraken2_db_dir} --gzip-compressed --threads {resources.cpus} --use-names --paired --output {output.main} --report {output.report} --unclassified-out {params.reads_out_arg} {input.R1} {input.R2} > {log} 2>&1
 
-        # compressing outputs
-        gzip {params.R1_tmp_out}
-        gzip {params.R2_tmp_out}
+            # compressing outputs
+            gzip {params.R1_tmp_out}
+            gzip {params.R2_tmp_out}
 
-        # renaming files
-        mv {params.R1_tmp_out_compressed} {output.R1}
-        mv {params.R2_tmp_out_compressed} {output.R2}
+            # renaming files
+            mv {params.R1_tmp_out_compressed} {output.R1}
+            mv {params.R2_tmp_out_compressed} {output.R2}
 
-        # making summary info
-        total_fragments=$(wc -l {output.main} | sed 's/^ *//' | cut -f 1 -d " ")
-        fragments_retained=$(grep -w -m 1 "unclassified" {output.report} | cut -f 2)
-        perc_removed=$(printf "%.2f\n" $(echo "scale=4; 100 - ${{fragments_retained}} / ${{total_fragments}} * 100" | bc -l))
+            # making summary info
+            total_fragments=$(wc -l {output.main} | sed 's/^ *//' | cut -f 1 -d " ")
+            fragments_retained=$(grep -w -m 1 "unclassified" {output.report} | cut -f 2)
+            perc_removed=$(printf "%.2f\n" $(echo "scale=4; 100 - ${{fragments_retained}} / ${{total_fragments}} * 100" | bc -l))
 
-        printf "{wildcards.ID}\t${{total_fragments}}\t${{fragments_retained}}\t${{perc_removed}}\n" > {output.summary}
-        """
+            printf "{wildcards.ID}\t${{total_fragments}}\t${{fragments_retained}}\t${{perc_removed}}\n" > {output.summary}
+            """
+
+else:
+    # kraken rule if single-end data
+    rule kraken2_SE:
+        conda:
+            "envs/kraken2.yaml"
+        input:
+            reads = config["input_reads_dir"] + "{ID}" + config["input_read_suffix"],
+            kraken2_db_trigger = config["REF_DB_ROOT_DIR"] + config["kraken2_db_dir"] + "/" + config["KRAKEN2_TRIGGER_FILE"]
+        output:
+            main = config["kraken_outputs"] + "{ID}-kraken2-output.txt",
+            report = config["kraken_outputs"] + "{ID}-kraken2-report.tsv",
+            reads = config["output_reads_dir"] + "{ID}" + config["output_read_suffix"],
+            summary = config["output_reads_dir"] + "{ID}-removal-info.tmp"
+        params:
+            uncompressed_reads_out_arg = config["output_reads_dir"] + "{ID}.fastq",
+            kraken2_db_dir = config["REF_DB_ROOT_DIR"] + config["kraken2_db_dir"]
+        resources:
+            cpus = config["num_threads"]
+        log:
+            config["logs_dir"] + "{ID}-kraken2-run.log"
+        shell:
+            """
+            kraken2 --db {params.kraken2_db_dir} --gzip-compressed --threads {resources.cpus} --use-names --output {output.main} --report {output.report} --unclassified-out {params.uncompressed_reads_out_arg} {input.reads} > {log} 2>&1
+
+            # compressing outputs
+            gzip {params.uncompressed_reads_out_arg}
+
+            # renaming files
+            mv {params.uncompressed_reads_out_arg}.gz {output.reads}
+
+            # making summary info
+            total_fragments=$(wc -l {output.main} | sed 's/^ *//' | cut -f 1 -d " ")
+            fragments_retained=$(grep -w -m 1 "unclassified" {output.report} | cut -f 2)
+            perc_removed=$(printf "%.2f\n" $(echo "scale=4; 100 - ${{fragments_retained}} / ${{total_fragments}} * 100" | bc -l))
+
+            printf "{wildcards.ID}\t${{total_fragments}}\t${{fragments_retained}}\t${{perc_removed}}\n" > {output.summary}
+            """
 
 
 rule combine_summary_info:

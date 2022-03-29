@@ -4,7 +4,7 @@
 
 ---
 
-**Date:** September 9, 2021  
+**Date:** September 15, 2021  
 **Revision:** -  
 **Document Number:** GL-DPPD-7107  
 
@@ -428,7 +428,7 @@ tar -xvzf CAT_prepare_20200618.tar.gz
 ```
 CAT contigs -c sample-1-assembly.fasta -d CAT_prepare_20200618/2020-06-18_database/ \
             -t CAT_prepare_20200618/2020-06-18_taxonomy/ -p sample-1-genes.faa \
-            -o sample-1-tax-out.tmp -n 15 -r 3 --top 3 --I_know_what_Im_doing
+            -o sample-1-tax-out.tmp -n 15 -r 3 --top 4 --I_know_what_Im_doing
 ```
 
 **Parameter Definitions:**  

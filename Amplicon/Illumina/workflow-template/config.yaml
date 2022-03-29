@@ -7,9 +7,13 @@
 ##################### VARIABLES TO SET #####################
 ############################################################
 
-####################################################################################
-##### These first 11 need to match what is specific to our system and our data #####
-####################################################################################
+###########################################################################
+##### These need to match what is specific to our system and our data #####
+###########################################################################
+
+## Set to "PE" for paired-end, "SE" for single-end. (if single-end, enter appropriate info below for the "_R1_" variables and ignore the "_R2_" ones)
+data_type:
+    "PE"
 
 ## single-column file with unique sample identifiers:
 sample_info_file:
@@ -20,7 +24,8 @@ raw_reads_dir:
     "../Raw_Sequence_Data/"
 
 ## raw read suffixes (region following the unique part of the sample names)
-  # e.g. for "Sample-1_R1_raw.fastq.gz" would be "_R1_raw.fastq.gz"
+  # e.g. for paired-end data, "Sample-1_R1_raw.fastq.gz" would be "_R1_raw.fastq.gz" for 'raw_R1_suffix' below
+  # e.g. if single-end, "Sample-1.fastq.gz" would be ".fastq.gz" for 'raw_R1_suffix' below, and 'raw_R2_suffix' won't be used
 raw_R1_suffix:
     "_R1_raw.fastq.gz"
 raw_R2_suffix:
@@ -47,14 +52,13 @@ F_linked_primer:
 R_linked_primer:
     "GGACTACHVGGGTWTCTAA...TTACCGCGGCKGCTGGCAC"
 
+## discard untrimmed, sets the "--discard-untrimmed" option if TRUE
+discard_untrimmed:
+    "TRUE"
+
 ## target region (16S or ITS acceptable; determines which reference database is used for taxonomic classification)
 target_region:
     "16S"
-
-
-######################################################################
-##### The rest only need to be altered if we want to change them #####
-######################################################################
 
 ## values to be passed to dada2's filterAndTrim() function:
 left_trunc:
@@ -65,6 +69,15 @@ left_maxEE:
     1
 right_maxEE:
     1
+
+## minimum length threshold for cutadapt
+min_cutadapt_len:
+    150
+
+
+######################################################################
+##### The rest only need to be altered if we want to change them #####
+######################################################################
 
 ## filename suffixes
 primer_trimmed_R1_suffix:
@@ -78,7 +91,7 @@ filtered_R2_suffix:
     "_R2_filtered.fastq.gz"
 
 
-## output prefix (if needed to distinguish from multiple primer sets, leave as empty string if not)
+## output prefix (if needed to distinguish from multiple primer sets, leave as empty string if not, include connecting symbol if adding, e.g. "ITS-")
 output_prefix:
     ""
 
@@ -91,10 +104,6 @@ filtered_reads_dir:
     "../Filtered_Sequence_Data/"
 final_outputs_dir:
     "../Final_Outputs/"
-
-## minimum length threshold for cutadapt
-min_cutadapt_len:
-    150
 
 
 ############################################################
