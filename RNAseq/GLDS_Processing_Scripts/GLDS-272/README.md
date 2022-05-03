@@ -1,5 +1,5 @@
 # GeneLab processing commands for GLDS-272
-This dataset was processed with [GL-DPPD-7101-C](../../GL-DPPD-7101-C.md).
+This dataset was processed with [GL-DPPD-7101-C](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-C.md).
 
 The raw and processed data are available from: [https://genelab-data.ndc.nasa.gov/genelab/accession/GLDS-272/](https://genelab-data.ndc.nasa.gov/genelab/accession/GLDS-272/)
 
