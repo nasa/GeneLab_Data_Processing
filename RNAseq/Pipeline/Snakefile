@@ -1,0 +1,252 @@
+## RNASeq Snakemake pipeline
+## https://github.com/nasa/GeneLab_Data_Processing/tree/master/RNAseq
+###### IMPORTS
+import os
+
+###### HELPERS
+def normalise_path(path):
+    return os.path.join(os.path.normpath(path),'')
+
+def star_readlen(wildcards):
+    return config['readlength'] - 1
+
+###### CONFIG
+configfile : 'config.json'
+ENVS_DIR = 'envs'
+RAW = config['raw_fq_dir']
+SMP,PE = glob_wildcards(f'{normalise_path(RAW)}{{sample}}_R{{pe}}_001.fastq.gz')
+CWD = os.getcwd()
+
+print(f"Sample names detected : \n{SMP}")
+print(f"Working directory : {CWD}")
+
+rule all:
+    input:
+        'processed/01_multiqc/multiqc_report.html',
+        'processed/05_trim_multiqc/multiqc_report.html',
+        'processed/90_aln_multiqc/multiqc_report.html',
+        expand('processed/09_RSEM_counts/{sample}_Counts/{sample}.tsv', sample=SMP),
+
+
+rule RNA_01_raw_fastqc:
+    input:
+        fastq = f'{normalise_path(RAW)}{{sample}}_R{{pe}}_001.fastq.gz',
+    output:
+        html = 'processed/00_fastqc/{sample}_R{pe}_001_fastqc.html',
+    resources:
+        cores = 2,
+        memory = 3,
+    params:
+        dir = 'processed/00_fastqc',
+    conda:
+        os.path.join(ENVS_DIR,'raw_fq_qc.yaml')
+    shell:
+        'fastqc '
+        '-t {resources.cores} '
+        '--outdir {params.dir} '
+        '{input.fastq} '
+
+rule RNA_02_multiqc:
+    input:
+        fqc_reports = expand(rules.RNA_01_raw_fastqc.output.html, sample=SMP, pe=[1,2]),
+    output:
+        dir = directory('processed/01_multiqc/'),
+        html = 'processed/01_multiqc/multiqc_report.html'
+    resources:
+        cores = 1,
+        memory = 8,
+    conda:
+        os.path.join(ENVS_DIR,'raw_fq_qc.yaml')
+    shell:
+        'multiqc '
+        '-o {output.dir} '
+        '{rules.RNA_01_raw_fastqc.params.dir} '
+
+rule RNA_03_trim:
+    input:
+        pe_1 = f'{normalise_path(RAW)}{{sample}}_R1_001.fastq.gz',
+        pe_2 = f'{normalise_path(RAW)}{{sample}}_R2_001.fastq.gz',
+    output:
+        pe_1 = 'processed/02_trim/{sample}_R1_001_val_1.fq.gz',
+        pe_2 = 'processed/02_trim/{sample}_R2_001_val_2.fq.gz',
+    resources:
+        cores = 2,
+        memory = 2,
+    params:
+        dir = directory('processed/02_trim/'),
+    conda:
+        os.path.join(ENVS_DIR,'raw_fq_qc.yaml')
+    shell:
+        'trim_galore '
+        '--gzip '
+        '--phred33 '
+        '--illumina '
+        '--output_dir {params.dir} '
+        '--paired '
+        '-j {resources.cores} '
+        '{input.pe_1} {input.pe_2} '
+
+rule RNA_04_trim_fastqc:
+    input:
+        fastq = 'processed/02_trim/{sample}_R{pe}_001_val_{pe}.fq.gz',
+    output:
+        html = 'processed/04_trim_fastqc/{sample}_R{pe}_001_val_{pe}_fastqc.html',
+    resources:
+        cores = 2,
+        memory = 3,
+    params:
+        dir = 'processed/04_trim_fastqc',
+    conda:
+        os.path.join(ENVS_DIR,'raw_fq_qc.yaml')
+    shell:
+        'fastqc '
+        '-t {resources.cores} '
+        '--outdir {params.dir} '
+        '{input.fastq} '
+
+rule RNA_05_trim_multiqc:
+    input:
+        fqc_reports = expand(rules.RNA_04_trim_fastqc.output.html, sample=SMP, pe=[1,2]),
+    output:
+        dir = directory('processed/05_trim_multiqc/'),
+        html = 'processed/05_trim_multiqc/multiqc_report.html'
+    resources:
+        cores = 1,
+        memory = 8,
+    conda:
+        os.path.join(ENVS_DIR,'raw_fq_qc.yaml')
+    shell:
+        'multiqc '
+        '-o {output.dir} '
+        '{rules.RNA_01_raw_fastqc.params.dir} '
+
+rule RNA_06_STAR_build_idx:
+    input:
+        fa=config['genome_fa'],
+        gtf=config['genome_gtf']
+    output:
+        dir = directory('processed/06_STAR_index/'),
+        flag = 'processed/06_STAR_index/INDEX.OK',
+    resources:
+        cores=4,
+        memory=2,
+    params:
+        readlength = star_readlen,
+    conda:
+        os.path.join(ENVS_DIR,'aln.yaml')
+    shell:
+        'STAR '
+        '--runThreadN {resources.cores} '
+        '--runMode genomeGenerate '
+        'genomeSAindexNbases 14 '
+        '--limitGenomeGenerateRAM 12000000000 '
+        '--genomeDir {output.dir} '
+        '--genomeFastaFiles {input.fa} '
+        '--sjdbGTFfile {input.gtf} ' 
+        '--sjdbOverhang {params.readlength} '
+        '&& touch {output.flag} '
+
+rule RNA_07_STAR_align:
+    input:
+        fq1 = rules.RNA_03_trim.output.pe_1,
+        fq2 = rules.RNA_03_trim.output.pe_2,
+        index = rules.RNA_06_STAR_build_idx.output.flag,
+    output:
+        bam = 'processed/07_STAR_align/{sample}/{sample}.bam',
+        trbam = 'processed/07_STAR_align/{sample}/{sample}_transcriptome.bam'
+    resources:
+        cores = 4,
+        memory = 3
+    params:
+        ref = rules.RNA_06_STAR_build_idx.output.dir,
+    conda:
+        os.path.join(ENVS_DIR,'aln.yaml')
+    shell:
+        'STAR --twopassMode Basic '
+        '--limitBAMsortRAM 14000000000 '
+        '--genomeDir {params.ref} '
+        '--outSAMunmapped Within '
+        '--outFilterType BySJout '
+        '--outSAMattributes NH HI AS NM MD MC '
+        '--outFilterMultimapNmax 20 '
+        '--outFilterMismatchNmax 999 '
+        '--outFilterMismatchNoverReadLmax 0.04 '
+        '--alignIntronMin 20 '
+        '--alignIntronMax 1000000 '
+        '--alignMatesGapMax 1000000 '
+        '--alignSJoverhangMin 8 '
+        '--alignSJDBoverhangMin 1 '
+        '--sjdbScore 1 '
+        '--readFilesCommand zcat '
+        '--runThreadN {resources.cores} '
+        '--outSAMtype BAM SortedByCoordinate '
+        '--quantMode TranscriptomeSAM GeneCounts '
+        '--outSAMheaderHD @HD VN:1.4 SO:coordinate '
+        '--outFileNamePrefix processed/07_STAR_align/{wildcards.sample}/{wildcards.sample}_ '
+        '--readFilesIn {input.fq1} {input.fq2} '
+        '&& mv processed/07_STAR_align/{wildcards.sample}/{wildcards.sample}_Aligned.sortedByCoord.out.bam {output.bam} '
+        '&& mv processed/07_STAR_align/{wildcards.sample}/{wildcards.sample}_Aligned.toTranscriptome.out.bam {output.trbam} '
+
+rule RNA_08_rsem_prep:
+    output:
+        dir = directory('processed/08_RSEM_index/'),
+        flag = 'processed/08_RSEM_index/INDEX.OK',
+    resources:
+        cores = 1,
+        memory = 6,
+    params:
+        gtf = config['genome_gtf'],
+        fa = config['genome_fa'],
+    shell:
+        'rsem-prepare-reference '
+        '--gtf {params.gtf} '
+        '{params.fa} '
+        '{output.dir} '
+        '&& touch {output.flag} '
+
+rule RNA_09_rsem_count:
+    input:
+        bam = rules.RNA_07_STAR_align.output.trbam,
+        ref = rules.RNA_08_rsem_prep.output.dir,
+        flag = rules.RNA_08_rsem_prep.output.flag,
+    output:
+        counts = 'processed/09_RSEM_counts/{sample}_Counts/{sample}.tsv'
+    resources:
+        cores=4,
+        memory=2,
+    params:
+        strandness = config['rsem_strandness']
+    shell:
+        'rsem-calculate-expression '
+        '--num-threads {resources.cores} '
+        '--seed-length 20 '
+        '--alignments '
+        '--bam '
+        '--paired-end '
+        '--seed 12345 '
+        '--estimate-rspd '
+        '--no-bam-output '
+        '--strandedness {params.strandness} '
+        '{input.bam} '
+        '{input.ref} '
+        '{output.counts} '
+        '&& touch {output.counts}'
+
+rule RNA_multiQC_align:
+    input:
+        bam = expand(rules.RNA_07_STAR_align.output.bam,sample=SMP),
+    output:
+        dir = directory('processed/90_aln_multiqc/'),
+        html='processed/90_aln_multiqc/multiqc_report.html'
+    resources:
+        cores = 1,
+        memory=8,
+    params:
+        dir = 'processed/07_STAR_align/',
+    conda:
+        os.path.join(ENVS_DIR,'raw_fq_qc.yaml')
+    shell:
+        'multiqc '
+        '--interactive '
+        '-o {output.dir} '
+        '{params.dir} '

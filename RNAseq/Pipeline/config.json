@@ -1,0 +1,8 @@
+{
+  "raw_fq_dir" : "path/to/raw/fastq",
+  "conda_env_dir" : "${CONDA_PREFIX}/envs",
+  "rsem_strandness" : "reverse",
+  "readlength" : 150,
+  "genome_fa" : "path/to/fasta",
+  "genome_gtf" : "path/to/gtf"
+}
