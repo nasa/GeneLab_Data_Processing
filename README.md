@@ -10,6 +10,7 @@ The [NASA GeneLab](https://genelab.nasa.gov/) Data Processing team and [Analysis
 
 ## Assay Types
 Click on an assay type below for data processing information.  
+- [Create GeneLab Reference Annotations](GeneLab_Reference_Annotations)
 - [Amplicon Sequencing](Amplicon) 
   - [Illumina](Amplicon/Illumina)  
   - [454 and Ion-Torrent](Amplicon/454-and-IonTorrent)  
