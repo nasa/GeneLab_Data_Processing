@@ -1,3 +1,0 @@
-#!python
-GeneLab_Microarray = __import__("GeneLab-Microarray")
-GeneLab_Microarray.run()
