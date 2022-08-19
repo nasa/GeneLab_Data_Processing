@@ -17,7 +17,9 @@ Click on an assay type below for data processing information.
 - [Metagenomics](Metagenomics)  
   - [Removing human reads](Metagenomics/Remove_human_reads_from_raw_data)  
   - [Illumina](Metagenomics/Illumina)  
-- [RNAseq](RNAseq)  
+- [(bulk) RNAseq](RNAseq)  
+- [single cell RNAseq](scRNAseq)  
+
 
 ---
 
