@@ -1,6 +1,6 @@
 # GeneLab bioinformatics processing pipeline for Illumina RNA-sequencing data
 
-> **This page holds an overview and instructions for how GeneLab processes RNAseq datasets. Exact processing commands and GL-DPPD-7101 revision used for specific datasets are available in the [GLDS_Processing_Scripts](GLDS_Processing_Scripts) sub-directory and are also provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
+> **This page holds an overview and instructions for how GeneLab processes RNAseq datasets. Exact processing commands and GL-DPPD-7101 revision used for specific datasets are available in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory and are also provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
 
 ---
 
@@ -23,11 +23,11 @@ Jonathan Galazka (GeneLab Project Scientist)
 
 In step 7, a line was added to both the section for datasets with ERCC Spike-In ([step 7a](#7a-for-datasets-with-ercc-spike-in)) and the section for datasets without ERCC Spike-In ([step 7b](#7b-for-datasets-without-ercc-spike-in)) to force the RSEM &ast;genes.results files to be imported in the same order that the samples are listed in the ISA files (this avoids the possibility of counts being associated with the wrong sample when generating counts tables).
 
-> Note that all RNAseq datasets originally processed with [Revision B](Previous_GL-DPPD-7101_Revisions/GL-DPPD-7101-B.md) or [Revision A](Previous_GL-DPPD-7101_Revisions/GL-DPPD-7101-A.md) in which the &ast;genes.results files were not imported in the same order that the samples were listed in the ISA files (or &ast;metadata.csv file for datasets processed with Revision A) were re-processed with this line added to the respective step 7 scripts.
+> Note that all RNAseq datasets originally processed with [Revision B](GL-DPPD-7101-B.md) or [Revision A](GL-DPPD-7101-A.md) in which the &ast;genes.results files were not imported in the same order that the samples were listed in the ISA files (or &ast;metadata.csv file for datasets processed with Revision A) were re-processed with this line added to the respective step 7 scripts.
 
 The DESeq2 script for datasets with ERCC spike-in, step 7a, was modified to only use size factors from ERCC group B genes for resclaing when performing ERCC normalization. This change was made because unlike the other ERCC genes, group B ERCC genes are the same concentration in both mix1 and mix2. 
 
-> Note that all RNAseq datasets with ERCC spike-in originally processed with [Revision B](Previous_GL-DPPD-7101_Revisions/GL-DPPD-7101-B.md) or [Revision A](Previous_GL-DPPD-7101_Revisions/GL-DPPD-7101-A.md) were re-processed with this change added to the respective step 7a scripts. 
+> Note that all RNAseq datasets with ERCC spike-in originally processed with [Revision B](GL-DPPD-7101-B.md) or [Revision A](GL-DPPD-7101-A.md) were re-processed with this change added to the respective step 7a scripts. 
 
 ---
 
@@ -77,13 +77,13 @@ The DESeq2 script for datasets with ERCC spike-in, step 7a, was modified to only
 |org.EcK12.eg.db|`packageVersion("org.EcK12.eg.db")`|[https://bioconductor.org/packages/release/data/annotation/html/org.EcK12.eg.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.EcK12.eg.db.html)|
 |org.Sc.sgd.db|`packageVersion("org.Sc.sgd.db")`|[https://bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html)|
 
->**\*** Exact versions are available along with the processing commands for each specific dataset in the [GLDS_Processing_Scripts](GLDS_Processing_Scripts) sub-directory. 
+>**\*** Exact versions are available along with the processing commands for each specific dataset in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory. 
 
 ---
 
 # General processing overview with example commands  
 
-> Exact processing commands for specific datasets are provided in the [GLDS_Processing_Scripts](GLDS_Processing_Scripts) sub-directory and are also provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).  
+> Exact processing commands for specific datasets are provided in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory and are also provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).  
 
 ---
 
@@ -237,7 +237,7 @@ STAR --runThreadN NumberOfThreads \
 - *.fasta (genome sequence\#)
 - *.gtf (genome annotation\#)
 
-\#See document(s) in the [GeneLab_Reference_and_Annotation_Files](GeneLab_Reference_and_Annotation_Files) sub-directory for a list of the ensembl fasta genome sequences and associated gtf annotation files used to generate the RNAseq processed data available in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
+\#See document(s) in the [GeneLab_Reference_and_Annotation_Files](../GeneLab_Reference_and_Annotation_Files) sub-directory for a list of the ensembl fasta genome sequences and associated gtf annotation files used to generate the RNAseq processed data available in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
 
 **Output Data:**
 
@@ -362,7 +362,7 @@ rsem-prepare-reference --gtf /path/to/annotation/gtf/file \
 - *.fasta (genome sequence\#)
 - *.gtf (genome annotation\#)
 
-\#See document(s) in the [GeneLab_Reference_and_Annotation_Files](GeneLab_Reference_and_Annotation_Files) sub-directory for a list of the ensembl fasta genome sequences and associated gtf annotation files used to generate the RNAseq processed data available in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
+\#See document(s) in the [GeneLab_Reference_and_Annotation_Files](../GeneLab_Reference_and_Annotation_Files) sub-directory for a list of the ensembl fasta genome sequences and associated gtf annotation files used to generate the RNAseq processed data available in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
 
 **Output Data:**
 
@@ -406,7 +406,7 @@ rsem-calculate-expression --num-threads NumberOfThreads \
 * `--estimate-rspd` - instructs RSEM to estimate the read start position distribution (rspd) from the data 
 * `--no-bam-output` - instructs RSEM not to output any bam file
 * `--strandedness` - defines the strandedness of the RNAseq reads; the `reverse` option meas all reads are derived from the reverse strand, which should be used for Illumina TruSeq Stranded protocols prepared with Illumina adapters
- 	> Note: For datasets generated by GeneLab's Sample Processing Laboratory, Illumina TruSeq Stranded protocols are prepared with xGen UDI-UMI adapters from [IDT](https://www.idtdna.com/pages/products/next-generation-sequencing/adapters/xgen-udi-umi-adapters), which causes the sequenced fragments to be inverted and therefore the `forward` option should be used for this parameter.
+ 	> Note: For datasets generated by GeneLab's Sample Processing Laboratory, Illumina TruSeq Stranded protocols are prepared with xGen UDI-UMI adapters from [IDT](https://www.idtdna.com/pages/products/next-generation-sequencing/workflow/xgen-ngs-library-preparation/ngs-adapters-indexing-primers), which causes the sequenced fragments to be inverted and therefore the `forward` option should be used for this parameter.
 * `/path/to/*Aligned.toTranscriptome.out.bam` - specifies path to input bam files, provided as a positional argument
 * `/path/to/RSEM/genome/directory/RSEM_ref_prefix` - specifies the path to the directory where the RSEM reference is stored and its prefix, provided as a positional argument
 * `/path/to/RSEM/counts/output/directory` – specifies the path to and prefix for the output file names; for GeneLab the prefix is the sample id
@@ -956,7 +956,7 @@ sessionInfo()
 
 **Input Data:**
 - *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, used to define sample groups - the *ISA.zip file is located in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) under 'STUDY FILES' -> 'Study Metadata Files')
-- [organisms.csv](organisms.csv) (csv file containing short name, species name, taxon ID, and annotation db object of model organisms hosted on GeneLab)
+- [organisms.csv](../organisms.csv) (csv file containing short name, species name, taxon ID, and annotation db object of model organisms hosted on GeneLab)
 - *genes.results (RSEM counts per gene, output from step 6)
 
 **Output Data:**
@@ -1313,7 +1313,7 @@ sessionInfo()
 
 **Input Data:**
 - *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, used to define sample groups - the *ISA.zip file is located in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) under 'STUDY FILES' -> 'Study Metadata Files')
-- [organisms.csv](organisms.csv) (csv file containing short name, species name, taxon ID, and annotation db object of model organisms hosted on GeneLab)
+- [organisms.csv](../organisms.csv) (csv file containing short name, species name, taxon ID, and annotation db object of model organisms hosted on GeneLab)
 - *genes.results (RSEM counts per gene, output from step 6)
 
 **Output Data:**

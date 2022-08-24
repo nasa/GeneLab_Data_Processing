@@ -18,7 +18,7 @@
   ```
 
   Activate the RNAseq_fq_to_counts_tools conda environment with the following command:
-  > This environment needs to be activated to run steps 1-6 of the [RNAseq processing pipeline](https://github.com/nasa/GeneLab_Data_Processing/blob/master/RNAseq/GL-DPPD-7101-C.md)
+  > This environment needs to be activated to run steps 1-6 of the [RNAseq processing pipeline](../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-E.md)
   
   ```
   conda activate RNAseq_fq_to_counts
@@ -34,7 +34,7 @@
   ```
 
   Activate the RNAseq_R_tools conda environment with the following command:
-  > This environment needs to be activated to run step 7 of the [RNAseq processing pipeline](https://github.com/nasa/GeneLab_Data_Processing/blob/master/RNAseq/GL-DPPD-7101-C.md)
+  > This environment needs to be activated to run step 7 of the [RNAseq processing pipeline](../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-E.md)
   
   ```
   conda activate RNAseq_R_tools
@@ -83,16 +83,16 @@
       cat ./Genomes/Mus_musculus/Mus_musculus.GRCm38.101.gtf ./Genomes/ERCC/ERCC92.gtf > ./Genomes/Mus_musculus/Mus_musculus.GRCm38.101_and_ERCC92.gtf
       ```
   
-  4. You can now set up your scripts for creating STAR indices for each organism of interest in the `./STAR_Indices/STAR_index_scripts` subdirectory you created in step 2 by following the instructions in [step 3](https://github.com/nasa/GeneLab_Data_Processing/blob/master/RNAseq/GL-DPPD-7101-C.md#3-build-star-reference) of the GL RNAseq processing pipeline. 
+  4. You can now set up your scripts for creating STAR indices for each organism of interest in the `./STAR_Indices/STAR_index_scripts` subdirectory you created in step 2 by following the instructions in [step 3](../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-E.md#3-build-star-reference) of the GL RNAseq processing pipeline. 
   
-     > **Note:** Prior to creating a STAR index for your organizm of interest, you will need to create a subdirectory in the `./STAR_Indices` directory you created in step 2, where the STAR index will be outputted. At GeneLab, we title these directories with the organism name and the readlength of the raw sequence data. Below is an example for making a STAR index output directory for Mus musculus samples with ERCC spike-in having a readlength of 149: 
+     > **Note:** Prior to creating a STAR index for your organism of interest, you will need to create a subdirectory in the `./STAR_Indices` directory you created in step 2, where the STAR index will be outputted. At GeneLab, we title these directories with the organism name and the read length of the raw sequence data. Below is an example for making a STAR index output directory for Mus musculus samples with ERCC spike-in having a read length of 149: 
      ```
      mkdir ./STAR_Indices/Mus_musculus_w_ERCC_RL-149
      ```
   
-  5. You can now set up your scripts for creating RSEM indices for each organism of interest in the `./RSEM_Indices/RSEM_index_scripts` subdirectory you created in step 2 by following the instructions in [step 5](https://github.com/nasa/GeneLab_Data_Processing/blob/master/RNAseq/GL-DPPD-7101-C.md#5-build-rsem-reference) of the GL RNAseq processing pipeline. 
+  5. You can now set up your scripts for creating RSEM indices for each organism of interest in the `./RSEM_Indices/RSEM_index_scripts` subdirectory you created in step 2 by following the instructions in [step 5](../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-E.md#5-build-rsem-reference) of the GL RNAseq processing pipeline. 
   
-     > **Note:** Prior to creating a RSEM index for your organizm of interest, you will need to create a subdirectory in the `./RSEM_Indices` directory you created in step 2, where the RSEM index will be outputted. At GeneLab, we title these directories with the organism name. Below is an example for making a RSEM index output directory for Mus musculus samples with ERCC spike-in: 
+     > **Note:** Prior to creating a RSEM index for your organism of interest, you will need to create a subdirectory in the `./RSEM_Indices` directory you created in step 2, where the RSEM index will be outputted. At GeneLab, we title these directories with the organism name. Below is an example for making a RSEM index output directory for Mus musculus samples with ERCC spike-in: 
      ```
      mkdir ./RSEM_Indices/Mus_musculus_w_ERCC
      ``` 
@@ -116,7 +116,7 @@
   cd GLDS-245
   ``` 
   
-  4. Create all sub-directories (aka child and subsequent grandchild directories) within the top level directory using the GL_RNAseq_mkdir.sh script by executing the following command (make sure you first download the [GL_RNAseq_mkdir.sh](https://github.com/nasa/GeneLab_Data_Processing/blob/master/RNAseq/RNAseq_Tool_Install/GL_RNAseq_mkdir.sh) file and save it in the topy level direcroty you made in step 2):
+  4. Create all sub-directories (aka child and subsequent grandchild directories) within the top level directory using the GL_RNAseq_mkdir.sh script by executing the following command (make sure you first download the [GL_RNAseq_mkdir.sh](https://github.com/nasa/GeneLab_Data_Processing/blob/master/RNAseq/RNAseq_Tool_Install/GL_RNAseq_mkdir.sh) file and save it in the top level directory you made in step 2):
   ```
   bash GL_RNAseq_mkdir.sh
   ``` 
@@ -137,4 +137,4 @@
       >
       > **Note2:** GeneLab provides processed data files from each step of the RNAseq processing pipeline in the [GeneLab Repository](https://genelab-data.ndc.nasa.gov/genelab/projects), so you may start processing from any step of the pipeline by downloading the appropriate input data for that step.  
    
-   4. Once you've downloaded the scripts and input data you need to start processing (steps 5i and 5iii, respectively) and have revised all of your processing scripts to indicate the correct paths and settings for your machine (step 5ii), you may use the `cd` command to navigate to the appropriare subdirectory within the `processing_scripts` child directory and begin executing the scripts in the same order as indicated in the [RNAseq processing pipeline](https://github.com/nasa/GeneLab_Data_Processing/blob/master/RNAseq/GL-DPPD-7101-C.md).  
+   4. Once you've downloaded the scripts and input data you need to start processing (steps 5i and 5iii, respectively) and have revised all of your processing scripts to indicate the correct paths and settings for your machine (step 5ii), you may use the `cd` command to navigate to the appropriate subdirectory within the `processing_scripts` child directory and begin executing the scripts in the same order as indicated in the [RNAseq processing pipeline](../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-E.md).  
