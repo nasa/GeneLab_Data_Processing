@@ -8,5 +8,7 @@
 
 --- 
 
+## Select a sequencing type for more info:
+
 * [Illumina](Illumina)  
 * [454 and IonTorrent](454-and-IonTorrent)  

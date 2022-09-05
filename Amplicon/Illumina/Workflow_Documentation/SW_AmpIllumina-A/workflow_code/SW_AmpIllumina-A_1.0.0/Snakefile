@@ -1,0 +1,665 @@
+############################################################################################
+## Snakefile for GeneLab's Illumina amplicon workflow                                     ##
+## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##
+############################################################################################
+
+import os
+
+configfile: "config.yaml"
+
+
+########################################
+############# General Info #############
+########################################
+
+
+"""
+See the corresponding 'config.yaml' file for general use information.
+Variables that may need to be adjusted should be changed there, not here.
+"""
+
+## example usage command ##
+# snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p
+
+# `--use-conda` – this specifies to use the conda environments included in the workflow
+# `--conda-prefix` – this allows us to point to where the needed conda environments should be stored. Including this means if we use the workflow on a different dataset somewhere else in the future, it will re-use the same conda environments rather than make new ones. The value listed here, `${CONDA_PREFIX}/envs`, is the default location for conda environments (the variable `${CONDA_PREFIX}` will be expanded to the appropriate location on whichever system it is run on).
+# `-j` – this lets us set how many jobs Snakemake should run concurrently (keep in mind that many of the thread and cpu parameters set in the config.yaml file will be multiplied by this)
+# `-p` – specifies to print out each command being run to the screen
+
+# See `snakemake -h` for more options and details.
+
+
+########################################
+#### Reading samples file into list ####
+########################################
+
+sample_IDs_file = config["sample_info_file"]
+sample_ID_list = [line.strip() for line in open(sample_IDs_file)]
+
+# making sure there are all unique names
+if len(set(sample_ID_list)) != len(sample_ID_list):
+
+    print("\n    Not all sample IDs in the " + str(config["sample_info_file"]) + " file are unique :(\n")
+    print("    Exiting for now.\n")
+    exit()
+
+########################################
+######## Setting up directories ########
+########################################
+
+if config["trim_primers"] == "TRUE":
+    needed_dirs = [config["fastqc_out_dir"], config["trimmed_reads_dir"], config["filtered_reads_dir"], config["final_outputs_dir"], "benchmarks"]
+else:
+    needed_dirs = [config["fastqc_out_dir"], config["filtered_reads_dir"], config["final_outputs_dir"], "benchmarks"]
+
+for dir in needed_dirs:
+    try:
+        os.mkdir(dir)
+    except:
+        pass
+
+
+########################################
+############# Rules start ##############
+########################################
+
+#### rules if paired-end data ####
+if config["data_type"] == "PE":
+
+    # "all" starting rule for paired-end data
+    if config["trim_primers"] == "TRUE":
+
+        rule all:
+            input:
+                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
+                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"], ID = sample_ID_list),
+                expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R1_suffix"], ID = sample_ID_list),
+                expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R2_suffix"], ID = sample_ID_list),
+                config["trimmed_reads_dir"] + config["output_prefix"] + "cutadapt.log",
+                config["trimmed_reads_dir"] + config["output_prefix"] + "trimmed-read-counts.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom.zip",
+                config["final_outputs_dir"] + config["output_prefix"] + "ASVs.fasta",
+                config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv",
+                config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_data.zip",
+                config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_data.zip"
+            shell:
+                """
+                bash scripts/combine-benchmarks.sh
+                """
+
+    # if we are not trimming the primers
+    else:
+
+        rule all:
+            input:
+                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
+                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"], ID = sample_ID_list),
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom.zip",
+                config["final_outputs_dir"] + config["output_prefix"] + "ASVs.fasta",
+                config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv",
+                config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_data.zip",
+                config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_data.zip"
+            shell:
+                """
+                bash scripts/combine-benchmarks.sh
+                """
+
+
+    # R processing rule for paired-end data
+    if config["trim_primers"] == "TRUE":
+
+        rule run_R_PE:
+            conda:
+                "envs/R.yaml"
+            input:
+                expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R1_suffix"], ID = sample_ID_list),
+                expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R2_suffix"], ID = sample_ID_list),
+                config["trimmed_reads_dir"] + config["output_prefix"] + "trimmed-read-counts.tsv"
+            output:
+                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
+                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"], ID = sample_ID_list),
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom",
+                config["final_outputs_dir"] + config["output_prefix"] + "ASVs.fasta",
+                config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv"
+            params:
+                left_trunc = config["left_trunc"],
+                right_trunc = config["right_trunc"],
+                left_maxEE = config["left_maxEE"],
+                right_maxEE = config["right_maxEE"],
+                trim_primers = config["trim_primers"],
+                trimmed_reads_dir = config["trimmed_reads_dir"],
+                filtered_reads_dir = config["filtered_reads_dir"],
+                primer_trimmed_R1_suffix = config["primer_trimmed_R1_suffix"],
+                primer_trimmed_R2_suffix = config["primer_trimmed_R2_suffix"],
+                filtered_R1_suffix = config["filtered_R1_suffix"],
+                filtered_R2_suffix = config["filtered_R2_suffix"],
+                final_outputs_dir = config["final_outputs_dir"],
+                target_region = config["target_region"],
+                output_prefix = config["output_prefix"]
+            log:
+                "R-processing.log"
+            benchmark:
+                "benchmarks/run_R-benchmarks.tsv"
+            shell:
+                """
+                Rscript scripts/Illumina-PE-R-processing.R "{params.left_trunc}" "{params.right_trunc}" "{params.left_maxEE}" "{params.right_maxEE}" "{params.trim_primers}" "{sample_IDs_file}" "{params.trimmed_reads_dir}" "{params.filtered_reads_dir}" "{params.primer_trimmed_R1_suffix}" "{params.primer_trimmed_R2_suffix}" "{params.filtered_R1_suffix}" "{params.filtered_R2_suffix}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" > {log} 2>&1
+                """
+
+    # if we did not trim the primers
+    else:
+
+        rule run_R_PE:
+            conda:
+                "envs/R.yaml"
+            input:
+                expand(config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"], ID = sample_ID_list),
+                expand(config["raw_reads_dir"] + "{ID}" + config["raw_R2_suffix"], ID = sample_ID_list)
+            output:
+                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
+                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"], ID = sample_ID_list),
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom",
+                config["final_outputs_dir"] + config["output_prefix"] + "ASVs.fasta",
+                config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv"
+            params:
+                left_trunc = config["left_trunc"],
+                right_trunc = config["right_trunc"],
+                left_maxEE = config["left_maxEE"],
+                right_maxEE = config["right_maxEE"],
+                trim_primers = config["trim_primers"],
+                raw_reads_dir = config["raw_reads_dir"],
+                filtered_reads_dir = config["filtered_reads_dir"],
+                raw_R1_suffix = config["raw_R1_suffix"],
+                raw_R2_suffix = config["raw_R2_suffix"],
+                filtered_R1_suffix = config["filtered_R1_suffix"],
+                filtered_R2_suffix = config["filtered_R2_suffix"],
+                final_outputs_dir = config["final_outputs_dir"],
+                target_region = config["target_region"],
+                output_prefix = config["output_prefix"]
+            log:
+                "R-processing.log"
+            benchmark:
+                "benchmarks/run_R-benchmarks.tsv"
+            shell:
+                """
+                Rscript scripts/Illumina-PE-R-processing.R "{params.left_trunc}" "{params.right_trunc}" "{params.left_maxEE}" "{params.right_maxEE}" "{params.trim_primers}" "{sample_IDs_file}" "{params.raw_reads_dir}" "{params.filtered_reads_dir}" "{params.raw_R1_suffix}" "{params.raw_R2_suffix}" "{params.filtered_R1_suffix}" "{params.filtered_R2_suffix}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" > {log} 2>&1
+                """
+
+
+    # cutadapt rule for paired-end data
+    rule cutadapt_PE:
+        """ this rule runs cutadapt. It is only executed if config["trim_primers"] is "TRUE" """
+        conda:
+            "envs/cutadapt.yaml"
+        input:
+            R1 = config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"],
+            R2 = config["raw_reads_dir"] + "{ID}" + config["raw_R2_suffix"]
+        output:
+            R1 = config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R1_suffix"],
+            R2 = config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R2_suffix"],
+            log = config["trimmed_reads_dir"] + "{ID}-cutadapt.log",
+            trim_counts = config["trimmed_reads_dir"] + "{ID}-trimmed-counts.tsv"
+        params:
+            F_linked_primer = config["F_linked_primer"],
+            R_linked_primer = config["R_linked_primer"],
+            F_primer = config["F_primer"],
+            R_primer = config["R_primer"],
+            min_cutadapt_len = config["min_cutadapt_len"],
+            primers_linked = config["primers_linked"],
+            discard_untrimmed = config["discard_untrimmed"]
+        log:
+            config["trimmed_reads_dir"] + "{ID}-cutadapt.log"
+        benchmark:
+            "benchmarks/cutadapt-{ID}-benchmarks.tsv"
+        shell:
+            """
+            # command depends on if primers are linked or not
+            if [ {params.primers_linked} == "TRUE" ]; then
+
+                if [ {params.discard_untrimmed} == "TRUE" ]; then
+                    cutadapt -a {params.F_linked_primer} -A {params.R_linked_primer} -o {output.R1} -p {output.R2} --discard-untrimmed -m {params.min_cutadapt_len} {input.R1} {input.R2} > {log} 2>&1
+                else
+                    cutadapt -a {params.F_linked_primer} -A {params.R_linked_primer} -o {output.R1} -p {output.R2} -m {params.min_cutadapt_len} {input.R1} {input.R2} > {log} 2>&1
+                fi
+
+            else
+
+                if [ {params.discard_untrimmed} == "TRUE" ]; then
+                    cutadapt -g {params.F_primer} -G {params.R_primer} -o {output.R1} -p {output.R2} --discard-untrimmed -m {params.min_cutadapt_len} {input.R1} {input.R2} > {log} 2>&1
+                else
+                    cutadapt -g {params.F_primer} -G {params.R_primer} -o {output.R1} -p {output.R2} -m {params.min_cutadapt_len} {input.R1} {input.R2} > {log} 2>&1
+                fi
+
+            fi
+
+            paste <( printf "{wildcards.ID}" ) <( grep "read pairs processed" {output.log} | tr -s " " "\t" | cut -f 5 | tr -d "," ) <( grep "Pairs written" {output.log} | tr -s " " "\t" | cut -f 5 | tr -d "," ) > {output.trim_counts}
+            """
+
+    # rule for raw fastqc for paired-end data
+    rule raw_fastqc_PE:
+        """
+        This rule runs fastqc on all raw input fastq files.
+        """
+
+        conda:
+            "envs/qc.yaml"
+        input:
+            config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"],
+            config["raw_reads_dir"] + "{ID}" + config["raw_R2_suffix"]
+        output:
+            config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.zip",
+            config["raw_reads_dir"] + "{ID}" + config["raw_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.zip"
+        benchmark:
+            "benchmarks/raw_fastqc-{ID}-benchmarks.tsv"
+        shell:
+            """
+            fastqc {input} -t 2 -q
+            """
+
+    # rule for raw multiqc for paired-end data
+    rule raw_multiqc_PE:
+        """
+        This rule collates all raw fastqc outputs.
+        """
+
+        conda:
+            "envs/qc.yaml"
+        input:
+            expand(config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list),
+            expand(config["raw_reads_dir"] + "{ID}" + config["raw_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list)
+        params:
+            out_filename_prefix = config["output_prefix"] + "raw_multiqc",
+            fastqc_out_dir = config["fastqc_out_dir"],
+            int_output = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc.html",
+            r1_html_files = expand(config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list),
+            r2_html_files = expand(config["raw_reads_dir"] + "{ID}" + config["raw_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list)
+        output:
+            html = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_report.html",
+            data = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_data.zip"
+        benchmark:
+            "benchmarks/raw_multiqc-benchmarks.tsv"
+        shell:
+            """
+            multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix} {input} > /dev/null 2>&1
+            # removing the individual fastqc files
+            rm -rf {input} {params.r1_html_files} {params.r2_html_files}
+            # renaming html file
+            mv {params.int_output} {output.html}
+            """
+
+
+    # rule for filtered fastqc for paired-end data
+    rule filtered_fastqc_PE:
+        """
+        This rule runs fastqc on all trimmed/filtered input fastq files.
+        """
+
+        conda:
+            "envs/qc.yaml"
+        input:
+            config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"],
+            config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"]
+        output:
+            config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.zip",
+            config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.zip"
+        benchmark:
+            "benchmarks/filtered_fastqc-{ID}-benchmarks.tsv"
+        shell:
+            """
+            fastqc {input} -t 2 -q
+            """
+
+
+    # rule for filtered multiqc for paired-end data
+    rule filtered_multiqc_PE:
+        """
+        This rule collates all trimmed/filtered fastqc outputs.
+        """
+
+        conda:
+            "envs/qc.yaml"
+        input:
+            expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list),
+            expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list)
+        params:
+            out_filename_prefix = config["output_prefix"] + "filtered_multiqc",
+            fastqc_out_dir = config["fastqc_out_dir"],
+            int_output = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc.html",
+            r1_html_files = expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list),
+            r2_html_files = expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list)
+        output:
+            html = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.html",
+            data = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_data.zip"
+        benchmark:
+            "benchmarks/filtered_multiqc-benchmarks.tsv"
+        shell:
+            """
+            multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix} {input} > /dev/null 2>&1
+            # removing the individual fastqc files and temp locations
+            rm -rf {input} {params.r1_html_files} {params.r2_html_files}
+            # renaming html file
+            mv {params.int_output} {output.html}
+            """
+
+
+#### end of rules specific for paired-end data ####
+
+##################################
+#### rules if single-end data ####
+##################################
+if config["data_type"] == "SE":
+
+    # "all" starting rule for single-end data
+    if config["trim_primers"] == "TRUE":
+
+        rule all:
+            input:
+                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
+                expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R1_suffix"], ID = sample_ID_list),
+                config["trimmed_reads_dir"] + config["output_prefix"] + "cutadapt.log",
+                config["trimmed_reads_dir"] + config["output_prefix"] + "trimmed-read-counts.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom.zip",
+                config["final_outputs_dir"] + config["output_prefix"] + "ASVs.fasta",
+                config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv",
+                config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_data.zip",
+                config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_data.zip"
+            shell:
+                """
+                bash scripts/combine-benchmarks.sh
+                """
+
+    # if we are not trimming the primers
+    else:
+
+        rule all:
+            input:
+                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom.zip",
+                config["final_outputs_dir"] + config["output_prefix"] + "ASVs.fasta",
+                config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv",
+                config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_data.zip",
+                config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_data.zip"
+            shell:
+                """
+                bash scripts/combine-benchmarks.sh
+                """
+
+
+    # R processing rule for single-end data
+    if config["trim_primers"] == "TRUE":
+
+        rule run_R_SE:
+            conda:
+                "envs/R.yaml"
+            input:
+                expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R1_suffix"], ID = sample_ID_list),
+                config["trimmed_reads_dir"] + config["output_prefix"] + "trimmed-read-counts.tsv"
+            output:
+                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom",
+                config["final_outputs_dir"] + config["output_prefix"] + "ASVs.fasta",
+                config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv"
+            params:
+                left_trunc = config["left_trunc"],
+                left_maxEE = config["left_maxEE"],
+                trim_primers = config["trim_primers"],
+                trimmed_reads_dir = config["trimmed_reads_dir"],
+                filtered_reads_dir = config["filtered_reads_dir"],
+                primer_trimmed_R1_suffix = config["primer_trimmed_R1_suffix"],
+                filtered_R1_suffix = config["filtered_R1_suffix"],
+                final_outputs_dir = config["final_outputs_dir"],
+                target_region = config["target_region"],
+                output_prefix = config["output_prefix"]
+            log:
+                "R-processing.log"
+            benchmark:
+                "benchmarks/run_R-benchmarks.tsv"
+            shell:
+                """
+                Rscript scripts/Illumina-SE-R-processing.R "{params.left_trunc}" "{params.left_maxEE}" "{params.trim_primers}" "{sample_IDs_file}" "{params.trimmed_reads_dir}" "{params.filtered_reads_dir}" "{params.primer_trimmed_R1_suffix}" "{params.filtered_R1_suffix}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" > {log} 2>&1
+                """
+
+    # if we did not trim the primers
+    else:
+
+        rule run_R_SE:
+            conda:
+                "envs/R.yaml"
+            input:
+                expand(config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"], ID = sample_ID_list)
+            output:
+                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom",
+                config["final_outputs_dir"] + config["output_prefix"] + "ASVs.fasta",
+                config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv"
+            params:
+                left_trunc = config["left_trunc"],
+                left_maxEE = config["left_maxEE"],
+                trim_primers = config["trim_primers"],
+                raw_reads_dir = config["raw_reads_dir"],
+                filtered_reads_dir = config["filtered_reads_dir"],
+                raw_R1_suffix = config["raw_R1_suffix"],
+                filtered_R1_suffix = config["filtered_R1_suffix"],
+                final_outputs_dir = config["final_outputs_dir"],
+                target_region = config["target_region"],
+                output_prefix = config["output_prefix"]
+            log:
+                "R-processing.log"
+            benchmark:
+                "benchmarks/run_R-benchmarks.tsv"
+            shell:
+                """
+                Rscript scripts/Illumina-SE-R-processing.R "{params.left_trunc}" "{params.left_maxEE}" "{params.trim_primers}" "{sample_IDs_file}" "{params.raw_reads_dir}" "{params.filtered_reads_dir}" "{params.raw_R1_suffix}" "{params.filtered_R1_suffix}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" > {log} 2>&1
+                """
+
+
+    # cutadapt rule for single-end data
+    rule cutadapt_SE:
+        """ this rule runs cutadapt. It is only executed if config["trim_primers"] is "TRUE" """
+        conda:
+            "envs/cutadapt.yaml"
+        input:
+            R1 = config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"]
+        output:
+            R1 = config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R1_suffix"],
+            log = config["trimmed_reads_dir"] + "{ID}-cutadapt.log",
+            trim_counts = config["trimmed_reads_dir"] + "{ID}-trimmed-counts.tsv"
+        params:
+            F_linked_primer = config["F_linked_primer"],
+            F_primer = config["F_primer"],
+            min_cutadapt_len = config["min_cutadapt_len"],
+            primers_linked = config["primers_linked"],
+            discard_untrimmed = config["discard_untrimmed"]
+        log:
+            config["trimmed_reads_dir"] + "{ID}-cutadapt.log"
+        benchmark:
+            "benchmarks/cutadapt-{ID}-benchmarks.tsv"
+        shell:
+            """
+            # command depends on if primers are linked or not
+            if [ {params.primers_linked} == "TRUE" ]; then
+
+                if [ {params.discard_untrimmed} == "TRUE" ]; then
+                    cutadapt -a {params.F_linked_primer} -o {output.R1} --discard-untrimmed -m {params.min_cutadapt_len} {input.R1} > {log} 2>&1
+                else
+                    cutadapt -a {params.F_linked_primer} -o {output.R1} -m {params.min_cutadapt_len} {input.R1} > {log} 2>&1
+                fi
+
+            else
+
+                if [ {params.discard_untrimmed} == "TRUE" ]; then
+                    cutadapt -g {params.F_primer} -o {output.R1} --discard-untrimmed -m {params.min_cutadapt_len} {input.R1} > {log} 2>&1
+                else
+                    cutadapt -g {params.F_primer} -o {output.R1} -m {params.min_cutadapt_len} {input.R1} > {log} 2>&1
+                fi
+
+            fi
+
+            paste <( printf "{wildcards.ID}" ) <( grep "reads processed" {output.log} | tr -s " " "\t" | cut -f 4 | tr -d "," ) <( grep "Reads written" {output.log} | tr -s " " "\t" | cut -f 5 | tr -d "," ) > {output.trim_counts}
+            """
+
+
+    # rule for raw fastqc for single-end data
+    rule raw_fastqc_SE:
+        """
+        This rule runs fastqc on all raw input fastq files.
+        """
+
+        conda:
+            "envs/qc.yaml"
+        input:
+            config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"]
+        output:
+            config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.zip"
+        benchmark:
+            "benchmarks/raw_fastqc-{ID}-benchmarks.tsv"
+        shell:
+            """
+            fastqc {input} -t 1 -q
+            """
+
+
+    # rule for raw multiqc for single-end data
+    rule raw_multiqc_SE:
+        """
+        This rule collates all raw fastqc outputs.
+        """
+
+        conda:
+            "envs/qc.yaml"
+        input:
+            expand(config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list)
+        params:
+            out_filename_prefix = config["output_prefix"] + "raw_multiqc",
+            fastqc_out_dir = config["fastqc_out_dir"],
+            int_output = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc.html",
+            r1_html_files = expand(config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list)
+        output:
+            html = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_report.html",
+            data = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_data.zip"
+        benchmark:
+            "benchmarks/raw_multiqc-benchmarks.tsv"
+        shell:
+            """
+            multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix} {input} > /dev/null 2>&1
+            # removing the individual fastqc files
+            rm -rf {input} {params.r1_html_files}
+            # renaming html file
+            mv {params.int_output} {output.html}
+            """
+
+
+    # rule for filtered fastqc for single-end data
+    rule filtered_fastqc_SE:
+        """
+        This rule runs fastqc on all trimmed/filtered input fastq files.
+        """
+
+        conda:
+            "envs/qc.yaml"
+        input:
+            config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"]
+        output:
+            config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.zip"
+        benchmark:
+            "benchmarks/filtered_fastqc-{ID}-benchmarks.tsv"
+        shell:
+            """
+            fastqc {input} -t 1 -q
+            """
+
+
+    # rule for filtered multiqc for single-end data
+    rule filtered_multiqc_SE:
+        """
+        This rule collates all trimmed/filtered fastqc outputs.
+        """
+
+        conda:
+            "envs/qc.yaml"
+        input:
+            expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list)
+        params:
+            out_filename_prefix = config["output_prefix"] + "filtered_multiqc",
+            fastqc_out_dir = config["fastqc_out_dir"],
+            int_output = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc.html",
+            r1_html_files = expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list)
+        output:
+            html = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.html",
+            data = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_data.zip"
+        benchmark:
+            "benchmarks/filtered_multiqc-benchmarks.tsv"
+        shell:
+            """
+            multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix} {input} > /dev/null 2>&1
+            # removing the individual fastqc files and temp locations
+            rm -rf {input} {params.r1_html_files}
+            # renaming html file
+            mv {params.int_output} {output.html}
+            """
+
+
+#### end of rules specific for paired-end data ####
+
+##################################################################
+#### rules that are the same whether paired-end or single-end ####
+##################################################################
+rule zip_biom:
+    input:
+        config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom"
+    output:
+        config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom.zip"
+    params:
+        initial_output = config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom"
+    shell:
+        """
+        zip -q {output} {params.initial_output} && rm {params.initial_output}
+        """
+
+
+rule combine_cutadapt_logs_and_summarize:
+    """ this rule combines the cutadapt logs and summarizes them. It is only executed if config["trim_primers"] is "TRUE" """
+    input:
+        counts = expand(config["trimmed_reads_dir"] + "{ID}-trimmed-counts.tsv", ID = sample_ID_list),
+        logs = expand(config["trimmed_reads_dir"] + "{ID}-cutadapt.log", ID = sample_ID_list)
+    output:
+        combined_log = config["trimmed_reads_dir"] + config["output_prefix"] + "cutadapt.log",
+        combined_counts = config["trimmed_reads_dir"] + config["output_prefix"] + "trimmed-read-counts.tsv"
+    benchmark:
+        "benchmarks/combine_cutadapt_logs_and_summarize-benchmarks.tsv"
+    shell:
+        """
+        cat {input.logs} > {output.combined_log}
+        rm {input.logs}
+        
+        cat <( printf "sample\traw_reads\tcutadapt_trimmed\n" ) <( cat {input.counts} ) > {output.combined_counts}
+        rm {input.counts}
+        """
+
+
+rule clean_all:
+    shell:
+        "rm -rf {needed_dirs}"
