@@ -21,20 +21,27 @@ Jonathan Galazka (GeneLab Project Scientist)
 
 # Table of contents  
 
-- [**Software used**](#software-used)
-- [**Reference databases used**](#reference-databases-used)
-- [**General processing overview with example commands**](#general-processing-overview-with-example-commands)
-  - [**1. Raw Data QC**](#1-raw-data-qc)
+- [Bioinformatics pipeline for 454 and IonTorrent amplicon sequencing data](#bioinformatics-pipeline-for-454-and-iontorrent-amplicon-sequencing-data)
+- [Table of contents](#table-of-contents)
+- [Software used](#software-used)
+- [Reference databases used](#reference-databases-used)
+- [General processing overview with example commands](#general-processing-overview-with-example-commands)
+  - [1. Raw Data QC](#1-raw-data-qc)
     - [1a. Compile Raw Data QC](#1a-compile-raw-data-qc)
-  - [**2. Trim Primers**](#2-trim-primers)
-  - [**3. Quality filtering**](#3-quality-filtering)
-  - [**4. Filtered Data QC**](#4-filtered-data-qc)
+  - [2. Trim Primers](#2-trim-primers)
+  - [3. Quality filtering](#3-quality-filtering)
+  - [4. Filtered Data QC](#4-filtered-data-qc)
     - [4a. Compile Filtered Data QC](#4a-compile-filtered-data-qc)
-  - [**5. Generating OTUs and counts per sample**](#5-generating-otus-and-counts-per-sample)
+  - [5. Generating OTUs and counts per sample](#5-generating-otus-and-counts-per-sample)
     - [5a. Dereplicate individual samples](#5a-dereplicate-individual-samples)
     - [5b. Generate OTUs](#5b-generate-otus)
+      - [Combining all individual sample dereplicated sequences for further processing](#combining-all-individual-sample-dereplicated-sequences-for-further-processing)
+      - [Dereplicating combined sequences](#dereplicating-combined-sequences)
+      - [Clustering to get representative sequences](#clustering-to-get-representative-sequences)
+      - [Removing singletons](#removing-singletons)
+      - [Chimera check and removal](#chimera-check-and-removal)
     - [5c. Map reads to OTUs](#5c-map-reads-to-otus)
-  - [**6. Generating taxonomy and additional outputs**](#6-generating-taxonomy-and-additional-outputs)
+  - [6. Generating taxonomy and additional outputs](#6-generating-taxonomy-and-additional-outputs)
     - [6a. Assigning taxonomy](#6a-assigning-taxonomy)
     - [6b. Generating and writing outputs](#6b-generating-and-writing-outputs)
 
@@ -66,7 +73,7 @@ Jonathan Galazka (GeneLab Project Scientist)
 
 # General processing overview with example commands
 
-> Exact processing commands for specific datasets are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).  
+> Exact processing commands for specific datasets that have been released are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**
 
 ---
 

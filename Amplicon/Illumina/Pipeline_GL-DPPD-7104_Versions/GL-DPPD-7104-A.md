@@ -1,6 +1,6 @@
 # Bioinformatics pipeline for amplicon Illumina sequencing data  
 
-> **This page holds an overview and instructions for how GeneLab processes Illumina amplicon datasets. Exact processing commands for specific datasets that have been released are available in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory and/or are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
+> **This page holds an overview and instructions for how GeneLab processes Illumina amplicon datasets. Exact processing commands for specific datasets that have been released are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**
 
 ---
 
@@ -22,19 +22,21 @@ Anushree Sonic (Genelab Configuration Manager)
 
 # Table of contents  
 
-- [**Software used**](#software-used)
-- [**Reference databases used**](#reference-databases-used)
-- [**General processing overview with example commands**](#general-processing-overview-with-example-commands)
-  - [**1. Raw Data QC**](#1-raw-data-qc)
+- [Bioinformatics pipeline for amplicon Illumina sequencing data](#bioinformatics-pipeline-for-amplicon-illumina-sequencing-data)
+- [Table of contents](#table-of-contents)
+- [Software used](#software-used)
+- [Reference databases used](#reference-databases-used)
+- [General processing overview with example commands](#general-processing-overview-with-example-commands)
+  - [1. Raw Data QC](#1-raw-data-qc)
     - [Compile Raw Data QC](#compile-raw-data-qc)
-  - [**2. Trim Primers**](#2-trim-primers)
-  - [**3. Quality filtering**](#3-quality-filtering)
-  - [**4. Filtered Data QC**](#4-filtered-data-qc)
+  - [2. Trim Primers](#2-trim-primers)
+  - [3. Quality filtering](#3-quality-filtering)
+  - [4. Filtered Data QC](#4-filtered-data-qc)
     - [Compile Filtered Data QC](#compile-filtered-data-qc)
-  - [**5. Calculate error model, apply DADA2 algorithm, assign taxonomy, and create output tables**](#5-calculate-error-model-apply-dada2-algorithm-assign-taxonomy-and-create-output-tables)
+  - [5. Calculate error model, apply DADA2 algorithm, assign taxonomy, and create output tables](#5-calculate-error-model-apply-dada2-algorithm-assign-taxonomy-and-create-output-tables)
     - [Learning the error rates](#learning-the-error-rates)
     - [Inferring sequences](#inferring-sequences)
-    - [Merging forward and reverse reads](#merging-forward-and-reverse-reads-not-needed-if-data-are-single-end)
+    - [Merging forward and reverse reads; not needed if data are single-end](#merging-forward-and-reverse-reads-not-needed-if-data-are-single-end)
     - [Generating sequence table with counts per sample](#generating-sequence-table-with-counts-per-sample)
     - [Removing putative chimeras](#removing-putative-chimeras)
     - [Assigning taxonomy](#assigning-taxonomy)
@@ -66,7 +68,8 @@ Anushree Sonic (Genelab Configuration Manager)
 
 # General processing overview with example commands  
 
-> Exact processing commands for specific datasets are available in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory of this repository, and/or are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).  
+
+> Exact processing commands for specific datasets that have been released are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**
 
 ---
 

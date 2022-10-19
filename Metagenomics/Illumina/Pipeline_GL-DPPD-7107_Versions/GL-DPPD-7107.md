@@ -1,6 +1,6 @@
 # Bioinformatics pipeline for Illumina metagenomics data
 
-> **This document holds an overview and some example commands of how GeneLab processes Illumina metagenomics datasets. Exact processing commands for specific datasets that have been released are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
+> **This document holds an overview and some example commands of how GeneLab processes Illumina metagenomics datasets. Exact processing commands for specific datasets that have been released are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**
 
 ---
 
@@ -21,27 +21,59 @@ Jonathan Galazka (GeneLab Project Scientist)
 
 # Table of contents
 
-- [**Software used**](#software-used)
-- [**General processing overview with example commands**](#general-processing-overview-with-example-commands)
-  - [**Pre-processing**](#pre-processing)
+- [Bioinformatics pipeline for Illumina metagenomics data](#bioinformatics-pipeline-for-illumina-metagenomics-data)
+- [Table of contents](#table-of-contents)
+- [Software used](#software-used)
+- [General processing overview with example commands](#general-processing-overview-with-example-commands)
+  - [Pre-processing](#pre-processing)
     - [1. Raw Data QC](#1-raw-data-qc)
+      - [1a. Compile Raw Data QC](#1a-compile-raw-data-qc)
     - [2. Quality filtering/trimming](#2-quality-filteringtrimming)
     - [3. Filtered/Trimmed Data QC](#3-filteredtrimmed-data-qc)
-  - [**Assembly-based processing**](#assembly-based-processing)
+      - [3a. Compile Filtered/Trimmed Data QC](#3a-compile-filteredtrimmed-data-qc)
+  - [Assembly-based processing](#assembly-based-processing)
     - [4. Sample assembly](#4-sample-assembly)
     - [5. Renaming contigs and summarizing assemblies](#5-renaming-contigs-and-summarizing-assemblies)
+      - [5a. Renaming contig headers](#5a-renaming-contig-headers)
+      - [5b. Summarizing assemblies](#5b-summarizing-assemblies)
     - [6. Gene prediction](#6-gene-prediction)
     - [7. Functional annotation](#7-functional-annotation)
+      - [7a. Downloading reference database of HMM models (only needs to be done once)](#7a-downloading-reference-database-of-hmm-models-only-needs-to-be-done-once)
+      - [7b. Running KEGG annotation](#7b-running-kegg-annotation)
+      - [7c. Filtering output to retain only those passing the KO-specific score and top hits](#7c-filtering-output-to-retain-only-those-passing-the-ko-specific-score-and-top-hits)
     - [8. Taxonomic classification](#8-taxonomic-classification)
+      - [8a. Pulling and un-packing pre-built reference db (only needs to be done once)](#8a-pulling-and-un-packing-pre-built-reference-db-only-needs-to-be-done-once)
+      - [8b. Running taxonomic classification](#8b-running-taxonomic-classification)
+      - [8c. Adding taxonomy info from taxids to genes](#8c-adding-taxonomy-info-from-taxids-to-genes)
+      - [8d. Adding taxonomy info from taxids to contigs](#8d-adding-taxonomy-info-from-taxids-to-contigs)
+      - [8e. Formatting gene-level output with awk and sed](#8e-formatting-gene-level-output-with-awk-and-sed)
+      - [8f. Formatting contig-level output with awk and sed](#8f-formatting-contig-level-output-with-awk-and-sed)
     - [9. Read-mapping](#9-read-mapping)
+      - [9a. Building reference index](#9a-building-reference-index)
+      - [9b. Performing mapping, conversion to bam, and sorting](#9b-performing-mapping-conversion-to-bam-and-sorting)
+      - [9c. Indexing](#9c-indexing)
     - [10. Getting coverage information and filtering based on detection](#10-getting-coverage-information-and-filtering-based-on-detection)
+      - [10a. Filtering coverage levels based on detection](#10a-filtering-coverage-levels-based-on-detection)
+      - [10b. Filtering gene coverage based on requiring 50% detection and parsing down to just gene ID and coverage](#10b-filtering-gene-coverage-based-on-requiring-50-detection-and-parsing-down-to-just-gene-id-and-coverage)
     - [11. Combining gene-level coverage, taxonomy, and functional annotations into one table for each sample](#11-combining-gene-level-coverage-taxonomy-and-functional-annotations-into-one-table-for-each-sample)
     - [12. Combining contig-level coverage and taxonomy into one table for each sample](#12-combining-contig-level-coverage-and-taxonomy-into-one-table-for-each-sample)
     - [13. Generating normalized, gene-level-coverage summary tables of KO-annotations and taxonomy across samples](#13-generating-normalized-gene-level-coverage-summary-tables-of-ko-annotations-and-taxonomy-across-samples)
     - [14. **M**etagenome-**A**ssembled **G**enome (MAG) recovery](#14-metagenome-assembled-genome-mag-recovery)
+      - [14a. Binning contigs](#14a-binning-contigs)
+      - [14b. Bin quality assessment](#14b-bin-quality-assessment)
+      - [14c. Filtering MAGs](#14c-filtering-mags)
+      - [14d. MAG taxonomic classification](#14d-mag-taxonomic-classification)
     - [15. Generating MAG-level functional summary overview](#15-generating-mag-level-functional-summary-overview)
-  - [**Read-based processing**](#read-based-processing)
+      - [15a. Getting KO annotations per MAG](#15a-getting-ko-annotations-per-mag)
+      - [15b. Summarizing KO annotations with KEGG-Decoder](#15b-summarizing-ko-annotations-with-kegg-decoder)
+  - [Read-based processing](#read-based-processing)
     - [16. Taxonomic and functional profiling](#16-taxonomic-and-functional-profiling)
+      - [16a. Running humann3 (which also runs metaphlan3)](#16a-running-humann3-which-also-runs-metaphlan3)
+      - [16b. Merging multiple sample functional profiles into one table](#16b-merging-multiple-sample-functional-profiles-into-one-table)
+      - [16c. Splitting results tables](#16c-splitting-results-tables)
+      - [16d. Normalizing gene families and pathway abundance tables](#16d-normalizing-gene-families-and-pathway-abundance-tables)
+      - [16e. Generating a normalized gene-family table that is grouped by Kegg Orthologs (KOs)](#16e-generating-a-normalized-gene-family-table-that-is-grouped-by-kegg-orthologs-kos)
+      - [16f. Combining taxonomy tables](#16f-combining-taxonomy-tables)
 
 ---
 
@@ -72,7 +104,7 @@ Jonathan Galazka (GeneLab Project Scientist)
 
 # General processing overview with example commands
 
-> Exact processing commands for specific datasets are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).  
+> Exact processing commands for specific datasets that have been released are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**
 
 ## Pre-processing
 ### 1. Raw Data QC

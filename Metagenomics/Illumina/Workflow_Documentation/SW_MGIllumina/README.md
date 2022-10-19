@@ -77,7 +77,7 @@ While in the directory holding the Snakefile, config.yaml, and other workflow fi
 snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p
 ```
 
-* `--use-conda` – specifies to use the conda environments included in the workflow (these are specified in the [envs](workflow_code/SW_MGIllumina_1.0.0/envs) directory)
+* `--use-conda` – specifies to use the conda environments included in the workflow (these are specified in the files in the workflow `envs/` directory)
 * `--conda-prefix` – indicates where the needed conda environments will be stored. Adding this option will also allow the same conda environments to be re-used when processing additional datasets, rather than making new environments each time you run the workflow. The value listed for this option, `${CONDA_PREFIX}/envs`, points to the default location for conda environments (note: the variable `${CONDA_PREFIX}` will be expanded to the appropriate location on whichever system it is run on).
 * `-j` – assigns the number of jobs Snakemake should run concurrently (keep in mind that many of the thread and cpu parameters set in the config.yaml file will be multiplied by this)
 * `-p` – specifies to print out each command being run to the screen

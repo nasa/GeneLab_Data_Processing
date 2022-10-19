@@ -1,0 +1,216 @@
+############################################################################################
+## Configuration file for GeneLab Illumina metagenomics processing workflow               ##
+## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##
+############################################################################################
+
+############################################################
+##################### VARIABLES TO SET #####################
+############################################################
+
+############################################################################
+##### This first set of variables needs to match what is on our system #####
+############################################################################
+
+## single-column file with unique portion of sample names
+sample_info_file:
+    "unique-sample-IDs.txt"
+
+## raw reads directory (can be relative to workflow directory, or needs to be full path)
+raw_reads_dir:
+    "../Raw_Sequence_Data/"
+
+## if data are single-end only (only one read-file per sample), set this to "TRUE", anything else is considered paired-end
+single_end_data:
+    ""
+
+## raw read suffixes (region following the unique part of the sample names)
+    # e.g. for "Sample-1_R1_raw.fastq.gz" would be "_R1_raw.fastq.gz"
+raw_R1_suffix:
+    "_R1_raw.fastq.gz"
+raw_R2_suffix:
+    "_R2_raw.fastq.gz"
+
+    # if single-end data, set this one (others above don't matter)
+raw_suffix:
+    "_raw.fastq.gz"
+
+## root directory of reference databases (or where they will be downloaded if they don't exist yet)
+    # this should be provided as a full path (starting with `/`) and include the ending `/` as in the
+    # below example (note that the the `~/` home shortcut is not expanded
+    # by snakemake's evaluation of files, so don't use that)
+REF_DB_ROOT_DIR:
+    "/path/to/ref-dbs/"
+
+######################################################################
+##### The rest only need to be altered if we want to change them #####
+######################################################################
+
+## run assembly-based workflow, read-based, or both
+# (values need to be one of: "assembly-based", "read-based", or "both")
+workflow:
+    "both"
+
+## number of threads to use PER snakemake job (which is set with the -j parameter passed to snakemake call)
+    # passed to megahit, bowtie2, samtools, metabat2, checkm-pplacer (many may be running concurrently)
+num_threads:
+    8
+
+## number of CPUs to use PER snakemake job
+    # passed to KOFamScan, CAT, checkm (many may be running concurrently)
+num_cpus:
+    8
+
+## number of cpus passed to pplacer by gtdb-tk and checkm, pplacer can have issues with memory with multiple cpus; see e.g. https://ecogenomics.github.io/GTDBTk/faq.html#gtdb-tk-reaches-the-memory-limit-pplacer-crashes
+gtdb_tk_checkm_pplacer_cpus:
+    1
+
+## number of CPUs to use for gtdb-tk (only 1 gtdb-tk job will be run, so not multiplied)
+gtdb_tk_num_cpus:
+    8
+
+## scratch directory for gtdb-tk, if wanting to use disk space instead of RAM, can be memory intensive; see https://ecogenomics.github.io/GTDBTk/faq.html#gtdb-tk-reaches-the-memory-limit-pplacer-crashes
+    # leave empty if wanting to use memory, the default, put in quotes the path to a directory that already exists if wanting to use disk space
+gtdb_tk_scratch_location:
+    ""
+
+## maximum memory allowed passed to megahit assembler
+    # can be set either by proportion of available on system, e.g. 0.5
+    # or by absolute value in bytes, e.g. 100e9 would be 100 GB
+max_mem:
+    0.5
+
+## Block size variable for CAT/diamond, lower value means less RAM usage; see https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#memory--performance-options
+block_size:
+    4
+
+## reduced_tree option for checkm, limits the RAM usage to 16GB; https://github.com/Ecogenomics/CheckM/wiki/Genome-Quality-Commands#tree
+    # "TRUE" for yes, anything will be considered "FALSE" and the default full tree will be used
+reduced_tree:
+    ""
+
+## MAG filtering cutoffs based on checkm quality assessments (in percent); see https://github.com/Ecogenomics/CheckM/wiki/Reported-Statistics
+minimum_estimated_completion:
+    90
+maximum_estimated_redundancy:
+    10
+maximum_estimated_strain_heterogeneity:
+    50
+
+## quality trimmed/filtered suffixes
+filtered_R1_suffix:
+    "_R1_filtered.fastq.gz"
+filtered_R2_suffix:
+    "_R2_filtered.fastq.gz"
+
+# if single-end
+filtered_suffix:
+    "_filtered.fastq.gz"
+
+## output directories (all relative to processing directory, will be created)
+fastqc_out_dir:
+    "../FastQC_Outputs/"
+filtered_reads_dir:
+    "../Filtered_Sequence_Data/"
+assembly_based_dir:
+    "../Assembly-based_Processing/"
+assemblies_dir:
+    "../Assembly-based_Processing/assemblies/"
+genes_dir:
+    "../Assembly-based_Processing/predicted-genes/"
+annotations_and_tax_dir:
+    "../Assembly-based_Processing/annotations-and-taxonomy/"
+mapping_dir:
+    "../Assembly-based_Processing/read-mapping/"
+combined_output_dir:
+    "../Assembly-based_Processing/combined-outputs/"
+bins_dir:
+    "../Assembly-based_Processing/bins/"
+MAGs_dir:
+    "../Assembly-based_Processing/MAGs/"
+read_based_dir:
+    "../Read-based_Processing/"
+logs_dir:
+    "logs/"
+
+
+## additional prefix to add to output files that describe more than one sample (to make them unique compared to other datasets)
+# leave as empty, i.e. "", if not wanted, include separator at end if adding one, e.g. "Swift1S_"
+additional_filename_prefix:
+    ""
+
+
+## setting for trimming recommended when working with Swift 1S libraries
+    # adds `swift=t` setting to bbduk quality trimming/filtering command
+    # for info on this see, e.g., https://swiftbiosci.com/wp-content/uploads/2019/03/16-0853-Tail-Trim-Final-442019.pdf
+    # set to "TRUE" if data was generated with Swift 1S library prep
+swift_1S:
+    "FALSE"
+
+## memory used by bbmap's pileup.sh (within the get_cov_and_det rule)
+# passed as the -Xmx parameter, 20g means 20 gigs of RAM, 20m means 20 megabytes
+# 5g should be sufficient for most assemblies, but if that rule is failing, this may need to be increased
+pileup_mem:
+    "5g"
+    # that way is needed for telling the program, but to tell snakemake how much memory will be used, we need to provide it in megabytes
+    # e.g., 5g above, for 5 gigabytes, would be 5000 megabytes, so we need to set this variable to 5000
+    # this needs to be changed to match what is in the 'pileup_mem' variable above, if 20g, then 20000, if 20m, then 20
+snakemake_pileup_mem:
+    5000
+
+#######################################################
+################# REFERENCE DATABASES #################
+#######################################################
+# The below variables probably shouldn't be changed unless we really want to for some reason.
+# The workflow will check the location pointed to above for the below databases, and install them
+# if they are not already there. It looks for the below "TRIGGER" filenames (they 
+# all end with "*_DB_SETUP") in the directory for each database, which it creates when
+# it sets them up initially. If we want to point to DBs that already exist on our setup,
+# we need to add these (empty) files to their respective directories. The
+# workflow just checks the file is there to know it doesn't need to setup the DB.
+#
+# All together, after installed and unpacked, these will take up about 240 GB. But may 
+# require up to 500 GB during installation and initial un-packing. 
+
+## specific database locations
+KOFAMSCAN_DIR:
+    "kofamscan_db"
+KOFAMSCAN_TRIGGER_FILE:
+    "KO_DB_SETUP"
+CAT_DIR:
+    "CAT_prepare_20210107"
+CAT_DL_FILE:
+    "CAT_prepare_20210107.tar.gz"
+CAT_DL_LINK:
+    "tbb.bio.uu.nl/bastiaan/CAT_prepare/CAT_prepare_20210107.tar.gz"
+CAT_TRIGGER_FILE:
+    "CAT_DB_SETUP"
+CAT_DB:
+    "/2021-01-07_CAT_database"
+CAT_TAX:
+    "/2021-01-07_taxonomy"
+GTDB_DATA_PATH:
+    "GTDB-tk-ref-db"
+GTDB_TRIGGER_FILE:
+    "GTDBTK_DB_SETUP"
+HUMANN3_DBS_DIR:
+    "humann3-db"
+HUMANN3_CHOCOPHLAN_TRIGGER_FILE:
+    "CHOCOPHLAN_DB_SETUP"
+HUMANN3_UNIREF_TRIGGER_FILE:
+    "UNIREF_DB_SETUP"
+HUMANN3_UTILITY_MAPPING_TRIGGER_FILE:
+    "UTILITY_MAPPING_SETUP"
+METAPHLAN4_DB_DIR:
+    "metaphlan4-db"
+METAPHLAN_TRIGGER_FILE:
+    "METAPHLAN4_DB_SETUP"
+
+## example usage command ##
+# snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p
+
+# `--use-conda` – this specifies to use the conda environments included in the workflow
+# `--conda-prefix` – this allows us to point to where the needed conda environments should be stored. Including this means if we use the workflow on a different dataset somewhere else in the future, it will re-use the same conda environments rather than make new ones. The value listed here, `${CONDA_PREFIX}/envs`, is the default location for conda environments (the variable `${CONDA_PREFIX}` will be expanded to the appropriate location on whichever system it is run on).
+# `-j` – this lets us set how many jobs Snakemake should run concurrently (keep in mind that many of the thread and cpu parameters set in the config.yaml file will be multiplied by this)
+# `-p` – specifies to print out each command being run to the screen
+
+# See `snakemake -h` for more options and details.
