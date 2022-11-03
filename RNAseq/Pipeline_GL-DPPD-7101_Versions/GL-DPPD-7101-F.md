@@ -1933,21 +1933,24 @@ import matplotlib.pyplot as plt
 accession = 'GLDS-NNN' # Replace Ns with GLDS number
 isaPath = 'path/to/GLDS-NNN-ISA.zip' # Replace with path to ISA archive file
 zip_file_object = zipfile.ZipFile(isaPath, "r")
-list_of_ISA_files = zip_file_object.namelist() # Print contents of zip file. Pick relevant one from list
+list_of_ISA_files = zip_file_object.namelist() 
+
+# Print contents of ISA zip file to view file order
+list_of_ISA_files
 
 # There are datasets that have multiple assays (including microarray), so the RNAseq ISA files from the above output must be selected. 
-# Txt files outputted above are indexed as 0, 1, 2, etc. Fill in the indexed number corresponding to the sample (s_\*txt) and assay files for RNAseq (a_\*_(RNA-Seq).txt) in the code block below.
+# Txt files outputted above are indexed as 0, 1, 2, etc. Fill in the indexed number corresponding to the sample (s_*txt) and assay files for RNAseq (a_*_(RNA-Seq).txt) in the code block below.
 
-# Extract metadata from the sample file (s_\*txt)
+# Extract metadata from the sample file (s_*txt)
 
-sample_file = list_of_ISA_files[1] # replace [1] with index corresponding to the (s_\*txt) file
+sample_file = list_of_ISA_files[1] # replace [1] with index corresponding to the (s_*txt) file
 file = zip_file_object.open(sample_file)
 sample_table = pd.read_csv(zip_file_object.open(sample_file), sep='\t')
 
 
-# Extract metadata from the assay (a_\*_(RNA-Seq).txt) file
+# Extract metadata from the assay (a_*_(RNA-Seq).txt) file
 
-assay_file = list_of_ISA_files[0] # replace [0] with index corresponding to the (a_\*_(RNA-Seq).txt) file
+assay_file = list_of_ISA_files[0] # replace [0] with index corresponding to the (a_*_(RNA-Seq).txt) file
 file = zip_file_object.open(assay_file)
 assay_table = pd.read_csv(zip_file_object.open(assay_file), sep='\t')
 
@@ -2044,6 +2047,8 @@ print(merged_ercc)
 
 
 ### Filter and calculate mean counts per million of Mix1 and Mix2 spiked samples in each of the 4 groups
+## Check the 'Parameter Value[Spike-in Mix Number]' column of the assay table
+## If the values do not have a space, change 'Mix 1' and 'Mix 2' to 'Mix1' and 'Mix2', respectively
 
 # Filter Mix1 CPM and Mix2 CPM in group A 
 
@@ -2126,7 +2131,7 @@ plt.text(23,2.5,"Mix1/ Mix2 = 4")
 a1 = sns.catplot(x="ERCC ID", y="Avg Mix1 CPM/ Avg Mix2 CPM", palette="rocket_r", data=adf, kind="bar", height=5, aspect=1, linewidth=0.5)
 a1.set_xticklabels(rotation=90)
 plt.title("ERCC Group A")
-a1.set(ylim=(0, 5))
+a1.set(ylim=(0, 6))
 print('Number of ERCC detected in group A (out of 23) =', adf['Avg Mix1 CPM/ Avg Mix2 CPM'].count())
 
 
@@ -2134,7 +2139,7 @@ print('Number of ERCC detected in group A (out of 23) =', adf['Avg Mix1 CPM/ Avg
 
 b = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupB, hue="Mix", data=merged_ercc[merged_ercc['ERCC ID'].isin(groupB)], kind="box", col="ERCC group", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']))
 b.set_xticklabels(rotation=90)
-plt.text(23,2,"Mix1/ Mix2 = 1")
+plt.text(23,2.5,"Mix1/ Mix2 = 1")
 
 ### Create bar plot of the average Mix1 CPM / average Mix 2 CPM for group B ERCC genes (for group B we expect Mix 1 CPM / Mix 2 CPM = 1)
 
@@ -2158,7 +2163,7 @@ c = sns.catplot(x="ERCC ID", y="Avg Mix1 CPM/ Avg Mix2 CPM", palette="rocket_r",
                height=5, aspect=1, linewidth=0.5)
 c.set_xticklabels(rotation=90)
 plt.title("ERCC Group C")
-c.set(ylim=(0, 2.6))
+c.set(ylim=(0, 2))
 print('Number of ERCC detected in group C (out of 23) =', cdf['Avg Mix1 CPM/ Avg Mix2 CPM'].count())
 
 
@@ -2174,7 +2179,7 @@ d = sns.catplot(x="ERCC ID", y="Avg Mix1 CPM/ Avg Mix2 CPM", palette="rocket_r",
                height=5, aspect=1, linewidth=0.5)
 d.set_xticklabels(rotation=90)
 plt.title("ERCC Group D")
-d.set(ylim=(0, 2))
+d.set(ylim=(0, 1))
 print('Number of ERCC detected in group D (out of 23) =', ddf['Avg Mix1 CPM/ Avg Mix2 CPM'].count())
 
 
@@ -2182,22 +2187,14 @@ print('Number of ERCC detected in group D (out of 23) =', ddf['Avg Mix1 CPM/ Avg
 ##### Individual sample ERCC analyses
 
 #Calculate and plot ERCC metrics from individual samples, including limit of detection, dynamic range, and R^2 of counts vs. concentration.
+
+#View the ERCC table
 print(ercc_table.head(n=3))
-
-# Make a dictionary for ERCC concentrations for each mix
-
-mix1_conc_dict = dict(zip(ercc_table['ERCC ID'], ercc_table['concentration in Mix 1 (attomoles/ul)']))
-mix2_conc_dict = dict(zip(ercc_table['ERCC ID'], ercc_table['concentration in Mix 2 (attomoles/ul)']))
 
 # Check assay_table header to identify the 'Sample Name' column and the column title indicating the 'Spike-in Mix Nmber' if it's indicated in the metadata.
 
 pd.set_option('display.max_columns', None)
 print(assay_table.head(n=3))
-
-# Get samples that use mix 1 and mix 2
-
-mix1_samples = assay_table[assay_table['Parameter Value[Spike-in Mix Number]'] == 'Mix 1']['Sample Name']
-mix2_samples = assay_table[assay_table['Parameter Value[Spike-in Mix Number]'] == 'Mix 2']['Sample Name']
 
 # Get ERCC counts for all samples
 
@@ -2205,11 +2202,24 @@ ercc_counts = raw_counts_table[raw_counts_table.index.str.contains('^ERCC-')]
 ercc_counts = ercc_counts.sort_values(by=list(ercc_counts), ascending=False)
 print(ercc_counts.head())
 
-# Get ERCC counts for Mix 1 spiked samples
 
+# Make a dictionary for ERCC concentrations for Mix 1
+mix1_conc_dict = dict(zip(ercc_table['ERCC ID'], ercc_table['concentration in Mix 1 (attomoles/ul)']))
+
+# Get samples spiked with Mix 1
+mix1_samples = assay_table[assay_table['Parameter Value[Spike-in Mix Number]'] == 'Mix 1']['Sample Name']
+
+# Get ERCC counts for Mix 1 spiked samples
 ercc_counts_mix_1 = ercc_counts[mix1_samples]
 ercc_counts_mix_1['ERCC conc (attomoles/ul)'] = ercc_counts_mix_1.index.map(mix1_conc_dict)
 print(ercc_counts_mix_1.head(n=3))
+
+
+# Make a dictionary for ERCC concentrations for Mix 2
+mix2_conc_dict = dict(zip(ercc_table['ERCC ID'], ercc_table['concentration in Mix 2 (attomoles/ul)']))
+
+# Get samples spiked with Mix 2
+mix2_samples = assay_table[assay_table['Parameter Value[Spike-in Mix Number]'] == 'Mix 2']['Sample Name']
 
 # Get ERCC counts for Mix 2 spiked samples
 
@@ -2225,7 +2235,7 @@ columns_mix_2 = ercc_counts_mix_2.columns.drop(['ERCC conc (attomoles/ul)'])
 all_columns = columns_mix_1.to_list() + columns_mix_2.to_list()
 total_columns = len(columns_mix_1) + len(columns_mix_2) 
 side_size = np.int32(np.ceil(np.sqrt(total_columns)))# calculate grid side size. take sqrt of total plots and round up.
-fig, axs = plt.subplots(side_size, side_size, figsize=(15,15), sharex='all', sharey='all'); #change figsize x,y labels if needed.
+fig, axs = plt.subplots(side_size, side_size, figsize=(22,26), sharex='all', sharey='all'); #change figsize x,y labels if needed.
 fig.tight_layout(pad=1, w_pad=2.5, h_pad=3.5)
 
 counter = 0
@@ -2236,14 +2246,14 @@ for ax in axs.flat:
       ax.set_title(all_columns[counter][-45:], fontsize=9);
       ax.set_xlabel('log2 ERCC conc (attomoles/ ul)', fontsize=9);
       ax.set_ylabel('log2 Counts per million', fontsize=9);
-      ax.tick_params(direction='in', axis='both', labelsize=8, labelleft=True, labelbottom=True);
+      ax.tick_params(direction='in', axis='both', labelsize=9, labelleft=True, labelbottom=True);
       
     elif(counter >= len(columns_mix_1) and counter < total_columns):
       ax.scatter(x=np.log2(ercc_counts_mix_2['ERCC conc (attomoles/ul)']), y=np.log2(ercc_counts_mix_2[all_columns[counter]]+1), s=7);
       ax.set_title(all_columns[counter][-45:], fontsize=9);
       ax.set_xlabel('log2 ERCC conc (attomoles/ ul)', fontsize=9);
       ax.set_ylabel('log2 Counts per million', fontsize=9);
-      ax.tick_params(direction='in', axis='both', labelsize=8, labelleft=True, labelbottom=True);
+      ax.tick_params(direction='in', axis='both', labelsize=9, labelleft=True, labelbottom=True);
        
     else:
       pass
@@ -2286,7 +2296,7 @@ maxs = []
 dyranges = []
 rs = []
 
-fig, axs = plt.subplots(side_size, side_size, figsize=(20,15), sharex='all', sharey='all');
+fig, axs = plt.subplots(side_size, side_size, figsize=(22,26), sharex='all', sharey='all');
 fig.tight_layout(pad=1, w_pad=2.5, h_pad=3.5)
 
 counter = 0
@@ -2303,7 +2313,7 @@ for ax in axs.flat:
       ax.set_title(all_columns[counter][-47:], fontsize=9);
       ax.set_xlabel('log2 Conc (attomoles/ul)', fontsize=9);
       ax.set_ylabel('log2 Counts per million', fontsize=9);
-      ax.tick_params(direction='in', axis='both', labelsize=8, labelleft=True, labelbottom=True)
+      ax.tick_params(direction='in', axis='both', labelsize=9, labelleft=True, labelbottom=True)
       samples.append(all_columns[counter])
 
       if(len(xvalues) == 0):
@@ -2360,7 +2370,7 @@ for ax in axs.flat:
       ax.set_title(all_columns[counter][-47:], fontsize=9);
       ax.set_xlabel('log2 Conc (attomoles/ul)', fontsize=9);
       ax.set_ylabel('log2 Counts per million', fontsize=9);
-      ax.tick_params(direction='in', axis='both', labelsize=8, labelleft=True, labelbottom=True);
+      ax.tick_params(direction='in', axis='both', labelsize=9, labelleft=True, labelbottom=True);
       samples.append(all_columns[counter])
 
 
@@ -2523,7 +2533,7 @@ dds
 ## Run DESeq2 analysis and calculate results
 
 dds <- DESeq(dds)
-res <- results(dds, contrast=c("Mix","Mix 1","Mix 2"))
+res <- results(dds, contrast=c("Mix","Mix 1","Mix 2")) # remove space before mix number if needed
 res
 
 ## Export DESeq2 results table and normalized ERCC counts table
