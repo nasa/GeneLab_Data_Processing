@@ -5,4 +5,4 @@ channels:
     - astrobiomike
 dependencies:
     - prodigal=2.6.3
-    - bit=1.8.26
+    - bit=1.8.53

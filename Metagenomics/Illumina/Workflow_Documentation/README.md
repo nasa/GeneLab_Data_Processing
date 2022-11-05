@@ -6,7 +6,7 @@
 
 |Pipeline Version|Current Workflow Version (for respective pipeline version)|
 |:---------------|:---------------------------------------------------------|
-|*[GL-DPPD-7107.md](../Pipeline_GL-DPPD-7107_Versions/GL-DPPD-7107.md)|[2.0.1](SW_MGIllumina)|
+|*[GL-DPPD-7107.md](../Pipeline_GL-DPPD-7107_Versions/GL-DPPD-7107.md)|[2.0.2](SW_MGIllumina)|
 
 *Current GeneLab Pipeline/Workflow Implementation
 
