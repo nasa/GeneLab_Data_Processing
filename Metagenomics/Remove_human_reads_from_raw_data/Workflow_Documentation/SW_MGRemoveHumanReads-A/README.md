@@ -27,7 +27,7 @@ conda activate genelab-utils
 ```
 
 ### 2. Download the workflow template files
-All files required for utilizing the GeneLab workflow for removing human reads from metagenomics data are in the [workflow_code](workflow_code) directory. To get a copy of the latest SW_MGRemoveHumanReads-A version on to your system, run the following command:
+All workflow files for removing human reads from metagenomics data are in the [workflow_code](workflow_code) directory. To get a copy of the latest SW_MGRemoveHumanReads-A version on to your system, run the following command:
 
 ```bash
 GL-get-workflow MG-remove-human-reads
@@ -35,8 +35,13 @@ GL-get-workflow MG-remove-human-reads
 
 This downloaded the workflow into a directory called `SW_MGRemoveHumanReads-*/`, with the workflow version number at the end.
 
+> Note: If wanting an earlier version, the wanted version can be provided as an optional argument like so:
+> ```bash
+> GL-get-workflow MG-remove-human-reads --wanted-version 1.0.0
+> ```
+
 ### 3. Modify the variables in the config.yaml file
-Once you've downloaded the workflow template, you can modify the variables in the [config.yaml](workflow_code/SW_MGRemoveHumanReads-A_1.0.0/config.yaml) file as needed. For example, you will have to provide a text file containing a single-column list of unique sample identifiers (see an example of how to set this up below - if you are running the example dataset, this file is provided in the [workflow_code](workflow_code) directory [here](workflow_code/SW_MGRemoveHumanReads-A_1.0.0/unique-sample-IDs.txt)). You will also need to indicate the path to your input data (raw reads) and the root directory for where the kraken2 reference database should be stored (it will be setup automatically). Additionally, if necessary, you'll need to modify each variable in the [config.yaml](workflow_code/SW_MGRemoveHumanReads-A_1.0.0/config.yaml) file to be consistent with the study you want to process and the machine you're using. 
+Once you've downloaded the workflow template, you can modify the variables in the [config.yaml](workflow_code/config.yaml) file as needed. For example, you will have to provide a text file containing a single-column list of unique sample identifiers (see an example of how to set this up below - if you are running the example dataset, this file is provided in the [workflow_code](workflow_code) directory [here](workflow_code/unique-sample-IDs.txt)). You will also need to indicate the path to your input data (raw reads) and the root directory for where the kraken2 reference database should be stored (it will be setup automatically). Additionally, if necessary, you'll need to modify each variable in the [config.yaml](workflow_code/config.yaml) file to be consistent with the study you want to process and the machine you're using. 
 
 > Note: If you are unfamiliar with how to specify paths, one place you can learn more is [here](https://astrobiomike.github.io/unix/getting-started#the-unix-file-system-structure).  
 
@@ -74,14 +79,14 @@ While in the directory holding the Snakefile, config.yaml, and other workflow fi
 snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p
 ```
 
-* `--use-conda` – specifies to use the conda environments included in the workflow (these are specified in the [envs](workflow_code/SW_MGRemoveHumanReads-A_1.0.0/envs) directory)
+* `--use-conda` – specifies to use the conda environments included in the workflow (these are specified in the [envs](workflow_code/envs) directory)
 * `--conda-prefix` – indicates where the needed conda environments will be stored. Adding this option will also allow the same conda environments to be re-used when processing additional datasets, rather than making new environments each time you run the workflow. The value listed for this option, `${CONDA_PREFIX}/envs`, points to the default location for conda environments (note: the variable `${CONDA_PREFIX}` will be expanded to the appropriate location on whichever system it is run on).
 * `-j` – assigns the number of jobs Snakemake should run concurrently (keep in mind that many of the thread and cpu parameters set in the config.yaml file will be multiplied by this)
 * `-p` – specifies to print out each command being run to the screen
 
 See `snakemake -h` and [Snakemake's documentation](https://snakemake.readthedocs.io/en/stable/) for more options and details.
 
-A quick example can be run with the files included in the [workflow_code](workflow_code) directory after specifying a location for the reference database in the [config.yaml](workflow_code/SW_MGRemoveHumanReads-A_1.0.0/config.yaml) file.
+A quick example can be run with the files included in the [workflow_code](workflow_code) directory after specifying a location for the reference database in the [config.yaml](workflow_code/config.yaml) file.
 
 ---
 
