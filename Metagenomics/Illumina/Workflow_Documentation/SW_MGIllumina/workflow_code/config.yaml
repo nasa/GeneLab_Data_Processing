@@ -200,10 +200,10 @@ HUMANN3_UNIREF_TRIGGER_FILE:
     "UNIREF_DB_SETUP"
 HUMANN3_UTILITY_MAPPING_TRIGGER_FILE:
     "UTILITY_MAPPING_SETUP"
-METAPHLAN3_DB_DIR:
-    "metaphlan3-db"
+METAPHLAN4_DB_DIR:
+    "metaphlan4-db"
 METAPHLAN_TRIGGER_FILE:
-    "METAPHLAN3_DB_SETUP"
+    "METAPHLAN4_DB_SETUP"
 
 ## example usage command ##
 # snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p

@@ -811,7 +811,7 @@ if config["single_end_data"] != "TRUE":
 
     rule humann3_PE:
         """
-        This rule runs humann3 and metaphlan3 on each individual sample generating the
+        This rule runs humann3 and metaphlan4 on each individual sample generating the
         read-based functional annotations and taxonomic classifications.
         """
         conda:
@@ -822,13 +822,13 @@ if config["single_end_data"] != "TRUE":
             chocophlan_db_trigger = config["REF_DB_ROOT_DIR"] + config["HUMANN3_DBS_DIR"] + "/" + config["HUMANN3_CHOCOPHLAN_TRIGGER_FILE"],
             uniref_db_trigger = config["REF_DB_ROOT_DIR"] + config["HUMANN3_DBS_DIR"] + "/" + config["HUMANN3_UNIREF_TRIGGER_FILE"],
             utility_db_trigger = config["REF_DB_ROOT_DIR"] + config["HUMANN3_DBS_DIR"] + "/" + config["HUMANN3_UTILITY_MAPPING_TRIGGER_FILE"],
-            metaphlan_db_trigger = config["REF_DB_ROOT_DIR"] + config["METAPHLAN3_DB_DIR"] + "/" + config["METAPHLAN_TRIGGER_FILE"]
+            metaphlan_db_trigger = config["REF_DB_ROOT_DIR"] + config["METAPHLAN4_DB_DIR"] + "/" + config["METAPHLAN_TRIGGER_FILE"]
         params:
             combined_reads = config["read_based_dir"] + "{ID}-reads.tmp.fq.gz",
             output_dir = config["read_based_dir"] + "{ID}-humann3-out-dir",
             tmp_metaphlan = config["read_based_dir"] + "{ID}-humann3-out-dir/{ID}_humann_temp/{ID}_metaphlan_bugs_list.tsv",
             tmp_dir = config["read_based_dir"] + "{ID}-humann3-out-dir/{ID}_humann_temp/",
-            metaphlan_dir = config["REF_DB_ROOT_DIR"] + config["METAPHLAN3_DB_DIR"]
+            metaphlan_dir = config["REF_DB_ROOT_DIR"] + config["METAPHLAN4_DB_DIR"]
         output:
             config["read_based_dir"] + "{ID}-humann3-out-dir/{ID}_genefamilies.tsv",
             config["read_based_dir"] + "{ID}-humann3-out-dir/{ID}_pathabundance.tsv",
@@ -844,7 +844,7 @@ if config["single_end_data"] != "TRUE":
         shell:
             """
             cat {input.R1} {input.R2} > {params.combined_reads}
-            humann --input {params.combined_reads} --output {params.output_dir} --threads {resources.cpus} --output-basename {wildcards.ID} --metaphlan-options "--bowtie2db {params.metaphlan_dir} --unknown_estimation --add_viruses --sample_id {wildcards.ID}" --bowtie-options "--sensitive --mm" > {log} 2>&1
+            humann --input {params.combined_reads} --output {params.output_dir} --threads {resources.cpus} --output-basename {wildcards.ID} --metaphlan-options "--bowtie2db {params.metaphlan_dir} --unclassified_estimation --add_viruses --sample_id {wildcards.ID}" --bowtie-options "--sensitive --mm" > {log} 2>&1
             mv {params.tmp_metaphlan} {output[3]}
             rm -rf {params.combined_reads} {params.tmp_dir}
             """
@@ -854,7 +854,7 @@ else:
 
     rule humann3_SE:
         """
-        This rule runs humann3 and metaphlan3 on each individual sample generating the
+        This rule runs humann3 and metaphlan4 on each individual sample generating the
         read-based functional annotations and taxonomic classifications.
         """
         conda:
@@ -864,12 +864,12 @@ else:
             chocophlan_db_trigger = config["REF_DB_ROOT_DIR"] + config["HUMANN3_DBS_DIR"] + "/" + config["HUMANN3_CHOCOPHLAN_TRIGGER_FILE"],
             uniref_db_trigger = config["REF_DB_ROOT_DIR"] + config["HUMANN3_DBS_DIR"] + "/" + config["HUMANN3_UNIREF_TRIGGER_FILE"],
             utility_db_trigger = config["REF_DB_ROOT_DIR"] + config["HUMANN3_DBS_DIR"] + "/" + config["HUMANN3_UTILITY_MAPPING_TRIGGER_FILE"],
-            metaphlan_db_trigger = config["REF_DB_ROOT_DIR"] + config["METAPHLAN3_DB_DIR"] + "/" + config["METAPHLAN_TRIGGER_FILE"]
+            metaphlan_db_trigger = config["REF_DB_ROOT_DIR"] + config["METAPHLAN4_DB_DIR"] + "/" + config["METAPHLAN_TRIGGER_FILE"]
         params:
             output_dir = config["read_based_dir"] + "{ID}-humann3-out-dir",
             tmp_metaphlan = config["read_based_dir"] + "{ID}-humann3-out-dir/{ID}_humann_temp/{ID}_metaphlan_bugs_list.tsv",
             tmp_dir = config["read_based_dir"] + "{ID}-humann3-out-dir/{ID}_humann_temp/",
-            metaphlan_dir = config["REF_DB_ROOT_DIR"] + config["METAPHLAN3_DB_DIR"]
+            metaphlan_dir = config["REF_DB_ROOT_DIR"] + config["METAPHLAN4_DB_DIR"]
         output:
             config["read_based_dir"] + "{ID}-humann3-out-dir/{ID}_genefamilies.tsv",
             config["read_based_dir"] + "{ID}-humann3-out-dir/{ID}_pathabundance.tsv",
@@ -884,7 +884,7 @@ else:
             "benchmarks/run_humann3-{ID}-benchmarks.tsv"
         shell:
             """
-            humann --input {input.R1} --output {params.output_dir} --threads {resources.cpus} --output-basename {wildcards.ID} --metaphlan-options "--bowtie2db {params.metaphlan_dir} --unknown_estimation --add_viruses --sample_id {wildcards.ID}" --bowtie-options "--sensitive --mm" > {log} 2>&1
+            humann --input {input.R1} --output {params.output_dir} --threads {resources.cpus} --output-basename {wildcards.ID} --metaphlan-options "--bowtie2db {params.metaphlan_dir} --unclassified_estimation --add_viruses --sample_id {wildcards.ID}" --bowtie-options "--sensitive --mm" > {log} 2>&1
             mv {params.tmp_metaphlan} {output[3]}
             rm -rf {params.tmp_dir}
             """
@@ -1871,10 +1871,10 @@ rule setup_humann3_dbs:
         chocophlan_db_trigger = config["REF_DB_ROOT_DIR"] + config["HUMANN3_DBS_DIR"] + "/" + config["HUMANN3_CHOCOPHLAN_TRIGGER_FILE"],
         uniref_db_trigger = config["REF_DB_ROOT_DIR"] + config["HUMANN3_DBS_DIR"] + "/" + config["HUMANN3_UNIREF_TRIGGER_FILE"],
         utility_db_trigger = config["REF_DB_ROOT_DIR"] + config["HUMANN3_DBS_DIR"] + "/" + config["HUMANN3_UTILITY_MAPPING_TRIGGER_FILE"],
-        metaphlan_db_trigger = config["REF_DB_ROOT_DIR"] + config["METAPHLAN3_DB_DIR"] + "/" + config["METAPHLAN_TRIGGER_FILE"]
+        metaphlan_db_trigger = config["REF_DB_ROOT_DIR"] + config["METAPHLAN4_DB_DIR"] + "/" + config["METAPHLAN_TRIGGER_FILE"]
     params:
         humann3_dbs_dir = config["REF_DB_ROOT_DIR"] + config["HUMANN3_DBS_DIR"],
-        metaphlan_dir = config["REF_DB_ROOT_DIR"] + config["METAPHLAN3_DB_DIR"]
+        metaphlan_dir = config["REF_DB_ROOT_DIR"] + config["METAPHLAN4_DB_DIR"]
     log:
         config["logs_dir"] + "setup-humann3-dbs.log"
     benchmark:

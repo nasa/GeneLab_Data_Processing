@@ -38,6 +38,11 @@ GL-get-workflow MG-Illumina
 
 This downloaded the workflow into a directory called `SW_MGIllumina_*/`, with the workflow version number at the end.
 
+> Note: If wanting an earlier version, the wanted version can be provided as an optional argument like so:
+> ```bash
+> GL-get-workflow MG-Illumina --wanted-version 1.0.0
+> ```
+
 ### 3. Modify the variables in the config.yaml file
 Once you've downlonaded the workflow template, you can modify the variables in your downloaded version of the [config.yaml](workflow_code/config.yaml) file as needed in order to match your dataset and system setup. For example, you will have to provide a text file containing a single-column list of unique sample identifiers (see an example of how to set this up below). You will also need to indicate the paths to your input data (raw reads) and the root directory for where the reference databases should be stored (they will be setup automatically). Additionally, if necessary, you'll need to modify each variable in the config.yaml file to be consistent with the study you want to process and the machine you're using. 
 

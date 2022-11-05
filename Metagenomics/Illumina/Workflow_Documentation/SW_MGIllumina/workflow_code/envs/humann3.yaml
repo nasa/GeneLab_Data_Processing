@@ -4,4 +4,5 @@ channels:
     - defaults
     - biobakery
 dependencies:
-    - humann=3.0.0
+    - humann=3.5
+    - metaphlan=4.0.1

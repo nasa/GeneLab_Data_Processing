@@ -6,6 +6,8 @@
 
 |Pipeline Version|Current Workflow Version (for respective pipeline version)|
 |:---------------|:---------------------------------------------------------|
-|*[GL-DPPD-7107.md](../Pipeline_GL-DPPD-7107_Versions/GL-DPPD-7107.md)|[1.0.0](SW_MGIllumina)|
+|*[GL-DPPD-7107.md](../Pipeline_GL-DPPD-7107_Versions/GL-DPPD-7107.md)|[2.0.0](SW_MGIllumina)|
 
 *Current GeneLab Pipeline/Workflow Implementation
+
+> See the [workflow change log](SW_MGIllumina/CHANGELOG.md) to access previous workflow versions and view all changes associated with each version update.
