@@ -40,7 +40,7 @@ This downloaded the workflow into a directory called `SW_MGIllumina_*/`, with th
 
 > Note: If wanting an earlier version, the wanted version can be provided as an optional argument like so:
 > ```bash
-> GL-get-workflow MG-Illumina --wanted-version 1.0.0
+> GL-get-workflow MG-Illumina --wanted-version 2.0.0
 > ```
 
 ### 3. Modify the variables in the config.yaml file
