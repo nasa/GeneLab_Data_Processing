@@ -877,7 +877,7 @@ gtdbtk classify_wf --genome_dir MAGs/ -x fa --out_dir gtdbtk-output-dir
 ### 15. Generating MAG-level functional summary overview
 
 #### 15a. Getting KO annotations per MAG
-This utilizes the helper script [`parse-MAG-annots.py`](../Workflow_Documentation/SW_MGIllumina/workflow_code/SW_MGIllumina_1.0.0/scripts/parse-MAG-annots.py).
+This utilizes the helper script [`parse-MAG-annots.py`](../Workflow_Documentation/SW_MGIllumina/workflow_code/scripts/parse-MAG-annots.py).
 
 ```bash
 for file in $( ls MAGs/*.fasta )
