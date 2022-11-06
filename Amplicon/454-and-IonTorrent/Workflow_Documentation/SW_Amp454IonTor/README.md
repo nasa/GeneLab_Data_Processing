@@ -35,9 +35,13 @@ GL-get-workflow Amplicon-454-IonTorrent
 
 This downloaded the workflow into a directory called `SW_Amp454IonTor_*/`, with the workflow version number at the end.
 
+> Note: If wanting an earlier version, the wanted version can be provided as an optional argument like so:
+> ```bash
+> GL-get-workflow Amplicon-454-IonTorrent --wanted-version 1.0.0
+> ```
 
 ### 3. Modify the variables in the config.yaml file
-Once you've downlonaded the workflow template, you can modify the variables in the [config.yaml](workflow_code/SW_Amp454IonTor_1.0.0/config.yaml) file as needed. For example, you will have to provide a text file containing a single-column list of unique sample identifiers (see an example of how to set this up below). You will also need to indicate the paths to your input data (raw reads) and, if necessary, modify each variable to be consistent with the study you want to process.
+Once you've downlonaded the workflow template, you can modify the variables in the [config.yaml](workflow_code/config.yaml) file as needed. For example, you will have to provide a text file containing a single-column list of unique sample identifiers (see an example of how to set this up below). You will also need to indicate the paths to your input data (raw reads) and, if necessary, modify each variable to be consistent with the study you want to process.
 
 > Note: If you are unfamiliar with how to specify paths, one place you can learn more is [here](https://astrobiomike.github.io/unix/getting-started#the-unix-file-system-structure).  
 
@@ -75,7 +79,7 @@ While in the directory holding the Snakefile, config.yaml, and other workflow fi
 snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p
 ```
 
-* `--use-conda` – specifies to use the conda environments included in the workflow (these are specified in the [envs](workflow_code/SW_Amp454IonTor_1.0.0/envs) sub-directory of the workflow code)
+* `--use-conda` – specifies to use the conda environments included in the workflow (these are specified in the [envs](workflow_code/envs) sub-directory of the workflow code)
 * `--conda-prefix` – indicates where the needed conda environments will be stored. Adding this option will also allow the same conda environments to be re-used when processing additional datasets, rather than making new environments each time you run the workflow. The value listed for this option, `${CONDA_PREFIX}/envs`, points to the default location for conda environments (note: the variable `${CONDA_PREFIX}` will be expanded to the appropriate location on whichever system it is run on).
 * `-j` – assigns the number of jobs Snakemake should run concurrently
 * `-p` – specifies to print out each command being run to the screen
