@@ -43,14 +43,17 @@ BiocManager::install("rtracklayer", version = 3.15)
 
 ### 2. Download the Workflow Files
 
-All files required for utilizing the GL_RefAnnotTable workflow for generating reference annotation tables are in the [workflow_code](workflow_code) directory. To get a 
-copy of latest GL_RefAnnotTable version on to your system, copy the github web address of the [latest GL_RefAnnotTable version](workflow_code/GL_RefAnnotTable_1.0), then paste it into [GitZip here](http://kinolien.github.io/gitzip/), and click download. 
+All files required for utilizing the GL_RefAnnotTable workflow for generating reference annotation tables are in the [workflow_code](workflow_code) directory. To get a copy of latest GL_RefAnnotTable version on to your system, run the following command:
+
+```bash
+curl -LO https://github.com/nasa/GeneLab_Data_Processing/releases/download/GL_RefAnnotTable_1.0.0/GL_RefAnnotTable_1.0.0.zip
+``` 
 
 <br>
 
 ### 3. Setup Execution Permission for Workflow Scripts
 
-Once you've downloaded the GL_RefAnnotTable workflow directory as a zip file, unzip the workflow then `cd` into the GL_RefAnnotTable directory on the CLI. Next, run the following command to set the execution permissions for the R script:
+Once you've downloaded the GL_RefAnnotTable workflow directory as a zip file, unzip the workflow then `cd` into the GL_RefAnnotTable_1.0.0 directory on the CLI. Next, run the following command to set the execution permissions for the R script:
 
 ```bash
 chmod -R u+x *R
