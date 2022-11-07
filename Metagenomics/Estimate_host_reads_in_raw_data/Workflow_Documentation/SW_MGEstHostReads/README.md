@@ -6,7 +6,7 @@ The current pipeline for how GeneLab estimates host DNA in Illumina metagenomics
 
 ## Utilizing the workflow
 
-1. [Install conda, mamba, and `genelab-utils` package](#1-install-conda-and-genelab-utils-package)  
+1. [Install conda, mamba, and `genelab-utils` package](#1-install-conda-mamba-and-genelab-utils-package)  
 2. [Download the workflow template files](#2-download-the-workflow-template-files)  
 3. [Modify the variables in the config.yaml file](#3-modify-the-variables-in-the-configyaml-file)  
 4. [Run the workflow](#4-run-the-workflow)  
