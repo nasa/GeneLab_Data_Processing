@@ -20,7 +20,7 @@ We recommend installing a Miniconda, Python3 version appropriate for your system
 Once conda is installed on your system, we recommend installing [mamba](https://github.com/mamba-org/mamba#mamba), as it generally allows for much faster conda installations:
 
 ```bash
-conda install -c conda-forge mamba
+conda install -n base -c conda-forge mamba
 ```
 
 > You can read a quick intro to mamba [here](https://astrobiomike.github.io/unix/conda-intro#bonus-mamba-no-5) if wanted.
