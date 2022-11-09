@@ -6,18 +6,26 @@ The current pipeline for how GeneLab identifies and removes human DNA in Illumin
 
 ## Utilizing the workflow
 
-1. [Install conda and `genelab-utils` package](#1-install-conda-and-genelab-utils-package)  
+1. [Install conda, mamba, and `genelab-utils` package](#1-install-conda-mamba-and-genelab-utils-package)  
 2. [Download the workflow template files](#2-download-the-workflow-template-files)  
 3. [Modify the variables in the config.yaml file](#3-modify-the-variables-in-the-configyaml-file)  
-4. [Run the workflow](#4-run-the-workflow)   
+4. [Run the workflow](#4-run-the-workflow)  
 
-### 1. Install conda and `genelab-utils` package
+### 1. Install conda, mamba, and `genelab-utils` package
 We recommend installing a Miniconda, Python3 version appropriate for your system, as exemplified in [the above link](https://astrobiomike.github.io/unix/conda-intro#getting-and-installing-conda).  
 
-Once conda is installed on your system, you can install the genelab-utils conda package in a new environment with the following command:
+Once conda is installed on your system, we recommend installing [mamba](https://github.com/mamba-org/mamba#mamba), as it generally allows for much faster conda installations:
 
 ```bash
-conda create -n genelab-utils -c conda-forge -c bioconda -c defaults -c astrobiomike 'genelab-utils>=1.1.02'
+conda install -n base -c conda-forge mamba
+```
+
+> You can read a quick intro to mamba [here](https://astrobiomike.github.io/unix/conda-intro#bonus-mamba-no-5) if wanted.
+
+Once mamba is installed, you can install the genelab-utils conda package in a new environment with the following command:
+
+```bash
+mamba create -n genelab-utils -c conda-forge -c bioconda -c defaults -c astrobiomike 'genelab-utils>=1.1.02'
 ```
 
 The environment then needs to be activated:
