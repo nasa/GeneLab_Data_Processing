@@ -1,19 +1,21 @@
-# GeneLab bioinformatics processing pipeline for Agilent 1 Channel Microarray Datasets <!-- omit in toc -->
+# GeneLab bioinformatics processing pipeline for Agilent 1-channel microarray data <!-- omit in toc -->
 
-> **This page holds an overview and instructions for how GeneLab processes Agilent 1 Channel microarray datasets. Exact processing commands and GL-DPPD-NNNN version used for specific datasets are available in the 
-[GLDS_Processing_Scripts](../GLDS_Processing_Scripts) directory and processed data output files are provided in the [GeneLab Data Systems 
+> **This page holds an overview and instructions for how GeneLab processes Agilent 1-channel microarray datasets. Exact processing commands and GL-DPPD-XXXX version used for specific datasets are provided with their processed data in the [GeneLab Data Systems 
 (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
 ---
 
-**Date:** TBD MONTH NN, 2022
+**Date:** TBD MONTH NN, 2023  
 **Revision:** -  
-**Document Number:** GL-DPPD-NNNN
+**Document Number:** GL-DPPD-XXXX   
 
 **Submitted by:**  
 Jonathan Oribello (GeneLab Data Processing Team)
 
 **Approved by:**  
-TBD
+Sylvain Costes (GeneLab Project Manager) 
+Samrawit Gebre (GeneLab Deputy Project Manager) 
+Amanda Saravia-Butler (GeneLab Data Processing Lead) 
+Lauren Sanders (acting GeneLab Project Scientist) 
 
 ---
 
@@ -55,9 +57,9 @@ TBD
 
 # General processing overview with example commands  
 
-> Exact processing commands for specific datasets are provided in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) directory.
+> Exact processing commands for specific datasets that have been released are provided with their processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
 > 
-> All output files marked with a \# are published for each DNA Microarray processed dataset in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects). 
+> All output files marked with a \# are published with the microarray processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects). 
 
 ---
 
