@@ -65,18 +65,20 @@ Lauren Sanders (acting GeneLab Project Scientist)
 
 ### 1. Create Sample RunSheet
 
-> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_Agile1CMP-A/examples/README.md).
-> Note: These command line tools are part of dp_tools
+> Notes: 
+> - Rather than running the commands below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_Agile1CMP-A/examples/README.md).
+> 
+> - These command line tools are part of the [dp_tools](https://github.com/J-81/dp_tools) program.
 
 ```bash
 ### Download the *ISA.zip file from the GeneLab Repository ###
 
 dpt-get-isa-archive \
- --accession GLDS-###
+ --accession OSD-###
 
 ### Parse the metadata from the *ISA.zip file to create a sample runsheet ###
 
-dpt-isa-to-runsheet --accession GLDS-### \
+dpt-isa-to-runsheet --accession OSD-### \
  --config-type microarray \
  --config-version Latest \
  --isa-archive *ISA.zip
@@ -84,7 +86,7 @@ dpt-isa-to-runsheet --accession GLDS-### \
 
 **Parameter Definitions:**
 
-- `--accession GLDS-###` - GLDS accession ID (replace ### with the GLDS number being processed), used to retrieve the urls for the ISA archive and raw reads hosted on the GeneLab Repository
+- `--accession OSD-###` - OSD accession ID (replace ### with the OSD number being processed), used to retrieve the urls for the ISA archive and raw expression files hosted on the GeneLab Repository
 - `--config-type` - Instructs the script to extract the metadata required for `microarray` processing from the ISA archive
 - `--config-version` - Specifies the `dp-tools` configuration version to use, a value of `Latest` will specify the most recent version
 - `--isa-archive` - Specifies the *ISA.zip file for the respective GLDS dataset, downloaded in the `dpt-get-isa-archive` command
@@ -92,13 +94,13 @@ dpt-isa-to-runsheet --accession GLDS-### \
 
 **Input Data:**
 
-- No input data required but the GLDS accession ID needs to be indicated, which is used to download the respective ISA archive 
+- No input data required but the OSD accession ID needs to be indicated, which is used to download the respective ISA archive 
 
 **Output Data:**
 
-- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, used to define sample groups - the *ISA.zip file is located in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) under 'Study Files' -> 'metadata')
+- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective OSD dataset, used to define sample groups - the *ISA.zip file is located in the [OSD repository](https://osdr.nasa.gov/bio/repo/search?q=&data_source=cgene,alsda&data_type=study) under 'Study Files' -> 'metadata')
 
-- {GLDS-Accession-ID}_microarray_v{version}_runsheet.csv\# (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
+- {OSD-Accession-ID}_microarray_v{version}_runsheet.csv\# (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
 
 <br>
 
