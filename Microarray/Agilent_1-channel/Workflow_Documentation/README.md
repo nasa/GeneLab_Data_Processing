@@ -1,6 +1,6 @@
 # GeneLab Microarray Agilent 1-channel Workflow Information
 
-> **GeneLab has wrapped each step of the microarray Agilent 1-channel pipeline into a workflow with validation and verification of output files built in after each step. The table below lists (and links to) each MAAgilent1ch version and the corresponding workflow subdirectory, the current MAAgilent1ch/workflow implementation is indicated. Each workflow subdirectory contains information about the workflow along with instructions for installation and usage. Exact workflow run info and MAAgilent1ch version used to process specific datasets that have been released are provided along with processed data in the [OSD Repository](https://osdr.nasa.gov/bio/repo/search?q=&data_source=cgene,alsda&data_type=study).**  
+> **GeneLab has wrapped each step of the microarray Agilent 1-channel (MAAgilent1ch) pipeline into a workflow with validation and verification of output files built in after each step. The table below lists (and links to) each MAAgilent1ch version and the corresponding workflow subdirectory, the current MAAgilent1ch/workflow implementation is indicated. Each workflow subdirectory contains information about the workflow along with instructions for installation and usage. Exact workflow run info and MAAgilent1ch version used to process specific datasets that have been released are provided along with processed data in the [OSD Repository](https://osdr.nasa.gov/bio/repo/search?q=&data_source=cgene,alsda&data_type=study).**  
 
 ## MAAgilent1ch Version and Corresponding Workflow
 
