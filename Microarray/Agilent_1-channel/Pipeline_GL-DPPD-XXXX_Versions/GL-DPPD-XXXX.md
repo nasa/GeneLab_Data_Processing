@@ -337,6 +337,7 @@ norm_data <- limma::backgroundCorrect(raw_data, method = "normexp")
 **Output Data:**
 
 - `norm_data` (R object containing background-corrected microarray data)
+  >
   > Note: Background correction was performed using the `normexp`, <insert description of what this does>
 
 <br>
