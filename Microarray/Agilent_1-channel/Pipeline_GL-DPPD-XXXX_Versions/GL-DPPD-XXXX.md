@@ -337,8 +337,9 @@ norm_data <- limma::backgroundCorrect(raw_data, method = "normexp")
 **Output Data:**
 
 - `norm_data` (R object containing background-corrected microarray data)
+
   >   
-  > Note: Background correction was performed using the `normexp`, <insert description of what this does>
+  > Note: Background correction was performed using the `normexp` method, TODO: insert description of what this does
 
 <br>
 
@@ -362,6 +363,9 @@ print(paste0("Number of Probes: ", dim(norm_data)[1]))
 **Output Data:**
 
 - `norm_data` (R object containing background-corrected and normalized microarray data)
+ 
+  >   
+  > Note: Background correction was performed using the `quantile` method, TODO: insert description of what this does
 
 <br>
 
