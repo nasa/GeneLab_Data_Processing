@@ -441,11 +441,11 @@ boxplotExpressionSafeMargin(norm_data)
 
 ## 7. Probeset Differential Expression
 
+<br>
 
+### 7a. Add Probeset Annotations
 
-```r
-### Add Probe Annotations
-
+```R
 shortenedOrganismName <- function(long_name) {
   #' Convert organism names like 'Homo Sapiens' into 'hsapiens'
 
