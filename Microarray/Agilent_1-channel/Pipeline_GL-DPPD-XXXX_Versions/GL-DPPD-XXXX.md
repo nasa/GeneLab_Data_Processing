@@ -43,6 +43,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
       - [7b. Summarize Biomart Mapping vs. Manufacturer Mapping](#7b-summarize-biomart-mapping-vs-manufacturer-mapping)
       - [7c. Generate Design Matrix](#7c-generate-design-matrix)
       - [7d. Perform Individual Probe Level DE](#7d-perform-individual-probe-level-de)
+      - [7e. Add Additional Columns and Format DE Table](#7e-add-additional-columns-and-format-de-table)
 
 ---
 
@@ -448,8 +449,6 @@ boxplotExpressionSafeMargin(norm_data)
 ```R
 shortenedOrganismName <- function(long_name) {
   #' Convert organism names like 'Homo Sapiens' into 'hsapiens'
-
-  # tokenize
   tokens <- long_name %>% stringr::str_split(" ", simplify = TRUE)
   genus_name <- tokens[1]
 
@@ -460,13 +459,14 @@ shortenedOrganismName <- function(long_name) {
   return(short_name)
 }
 
+
 # locate dataset
 expected_dataset_name <- shortenedOrganismName(unique(df_rs$organism)) %>% stringr::str_c("_gene_ensembl")
 print(paste0("Expected dataset name: '", expected_dataset_name, "'"))
 
-ENSEMBL_VERSION <- '108'
 
-print(paste0("Searching for Ensembl Version: ", ENSEMBL_VERSION))
+# Specify Ensembl version used in current GeneLab reference annotations
+ENSEMBL_VERSION <- '107'
 
 ensembl <- biomaRt::useEnsembl(biomart = "genes", 
                                dataset = expected_dataset_name,
@@ -476,8 +476,6 @@ print(ensembl)
 
 getBioMartAttribute <- function(df_rs, params) {
   #' Returns resolved biomart attribute
-  #' this either comes from the runsheet or as a fall back, the parameters injected during render
-  #' if neither exist, an error is thrown
 
   # check if runsheet has Array Design REF
   if ( !is.null(df_rs$`Array Design REF`) ) {
@@ -493,7 +491,7 @@ getBioMartAttribute <- function(df_rs, params) {
     return(params$biomart_attribute)
   }
 
-  # finally throw error if neither guard condition was true
+  # finally throw an error if neither guard condition was true
   stop("No valid biomart attribute identified")
 }
 
@@ -508,6 +506,8 @@ if ( is.integer(params$DEBUG_limit_biomart_query) ) {
   probe_ids <- probe_ids[1:params$DEBUG_limit_biomart_query]
 }
 
+
+# Create probe map
 df_mapping <- biomaRt::getBM(
     attributes = c(
         expected_attribute_name,
@@ -519,6 +519,8 @@ df_mapping <- biomaRt::getBM(
         values = c(probe_ids), 
         mart = ensembl)
 
+
+# Convert list of multi-mapped genes to string
 listToUniquePipedString <- function(str_list) {
   #! convert lists into strings denoting unique elements separated by '|' characters
   #! e.g. c("GO1","GO2","GO2","G03") -> "GO1|GO2|GO3"
@@ -526,7 +528,7 @@ listToUniquePipedString <- function(str_list) {
 }
 
 unique_probe_ids <- df_mapping %>% 
-                      dplyr::group_by(!!sym(expected_attribute_name)) %>% # note: '!!sym(VAR)' syntax allows usage of variable 'VAR' in dplyr functions due to NSE. ref: https://dplyr.tidyverse.org/articles/programming.html
+                      dplyr::group_by(!!sym(expected_attribute_name)) %>% 
                       dplyr::summarise(
                         SYMBOL = listToUniquePipedString(uniprot_gn_symbol),
                         ENSEMBL = listToUniquePipedString(ensembl_gene_id),
@@ -540,13 +542,30 @@ unique_probe_ids <- df_mapping %>%
 norm_data$genes <- norm_data$genes %>% 
   dplyr::left_join(unique_probe_ids, by = c("ProbeName" = expected_attribute_name ) ) %>%
   dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) )
+```
 
-### Summarize Remapping VS Original Mapping
+**Input Data:**
 
+- `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
+- `df_rs$'Array Design REF'` (array design reference specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
+- Ensembl version (reference organism Ensembl version indicated in the `ensemblVersion` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
+- `probe_ids` (probe IDs for each probe associated with the `norm_data` R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
+
+**Output Data:**
+
+- `df_mapping` (R object containing a map of each probe ID to the respective Biomart Ensembl ID(s), gene symbol(s) and GO slim ID(s)) 
+- `unique_probe_ids` (R object containing probe IDs that map uniquely to an Ensembl ID and feature)
+- Should this just be `norm_data$genes`???
+
+<br>
+
+### 7b. Summarize Biomart Mapping vs. Manufacturer Mapping
+
+```R
 describeMapping <- function(stats) {
   my_label <- scales::label_percent(accuracy = 0.01, prefix="(", suffix = "%)")
   percentOfUniqueProbes <- function(num) {
-    #' Gives number as a percent of unique probes (defined in outer scope)
+    #' Gives number as a percent of unique probes 
     
     return(my_label(num / stats$count_unique_probe))
   }
@@ -657,20 +676,37 @@ calculateMappingStats <- function(df_genes) {
 
 
 calculateMappingStats(norm_data$genes) %>% describeMapping()
+```
 
-### Generate Design Matrix
+**Input Data:**
 
+- ???
+
+**Output Data:**
+
+- Indicate what's included in the mapping summary - let's go over each of these.
+
+<br>
+
+### 7c. Generate Design Matrix
+
+```R
+# Pull all factors for each sample in the study from the runsheet created in Step 1
 runsheetToDesignMatrix <- function(runsheet_path) {
     df = read.csv(runsheet_path)
     # get only Factor Value columns
     factors = as.data.frame(df[,grep("Factor.Value", colnames(df), ignore.case=TRUE)])
     colnames(factors) = paste("factor",1:dim(factors)[2], sep= "_")
-
+    
+    # Load metadata from runsheet csv file
     compare_csv = data.frame(sample_id = df[,c("Sample.Name")], factors)
 
+    # Create data frame containing all samples and respective factors
     study <- as.data.frame(compare_csv[,2:dim(compare_csv)[2]])
     colnames(study) <- colnames(compare_csv)[2:dim(compare_csv)[2]]
     rownames(study) <- compare_csv[,1] 
+    
+    # Format groups and indicate the group that each sample belongs to
     if (dim(study)[2] >= 2){
         group<-apply(study,1,paste,collapse = " & ") # concatenate multiple factors into one condition per sample
     } else{
@@ -680,6 +716,7 @@ runsheetToDesignMatrix <- function(runsheet_path) {
     group <- sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", group))) # group naming compatible with R models, this maintains the default behaviour of make.names with the exception that 'X' is never prepended to group namesnames(group) <- group_names
     names(group) <- group_names
 
+    # Format contrasts table, defining pairwise comparisons for all groups
     contrast.names <- combn(levels(factor(names(group))),2) # generate matrix of pairwise group combinations for comparison
     contrasts <- apply(contrast.names, MARGIN=2, function(col) sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", stringr::str_sub(col, 2, -2)))))
     contrast.names <- c(paste(contrast.names[1,],contrast.names[2,],sep = "v"),paste(contrast.names[2,],contrast.names[1,],sep = "v")) # format combinations for output table files names
@@ -695,13 +732,26 @@ runsheetToDesignMatrix <- function(runsheet_path) {
     design_data <- list( matrix = design, mapping = names_mapping, groups = as.data.frame( cbind(sample = df[,c("Sample.Name")], group = group_names) ) )
     return(design_data)
 }
+
+
 # Loading metadata from runsheet csv file
 design_data <- runsheetToDesignMatrix(params$runsheet)
 design <- design_data$matrix
+```
 
-### Perform Individual Probe Level DE
+**Input Data:**
 
-print("Here DE is performed")
+- `params$runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
+
+**Output Data:**
+
+- `design` (R object containing the study design matrix, indicating the group that each sample belongs to)
+
+<br>
+
+### 7d. Perform Individual Probe Level DE
+
+```R
 lmFitPairwise <- function(norm_data, design) {
     #' Perform all pairwise comparisons
 
@@ -709,7 +759,7 @@ lmFitPairwise <- function(norm_data, design) {
 
     fit <- limma::lmFit(norm_data, design)
 
-    ### Create Contrast Model
+    # Create Contrast Model
     fit.groups <- colnames(fit$design)[which(fit$assign == 1)]
     combos <- combn(fit.groups,2)
     contrasts<-c(paste(combos[1,],combos[2,],sep = "-"),paste(combos[2,],combos[1,],sep = "-")) # format combinations for limma:makeContrasts
@@ -720,38 +770,39 @@ lmFitPairwise <- function(norm_data, design) {
     return(contrast.fit)
 }
 
-print("All probes")
+# Calculate results
 res <- lmFitPairwise(norm_data, design)
-DT::datatable(limma::topTable(res))
+
+# Print DE table, without filtering
 NO_FILTER_DGE = paste0(params$id, "_INTERIM_no_filtering.csv")
 limma::write.fit(res, adjust = 'BH', 
                 file = NO_FILTER_DGE,
                 row.names = FALSE,
                 quote = TRUE,
                 sep = ",")
+```
 
+**Input Data:**
 
-### Reformat Table
+- `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
+- `design` (R object containing the study design matrix, indicating the group that each sample belongs to, created in [Step 7c](#7c-generate-design-matrix) above)
 
-This is for consistency across DE analyses tables within GeneLab.
+**Output Data:**
 
-* Rework column names
-* Add normalized counts for each sample to the table
+- `*_INTERIM_no_filtering.csv` (???)
 
-## Normal Model
+<br>
+
+### 7e. Add Additional Columns and Format DE Table 
+
+```R
+## Reformat Table for consistency across DE analyses tables within GeneLab ##
+
+# Read in DE table 
 df_interim <- read.csv(NO_FILTER_DGE)
 
-
+# Reformat column names
 reformat_names <- function(colname, group_name_mapping) {
-  #! Converts from:
-  #!    "P.value.adj.conditionWild.Type...Space.Flight...1st.generation.conditionWild.Type...Ground.Control...4th.generation"
-  #! to something like:
-  #! "Adj.p.value(Wild Type & Space Flight & 1st generation)v(Wild Type & Ground Control & 4th generation)"
-  #! Since two groups are expected to be replace, ensure replacements happen in pairs
-
-  # Remove 'condition' from group names
-  ## This was introduced while creating design matrix
-  # Rename other columns for consistency across genomics related DE outputs
   new_colname <- colname  %>% 
                   stringr::str_replace(pattern = "^P.value.adj.condition", replacement = "Adj.p.value_") %>%
                   stringr::str_replace(pattern = "^P.value.condition", replacement = "P.value_") %>%
@@ -762,6 +813,7 @@ reformat_names <- function(colname, group_name_mapping) {
                   stringr::str_replace(pattern = stringr::fixed("Genes.ENSEMBL"), replacement = "ENSEMBL") %>% 
                   stringr::str_replace(pattern = stringr::fixed("Genes.GOSLIM_IDS"), replacement = "GOSLIM_IDS") %>% 
                   stringr::str_replace(pattern = ".condition", replacement = "v")
+  
   # remap to group names before make.names was applied
   for ( i in seq(nrow(group_name_mapping)) ) {
     safe_name <- group_name_mapping[i,]$safe_name
@@ -774,12 +826,14 @@ reformat_names <- function(colname, group_name_mapping) {
 
 df_interim <- df_interim %>% dplyr::rename_with( reformat_names, group_name_mapping = design_data$mapping )
 
-# Concatenate Expression Values for each sample
+
+# Concatenate expression values for each sample
 df_interim <- df_interim %>% dplyr::bind_cols(norm_data$E)
 
-#### Add Group Wise Statistics
 
-* Group mean and standard deviations for normalized expression values are computed and added to the table
+## Add Group Wise Statistics ##
+
+# Group mean and standard deviations for normalized expression values are computed and added to the table
 
 unique_groups <- unique(design_data$group$group)
 for ( i in seq_along(unique_groups) ) {
@@ -793,6 +847,7 @@ for ( i in seq_along(unique_groups) ) {
                         group == current_group
                       ) %>% 
                       dplyr::pull()
+  #### THIS IS DIFFERENT FROM HTML ####                    
   print(glue::glue("Computing mean and standard deviation for Group {i} of {length(unique_groups)}"))
   print(glue::glue("Group: {current_group}"))
   print(glue::glue("Samples in Group: '{toString(current_samples)}'"))
@@ -827,9 +882,16 @@ df_interim <- df_interim %>% dplyr::select(-any_of(colnames_to_remove))
 
 # Save to file
 write.csv(df_interim, paste0(params$id, "_differential_expression.csv"), row.names = FALSE)
-
-### Summarize DE
-
-print(colnames(df_interim))
-DT::datatable(df_interim[1000:1010,], caption = 'Displaying records 1000 - 1010')
 ```
+
+**Input Data:**
+
+- `*_INTERIM_no_filtering.csv` (???, output from [Step 7d](#7d-perform-individual-probe-level-de) above)
+
+**Output Data:**
+
+- SampleTable.csv\# (table containing samples and their respective groups - ### I don't see this outputted here and shoudn't it be outputted in 7c? ###)
+- contrasts.csv\# (table containing all pairwise comparisons - ### I don't see this outputted here and shoudn't it be outputted in 7c? ###)
+- visualization_output_table.csv (file used to generate GeneLab DGE visualizations - ### I don't see where this outputted here ###)
+- visualization_PCA_table.csv (file used to generate GeneLab PCA plots - ### I don't see where this calculated or outputted here ###)
+- differential_expression.csv\# (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
