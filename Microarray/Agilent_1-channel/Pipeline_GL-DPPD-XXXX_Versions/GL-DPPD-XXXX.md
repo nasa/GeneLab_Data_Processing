@@ -70,7 +70,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
 
 ---
 
-### 1. Create Sample RunSheet
+## 1. Create Sample RunSheet
 
 > Notes: 
 > - Rather than running the commands below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_Agile1CMP-A/examples/README.md).
@@ -113,9 +113,9 @@ dpt-isa-to-runsheet --accession OSD-### \
 
 ---
 
-### 2. Load Metadata and Raw Data
+## 2. Load Metadata and Raw Data
 
-> Steps 2 - 7 are done in R
+> Note: Steps 2 - 7 are done in R
 
 ```R
 # fileEncoding removes strange characters from the column names
@@ -195,26 +195,31 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 
 ---
 
-### 3. Raw Data Quality Assessment
+## 3. Raw Data Quality Assessment
 
 <br>
 
-#### 3a. Density Plot
+### 3a. Density Plot
 
 ```R
-### Density Plot
-#| fig-cap: Density of raw intensities for each array.  These are raw intensity values with background intensity values subtracted.  A lack of overlap indicates a need for normalization.
-#| warning: false
-#| fig-height: !expr length(rownames(raw_data$targets)) / 2.5 # Dynamically setting figure height to prevent legend from being cutoff for many arrays
 limma::plotDensities(raw_data, 
                      log = TRUE, 
                      legend = "topright")
+```
 
-### Psuedoimage Plots
+**Input Data:**
 
-#| warning: false # NAN can be produced due to log transformations
-#| layout-ncol: 2
+- `raw_data` (raw data R object created in [Step 2](#2-load-metadata-and-raw-data) above)
 
+**Output Data:**
+
+- Plot containing the density of raw intensities for each array (raw intensity values with background intensity values subtracted; lack of overlap indicates a need for normalization)
+
+<br>
+
+### 3b. Pseudo Image Plots
+
+```R
 agilentImagePlot <- function(eListRaw) {
   # Adapted from this discussion: https://support.bioconductor.org/p/15523/
   copy_raw_data <- eListRaw
@@ -235,10 +240,19 @@ agilentImagePlot <- function(eListRaw) {
 }
 
 agilentImagePlot(raw_data)
+```
 
+**Input Data:**
 
-### MA Plots
+- `raw_data` (raw data R object created in [Step 2](#2-load-metadata-and-raw-data) above)
 
+**Output Data:**
+
+- Psuedo images of each array
+
+<br>
+
+### 3c. MA Plots
 
 #| layout-ncol: 2
 #| warning: false # NAN can be produced due to log transformations
