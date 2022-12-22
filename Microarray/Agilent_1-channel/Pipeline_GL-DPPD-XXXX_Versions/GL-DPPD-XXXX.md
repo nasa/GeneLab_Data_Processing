@@ -34,6 +34,10 @@ Lauren Sanders (acting GeneLab Project Scientist)
     - [4. Background Correction](#4-background-correction)
     - [5. Between Array Normalization](#5-between-array-normalization)
     - [6. Normalized Data Quality Assessment](#6-normalized-data-quality-assessment)
+      - [6a. Density Plot](#6a-density-plot)
+      - [6b. Pseudo Image Plots](#6b-pseudo-image-plots)
+      - [6c. MA Plots](#6c-ma-plots)
+      - [6d. Boxplots](#6d-boxplots)
     - [7. Probeset Differential Expression](#7-probeset-differential-expression)
 
 ---
@@ -107,74 +111,24 @@ dpt-isa-to-runsheet --accession OSD-### \
 
 <br>
 
-### 2. Processing Quarto Markdown File
+---
 
-> Note: Substep [2a](#2a-rendering-quarto-markdown-file) shows how to run and automatically parameterize all code found in steps [2b](#2b-load-runsheet) through [2g](#2g-perform-probe-level-differential-expression-and-annotation).  This means that **either** step [2a](#2a-rendering-quarto-markdown-file) or [2b](#2b-load-runsheet) through [2g](#2g-perform-probe-level-differential-expression-and-annotation).
+### 2. Load Metadata and Raw Data
 
-#### 2a. Rendering Quarto Markdown File
+> Steps 2 - 7 are done in R
 
-```bash
-quarto render Agile1CMP.qmd \
-    -P runsheet:{GLDS-Accession-ID}_microarray_v{version}_runsheet.csv \
-    -P id:<GLDS-NNN>
-```
+```R
+# fileEncoding removes strange characters from the column names
+df_rs <- read.csv(params$runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
 
-**Parameter Definitions:**
 
-- `render Agile1CMP.qmd` - Runs the processing quarto markdown file and renders an html report.
-- `-P runsheet:` - Specifies the path to the runsheet used to supply processing input data and file locations.
-- `-P id:` - Specifies the identifier for the dataset.
-
-**Input Data:**
-
-- `{GLDS-Accession-ID}_microarray_v{version}_runsheet.csv` (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive, output from [Step 1](#1-create-sample-runsheet))
-
-**Output Data:**
-
-- Agile1CMP.html\# (HTML Report that contains all processing code used alongside the console output and figures generated during processing)
-- probe_level_raw_intensities.csv\# (comma delimited table that contains all probe intensity values for each array as directly parsed from the raw data files)
-- probe_level_normalized_intensities.csv\# (comma delimited table that contains all probe intensity values for each array after background correction and normalization)
-- probe_level_normalized_intensities.csv\# (comma delimited table that contains all probe intensity values for each array after background correction and normalization)
-- SampleTable.csv\# (table containing samples and their respective groups)
-- contrasts.csv\# (table containing all pairwise comparisons)
-- visualization_output_table.csv (file used to generate GeneLab DGE visualizations)
-- visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
-- differential_expression.csv\# (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
-
-<br>
-
-#### 2b. Load Runsheet
-
-``` r
-print("Loading Runsheet...")
-
-df_rs <- read.csv(params$runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') # fileEncoding removes strange characters from the column names
-
-print("Here is the embedded runsheet")
-DT::datatable(df_rs)
-print("Here are the expected comparison groups")
-```
-
-**Input Data:**
-
-- `params$runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
-
-#### 2c. Load Raw Data
-
-```r
-print("Loading Raw Data...")
-# TODO: generalize this utility function
-allTrue <- function(i_vector) {
-  if ( length(i_vector) == 0 ) {
-    stop(paste("Input vector is length zero"))
-  }
-  all(i_vector)
-}
-
+# Define paths to raw data files
 runsheetPathsAreURIs <- function(df_runsheet) {
   allTrue(stringr::str_starts(df_runsheet$`Array Data File Path`, "https"))
 }
 
+
+# Download raw data files
 downloadFilesFromRunsheet <- function(df_runsheet) {
   urls <- df_runsheet$`Array Data File Path`
   destinationFiles <- df_runsheet$`Array Data File Name`
@@ -199,6 +153,7 @@ if ( runsheetPathsAreURIs(df_rs) ) {
   local_paths <- df_rs$`Array Data File Path`
 }
 
+
 # Decompress files if needed
 if ( allTrue(stringr::str_ends(local_paths, ".gz")) ) {
   print("Determined these files are gzip compressed... Decompressing now")
@@ -215,30 +170,38 @@ if ( allTrue(stringr::str_ends(local_paths, ".gz")) ) {
 }
 
 df_local_paths <- data.frame(`Sample Name` = df_rs$`Sample Name`, `Local Paths` = local_paths, check.names = FALSE)
-print("Raw Data Loaded Successfully")
-DT::datatable(df_local_paths)
 
+
+# Load raw data into R object
 raw_data <- limma::read.maimages(df_local_paths$`Local Paths`, 
                                  source = "agilent",  # Specify platform
                                  green.only = TRUE, # Specify one-channel design
                                  names = df_local_paths$`Sample Name` # Map column names as Sample Names (instead of default filenames)
                                  )
-```
 
-#### 2d. Summarize Raw Data
 
-```r
-print("Summarized Raw Data Below")
+# Summarize raw data
 print(paste0("Number of Arrays: ", dim(raw_data)[2]))
 print(paste0("Number of Probes: ", dim(raw_data)[1]))
-DT::datatable(raw_data$targets, caption = "Sample to File Mapping")
-DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data file embedded probes to genes table")
 ```
 
-#### 2e. QC for Raw Data
+**Input Data:**
 
+- `params$runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
 
-```r
+> Note: The raw data R object will be used to generate quality assessment (QA) plots in the next step.
+
+<br>
+
+---
+
+### 3. Raw Data Quality Assessment
+
+<br>
+
+#### 3a. Density Plot
+
+```R
 ### Density Plot
 #| fig-cap: Density of raw intensities for each array.  These are raw intensity values with background intensity values subtracted.  A lack of overlap indicates a need for normalization.
 #| warning: false
