@@ -506,12 +506,6 @@ print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
 
 probe_ids <- norm_data$genes$ProbeName
 
-# DEBUG clause
-if ( is.integer(params$DEBUG_limit_biomart_query) ) {
-  warning(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
-  probe_ids <- probe_ids[1:params$DEBUG_limit_biomart_query]
-}
-
 
 # Create probe map
 df_mapping <- biomaRt::getBM(
