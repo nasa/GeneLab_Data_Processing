@@ -71,7 +71,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
 
 > Exact processing commands for specific datasets that have been released are provided with their processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
 > 
-> All output files marked with a \# are published with the microarray processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects). 
+> All output files in **bold** are published with the microarray processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects). 
 
 ---
 
