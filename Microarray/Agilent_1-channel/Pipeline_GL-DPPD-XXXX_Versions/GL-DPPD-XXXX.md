@@ -549,13 +549,11 @@ norm_data$genes <- norm_data$genes %>%
 - `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - `df_rs$'Array Design REF'` (array design reference specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - Ensembl version (reference organism Ensembl version indicated in the `ensemblVersion` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
-- `probe_ids` (probe IDs for each probe associated with the `norm_data` R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
+- `norm_data$genes` (Manufacturer's probe metadata, including probe IDs and sequence position gene annotations associated with the `norm_data` R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
 
 **Output Data:**
 
-- `df_mapping` (R object containing a map of each probe ID to the respective Biomart Ensembl ID(s), gene symbol(s) and GO slim ID(s)) 
-- `unique_probe_ids` (R object containing probe IDs that map uniquely to an Ensembl ID and feature)
-- Should this just be `norm_data$genes`???
+- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html))
 
 <br>
 
