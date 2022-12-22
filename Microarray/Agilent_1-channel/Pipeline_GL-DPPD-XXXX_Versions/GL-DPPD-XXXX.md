@@ -67,6 +67,9 @@ Lauren Sanders (acting GeneLab Project Scientist)
 
 ---
 
+TODO: Replace all params$runsheet with the variable you decide to use
+TODO: Replace /# indicators for published files with putting them in **bold** instead
+
 # General processing overview with example commands  
 
 > Exact processing commands for specific datasets that have been released are provided with their processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
@@ -738,13 +741,17 @@ design_data <- runsheetToDesignMatrix(params$runsheet)
 design <- design_data$matrix
 ```
 
+TODO: Add write to file commands to write out the SampleTable.csv and contrasts.csv files
+
 **Input Data:**
 
 - `params$runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
 
 **Output Data:**
 
-- `design` (R object containing the study design matrix, indicating the group that each sample belongs to)
+- `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to)
+- SampleTable.csv\# (table containing samples and their respective groups)
+- contrasts.csv\# (table containing all pairwise comparisons)
 
 <br>
 
