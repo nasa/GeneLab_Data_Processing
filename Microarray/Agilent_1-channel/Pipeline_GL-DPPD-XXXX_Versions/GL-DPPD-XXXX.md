@@ -365,7 +365,7 @@ print(paste0("Number of Probes: ", dim(norm_data)[1]))
 - `norm_data` (R object containing background-corrected and normalized microarray data)
  
   >   
-  > Note: Background correction was performed using the `quantile` method, TODO: insert description of what this does
+  > Note: Normalization was performed using the `quantile` method, TODO: insert description of what this does
 
 <br>
 
