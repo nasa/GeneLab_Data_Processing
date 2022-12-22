@@ -189,7 +189,11 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 
 - `params$runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
 
-> Note: The raw data R object will be used to generate quality assessment (QA) plots in the next step.
+**Output Data:**
+
+- `raw_data` (R object containing raw microarray data)
+
+    > Note: The raw data R object will be used to generate quality assessment (QA) plots in the next step.
 
 <br>
 
@@ -248,41 +252,52 @@ agilentImagePlot(raw_data)
 
 **Output Data:**
 
-- Psuedo images of each array
+- Psuedo images of each array before background correction and normalization
 
 <br>
 
 ### 3c. MA Plots
 
-#| layout-ncol: 2
-#| warning: false # NAN can be produced due to log transformations
-
+```R
 for ( array_i in seq(colnames(raw_data$E)) ) {
   sample_name <- rownames(raw_data$targets)[array_i]
-  limma::plotMA(raw_data,array=array_i,xlab="Average log-expression",ylab="Expression log-ratio(this sample vs. others)", main = sample_name, status=raw_data$genes$ControlType)
+  limma::plotMA(raw_data,array=array_i,xlab="Average log-expression",ylab="Expression log-ratio (this sample vs. others)", main = sample_name, status=raw_data$genes$ControlType)
 }
+```
 
+**Input Data:**
 
-### Foreground-Background Plots
+- `raw_data` (raw data R object created in [Step 2](#2-load-metadata-and-raw-data) above)
 
-#| layout-ncol: 2
-#| warning: false # NAN can be produced due to log transformations
+**Output Data:**
 
+- M (log ratio) vs. A (average log expression) plot for each array before background correction and normalization (negative and positive control probes are in green and red, respectively)
+
+<br>
+
+### 3d. Foreground-Background Plots
+
+```R
 for ( array_i in seq(colnames(raw_data$E)) ) {
   sample_name <- rownames(raw_data$targets)[array_i]
   limma::plotFB(raw_data, array = array_i, xlab = "log2 Background", ylab = "log2 Foreground", main = sample_name) 
 }
+```
 
+**Input Data:**
 
+- `raw_data` (raw data R object created in [Step 2](#2-load-metadata-and-raw-data) above)
 
-### Boxplots
+**Output Data:**
 
-#| warning: false # NAN can be produced due to log transformations
+- Foreground vs. background expression plot for each array before background correction and normalization 
+
+<br>
+
+### 3e. Boxplots
+
+```R
 boxplotExpressionSafeMargin <- function(data) {
-  #' plot boxplots of expression values
-  #'
-  #' Ensures the plot labels are vertical and fit the plot
-  #' @param data: limma::EListRaw or limma::EList
   longest_sample_name_length <- max(nchar(rownames(data$targets))) * 1
   bottom_margin <- min(35, longest_sample_name_length)
   par(mar=c(bottom_margin,2,1,1))
@@ -292,41 +307,137 @@ boxplotExpressionSafeMargin <- function(data) {
 boxplotExpressionSafeMargin(raw_data)
 ```
 
-#### 2f. QC for Raw Data
+**Input Data:**
 
+- `raw_data` (raw data R object created in [Step 2](#2-load-metadata-and-raw-data) above)
 
-```r
-### Density Plot
-#| fig-cap: Density of norm intensities for each array.  Near complete overlap is expected after normalization.
-#| warning: false
-#| fig-height: !expr length(rownames(norm_data$targets)) / 2.5 # Dynamically setting figure height to prevent legend from being cutoff for many arrays
+**Output Data:**
+
+- Boxplot of raw expression data for each array before background correction and normalization 
+
+<br>
+
+---
+
+## 4. Background Correction
+
+```R
+norm_data <- limma::backgroundCorrect(raw_data, method = "normexp")
+```
+
+**Input Data:**
+
+- `raw_data` (raw data R object created in [Step 2](#2-load-metadata-and-raw-data) above)
+
+**Output Data:**
+
+- `norm_data` (R object containing background-corrected microarray data)
+
+<br>
+
+---
+
+## 5. Between Array Normalization
+
+```R
+# Normalize background-corrected data using the quantile method
+norm_data <- limma::normalizeBetweenArrays(norm_data, method = "quantile")
+
+# Summarize background-corrected and normalized data
+print(paste0("Number of Arrays: ", dim(norm_data)[2]))
+print(paste0("Number of Probes: ", dim(norm_data)[1]))
+```
+
+**Input Data:**
+
+- `norm_data` (R object containing background-corrected microarray data created in [Step 4](#4-background-correction) above)
+
+**Output Data:**
+
+- `norm_data` (R object containing background-corrected and normalized microarray data)
+
+<br>
+
+---
+
+## 6. Normalized Data Quality Assessment
+
+<br>
+
+### 6a. Density Plot
+
+```R
 limma::plotDensities(norm_data, 
                      log = TRUE, 
                      legend = "topright")
+```
 
-### Psuedoimage Plots
+**Input Data:**
 
-#| warning: false # NAN can be produced due to log transformations
-#| layout-ncol: 2
+- `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization) above)
 
+**Output Data:**
+
+- Plot containing the density of background-corrected and normalized intensities for each array (near complete overlap is expected after normalization)
+
+<br>
+
+### 6b. Pseudo Image Plots
+
+```R
 agilentImagePlot(norm_data)
+```
 
-### MA Plots
+**Input Data:**
 
-#| layout-ncol: 2
-#| warning: false # NAN can be produced due to log transformations
+- `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization) above)
 
+**Output Data:**
+
+- Psuedo images of each array after background correction and normalization
+
+<br>
+
+### 6c. MA Plots
+
+```R
 for ( array_i in seq(colnames(norm_data$E)) ) {
   sample_name <- rownames(norm_data$targets)[array_i]
-  limma::plotMA(norm_data,array=array_i,xlab="Average log-expression",ylab="Expression log-ratio(this sample vs. others)", main = sample_name, status=norm_data$genes$ControlType)
+  limma::plotMA(norm_data,array=array_i,xlab="Average log-expression",ylab="Expression log-ratio (this sample vs. others)", main = sample_name, status=norm_data$genes$ControlType)
 }
-### Boxplots
+```
 
-#| warning: false # NAN can be produced due to log transformations
+**Input Data:**
+
+- `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization) above)
+
+**Output Data:**
+
+- M (log ratio) vs. A (average log expression) plot for each array after background correction and normalization (negative and positive control probes are in green and red, respectively)
+
+<br>
+
+### 6d. Boxplots
+
+```R
 boxplotExpressionSafeMargin(norm_data)
 ```
 
-#### 2g. Perform Probe Level Differential Expression and Annotation
+**Input Data:**
+
+- `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization) above)
+
+**Output Data:**
+
+- Boxplot of expression data for each array after background correction and normalization 
+
+<br>
+
+---
+
+## 7. Probeset Differential Expression
+
+
 
 ```r
 ### Add Probe Annotations
