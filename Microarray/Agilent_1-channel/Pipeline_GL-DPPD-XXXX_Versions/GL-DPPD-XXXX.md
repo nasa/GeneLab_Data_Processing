@@ -12,10 +12,10 @@
 Jonathan Oribello (GeneLab Data Processing Team)
 
 **Approved by:**  
-Sylvain Costes (GeneLab Project Manager) 
-Samrawit Gebre (GeneLab Deputy Project Manager) 
-Amanda Saravia-Butler (GeneLab Data Processing Lead) 
-Lauren Sanders (acting GeneLab Project Scientist) 
+Sylvain Costes (GeneLab Project Manager)   
+Samrawit Gebre (GeneLab Deputy Project Manager)   
+Amanda Saravia-Butler (GeneLab Data Processing Lead)   
+Lauren Sanders (acting GeneLab Project Scientist)   
 
 ---
 
