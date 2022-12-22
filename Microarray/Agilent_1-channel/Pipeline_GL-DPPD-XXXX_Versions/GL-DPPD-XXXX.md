@@ -788,14 +788,17 @@ limma::write.fit(res, adjust = 'BH',
                 sep = ",")
 ```
 
+TODO: Make the NO_FILTER_DGE variable a static file instead.
+
 **Input Data:**
 
 - `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
-- `design` (R object containing the study design matrix, indicating the group that each sample belongs to, created in [Step 7c](#7c-generate-design-matrix) above)
+- `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to, created in [Step 7c](#7c-generate-design-matrix) above)
 
 **Output Data:**
 
-- `*_INTERIM_no_filtering.csv` (???)
+TODO: change to static file name
+- `*_INTERIM_no_filtering.csv` (Statistical values from individual probe level DE analysis, including TODO: list the statistical values provided in this output file and the modles used to generate those statistics)
 
 <br>
 
@@ -803,6 +806,8 @@ limma::write.fit(res, adjust = 'BH',
 
 ```R
 ## Reformat Table for consistency across DE analyses tables within GeneLab ##
+
+TODO: Replace NO_FILTER_DGE variable with static file name
 
 # Read in DE table 
 df_interim <- read.csv(NO_FILTER_DGE)
@@ -853,7 +858,7 @@ for ( i in seq_along(unique_groups) ) {
                         group == current_group
                       ) %>% 
                       dplyr::pull()
-  #### THIS IS DIFFERENT FROM HTML ####                    
+  #### TODO: Update this code chunk ####                    
   print(glue::glue("Computing mean and standard deviation for Group {i} of {length(unique_groups)}"))
   print(glue::glue("Group: {current_group}"))
   print(glue::glue("Samples in Group: '{toString(current_samples)}'"))
@@ -887,17 +892,18 @@ colnames_to_remove = c(
 df_interim <- df_interim %>% dplyr::select(-any_of(colnames_to_remove))
 
 # Save to file
+TODO: Make differential_expression.csv static file name
+TODO: Create static files for visualization tables - both DE table with true/false columns and the PCA table
 write.csv(df_interim, paste0(params$id, "_differential_expression.csv"), row.names = FALSE)
 ```
 
 **Input Data:**
 
-- `*_INTERIM_no_filtering.csv` (???, output from [Step 7d](#7d-perform-individual-probe-level-de) above)
+TODO: change to static file name
+- `*_INTERIM_no_filtering.csv` (Statistical values from individual probe level DE analysis, output from [Step 7d](#7d-perform-individual-probe-level-de) above)
 
 **Output Data:**
 
-- SampleTable.csv\# (table containing samples and their respective groups - ### I don't see this outputted here and shoudn't it be outputted in 7c? ###)
-- contrasts.csv\# (table containing all pairwise comparisons - ### I don't see this outputted here and shoudn't it be outputted in 7c? ###)
-- visualization_output_table.csv (file used to generate GeneLab DGE visualizations - ### I don't see where this outputted here ###)
-- visualization_PCA_table.csv (file used to generate GeneLab PCA plots - ### I don't see where this calculated or outputted here ###)
 - differential_expression.csv\# (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
+- visualization_output_table.csv (file used to generate GeneLab DGE visualizations)
+- visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
