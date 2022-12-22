@@ -675,14 +675,15 @@ calculateMappingStats <- function(df_genes) {
 
 calculateMappingStats(norm_data$genes) %>% describeMapping()
 ```
+TODO: Update code block to flip function order
 
 **Input Data:**
 
-- ???
+- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html), output from [Step 7a](#7a-add-probeset-annotations) above)
 
 **Output Data:**
 
-- Indicate what's included in the mapping summary - let's go over each of these.
+- Mapping summary (TODO: Indicate what's included in the mapping summary)
 
 <br>
 
