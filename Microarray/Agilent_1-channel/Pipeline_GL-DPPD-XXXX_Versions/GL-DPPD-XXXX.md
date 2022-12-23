@@ -31,7 +31,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
     - [3c. MA Plots](#3c-ma-plots)
     - [3d. Foreground-Background Plots](#3d-foreground-background-plots)
     - [3e. Boxplots](#3e-boxplots)
-  - [4. Background Correct](#4-background-correct)
+  - [4. Background Correction](#4-background-correction)
   - [5. Between Array Normalization](#5-between-array-normalization)
   - [6. Normalized Data Quality Assessment](#6-normalized-data-quality-assessment)
     - [6a. Density Plot](#6a-density-plot)
@@ -323,7 +323,7 @@ boxplotExpressionSafeMargin(raw_data)
 - Boxplot of raw expression data for each array before background correction and normalization 
 
 
-## 4. Background Correct
+## 4. Background Correction
 
 
 ```R
