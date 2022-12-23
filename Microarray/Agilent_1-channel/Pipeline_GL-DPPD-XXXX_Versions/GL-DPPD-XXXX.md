@@ -4,46 +4,46 @@
 (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
 ---
 
-**Date:** TBD MONTH NN, 2023  
-**Revision:** -  
-**Document Number:** GL-DPPD-XXXX   
+**Date:** TBD MONTH NN, 2023
+**Revision:** -
+**Document Number:** GL-DPPD-XXXX
 
-**Submitted by:**  
-Jonathan Oribello (GeneLab Data Processing Team)
+**Submitted by:**
+Jonathan Oribello (GeneLab Data Processing Team)  
 
-**Approved by:**  
-Sylvain Costes (GeneLab Project Manager)   
-Samrawit Gebre (GeneLab Deputy Project Manager)   
-Amanda Saravia-Butler (GeneLab Data Processing Lead)   
-Lauren Sanders (acting GeneLab Project Scientist)   
+**Approved by:**
+Sylvain Costes (GeneLab Project Manager)  
+Samrawit Gebre (GeneLab Deputy Project Manager)  
+Amanda Saravia-Butler (GeneLab Data Processing Lead)  
+Lauren Sanders (acting GeneLab Project Scientist)  
 
 ---
 
-# Table of contents  <!-- omit in toc -->
+# Table of contents <!-- omit in toc -->
 
 - [Software used](#software-used)
 - [General processing overview with example commands](#general-processing-overview-with-example-commands)
-    - [1. Create Sample RunSheet](#1-create-sample-runsheet)
-    - [2. Load Metadata and Raw Data](#2-load-metadata-and-raw-data)
-    - [3. Raw Data Quality Assessment](#3-raw-data-quality-assessment)
-      - [3a. Density Plot](#3a-density-plot)
-      - [3b. Pseudo Image Plots](#3b-pseudo-image-plots)
-      - [3c. MA Plots](#3c-ma-plots)
-      - [3d. Foreground-Background Plots](#3d-foreground-background-plots)
-      - [3e. Boxplots](#3e-boxplots)
-    - [4. Background Correction](#4-background-correction)
-    - [5. Between Array Normalization](#5-between-array-normalization)
-    - [6. Normalized Data Quality Assessment](#6-normalized-data-quality-assessment)
-      - [6a. Density Plot](#6a-density-plot)
-      - [6b. Pseudo Image Plots](#6b-pseudo-image-plots)
-      - [6c. MA Plots](#6c-ma-plots)
-      - [6d. Boxplots](#6d-boxplots)
-    - [7. Probeset Differential Expression (DE)](#7-probeset-differential-expression)
-      - [7a. Add Probeset Annotations](#7a-add-probeset-annotations)
-      - [7b. Summarize Biomart Mapping vs. Manufacturer Mapping](#7b-summarize-biomart-mapping-vs-manufacturer-mapping)
-      - [7c. Generate Design Matrix](#7c-generate-design-matrix)
-      - [7d. Perform Individual Probe Level DE](#7d-perform-individual-probe-level-de)
-      - [7e. Add Additional Columns and Format DE Table](#7e-add-additional-columns-and-format-de-table)
+  - [1. Create Sample RunSheet](#1-create-sample-runsheet)
+  - [2. Load Metadata and Raw Data](#2-load-metadata-and-raw-data)
+  - [3. Raw Data Quality Assessment](#3-raw-data-quality-assessment)
+    - [3a. Density Plot](#3a-density-plot)
+    - [3b. Pseudo Image Plots](#3b-pseudo-image-plots)
+    - [3c. MA Plots](#3c-ma-plots)
+    - [3d. Foreground-Background Plots](#3d-foreground-background-plots)
+    - [3e. Boxplots](#3e-boxplots)
+  - [4. Background Correct](#4-background-correct)
+  - [5. Between Array Normalization](#5-between-array-normalization)
+  - [6. Normalized Data Quality Assessment](#6-normalized-data-quality-assessment)
+    - [6a. Density Plot](#6a-density-plot)
+    - [6b. Pseudo Image Plots](#6b-pseudo-image-plots)
+    - [6c. MA Plots](#6c-ma-plots)
+    - [6d. Boxplots](#6d-boxplots)
+  - [7. Probeset Differential Expression (DE)](#7-probeset-differential-expression-de)
+    - [7a. Add Probeset Annotations](#7a-add-probeset-annotations)
+    - [7b. Summarize Biomart Mapping vs. Manufacturer Mapping](#7b-summarize-biomart-mapping-vs-manufacturer-mapping)
+    - [7c. Generate Design Matrix](#7c-generate-design-matrix)
+    - [7d. Perform Individual Probe Level DE](#7d-perform-individual-probe-level-de)
+    - [7e. Add Additional Columns and Format DE Table](#7e-add-additional-columns-and-format-de-table)
 
 ---
 
@@ -53,50 +53,46 @@ Lauren Sanders (acting GeneLab Project Scientist)
 |:------|:------:|:-------------|
 |R|4.1.3|[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
 |DT|0.26|[https://github.com/rstudio/DT](https://github.com/rstudio/DT)|
-|dplyr|1.0.10|[https://dplyr.tidyverse.org/](https://dplyr.tidyverse.org/)|
+|dplyr|1.0.10|[https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)|
 |stringr|1.5.0|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
 |R.utils|2.12.2|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
 |limma|3.50.3|[https://bioconductor.org/packages/3.14/bioc/html/limma.html](https://bioconductor.org/packages/3.14/bioc/html/limma.html)|
-|glue|R1.6.2|[https://glue.tidyverse.org/](https://glue.tidyverse.org/)|
+|glue|1.6.2|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
 |biomaRt|2.50.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
-|scales|1.2.1|[https://scales.r-lib.org/](https://scales.r-lib.org/)|
+|scales|1.2.1|[https://scales.r-lib.org](https://scales.r-lib.org)|
+|matrixStats|0.63.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
 |dp_tools|1.2.0|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
-|singularity|3.9|[https://sylabs.io/](https://sylabs.io/)|
-|Quarto|1.1.251|[https://quarto.org/](https://quarto.org/)|
-
+|singularity|3.9|[https://sylabs.io](https://sylabs.io)|
+|Quarto|1.1.251|[https://quarto.org](https://quarto.org)|
 
 ---
-
-TODO: Replace all params$runsheet with the variable you decide to use
-TODO: Replace /# indicators for published files with putting them in **bold** instead
 
 # General processing overview with example commands  
 
 > Exact processing commands for specific datasets that have been released are provided with their processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
 > 
-> All output files in **bold** are published with the microarray processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects). 
+> All output files in **bold** are published for each Agilent 1-channel microarray processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects). 
 
 ---
 
 ## 1. Create Sample RunSheet
 
-> Notes: 
-> - Rather than running the commands below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_Agile1CMP-A/examples/README.md).
-> 
+> Notes:
+> - Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_Agile1CMP-A/examples/README.md).
 > - These command line tools are part of the [dp_tools](https://github.com/J-81/dp_tools) program.
 
 ```bash
 ### Download the *ISA.zip file from the GeneLab Repository ###
 
 dpt-get-isa-archive \
- --accession OSD-###
+  --accession OSD-###
 
 ### Parse the metadata from the *ISA.zip file to create a sample runsheet ###
 
 dpt-isa-to-runsheet --accession OSD-### \
- --config-type microarray \
- --config-version Latest \
- --isa-archive *ISA.zip
+  --config-type microarray \
+  --config-version Latest \
+  --isa-archive *ISA.zip
 ```
 
 **Parameter Definitions:**
@@ -106,28 +102,26 @@ dpt-isa-to-runsheet --accession OSD-### \
 - `--config-version` - Specifies the `dp-tools` configuration version to use, a value of `Latest` will specify the most recent version
 - `--isa-archive` - Specifies the *ISA.zip file for the respective GLDS dataset, downloaded in the `dpt-get-isa-archive` command
 
-
 **Input Data:**
 
-- No input data required but the OSD accession ID needs to be indicated, which is used to download the respective ISA archive 
+- `No input data required but the OSD accession ID needs to be indicated, which is used to download the respective ISA archive` 
 
 **Output Data:**
 
 - *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective OSD dataset, used to define sample groups - the *ISA.zip file is located in the [OSD repository](https://osdr.nasa.gov/bio/repo/search?q=&data_source=cgene,alsda&data_type=study) under 'Study Files' -> 'metadata')
-
-- {OSD-Accession-ID}_microarray_v{version}_runsheet.csv\# (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
+- **{OSD-Accession-ID}_microarray_v{version}_runsheet.csv** (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
 
 <br>
 
----
 
 ## 2. Load Metadata and Raw Data
 
-> Note: Steps 2 - 7 are done in R
+> Notes:
+> - Steps 2 - 7 are done in R
 
 ```R
 # fileEncoding removes strange characters from the column names
-df_rs <- read.csv(params$runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
+df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
 
 
 # Define paths to raw data files
@@ -182,10 +176,10 @@ df_local_paths <- data.frame(`Sample Name` = df_rs$`Sample Name`, `Local Paths` 
 
 # Load raw data into R object
 raw_data <- limma::read.maimages(df_local_paths$`Local Paths`, 
-                                 source = "agilent",  # Specify platform
-                                 green.only = TRUE, # Specify one-channel design
-                                 names = df_local_paths$`Sample Name` # Map column names as Sample Names (instead of default filenames)
-                                 )
+                                source = "agilent",  # Specify platform
+                                green.only = TRUE, # Specify one-channel design
+                                names = df_local_paths$`Sample Name` # Map column names as Sample Names (instead of default filenames)
+                                )
 
 
 # Summarize raw data
@@ -193,30 +187,35 @@ print(paste0("Number of Arrays: ", dim(raw_data)[2]))
 print(paste0("Number of Probes: ", dim(raw_data)[1]))
 ```
 
+
+
 **Input Data:**
 
-- `params$runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
+- `runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
 
 **Output Data:**
 
-- `raw_data` (R object containing raw microarray data)
-
+- df_rs (R dataframe containing information from runsheet)
+- raw_data (R object containing raw microarray data)
     > Note: The raw data R object will be used to generate quality assessment (QA) plots in the next step.
 
 <br>
 
----
 
 ## 3. Raw Data Quality Assessment
 
+
+
 <br>
 
+    
 ### 3a. Density Plot
+
 
 ```R
 limma::plotDensities(raw_data, 
-                     log = TRUE, 
-                     legend = "topright")
+             log = TRUE, 
+             legend = "topright")
 ```
 
 **Input Data:**
@@ -227,9 +226,9 @@ limma::plotDensities(raw_data,
 
 - Plot containing the density of raw intensities for each array (raw intensity values with background intensity values subtracted; lack of overlap indicates a need for normalization)
 
-<br>
-
+    
 ### 3b. Pseudo Image Plots
+
 
 ```R
 agilentImagePlot <- function(eListRaw) {
@@ -260,11 +259,11 @@ agilentImagePlot(raw_data)
 
 **Output Data:**
 
-- Psuedo images of each array before background correction and normalization
+- Pseudo images of each array before background correction and normalization 
 
-<br>
-
+    
 ### 3c. MA Plots
+
 
 ```R
 for ( array_i in seq(colnames(raw_data$E)) ) {
@@ -279,11 +278,11 @@ for ( array_i in seq(colnames(raw_data$E)) ) {
 
 **Output Data:**
 
-- M (log ratio) vs. A (average log expression) plot for each array before background correction and normalization (negative and positive control probes are in green and red, respectively)
+- M (log ratio of the subject array vs a pseudo-reference, the mean of all other arrays) vs. A (average log expression) plot for each array before background correction and normalization (negative and positive control probes are in green and red, respectively) 
 
-<br>
-
+    
 ### 3d. Foreground-Background Plots
+
 
 ```R
 for ( array_i in seq(colnames(raw_data$E)) ) {
@@ -300,9 +299,9 @@ for ( array_i in seq(colnames(raw_data$E)) ) {
 
 - Foreground vs. background expression plot for each array before background correction and normalization 
 
-<br>
-
+    
 ### 3e. Boxplots
+
 
 ```R
 boxplotExpressionSafeMargin <- function(data) {
@@ -323,15 +322,15 @@ boxplotExpressionSafeMargin(raw_data)
 
 - Boxplot of raw expression data for each array before background correction and normalization 
 
-<br>
 
----
+## 4. Background Correct
 
-## 4. Background Correction
 
 ```R
 norm_data <- limma::backgroundCorrect(raw_data, method = "normexp")
 ```
+
+
 
 **Input Data:**
 
@@ -339,16 +338,15 @@ norm_data <- limma::backgroundCorrect(raw_data, method = "normexp")
 
 **Output Data:**
 
-- `norm_data` (R object containing background-corrected microarray data)
-
-  >   
-  > Note: Background correction was performed using the `normexp` method, TODO: insert description of what this does
+- norm_data 
+    > Note: Background correction was performed using the `normexp` method, as recommended by
+Ritchie, M. E., Silver, J., Oshlack, A., Silver, J., Holmes, M., Diyagama, D., Holloway, A., and Smyth, G. K. (2007). A comparison of background correction methods for two-colour microarrays. Bioinformatics 23, 2700-2707. http://bioinformatics.oxfordjournals.org/content/23/20/2700
 
 <br>
 
----
 
 ## 5. Between Array Normalization
+
 
 ```R
 # Normalize background-corrected data using the quantile method
@@ -359,31 +357,34 @@ print(paste0("Number of Arrays: ", dim(norm_data)[2]))
 print(paste0("Number of Probes: ", dim(norm_data)[1]))
 ```
 
+
+
 **Input Data:**
 
 - `norm_data` (R object containing background-corrected microarray data created in [Step 4](#4-background-correction) above)
 
 **Output Data:**
 
-- `norm_data` (R object containing background-corrected and normalized microarray data)
- 
-  >   
-  > Note: Normalization was performed using the `quantile` method, TODO: insert description of what this does
+- norm_data (R object containing background-corrected and normalized microarray data)
+    > Note: Normalization was performed using the `quantile` method which forces the empirical distribution of all arrays to be identical
 
 <br>
 
----
 
 ## 6. Normalized Data Quality Assessment
 
+
+
 <br>
 
+    
 ### 6a. Density Plot
+
 
 ```R
 limma::plotDensities(norm_data, 
-                     log = TRUE, 
-                     legend = "topright")
+             log = TRUE, 
+             legend = "topright")
 ```
 
 **Input Data:**
@@ -392,11 +393,11 @@ limma::plotDensities(norm_data,
 
 **Output Data:**
 
-- Plot containing the density of background-corrected and normalized intensities for each array (near complete overlap is expected after normalization)
+- Plot containing the density of background-corrected and normalized intensities for each array (near complete overlap is expected after normalization) 
 
-<br>
-
+    
 ### 6b. Pseudo Image Plots
+
 
 ```R
 agilentImagePlot(norm_data)
@@ -408,11 +409,11 @@ agilentImagePlot(norm_data)
 
 **Output Data:**
 
-- Psuedo images of each array after background correction and normalization
+- Pseudo images of each array after background correction and normalization 
 
-<br>
-
+    
 ### 6c. MA Plots
+
 
 ```R
 for ( array_i in seq(colnames(norm_data$E)) ) {
@@ -427,11 +428,11 @@ for ( array_i in seq(colnames(norm_data$E)) ) {
 
 **Output Data:**
 
-- M (log ratio) vs. A (average log expression) plot for each array after background correction and normalization (negative and positive control probes are in green and red, respectively)
+- M (log ratio of the subject array vs a pseudo-reference, the mean of all other arrays) vs. A (average log expression) plot for each array after background correction and normalization (negative and positive control probes are in green and red, respectively) 
 
-<br>
-
+    
 ### 6d. Boxplots
+
 
 ```R
 boxplotExpressionSafeMargin(norm_data)
@@ -445,15 +446,16 @@ boxplotExpressionSafeMargin(norm_data)
 
 - Boxplot of expression data for each array after background correction and normalization 
 
+
+## 7. Probeset Differential Expression (DE)
+
+
+
 <br>
 
----
-
-## 7. Probeset Differential Expression
-
-<br>
-
+    
 ### 7a. Add Probeset Annotations
+
 
 ```R
 shortenedOrganismName <- function(long_name) {
@@ -478,8 +480,8 @@ print(paste0("Expected dataset name: '", expected_dataset_name, "'"))
 ENSEMBL_VERSION <- '107'
 
 ensembl <- biomaRt::useEnsembl(biomart = "genes", 
-                               dataset = expected_dataset_name,
-                               version = ENSEMBL_VERSION)
+                              dataset = expected_dataset_name,
+                              version = ENSEMBL_VERSION)
 print(ensembl)
 
 
@@ -549,44 +551,19 @@ norm_data$genes <- norm_data$genes %>%
 
 **Input Data:**
 
-- `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
-- `df_rs$'Array Design REF'` (array design reference specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
-- Ensembl version (reference organism Ensembl version indicated in the `ensemblVersion` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
+- `df_rs` (R dataframe created in [Step 1](#1-create-sample-runsheet), used here to provide organism and array design reference bioMart attribute)
+- `ENSEMBL_VERSION` (reference organism Ensembl version indicated in the `ensemblVersion` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
 - `norm_data$genes` (Manufacturer's probe metadata, including probe IDs and sequence position gene annotations associated with the `norm_data` R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
 
 **Output Data:**
 
-- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html))
+- norm_data$genes (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html))
 
-<br>
-
+    
 ### 7b. Summarize Biomart Mapping vs. Manufacturer Mapping
 
+
 ```R
-describeMapping <- function(stats) {
-  my_label <- scales::label_percent(accuracy = 0.01, prefix="(", suffix = "%)")
-  percentOfUniqueProbes <- function(num) {
-    #' Gives number as a percent of unique probes 
-    
-    return(my_label(num / stats$count_unique_probe))
-  }
-
-  print(paste("  Mapped (original): ", stats$count_total_original_mapped, percentOfUniqueProbes(stats$count_total_original_mapped)))
-  print(paste("  Mapped (biomart): ", stats$count_total_biomart_mapped, percentOfUniqueProbes(stats$count_total_biomart_mapped)))
-  print(paste("  Ensembl One-To-One Mapped (biomart): ", stats$count_total_biomart_1to1_mapped, percentOfUniqueProbes(stats$count_total_biomart_1to1_mapped)))
-  print(paste("  Ensembl Multi-Mapped (biomart): ", stats$count_total_biomart_multi_mapped, percentOfUniqueProbes(stats$count_total_biomart_multi_mapped)))
-  print(paste("  Not mapped (unique original): ", stats$count_unique_original_unmapped, percentOfUniqueProbes(stats$count_unique_original_unmapped)))
-  print(paste("  Not mapped (unique biomart): ", stats$count_unique_biomart_unmapped, percentOfUniqueProbes(stats$count_unique_biomart_unmapped)))
-  print(paste("  Not mapped (shared biomart & original): ", stats$count_both_original_and_biomart_unmapped, percentOfUniqueProbes(stats$count_both_original_and_biomart_unmapped)))
-
-  print("More Info")
-  print(paste("  Not mapped (total original mapping): ", stats$count_total_original_unmapped, percentOfUniqueProbes(stats$count_total_original_unmapped)))
-  print(paste("  Not mapped (total biomart mapping): ", stats$count_total_biomart_unmapped, percentOfUniqueProbes(stats$count_total_biomart_unmapped)))
-  print(paste("  Features (genes) (stats$count_biomart_unique_mapped_features): ", stats$count_biomart_unique_mapped_features))
-  print(paste("  Features (genes) (stats$count_original_unique_mapped_features): ", stats$count_original_unique_mapped_features))
-  print(paste("  Percent fewer unique features: ", my_label(-(stats$count_biomart_unique_mapped_features - stats$count_original_unique_mapped_features) / stats$count_original_unique_mapped_features)))
-}
-
 calculateMappingStats <- function(df_genes) {
 
   stats <- list()
@@ -674,11 +651,32 @@ calculateMappingStats <- function(df_genes) {
 
   return(stats)
 }
+describeMapping <- function(stats) {
+  my_label <- scales::label_percent(accuracy = 0.01, prefix="(", suffix = "%)")
+  percentOfUniqueProbes <- function(num) {
+    #' Gives number as a percent of unique probes 
+    
+    return(my_label(num / stats$count_unique_probe))
+  }
 
+  print(paste("  Mapped (original): ", stats$count_total_original_mapped, percentOfUniqueProbes(stats$count_total_original_mapped)))
+  print(paste("  Mapped (biomart): ", stats$count_total_biomart_mapped, percentOfUniqueProbes(stats$count_total_biomart_mapped)))
+  print(paste("  Ensembl One-To-One Mapped (biomart): ", stats$count_total_biomart_1to1_mapped, percentOfUniqueProbes(stats$count_total_biomart_1to1_mapped)))
+  print(paste("  Ensembl Multi-Mapped (biomart): ", stats$count_total_biomart_multi_mapped, percentOfUniqueProbes(stats$count_total_biomart_multi_mapped)))
+  print(paste("  Not mapped (unique original): ", stats$count_unique_original_unmapped, percentOfUniqueProbes(stats$count_unique_original_unmapped)))
+  print(paste("  Not mapped (unique biomart): ", stats$count_unique_biomart_unmapped, percentOfUniqueProbes(stats$count_unique_biomart_unmapped)))
+  print(paste("  Not mapped (shared biomart & original): ", stats$count_both_original_and_biomart_unmapped, percentOfUniqueProbes(stats$count_both_original_and_biomart_unmapped)))
+
+  print("More Info")
+  print(paste("  Not mapped (total original mapping): ", stats$count_total_original_unmapped, percentOfUniqueProbes(stats$count_total_original_unmapped)))
+  print(paste("  Not mapped (total biomart mapping): ", stats$count_total_biomart_unmapped, percentOfUniqueProbes(stats$count_total_biomart_unmapped)))
+  print(paste("  Features (genes) (stats$count_biomart_unique_mapped_features): ", stats$count_biomart_unique_mapped_features))
+  print(paste("  Features (genes) (stats$count_original_unique_mapped_features): ", stats$count_original_unique_mapped_features))
+  print(paste("  Percent fewer unique features: ", my_label(-(stats$count_biomart_unique_mapped_features - stats$count_original_unique_mapped_features) / stats$count_original_unique_mapped_features)))
+}
 
 calculateMappingStats(norm_data$genes) %>% describeMapping()
 ```
-TODO: Update code block to flip function order
 
 **Input Data:**
 
@@ -686,11 +684,24 @@ TODO: Update code block to flip function order
 
 **Output Data:**
 
-- Mapping summary (TODO: Indicate what's included in the mapping summary)
+- Mapping summary (An in-report comparison of non-control probe annotation mapping the includes the following:
+  - Mapped (original): Count/Percent of probes mapped using the original manufactuer mapping
+  - Mapped (biomart): Count/Percent of probes mapped using the biomart as per this Ensembl [protocol](https://useast.ensembl.org/info/genome/microarray_probe_set_mapping.html)
+  - Ensembl One-To-One Mapped (biomart): Count/Percent of probes mapping one-to-one to Ensembl gene IDs
+  - Ensembl Multi-Mapped (biomart): Count/Percent of probes mapping to greater than one Ensembl gene IDs
+  - Not mapped (unique original): Count/Percent of probes not mapped as per the manufacturer but mapped as per biomart.
+  - Not mapped (unique biomart): Count/Percent of probes not mapped as per the biomart but mapped as per the manufacturer.
+  - Not mapped (shared biomart & original): Count/Percent of probes not mapped as per either the manufacturer nor biomart.
+  - Not mapped (total original mapping): Count/Percent of probes not mapped to the original manufacturer.
+  - Not mapped (total biomart mapping): Count/Percent of probes not mapped to the biomart.
+  - Features (genes) (stats$count_biomart_unique_mapped_features): Count/Percent of unique probes mapped as per biomart.
+  - Features (genes) (stats$count_original_unique_mapped_features): Count/Percent of unique probes mapped as per the original manufacturer.
+  - Percent fewer unique features: Percent less unique genes mapped comparing original manufacturer to biomart.
+)
 
-<br>
-
+    
 ### 7c. Generate Design Matrix
+
 
 ```R
 # Pull all factors for each sample in the study from the runsheet created in Step 1
@@ -739,23 +750,22 @@ runsheetToDesignMatrix <- function(runsheet_path) {
 # Loading metadata from runsheet csv file
 design_data <- runsheetToDesignMatrix(params$runsheet)
 design <- design_data$matrix
+write.csv(design_data$groups, "SampleTable.csv")
 ```
-
-TODO: Add write to file commands to write out the SampleTable.csv and contrasts.csv files
 
 **Input Data:**
 
-- `params$runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
+- `runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
 
 **Output Data:**
 
-- `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to)
-- SampleTable.csv\# (table containing samples and their respective groups)
-- contrasts.csv\# (table containing all pairwise comparisons)
+- design (R object containing the limma study design matrix, indicating the group that each sample belongs to)
+- SampleTable.csv (table containing samples and their respective groups)
+- TODO: contrasts.csv (table containing all pairwise comparisons)
 
-<br>
-
+    
 ### 7d. Perform Individual Probe Level DE
+
 
 ```R
 lmFitPairwise <- function(norm_data, design) {
@@ -780,15 +790,12 @@ lmFitPairwise <- function(norm_data, design) {
 res <- lmFitPairwise(norm_data, design)
 
 # Print DE table, without filtering
-NO_FILTER_DGE = paste0(params$id, "_INTERIM_no_filtering.csv")
 limma::write.fit(res, adjust = 'BH', 
-                file = NO_FILTER_DGE,
+                file = "INTERIM.csv",
                 row.names = FALSE,
                 quote = TRUE,
                 sep = ",")
 ```
-
-TODO: Make the NO_FILTER_DGE variable a static file instead.
 
 **Input Data:**
 
@@ -797,20 +804,21 @@ TODO: Make the NO_FILTER_DGE variable a static file instead.
 
 **Output Data:**
 
-TODO: change to static file name
-- `*_INTERIM_no_filtering.csv` (Statistical values from individual probe level DE analysis, including TODO: list the statistical values provided in this output file and the modles used to generate those statistics)
+- INTERIM.csv (Statistical values from individual probe level DE analysis, including:
+  - Log2fc between all pairwise comparisons
+  - T statistic for all pairwise comparison tests
+  - P value for all pairwise comparison tests
+)
 
-<br>
-
+    
 ### 7e. Add Additional Columns and Format DE Table 
+
 
 ```R
 ## Reformat Table for consistency across DE analyses tables within GeneLab ##
 
-TODO: Replace NO_FILTER_DGE variable with static file name
-
 # Read in DE table 
-df_interim <- read.csv(NO_FILTER_DGE)
+df_interim <- read.csv("INTERIM.csv")
 
 # Reformat column names
 reformat_names <- function(colname, group_name_mapping) {
@@ -858,16 +866,15 @@ for ( i in seq_along(unique_groups) ) {
                         group == current_group
                       ) %>% 
                       dplyr::pull()
-  #### TODO: Update this code chunk ####                    
+
   print(glue::glue("Computing mean and standard deviation for Group {i} of {length(unique_groups)}"))
   print(glue::glue("Group: {current_group}"))
   print(glue::glue("Samples in Group: '{toString(current_samples)}'"))
   
   df_interim <- df_interim %>% 
-    dplyr::rowwise() %>% 
     dplyr::mutate( 
-      "Group.Mean_{current_group}" := mean(c_across(current_samples)),
-      "Group.Stdev_{current_group}" := sd(c_across(current_samples)),
+      "Group.Mean_{current_group}" := rowMeans(select(., current_samples)),
+      "Group.Stdev_{current_group}" := matrixStats::rowSds(as.matrix(select(., current_samples))),
       ) %>% 
     dplyr::ungroup() %>%
     as.data.frame()
@@ -892,18 +899,20 @@ colnames_to_remove = c(
 df_interim <- df_interim %>% dplyr::select(-any_of(colnames_to_remove))
 
 # Save to file
-TODO: Make differential_expression.csv static file name
 TODO: Create static files for visualization tables - both DE table with true/false columns and the PCA table
-write.csv(df_interim, paste0(params$id, "_differential_expression.csv"), row.names = FALSE)
+write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
 ```
 
 **Input Data:**
 
-TODO: change to static file name
-- `*_INTERIM_no_filtering.csv` (Statistical values from individual probe level DE analysis, output from [Step 7d](#7d-perform-individual-probe-level-de) above)
+- `INTERIM.csv` (Statistical values from individual probe level DE analysis, output from [Step 7d](#7d-perform-individual-probe-level-de) above)
 
 **Output Data:**
 
-- differential_expression.csv\# (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
+- **differential_expression.csv** (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
 - visualization_output_table.csv (file used to generate GeneLab DGE visualizations)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
+
+
+
+---
