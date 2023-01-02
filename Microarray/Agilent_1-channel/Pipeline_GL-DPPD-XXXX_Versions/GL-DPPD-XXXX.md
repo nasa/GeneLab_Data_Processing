@@ -127,6 +127,9 @@ dpt-isa-to-runsheet --accession OSD-### \
 > Note: Steps 2 - 7 are done in R
 
 ```R
+# Define path to runsheet
+runsheet <- /path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv
+
 # fileEncoding removes strange characters from the column names
 df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
 
@@ -196,10 +199,11 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 
 **Input Data:**
 
-- `params$runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
+- `runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
 
 **Output Data:**
 
+- `df_rs` (R datafrae containing information from the runsheet)
 - `raw_data` (R object containing raw microarray data)
 
     > Note: The raw data R object will be used to generate quality assessment (QA) plots in the next step.
@@ -280,7 +284,7 @@ for ( array_i in seq(colnames(raw_data$E)) ) {
 
 **Output Data:**
 
-- M (log ratio) vs. A (average log expression) plot for each array before background correction and normalization (negative and positive control probes are in green and red, respectively)
+- M (log ratio of the subject array vs a pseudo-reference, the mean of all other arrays) vs. A (average log expression) plot for each array before background correction and normalization (negative and positive control probes are in green and red, respectively)
 
 <br>
 
@@ -343,7 +347,7 @@ norm_data <- limma::backgroundCorrect(raw_data, method = "normexp")
 - `norm_data` (R object containing background-corrected microarray data)
 
   >   
-  > Note: Background correction was performed using the `normexp` method, TODO: insert description of what this does
+  > Note: Background correction was performed using the `normexp` method, TODO: insert description of what this does, as recommended by [Ritchie, M.E., et al.](http://bioinformatics.oxfordjournals.org/content/23/20/2700)
 
 <br>
 
