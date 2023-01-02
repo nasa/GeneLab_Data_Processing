@@ -373,7 +373,7 @@ print(paste0("Number of Probes: ", dim(norm_data)[1]))
 - `norm_data` (R object containing background-corrected and normalized microarray data)
  
   >   
-  > Note: Normalization was performed using the `quantile` method, TODO: insert description of what this does
+  > Note: Normalization was performed using the `quantile` method, which forces the entire empirical distribution of all arrays to be identical
 
 <br>
 
@@ -432,7 +432,7 @@ for ( array_i in seq(colnames(norm_data$E)) ) {
 
 **Output Data:**
 
-- M (log ratio) vs. A (average log expression) plot for each array after background correction and normalization (negative and positive control probes are in green and red, respectively)
+- M (log ratio of the subject array vs a pseudo-reference, the mean of all other arrays) vs. A (average log expression) plot for each array after background correction and normalization (negative and positive control probes are in green and red, respectively)
 
 <br>
 
@@ -454,7 +454,7 @@ boxplotExpressionSafeMargin(norm_data)
 
 ---
 
-## 7. Probeset Differential Expression
+## 7. Probeset Differential Expression (DE)
 
 <br>
 
@@ -556,7 +556,7 @@ norm_data$genes <- norm_data$genes %>%
 
 - `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - `df_rs$'Array Design REF'` (array design reference specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
-- Ensembl version (reference organism Ensembl version indicated in the `ensemblVersion` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
+- ENSEMBL_VERSION (reference organism Ensembl version indicated in the `ensemblVersion` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
 - `norm_data$genes` (Manufacturer's probe metadata, including probe IDs and sequence position gene annotations associated with the `norm_data` R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
 
 **Output Data:**
@@ -568,30 +568,7 @@ norm_data$genes <- norm_data$genes %>%
 ### 7b. Summarize Biomart Mapping vs. Manufacturer Mapping
 
 ```R
-describeMapping <- function(stats) {
-  my_label <- scales::label_percent(accuracy = 0.01, prefix="(", suffix = "%)")
-  percentOfUniqueProbes <- function(num) {
-    #' Gives number as a percent of unique probes 
-    
-    return(my_label(num / stats$count_unique_probe))
-  }
-
-  print(paste("  Mapped (original): ", stats$count_total_original_mapped, percentOfUniqueProbes(stats$count_total_original_mapped)))
-  print(paste("  Mapped (biomart): ", stats$count_total_biomart_mapped, percentOfUniqueProbes(stats$count_total_biomart_mapped)))
-  print(paste("  Ensembl One-To-One Mapped (biomart): ", stats$count_total_biomart_1to1_mapped, percentOfUniqueProbes(stats$count_total_biomart_1to1_mapped)))
-  print(paste("  Ensembl Multi-Mapped (biomart): ", stats$count_total_biomart_multi_mapped, percentOfUniqueProbes(stats$count_total_biomart_multi_mapped)))
-  print(paste("  Not mapped (unique original): ", stats$count_unique_original_unmapped, percentOfUniqueProbes(stats$count_unique_original_unmapped)))
-  print(paste("  Not mapped (unique biomart): ", stats$count_unique_biomart_unmapped, percentOfUniqueProbes(stats$count_unique_biomart_unmapped)))
-  print(paste("  Not mapped (shared biomart & original): ", stats$count_both_original_and_biomart_unmapped, percentOfUniqueProbes(stats$count_both_original_and_biomart_unmapped)))
-
-  print("More Info")
-  print(paste("  Not mapped (total original mapping): ", stats$count_total_original_unmapped, percentOfUniqueProbes(stats$count_total_original_unmapped)))
-  print(paste("  Not mapped (total biomart mapping): ", stats$count_total_biomart_unmapped, percentOfUniqueProbes(stats$count_total_biomart_unmapped)))
-  print(paste("  Features (genes) (stats$count_biomart_unique_mapped_features): ", stats$count_biomart_unique_mapped_features))
-  print(paste("  Features (genes) (stats$count_original_unique_mapped_features): ", stats$count_original_unique_mapped_features))
-  print(paste("  Percent fewer unique features: ", my_label(-(stats$count_biomart_unique_mapped_features - stats$count_original_unique_mapped_features) / stats$count_original_unique_mapped_features)))
-}
-
+# Create function to calcluate mapping statistics
 calculateMappingStats <- function(df_genes) {
 
   stats <- list()
@@ -680,10 +657,34 @@ calculateMappingStats <- function(df_genes) {
   return(stats)
 }
 
+# Create function to describe mapping statistics calculated above
+describeMapping <- function(stats) {
+  my_label <- scales::label_percent(accuracy = 0.01, prefix="(", suffix = "%)")
+  percentOfUniqueProbes <- function(num) {
+    #' Gives number as a percent of unique probes 
+    
+    return(my_label(num / stats$count_unique_probe))
+  }
 
+  print(paste("  Mapped (original): ", stats$count_total_original_mapped, percentOfUniqueProbes(stats$count_total_original_mapped)))
+  print(paste("  Mapped (biomart): ", stats$count_total_biomart_mapped, percentOfUniqueProbes(stats$count_total_biomart_mapped)))
+  print(paste("  Ensembl One-To-One Mapped (biomart): ", stats$count_total_biomart_1to1_mapped, percentOfUniqueProbes(stats$count_total_biomart_1to1_mapped)))
+  print(paste("  Ensembl Multi-Mapped (biomart): ", stats$count_total_biomart_multi_mapped, percentOfUniqueProbes(stats$count_total_biomart_multi_mapped)))
+  print(paste("  Not mapped (unique original): ", stats$count_unique_original_unmapped, percentOfUniqueProbes(stats$count_unique_original_unmapped)))
+  print(paste("  Not mapped (unique biomart): ", stats$count_unique_biomart_unmapped, percentOfUniqueProbes(stats$count_unique_biomart_unmapped)))
+  print(paste("  Not mapped (shared biomart & original): ", stats$count_both_original_and_biomart_unmapped, percentOfUniqueProbes(stats$count_both_original_and_biomart_unmapped)))
+
+  print("More Info")
+  print(paste("  Not mapped (total original mapping): ", stats$count_total_original_unmapped, percentOfUniqueProbes(stats$count_total_original_unmapped)))
+  print(paste("  Not mapped (total biomart mapping): ", stats$count_total_biomart_unmapped, percentOfUniqueProbes(stats$count_total_biomart_unmapped)))
+  print(paste("  Features (genes) (stats$count_biomart_unique_mapped_features): ", stats$count_biomart_unique_mapped_features))
+  print(paste("  Features (genes) (stats$count_original_unique_mapped_features): ", stats$count_original_unique_mapped_features))
+  print(paste("  Percent fewer unique features: ", my_label(-(stats$count_biomart_unique_mapped_features - stats$count_original_unique_mapped_features) / stats$count_original_unique_mapped_features)))
+}
+
+# Use functions created above to calculate and describe the mapping statistics based on probe annotations
 calculateMappingStats(norm_data$genes) %>% describeMapping()
 ```
-TODO: Update code block to flip function order
 
 **Input Data:**
 
@@ -691,7 +692,19 @@ TODO: Update code block to flip function order
 
 **Output Data:**
 
-- Mapping summary (TODO: Indicate what's included in the mapping summary)
+- Mapping summary (An in-report comparison of non-control probe annotation mapping that includes the following:
+  - Mapped (original): Count/Percent of probes mapped using the original manufactuer mapping
+  - Mapped (biomart): Count/Percent of probes mapped using the biomart as per this Ensembl [protocol](https://useast.ensembl.org/info/genome/microarray_probe_set_mapping.html)
+  - Ensembl One-To-One Mapped (biomart): Count/Percent of probes mapping one-to-one to Ensembl gene IDs
+  - Ensembl Multi-Mapped (biomart): Count/Percent of probes mapping to more than one Ensembl gene IDs
+  - Not mapped (unique original): Count/Percent of probes not mapped as per the manufacturer but mapped as per biomart.
+  - Not mapped (unique biomart): Count/Percent of probes not mapped as per the biomart but mapped as per the manufacturer.
+  - Not mapped (shared biomart & original): Count/Percent of probes not mapped as per either the manufacturer nor biomart.
+  - Not mapped (total original mapping): Count/Percent of probes not mapped to the original manufacturer.
+  - Not mapped (total biomart mapping): Count/Percent of probes not mapped to the biomart.
+  - Features (genes) (stats$count_biomart_unique_mapped_features): Count/Percent of unique probes mapped as per biomart.
+  - Features (genes) (stats$count_original_unique_mapped_features): Count/Percent of unique probes mapped as per the original manufacturer.
+  - Percent fewer unique features: Percent reduction of unique genes mapped when comparing original manufacturer to biomart.)
 
 <br>
 
@@ -742,21 +755,24 @@ runsheetToDesignMatrix <- function(runsheet_path) {
 
 
 # Loading metadata from runsheet csv file
-design_data <- runsheetToDesignMatrix(params$runsheet)
+design_data <- runsheetToDesignMatrix(runsheet)
 design <- design_data$matrix
+
+# Print SampleTable.csv file
+write.csv(design_data$groups, "SampleTable.csv")
 ```
 
-TODO: Add write to file commands to write out the SampleTable.csv and contrasts.csv files
+TODO: Add write to file commands to write out the contrasts.csv files
 
 **Input Data:**
 
-- `params$runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
+- `runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
 
 **Output Data:**
 
 - `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to)
-- SampleTable.csv\# (table containing samples and their respective groups)
-- contrasts.csv\# (table containing all pairwise comparisons)
+- **SampleTable.csv** (table containing samples and their respective groups)
+- **contrasts.csv** (table containing all pairwise comparisons)
 
 <br>
 
@@ -785,15 +801,12 @@ lmFitPairwise <- function(norm_data, design) {
 res <- lmFitPairwise(norm_data, design)
 
 # Print DE table, without filtering
-NO_FILTER_DGE = paste0(params$id, "_INTERIM_no_filtering.csv")
 limma::write.fit(res, adjust = 'BH', 
-                file = NO_FILTER_DGE,
+                file = INTERIM.csv,
                 row.names = FALSE,
                 quote = TRUE,
                 sep = ",")
 ```
-
-TODO: Make the NO_FILTER_DGE variable a static file instead.
 
 **Input Data:**
 
@@ -802,8 +815,10 @@ TODO: Make the NO_FILTER_DGE variable a static file instead.
 
 **Output Data:**
 
-TODO: change to static file name
-- `*_INTERIM_no_filtering.csv` (Statistical values from individual probe level DE analysis, including TODO: list the statistical values provided in this output file and the modles used to generate those statistics)
+- INTERIM.csv (Statistical values from individual probe level DE analysis, including:
+  - Log2fc between all pairwise comparisons
+  - T statistic for all pairwise comparison tests
+  - P value for all pairwise comparison tests)
 
 <br>
 
@@ -812,10 +827,8 @@ TODO: change to static file name
 ```R
 ## Reformat Table for consistency across DE analyses tables within GeneLab ##
 
-TODO: Replace NO_FILTER_DGE variable with static file name
-
 # Read in DE table 
-df_interim <- read.csv(NO_FILTER_DGE)
+df_interim <- read.csv("INTERIM.csv")
 
 # Reformat column names
 reformat_names <- function(colname, group_name_mapping) {
@@ -863,16 +876,15 @@ for ( i in seq_along(unique_groups) ) {
                         group == current_group
                       ) %>% 
                       dplyr::pull()
-  #### TODO: Update this code chunk ####                    
+                    
   print(glue::glue("Computing mean and standard deviation for Group {i} of {length(unique_groups)}"))
   print(glue::glue("Group: {current_group}"))
   print(glue::glue("Samples in Group: '{toString(current_samples)}'"))
   
   df_interim <- df_interim %>% 
-    dplyr::rowwise() %>% 
     dplyr::mutate( 
-      "Group.Mean_{current_group}" := mean(c_across(current_samples)),
-      "Group.Stdev_{current_group}" := sd(c_across(current_samples)),
+      "Group.Mean_{current_group}" := rowMeans(select(., current_samples)),
+      "Group.Stdev_{current_group}" := matrixStats::rowSds(as.matrix(select(., current_samples))),
       ) %>% 
     dplyr::ungroup() %>%
     as.data.frame()
@@ -897,18 +909,18 @@ colnames_to_remove = c(
 df_interim <- df_interim %>% dplyr::select(-any_of(colnames_to_remove))
 
 # Save to file
-TODO: Make differential_expression.csv static file name
+write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
+
 TODO: Create static files for visualization tables - both DE table with true/false columns and the PCA table
-write.csv(df_interim, paste0(params$id, "_differential_expression.csv"), row.names = FALSE)
+
 ```
 
 **Input Data:**
 
-TODO: change to static file name
-- `*_INTERIM_no_filtering.csv` (Statistical values from individual probe level DE analysis, output from [Step 7d](#7d-perform-individual-probe-level-de) above)
+- INTERIM.csv (Statistical values from individual probe level DE analysis, output from [Step 7d](#7d-perform-individual-probe-level-de) above)
 
 **Output Data:**
 
-- differential_expression.csv\# (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
+- **differential_expression.csv** (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
 - visualization_output_table.csv (file used to generate GeneLab DGE visualizations)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
