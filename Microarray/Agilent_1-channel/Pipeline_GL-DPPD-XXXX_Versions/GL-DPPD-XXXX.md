@@ -344,7 +344,7 @@ norm_data <- limma::backgroundCorrect(raw_data, method = "normexp")
 - `norm_data` (R object containing background-corrected microarray data)
 
   >   
-  > Note: Background correction was performed using the `normexp` method, TODO: insert description of what this does, as recommended by [Ritchie, M.E., et al.](http://bioinformatics.oxfordjournals.org/content/23/20/2700)
+  > Note: Background correction was performed using the `normexp` method as recommended by [Ritchie, M.E., et al.](http://bioinformatics.oxfordjournals.org/content/23/20/2700), which performs background correction and quantile normalization using the control probes by utilizing the `normexp.fit.control` function to estimate the parameters required by normal+exponential(normexp) convolution model with the help of negative control probes, followed by the `normexp.signal` function to perform the background correction.
 
 <br>
 
