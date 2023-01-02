@@ -68,9 +68,6 @@ Lauren Sanders (acting GeneLab Project Scientist)
 
 ---
 
-TODO: Replace all params$runsheet with the variable you decide to use
-TODO: Replace /# indicators for published files with putting them in **bold** instead
-
 # General processing overview with example commands  
 
 > Exact processing commands for specific datasets that have been released are provided with their processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
