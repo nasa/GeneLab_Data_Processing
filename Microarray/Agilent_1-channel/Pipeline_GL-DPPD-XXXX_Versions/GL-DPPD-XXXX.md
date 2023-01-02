@@ -38,7 +38,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
       - [6b. Pseudo Image Plots](#6b-pseudo-image-plots)
       - [6c. MA Plots](#6c-ma-plots)
       - [6d. Boxplots](#6d-boxplots)
-    - [7. Probeset Differential Expression (DE)](#7-probeset-differential-expression)
+    - [7. Probeset Differential Expression (DE)](#7-probeset-differential-expression-de)
       - [7a. Add Probeset Annotations](#7a-add-probeset-annotations)
       - [7b. Summarize Biomart Mapping vs. Manufacturer Mapping](#7b-summarize-biomart-mapping-vs-manufacturer-mapping)
       - [7c. Generate Design Matrix](#7c-generate-design-matrix)
@@ -57,9 +57,10 @@ Lauren Sanders (acting GeneLab Project Scientist)
 |stringr|1.5.0|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
 |R.utils|2.12.2|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
 |limma|3.50.3|[https://bioconductor.org/packages/3.14/bioc/html/limma.html](https://bioconductor.org/packages/3.14/bioc/html/limma.html)|
-|glue|R1.6.2|[https://glue.tidyverse.org/](https://glue.tidyverse.org/)|
+|glue|1.6.2|[https://glue.tidyverse.org/](https://glue.tidyverse.org/)|
 |biomaRt|2.50.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
 |scales|1.2.1|[https://scales.r-lib.org/](https://scales.r-lib.org/)|
+|matrixStats|0.63.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
 |dp_tools|1.2.0|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |singularity|3.9|[https://sylabs.io/](https://sylabs.io/)|
 |Quarto|1.1.251|[https://quarto.org/](https://quarto.org/)|
@@ -74,7 +75,7 @@ TODO: Replace /# indicators for published files with putting them in **bold** in
 
 > Exact processing commands for specific datasets that have been released are provided with their processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
 > 
-> All output files in **bold** are published with the microarray processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects). 
+> All output files in **bold** are published with the Agilent 1-channel microarray processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects). 
 
 ---
 
@@ -115,7 +116,7 @@ dpt-isa-to-runsheet --accession OSD-### \
 
 - *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective OSD dataset, used to define sample groups - the *ISA.zip file is located in the [OSD repository](https://osdr.nasa.gov/bio/repo/search?q=&data_source=cgene,alsda&data_type=study) under 'Study Files' -> 'metadata')
 
-- {OSD-Accession-ID}_microarray_v{version}_runsheet.csv\# (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
+- **{OSD-Accession-ID}_microarray_v{version}_runsheet.csv** (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
 
 <br>
 
@@ -127,7 +128,7 @@ dpt-isa-to-runsheet --accession OSD-### \
 
 ```R
 # fileEncoding removes strange characters from the column names
-df_rs <- read.csv(params$runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
+df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
 
 
 # Define paths to raw data files
