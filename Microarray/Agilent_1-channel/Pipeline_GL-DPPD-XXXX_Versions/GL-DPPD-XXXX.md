@@ -4,9 +4,9 @@
 (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
 ---
 
-**Date:** TBD MONTH NN, 2023
-**Revision:** -
-**Document Number:** GL-DPPD-XXXX
+**Date:** TBD MONTH NN, 2023  
+**Revision:** -  
+**Document Number:** GL-DPPD-XXXX   
 
 **Submitted by:**  
 Jonathan Oribello (GeneLab Data Processing Team)
@@ -77,22 +77,23 @@ Lauren Sanders (acting GeneLab Project Scientist)
 
 ## 1. Create Sample RunSheet
 
-> Notes:
-> - Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_Agile1CMP-A/examples/README.md).
+> Notes: 
+> - Rather than running the commands below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_Agile1CMP-A/examples/README.md).
+> 
 > - These command line tools are part of the [dp_tools](https://github.com/J-81/dp_tools) program.
 
 ```bash
 ### Download the *ISA.zip file from the GeneLab Repository ###
 
 dpt-get-isa-archive \
-  --accession OSD-###
+ --accession OSD-###
 
 ### Parse the metadata from the *ISA.zip file to create a sample runsheet ###
 
 dpt-isa-to-runsheet --accession OSD-### \
-  --config-type microarray \
-  --config-version Latest \
-  --isa-archive *ISA.zip
+ --config-type microarray \
+ --config-version Latest \
+ --isa-archive *ISA.zip
 ```
 
 **Parameter Definitions:**
@@ -102,22 +103,24 @@ dpt-isa-to-runsheet --accession OSD-### \
 - `--config-version` - Specifies the `dp-tools` configuration version to use, a value of `Latest` will specify the most recent version
 - `--isa-archive` - Specifies the *ISA.zip file for the respective GLDS dataset, downloaded in the `dpt-get-isa-archive` command
 
+
 **Input Data:**
 
-- `No input data required but the OSD accession ID needs to be indicated, which is used to download the respective ISA archive` 
+- No input data required but the OSD accession ID needs to be indicated, which is used to download the respective ISA archive 
 
 **Output Data:**
 
 - *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective OSD dataset, used to define sample groups - the *ISA.zip file is located in the [OSD repository](https://osdr.nasa.gov/bio/repo/search?q=&data_source=cgene,alsda&data_type=study) under 'Study Files' -> 'metadata')
+
 - **{OSD-Accession-ID}_microarray_v{version}_runsheet.csv** (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
 
 <br>
 
+---
 
 ## 2. Load Metadata and Raw Data
 
-> Notes:
-> - Steps 2 - 7 are done in R
+> Note: Steps 2 - 7 are done in R
 
 ```R
 # Define path to runsheet
@@ -179,18 +182,16 @@ df_local_paths <- data.frame(`Sample Name` = df_rs$`Sample Name`, `Local Paths` 
 
 # Load raw data into R object
 raw_data <- limma::read.maimages(df_local_paths$`Local Paths`, 
-                                source = "agilent",  # Specify platform
-                                green.only = TRUE, # Specify one-channel design
-                                names = df_local_paths$`Sample Name` # Map column names as Sample Names (instead of default filenames)
-                                )
+                                 source = "agilent",  # Specify platform
+                                 green.only = TRUE, # Specify one-channel design
+                                 names = df_local_paths$`Sample Name` # Map column names as Sample Names (instead of default filenames)
+                                 )
 
 
 # Summarize raw data
 print(paste0("Number of Arrays: ", dim(raw_data)[2]))
 print(paste0("Number of Probes: ", dim(raw_data)[1]))
 ```
-
-
 
 **Input Data:**
 
@@ -205,21 +206,18 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 
 <br>
 
+---
 
 ## 3. Raw Data Quality Assessment
 
-
-
 <br>
 
-    
 ### 3a. Density Plot
-
 
 ```R
 limma::plotDensities(raw_data, 
-             log = TRUE, 
-             legend = "topright")
+                     log = TRUE, 
+                     legend = "topright")
 ```
 
 **Input Data:**
@@ -230,9 +228,9 @@ limma::plotDensities(raw_data,
 
 - Plot containing the density of raw intensities for each array (raw intensity values with background intensity values subtracted; lack of overlap indicates a need for normalization)
 
-    
-### 3b. Pseudo Image Plots
+<br>
 
+### 3b. Pseudo Image Plots
 
 ```R
 agilentImagePlot <- function(eListRaw) {
@@ -265,9 +263,9 @@ agilentImagePlot(raw_data)
 
 - Pseudo images of each array before background correction and normalization 
 
-    
-### 3c. MA Plots
+<br>
 
+### 3c. MA Plots
 
 ```R
 for ( array_i in seq(colnames(raw_data$E)) ) {
@@ -284,9 +282,9 @@ for ( array_i in seq(colnames(raw_data$E)) ) {
 
 - M (log ratio of the subject array vs a pseudo-reference, the mean of all other arrays) vs. A (average log expression) plot for each array before background correction and normalization (negative and positive control probes are in green and red, respectively)
 
-    
-### 3d. Foreground-Background Plots
+<br>
 
+### 3d. Foreground-Background Plots
 
 ```R
 for ( array_i in seq(colnames(raw_data$E)) ) {
@@ -303,9 +301,9 @@ for ( array_i in seq(colnames(raw_data$E)) ) {
 
 - Foreground vs. background expression plot for each array before background correction and normalization 
 
-    
-### 3e. Boxplots
+<br>
 
+### 3e. Boxplots
 
 ```R
 boxplotExpressionSafeMargin <- function(data) {
@@ -326,15 +324,15 @@ boxplotExpressionSafeMargin(raw_data)
 
 - Boxplot of raw expression data for each array before background correction and normalization 
 
+<br>
+
+---
 
 ## 4. Background Correction
-
 
 ```R
 norm_data <- limma::backgroundCorrect(raw_data, method = "normexp")
 ```
-
-
 
 **Input Data:**
 
@@ -349,9 +347,9 @@ norm_data <- limma::backgroundCorrect(raw_data, method = "normexp")
 
 <br>
 
+---
 
 ## 5. Between Array Normalization
-
 
 ```R
 # Normalize background-corrected data using the quantile method
@@ -361,8 +359,6 @@ norm_data <- limma::normalizeBetweenArrays(norm_data, method = "quantile")
 print(paste0("Number of Arrays: ", dim(norm_data)[2]))
 print(paste0("Number of Probes: ", dim(norm_data)[1]))
 ```
-
-
 
 **Input Data:**
 
@@ -377,21 +373,18 @@ print(paste0("Number of Probes: ", dim(norm_data)[1]))
 
 <br>
 
+---
 
 ## 6. Normalized Data Quality Assessment
 
-
-
 <br>
 
-    
 ### 6a. Density Plot
-
 
 ```R
 limma::plotDensities(norm_data, 
-             log = TRUE, 
-             legend = "topright")
+                     log = TRUE, 
+                     legend = "topright")
 ```
 
 **Input Data:**
@@ -400,11 +393,11 @@ limma::plotDensities(norm_data,
 
 **Output Data:**
 
-- Plot containing the density of background-corrected and normalized intensities for each array (near complete overlap is expected after normalization) 
+- Plot containing the density of background-corrected and normalized intensities for each array (near complete overlap is expected after normalization)
 
-    
+<br>
+
 ### 6b. Pseudo Image Plots
-
 
 ```R
 agilentImagePlot(norm_data)
@@ -418,9 +411,9 @@ agilentImagePlot(norm_data)
 
 - Pseudo images of each array after background correction and normalization 
 
-    
-### 6c. MA Plots
+<br>
 
+### 6c. MA Plots
 
 ```R
 for ( array_i in seq(colnames(norm_data$E)) ) {
@@ -437,9 +430,9 @@ for ( array_i in seq(colnames(norm_data$E)) ) {
 
 - M (log ratio of the subject array vs a pseudo-reference, the mean of all other arrays) vs. A (average log expression) plot for each array after background correction and normalization (negative and positive control probes are in green and red, respectively)
 
-    
-### 6d. Boxplots
+<br>
 
+### 6d. Boxplots
 
 ```R
 boxplotExpressionSafeMargin(norm_data)
@@ -453,14 +446,15 @@ boxplotExpressionSafeMargin(norm_data)
 
 - Boxplot of expression data for each array after background correction and normalization 
 
+<br>
 
-## 7. Probeset Differential Expression
+---
+
+## 7. Probeset Differential Expression (DE)
 
 <br>
 
-    
 ### 7a. Add Probeset Annotations
-
 
 ```R
 shortenedOrganismName <- function(long_name) {
@@ -485,8 +479,8 @@ print(paste0("Expected dataset name: '", expected_dataset_name, "'"))
 ENSEMBL_VERSION <- '107'
 
 ensembl <- biomaRt::useEnsembl(biomart = "genes", 
-                              dataset = expected_dataset_name,
-                              version = ENSEMBL_VERSION)
+                               dataset = expected_dataset_name,
+                               version = ENSEMBL_VERSION)
 print(ensembl)
 
 
@@ -563,9 +557,10 @@ norm_data$genes <- norm_data$genes %>%
 
 **Output Data:**
 
-- norm_data$genes (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html))
+- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html))
 
-    
+<br>
+
 ### 7b. Summarize Biomart Mapping vs. Manufacturer Mapping
 
 ```R
@@ -707,9 +702,9 @@ calculateMappingStats(norm_data$genes) %>% describeMapping()
   - Features (genes) (stats$count_original_unique_mapped_features): Count/Percent of unique probes mapped as per the original manufacturer.
   - Percent fewer unique features: Percent reduction of unique genes mapped when comparing original manufacturer to biomart.)
 
-    
-### 7c. Generate Design Matrix
+<br>
 
+### 7c. Generate Design Matrix
 
 ```R
 # Pull all factors for each sample in the study from the runsheet created in Step 1
@@ -775,9 +770,9 @@ TODO: Add write to file commands to write out the contrasts.csv files
 - **SampleTable.csv** (table containing samples and their respective groups)
 - **contrasts.csv** (table containing all pairwise comparisons)
 
-    
-### 7d. Perform Individual Probe Level DE
+<br>
 
+### 7d. Perform Individual Probe Level DE
 
 ```R
 lmFitPairwise <- function(norm_data, design) {
@@ -821,9 +816,9 @@ limma::write.fit(res, adjust = 'BH',
   - T statistic for all pairwise comparison tests
   - P value for all pairwise comparison tests)
 
-    
-### 7e. Add Additional Columns and Format DE Table 
+<br>
 
+### 7e. Add Additional Columns and Format DE Table 
 
 ```R
 ## Reformat Table for consistency across DE analyses tables within GeneLab ##
@@ -910,8 +905,10 @@ colnames_to_remove = c(
 df_interim <- df_interim %>% dplyr::select(-any_of(colnames_to_remove))
 
 # Save to file
-TODO: Create static files for visualization tables - both DE table with true/false columns and the PCA table
 write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
+
+TODO: Create static files for visualization tables - both DE table with true/false columns and the PCA table
+
 ```
 
 **Input Data:**
@@ -923,7 +920,3 @@ write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
 - **differential_expression.csv** (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
 - visualization_output_table.csv (file used to generate GeneLab DGE visualizations)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
-
-
-
----
