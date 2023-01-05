@@ -745,7 +745,7 @@ runsheetToDesignMatrix <- function(runsheet_path) {
     names_mapping <- as.data.frame(cbind(safe_name = as.character(condition), original_name = group_names))
 
     design <- model.matrix(~ 0 + condition)
-    design_data <- list( matrix = design, mapping = names_mapping, groups = as.data.frame( cbind(sample = df[,c("Sample.Name")], group = group_names) ) )
+    design_data <- list( matrix = design, mapping = names_mapping, groups = as.data.frame( cbind(sample = df[,c("Sample.Name")], group = group_names) ), contrasts = contrasts )
     return(design_data)
 }
 
@@ -754,11 +754,10 @@ runsheetToDesignMatrix <- function(runsheet_path) {
 design_data <- runsheetToDesignMatrix(runsheet)
 design <- design_data$matrix
 
-# Print SampleTable.csv file
+# Write SampleTable.csv and contrasts.csv file
 write.csv(design_data$groups, "SampleTable.csv")
+write.csv(design_data$contrasts, "contrasts.csv")
 ```
-
-TODO: Add write to file commands to write out the contrasts.csv files
 
 **Input Data:**
 
