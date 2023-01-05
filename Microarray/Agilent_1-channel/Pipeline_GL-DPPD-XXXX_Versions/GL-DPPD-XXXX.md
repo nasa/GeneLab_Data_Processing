@@ -38,8 +38,8 @@ Lauren Sanders (acting GeneLab Project Scientist)
       - [6b. Pseudo Image Plots](#6b-pseudo-image-plots)
       - [6c. MA Plots](#6c-ma-plots)
       - [6d. Boxplots](#6d-boxplots)
-    - [7. Probeset Differential Expression (DE)](#7-probeset-differential-expression-de)
-      - [7a. Add Probeset Annotations](#7a-add-probeset-annotations)
+    - [7. Probe Differential Expression (DE)](#7-probe-differential-expression-de)
+      - [7a. Add Probe Annotations](#7a-add-probe-annotations)
       - [7b. Summarize Biomart Mapping vs. Manufacturer Mapping](#7b-summarize-biomart-mapping-vs-manufacturer-mapping)
       - [7c. Generate Design Matrix](#7c-generate-design-matrix)
       - [7d. Perform Individual Probe Level DE](#7d-perform-individual-probe-level-de)
@@ -450,11 +450,11 @@ boxplotExpressionSafeMargin(norm_data)
 
 ---
 
-## 7. Probeset Differential Expression (DE)
+## 7. Probe Differential Expression (DE)
 
 <br>
 
-### 7a. Add Probeset Annotations
+### 7a. Add Probe Annotations
 
 ```R
 shortenedOrganismName <- function(long_name) {
@@ -684,7 +684,7 @@ calculateMappingStats(norm_data$genes) %>% describeMapping()
 
 **Input Data:**
 
-- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html), output from [Step 7a](#7a-add-probeset-annotations) above)
+- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html), output from [Step 7a](#7a-add-probe-annotations) above)
 
 **Output Data:**
 
