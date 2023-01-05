@@ -906,8 +906,46 @@ df_interim <- df_interim %>% dplyr::select(-any_of(colnames_to_remove))
 # Save to file
 write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
 
-TODO: Create static files for visualization tables - both DE table with true/false columns and the PCA table
+### Add columns needed to generate GeneLab visualization plots
+## Add column to indicate the sign (positive/negative) of log2fc for each pairwise comparison
+df <- df_interim
+updown_table <- sign(df[,grep("Log2fc_",colnames(df))])
+colnames(updown_table) <- gsub("Log2fc","Updown",grep("Log2fc_",colnames(df),value = TRUE))
+df <- cbind(df,updown_table)
+rm(updown_table)
+## Add column to indicate contrast significance with p <= 0.1
+sig.1_table <- df[,grep("P.value_",colnames(df))]<=.1
+colnames(sig.1_table) <- gsub("P.value","Sig.1",grep("P.value_",colnames(df),value = TRUE))
+df <- cbind(df,sig.1_table)
+rm(sig.1_table)
+## Add column to indicate contrast significance with p <= 0.05
+sig.05_table <- df[,grep("P.value_",colnames(df))]<=.05
+colnames(sig.05_table) <- gsub("P.value","Sig.05",grep("P.value_",colnames(df),value = TRUE))
+df <- cbind(df, sig.05_table)
+rm(sig.05_table)
+## Add columns for the volcano plot with p-value and adjusted p-value
+log_pval_table <- log2(df[,grep("P.value_", colnames(df))])
+colnames(log_pval_table) <- paste0("Log2_", colnames(log_pval_table))
+df <- cbind(df, log_pval_table)
+rm(log_pval_table)
+log_adj_pval_table <- log2(df[,grep("Adj.p.value_", colnames(df))])
+colnames(log_adj_pval_table) <- paste0("Log2_", colnames(log_adj_pval_table))
+df <- cbind(df, log_adj_pval_table)
+rm(log_adj_pval_table)
 
+write.csv(df,
+          row.names = FALSE,
+          "visualization_output_table.csv"
+          )
+
+### Generate and export PCA table for GeneLab visualization plots
+## Only use positive expression values, negative values can make up a small portion ( < 0.5% ) of normalized expression values and cannot be log transformed
+exp_raw <- log2(norm_data$E) # negatives get converted to NA
+exp_raw <- na.omit(norm_data$E)
+PCA_raw <- prcomp(t(exp_raw), scale = FALSE)
+write.csv(PCA_raw$x,
+          "visualization_PCA_table.csv"
+          )
 ```
 
 **Input Data:**
