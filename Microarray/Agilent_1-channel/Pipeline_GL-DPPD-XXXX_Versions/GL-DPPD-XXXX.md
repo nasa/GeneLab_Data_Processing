@@ -570,7 +570,7 @@ norm_data$genes <- norm_data$genes %>%
 ### 7b. Summarize Biomart Mapping vs. Manufacturer Mapping
 
 ```R
-# Create function to calcluate mapping statistics
+# Create function to calculate mapping statistics
 calculateMappingStats <- function(df_genes) {
 
   stats <- list()
