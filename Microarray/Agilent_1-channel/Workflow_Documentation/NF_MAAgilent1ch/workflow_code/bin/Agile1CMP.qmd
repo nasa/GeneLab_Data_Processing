@@ -41,7 +41,7 @@ runsheet = params$runsheet # <path/to/runsheet>
 ``` {r load-runsheet}
 print("Loading Runsheet...") # NON_DPPD
 # fileEncoding removes strange characters from the column names
-df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM')  
+df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
 # DEBUG:START
 SAMPLES_TO_PROCESS = 6
 df_rs <- df_rs[1:SAMPLES_TO_PROCESS,] # DEBUG_ONLY, reduce number of samples to process
