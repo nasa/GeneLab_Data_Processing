@@ -546,7 +546,7 @@ unique_probe_ids <- df_mapping %>%
                         ) %>%
                       # Count number of ensembl IDS mapped
                       dplyr::mutate( 
-                        count_ENSEMBL_mappings = 1 + stringr::str_count(ENSEMBL, stringr::fixed("|"))
+                        count_ENSEMBL_mappings = 1 + stringr::str_count(ENSEMBL, ",")
                       )
 
 norm_data$genes <- norm_data$genes %>% 
