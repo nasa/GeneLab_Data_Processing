@@ -1,0 +1,775 @@
+---
+title: "Agilent 1 Channel Processing"
+date: now
+title-block-banner: true
+format:
+    html:
+        code-link: true
+        code-fold: true
+        embed-resources: true
+        toc: true
+        toc-location: left
+        toc-depth: 4
+        number-sections: true
+
+params:
+  id: NULL # str, used to name output files
+  runsheet: NULL # str, path to runsheet
+  biomart_attribute: NULL # str, used as a fallback value if 'Array Design REF' column is not found in the runsheet
+  DEBUG_limit_biomart_query: NULL # int, If supplied, only the first n probeIDs are queried
+---
+
+## Validate Parameters <!-- non DPPD -->
+``` {r validate-parameters}
+# DEBUG UNTIL CONTAINER UPDATED
+chooseCRANmirror(ind = 1)
+install.packages('matrixStats')
+# ENDDEBUG
+
+library(dplyr) # Ensure infix operator is available, methods should still reference dplyr namespace otherwise
+options(dplyr.summarise.inform = FALSE) # Don't print out '`summarise()` has grouped output by 'group'. You can override using the `.groups` argument.'
+if (is.null(params$runsheet)) {
+  stop("PARAMETERIZATION ERROR: Must supply runsheet path")
+}
+
+runsheet = params$runsheet # <path/to/runsheet>
+
+```
+
+## Load Metadata and Raw Data
+
+``` {r load-runsheet}
+print("Loading Runsheet...") # NON_DPPD
+# fileEncoding removes strange characters from the column names
+df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM')  
+# DEBUG:START
+SAMPLES_TO_PROCESS = 6
+df_rs <- df_rs[1:SAMPLES_TO_PROCESS,] # DEBUG_ONLY, reduce number of samples to process
+# DEBUG:END
+# NON_DPPD:START
+print("Here is the embedded runsheet")
+DT::datatable(df_rs)
+print("Here are the expected comparison groups")
+# NON_DPPD:END
+print("Loading Raw Data...") # NON_DPPD
+# TODO: generalize this utility function
+allTrue <- function(i_vector) {
+  if ( length(i_vector) == 0 ) {
+    stop(paste("Input vector is length zero"))
+  }
+  all(i_vector)
+}
+
+# Define paths to raw data files
+runsheetPathsAreURIs <- function(df_runsheet) {
+  allTrue(stringr::str_starts(df_runsheet$`Array Data File Path`, "https"))
+}
+
+
+# Download raw data files
+downloadFilesFromRunsheet <- function(df_runsheet) {
+  urls <- df_runsheet$`Array Data File Path`
+  destinationFiles <- df_runsheet$`Array Data File Name`
+
+  mapply(function(url, destinationFile) {
+    print(paste0("Downloading from '", url, "' TO '", destinationFile, "'"))
+    if ( file.exists(destinationFile ) ) {
+      warning(paste( "Using Existing File:", destinationFile ))
+    } else {
+      download.file(url, destinationFile)
+    }
+  }, urls, destinationFiles)
+
+  destinationFiles # Return these paths
+}
+
+if ( runsheetPathsAreURIs(df_rs) ) {
+  print("Determined Raw Data Locations are URIS")
+  local_paths <- downloadFilesFromRunsheet(df_rs)
+} else {
+  print("Or Determined Raw Data Locations are local paths")
+  local_paths <- df_rs$`Array Data File Path`
+}
+
+
+# Decompress files if needed
+if ( allTrue(stringr::str_ends(local_paths, ".gz")) ) {
+  print("Determined these files are gzip compressed... Decompressing now")
+  # This does the decompression
+  lapply(local_paths, R.utils::gunzip, remove = FALSE, overwrite = TRUE)
+  # This removes the .gz extension to get the decompressed filenames
+  local_paths <- vapply(local_paths, 
+                        stringr::str_replace, # Run this function against each item in 'local_paths'
+                        FUN.VALUE = character(1),  # Execpt an character vector as a return
+                        USE.NAMES = FALSE,  # Don't use the input to assign names for the returned list
+                        pattern = ".gz$", # first argument for applied function
+                        replacement = ""  # second argument for applied function
+                        )
+}
+
+df_local_paths <- data.frame(`Sample Name` = df_rs$`Sample Name`, `Local Paths` = local_paths, check.names = FALSE)
+# NON_DPPD:START
+print("Raw Data Loaded Successfully")
+DT::datatable(df_local_paths)
+# NON_DPPD:END
+
+
+# Load raw data into R object
+raw_data <- limma::read.maimages(df_local_paths$`Local Paths`, 
+                                 source = "agilent",  # Specify platform
+                                 green.only = TRUE, # Specify one-channel design
+                                 names = df_local_paths$`Sample Name` # Map column names as Sample Names (instead of default filenames)
+                                 )
+
+
+# Summarize raw data
+print("Summarized Raw Data Below") # NON_DPPD
+print(paste0("Number of Arrays: ", dim(raw_data)[2]))
+print(paste0("Number of Probes: ", dim(raw_data)[1]))
+# NON_DPPD:START
+DT::datatable(raw_data$targets, caption = "Sample to File Mapping")
+DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data file embedded probes to genes table")
+# NON_DPPD:END
+```
+
+## QA For Raw Data
+
+### Density Plot
+
+``` {r qa-for-raw-data--density-plot}
+#| fig-cap: Density of raw intensities for each array.  These are raw intensity values with background intensity values subtracted.  A lack of overlap indicates a need for normalization. # TODO: include me in DPPD
+#| warning: false
+#| fig-height: !expr length(rownames(raw_data$targets)) / 2.5 # Dynamically setting figure height to prevent legend from being cutoff for many arrays
+limma::plotDensities(raw_data, 
+                     log = TRUE, 
+                     legend = "topright")
+```
+
+### Pseudo Image Plots
+
+``` {r qa-for-raw-data--pseudoimage-plots}
+#| warning: false # NAN can be produced due to log transformations
+#| layout-ncol: 2
+agilentImagePlot <- function(eListRaw) {
+  # Adapted from this discussion: https://support.bioconductor.org/p/15523/
+  copy_raw_data <- eListRaw
+  copy_raw_data$genes$Block <- 1 # Agilent arrays only have one block
+  names(copy_raw_data$genes)[2] <- "Column"
+  copy_raw_data$printer <- limma::getLayout(copy_raw_data$genes)
+
+  r <- copy_raw_data$genes$Row
+  c <- copy_raw_data$genes$Column
+  nr <- max(r)
+  nc <- max(c)
+  y <- rep(NA,nr*nc)
+  i <- (r-1)*nc+c
+  for ( array_i in seq(colnames(copy_raw_data$E)) ) {
+    y[i] <- log2(copy_raw_data$E[,array_i])
+    limma::imageplot(y,copy_raw_data$printer, main = rownames(copy_raw_data$targets)[array_i])
+  }
+}
+
+agilentImagePlot(raw_data)
+```
+
+### MA Plots
+
+``` {r qa-for-raw-data--ma-plots}
+#| layout-ncol: 2
+#| warning: false # NAN can be produced due to log transformations
+for ( array_i in seq(colnames(raw_data$E)) ) {
+  message(glue::glue("MA Plot for array: {array_i} of {length(colnames(raw_data$E))}")) # NON_DPPD
+  sample_name <- rownames(raw_data$targets)[array_i]
+  limma::plotMA(raw_data,array=array_i,xlab="Average log-expression",ylab="Expression log-ratio (this sample vs. others)", main = sample_name, status=raw_data$genes$ControlType)
+}
+```
+
+
+### Foreground-Background Plots
+
+``` {r qa-for-raw-data--foreground-background-plots}
+#| layout-ncol: 2
+#| warning: false # NAN can be produced due to log transformations
+for ( array_i in seq(colnames(raw_data$E)) ) {
+  message(glue::glue("FB Plot for array: {array_i} of {length(colnames(raw_data$E))}")) # NON_DPPD
+  sample_name <- rownames(raw_data$targets)[array_i]
+  limma::plotFB(raw_data, array = array_i, xlab = "log2 Background", ylab = "log2 Foreground", main = sample_name) 
+}
+```
+
+### Boxplots
+
+``` {r qa-for-raw-data--boxplots}
+#| warning: false # NAN can be produced due to log transformations
+boxplotExpressionSafeMargin <- function(data) {
+  # NON_DPPD:START
+  #' plot boxplots of expression values
+  #'
+  #' Ensures the plot labels are vertical and fit the plot
+  #' @param data: limma::EListRaw or limma::EList
+  # NON_DPPD:END
+  longest_sample_name_length <- max(nchar(rownames(data$targets))) * 1
+  bottom_margin <- min(35, longest_sample_name_length)
+  par(mar=c(bottom_margin,2,1,1))
+  boxplot(log2(data$E), las=2)
+}
+
+boxplotExpressionSafeMargin(raw_data)
+```
+
+## Background Correction
+
+``` {r background-correction}
+norm_data <- limma::backgroundCorrect(raw_data, method = "normexp")
+```
+
+## Between Array Normalization
+
+``` {r between-array-normalization}
+# Normalize background-corrected data using the quantile method
+norm_data <- limma::normalizeBetweenArrays(norm_data, method = "quantile")
+print("Summarized Normalized Data Below") # NON_DPPD
+print("Note: These are expected to be the same values as the normalized data since no filtering/summarization has been performed") # NON_DPPD
+
+# Summarize background-corrected and normalized data
+print(paste0("Number of Arrays: ", dim(norm_data)[2]))
+print(paste0("Number of Probes: ", dim(norm_data)[1]))
+# NON_DPPD:START
+DT::datatable(norm_data$targets, caption = "Sample to File Mapping")
+DT::datatable(head(norm_data$genes, n = 20), caption = "First 20 rows of normalized data file embedded probes to genes table")
+# NON_DPPD:END
+```
+
+## Normalized Data Quality Assessment
+
+### Density Plot
+
+``` {r qa-for-norm-data--density-plot}
+#| fig-cap: Density of norm intensities for each array.  Near complete overlap is expected after normalization.
+#| warning: false
+#| fig-height: !expr length(rownames(norm_data$targets)) / 2.5 # Dynamically setting figure height to prevent legend from being cutoff for many arrays
+limma::plotDensities(norm_data, 
+                     log = TRUE, 
+                     legend = "topright")
+```
+
+### Pseudo Image Plots
+
+``` {r qa-for-norm-data--pseudoimage-plots}
+#| warning: false # NAN can be produced due to log transformations
+#| layout-ncol: 2
+agilentImagePlot(norm_data)
+```
+
+### MA Plots
+
+``` {r qa-for-norm-data--ma-plots}
+#| layout-ncol: 2
+#| warning: false # NAN can be produced due to log transformations
+for ( array_i in seq(colnames(norm_data$E)) ) {
+  sample_name <- rownames(norm_data$targets)[array_i]
+  limma::plotMA(norm_data,array=array_i,xlab="Average log-expression",ylab="Expression log-ratio (this sample vs. others)", main = sample_name, status=norm_data$genes$ControlType)
+}
+```
+
+
+### Boxplots
+
+``` {r qa-for-norm-data--boxplots}
+#| warning: false # NAN can be produced due to log transformations
+boxplotExpressionSafeMargin(norm_data)
+```
+
+
+
+## Perform Probeset Differential Expression
+
+### Approach Motivation
+
+Based on bioconductor discussions with Gordon Smyth ("[Smyth's] research group created the limma, edgeR, goseq, Rsubread, csaw and diffHic packages.") here: https://support.bioconductor.org/p/116616/#116674
+
+Summarization using `avereps` is 'deliberately designed for cases when each probe is associated with exactly one gene'.
+
+Given good quality gene annotations (which this analysis should have by using bioMart Ensembl Gene annotations), 'most Agilent probes should map to a unique gene'.
+
+Based on this discussion, the folowing approach is utilized:
+
+1. Add biomart annotations first
+2. Compute all mapping statistics (i.e. multimapping (one-probe to many-genes), redudant mapping (many-probes to one-gene))
+3. Perform DE with and without filtering (assessing effects of filtering on row-wise results)
+
+Don't summarize the results from the probe level since any probe with a single gene mapping being DE implies the gene a DEG. https://support.bioconductor.org/p/93796/#116605
+
+
+### Probe Differential Expression (DE)
+
+#### Add Probe Annotations
+
+``` {r retrieve-probeset-annotations}
+#| message = FALSE
+shortenedOrganismName <- function(long_name) {
+  #' Convert organism names like 'Homo Sapiens' into 'hsapiens'
+  tokens <- long_name %>% stringr::str_split(" ", simplify = TRUE)
+  genus_name <- tokens[1]
+
+  species_name <- tokens[2]
+
+  short_name <- stringr::str_to_lower(paste0(substr(genus_name, start = 1, stop = 1), species_name))
+
+  return(short_name)
+}
+
+
+# locate dataset
+expected_dataset_name <- shortenedOrganismName(unique(df_rs$organism)) %>% stringr::str_c("_gene_ensembl")
+print(paste0("Expected dataset name: '", expected_dataset_name, "'"))
+
+
+# Specify Ensembl version used in current GeneLab reference annotations
+ENSEMBL_VERSION <- '107'
+print(paste0("Searching for Ensembl Version: ", ENSEMBL_VERSION)) # NON_DPPD
+
+ensembl <- biomaRt::useEnsembl(biomart = "genes", 
+                               dataset = expected_dataset_name,
+                               version = ENSEMBL_VERSION)
+print(ensembl)
+
+
+getBioMartAttribute <- function(df_rs, params) {
+  #' Returns resolved biomart attribute
+  # NON_DPPD:START
+  #' this either comes from the runsheet or as a fall back, the parameters injected during render
+  #' if neither exist, an error is thrown
+  # NON_DPPD:END
+
+  # check if runsheet has Array Design REF
+  if ( !is.null(df_rs$`Array Design REF`) ) {
+    print("Using attribute name sourced from runsheet")
+    return(unique(df_rs$`Array Design REF`))
+  } else {
+    print("Could not find 'Array Design REF' in runsheet, falling back to parameters")
+  }
+
+  # check if a fallback has been given via params
+  if ( !is.null(params$biomart_attribute ) ) {
+    print("Using attribute name sourced from parameters")
+    return(params$biomart_attribute)
+  }
+
+  # finally throw an error if neither guard condition was true
+  stop("No valid biomart attribute identified")
+}
+
+expected_attribute_name <- getBioMartAttribute(df_rs, params)
+print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
+
+probe_ids <- norm_data$genes$ProbeName
+
+# DEBUG:START
+if ( is.integer(params$DEBUG_limit_biomart_query) ) {
+  warning(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
+  message(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
+  probe_ids <- probe_ids[1:params$DEBUG_limit_biomart_query]
+}
+# DEBUG:END
+
+# Create probe map
+df_mapping <- biomaRt::getBM(
+    attributes = c(
+        expected_attribute_name,
+        "ensembl_gene_id",
+        "uniprot_gn_symbol",
+        #"go_id", # Full GO IDS
+        "goslim_goa_accession" # GO SLIM IDS, we use these to be consistent with bulkRNASeq and other transcriptomics assays
+        ), filters = expected_attribute_name, 
+        values = c(probe_ids), 
+        mart = ensembl)
+
+```
+
+``` {r reformat-merge-probeset-annotations}
+
+# Convert list of multi-mapped genes to string
+listToUniquePipedString <- function(str_list) {
+  #! convert lists into strings denoting unique elements separated by '|' characters
+  #! e.g. c("GO1","GO2","GO2","G03") -> "GO1|GO2|GO3"
+  return(toString(unique(str_list)) %>% stringr::str_replace_all(pattern = stringr::fixed(", "), replacement = "|"))
+}
+
+unique_probe_ids <- df_mapping %>% 
+                      # note: '!!sym(VAR)' syntax allows usage of variable 'VAR' in dplyr functions due to NSE. ref: https://dplyr.tidyverse.org/articles/programming.html # NON_DPPD
+                      dplyr::group_by(!!sym(expected_attribute_name)) %>% 
+                      dplyr::summarise(
+                        SYMBOL = listToUniquePipedString(uniprot_gn_symbol),
+                        ENSEMBL = listToUniquePipedString(ensembl_gene_id),
+                        GOSLIM_IDS = listToUniquePipedString(goslim_goa_accession)
+                        ) %>%
+                      # Count number of ensembl IDS mapped
+                      dplyr::mutate( 
+                        count_ENSEMBL_mappings = 1 + stringr::str_count(ENSEMBL, ",")
+                      )
+
+norm_data$genes <- norm_data$genes %>% 
+  dplyr::left_join(unique_probe_ids, by = c("ProbeName" = expected_attribute_name ) ) %>%
+  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) )
+```
+
+### Summarize Biomart Mapping vs. Manufacturer Mapping
+
+``` {r summarize-remapping-vs-original-mapping}
+# Create function to calculate mapping statistics
+calculateMappingStats <- function(df_genes) {
+
+  stats <- list()
+
+  df_genes.no.control.probes <- df_genes %>% dplyr::filter( ControlType == 0 )
+  print(paste("Original Probe Count: ", length(df_genes$ProbeName)))
+  print(paste("Original Non-Control Probe Count: ", length(df_genes.no.control.probes$ProbeName)))
+  stats$count_unique_probe <- length(unique(df_genes.no.control.probes$ProbeName))
+
+  stats$count_total_original_unmapped <- length(
+    unique(
+      df_genes.no.control.probes %>%
+      dplyr::filter( (ProbeName == SystematicName) ) %>%
+      dplyr::pull( ProbeName )
+    )
+  )
+  stats$count_total_original_mapped <- length(
+    unique(
+      df_genes.no.control.probes %>%
+      dplyr::filter( (ProbeName != SystematicName) ) %>%
+      dplyr::pull( ProbeName )
+    )
+  )
+  stats$count_total_biomart_unmapped <- length(
+    unique(
+      df_genes.no.control.probes %>%
+      dplyr::filter( is.na(SYMBOL) ) %>%
+      dplyr::pull( ProbeName )
+    )
+  )
+  stats$count_total_biomart_mapped <- length(
+    unique(
+      df_genes.no.control.probes %>%
+      dplyr::filter( !is.na(SYMBOL) ) %>%
+      dplyr::pull( ProbeName )
+    )
+  )
+  stats$count_total_biomart_1to1_mapped <- length(
+    unique(
+      df_genes.no.control.probes %>%
+      dplyr::filter( !is.na(SYMBOL) & (count_ENSEMBL_mappings == 1) ) %>%
+      dplyr::pull( ProbeName )
+    )
+  )
+  stats$count_total_biomart_multi_mapped <- length(
+    unique(
+      df_genes.no.control.probes %>%
+      dplyr::filter( !is.na(SYMBOL) & (count_ENSEMBL_mappings > 1) ) %>%
+      dplyr::pull( ProbeName )
+    )
+  )
+  stats$count_unique_original_unmapped <- length(
+    unique(
+      df_genes.no.control.probes %>%
+      dplyr::filter( (ProbeName == SystematicName) & !is.na(SYMBOL) ) %>%
+      dplyr::pull( ProbeName )
+    )
+  )
+  stats$count_unique_biomart_unmapped <- length(
+    unique(
+      df_genes.no.control.probes %>%
+      dplyr::filter( ( count_ENSEMBL_mappings == 0 ) & (ProbeName != SystematicName) ) %>%
+      dplyr::pull( ProbeName )
+    )
+  )
+  stats$count_both_original_and_biomart_unmapped <- length(
+    unique(
+      df_genes.no.control.probes %>%
+      dplyr::filter( is.na(SYMBOL) & (ProbeName == SystematicName) ) %>%
+      dplyr::pull( ProbeName )
+    )
+  )
+
+  stats$count_biomart_unique_mapped_features <- df_genes.no.control.probes %>%
+      dplyr::filter( count_ENSEMBL_mappings == 1  ) %>%
+      dplyr::pull( ENSEMBL ) %>%
+      unique() %>%
+      length()
+
+  stats$count_original_unique_mapped_features <- df_genes.no.control.probes %>%
+      dplyr::filter( ProbeName != GeneName  ) %>%
+      dplyr::pull( GeneName ) %>%
+      unique() %>%
+      length()
+
+  return(stats)
+}
+
+# Create function to describe mapping statistics calculated above
+describeMapping <- function(stats) {
+  my_label <- scales::label_percent(accuracy = 0.01, prefix="(", suffix = "%)")
+  percentOfUniqueProbes <- function(num) {
+    #' Gives number as a percent of unique probes 
+    #  (defined in outer scope) # NON_DPPD
+    
+    return(my_label(num / stats$count_unique_probe))
+  }
+
+  print(paste("  Mapped (original): ", stats$count_total_original_mapped, percentOfUniqueProbes(stats$count_total_original_mapped)))
+  print(paste("  Mapped (biomart): ", stats$count_total_biomart_mapped, percentOfUniqueProbes(stats$count_total_biomart_mapped)))
+  print(paste("  Ensembl One-To-One Mapped (biomart): ", stats$count_total_biomart_1to1_mapped, percentOfUniqueProbes(stats$count_total_biomart_1to1_mapped)))
+  print(paste("  Ensembl Multi-Mapped (biomart): ", stats$count_total_biomart_multi_mapped, percentOfUniqueProbes(stats$count_total_biomart_multi_mapped)))
+  print(paste("  Not mapped (unique original): ", stats$count_unique_original_unmapped, percentOfUniqueProbes(stats$count_unique_original_unmapped)))
+  print(paste("  Not mapped (unique biomart): ", stats$count_unique_biomart_unmapped, percentOfUniqueProbes(stats$count_unique_biomart_unmapped)))
+  print(paste("  Not mapped (shared biomart & original): ", stats$count_both_original_and_biomart_unmapped, percentOfUniqueProbes(stats$count_both_original_and_biomart_unmapped)))
+
+  print("More Info")
+  print(paste("  Not mapped (total original mapping): ", stats$count_total_original_unmapped, percentOfUniqueProbes(stats$count_total_original_unmapped)))
+  print(paste("  Not mapped (total biomart mapping): ", stats$count_total_biomart_unmapped, percentOfUniqueProbes(stats$count_total_biomart_unmapped)))
+  print(paste("  Features (genes) (stats$count_biomart_unique_mapped_features): ", stats$count_biomart_unique_mapped_features))
+  print(paste("  Features (genes) (stats$count_original_unique_mapped_features): ", stats$count_original_unique_mapped_features))
+  print(paste("  Percent fewer unique features: ", my_label(-(stats$count_biomart_unique_mapped_features - stats$count_original_unique_mapped_features) / stats$count_original_unique_mapped_features)))
+}
+
+# Use functions created above to calculate and describe the mapping statistics based on probe annotations
+calculateMappingStats(norm_data$genes) %>% describeMapping()
+```
+
+### Generate Design Matrix
+
+``` {r generate-design-matrix}
+runsheetToDesignMatrix <- function(runsheet_path) {
+    df = read.csv(runsheet_path)
+    # get only Factor Value columns
+    factors = as.data.frame(df[,grep("Factor.Value", colnames(df), ignore.case=TRUE)])
+    colnames(factors) = paste("factor",1:dim(factors)[2], sep= "_")
+    
+    # Load metadata from runsheet csv file
+    compare_csv = data.frame(sample_id = df[,c("Sample.Name")], factors)
+
+    # Create data frame containing all samples and respective factors
+    study <- as.data.frame(compare_csv[,2:dim(compare_csv)[2]])
+    colnames(study) <- colnames(compare_csv)[2:dim(compare_csv)[2]]
+    rownames(study) <- compare_csv[,1] 
+    
+    # Format groups and indicate the group that each sample belongs to
+    if (dim(study)[2] >= 2){
+        group<-apply(study,1,paste,collapse = " & ") # concatenate multiple factors into one condition per sample
+    } else{
+        group<-study[,1]
+    }
+    group_names <- paste0("(",group,")",sep = "") # human readable group names
+    group <- sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", group))) # group naming compatible with R models, this maintains the default behaviour of make.names with the exception that 'X' is never prepended to group namesnames(group) <- group_names
+    names(group) <- group_names
+
+    # Format contrasts table, defining pairwise comparisons for all groups
+    contrast.names <- combn(levels(factor(names(group))),2) # generate matrix of pairwise group combinations for comparison
+    contrasts <- apply(contrast.names, MARGIN=2, function(col) sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", stringr::str_sub(col, 2, -2)))))
+    contrast.names <- c(paste(contrast.names[1,],contrast.names[2,],sep = "v"),paste(contrast.names[2,],contrast.names[1,],sep = "v")) # format combinations for output table files names
+    contrasts <- cbind(contrasts,contrasts[c(2,1),])
+    colnames(contrasts) <- contrast.names
+    sampleTable <- data.frame(condition=factor(group))
+    rownames(sampleTable) <- df[,c("Sample.Name")]
+
+    condition <- sampleTable[,'condition']
+    names_mapping <- as.data.frame(cbind(safe_name = as.character(condition), original_name = group_names))
+
+    design <- model.matrix(~ 0 + condition)
+    design_data <- list( matrix = design, mapping = names_mapping, groups = as.data.frame( cbind(sample = df[,c("Sample.Name")], group = group_names) ), contrasts = contrasts )
+    return(design_data)
+}
+
+
+# Loading metadata from runsheet csv file
+design_data <- runsheetToDesignMatrix(runsheet)
+design <- design_data$matrix
+
+# Write SampleTable.csv and contrasts.csv file
+write.csv(design_data$groups, "SampleTable.csv")
+write.csv(design_data$contrasts, "contrasts.csv")
+```
+
+### Perform Individual Probe Level DE
+
+``` {r perform-probeset-differential-expression}
+lmFitPairwise <- function(norm_data, design) {
+    #' Perform all pairwise comparisons
+
+    #' Approach based on limma manual section 17.4 (version 3.52.4)
+
+    fit <- limma::lmFit(norm_data, design)
+
+    # Create Contrast Model
+    fit.groups <- colnames(fit$design)[which(fit$assign == 1)]
+    combos <- combn(fit.groups,2)
+    contrasts<-c(paste(combos[1,],combos[2,],sep = "-"),paste(combos[2,],combos[1,],sep = "-")) # format combinations for limma:makeContrasts
+    cont.matrix <- limma::makeContrasts(contrasts=contrasts,levels=design)
+    contrast.fit <- limma::contrasts.fit(fit, cont.matrix)
+
+    contrast.fit <- limma::eBayes(contrast.fit,trend=TRUE,robust=TRUE)
+    return(contrast.fit)
+}
+
+# Calculate results
+res <- lmFitPairwise(norm_data, design)
+DT::datatable(limma::topTable(res)) # NON_DPPD
+
+# Print DE table, without filtering
+limma::write.fit(res, adjust = 'BH', 
+                file = "INTERIM.csv",
+                row.names = FALSE,
+                quote = TRUE,
+                sep = ",")
+```
+
+### Add Additional Columns and Format DE Table 
+
+``` {r add-additional-columns-and-format-de-table}
+## Reformat Table for consistency across DE analyses tables within GeneLab ##
+
+# Read in DE table 
+df_interim <- read.csv("INTERIM.csv")
+
+# Reformat column names
+reformat_names <- function(colname, group_name_mapping) {
+  # NON_DPPD:START
+  #! Converts from:
+  #!    "P.value.adj.conditionWild.Type...Space.Flight...1st.generation.conditionWild.Type...Ground.Control...4th.generation"
+  #! to something like:
+  #! "Adj.p.value(Wild Type & Space Flight & 1st generation)v(Wild Type & Ground Control & 4th generation)"
+  #! Since two groups are expected to be replace, ensure replacements happen in pairs
+
+  # Remove 'condition' from group names
+  ## This was introduced while creating design matrix
+  # Rename other columns for consistency across genomics related DE outputs
+  # NON_DPPD:END
+  new_colname <- colname  %>% 
+                  stringr::str_replace(pattern = "^P.value.adj.condition", replacement = "Adj.p.value_") %>%
+                  stringr::str_replace(pattern = "^P.value.condition", replacement = "P.value_") %>%
+                  stringr::str_replace(pattern = "^Coef.condition", replacement = "Log2fc_") %>% # This is the Log2FC as per: https://rdrr.io/bioc/limma/man/writefit.html
+                  stringr::str_replace(pattern = "^t.condition", replacement = "T.stat_") %>%
+                  stringr::str_replace(pattern = stringr::fixed("Genes.ProbeName"), replacement = "PROBEID") %>% 
+                  stringr::str_replace(pattern = stringr::fixed("Genes.SYMBOL"), replacement = "SYMBOL") %>% 
+                  stringr::str_replace(pattern = stringr::fixed("Genes.ENSEMBL"), replacement = "ENSEMBL") %>% 
+                  stringr::str_replace(pattern = stringr::fixed("Genes.GOSLIM_IDS"), replacement = "GOSLIM_IDS") %>% 
+                  stringr::str_replace(pattern = ".condition", replacement = "v")
+  
+  # remap to group names before make.names was applied
+  for ( i in seq(nrow(group_name_mapping)) ) {
+    safe_name <- group_name_mapping[i,]$safe_name
+    original_name <- group_name_mapping[i,]$original_name
+    new_colname <- new_colname %>% stringr::str_replace(pattern = stringr::fixed(safe_name), replacement = original_name)
+  }
+
+  return(new_colname)
+}
+
+df_interim <- df_interim %>% dplyr::rename_with( reformat_names, group_name_mapping = design_data$mapping )
+
+
+# Concatenate expression values for each sample
+df_interim <- df_interim %>% dplyr::bind_cols(norm_data$E)
+
+
+## Add Group Wise Statistics ##
+
+# Group mean and standard deviations for normalized expression values are computed and added to the table
+
+unique_groups <- unique(design_data$group$group)
+for ( i in seq_along(unique_groups) ) {
+  current_group <- unique_groups[i]
+  current_samples <- design_data$group %>% 
+                      dplyr::group_by(group) %>%
+                      dplyr::summarize(
+                        samples = sort(unique(sample))
+                      ) %>%
+                      dplyr::filter(
+                        group == current_group
+                      ) %>% 
+                      dplyr::pull()
+                    
+  print(glue::glue("Computing mean and standard deviation for Group {i} of {length(unique_groups)}"))
+  print(glue::glue("Group: {current_group}"))
+  print(glue::glue("Samples in Group: '{toString(current_samples)}'"))
+  # NON_DPPD:START
+  message(glue::glue("Computing mean and standard deviation for Group {i} of {length(unique_groups)}"))
+  message(glue::glue("Group: {current_group}"))
+  message(glue::glue("Samples in Group: '{toString(current_samples)}'"))
+  # NON_DPPD:END
+  
+  df_interim <- df_interim %>% 
+    dplyr::mutate( 
+      "Group.Mean_{current_group}" := rowMeans(select(., current_samples)),
+      "Group.Stdev_{current_group}" := matrixStats::rowSds(as.matrix(select(., current_samples))),
+      ) %>% 
+    dplyr::ungroup() %>%
+    as.data.frame()
+}
+
+print("Remove extra columns from final table")
+
+# These columns are data mapped to column PROBEID as per the original Manufacturer and can be linked as needed
+colnames_to_remove = c(
+  "Genes.Row",
+  "Genes.Col",
+  "Genes.Start",
+  "Genes.Sequence",
+  "Genes.ControlType",
+  "Genes.ProbeName",
+  "Genes.GeneName",
+  "Genes.SystematicName",
+  "Genes.Description"
+  # "Genes.count_ENSEMBL_mappings", Keep this
+)
+
+df_interim <- df_interim %>% dplyr::select(-any_of(colnames_to_remove))
+
+# Save to file
+write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
+
+### Add columns needed to generate GeneLab visualization plots
+## Add column to indicate the sign (positive/negative) of log2fc for each pairwise comparison
+df <- df_interim
+updown_table <- sign(df[,grep("Log2fc_",colnames(df))])
+colnames(updown_table) <- gsub("Log2fc","Updown",grep("Log2fc_",colnames(df),value = TRUE))
+df <- cbind(df,updown_table)
+rm(updown_table)
+## Add column to indicate contrast significance with p <= 0.1
+sig.1_table <- df[,grep("P.value_",colnames(df))]<=.1
+colnames(sig.1_table) <- gsub("P.value","Sig.1",grep("P.value_",colnames(df),value = TRUE))
+df <- cbind(df,sig.1_table)
+rm(sig.1_table)
+## Add column to indicate contrast significance with p <= 0.05
+sig.05_table <- df[,grep("P.value_",colnames(df))]<=.05
+colnames(sig.05_table) <- gsub("P.value","Sig.05",grep("P.value_",colnames(df),value = TRUE))
+df <- cbind(df, sig.05_table)
+rm(sig.05_table)
+## Add columns for the volcano plot with p-value and adjusted p-value
+log_pval_table <- log2(df[,grep("P.value_", colnames(df))])
+colnames(log_pval_table) <- paste0("Log2_", colnames(log_pval_table))
+df <- cbind(df, log_pval_table)
+rm(log_pval_table)
+log_adj_pval_table <- log2(df[,grep("Adj.p.value_", colnames(df))])
+colnames(log_adj_pval_table) <- paste0("Log2_", colnames(log_adj_pval_table))
+df <- cbind(df, log_adj_pval_table)
+rm(log_adj_pval_table)
+
+write.csv(df,
+          row.names = FALSE,
+          "visualization_output_table.csv"
+          )
+
+### Generate and export PCA table for GeneLab visualization plots
+## Only use positive expression values, negative values can make up a small portion ( < 0.5% ) of normalized expression values and cannot be log transformed
+exp_raw <- log2(norm_data$E) # negatives get converted to NA
+exp_raw <- na.omit(norm_data$E)
+PCA_raw <- prcomp(t(exp_raw), scale = FALSE)
+write.csv(PCA_raw$x,
+          "visualization_PCA_table.csv"
+          )
+```
+
+``` {r save-session}
+save.image(file = paste0(params$id, ".RData")) # NON_DPPD
+```
