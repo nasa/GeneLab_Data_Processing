@@ -838,7 +838,7 @@ reformat_names <- function(colname, group_name_mapping) {
                   stringr::str_replace(pattern = "^P.value.condition", replacement = "P.value_") %>%
                   stringr::str_replace(pattern = "^Coef.condition", replacement = "Log2fc_") %>% # This is the Log2FC as per: https://rdrr.io/bioc/limma/man/writefit.html
                   stringr::str_replace(pattern = "^t.condition", replacement = "T.stat_") %>%
-                  stringr::str_replace(pattern = stringr::fixed("Genes.ProbeUID"), replacement = "PROBEID") %>% 
+                  stringr::str_replace(pattern = stringr::fixed("Genes.ProbeName"), replacement = "PROBEID") %>% 
                   stringr::str_replace(pattern = stringr::fixed("Genes.SYMBOL"), replacement = "SYMBOL") %>% 
                   stringr::str_replace(pattern = stringr::fixed("Genes.ENSEMBL"), replacement = "ENSEMBL") %>% 
                   stringr::str_replace(pattern = stringr::fixed("Genes.GOSLIM_IDS"), replacement = "GOSLIM_IDS") %>% 
