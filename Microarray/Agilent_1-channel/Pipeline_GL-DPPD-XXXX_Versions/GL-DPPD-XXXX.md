@@ -128,7 +128,13 @@ runsheet <- /path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.
 
 # fileEncoding removes strange characters from the column names
 df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
-
+# TODO: generalize this utility function
+allTrue <- function(i_vector) {
+  if ( length(i_vector) == 0 ) {
+    stop(paste("Input vector is length zero"))
+  }
+  all(i_vector)
+}
 
 # Define paths to raw data files
 runsheetPathsAreURIs <- function(df_runsheet) {
