@@ -138,7 +138,7 @@ BiocManager::install("limma")
 BiocManager::install("biomaRt")
 
 
-### Import libraries (tximport, DESeq2, tidyverse, stringr) ###
+### Import libraries ###
 
 library(tidyverse)
 library(dplyr)
