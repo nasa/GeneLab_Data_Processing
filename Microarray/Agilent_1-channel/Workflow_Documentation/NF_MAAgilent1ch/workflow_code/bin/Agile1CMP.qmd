@@ -731,5 +731,5 @@ cat(capture.output(sessionInfo()),
 ```
 
 ``` {r save-session}
-save.image(file = paste0(params$id, ".RData")) # NON_DPPD
+#save.image(file = paste0(params$id, ".RData")) # DEBUG
 ```
