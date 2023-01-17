@@ -622,8 +622,8 @@ for ( i in seq_along(unique_groups) ) {
   
   df_interim <- df_interim %>% 
     dplyr::mutate( 
-      "Group.Mean_{current_group}" := rowMeans(select(., current_samples)),
-      "Group.Stdev_{current_group}" := matrixStats::rowSds(as.matrix(select(., current_samples))),
+      "Group.Mean_{current_group}" := rowMeans(select(., all_of(current_samples))),
+      "Group.Stdev_{current_group}" := matrixStats::rowSds(as.matrix(select(., all_of(current_samples)))),
       ) %>% 
     dplyr::ungroup() %>%
     as.data.frame()
