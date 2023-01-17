@@ -547,6 +547,7 @@ limma::write.fit(res, adjust = 'BH',
 ### Add Additional Columns and Format DE Table 
 
 ``` {r add-additional-columns-and-format-de-table}
+#| message = FALSE
 ## Reformat Table for consistency across DE analyses tables within GeneLab ##
 
 # Read in DE table 
