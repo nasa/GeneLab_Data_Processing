@@ -714,6 +714,22 @@ write.csv(PCA_raw$x,
           )
 ```
 
+## Version Reporting <!-- non DPPD -->
+
+```{r version-reporting}
+## print session info ##
+print("Session Info below: ")
+sessionInfo()
+## Log same info into versions.txt file
+version_output_fn <- "versions.txt"
+cat(capture.output(sessionInfo()),
+    "BioC_version_associated_with_R_version",
+    toString(tools:::.BioC_version_associated_with_R_version()),
+    file = version_output_fn,
+    append = TRUE,
+    sep = "\n")
+```
+
 ``` {r save-session}
 save.image(file = paste0(params$id, ".RData")) # NON_DPPD
 ```
