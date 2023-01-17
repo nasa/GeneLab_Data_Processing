@@ -39,6 +39,7 @@ runsheet = params$runsheet # <path/to/runsheet>
 ## Load Metadata and Raw Data
 
 ``` {r load-runsheet}
+#| message = FALSE
 print("Loading Runsheet...") # NON_DPPD
 # fileEncoding removes strange characters from the column names
 df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
@@ -126,6 +127,8 @@ raw_data <- limma::read.maimages(df_local_paths$`Local Paths`,
 print("Summarized Raw Data Below") # NON_DPPD
 print(paste0("Number of Arrays: ", dim(raw_data)[2]))
 print(paste0("Number of Probes: ", dim(raw_data)[1]))
+message(paste0("Number of Arrays: ", dim(raw_data)[2])) # NON_DPPD
+message(paste0("Number of Probes: ", dim(raw_data)[1])) # NON_DPPD
 # NON_DPPD:START
 DT::datatable(raw_data$targets, caption = "Sample to File Mapping")
 DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data file embedded probes to genes table")
