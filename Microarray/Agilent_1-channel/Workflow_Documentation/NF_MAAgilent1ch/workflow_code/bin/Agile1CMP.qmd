@@ -229,6 +229,7 @@ norm_data <- limma::backgroundCorrect(raw_data, method = "normexp")
 ## Between Array Normalization
 
 ``` {r between-array-normalization}
+#| message = FALSE
 # Normalize background-corrected data using the quantile method
 norm_data <- limma::normalizeBetweenArrays(norm_data, method = "quantile")
 print("Summarized Normalized Data Below") # NON_DPPD
@@ -237,6 +238,8 @@ print("Note: These are expected to be the same values as the normalized data sin
 # Summarize background-corrected and normalized data
 print(paste0("Number of Arrays: ", dim(norm_data)[2]))
 print(paste0("Number of Probes: ", dim(norm_data)[1]))
+message(paste0("Number of Arrays: ", dim(norm_data)[2])) # NON_DPPD
+message(paste0("Number of Probes: ", dim(norm_data)[1])) # NON_DPPD
 # NON_DPPD:START
 DT::datatable(norm_data$targets, caption = "Sample to File Mapping")
 DT::datatable(head(norm_data$genes, n = 20), caption = "First 20 rows of normalized data file embedded probes to genes table")
