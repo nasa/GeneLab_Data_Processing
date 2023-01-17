@@ -27,7 +27,7 @@ params:
 #| message = FALSE
 # DEBUG UNTIL CONTAINER UPDATED
 chooseCRANmirror(ind = 1)
-install.packages('matrixStats')
+install.packages('matrixStats', lib=".")
 # ENDDEBUG
 
 library(dplyr) # Ensure infix operator is available, methods should still reference dplyr namespace otherwise
