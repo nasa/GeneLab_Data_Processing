@@ -382,17 +382,27 @@ if ( is.integer(params$DEBUG_limit_biomart_query) ) {
 # DEBUG:END
 
 # Create probe map
-df_mapping <- biomaRt::getBM(
-    attributes = c(
-        expected_attribute_name,
-        "ensembl_gene_id",
-        "uniprot_gn_symbol",
-        #"go_id", # Full GO IDS
-        "goslim_goa_accession" # GO SLIM IDS, we use these to be consistent with bulkRNASeq and other transcriptomics assays
-        ), filters = expected_attribute_name, 
-        values = c(probe_ids), 
-        mart = ensembl)
+# Run Biomart Queries in chunks to prevent request timeouts
+#   Note: If timeout is occuring (possibly due to larger load on biomart), reduce chunk size
+CHUNK_SIZE= 8000
+probe_id_chunks <- split(probe_ids, ceiling(seq_along(probe_ids) / CHUNK_SIZE))
+df_mapping <- data.frame()
+for (i in seq_along(probe_id_chunks)) {
+  probe_id_chunk <- probe_id_chunks[[i]]
+  print(glue::glue("Running biomart query chunk {i} of {length(probe_id_chunks)}. Total probes IDS in query ({length(probe_id_chunk)})"))
+  message(glue::glue("Running biomart query chunk {i} of {length(probe_id_chunks)}. Total probes IDS in query ({length(probe_id_chunk)})")) # NON_DPPD
+  chunk_results <- biomaRt::getBM(
+      attributes = c(
+          expected_attribute_name,
+          "ensembl_gene_id"
+          ), 
+          filters = expected_attribute_name, 
+          values = probe_id_chunk, 
+          mart = ensembl)
 
+  df_mapping <- df_mapping %>% dplyr::bind_rows(chunk_results)
+  Sys.sleep(10) # Slight break between requests to prevent back-to-back requests
+}
 ```
 
 ``` {r reformat-merge-probeset-annotations}
