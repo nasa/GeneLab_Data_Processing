@@ -647,6 +647,26 @@ colnames_to_remove = c(
 
 df_interim <- df_interim %>% dplyr::select(-any_of(colnames_to_remove))
 
+## Concatenate annotations for genes (for uniquely mapped probes) ##
+### Read in annotation table for the appropriate organism ###
+annot <- read.table(
+            annotation_file_path,
+            sep = "\t",
+            header = TRUE,
+            quote = "",
+            comment.char = "",
+        )
+
+# Join annotation table and uniquely mapped data
+df_interim <- merge(
+                annot,
+                df_interim,
+                by = primary_keytype,
+                # ensure all original dge rows are kept.
+                # If unmatched in the annotation database, then fill missing with NAN
+                all.y = TRUE
+            )
+
 # Save to file
 write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
 
