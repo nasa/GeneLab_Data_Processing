@@ -371,7 +371,7 @@ expected_attribute_name <- getBioMartAttribute(df_rs, params)
 print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
 message(paste0("Expected attribute name: '", expected_attribute_name, "'")) # NON_DPPD
 
-probe_ids <- norm_data$genes$ProbeName
+probe_ids <- unique(norm_data$genes$ProbeName)
 
 # DEBUG:START
 if ( is.integer(params$DEBUG_limit_biomart_query) ) {
