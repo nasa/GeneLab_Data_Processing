@@ -433,123 +433,28 @@ norm_data$genes <- norm_data$genes %>%
 ### Summarize Biomart Mapping vs. Manufacturer Mapping
 
 ``` {r summarize-remapping-vs-original-mapping}
-# Create function to calculate mapping statistics
-calculateMappingStats <- function(df_genes) {
-
-  stats <- list()
-
-  df_genes.no.control.probes <- df_genes %>% dplyr::filter( ControlType == 0 )
-  print(paste("Original Probe Count: ", length(df_genes$ProbeName)))
-  print(paste("Original Non-Control Probe Count: ", length(df_genes.no.control.probes$ProbeName)))
-  stats$count_unique_probe <- length(unique(df_genes.no.control.probes$ProbeName))
-
-  stats$count_total_original_unmapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( (ProbeName == SystematicName) ) %>%
-      dplyr::pull( ProbeName )
+#| message = FALSE
+# Pie Chart with Percentages
+slices <- c(
+    'Control probes' = nrow(norm_data$gene %>% dplyr::filter(ControlType != 0) %>% dplyr::distinct(ProbeName)), 
+    'Unique Mapping' = nrow(norm_data$gene %>% dplyr::filter(ControlType == 0) %>% dplyr::filter(count_ENSEMBL_mappings == 1) %>% dplyr::distinct(ProbeName)), 
+    'Multi Mapping' = nrow(norm_data$gene %>% dplyr::filter(ControlType == 0) %>% dplyr::filter(count_ENSEMBL_mappings > 1) %>% dplyr::distinct(ProbeName)), 
+    'No Mapping' = nrow(norm_data$gene %>% dplyr::filter(ControlType == 0) %>% dplyr::filter(count_ENSEMBL_mappings == 0) %>% dplyr::distinct(ProbeName))
+)
+pct <- round(slices/sum(slices)*100)
+chart_names <- names(slices)
+chart_names <- glue::glue("{names(slices)} ({slices})") # add count to labelss
+chart_names <- paste(chart_names, pct) # add percents to labels
+chart_names <- paste(chart_names,"%",sep="") # ad % to labels
+pie(slices,labels = chart_names, col=rainbow(length(slices)),
+    main=glue::glue("Biomart Mapping to Ensembl Primary Keytype\n {nrow(norm_data$gene %>% dplyr::distinct(ProbeName))} Total Unique Probes")
     )
-  )
-  stats$count_total_original_mapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( (ProbeName != SystematicName) ) %>%
-      dplyr::pull( ProbeName )
-    )
-  )
-  stats$count_total_biomart_unmapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( is.na(SYMBOL) ) %>%
-      dplyr::pull( ProbeName )
-    )
-  )
-  stats$count_total_biomart_mapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( !is.na(SYMBOL) ) %>%
-      dplyr::pull( ProbeName )
-    )
-  )
-  stats$count_total_biomart_1to1_mapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( !is.na(SYMBOL) & (count_ENSEMBL_mappings == 1) ) %>%
-      dplyr::pull( ProbeName )
-    )
-  )
-  stats$count_total_biomart_multi_mapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( !is.na(SYMBOL) & (count_ENSEMBL_mappings > 1) ) %>%
-      dplyr::pull( ProbeName )
-    )
-  )
-  stats$count_unique_original_unmapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( (ProbeName == SystematicName) & !is.na(SYMBOL) ) %>%
-      dplyr::pull( ProbeName )
-    )
-  )
-  stats$count_unique_biomart_unmapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( ( count_ENSEMBL_mappings == 0 ) & (ProbeName != SystematicName) ) %>%
-      dplyr::pull( ProbeName )
-    )
-  )
-  stats$count_both_original_and_biomart_unmapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( is.na(SYMBOL) & (ProbeName == SystematicName) ) %>%
-      dplyr::pull( ProbeName )
-    )
-  )
 
-  stats$count_biomart_unique_mapped_features <- df_genes.no.control.probes %>%
-      dplyr::filter( count_ENSEMBL_mappings == 1  ) %>%
-      dplyr::pull( ENSEMBL ) %>%
-      unique() %>%
-      length()
-
-  stats$count_original_unique_mapped_features <- df_genes.no.control.probes %>%
-      dplyr::filter( ProbeName != GeneName  ) %>%
-      dplyr::pull( GeneName ) %>%
-      unique() %>%
-      length()
-
-  return(stats)
-}
-
-# Create function to describe mapping statistics calculated above
-describeMapping <- function(stats) {
-  my_label <- scales::label_percent(accuracy = 0.01, prefix="(", suffix = "%)")
-  percentOfUniqueProbes <- function(num) {
-    #' Gives number as a percent of unique probes 
-    #  (defined in outer scope) # NON_DPPD
-    
-    return(my_label(num / stats$count_unique_probe))
-  }
-
-  print(paste("  Mapped (original): ", stats$count_total_original_mapped, percentOfUniqueProbes(stats$count_total_original_mapped)))
-  print(paste("  Mapped (biomart): ", stats$count_total_biomart_mapped, percentOfUniqueProbes(stats$count_total_biomart_mapped)))
-  print(paste("  Ensembl One-To-One Mapped (biomart): ", stats$count_total_biomart_1to1_mapped, percentOfUniqueProbes(stats$count_total_biomart_1to1_mapped)))
-  print(paste("  Ensembl Multi-Mapped (biomart): ", stats$count_total_biomart_multi_mapped, percentOfUniqueProbes(stats$count_total_biomart_multi_mapped)))
-  print(paste("  Not mapped (unique original): ", stats$count_unique_original_unmapped, percentOfUniqueProbes(stats$count_unique_original_unmapped)))
-  print(paste("  Not mapped (unique biomart): ", stats$count_unique_biomart_unmapped, percentOfUniqueProbes(stats$count_unique_biomart_unmapped)))
-  print(paste("  Not mapped (shared biomart & original): ", stats$count_both_original_and_biomart_unmapped, percentOfUniqueProbes(stats$count_both_original_and_biomart_unmapped)))
-
-  print("More Info")
-  print(paste("  Not mapped (total original mapping): ", stats$count_total_original_unmapped, percentOfUniqueProbes(stats$count_total_original_unmapped)))
-  print(paste("  Not mapped (total biomart mapping): ", stats$count_total_biomart_unmapped, percentOfUniqueProbes(stats$count_total_biomart_unmapped)))
-  print(paste("  Features (genes) (stats$count_biomart_unique_mapped_features): ", stats$count_biomart_unique_mapped_features))
-  print(paste("  Features (genes) (stats$count_original_unique_mapped_features): ", stats$count_original_unique_mapped_features))
-  print(paste("  Percent fewer unique features: ", my_label(-(stats$count_biomart_unique_mapped_features - stats$count_original_unique_mapped_features) / stats$count_original_unique_mapped_features)))
-}
-
-# Use functions created above to calculate and describe the mapping statistics based on probe annotations
-calculateMappingStats(norm_data$genes) %>% describeMapping()
+original_mapping_rate = nrow(norm_data$gene %>% dplyr::filter(ControlType == 0) %>% dplyr::filter(ProbeName != SystematicName) %>% dplyr::distinct(ProbeName))
+print(glue::glue("Original Manufacturer Reported Mapping Rate: {original_mapping_rate}"))
+print(glue::glue("Biomart Unique Mapping Rate: {original_mapping_rate}"))
+message(glue::glue("Original Manufacturer Reported Mapping Rate: {original_mapping_rate}")) # NON_DPPD
+message(glue::glue("Biomart Unique Mapping Rate: {slices[['Unique Mapping']]}")) # NON_DPPD
 ```
 
 ### Generate Design Matrix
