@@ -513,7 +513,7 @@ write.csv(design_data$contrasts, "contrasts.csv")
 
 ### Perform Individual Probe Level DE
 
-``` {r perform-probeset-differential-expression}
+``` {r perform-probe-differential-expression}
 lmFitPairwise <- function(norm_data, design) {
     #' Perform all pairwise comparisons
 
