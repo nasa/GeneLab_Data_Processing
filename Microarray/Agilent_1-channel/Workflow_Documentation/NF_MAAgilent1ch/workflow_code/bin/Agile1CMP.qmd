@@ -55,7 +55,7 @@ DT::datatable(df_rs)
 print("Here are the expected comparison groups")
 # NON_DPPD:END
 print("Loading Raw Data...") # NON_DPPD
-# TODO: generalize this utility function
+# TODO: priority-low generalize this utility function
 allTrue <- function(i_vector) {
   if ( length(i_vector) == 0 ) {
     stop(paste("Input vector is length zero"))
