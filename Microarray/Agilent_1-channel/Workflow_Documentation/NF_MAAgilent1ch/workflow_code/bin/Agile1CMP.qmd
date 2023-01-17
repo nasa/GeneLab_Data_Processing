@@ -418,9 +418,7 @@ unique_probe_ids <- df_mapping %>%
                       # note: '!!sym(VAR)' syntax allows usage of variable 'VAR' in dplyr functions due to NSE. ref: https://dplyr.tidyverse.org/articles/programming.html # NON_DPPD
                       dplyr::group_by(!!sym(expected_attribute_name)) %>% 
                       dplyr::summarise(
-                        SYMBOL = listToUniquePipedString(uniprot_gn_symbol),
-                        ENSEMBL = listToUniquePipedString(ensembl_gene_id),
-                        GOSLIM_IDS = listToUniquePipedString(goslim_goa_accession)
+                        ENSEMBL = listToUniquePipedString(ensembl_gene_id)
                         ) %>%
                       # Count number of ensembl IDS mapped
                       dplyr::mutate( 
