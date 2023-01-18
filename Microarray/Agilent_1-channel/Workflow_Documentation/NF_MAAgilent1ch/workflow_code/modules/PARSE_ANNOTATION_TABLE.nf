@@ -26,7 +26,7 @@ process PARSE_ANNOTATION_TABLE {
     ensemblVersion = organisms[organism_key][3]
     ensemblSource = organisms[organism_key][4]
 
-    println "PARSE_ANNOTATIONS_TABLE:"
+    println "PARSE_ANNOTATION_TABLE:"
     println "Values parsed for '${organism_key}' using process:"
     println "--------------------------------------------------"
     // println "- fasta_url: ${fasta_url}"
