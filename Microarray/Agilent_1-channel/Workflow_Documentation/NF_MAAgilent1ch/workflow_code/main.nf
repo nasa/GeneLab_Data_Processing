@@ -6,6 +6,8 @@ c_blue = "\033[0;34m";
 c_reset = "\033[0m";
 
 include { PARSE_ANNOTATION_TABLE } from './modules/PARSE_ANNOTATION_TABLE.nf'
+include { VV_AGILE1CH } from './modules/VV_AGILE1CH.nf'
+include { AGILE1CH } from './modules/AGILE1CH.nf'
 
 /**************************************************
 * HELP MENU  **************************************
@@ -61,14 +63,17 @@ workflow {
         params.annotation_file_path,
         ch_meta | map { it.organism }
     )
+
+    AGILE1CH(
+      channel.fromPath( "${ projectDir }/bin/Agile1CMP.qmd" ),
+      ch_runsheet,
+      params.biomart_attribute ? params.biomart_attribute : false, // supply biomart_attribute if parameter exists
+      PARSE_ANNOTATION_TABLE.out.annotations_db_url,
+      ch_meta | map { it.organism }
+    )
+
+    VV_AGILE1CH( ch_runsheet, AGILE1CH.out.de )
     /*
-    VV_RAW_READS( ch_meta,
-                  STAGING.out.runsheet,
-                  ch_all_raw_reads,
-                  RAW_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] } | flatten | collect,
-                  RAW_MULTIQC.out.zipped_report,
-                  RAW_MULTIQC.out.unzipped_report,
-                )
 
     // Software Version Capturing
     nf_version = "Nextflow Version:".concat("${nextflow.version}\n<><><>\n")
