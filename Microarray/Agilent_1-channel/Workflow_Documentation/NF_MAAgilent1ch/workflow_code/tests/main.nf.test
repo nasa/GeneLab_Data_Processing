@@ -1,0 +1,23 @@
+nextflow_pipeline {
+
+    name "Test Workflow main.nf"
+    script "main.nf"
+
+    test("Direct runsheet version: Should run without failures") {
+
+        when {
+            params {
+                // define parameters here. Example: 
+                outdir = "tests/results"
+                runsheetPath = "/workspace/GeneLab_Data_Processing/Microarray/Agilent_1-channel/Workflow_Documentation/NF_MAAgilent1ch/examples/runsheet/GLDS-367_microarray_v0_runsheet.csv"
+                gldsAccession = "GLDS-367"
+            }
+        }
+
+        then {
+            assert workflow.success
+        }
+
+    }
+
+}
