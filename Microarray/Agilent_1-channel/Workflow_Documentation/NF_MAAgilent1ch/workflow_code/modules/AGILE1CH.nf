@@ -6,7 +6,7 @@ process AGILE1CH {
     path(runsheet_csv) // runsheet to supply as parameter
     val(biomart_attribute) // biomart attribute to supply as parameter (overridden by runsheet 'Array_Design_REF' column)
     path(annotation_file_path) // runsheet to supply as parameter
-    val(primary_keytype) // runsheet to supply as parameter
+    val(organism) // runsheet to supply as parameter
 
   output:
     path("Agile1CMP.html"), emit: report
@@ -22,9 +22,9 @@ process AGILE1CH {
   script:
     """
         quarto render \$PWD/${qmd} \
-            -P runsheet:${runsheet_csv} \
-            -P biomart_attribute:${biomart_attribute} \
+            -P 'runsheet:${runsheet_csv}' \
+            -P 'biomart_attribute:${biomart_attribute}' \
             -P 'annotation_file_path:${annotation_file_path}' \
-            -P primary_keytype:${primary_keytype}
+            -P 'organism:${organism}'
     """
 }
