@@ -18,7 +18,7 @@ nextflow_process {
                 input[1] = file("/workspace/GeneLab_Data_Processing/Microarray/Agilent_1-channel/Workflow_Documentation/NF_MAAgilent1ch/examples/runsheet/GLDS-367_microarray_v0_runsheet.csv")
                 input[2] = "agilent_wholegenome_4x44k_v1"
                 input[3] = file("https://figshare.com/ndownloader/files/36597120")
-                input[4] = "ENSEMBL"
+                input[4] = "Homo sapiens"
                 """
             }
         }
