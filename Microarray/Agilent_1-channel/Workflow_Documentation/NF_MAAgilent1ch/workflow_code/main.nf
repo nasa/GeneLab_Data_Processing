@@ -72,7 +72,7 @@ workflow {
       ch_meta | map { it.organism }
     )
 
-    VV_AGILE1CH( ch_runsheet, AGILE1CH.out.de )
+    // TODO: NOT IMPLEMENTED: VV_AGILE1CH( ch_runsheet, AGILE1CH.out.de )
     /*
 
     // Software Version Capturing
