@@ -9,7 +9,7 @@ nextflow_pipeline {
             params {
                 // define parameters here. Example: 
                 outdir = "tests/results"
-                runsheetPath = "/workspace/GeneLab_Data_Processing/Microarray/Agilent_1-channel/Workflow_Documentation/NF_MAAgilent1ch/examples/runsheet/GLDS-367_microarray_v0_runsheet.csv"
+                runsheetPath = "../examples/runsheet/GLDS-367_microarray_v0_runsheet.csv"
                 gldsAccession = "GLDS-367"
                 biomart_attribute = "agilent_wholegenome_4x44k_v1"
             }
