@@ -124,7 +124,6 @@ dpt-isa-to-runsheet --accession OSD-### \
 ```R
 ### Install R packages if not already installed ###
 
-install.packages('DT')
 install.packages("tidyverse")
 install.packages("R.utils")
 install.packages("glue")
