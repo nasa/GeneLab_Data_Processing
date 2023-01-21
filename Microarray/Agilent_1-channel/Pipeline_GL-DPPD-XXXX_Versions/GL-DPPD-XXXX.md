@@ -59,7 +59,6 @@ Lauren Sanders (acting GeneLab Project Scientist)
 |limma|3.50.3|[https://bioconductor.org/packages/3.14/bioc/html/limma.html](https://bioconductor.org/packages/3.14/bioc/html/limma.html)|
 |glue|1.6.2|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
 |biomaRt|2.50.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
-|scales|1.2.1|[https://scales.r-lib.org](https://scales.r-lib.org)|
 |matrixStats|0.63.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
 |dp_tools|1.2.0|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |singularity|3.9|[https://sylabs.io](https://sylabs.io)|
@@ -129,7 +128,6 @@ install.packages('DT')
 install.packages("tidyverse")
 install.packages("R.utils")
 install.packages("glue")
-install.packages("scales")
 install.packages("matrixStats")
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
@@ -145,7 +143,6 @@ library(dplyr)
 library(stringr)
 library(R.utils)
 library(glue)
-library(scales)
 library(matrixStats)
 library(limma)
 library(biomaRt)
