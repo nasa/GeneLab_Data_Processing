@@ -123,6 +123,35 @@ dpt-isa-to-runsheet --accession OSD-### \
 > Note: Steps 2 - 7 are done in R
 
 ```R
+### Install R packages if not already installed ###
+
+install.packages('DT')
+install.packages("tidyverse")
+install.packages("R.utils")
+install.packages("glue")
+install.packages("scales")
+install.packages("matrixStats")
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(version = "3.14")
+BiocManager::install("limma")
+BiocManager::install("biomaRt")
+
+
+### Import libraries ###
+
+library(tidyverse)
+library(dplyr)
+library(stringr)
+library(R.utils)
+library(glue)
+library(scales)
+library(matrixStats)
+library(limma)
+library(biomaRt)
+
+
+
 # Define path to runsheet
 runsheet <- /path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv
 
