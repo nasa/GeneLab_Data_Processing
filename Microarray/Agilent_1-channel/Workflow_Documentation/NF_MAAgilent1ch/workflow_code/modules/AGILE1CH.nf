@@ -17,7 +17,7 @@ process AGILE1CH {
           path("visualization_output_table.csv"),
           path("visualization_PCA_table.csv"), emit: de
 
-    path("versions.txt"), emit: version
+    path("versions.txt"), emit: version // TODO: convert version reporting to json format
 
   script:
     """
@@ -26,5 +26,7 @@ process AGILE1CH {
             -P 'biomart_attribute:${biomart_attribute}' \
             -P 'annotation_file_path:${annotation_file_path}' \
             -P 'organism:${organism}'
+
+        # TODO: add quarto version reporting
     """
 }
