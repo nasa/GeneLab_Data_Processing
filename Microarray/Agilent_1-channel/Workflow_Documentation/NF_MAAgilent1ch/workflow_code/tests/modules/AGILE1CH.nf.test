@@ -9,7 +9,7 @@ nextflow_process {
         when {
             params {
                 // define parameters here. Example:
-                // outdir = "tests/results"
+                limit_biomart_query = 6000
             }
             process {
                 """
@@ -19,6 +19,7 @@ nextflow_process {
                 input[2] = "agilent_wholegenome_4x44k_v1"
                 input[3] = file("https://figshare.com/ndownloader/files/36597120")
                 input[4] = "Homo sapiens"
+                input[5] = params.limit_biomart_query
                 """
             }
         }
