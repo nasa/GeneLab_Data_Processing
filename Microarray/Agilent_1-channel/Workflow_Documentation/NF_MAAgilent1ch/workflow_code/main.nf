@@ -8,6 +8,7 @@ c_reset = "\033[0m";
 include { PARSE_ANNOTATION_TABLE } from './modules/PARSE_ANNOTATION_TABLE.nf'
 include { VV_AGILE1CH } from './modules/VV_AGILE1CH.nf'
 include { AGILE1CH } from './modules/AGILE1CH.nf'
+include { RUNSHEET_FROM_GLDS } from './modules/RUNSHEET_FROM_GLDS.nf'
 
 /**************************************************
 * HELP MENU  **************************************
@@ -51,7 +52,11 @@ if ( !params.outputDir ) {  params.outputDir = "$workflow.launchDir" }
 workflow {
 	main:
     if ( !params.runsheetPath ) {
-        GENERATE_RUNSHEET( params.gldsAccession ) | ch_runsheet
+        RUNSHEET_FROM_GLDS( 
+          params.osdAccession,
+          params.gldsAccession,
+        ) 
+        RUNSHEET_FROM_GLDS.out.runsheet | set{ ch_runsheet }
     } else {
         ch_runsheet = channel.fromPath( params.runsheetPath )
     }
