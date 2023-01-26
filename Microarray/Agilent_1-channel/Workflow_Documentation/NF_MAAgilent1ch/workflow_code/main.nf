@@ -78,7 +78,11 @@ workflow {
       params.limit_biomart_query
     )
 
-    // TODO: NOT IMPLEMENTED: VV_AGILE1CH( ch_runsheet, AGILE1CH.out.de )
+    VV_AGILE1CH( 
+      ch_runsheet, 
+      AGILE1CH.out.de,
+      params.skipVV
+      )
     /*
 
     // Software Version Capturing

@@ -17,10 +17,11 @@ process VV_AGILE1CH {
   input:
     path("VV_INPUT/Metadata/*") // While files from processing are staged, we instead want to use the files located in the publishDir for QC
     path("VV_INPUT/00-DE/*") // "While files from processing are staged, we instead want to use the files located in the publishDir for QC
+    val(skipVV) // Skips running V&V but will still publish the files
   
   output:
     path("Metadata/*_runsheet.csv"), emit: VVed_runsheet
-    path("00-DE"), emit: VVed_raw_reads
+    path("00-DE/*"), emit: VVed_raw_reads
     path("VV_log.tsv"), optional: params.skipVV, emit: log
 
   script:
@@ -30,7 +31,7 @@ process VV_AGILE1CH {
     mv VV_INPUT/* .
 
     # Run V&V unless user requests to skip V&V
-    if ${ !params.skipVV} ; then
+    if ${ !skipVV} ; then
       VV_data_assets.py   --root-path . \\
                           --accession ${ params.gldsAccession } \\
                           --runsheet-path Metadata/*_runsheet.csv \\

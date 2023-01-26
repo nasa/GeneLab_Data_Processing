@@ -3,20 +3,45 @@ nextflow_pipeline {
     name "Test Workflow main.nf"
     script "main.nf"
 
-    test("Direct runsheet version: Should run without failures") {
+    test("Direct runsheet version: SKIPVV : Should run without failures") {
 
         when {
             params {
                 // define parameters here. Example: 
-                outdir = "tests/results"
                 runsheetPath = "../examples/runsheet/GLDS-367_microarray_v0_runsheet.csv"
                 gldsAccession = "GLDS-367"
                 biomart_attribute = "agilent_wholegenome_4x44k_v1"
+                limit_biomart_query = 300
+                skipVV = true
             }
         }
 
         then {
             assert workflow.success
+            assert snapshot(
+                            path("${params.outputDir}/${params.gldsAccession}").list(),
+                            ).match()
+        }
+
+    }
+    test("GLDS-367: SKIPVV : Should run without failures") {
+
+        when {
+            params {
+                // define parameters here. Example: 
+                osdAccession = "OSD-367"
+                gldsAccession = "GLDS-367"
+                biomart_attribute = "agilent_wholegenome_4x44k_v1"
+                limit_biomart_query = 300
+                skipVV = true
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert snapshot(
+                            path("${params.outputDir}/${params.gldsAccession}").list(),
+                            ).match()
         }
 
     }
