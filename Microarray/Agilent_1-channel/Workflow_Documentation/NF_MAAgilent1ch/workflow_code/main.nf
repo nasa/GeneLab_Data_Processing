@@ -69,7 +69,8 @@ workflow {
       ch_runsheet,
       params.biomart_attribute ? params.biomart_attribute : false, // supply biomart_attribute if parameter exists
       PARSE_ANNOTATION_TABLE.out.annotations_db_url,
-      ch_meta | map { it.organism }
+      ch_meta | map { it.organism },
+      params.limit_biomart_query
     )
 
     // TODO: NOT IMPLEMENTED: VV_AGILE1CH( ch_runsheet, AGILE1CH.out.de )

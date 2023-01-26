@@ -7,6 +7,7 @@ process AGILE1CH {
     val(biomart_attribute) // biomart attribute to supply as parameter (overridden by runsheet 'Array_Design_REF' column)
     path(annotation_file_path) // runsheet to supply as parameter
     val(organism) // runsheet to supply as parameter
+    val(limit_biomart_query) // DEBUG option, limits biomart queries to the number specified if not set to false
 
   output:
     path("Agile1CMP.html"), emit: report
@@ -20,13 +21,15 @@ process AGILE1CH {
     path("versions.txt"), emit: version // TODO: convert version reporting to json format
 
   script:
+    def limit_biomart_query_parameter = limit_biomart_query ? "-P DEBUG_limit_biomart_query:${limit_biomart_query}" : ''
     """
         quarto render \$PWD/${qmd} \
             -P 'runsheet:${runsheet_csv}' \
             -P 'biomart_attribute:${biomart_attribute}' \
             -P 'annotation_file_path:${annotation_file_path}' \
-            -P 'organism:${organism}'
+            -P 'organism:${organism}' \
+            ${limit_biomart_query_parameter}
 
-        # TODO: add quarto version reporting
+        echo "quarto version: \$(quarto --version)" >> versions.txt
     """
 }
