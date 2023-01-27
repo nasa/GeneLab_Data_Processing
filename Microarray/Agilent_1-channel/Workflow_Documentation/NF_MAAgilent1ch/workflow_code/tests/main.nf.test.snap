@@ -9,10 +9,13 @@
                 "visualization_output_table.csv:md5,6cac37993daf664d1be489b1f5a9befd"
             ],
             [
+                "Agile1CMP.html:md5,8cb99f2db7022e97a433b94f85664f85"
+            ],
+            [
                 "GLDS-367_microarray_v0_runsheet.csv:md5,deeb1c31bfda3f10627be9842423491d"
             ]
         ],
-        "timestamp": "2023-01-26T23:10:39+0000"
+        "timestamp": "2023-01-27T17:52:11+0000"
     },
     "GLDS-367: SKIPVV : Should run without failures": {
         "content": [
@@ -24,10 +27,13 @@
                 "visualization_output_table.csv:md5,6cac37993daf664d1be489b1f5a9befd"
             ],
             [
+                "Agile1CMP.html:md5,61cbee49f81ddd94d5ace75d9e24b2b4"
+            ],
+            [
                 "GLDS-367_metadata_GLDS-367-ISA.zip:md5,130bb4f9fded2750631cfed98c173c06",
                 "GLDS-367_microarray_v0_runsheet.csv:md5,deeb1c31bfda3f10627be9842423491d"
             ]
         ],
-        "timestamp": "2023-01-26T23:10:40+0000"
+        "timestamp": "2023-01-27T17:52:12+0000"
     }
 }

@@ -1,4 +1,7 @@
 process AGILE1CH {
+  publishDir "${ params.outputDir }/${ params.gldsAccession }/GeneLab",
+    pattern: "Agile1CMP.html",
+    mode: params.publish_dir_mode
   stageInMode 'copy'
 
   input:
