@@ -19,7 +19,9 @@ nextflow_pipeline {
         then {
             assert workflow.success
             assert snapshot(
-                            path("${params.outputDir}/${params.gldsAccession}").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/Metadata").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/00-DE").list(),
+                            [ 'Agile1CMP.html exists' : path("${params.outputDir}/${params.gldsAccession}/GeneLab/Agile1CMP.html").exists()],
                             ).match()
         }
 
@@ -40,7 +42,9 @@ nextflow_pipeline {
         then {
             assert workflow.success
             assert snapshot(
-                            path("${params.outputDir}/${params.gldsAccession}").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/Metadata").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/00-DE").list(),
+                            [ 'Agile1CMP.html exists' : path("${params.outputDir}/${params.gldsAccession}/GeneLab/Agile1CMP.html").exists()],
                             ).match()
         }
 
