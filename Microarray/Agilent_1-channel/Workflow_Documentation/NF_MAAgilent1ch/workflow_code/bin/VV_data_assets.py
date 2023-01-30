@@ -4,45 +4,19 @@
 import argparse
 from pathlib import Path
 
-from dp_tools.microarray.vv_protocols import validate_microarray
+from dp_tools.microarray.vv_protocols import validate_Agilent1Channel
 from dp_tools.core.check_model import ValidationProtocol
 from dp_tools.core.loaders import load_data
 
 ASSET_KEY_SETS = [
     "glds metadata",
-    "demuliplexed paired end raw data",  # paired only
-    "qc reports for paired end raw data",  # paired only
-    "paired end trimmed reads",  # paired only
-    "qc reports for paired end trimmed reads data",  # paired only
-    "RSeQC output for paired end data",  # paired only
-    "demuliplexed single end raw data",  # single only
-    "qc reports for single end raw data",  # single only
-    "single end trimmed reads",  # single only
-    "qc reports for single end trimmed reads data",  # single only
-    "RSeQC output for single end data",  # single only
-    "STAR alignments",
-    "RSEM counts",
-    "DGE Output",
-    "ERCC DGE Output",  # ERCC Only
-    "RSEM Output",
+    "processed",
 ]
 
 SKIP_LIST_COMPONENTS = [
     "Metadata",  # for raw reads V&V
-    "Raw Reads",  # for raw reads V&V
-    "Raw Reads By Sample",  # for raw reads V&V
-    "Trim Reads",  # for trim reads V&V
-    "Trimmed Reads By Sample",  # for trim reads V&V
-    "STAR Alignments",  # for star alignment V&V
-    "STAR Alignments By Sample",  # for star alignment V&V
-    "RSeQC By Sample",  # for RSeQC V&V
-    "RSeQC",  # for RSeQC V&V
-    "RSEM Counts",  # for after RSEM V&V
-    "Unnormalized Gene Counts",  # for after RSEM V&V
     "DGE Metadata",  # for post DGE
-    "DGE Metadata ERCC",  # for post DGE
     "DGE Output",  # for post DGE
-    "DGE Output ERCC",  # for post DGE
 ]
 
 ##############################################################
@@ -98,7 +72,7 @@ def main():
         runsheet_path=Path(args.runsheet_path),
     )
 
-    vp = validate_microarray(
+    vp = validate_Agilent1Channel(
         datasystem.dataset,
         report_args={"include_skipped": True},
         protocol_args={"skip_components": skip_components},

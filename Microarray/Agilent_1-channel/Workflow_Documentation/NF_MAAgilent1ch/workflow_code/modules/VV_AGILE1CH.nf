@@ -36,11 +36,12 @@ process VV_AGILE1CH {
                           --accession ${ params.gldsAccession } \\
                           --runsheet-path Metadata/*_runsheet.csv \\
                           --data-asset-sets  \\
-                            'Metadata' \\
+                            'glds metadata' \\
+                            'processed' \\
                           --run-components \\
                             'Metadata' \\
-                            'Raw Reads' \\
-                            'Raw Reads By Sample' \\
+                            'DGE Metadata' \\
+                            'DGE Output' \\
                           --max-flag-code ${ params.max_flag_code }
     fi
     """

@@ -1,0 +1,24 @@
+{
+    "Should run without failures": {
+        "content": [
+            {
+                "VVed_raw_reads": [
+                    [
+                        "SampleTable.csv:md5,f393473808e2b9e262c7da5809e0baca",
+                        "contrasts.csv:md5,c9af9056cef7bd0210a626cd9c6175b2",
+                        "differential_expression.csv:md5,7aabea95a4b1d09ec26fb826daa17f08",
+                        "visualization_PCA_table.csv:md5,6b37103ca8cacdfc2a924631e7422fa9",
+                        "visualization_output_table.csv:md5,6cac37993daf664d1be489b1f5a9befd"
+                    ]
+                ],
+                "log": [
+                    "VV_log.tsv:md5,5854f6db5011996fabb22286f0ef75e2"
+                ],
+                "VVed_runsheet": [
+                    "GLDS-367_microarray_v0_runsheet.csv:md5,6b066905180d502a70e4ad9fc094433d"
+                ]
+            }
+        ],
+        "timestamp": "2023-01-28T00:50:54+0000"
+    }
+}
