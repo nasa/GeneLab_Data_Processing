@@ -23,6 +23,7 @@ nextflow_process {
 
         then {
             assert process.success
+            // TODO: future on dp_tools, messages in VV log are not deterministic due to use of sets to present items (i.e. order is not guaranteed)
             assert snapshot(
                 process.out.VVed_raw_reads,
                 process.out.VVed_runsheet,
