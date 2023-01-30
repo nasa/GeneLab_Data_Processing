@@ -16,10 +16,9 @@ nextflow_process {
                 // define inputs of the process here. Example:
                 input[0] = file("./bin/Agile1CMP.qmd")
                 input[1] = file("../examples/runsheet/GLDS-367_microarray_v0_runsheet.csv")
-                input[2] = "agilent_wholegenome_4x44k_v1"
-                input[3] = file("https://figshare.com/ndownloader/files/36597120")
-                input[4] = "Homo sapiens"
-                input[5] = params.limit_biomart_query
+                input[2] = file("https://figshare.com/ndownloader/files/36597120")
+                input[3] = "Homo sapiens"
+                input[4] = params.limit_biomart_query
                 """
             }
         }
