@@ -352,9 +352,9 @@ getBioMartAttribute <- function(df_rs, params) {
   # NON_DPPD:END
 
   # check if runsheet has Array Design REF
-  if ( !is.null(df_rs$`Array Design REF`) ) {
+  if ( !is.null(df_rs$`biomart_attribute`) ) {
     print("Using attribute name sourced from runsheet")
-    return(unique(df_rs$`Array Design REF`))
+    return(unique(df_rs$`biomart_attribute`))
   } else {
     print("Could not find 'Array Design REF' in runsheet, falling back to parameters")
   }
