@@ -72,7 +72,6 @@ workflow {
     AGILE1CH(
       channel.fromPath( "${ projectDir }/bin/Agile1CMP.qmd" ),
       ch_runsheet,
-      params.biomart_attribute ? params.biomart_attribute : false, // supply biomart_attribute if parameter exists
       PARSE_ANNOTATION_TABLE.out.annotations_db_url,
       ch_meta | map { it.organism },
       params.limit_biomart_query

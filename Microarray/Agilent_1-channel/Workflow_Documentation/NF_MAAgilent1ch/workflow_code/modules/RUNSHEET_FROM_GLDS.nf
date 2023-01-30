@@ -13,10 +13,11 @@ process RUNSHEET_FROM_GLDS {
     path("*.zip"), emit: isaArchive
 
   script:
+    def injects = params.biomart_attribute ? "--inject biomart_attribute=${ params.biomart_attribute }" : ''
     """
     dpt-get-isa-archive --accession ${ osdAccession }
 
     dpt-isa-to-runsheet --accession ${ gldsAccession } \
-      --config-type microarray --isa-archive *.zip
+      --config-type microarray --isa-archive *.zip ${ injects }
     """
 }

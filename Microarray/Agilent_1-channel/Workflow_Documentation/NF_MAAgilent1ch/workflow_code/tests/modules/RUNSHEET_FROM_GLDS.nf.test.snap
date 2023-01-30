@@ -3,13 +3,13 @@
         "content": [
             {
                 "runsheet": [
-                    "GLDS-367_microarray_v0_runsheet.csv:md5,deeb1c31bfda3f10627be9842423491d"
+                    "GLDS-367_microarray_v0_runsheet.csv:md5,6b066905180d502a70e4ad9fc094433d"
                 ],
                 "isaArchive": [
                     "GLDS-367_metadata_GLDS-367-ISA.zip:md5,130bb4f9fded2750631cfed98c173c06"
                 ]
             }
         ],
-        "timestamp": "2023-01-26T21:39:57+0000"
+        "timestamp": "2023-01-27T22:59:30+0000"
     }
 }

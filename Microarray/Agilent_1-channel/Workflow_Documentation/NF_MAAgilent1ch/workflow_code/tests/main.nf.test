@@ -10,7 +10,6 @@ nextflow_pipeline {
                 // define parameters here. Example: 
                 runsheetPath = "../examples/runsheet/GLDS-367_microarray_v0_runsheet.csv"
                 gldsAccession = "GLDS-367"
-                biomart_attribute = "agilent_wholegenome_4x44k_v1"
                 limit_biomart_query = 300
                 skipVV = true
             }

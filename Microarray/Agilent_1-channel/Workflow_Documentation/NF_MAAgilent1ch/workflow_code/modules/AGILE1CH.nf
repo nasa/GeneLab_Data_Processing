@@ -7,7 +7,6 @@ process AGILE1CH {
   input:
     path(qmd) // quarto qmd file to render
     path(runsheet_csv) // runsheet to supply as parameter
-    val(biomart_attribute) // biomart attribute to supply as parameter (overridden by runsheet 'Array_Design_REF' column)
     path(annotation_file_path) // runsheet to supply as parameter
     val(organism) // runsheet to supply as parameter
     val(limit_biomart_query) // DEBUG option, limits biomart queries to the number specified if not set to false
@@ -28,7 +27,6 @@ process AGILE1CH {
     """
         quarto render \$PWD/${qmd} \
             -P 'runsheet:${runsheet_csv}' \
-            -P 'biomart_attribute:${biomart_attribute}' \
             -P 'annotation_file_path:${annotation_file_path}' \
             -P 'organism:${organism}' \
             ${limit_biomart_query_parameter}

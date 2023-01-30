@@ -9,7 +9,7 @@ nextflow_process {
         when {
             params {
                 // define parameters here. Example:
-                // outdir = "tests/results"
+                biomart_attribute = "agilent_wholegenome_4x44k_v1"
             }
             process {
                 """
