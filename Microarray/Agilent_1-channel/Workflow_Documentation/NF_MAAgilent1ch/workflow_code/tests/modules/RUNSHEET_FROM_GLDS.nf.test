@@ -16,6 +16,7 @@ nextflow_process {
                 // define inputs of the process here. Example:
                 input[0] = "OSD-367"
                 input[1] = "GLDS-367"
+                input[2] = file("${baseDir}/bin/dp_tools__agilent_1_channel")
                 """
             }
         }

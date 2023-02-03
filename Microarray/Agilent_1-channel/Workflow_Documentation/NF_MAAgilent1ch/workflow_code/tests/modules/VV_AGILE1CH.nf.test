@@ -17,6 +17,7 @@ nextflow_process {
                 input[0] = file("test-datasets-extended/testdata/GLDS-367/Metadata/*")
                 input[1] = file("test-datasets-extended/testdata/GLDS-367/00-DE/*")
                 input[2] = false // val(skipVV)
+                input[3] = file("${baseDir}/bin/dp_tools__agilent_1_channel")
                 """
             }
         }
