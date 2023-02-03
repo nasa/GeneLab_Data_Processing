@@ -112,7 +112,7 @@ def main():
 
     # halt on error
     flagged_messages = "\n".join(
-        [msg for msg in df.loc[df["code_level"] >= max_flag_code]["message"]]
+        ["--".join(list(row.values())) for row in df.loc[df["code_level"] >= max_flag_code][["description","message"]].to_dict(orient="records")]
     )
     assert (
         df["code_level"].max() < max_flag_code
