@@ -18,6 +18,7 @@ process VV_AGILE1CH {
     path("VV_INPUT/Metadata/*") // While files from processing are staged, we instead want to use the files located in the publishDir for QC
     path("VV_INPUT/00-DE/*") // "While files from processing are staged, we instead want to use the files located in the publishDir for QC
     val(skipVV) // Skips running V&V but will still publish the files
+    path("dp_tools__agilent_1_channel")
   
   output:
     path("Metadata/*_runsheet.csv"), emit: VVed_runsheet
@@ -42,7 +43,8 @@ process VV_AGILE1CH {
                             'Metadata' \\
                             'DGE Metadata' \\
                             'DGE Output' \\
-                          --max-flag-code ${ params.max_flag_code }
+                          --max-flag-code ${ params.max_flag_code } \\
+                          --plugin-dir dp_tools__agilent_1_channel 
     fi
     """
 }

@@ -55,6 +55,7 @@ workflow {
         RUNSHEET_FROM_GLDS( 
           params.osdAccession,
           params.gldsAccession,
+          "${ projectDir }/bin/dp_tools__agilent_1_channel" // dp_tools plugin
         ) 
         RUNSHEET_FROM_GLDS.out.runsheet | set{ ch_runsheet }
     } else {
@@ -80,7 +81,8 @@ workflow {
     VV_AGILE1CH( 
       ch_runsheet, 
       AGILE1CH.out.de,
-      params.skipVV
+      params.skipVV,
+      "${ projectDir }/bin/dp_tools__agilent_1_channel" // dp_tools plugin
       )
     /*
 

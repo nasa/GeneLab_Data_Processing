@@ -4,9 +4,9 @@
 import argparse
 from pathlib import Path
 
-from dp_tools.microarray.vv_protocols import validate_Agilent1Channel
 from dp_tools.core.check_model import ValidationProtocol
 from dp_tools.core.loaders import load_data
+from dp_tools import plugin_api
 
 ASSET_KEY_SETS = [
     "glds metadata",
@@ -49,6 +49,11 @@ def _parse_args():
         help=f"V&V Components to run. Must be a subset of this list: {SKIP_LIST_COMPONENTS}",
         required=True,
     )
+    parser.add_argument(
+        "--plugin-dir",
+        help=f"Plugin directory to load",
+        required=True,
+    )
 
     args = parser.parse_args()
     return args
@@ -57,6 +62,8 @@ def _parse_args():
 def main():
     args = _parse_args()
     max_flag_code = int(args.max_flag_code)
+
+    plugin = plugin_api.load_plugin(Path(args.plugin_dir))
 
     # invert requested components
     # this is because these are supplied as skips
@@ -67,12 +74,12 @@ def main():
 
     datasystem = load_data(
         key_sets=args.data_asset_sets,
-        config=("microarray", "Latest"),
+        config=plugin.config,
         root_path=Path(args.root_path),
         runsheet_path=Path(args.runsheet_path),
     )
 
-    vp = validate_Agilent1Channel(
+    vp = plugin.protocol.validate(
         datasystem.dataset,
         report_args={"include_skipped": True},
         protocol_args={"skip_components": skip_components},
