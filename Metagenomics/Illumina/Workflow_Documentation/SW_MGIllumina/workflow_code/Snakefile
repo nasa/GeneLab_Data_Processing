@@ -1,6 +1,7 @@
 ############################################################################################
 ## Snakefile for GeneLab Illumina metagenomics processing workflow                        ##
 ## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##
+## Version 2.0.3                                                                          ##
 ############################################################################################
 
 import os
