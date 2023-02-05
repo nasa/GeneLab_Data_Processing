@@ -38,6 +38,8 @@ raw_suffix:
     # this should be provided as a full path (starting with `/`) and include the ending `/` as in the
     # below example (note that the the `~/` home shortcut is not expanded
     # by snakemake's evaluation of files, so don't use that)
+    # also note, if this is a GeneLab processed dataset config file, the path may
+    # have been modified for security purposes and no longer be listed as a full path here
 REF_DB_ROOT_DIR:
     "/path/to/ref-dbs/"
 
