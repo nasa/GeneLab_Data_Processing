@@ -41,11 +41,11 @@ F_primer:
 R_primer:
     "GGACTACHVGGGTWTCTAA"
 
-## should cutadapt treat these as linked primers? (https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-both-ends-of-paired-end-reads)
+## should cutadapt treat these as linked primers? (https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads)
 primers_linked:
     "TRUE"
 
-## if primers are linked, we need to provide them as below, where the second half, following three periods, is the other primer reverse-complemented (see https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-both-ends-of-paired-end-reads)
+## if primers are linked, we need to provide them as below, where the second half, following three periods, is the other primer reverse-complemented (see https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads)
   # (can reverse complement while retaining ambiguous bases at this site: http://arep.med.harvard.edu/labgc/adnan/projects/Utilities/revcomp.html)
 F_linked_primer:
     "GTGCCAGCMGCCGCGGTAA...TTAGAWACCCBDGTAGTCC"
