@@ -1,6 +1,6 @@
 # Workflow change log
 
-## [2.0.3](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_MGIllumina_2.0.3/Metagenomics/Illumina/Workflow_Documentation/SW_MGIllumina)
+## [pending 2.0.3](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_MGIllumina_2.0.3/Metagenomics/Illumina/Workflow_Documentation/SW_MGIllumina)
 - added config file for multiqc to trim suffixes from sample names and not include paths in output report
 - added version number to top of primary Snakefile
 
