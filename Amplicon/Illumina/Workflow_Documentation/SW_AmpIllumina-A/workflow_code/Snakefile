@@ -284,7 +284,8 @@ if config["data_type"] == "PE":
             fastqc_out_dir = config["fastqc_out_dir"],
             int_output = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc.html",
             r1_html_files = expand(config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list),
-            r2_html_files = expand(config["raw_reads_dir"] + "{ID}" + config["raw_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list)
+            r2_html_files = expand(config["raw_reads_dir"] + "{ID}" + config["raw_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list),
+            config_file = "config/multiqc.config"
         output:
             html = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_report.html",
             data = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_data.zip"
@@ -292,7 +293,7 @@ if config["data_type"] == "PE":
             "benchmarks/raw_multiqc-benchmarks.tsv"
         shell:
             """
-            multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix} {input} > /dev/null 2>&1
+            multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix} --config {params.config_file} {input} > /dev/null 2>&1
             # removing the individual fastqc files
             rm -rf {input} {params.r1_html_files} {params.r2_html_files}
             # renaming html file
@@ -338,7 +339,8 @@ if config["data_type"] == "PE":
             fastqc_out_dir = config["fastqc_out_dir"],
             int_output = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc.html",
             r1_html_files = expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list),
-            r2_html_files = expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list)
+            r2_html_files = expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list),
+            config_file = "config/multiqc.config"
         output:
             html = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.html",
             data = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_data.zip"
@@ -346,7 +348,7 @@ if config["data_type"] == "PE":
             "benchmarks/filtered_multiqc-benchmarks.tsv"
         shell:
             """
-            multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix} {input} > /dev/null 2>&1
+            multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix} --config {params.config_file} {input} > /dev/null 2>&1
             # removing the individual fastqc files and temp locations
             rm -rf {input} {params.r1_html_files} {params.r2_html_files}
             # renaming html file
@@ -557,7 +559,8 @@ if config["data_type"] == "SE":
             out_filename_prefix = config["output_prefix"] + "raw_multiqc",
             fastqc_out_dir = config["fastqc_out_dir"],
             int_output = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc.html",
-            r1_html_files = expand(config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list)
+            r1_html_files = expand(config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list),
+            config_file = "config/multiqc.config"
         output:
             html = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_report.html",
             data = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_data.zip"
@@ -565,7 +568,7 @@ if config["data_type"] == "SE":
             "benchmarks/raw_multiqc-benchmarks.tsv"
         shell:
             """
-            multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix} {input} > /dev/null 2>&1
+            multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix} --config {params.config_file} {input} > /dev/null 2>&1
             # removing the individual fastqc files
             rm -rf {input} {params.r1_html_files}
             # renaming html file
@@ -607,7 +610,8 @@ if config["data_type"] == "SE":
             out_filename_prefix = config["output_prefix"] + "filtered_multiqc",
             fastqc_out_dir = config["fastqc_out_dir"],
             int_output = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc.html",
-            r1_html_files = expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list)
+            r1_html_files = expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list),
+            config_file = "config/multiqc.config"
         output:
             html = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.html",
             data = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_data.zip"
@@ -615,7 +619,7 @@ if config["data_type"] == "SE":
             "benchmarks/filtered_multiqc-benchmarks.tsv"
         shell:
             """
-            multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix} {input} > /dev/null 2>&1
+            multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix} --config {params.config_file} {input} > /dev/null 2>&1
             # removing the individual fastqc files and temp locations
             rm -rf {input} {params.r1_html_files}
             # renaming html file
