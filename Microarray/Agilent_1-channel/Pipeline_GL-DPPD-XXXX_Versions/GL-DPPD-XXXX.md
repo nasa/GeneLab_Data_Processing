@@ -59,7 +59,6 @@ Lauren Sanders (acting GeneLab Project Scientist)
 |limma|3.50.3|[https://bioconductor.org/packages/3.14/bioc/html/limma.html](https://bioconductor.org/packages/3.14/bioc/html/limma.html)|
 |glue|1.6.2|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
 |biomaRt|2.50.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
-|scales|1.2.1|[https://scales.r-lib.org](https://scales.r-lib.org)|
 |matrixStats|0.63.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
 |dp_tools|1.2.0|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |singularity|3.9|[https://sylabs.io](https://sylabs.io)|
@@ -125,11 +124,9 @@ dpt-isa-to-runsheet --accession OSD-### \
 ```R
 ### Install R packages if not already installed ###
 
-install.packages('DT')
 install.packages("tidyverse")
 install.packages("R.utils")
 install.packages("glue")
-install.packages("scales")
 install.packages("matrixStats")
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
@@ -145,7 +142,6 @@ library(dplyr)
 library(stringr)
 library(R.utils)
 library(glue)
-library(scales)
 library(matrixStats)
 library(limma)
 library(biomaRt)
@@ -157,7 +153,13 @@ runsheet <- /path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.
 
 # fileEncoding removes strange characters from the column names
 df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
-
+# TODO: priority-low generalize this utility function
+allTrue <- function(i_vector) {
+  if ( length(i_vector) == 0 ) {
+    stop(paste("Input vector is length zero"))
+  }
+  all(i_vector)
+}
 
 # Define paths to raw data files
 runsheetPathsAreURIs <- function(df_runsheet) {
@@ -537,21 +539,30 @@ getBioMartAttribute <- function(df_rs, params) {
 expected_attribute_name <- getBioMartAttribute(df_rs, params)
 print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
 
-probe_ids <- norm_data$genes$ProbeName
+probe_ids <- unique(norm_data$genes$ProbeName)
 
 
 # Create probe map
-df_mapping <- biomaRt::getBM(
-    attributes = c(
-        expected_attribute_name,
-        "ensembl_gene_id",
-        "uniprot_gn_symbol",
-        #"go_id", # Full GO IDS
-        "goslim_goa_accession" # GO SLIM IDS, we use these to be consistent with bulkRNASeq and other transcriptomics assays
-        ), filters = expected_attribute_name, 
-        values = c(probe_ids), 
-        mart = ensembl)
+# Run Biomart Queries in chunks to prevent request timeouts
+#   Note: If timeout is occuring (possibly due to larger load on biomart), reduce chunk size
+CHUNK_SIZE= 8000
+probe_id_chunks <- split(probe_ids, ceiling(seq_along(probe_ids) / CHUNK_SIZE))
+df_mapping <- data.frame()
+for (i in seq_along(probe_id_chunks)) {
+  probe_id_chunk <- probe_id_chunks[[i]]
+  print(glue::glue("Running biomart query chunk {i} of {length(probe_id_chunks)}. Total probes IDS in query ({length(probe_id_chunk)})"))
+  chunk_results <- biomaRt::getBM(
+      attributes = c(
+          expected_attribute_name,
+          "ensembl_gene_id"
+          ), 
+          filters = expected_attribute_name, 
+          values = probe_id_chunk, 
+          mart = ensembl)
 
+  df_mapping <- df_mapping %>% dplyr::bind_rows(chunk_results)
+  Sys.sleep(10) # Slight break between requests to prevent back-to-back requests
+}
 
 # Convert list of multi-mapped genes to string
 listToUniquePipedString <- function(str_list) {
@@ -563,9 +574,7 @@ listToUniquePipedString <- function(str_list) {
 unique_probe_ids <- df_mapping %>% 
                       dplyr::group_by(!!sym(expected_attribute_name)) %>% 
                       dplyr::summarise(
-                        SYMBOL = listToUniquePipedString(uniprot_gn_symbol),
-                        ENSEMBL = listToUniquePipedString(ensembl_gene_id),
-                        GOSLIM_IDS = listToUniquePipedString(goslim_goa_accession)
+                        ENSEMBL = listToUniquePipedString(ensembl_gene_id)
                         ) %>%
                       # Count number of ensembl IDS mapped
                       dplyr::mutate( 
@@ -593,122 +602,25 @@ norm_data$genes <- norm_data$genes %>%
 ### 7b. Summarize Biomart Mapping vs. Manufacturer Mapping
 
 ```R
-# Create function to calcluate mapping statistics
-calculateMappingStats <- function(df_genes) {
-
-  stats <- list()
-
-  df_genes.no.control.probes <- df_genes %>% dplyr::filter( ControlType == 0 )
-  print(paste("Original Probe Count: ", length(df_genes$ProbeName)))
-  print(paste("Original Non-Control Probe Count: ", length(df_genes.no.control.probes$ProbeName)))
-  stats$count_unique_probe <- length(unique(df_genes.no.control.probes$ProbeName))
-
-  stats$count_total_original_unmapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( (ProbeName == SystematicName) ) %>%
-      dplyr::pull( ProbeName )
+# Pie Chart with Percentages
+slices <- c(
+    'Control probes' = nrow(norm_data$gene %>% dplyr::filter(ControlType != 0) %>% dplyr::distinct(ProbeName)), 
+    'Unique Mapping' = nrow(norm_data$gene %>% dplyr::filter(ControlType == 0) %>% dplyr::filter(count_ENSEMBL_mappings == 1) %>% dplyr::distinct(ProbeName)), 
+    'Multi Mapping' = nrow(norm_data$gene %>% dplyr::filter(ControlType == 0) %>% dplyr::filter(count_ENSEMBL_mappings > 1) %>% dplyr::distinct(ProbeName)), 
+    'No Mapping' = nrow(norm_data$gene %>% dplyr::filter(ControlType == 0) %>% dplyr::filter(count_ENSEMBL_mappings == 0) %>% dplyr::distinct(ProbeName))
+)
+pct <- round(slices/sum(slices)*100)
+chart_names <- names(slices)
+chart_names <- glue::glue("{names(slices)} ({slices})") # add count to labelss
+chart_names <- paste(chart_names, pct) # add percents to labels
+chart_names <- paste(chart_names,"%",sep="") # ad % to labels
+pie(slices,labels = chart_names, col=rainbow(length(slices)),
+    main=glue::glue("Biomart Mapping to Ensembl Primary Keytype\n {nrow(norm_data$gene %>% dplyr::distinct(ProbeName))} Total Unique Probes")
     )
-  )
-  stats$count_total_original_mapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( (ProbeName != SystematicName) ) %>%
-      dplyr::pull( ProbeName )
-    )
-  )
-  stats$count_total_biomart_unmapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( is.na(SYMBOL) ) %>%
-      dplyr::pull( ProbeName )
-    )
-  )
-  stats$count_total_biomart_mapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( !is.na(SYMBOL) ) %>%
-      dplyr::pull( ProbeName )
-    )
-  )
-  stats$count_total_biomart_1to1_mapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( !is.na(SYMBOL) & (count_ENSEMBL_mappings == 1) ) %>%
-      dplyr::pull( ProbeName )
-    )
-  )
-  stats$count_total_biomart_multi_mapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( !is.na(SYMBOL) & (count_ENSEMBL_mappings > 1) ) %>%
-      dplyr::pull( ProbeName )
-    )
-  )
-  stats$count_unique_original_unmapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( (ProbeName == SystematicName) & !is.na(SYMBOL) ) %>%
-      dplyr::pull( ProbeName )
-    )
-  )
-  stats$count_unique_biomart_unmapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( ( count_ENSEMBL_mappings == 0 ) & (ProbeName != SystematicName) ) %>%
-      dplyr::pull( ProbeName )
-    )
-  )
-  stats$count_both_original_and_biomart_unmapped <- length(
-    unique(
-      df_genes.no.control.probes %>%
-      dplyr::filter( is.na(SYMBOL) & (ProbeName == SystematicName) ) %>%
-      dplyr::pull( ProbeName )
-    )
-  )
 
-  stats$count_biomart_unique_mapped_features <- df_genes.no.control.probes %>%
-      dplyr::filter( count_ENSEMBL_mappings == 1  ) %>%
-      dplyr::pull( ENSEMBL ) %>%
-      unique() %>%
-      length()
-
-  stats$count_original_unique_mapped_features <- df_genes.no.control.probes %>%
-      dplyr::filter( ProbeName != GeneName  ) %>%
-      dplyr::pull( GeneName ) %>%
-      unique() %>%
-      length()
-
-  return(stats)
-}
-
-# Create function to describe mapping statistics calculated above
-describeMapping <- function(stats) {
-  my_label <- scales::label_percent(accuracy = 0.01, prefix="(", suffix = "%)")
-  percentOfUniqueProbes <- function(num) {
-    #' Gives number as a percent of unique probes 
-    
-    return(my_label(num / stats$count_unique_probe))
-  }
-
-  print(paste("  Mapped (original): ", stats$count_total_original_mapped, percentOfUniqueProbes(stats$count_total_original_mapped)))
-  print(paste("  Mapped (biomart): ", stats$count_total_biomart_mapped, percentOfUniqueProbes(stats$count_total_biomart_mapped)))
-  print(paste("  Ensembl One-To-One Mapped (biomart): ", stats$count_total_biomart_1to1_mapped, percentOfUniqueProbes(stats$count_total_biomart_1to1_mapped)))
-  print(paste("  Ensembl Multi-Mapped (biomart): ", stats$count_total_biomart_multi_mapped, percentOfUniqueProbes(stats$count_total_biomart_multi_mapped)))
-  print(paste("  Not mapped (unique original): ", stats$count_unique_original_unmapped, percentOfUniqueProbes(stats$count_unique_original_unmapped)))
-  print(paste("  Not mapped (unique biomart): ", stats$count_unique_biomart_unmapped, percentOfUniqueProbes(stats$count_unique_biomart_unmapped)))
-  print(paste("  Not mapped (shared biomart & original): ", stats$count_both_original_and_biomart_unmapped, percentOfUniqueProbes(stats$count_both_original_and_biomart_unmapped)))
-
-  print("More Info")
-  print(paste("  Not mapped (total original mapping): ", stats$count_total_original_unmapped, percentOfUniqueProbes(stats$count_total_original_unmapped)))
-  print(paste("  Not mapped (total biomart mapping): ", stats$count_total_biomart_unmapped, percentOfUniqueProbes(stats$count_total_biomart_unmapped)))
-  print(paste("  Features (genes) (stats$count_biomart_unique_mapped_features): ", stats$count_biomart_unique_mapped_features))
-  print(paste("  Features (genes) (stats$count_original_unique_mapped_features): ", stats$count_original_unique_mapped_features))
-  print(paste("  Percent fewer unique features: ", my_label(-(stats$count_biomart_unique_mapped_features - stats$count_original_unique_mapped_features) / stats$count_original_unique_mapped_features)))
-}
-
-# Use functions created above to calculate and describe the mapping statistics based on probe annotations
-calculateMappingStats(norm_data$genes) %>% describeMapping()
+original_mapping_rate = nrow(norm_data$gene %>% dplyr::filter(ControlType == 0) %>% dplyr::filter(ProbeName != SystematicName) %>% dplyr::distinct(ProbeName))
+print(glue::glue("Original Manufacturer Reported Mapping Rate: {original_mapping_rate}"))
+print(glue::glue("Biomart Unique Mapping Rate: {original_mapping_rate}"))
 ```
 
 **Input Data:**
@@ -717,19 +629,8 @@ calculateMappingStats(norm_data$genes) %>% describeMapping()
 
 **Output Data:**
 
-- Mapping summary (An in-report comparison of non-control probe annotation mapping that includes the following:
-  - Mapped (original): Count/Percent of probes mapped using the original manufactuer mapping
-  - Mapped (biomart): Count/Percent of probes mapped using the biomart as per this Ensembl [protocol](https://useast.ensembl.org/info/genome/microarray_probe_set_mapping.html)
-  - Ensembl One-To-One Mapped (biomart): Count/Percent of probes mapping one-to-one to Ensembl gene IDs
-  - Ensembl Multi-Mapped (biomart): Count/Percent of probes mapping to more than one Ensembl gene IDs
-  - Not mapped (unique original): Count/Percent of probes not mapped as per the manufacturer but mapped as per biomart.
-  - Not mapped (unique biomart): Count/Percent of probes not mapped as per the biomart but mapped as per the manufacturer.
-  - Not mapped (shared biomart & original): Count/Percent of probes not mapped as per either the manufacturer nor biomart.
-  - Not mapped (total original mapping): Count/Percent of probes not mapped to the original manufacturer.
-  - Not mapped (total biomart mapping): Count/Percent of probes not mapped to the biomart.
-  - Features (genes) (stats$count_biomart_unique_mapped_features): Count/Percent of unique probes mapped as per biomart.
-  - Features (genes) (stats$count_original_unique_mapped_features): Count/Percent of unique probes mapped as per the original manufacturer.
-  - Percent fewer unique features: Percent reduction of unique genes mapped when comparing original manufacturer to biomart.)
+- A pie chart denoting the biomart mapping rates for each unique probe ID
+- A printout denoting the count of unique mappings for both the original manufacturer mapping and the biomart mapping
 
 <br>
 
@@ -861,7 +762,7 @@ reformat_names <- function(colname, group_name_mapping) {
                   stringr::str_replace(pattern = "^P.value.condition", replacement = "P.value_") %>%
                   stringr::str_replace(pattern = "^Coef.condition", replacement = "Log2fc_") %>% # This is the Log2FC as per: https://rdrr.io/bioc/limma/man/writefit.html
                   stringr::str_replace(pattern = "^t.condition", replacement = "T.stat_") %>%
-                  stringr::str_replace(pattern = stringr::fixed("Genes.ProbeUID"), replacement = "PROBEID") %>% 
+                  stringr::str_replace(pattern = stringr::fixed("Genes.ProbeName"), replacement = "PROBEID") %>% 
                   stringr::str_replace(pattern = stringr::fixed("Genes.SYMBOL"), replacement = "SYMBOL") %>% 
                   stringr::str_replace(pattern = stringr::fixed("Genes.ENSEMBL"), replacement = "ENSEMBL") %>% 
                   stringr::str_replace(pattern = stringr::fixed("Genes.GOSLIM_IDS"), replacement = "GOSLIM_IDS") %>% 
@@ -907,8 +808,8 @@ for ( i in seq_along(unique_groups) ) {
   
   df_interim <- df_interim %>% 
     dplyr::mutate( 
-      "Group.Mean_{current_group}" := rowMeans(select(., current_samples)),
-      "Group.Stdev_{current_group}" := matrixStats::rowSds(as.matrix(select(., current_samples))),
+      "Group.Mean_{current_group}" := rowMeans(select(., all_of(current_samples))),
+      "Group.Stdev_{current_group}" := matrixStats::rowSds(as.matrix(select(., all_of(current_samples)))),
       ) %>% 
     dplyr::ungroup() %>%
     as.data.frame()
@@ -931,6 +832,26 @@ colnames_to_remove = c(
 )
 
 df_interim <- df_interim %>% dplyr::select(-any_of(colnames_to_remove))
+
+## Concatenate annotations for genes (for uniquely mapped probes) ##
+### Read in annotation table for the appropriate organism ###
+annot <- read.table(
+            annotation_file_path,
+            sep = "\t",
+            header = TRUE,
+            quote = "",
+            comment.char = "",
+        )
+
+# Join annotation table and uniquely mapped data
+df_interim <- merge(
+                annot,
+                df_interim,
+                by = primary_keytype,
+                # ensure all original dge rows are kept.
+                # If unmatched in the annotation database, then fill missing with NAN
+                all.y = TRUE
+            )
 
 # Save to file
 write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
@@ -980,6 +901,8 @@ write.csv(PCA_raw$x,
 **Input Data:**
 
 - INTERIM.csv (Statistical values from individual probe level DE analysis, output from [Step 7d](#7d-perform-individual-probe-level-de) above)
+- `annotation_file_path` (Annotation file url from 'genelab_annots_link' column of [GL-DPPD-7110_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) corresponding to the subject organism)
+- `primary_keytype` (Keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL')
 
 **Output Data:**
 
