@@ -518,7 +518,7 @@ print(ensembl)
 getBioMartAttribute <- function(df_rs) {
   #' Returns resolved biomart attribute source from runsheet
 
-  # check if runsheet has Array Design REF
+  # check if runsheet has 'biomart_attribute' column
   if ( !is.null(df_rs$`biomart_attribute`) ) {
     print("Using attribute name sourced from runsheet")
     # Format according to biomart needs
