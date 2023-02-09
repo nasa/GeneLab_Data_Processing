@@ -515,28 +515,23 @@ ensembl <- biomaRt::useEnsembl(biomart = "genes",
 print(ensembl)
 
 
-getBioMartAttribute <- function(df_rs, params) {
-  #' Returns resolved biomart attribute
+getBioMartAttribute <- function(df_rs) {
+  #' Returns resolved biomart attribute source from runsheet
 
-  # check if runsheet has Array Design REF
-  if ( !is.null(df_rs$`Array Design REF`) ) {
+  # check if runsheet has 'biomart_attribute' column
+  if ( !is.null(df_rs$`biomart_attribute`) ) {
     print("Using attribute name sourced from runsheet")
-    return(unique(df_rs$`Array Design REF`))
+    # Format according to biomart needs
+    formatted_value <- unique(df_rs$`biomart_attribute`) %>% 
+                        stringr::str_replace_all(" ","_") %>% # Replace all spaces with underscore
+                        stringr::str_to_lower() # Lower casing only
+    return(formatted_value)
   } else {
-    print("Could not find 'Array Design REF' in runsheet, falling back to parameters")
+    stop("ERROR: Could not find 'biomart_attribute' in runsheet")
   }
-
-  # check if a fallback has been given via params
-  if ( !is.null(params$biomart_attribute ) ) {
-    print("Using attribute name sourced from parameters")
-    return(params$biomart_attribute)
-  }
-
-  # finally throw an error if neither guard condition was true
-  stop("No valid biomart attribute identified")
 }
 
-expected_attribute_name <- getBioMartAttribute(df_rs, params)
+expected_attribute_name <- getBioMartAttribute(df_rs)
 print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
 
 probe_ids <- unique(norm_data$genes$ProbeName)
