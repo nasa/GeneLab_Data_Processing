@@ -862,13 +862,13 @@ colnames(updown_table) <- gsub("Log2fc","Updown",grep("Log2fc_",colnames(df),val
 df <- cbind(df,updown_table)
 rm(updown_table)
 ## Add column to indicate contrast significance with p <= 0.1
-sig.1_table <- df[,grep("P.value_",colnames(df))]<=.1
-colnames(sig.1_table) <- gsub("P.value","Sig.1",grep("P.value_",colnames(df),value = TRUE))
+sig.1_table <- df[,grep("Adj.p.value_",colnames(df))]<=.1
+colnames(sig.1_table) <- gsub("Adj.p.value","Sig.1",grep("Adj.p.value_",colnames(df),value = TRUE))
 df <- cbind(df,sig.1_table)
 rm(sig.1_table)
 ## Add column to indicate contrast significance with p <= 0.05
-sig.05_table <- df[,grep("P.value_",colnames(df))]<=.05
-colnames(sig.05_table) <- gsub("P.value","Sig.05",grep("P.value_",colnames(df),value = TRUE))
+sig.05_table <- df[,grep("Adj.p.value_",colnames(df))]<=.05
+colnames(sig.05_table) <- gsub("Adj.p.value","Sig.05",grep("Adj.p.value_",colnames(df),value = TRUE))
 df <- cbind(df, sig.05_table)
 rm(sig.05_table)
 ## Add columns for the volcano plot with p-value and adjusted p-value
