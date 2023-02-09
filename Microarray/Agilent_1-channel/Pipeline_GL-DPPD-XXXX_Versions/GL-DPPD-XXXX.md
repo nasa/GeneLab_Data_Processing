@@ -149,7 +149,7 @@ library(biomaRt)
 
 
 # Define path to runsheet
-runsheet <- /path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv
+runsheet <- "/path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv"
 
 # fileEncoding removes strange characters from the column names
 df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
