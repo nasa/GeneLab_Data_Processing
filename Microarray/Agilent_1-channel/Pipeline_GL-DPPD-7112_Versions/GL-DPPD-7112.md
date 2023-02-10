@@ -155,11 +155,29 @@ library(statmod)
 runsheet <- "/path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv"
 
 
-## Define path to the GeneLab annotation table (GL-DPPD-7110_annotations.csv) file ##
-annotation_file_path <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv"
-
 # fileEncoding removes strange characters from the column names
 df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
+
+## Determines the organism specific annotation file to use based on the organism in the runsheet
+fetch_organism_specific_annotation_file_path <- function(organism) {
+  #' Uses the GeneLab GL-DPPD-7110_annotations.csv file to find an applicable organism specific annotation file path
+  #' Raises an exception if the organism does not have an associated annotation file yet
+  
+
+  all_organism_table <- read.csv("https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv")
+
+  annotation_file_path <- all_organism_table %>% dplyr::filter(species == organism) %>% dplyr::pull(genelab_annots_link)
+
+  # Guard clause: Ensure annotation_file_path populated
+  #  Else: raise exception for unsupported organism
+  if (length(annotation_file_path) == 0) {
+    stop(glue::glue("Organism supplied '{organism}' is not supported. See the following url for supported organisms: https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv.  Supported organisms will correspond to a row based on the 'species' column and include a url in the 'genelab_annots_link' column of that row"))
+  }
+
+  return(annotation_file_path)
+}
+annotation_file_path <- fetch_organism_specific_annotation_file_path(unique(df_rs$organism))
+
 allTrue <- function(i_vector) {
   if ( length(i_vector) == 0 ) {
     stop(paste("Input vector is length zero"))
