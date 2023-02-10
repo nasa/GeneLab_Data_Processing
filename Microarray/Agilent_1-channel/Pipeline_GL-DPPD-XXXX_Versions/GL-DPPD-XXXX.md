@@ -60,6 +60,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
 |glue|1.6.2|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
 |biomaRt|2.50.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
 |matrixStats|0.63.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
+|statmod|1.5.0|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
 |dp_tools|1.2.0|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |singularity|3.9|[https://sylabs.io](https://sylabs.io)|
 |Quarto|1.1.251|[https://quarto.org](https://quarto.org)|
@@ -128,6 +129,7 @@ install.packages("tidyverse")
 install.packages("R.utils")
 install.packages("glue")
 install.packages("matrixStats")
+install.packages("statmod")
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install(version = "3.14")
@@ -145,11 +147,16 @@ library(glue)
 library(matrixStats)
 library(limma)
 library(biomaRt)
+library(statmod)
 
 
 
 # Define path to runsheet
-runsheet <- /path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv
+runsheet <- "/path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv"
+
+# Define path to annotation table
+# # Annotation file from 'genelab_annots_link' column of https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv
+annotation_file_path <- "/path/to/annotation_table_path"
 
 # fileEncoding removes strange characters from the column names
 df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
@@ -193,12 +200,12 @@ if ( runsheetPathsAreURIs(df_rs) ) {
 }
 
 
-# Decompress files if needed
+# uncompress files if needed
 if ( allTrue(stringr::str_ends(local_paths, ".gz")) ) {
-  print("Determined these files are gzip compressed... Decompressing now")
-  # This does the decompression
+  print("Determined these files are gzip compressed... uncompressing now")
+  # This does the uncompression
   lapply(local_paths, R.utils::gunzip, remove = FALSE, overwrite = TRUE)
-  # This removes the .gz extension to get the decompressed filenames
+  # This removes the .gz extension to get the uncompressed filenames
   local_paths <- vapply(local_paths, 
                         stringr::str_replace, # Run this function against each item in 'local_paths'
                         FUN.VALUE = character(1),  # Execpt an character vector as a return
@@ -606,7 +613,7 @@ slices <- c(
 )
 pct <- round(slices/sum(slices)*100)
 chart_names <- names(slices)
-chart_names <- glue::glue("{names(slices)} ({slices})") # add count to labelss
+chart_names <- glue::glue("{names(slices)} ({slices})") # add count to labels
 chart_names <- paste(chart_names, pct) # add percents to labels
 chart_names <- paste(chart_names,"%",sep="") # ad % to labels
 pie(slices,labels = chart_names, col=rainbow(length(slices)),
@@ -810,6 +817,15 @@ for ( i in seq_along(unique_groups) ) {
     as.data.frame()
 }
 
+all_samples <- design_data$group %>% dplyr::pull(sample)
+df_interim <- df_interim %>% 
+  dplyr::mutate( 
+    "All.mean" := rowMeans(select(., all_of(all_samples))),
+    "All.stdev" := matrixStats::rowSds(as.matrix(select(., all_of(all_samples)))),
+    ) %>% 
+  dplyr::ungroup() %>%
+  as.data.frame()
+
 print("Remove extra columns from final table")
 
 # These columns are data mapped to column PROBEID as per the original Manufacturer and can be linked as needed
@@ -822,7 +838,8 @@ colnames_to_remove = c(
   "Genes.ProbeName",
   "Genes.GeneName",
   "Genes.SystematicName",
-  "Genes.Description"
+  "Genes.Description",
+  "AveExpr" # Replaced by 'All.mean' column
   # "Genes.count_ENSEMBL_mappings", Keep this
 )
 
@@ -839,10 +856,23 @@ annot <- read.table(
         )
 
 # Join annotation table and uniquely mapped data
+
+# Determine appropriate keytype
+map_primary_keytypes <- c(
+  'Caenorhabditis elegans' = 'ENSEMBL',
+  'Danio rerio' = 'ENSEMBL',
+  'Drosophila melanogaster' = 'ENSEMBL',
+  'Rattus norvegicus' = 'ENSEMBL',
+  'Saccharomyces cerevisiae' = 'ENSEMBL',
+  'Homo sapiens' = 'ENSEMBL',
+  'Mus sapiens' = 'ENSEMBL',
+  'Arabidopsis thaliana' = 'TAIR'
+)
+
 df_interim <- merge(
                 annot,
                 df_interim,
-                by = primary_keytype,
+                by = map_primary_keytypes[[unique(df_rs$organism)]],
                 # ensure all original dge rows are kept.
                 # If unmatched in the annotation database, then fill missing with NAN
                 all.y = TRUE
@@ -859,13 +889,13 @@ colnames(updown_table) <- gsub("Log2fc","Updown",grep("Log2fc_",colnames(df),val
 df <- cbind(df,updown_table)
 rm(updown_table)
 ## Add column to indicate contrast significance with p <= 0.1
-sig.1_table <- df[,grep("P.value_",colnames(df))]<=.1
-colnames(sig.1_table) <- gsub("P.value","Sig.1",grep("P.value_",colnames(df),value = TRUE))
+sig.1_table <- df[,grep("Adj.p.value_",colnames(df))]<=.1
+colnames(sig.1_table) <- gsub("Adj.p.value","Sig.1",grep("Adj.p.value_",colnames(df),value = TRUE))
 df <- cbind(df,sig.1_table)
 rm(sig.1_table)
 ## Add column to indicate contrast significance with p <= 0.05
-sig.05_table <- df[,grep("P.value_",colnames(df))]<=.05
-colnames(sig.05_table) <- gsub("P.value","Sig.05",grep("P.value_",colnames(df),value = TRUE))
+sig.05_table <- df[,grep("Adj.p.value_",colnames(df))]<=.05
+colnames(sig.05_table) <- gsub("Adj.p.value","Sig.05",grep("Adj.p.value_",colnames(df),value = TRUE))
 df <- cbind(df, sig.05_table)
 rm(sig.05_table)
 ## Add columns for the volcano plot with p-value and adjusted p-value
