@@ -613,7 +613,7 @@ slices <- c(
 )
 pct <- round(slices/sum(slices)*100)
 chart_names <- names(slices)
-chart_names <- glue::glue("{names(slices)} ({slices})") # add count to labelss
+chart_names <- glue::glue("{names(slices)} ({slices})") # add count to labels
 chart_names <- paste(chart_names, pct) # add percents to labels
 chart_names <- paste(chart_names,"%",sep="") # ad % to labels
 pie(slices,labels = chart_names, col=rainbow(length(slices)),
