@@ -809,8 +809,8 @@ for ( i in seq_along(unique_groups) ) {
   
   df_interim <- df_interim %>% 
     dplyr::mutate( 
-      "Group.Mean_{current_group}" := rowMeans(select(., all_of(current_samples))),
-      "Group.Stdev_{current_group}" := matrixStats::rowSds(as.matrix(select(., all_of(current_samples)))),
+      "Group.Mean_{current_group}" := rowMeans(dplyr::select(., all_of(current_samples))),
+      "Group.Stdev_{current_group}" := matrixStats::rowSds(as.matrix(dplyr::select(., all_of(current_samples)))),
       ) %>% 
     dplyr::ungroup() %>%
     as.data.frame()
@@ -819,8 +819,8 @@ for ( i in seq_along(unique_groups) ) {
 all_samples <- design_data$group %>% dplyr::pull(sample)
 df_interim <- df_interim %>% 
   dplyr::mutate( 
-    "All.mean" := rowMeans(select(., all_of(all_samples))),
-    "All.stdev" := matrixStats::rowSds(as.matrix(select(., all_of(all_samples)))),
+    "All.mean" := rowMeans(dplyr::select(., all_of(all_samples))),
+    "All.stdev" := matrixStats::rowSds(as.matrix(dplyr::select(., all_of(all_samples)))),
     ) %>% 
   dplyr::ungroup() %>%
   as.data.frame()
