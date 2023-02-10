@@ -895,6 +895,83 @@ df_interim <- merge(
                 all.y = TRUE
             )
 
+## Reorder columns before saving to file
+ANNOTATIONS_COLUMN_ORDER = c(
+  map_primary_keytypes[[unique(df_rs$organism)]],
+  "SYMBOL",
+  "GENENAME",
+  "REFSEQ",
+  "ENTREZID",
+  "STRING_id",
+  "GOSLIM_IDS"
+)
+
+PROBE_INFO_COLUMN_ORDER = c(
+  "Genes.ProbeUID",
+  "PROBEID",
+  "Genes.count_ENSEMBL_mappings"
+)
+SAMPLE_COLUMN_ORDER <- all_samples
+generate_prefixed_column_order <- function(subjects, prefixes) {
+  #' Return a vector of columns based on subject and given prefixes
+  #'  Used for both contrasts and groups column name generation
+  
+  # Track order of columns
+  final_order = c()
+
+  # For each contrast
+  for (subject in subjects) {
+    # Generate column names for each prefix and append to final_order
+    for (prefix in prefixes) {
+      final_order <- append(final_order, glue::glue("{prefix}{subject}"))
+    }
+  }
+  return(final_order)
+}
+STAT_COLUMNS_ORDER <- generate_prefixed_column_order(
+  subjects = colnames(design_data$contrasts),
+  prefixes = c(
+    "Log2fc_",
+    "T.stat_",
+    "P.value_",
+    "Adj.p.value_"
+    )
+  )
+ALL_SAMPLE_STATS_COLUMNS_ORDER <- c(
+  "All.mean",
+  "All.stdev",
+  "F",
+  "F.p.value"
+)
+
+  COLUMN_PREFIXES = c(
+    "Group.Mean_",
+    "Group.Stdev_"
+  )
+GROUP_STAT_COLUMNS_ORDER <- generate_prefixed_column_order(
+  subjects = unique(design_data$groups$group),
+  prefixes = c(
+    "Group.Mean_",
+    "Group.Stdev_"
+    )
+  )
+FINAL_COLUMN_ORDER <- c(
+  ANNOTATIONS_COLUMN_ORDER, 
+  PROBE_INFO_COLUMN_ORDER, 
+  SAMPLE_COLUMN_ORDER, 
+  STAT_COLUMNS_ORDER, 
+  ALL_SAMPLE_STATS_COLUMNS_ORDER, GROUP_STAT_COLUMNS_ORDER
+  )
+
+## Assert final column order includes all columns from original table
+if (!setequal(FINAL_COLUMN_ORDER, colnames(df_interim))) {
+  FINAL_COLUMN_ORDER_STRING <- paste(FINAL_COLUMN_ORDER, collapse = ":::::")
+  stop(glue::glue("Column reordering attempt resulted in different sets of columns than orignal. Order attempted: {FINAL_COLUMN_ORDER_STRING}"))
+}
+
+## Perform reordering
+df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
+
 # Save to file
 write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
 
