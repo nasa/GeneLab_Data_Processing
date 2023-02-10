@@ -196,12 +196,12 @@ if ( runsheetPathsAreURIs(df_rs) ) {
 }
 
 
-# Decompress files if needed
+# uncompress files if needed
 if ( allTrue(stringr::str_ends(local_paths, ".gz")) ) {
-  print("Determined these files are gzip compressed... Decompressing now")
-  # This does the decompression
+  print("Determined these files are gzip compressed... uncompressing now")
+  # This does the uncompression
   lapply(local_paths, R.utils::gunzip, remove = FALSE, overwrite = TRUE)
-  # This removes the .gz extension to get the decompressed filenames
+  # This removes the .gz extension to get the uncompressed filenames
   local_paths <- vapply(local_paths, 
                         stringr::str_replace, # Run this function against each item in 'local_paths'
                         FUN.VALUE = character(1),  # Execpt an character vector as a return
