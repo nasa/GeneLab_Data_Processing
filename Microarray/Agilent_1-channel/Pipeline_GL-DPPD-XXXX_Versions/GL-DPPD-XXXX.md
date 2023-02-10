@@ -620,8 +620,8 @@ pie(slices,labels = chart_names, col=rainbow(length(slices)),
     )
 
 original_mapping_rate = nrow(norm_data$gene %>% dplyr::filter(ControlType == 0) %>% dplyr::filter(ProbeName != SystematicName) %>% dplyr::distinct(ProbeName))
-print(glue::glue("Original Manufacturer Reported Mapping Rate: {original_mapping_rate}"))
-print(glue::glue("Biomart Unique Mapping Rate: {slices[['Unique Mapping']]}"))
+print(glue::glue("Original Manufacturer Reported Mapping Count: {original_mapping_rate}"))
+print(glue::glue("Biomart Unique Mapping Count: {slices[['Unique Mapping']]}"))
 ```
 
 **Input Data:**
