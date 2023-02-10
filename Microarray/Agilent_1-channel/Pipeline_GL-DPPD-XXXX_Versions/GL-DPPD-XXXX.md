@@ -160,7 +160,6 @@ annotation_file_path <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Pro
 
 # fileEncoding removes strange characters from the column names
 df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
-# TODO: priority-low generalize this utility function
 allTrue <- function(i_vector) {
   if ( length(i_vector) == 0 ) {
     stop(paste("Input vector is length zero"))
@@ -621,8 +620,8 @@ pie(slices,labels = chart_names, col=rainbow(length(slices)),
     )
 
 original_mapping_rate = nrow(norm_data$gene %>% dplyr::filter(ControlType == 0) %>% dplyr::filter(ProbeName != SystematicName) %>% dplyr::distinct(ProbeName))
-print(glue::glue("Original Manufacturer Reported Mapping Rate: {original_mapping_rate}"))
-print(glue::glue("Biomart Unique Mapping Rate: {original_mapping_rate}"))
+print(glue::glue("Original Manufacturer Reported Mapping Count: {original_mapping_rate}"))
+print(glue::glue("Biomart Unique Mapping Count: {slices[['Unique Mapping']]}"))
 ```
 
 **Input Data:**
@@ -810,8 +809,8 @@ for ( i in seq_along(unique_groups) ) {
   
   df_interim <- df_interim %>% 
     dplyr::mutate( 
-      "Group.Mean_{current_group}" := rowMeans(select(., all_of(current_samples))),
-      "Group.Stdev_{current_group}" := matrixStats::rowSds(as.matrix(select(., all_of(current_samples)))),
+      "Group.Mean_{current_group}" := rowMeans(dplyr::select(., all_of(current_samples))),
+      "Group.Stdev_{current_group}" := matrixStats::rowSds(as.matrix(dplyr::select(., all_of(current_samples)))),
       ) %>% 
     dplyr::ungroup() %>%
     as.data.frame()
@@ -820,8 +819,8 @@ for ( i in seq_along(unique_groups) ) {
 all_samples <- design_data$group %>% dplyr::pull(sample)
 df_interim <- df_interim %>% 
   dplyr::mutate( 
-    "All.mean" := rowMeans(select(., all_of(all_samples))),
-    "All.stdev" := matrixStats::rowSds(as.matrix(select(., all_of(all_samples)))),
+    "All.mean" := rowMeans(dplyr::select(., all_of(all_samples))),
+    "All.stdev" := matrixStats::rowSds(as.matrix(dplyr::select(., all_of(all_samples)))),
     ) %>% 
   dplyr::ungroup() %>%
   as.data.frame()
