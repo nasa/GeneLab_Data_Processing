@@ -856,10 +856,23 @@ annot <- read.table(
         )
 
 # Join annotation table and uniquely mapped data
+
+# Determine appropriate keytype
+map_primary_keytypes <- c(
+  'Caenorhabditis elegans' = 'ENSEMBL',
+  'Danio rerio' = 'ENSEMBL',
+  'Drosophila melanogaster' = 'ENSEMBL',
+  'Rattus norvegicus' = 'ENSEMBL',
+  'Saccharomyces cerevisiae' = 'ENSEMBL',
+  'Homo sapiens' = 'ENSEMBL',
+  'Mus sapiens' = 'ENSEMBL',
+  'Arabidopsis thaliana' = 'TAIR'
+)
+
 df_interim <- merge(
                 annot,
                 df_interim,
-                by = primary_keytype,
+                by = map_primary_keytypes[[unique(df_rs$organism)]],
                 # ensure all original dge rows are kept.
                 # If unmatched in the annotation database, then fill missing with NAN
                 all.y = TRUE
