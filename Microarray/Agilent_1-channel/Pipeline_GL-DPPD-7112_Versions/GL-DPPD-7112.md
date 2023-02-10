@@ -944,14 +944,15 @@ ALL_SAMPLE_STATS_COLUMNS_ORDER <- c(
   "F.p.value"
 )
 
-  COLUMN_PREFIXES = c(
-    "Group.Mean_",
-    "Group.Stdev_"
-  )
-GROUP_STAT_COLUMNS_ORDER <- generate_prefixed_column_order(
+GROUP_MEAN_COLUMNS_ORDER <- generate_prefixed_column_order(
   subjects = unique(design_data$groups$group),
   prefixes = c(
-    "Group.Mean_",
+    "Group.Mean_"
+    )
+  )
+GROUP_STDEV_COLUMNS_ORDER <- generate_prefixed_column_order(
+  subjects = unique(design_data$groups$group),
+  prefixes = c(
     "Group.Stdev_"
     )
   )
@@ -961,7 +962,8 @@ FINAL_COLUMN_ORDER <- c(
   SAMPLE_COLUMN_ORDER, 
   STAT_COLUMNS_ORDER, 
   ALL_SAMPLE_STATS_COLUMNS_ORDER, 
-  GROUP_STAT_COLUMNS_ORDER
+  GROUP_MEAN_COLUMNS_ORDER,
+  GROUP_STDEV_COLUMNS_ORDER
   )
 
 ## Assert final column order includes all columns from original table
