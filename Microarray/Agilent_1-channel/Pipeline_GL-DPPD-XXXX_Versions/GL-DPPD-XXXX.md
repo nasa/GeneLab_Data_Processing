@@ -817,6 +817,15 @@ for ( i in seq_along(unique_groups) ) {
     as.data.frame()
 }
 
+all_samples <- design_data$group %>% dplyr::pull(sample)
+df_interim <- df_interim %>% 
+  dplyr::mutate( 
+    "All.mean" := rowMeans(select(., all_of(all_samples))),
+    "All.stdev" := matrixStats::rowSds(as.matrix(select(., all_of(all_samples)))),
+    ) %>% 
+  dplyr::ungroup() %>%
+  as.data.frame()
+
 print("Remove extra columns from final table")
 
 # These columns are data mapped to column PROBEID as per the original Manufacturer and can be linked as needed
@@ -829,7 +838,8 @@ colnames_to_remove = c(
   "Genes.ProbeName",
   "Genes.GeneName",
   "Genes.SystematicName",
-  "Genes.Description"
+  "Genes.Description",
+  "AveExpr" # Replaced by 'All.mean' column
   # "Genes.count_ENSEMBL_mappings", Keep this
 )
 
