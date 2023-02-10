@@ -154,9 +154,9 @@ library(statmod)
 # Define path to runsheet
 runsheet <- "/path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv"
 
-# Define path to annotation table
-# # Annotation file from 'genelab_annots_link' column of https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv
-annotation_file_path <- "/path/to/annotation_table_path"
+
+## Define path to the GeneLab annotation table (GL-DPPD-7110_annotations.csv) file ##
+annotation_file_path <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv"
 
 # fileEncoding removes strange characters from the column names
 df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
