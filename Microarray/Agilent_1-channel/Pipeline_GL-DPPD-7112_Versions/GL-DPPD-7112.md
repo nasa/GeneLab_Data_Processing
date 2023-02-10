@@ -160,8 +160,8 @@ df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM')
 
 ## Determines the organism specific annotation file to use based on the organism in the runsheet
 fetch_organism_specific_annotation_file_path <- function(organism) {
-  #' Uses the GeneLab GL-DPPD-7110_annotations.csv file to find an applicable organism specific annotation file path
-  #' Raises an exception if the organism does not have an associated annotation file yet
+  # Uses the GeneLab GL-DPPD-7110_annotations.csv file to find the organism specific annotation file path
+  # Raises an exception if the organism does not have an associated annotation file yet
   
 
   all_organism_table <- read.csv("https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv")
@@ -169,7 +169,7 @@ fetch_organism_specific_annotation_file_path <- function(organism) {
   annotation_file_path <- all_organism_table %>% dplyr::filter(species == organism) %>% dplyr::pull(genelab_annots_link)
 
   # Guard clause: Ensure annotation_file_path populated
-  #  Else: raise exception for unsupported organism
+  # Else: raise exception for unsupported organism
   if (length(annotation_file_path) == 0) {
     stop(glue::glue("Organism supplied '{organism}' is not supported. See the following url for supported organisms: https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv.  Supported organisms will correspond to a row based on the 'species' column and include a url in the 'genelab_annots_link' column of that row"))
   }
