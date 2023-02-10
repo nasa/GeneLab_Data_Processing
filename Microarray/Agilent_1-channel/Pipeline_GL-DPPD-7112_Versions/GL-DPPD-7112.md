@@ -882,7 +882,7 @@ map_primary_keytypes <- c(
   'Rattus norvegicus' = 'ENSEMBL',
   'Saccharomyces cerevisiae' = 'ENSEMBL',
   'Homo sapiens' = 'ENSEMBL',
-  'Mus sapiens' = 'ENSEMBL',
+  'Mus musculus' = 'ENSEMBL',
   'Arabidopsis thaliana' = 'TAIR'
 )
 
