@@ -1,0 +1,50 @@
+nextflow_pipeline {
+
+    name "Test Workflow main.nf"
+    script "main.nf"
+
+    test("Direct runsheet version: Should run without failures") {
+
+        when {
+            params {
+                // define parameters here. Example: 
+                runsheetPath = "../examples/runsheet/GLDS-367_microarray_v0_runsheet.csv"
+                gldsAccession = "GLDS-367"
+                limit_biomart_query = 300
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert snapshot(
+                            path("${params.outputDir}/${params.gldsAccession}/Metadata").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/00-DE").list(),
+                            [ 'Agile1CMP.html exists' : path("${params.outputDir}/${params.gldsAccession}/GeneLab/Agile1CMP.html").exists()],
+                            ).match()
+        }
+
+    }
+    test("GLDS-367: Should run without failures") {
+
+        when {
+            params {
+                // define parameters here. Example: 
+                osdAccession = "OSD-367"
+                gldsAccession = "GLDS-367"
+                biomart_attribute = "Agilent wholegenome 4x44k v1"
+                limit_biomart_query = 300
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert snapshot(
+                            path("${params.outputDir}/${params.gldsAccession}/Metadata").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/00-DE").list(),
+                            [ 'Agile1CMP.html exists' : path("${params.outputDir}/${params.gldsAccession}/GeneLab/Agile1CMP.html").exists()],
+                            ).match()
+        }
+
+    }
+
+}

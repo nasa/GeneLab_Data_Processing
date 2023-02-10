@@ -1,0 +1,28 @@
+nextflow_pipeline {
+
+    name "Test Workflow main.nf"
+    script "main.nf"
+
+    test("GLDS-542: Should run without failures") {
+
+        when {
+            params {
+                // define parameters here. Example: 
+                osdAccession = "OSD-542"
+                gldsAccession = "GLDS-542"
+                limit_biomart_query = 300
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert snapshot(
+                            path("${params.outputDir}/${params.gldsAccession}/Metadata").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/00-DE").list(),
+                            [ 'Agile1CMP.html exists' : path("${params.outputDir}/${params.gldsAccession}/GeneLab/Agile1CMP.html").exists()],
+                            ).match()
+        }
+
+    }
+
+}

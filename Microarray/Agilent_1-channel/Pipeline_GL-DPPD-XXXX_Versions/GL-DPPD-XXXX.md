@@ -160,7 +160,6 @@ annotation_file_path <- "/path/to/annotation_table_path"
 
 # fileEncoding removes strange characters from the column names
 df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
-# TODO: priority-low generalize this utility function
 allTrue <- function(i_vector) {
   if ( length(i_vector) == 0 ) {
     stop(paste("Input vector is length zero"))
