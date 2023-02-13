@@ -1035,7 +1035,7 @@ raw_data_matrix_annotated <- merge(
                 all.y = TRUE
             )
 
-write.csv(raw_data_matrix_annotated, "raw_intensities.csv")
+write.csv(raw_data_matrix_annotated, "raw_intensities.csv", row.names = FALSE)
 ```
 
 **Input Data:**
