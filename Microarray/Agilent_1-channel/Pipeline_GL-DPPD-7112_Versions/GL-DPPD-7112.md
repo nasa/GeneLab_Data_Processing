@@ -386,7 +386,7 @@ boxplotExpressionSafeMargin(raw_data)
 ## 4. Background Correction
 
 ```R
-norm_data <- limma::backgroundCorrect(raw_data, method = "normexp")
+background_corrected_data <- limma::backgroundCorrect(raw_data, method = "normexp")
 ```
 
 **Input Data:**
@@ -395,7 +395,7 @@ norm_data <- limma::backgroundCorrect(raw_data, method = "normexp")
 
 **Output Data:**
 
-- `norm_data` (R object containing background-corrected microarray data)
+- `background_corrected_data` (R object containing background-corrected microarray data)
 
   >   
   > Note: Background correction was performed using the `normexp` method as recommended by [Ritchie, M.E., et al.](http://bioinformatics.oxfordjournals.org/content/23/20/2700), which performs background correction and quantile normalization using the control probes by utilizing the `normexp.fit.control` function to estimate the parameters required by normal+exponential(normexp) convolution model with the help of negative control probes, followed by the `normexp.signal` function to perform the background correction.
@@ -408,7 +408,7 @@ norm_data <- limma::backgroundCorrect(raw_data, method = "normexp")
 
 ```R
 # Normalize background-corrected data using the quantile method
-norm_data <- limma::normalizeBetweenArrays(norm_data, method = "quantile")
+norm_data <- limma::normalizeBetweenArrays(background_corrected_data, method = "quantile")
 
 # Summarize background-corrected and normalized data
 print(paste0("Number of Arrays: ", dim(norm_data)[2]))
@@ -417,7 +417,7 @@ print(paste0("Number of Probes: ", dim(norm_data)[1]))
 
 **Input Data:**
 
-- `norm_data` (R object containing background-corrected microarray data created in [Step 4](#4-background-correction) above)
+- `background_corrected_data` (R object containing background-corrected microarray data created in [Step 4](#4-background-correction) above)
 
 **Output Data:**
 
@@ -1018,6 +1018,24 @@ PCA_raw <- prcomp(t(exp_raw), scale = FALSE)
 write.csv(PCA_raw$x,
           "visualization_PCA_table.csv"
           )
+
+## Generate raw intensity matrix that includes annotations
+raw_data_matrix <- background_corrected_data$genes %>% 
+                    dplyr::select(ProbeUID, ProbeName) %>%
+                    dplyr::bind_cols(background_corrected_data$E) %>% 
+                    dplyr::left_join(unique_probe_ids, by = c("ProbeName" = expected_attribute_name ) ) %>%
+                    dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) )
+
+raw_data_matrix_annotated <- merge(
+                annot,
+                raw_data_matrix,
+                by = map_primary_keytypes[[unique(df_rs$organism)]],
+                # ensure all original dge rows are kept.
+                # If unmatched in the annotation database, then fill missing with NAN
+                all.y = TRUE
+            )
+
+write.csv(raw_data_matrix_annotated, "raw_intensities.csv")
 ```
 
 **Input Data:**
@@ -1025,9 +1043,11 @@ write.csv(PCA_raw$x,
 - INTERIM.csv (Statistical values from individual probe level DE analysis, output from [Step 7d](#7d-perform-individual-probe-level-de) above)
 - `annotation_file_path` (Annotation file url from 'genelab_annots_link' column of [GL-DPPD-7110_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) corresponding to the subject organism)
 - `primary_keytype` (Keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL')
+- `background_corrected_data` (R object containing background-corrected microarray data)
 
 **Output Data:**
 
 - **differential_expression.csv** (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
 - visualization_output_table.csv (file used to generate GeneLab DGE visualizations)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
+- raw_intensities.csv (table containing the background corrected unnormalized intensity values for each sample including gene annotations)
