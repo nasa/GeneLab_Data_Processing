@@ -781,7 +781,9 @@ reformat_names <- function(colname, group_name_mapping) {
                   stringr::str_replace(pattern = "^P.value.condition", replacement = "P.value_") %>%
                   stringr::str_replace(pattern = "^Coef.condition", replacement = "Log2fc_") %>% # This is the Log2FC as per: https://rdrr.io/bioc/limma/man/writefit.html
                   stringr::str_replace(pattern = "^t.condition", replacement = "T.stat_") %>%
-                  stringr::str_replace(pattern = stringr::fixed("Genes.ProbeName"), replacement = "PROBEID") %>% 
+                  stringr::str_replace(pattern = stringr::fixed("Genes.ProbeName"), replacement = "ProbeName") %>% 
+                  stringr::str_replace(pattern = stringr::fixed("Genes.count_ENSEMBL_mappings"), replacement = "count_ENSEMBL_mappings") %>% 
+                  stringr::str_replace(pattern = stringr::fixed("Genes.ProbeUID"), replacement = "ProbeUID") %>% 
                   stringr::str_replace(pattern = stringr::fixed("Genes.SYMBOL"), replacement = "SYMBOL") %>% 
                   stringr::str_replace(pattern = stringr::fixed("Genes.ENSEMBL"), replacement = "ENSEMBL") %>% 
                   stringr::str_replace(pattern = stringr::fixed("Genes.GOSLIM_IDS"), replacement = "GOSLIM_IDS") %>% 
@@ -907,9 +909,9 @@ ANNOTATIONS_COLUMN_ORDER = c(
 )
 
 PROBE_INFO_COLUMN_ORDER = c(
-  "Genes.ProbeUID",
-  "PROBEID",
-  "Genes.count_ENSEMBL_mappings"
+  "ProbeUID",
+  "ProbeName",
+  "count_ENSEMBL_mappings"
 )
 SAMPLE_COLUMN_ORDER <- all_samples
 generate_prefixed_column_order <- function(subjects, prefixes) {
@@ -1035,6 +1037,16 @@ raw_data_matrix_annotated <- merge(
                 all.y = TRUE
             )
 
+## Perform reordering
+FINAL_COLUMN_ORDER <- c(
+  ANNOTATIONS_COLUMN_ORDER, 
+  PROBE_INFO_COLUMN_ORDER, 
+  SAMPLE_COLUMN_ORDER
+  )
+
+raw_data_matrix_annotated <- raw_data_matrix_annotated %>% 
+  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
+
 write.csv(raw_data_matrix_annotated, "raw_intensities.csv", row.names = FALSE)
 
 
@@ -1053,6 +1065,17 @@ norm_data_matrix_annotated <- merge(
                 # If unmatched in the annotation database, then fill missing with NAN
                 all.y = TRUE
             )
+
+
+## Perform reordering
+FINAL_COLUMN_ORDER <- c(
+  ANNOTATIONS_COLUMN_ORDER, 
+  PROBE_INFO_COLUMN_ORDER, 
+  SAMPLE_COLUMN_ORDER
+  )
+
+norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
+  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = FALSE)
 ```
