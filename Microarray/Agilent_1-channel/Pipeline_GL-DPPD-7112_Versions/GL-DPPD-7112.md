@@ -1036,6 +1036,25 @@ raw_data_matrix_annotated <- merge(
             )
 
 write.csv(raw_data_matrix_annotated, "raw_intensities.csv", row.names = FALSE)
+
+
+## Generate normalized expression matrix that includes annotations
+norm_data_matrix <- norm_data$genes %>% 
+                    dplyr::select(ProbeUID, ProbeName) %>%
+                    dplyr::bind_cols(norm_data$E) %>% 
+                    dplyr::left_join(unique_probe_ids, by = c("ProbeName" = expected_attribute_name ) ) %>%
+                    dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) )
+
+norm_data_matrix_annotated <- merge(
+                annot,
+                norm_data_matrix,
+                by = map_primary_keytypes[[unique(df_rs$organism)]],
+                # ensure all original dge rows are kept.
+                # If unmatched in the annotation database, then fill missing with NAN
+                all.y = TRUE
+            )
+
+write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = FALSE)
 ```
 
 **Input Data:**
@@ -1044,6 +1063,7 @@ write.csv(raw_data_matrix_annotated, "raw_intensities.csv", row.names = FALSE)
 - `annotation_file_path` (Annotation file url from 'genelab_annots_link' column of [GL-DPPD-7110_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) corresponding to the subject organism)
 - `primary_keytype` (Keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL')
 - `background_corrected_data` (R object containing background-corrected microarray data)
+- `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
 
 **Output Data:**
 
@@ -1051,3 +1071,4 @@ write.csv(raw_data_matrix_annotated, "raw_intensities.csv", row.names = FALSE)
 - visualization_output_table.csv (file used to generate GeneLab DGE visualizations)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
 - **raw_intensities.csv** (table containing the background corrected unnormalized intensity values for each sample including gene annotations)
+- **normalized_expression.csv** (table containing the background corrected, normalized intensity values for each sample including gene annotations)
