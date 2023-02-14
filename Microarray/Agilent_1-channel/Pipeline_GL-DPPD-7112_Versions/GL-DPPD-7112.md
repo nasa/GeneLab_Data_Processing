@@ -1037,6 +1037,16 @@ raw_data_matrix_annotated <- merge(
                 all.y = TRUE
             )
 
+## Perform reordering
+FINAL_COLUMN_ORDER <- c(
+  ANNOTATIONS_COLUMN_ORDER, 
+  PROBE_INFO_COLUMN_ORDER, 
+  SAMPLE_COLUMN_ORDER
+  )
+
+raw_data_matrix_annotated <- raw_data_matrix_annotated %>% 
+  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
+
 write.csv(raw_data_matrix_annotated, "raw_intensities.csv", row.names = FALSE)
 
 
