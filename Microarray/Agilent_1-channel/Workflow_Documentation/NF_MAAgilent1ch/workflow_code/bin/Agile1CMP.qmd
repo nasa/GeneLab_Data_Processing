@@ -25,11 +25,6 @@ params:
 ## Validate Parameters <!-- non DPPD -->
 ``` {r validate-parameters}
 #| message = FALSE
-# DEBUG UNTIL CONTAINER UPDATED
-chooseCRANmirror(ind = 1)
-install.packages('matrixStats', lib=".")
-# ENDDEBUG
-
 library(dplyr) # Ensure infix operator is available, methods should still reference dplyr namespace otherwise
 options(dplyr.summarise.inform = FALSE) # Don't print out '`summarise()` has grouped output by 'group'. You can override using the `.groups` argument.'
 if (is.null(params$runsheet)) {
@@ -37,25 +32,44 @@ if (is.null(params$runsheet)) {
 }
 
 runsheet = params$runsheet # <path/to/runsheet>
-annotation_file_path <- as.character(params$annotation_file_path) # Annotation file from 'genelab_annots_link' column of https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv
-organism <- params$organism # Used to determine primary keytype
+
 message(params)
 ```
 
 ## Load Metadata and Raw Data
 
-``` {r load-runsheet}
+``` {r load-runsheet-and-annotation-table-link}
 #| message = FALSE
 print("Loading Runsheet...") # NON_DPPD
 # fileEncoding removes strange characters from the column names
-df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
+df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM')
+
+## Determines the organism specific annotation file to use based on the organism in the runsheet
+fetch_organism_specific_annotation_file_path <- function(organism) {
+  # Uses the GeneLab GL-DPPD-7110_annotations.csv file to find the organism specific annotation file path
+  # Raises an exception if the organism does not have an associated annotation file yet
+  
+
+  all_organism_table <- read.csv("https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv")
+
+  annotation_file_path <- all_organism_table %>% dplyr::filter(species == organism) %>% dplyr::pull(genelab_annots_link)
+
+  # Guard clause: Ensure annotation_file_path populated
+  # Else: raise exception for unsupported organism
+  if (length(annotation_file_path) == 0) {
+    stop(glue::glue("Organism supplied '{organism}' is not supported. See the following url for supported organisms: https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv.  Supported organisms will correspond to a row based on the 'species' column and include a url in the 'genelab_annots_link' column of that row"))
+  }
+
+  return(annotation_file_path)
+}
+annotation_file_path <- fetch_organism_specific_annotation_file_path(unique(df_rs$organism))
+
 # NON_DPPD:START
 print("Here is the embedded runsheet")
 DT::datatable(df_rs)
 print("Here are the expected comparison groups")
 # NON_DPPD:END
 print("Loading Raw Data...") # NON_DPPD
-# TODO: priority-low generalize this utility function
 allTrue <- function(i_vector) {
   if ( length(i_vector) == 0 ) {
     stop(paste("Input vector is length zero"))
@@ -95,12 +109,12 @@ if ( runsheetPathsAreURIs(df_rs) ) {
 }
 
 
-# Decompress files if needed
+# uncompress files if needed
 if ( allTrue(stringr::str_ends(local_paths, ".gz")) ) {
-  print("Determined these files are gzip compressed... Decompressing now")
-  # This does the decompression
+  print("Determined these files are gzip compressed... uncompressing now")
+  # This does the uncompression
   lapply(local_paths, R.utils::gunzip, remove = FALSE, overwrite = TRUE)
-  # This removes the .gz extension to get the decompressed filenames
+  # This removes the .gz extension to get the uncompressed filenames
   local_paths <- vapply(local_paths, 
                         stringr::str_replace, # Run this function against each item in 'local_paths'
                         FUN.VALUE = character(1),  # Execpt an character vector as a return
@@ -221,11 +235,11 @@ boxplotExpressionSafeMargin <- function(data) {
 
 boxplotExpressionSafeMargin(raw_data)
 ```
-
+G
 ## Background Correction
 
 ``` {r background-correction}
-norm_data <- limma::backgroundCorrect(raw_data, method = "normexp")
+background_corrected_data <- limma::backgroundCorrect(raw_data, method = "normexp")
 ```
 
 ## Between Array Normalization
@@ -233,7 +247,7 @@ norm_data <- limma::backgroundCorrect(raw_data, method = "normexp")
 ``` {r between-array-normalization}
 #| message = FALSE
 # Normalize background-corrected data using the quantile method
-norm_data <- limma::normalizeBetweenArrays(norm_data, method = "quantile")
+norm_data <- limma::normalizeBetweenArrays(background_corrected_data, method = "quantile")
 print("Summarized Normalized Data Below") # NON_DPPD
 print("Note: These are expected to be the same values as the normalized data since no filtering/summarization has been performed") # NON_DPPD
 
@@ -344,14 +358,14 @@ ensembl <- biomaRt::useEnsembl(biomart = "genes",
 print(ensembl)
 
 
-getBioMartAttribute <- function(df_rs, params) {
-  #' Returns resolved biomart attribute
+getBioMartAttribute <- function(df_rs) {
+  #' Returns resolved biomart attribute source from runsheet
   # NON_DPPD:START
   #' this either comes from the runsheet or as a fall back, the parameters injected during render
   #' if neither exist, an error is thrown
   # NON_DPPD:END
 
-  # check if runsheet has Array Design REF
+  # check if runsheet has 'biomart_attribute' column
   if ( !is.null(df_rs$`biomart_attribute`) ) {
     print("Using attribute name sourced from runsheet")
     # Format according to biomart needs
@@ -360,20 +374,11 @@ getBioMartAttribute <- function(df_rs, params) {
                         stringr::str_to_lower() # Lower casing only
     return(formatted_value)
   } else {
-    print("Could not find 'Array Design REF' in runsheet, falling back to parameters")
+    stop("ERROR: Could not find 'biomart_attribute' in runsheet")
   }
-
-  # check if a fallback has been given via params
-  if ( !is.null(params$biomart_attribute ) ) {
-    print("Using attribute name sourced from parameters")
-    return(params$biomart_attribute)
-  }
-
-  # finally throw an error if neither guard condition was true
-  stop("No valid biomart attribute identified")
 }
 
-expected_attribute_name <- getBioMartAttribute(df_rs, params)
+expected_attribute_name <- getBioMartAttribute(df_rs)
 print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
 message(paste0("Expected attribute name: '", expected_attribute_name, "'")) # NON_DPPD
 
@@ -390,7 +395,7 @@ if ( is.integer(params$DEBUG_limit_biomart_query) ) {
 # Create probe map
 # Run Biomart Queries in chunks to prevent request timeouts
 #   Note: If timeout is occuring (possibly due to larger load on biomart), reduce chunk size
-CHUNK_SIZE= 8000
+CHUNK_SIZE= 1500
 probe_id_chunks <- split(probe_ids, ceiling(seq_along(probe_ids) / CHUNK_SIZE))
 df_mapping <- data.frame()
 for (i in seq_along(probe_id_chunks)) {
@@ -449,7 +454,7 @@ slices <- c(
 )
 pct <- round(slices/sum(slices)*100)
 chart_names <- names(slices)
-chart_names <- glue::glue("{names(slices)} ({slices})") # add count to labelss
+chart_names <- glue::glue("{names(slices)} ({slices})") # add count to labels
 chart_names <- paste(chart_names, pct) # add percents to labels
 chart_names <- paste(chart_names,"%",sep="") # ad % to labels
 pie(slices,labels = chart_names, col=rainbow(length(slices)),
@@ -457,8 +462,8 @@ pie(slices,labels = chart_names, col=rainbow(length(slices)),
     )
 
 original_mapping_rate = nrow(norm_data$gene %>% dplyr::filter(ControlType == 0) %>% dplyr::filter(ProbeName != SystematicName) %>% dplyr::distinct(ProbeName))
-print(glue::glue("Original Manufacturer Reported Mapping Rate: {original_mapping_rate}"))
-print(glue::glue("Biomart Unique Mapping Rate: {original_mapping_rate}"))
+print(glue::glue("Original Manufacturer Reported Mapping Count: {original_mapping_rate}"))
+print(glue::glue("Biomart Unique Mapping Count: {slices[['Unique Mapping']]}"))
 message(glue::glue("Original Manufacturer Reported Mapping Rate: {original_mapping_rate}")) # NON_DPPD
 message(glue::glue("Biomart Unique Mapping Rate: {slices[['Unique Mapping']]}")) # NON_DPPD
 ```
@@ -577,7 +582,9 @@ reformat_names <- function(colname, group_name_mapping) {
                   stringr::str_replace(pattern = "^P.value.condition", replacement = "P.value_") %>%
                   stringr::str_replace(pattern = "^Coef.condition", replacement = "Log2fc_") %>% # This is the Log2FC as per: https://rdrr.io/bioc/limma/man/writefit.html
                   stringr::str_replace(pattern = "^t.condition", replacement = "T.stat_") %>%
-                  stringr::str_replace(pattern = stringr::fixed("Genes.ProbeName"), replacement = "PROBEID") %>% 
+                  stringr::str_replace(pattern = stringr::fixed("Genes.ProbeName"), replacement = "ProbeName") %>% 
+                  stringr::str_replace(pattern = stringr::fixed("Genes.count_ENSEMBL_mappings"), replacement = "count_ENSEMBL_mappings") %>% 
+                  stringr::str_replace(pattern = stringr::fixed("Genes.ProbeUID"), replacement = "ProbeUID") %>% 
                   stringr::str_replace(pattern = stringr::fixed("Genes.SYMBOL"), replacement = "SYMBOL") %>% 
                   stringr::str_replace(pattern = stringr::fixed("Genes.ENSEMBL"), replacement = "ENSEMBL") %>% 
                   stringr::str_replace(pattern = stringr::fixed("Genes.GOSLIM_IDS"), replacement = "GOSLIM_IDS") %>% 
@@ -628,23 +635,22 @@ for ( i in seq_along(unique_groups) ) {
   
   df_interim <- df_interim %>% 
     dplyr::mutate( 
-      "Group.Mean_{current_group}" := rowMeans(select(., all_of(current_samples))),
-      "Group.Stdev_{current_group}" := matrixStats::rowSds(as.matrix(select(., all_of(current_samples)))),
+      "Group.Mean_{current_group}" := rowMeans(dplyr::select(., all_of(current_samples))),
+      "Group.Stdev_{current_group}" := matrixStats::rowSds(as.matrix(dplyr::select(., all_of(current_samples)))),
       ) %>% 
     dplyr::ungroup() %>%
     as.data.frame()
 }
 
-## Compute all sample mean and standard deviation
-print(glue::glue("Computing mean and standard deviation for all samples"))
 # NON_DPPD:START
+## Compute all sample mean and standard deviation
 message(glue::glue("Computing mean and standard deviation for all samples"))
 # NON_DPPD:END
 all_samples <- design_data$group %>% dplyr::pull(sample)
 df_interim <- df_interim %>% 
   dplyr::mutate( 
-    "All.mean" := rowMeans(select(., all_of(all_samples))),
-    "All.stdev" := matrixStats::rowSds(as.matrix(select(., all_of(all_samples)))),
+    "All.mean" := rowMeans(dplyr::select(., all_of(all_samples))),
+    "All.stdev" := matrixStats::rowSds(as.matrix(dplyr::select(., all_of(all_samples)))),
     ) %>% 
   dplyr::ungroup() %>%
   as.data.frame()
@@ -688,18 +694,98 @@ map_primary_keytypes <- c(
   'Rattus norvegicus' = 'ENSEMBL',
   'Saccharomyces cerevisiae' = 'ENSEMBL',
   'Homo sapiens' = 'ENSEMBL',
-  'Mus sapiens' = 'ENSEMBL',
-  'Arabidopsis thaliana	' = 'TAIR'
+  'Mus musculus' = 'ENSEMBL',
+  'Arabidopsis thaliana' = 'TAIR'
 )
 
 df_interim <- merge(
                 annot,
                 df_interim,
-                by = map_primary_keytypes[[organism]],
+                by = map_primary_keytypes[[unique(df_rs$organism)]],
                 # ensure all original dge rows are kept.
                 # If unmatched in the annotation database, then fill missing with NAN
                 all.y = TRUE
             )
+
+## Reorder columns before saving to file
+ANNOTATIONS_COLUMN_ORDER = c(
+  map_primary_keytypes[[unique(df_rs$organism)]],
+  "SYMBOL",
+  "GENENAME",
+  "REFSEQ",
+  "ENTREZID",
+  "STRING_id",
+  "GOSLIM_IDS"
+)
+
+PROBE_INFO_COLUMN_ORDER = c(
+  "ProbeUID",
+  "ProbeName",
+  "count_ENSEMBL_mappings"
+)
+SAMPLE_COLUMN_ORDER <- all_samples
+generate_prefixed_column_order <- function(subjects, prefixes) {
+  #' Return a vector of columns based on subject and given prefixes
+  #'  Used for both contrasts and groups column name generation
+  
+  # Track order of columns
+  final_order = c()
+
+  # For each contrast
+  for (subject in subjects) {
+    # Generate column names for each prefix and append to final_order
+    for (prefix in prefixes) {
+      final_order <- append(final_order, glue::glue("{prefix}{subject}"))
+    }
+  }
+  return(final_order)
+}
+STAT_COLUMNS_ORDER <- generate_prefixed_column_order(
+  subjects = colnames(design_data$contrasts),
+  prefixes = c(
+    "Log2fc_",
+    "T.stat_",
+    "P.value_",
+    "Adj.p.value_"
+    )
+  )
+ALL_SAMPLE_STATS_COLUMNS_ORDER <- c(
+  "All.mean",
+  "All.stdev",
+  "F",
+  "F.p.value"
+)
+
+GROUP_MEAN_COLUMNS_ORDER <- generate_prefixed_column_order(
+  subjects = unique(design_data$groups$group),
+  prefixes = c(
+    "Group.Mean_"
+    )
+  )
+GROUP_STDEV_COLUMNS_ORDER <- generate_prefixed_column_order(
+  subjects = unique(design_data$groups$group),
+  prefixes = c(
+    "Group.Stdev_"
+    )
+  )
+FINAL_COLUMN_ORDER <- c(
+  ANNOTATIONS_COLUMN_ORDER, 
+  PROBE_INFO_COLUMN_ORDER, 
+  SAMPLE_COLUMN_ORDER, 
+  STAT_COLUMNS_ORDER, 
+  ALL_SAMPLE_STATS_COLUMNS_ORDER, 
+  GROUP_MEAN_COLUMNS_ORDER,
+  GROUP_STDEV_COLUMNS_ORDER
+  )
+
+## Assert final column order includes all columns from original table
+if (!setequal(FINAL_COLUMN_ORDER, colnames(df_interim))) {
+  FINAL_COLUMN_ORDER_STRING <- paste(FINAL_COLUMN_ORDER, collapse = ":::::")
+  stop(glue::glue("Column reordering attempt resulted in different sets of columns than orignal. Order attempted: {FINAL_COLUMN_ORDER_STRING}"))
+}
+
+## Perform reordering
+df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 # Save to file
 write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
@@ -712,13 +798,13 @@ colnames(updown_table) <- gsub("Log2fc","Updown",grep("Log2fc_",colnames(df),val
 df <- cbind(df,updown_table)
 rm(updown_table)
 ## Add column to indicate contrast significance with p <= 0.1
-sig.1_table <- df[,grep("P.value_",colnames(df))]<=.1
-colnames(sig.1_table) <- gsub("P.value","Sig.1",grep("P.value_",colnames(df),value = TRUE))
+sig.1_table <- df[,grep("Adj.p.value_",colnames(df))]<=.1
+colnames(sig.1_table) <- gsub("Adj.p.value","Sig.1",grep("Adj.p.value_",colnames(df),value = TRUE))
 df <- cbind(df,sig.1_table)
 rm(sig.1_table)
 ## Add column to indicate contrast significance with p <= 0.05
-sig.05_table <- df[,grep("P.value_",colnames(df))]<=.05
-colnames(sig.05_table) <- gsub("P.value","Sig.05",grep("P.value_",colnames(df),value = TRUE))
+sig.05_table <- df[,grep("Adj.p.value_",colnames(df))]<=.05
+colnames(sig.05_table) <- gsub("Adj.p.value","Sig.05",grep("Adj.p.value_",colnames(df),value = TRUE))
 df <- cbind(df, sig.05_table)
 rm(sig.05_table)
 ## Add columns for the volcano plot with p-value and adjusted p-value
@@ -744,6 +830,67 @@ PCA_raw <- prcomp(t(exp_raw), scale = FALSE)
 write.csv(PCA_raw$x,
           "visualization_PCA_table.csv"
           )
+
+write.csv(PCA_raw$x,
+          "visualization_PCA_table.csv"
+          )
+
+## Generate raw intensity matrix that includes annotations
+raw_data_matrix <- background_corrected_data$genes %>% 
+                    dplyr::select(ProbeUID, ProbeName) %>%
+                    dplyr::bind_cols(background_corrected_data$E) %>% 
+                    dplyr::left_join(unique_probe_ids, by = c("ProbeName" = expected_attribute_name ) ) %>%
+                    dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) )
+
+raw_data_matrix_annotated <- merge(
+                annot,
+                raw_data_matrix,
+                by = map_primary_keytypes[[unique(df_rs$organism)]],
+                # ensure all original dge rows are kept.
+                # If unmatched in the annotation database, then fill missing with NAN
+                all.y = TRUE
+            )
+
+## Perform reordering
+FINAL_COLUMN_ORDER <- c(
+  ANNOTATIONS_COLUMN_ORDER, 
+  PROBE_INFO_COLUMN_ORDER, 
+  SAMPLE_COLUMN_ORDER
+  )
+
+raw_data_matrix_annotated <- raw_data_matrix_annotated %>% 
+  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
+
+write.csv(raw_data_matrix_annotated, "raw_intensities.csv", row.names = FALSE)
+
+## Generate normalized expression matrix that includes annotations
+norm_data_matrix <- norm_data$genes %>% 
+                    dplyr::select(ProbeUID, ProbeName) %>%
+                    dplyr::bind_cols(norm_data$E) %>% 
+                    dplyr::left_join(unique_probe_ids, by = c("ProbeName" = expected_attribute_name ) ) %>%
+                    dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) )
+
+norm_data_matrix_annotated <- merge(
+                annot,
+                norm_data_matrix,
+                by = map_primary_keytypes[[unique(df_rs$organism)]],
+                # ensure all original dge rows are kept.
+                # If unmatched in the annotation database, then fill missing with NAN
+                all.y = TRUE
+            )
+
+
+## Perform reordering
+FINAL_COLUMN_ORDER <- c(
+  ANNOTATIONS_COLUMN_ORDER, 
+  PROBE_INFO_COLUMN_ORDER, 
+  SAMPLE_COLUMN_ORDER
+  )
+
+norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
+  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
+
+write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = FALSE)
 ```
 
 ## Version Reporting <!-- non DPPD -->
