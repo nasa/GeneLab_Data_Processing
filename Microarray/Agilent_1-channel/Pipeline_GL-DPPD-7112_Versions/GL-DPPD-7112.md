@@ -1037,7 +1037,7 @@ raw_data_matrix_annotated <- merge(
                 all.y = TRUE
             )
 
-## Perform reordering
+## Reorder columns to match DGE output
 FINAL_COLUMN_ORDER <- c(
   ANNOTATIONS_COLUMN_ORDER, 
   PROBE_INFO_COLUMN_ORDER, 
@@ -1065,14 +1065,6 @@ norm_data_matrix_annotated <- merge(
                 # If unmatched in the annotation database, then fill missing with NAN
                 all.y = TRUE
             )
-
-
-## Perform reordering
-FINAL_COLUMN_ORDER <- c(
-  ANNOTATIONS_COLUMN_ORDER, 
-  PROBE_INFO_COLUMN_ORDER, 
-  SAMPLE_COLUMN_ORDER
-  )
 
 norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
