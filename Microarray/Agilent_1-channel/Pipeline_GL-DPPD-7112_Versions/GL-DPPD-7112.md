@@ -909,9 +909,9 @@ ANNOTATIONS_COLUMN_ORDER = c(
 )
 
 PROBE_INFO_COLUMN_ORDER = c(
-  "Genes.ProbeUID",
-  "PROBEID",
-  "Genes.count_ENSEMBL_mappings"
+  "ProbeUID",
+  "ProbeName",
+  "count_ENSEMBL_mappings"
 )
 SAMPLE_COLUMN_ORDER <- all_samples
 generate_prefixed_column_order <- function(subjects, prefixes) {
