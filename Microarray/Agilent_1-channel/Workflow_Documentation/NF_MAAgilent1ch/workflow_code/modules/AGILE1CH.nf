@@ -18,7 +18,9 @@ process AGILE1CH {
           path("SampleTable.csv"),
           path("differential_expression.csv"),
           path("visualization_output_table.csv"),
-          path("visualization_PCA_table.csv"), emit: de
+          path("visualization_PCA_table.csv"),
+          path("normalized_expression.csv"),
+          path("raw_intensities.csv"), emit: de
 
     path("versions.txt"), emit: version // TODO: convert version reporting to json format
 
