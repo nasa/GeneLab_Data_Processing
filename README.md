@@ -19,7 +19,9 @@ Click on an assay type below for data processing information.
   - [Illumina](Metagenomics/Illumina)  
 - [(bulk) RNAseq](RNAseq)  
 - [single cell RNAseq](scRNAseq)  
-
+- [Methylation Sequencing](Methyl-Seq)
+- [Microarray](Microarray)
+  - [Agilent 1-channel](Microarray/Agilent_1-channel)
 
 ---
 
