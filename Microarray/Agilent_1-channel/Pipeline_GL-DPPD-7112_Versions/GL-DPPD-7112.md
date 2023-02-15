@@ -78,8 +78,6 @@ Lauren Sanders (acting GeneLab Project Scientist)
 ## 1. Create Sample RunSheet
 
 > Notes: 
-> - Rather than running the commands below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_Agile1CMP-A/examples/README.md).
-> 
 > - These command line tools are part of the [dp_tools](https://github.com/J-81/dp_tools) program.
 
 ```bash
