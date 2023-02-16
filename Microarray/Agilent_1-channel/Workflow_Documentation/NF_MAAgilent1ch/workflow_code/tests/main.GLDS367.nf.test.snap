@@ -3,57 +3,22 @@
         "content": [
             [
                 "GLDS-367_metadata_GLDS-367-ISA.zip:md5,130bb4f9fded2750631cfed98c173c06",
-                "GLDS-367_microarray_v0_runsheet.csv:md5,20d3407f692abaf4471151a7d85c0420"
+                "OSD-367_microarray_v0_runsheet.csv:md5,20d3407f692abaf4471151a7d85c0420"
             ],
             [
                 "SampleTable.csv:md5,f393473808e2b9e262c7da5809e0baca",
                 "contrasts.csv:md5,c9af9056cef7bd0210a626cd9c6175b2",
-                "differential_expression.csv:md5,7aabea95a4b1d09ec26fb826daa17f08",
+                "differential_expression.csv:md5,1bce5936134e25585716ebe983743c32",
+                "normalized_expression.csv:md5,baae31c588f25cf574df54ee4937cbaa",
+                "raw_intensities.csv:md5,21b8fe8485e30baabd33d4341be08a78",
                 "visualization_PCA_table.csv:md5,6b37103ca8cacdfc2a924631e7422fa9",
-                "visualization_output_table.csv:md5,6cac37993daf664d1be489b1f5a9befd"
+                "visualization_output_table.csv:md5,e1aa48627dde500d26443891de6c23d9"
             ],
             {
                 "Agile1CMP.html exists": true
             }
         ],
-        "timestamp": "2023-02-03T04:06:05+0000"
-    },
-    "Direct runsheet version: SKIPVV : Should run without failures": {
-        "content": [
-            [
-                "GLDS-367_microarray_v0_runsheet.csv:md5,6b066905180d502a70e4ad9fc094433d"
-            ],
-            [
-                "SampleTable.csv:md5,f393473808e2b9e262c7da5809e0baca",
-                "contrasts.csv:md5,c9af9056cef7bd0210a626cd9c6175b2",
-                "differential_expression.csv:md5,7aabea95a4b1d09ec26fb826daa17f08",
-                "visualization_PCA_table.csv:md5,6b37103ca8cacdfc2a924631e7422fa9",
-                "visualization_output_table.csv:md5,6cac37993daf664d1be489b1f5a9befd"
-            ],
-            {
-                "Agile1CMP.html exists": true
-            }
-        ],
-        "timestamp": "2023-02-03T04:06:05+0000"
-    },
-    "GLDS-367: SKIPVV : Should run without failures": {
-        "content": [
-            [
-                "GLDS-367_metadata_GLDS-367-ISA.zip:md5,130bb4f9fded2750631cfed98c173c06",
-                "GLDS-367_microarray_v0_runsheet.csv:md5,6b066905180d502a70e4ad9fc094433d"
-            ],
-            [
-                "SampleTable.csv:md5,f393473808e2b9e262c7da5809e0baca",
-                "contrasts.csv:md5,c9af9056cef7bd0210a626cd9c6175b2",
-                "differential_expression.csv:md5,7aabea95a4b1d09ec26fb826daa17f08",
-                "visualization_PCA_table.csv:md5,6b37103ca8cacdfc2a924631e7422fa9",
-                "visualization_output_table.csv:md5,6cac37993daf664d1be489b1f5a9befd"
-            ],
-            {
-                "Agile1CMP.html exists": true
-            }
-        ],
-        "timestamp": "2023-02-03T04:06:05+0000"
+        "timestamp": "2023-02-15T00:22:15+0000"
     },
     "Direct runsheet version: Should run without failures": {
         "content": [
@@ -63,14 +28,16 @@
             [
                 "SampleTable.csv:md5,f393473808e2b9e262c7da5809e0baca",
                 "contrasts.csv:md5,c9af9056cef7bd0210a626cd9c6175b2",
-                "differential_expression.csv:md5,7aabea95a4b1d09ec26fb826daa17f08",
+                "differential_expression.csv:md5,1bce5936134e25585716ebe983743c32",
+                "normalized_expression.csv:md5,baae31c588f25cf574df54ee4937cbaa",
+                "raw_intensities.csv:md5,21b8fe8485e30baabd33d4341be08a78",
                 "visualization_PCA_table.csv:md5,6b37103ca8cacdfc2a924631e7422fa9",
-                "visualization_output_table.csv:md5,6cac37993daf664d1be489b1f5a9befd"
+                "visualization_output_table.csv:md5,e1aa48627dde500d26443891de6c23d9"
             ],
             {
                 "Agile1CMP.html exists": true
             }
         ],
-        "timestamp": "2023-02-03T04:06:05+0000"
+        "timestamp": "2023-02-15T00:22:13+0000"
     }
 }
