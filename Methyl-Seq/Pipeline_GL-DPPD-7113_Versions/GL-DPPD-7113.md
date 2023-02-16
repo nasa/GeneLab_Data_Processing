@@ -70,9 +70,12 @@ Jonathan Galazka (GeneLab Project Scientist)
 |TrimGalore!| 0.6.7 |[https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/)|
 |Bismark| 0.23.1 |[https://github.com/FelixKrueger/Bismark](https://github.com/FelixKrueger/Bismark)|
 |bowtie2| 2.4.4 |[https://github.com/BenLangmead/bowtie2#overview](https://github.com/BenLangmead/bowtie2#overview)|
+|hisat2| 2.2.1 | [https://github.com/DaehwanKimLab/hisat2](https://github.com/DaehwanKimLab/hisat2)|
 |samtools| 1.16.1 |[https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)|
 |qualimap| 2.2.2d |[http://qualimap.conesalab.org/](http://qualimap.conesalab.org/)|
-|methylKit|1.20.0|[https://bioconductor.org/packages/release/bioc/html/methylKit.html](https://bioconductor.org/packages/release/bioc/html/methylKit.html)|
+|methylKit| 1.20.0 |[https://bioconductor.org/packages/release/bioc/html/methylKit.html](https://bioconductor.org/packages/release/bioc/html/methylKit.html)|
+|tidyverse| 1.3.2 |[https://tidyverse.tidyverse.org/](https://tidyverse.tidyverse.org/)|
+|genomation| 1.26.0 |[https://bioconductor.org/packages/release/bioc/html/genomation.html](https://bioconductor.org/packages/release/bioc/html/genomation.html)|
 
 ---
 
