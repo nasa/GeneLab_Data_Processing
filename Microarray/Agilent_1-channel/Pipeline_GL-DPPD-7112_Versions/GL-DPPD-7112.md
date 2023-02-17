@@ -1,9 +1,9 @@
 # GeneLab bioinformatics processing pipeline for Agilent 1-channel microarray data <!-- omit in toc -->
 
-> **This page holds an overview and instructions for how GeneLab processes Agilent 1-channel microarray datasets*. Exact processing commands and GL-DPPD-7112 version used for specific datasets are provided with their processed data in the [GeneLab Data Systems 
+> **This page holds an overview and instructions for how GeneLab processes Agilent 1-channel microarray datasets\*. Exact processing commands and GL-DPPD-7112 version used for specific datasets are provided with their processed data in the [GeneLab Data Systems 
 (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
 >
-> \* The pipeline detailed below is currently used for animals only, it will be updated soon for processing plants and microbe microarray data.
+> \* The pipeline detailed below is currently used for animal studies only, it will be updated soon for processing plants and microbe microarray data.
 ---
 
 **Date:** February 13, 2023  
