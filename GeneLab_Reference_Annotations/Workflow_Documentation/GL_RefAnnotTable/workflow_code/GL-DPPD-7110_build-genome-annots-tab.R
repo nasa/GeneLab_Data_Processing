@@ -24,8 +24,8 @@ currently_accepted_orgs <- c("ARABIDOPSIS",
                              "RAT",
                              "WORM",
                              "YEAST",
-                             "ZEBRAFISH")
-                             # "BACSU", # need to work out links to ref fasta and gtf files
+                             "ZEBRAFISH",
+                             "BACSU")
                              # "ECOLI") # need to work out links to ref fasta and gtf files
 
 ## Check that at least one positional command line argument was provided ##
