@@ -460,7 +460,32 @@ def validate(
                                         - Halt: At least 1 log2fc value inconsistent with recomputation (greater than tolerance)
                             """)
                         )
-
+                    vp.add(
+                        bulkRNASeq.checks.check_viz_table_columns_exist,
+                        full_description=textwrap.dedent(f"""
+                                - Check: Ensure all viz columns specific exist including updown and significance columns
+                                    - Reason:
+                                        - These columns are part of proper Viz table output
+                                    - Potential Source of Problems:
+                                        - Bug in processing script
+                                    - Flag Condition:
+                                        - Green: All columns found
+                                        - Halt: At least one column was missing
+                            """)
+                    )
+                    vp.add(
+                        bulkRNASeq.checks.check_viz_table_columns_constraints,
+                        full_description=textwrap.dedent(f"""
+                                - Check: Ensure all viz columns specific met constraints
+                                    - Reason:
+                                        - These columns are part of proper Viz table output
+                                    - Potential Source of Problems:
+                                        - Bug in processing script
+                                    - Flag Condition:
+                                        - Green: All columns met value constraints
+                                        - Halt: At least one column failed value constraints
+                            """)
+                    )
                 with vp.payload(
                     payloads=[
                         {
