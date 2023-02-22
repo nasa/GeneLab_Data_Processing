@@ -17,6 +17,62 @@ class GroupFormatting(enum.Enum):
     r_make_names = enum.auto()
     ampersand_join = enum.auto()
 
+def check_viz_table_columns_constraints(
+    dge_table: Path, runsheet: Path, **_
+) -> FlagEntry:
+    # data specific preprocess
+    expected_groups = utils_runsheet_to_expected_groups(runsheet, map_to_lists=True)
+    expected_comparisons = [
+        "v".join(paired_groups)
+        for paired_groups in itertools.permutations(expected_groups, 2)
+    ]
+    viz_pairwise_columns_constraints = (
+        (
+            {f"Log2_Adj.p.value_{comp}" for comp in expected_comparisons},
+            {"nonNull": False},
+        ),
+        (
+            {f"Sig.1_{comp}" for comp in expected_comparisons},
+            {"allowedValues": [False, True], "nonNull": False},
+        ),
+        (
+            {f"Sig.05_{comp}" for comp in expected_comparisons},
+            {"allowedValues": [False, True], "nonNull": False},
+        ),
+        (
+            {f"Log2_P.value_{comp}" for comp in expected_comparisons},
+            {"nonNegative": False, "nonNull": False},
+        ),
+        (
+            {f"Updown_{comp}" for comp in expected_comparisons},
+            {"allowedValues": [1, -1], "nonNull": True},
+        ),
+    )
+
+    df_viz = pd.read_csv(dge_table)
+
+    # issue trackers
+    # here: {prefix+constraint: [failed_columns]}
+    issues: dict[str, list[str]] = dict()
+
+    issues = utils_common_constraints_on_dataframe(
+        df_viz, viz_pairwise_columns_constraints
+    )
+
+    # check logic
+    if not any([issue_type for issue_type in issues.values()]):
+        code = FlagCode.GREEN
+        message = (
+            f"All values in columns met constraint: {viz_pairwise_columns_constraints}"
+        )
+    else:
+        code = FlagCode.HALT
+        message = (
+            f"Issues found {issues} that"
+            f"fail the contraint: {viz_pairwise_columns_constraints}."
+        )
+    return {"code": code, "message": message}
+
 def utils_runsheet_to_expected_groups(
     runsheet: Path,
     formatting: GroupFormatting = GroupFormatting.ampersand_join,
