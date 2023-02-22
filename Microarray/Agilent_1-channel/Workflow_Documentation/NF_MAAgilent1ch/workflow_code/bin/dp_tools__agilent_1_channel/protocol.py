@@ -509,6 +509,124 @@ def validate(
                                         - Halt: At least one sample or column is missing
                             """)
                         )
+        with vp.component_start(
+            name="Processing Report",
+            description="",
+        ):
+            vp.add_manual(
+                description = "Loading report",
+                start_instructions = "Load html report into web browser",
+                pass_fail_questions = [
+                    "Does the report render without issue?",
+                ]
+            )
+            vp.add_manual(
+                description = "Section 2 Load Metadata and Raw Data",
+                start_instructions = "Navigate to section 2",
+                pass_fail_questions = [
+                    "Does the content of the table match the runsheet?",
+                    "Do the number of entries in the embedded runsheet match the number of samples/runsheet-rows?",
+                ]
+            )
+            vp.add_manual(
+                description = "Section 3 QA For Raw Data - Density Plots",
+                start_instructions = "Navigate to section 3 - Density Plots",
+                pass_fail_questions = [
+                    "Is every sample included in the legend?",
+                    "Are axes and axe titles clear?",
+                ],
+                pass_flag_questions = [
+                    "Are all lines have similar one or two peak shape, each line not likely overlapping?",
+                ]
+            )
+            vp.add_manual(
+                description = "Section 3 QA For Raw Data - Pseudo Image Plots",
+                start_instructions = "Navigate to section 3 - Pseudo Image Plots",
+                pass_fail_questions = [
+                    "Does every sample have its own plot?",
+                    "Is each plot white-blue gradient?",
+                ],
+                pass_flag_questions = [
+                    "Are there clear physical streaks, bright (i.e. white) circles or other features?",
+                ]
+            )
+            vp.add_manual(
+                description = "Section 3 QA For Raw Data - MA Plots",
+                start_instructions = "Navigate to section 3 - MA Plots",
+                pass_fail_questions = [
+                    "Does every sample have its own plot?",
+                ],
+                pass_flag_questions = [
+                    "Are positive control points distributed from left end to right end of MA cloud",
+                    "Are negative control points concentrated at left end of MA cloud?",
+                ]
+            )
+            vp.add_manual(
+                description = "Section 3 QA For Raw Data - Foreground Background Plots",
+                start_instructions = "Navigate to section 3 - Foreground Background Plots",
+                pass_fail_questions = [
+                    "Does every sample have its own plot?",
+                ],
+                pass_flag_questions = [
+                    "Are the vast majority (i.e. 99.9%) of points are above the blue diagonal line",
+                ]
+            )
+            vp.add_manual(
+                description = "Section 3 QA For Raw Data - Boxplots",
+                start_instructions = "Navigate to section 3 - Boxplots",
+                pass_fail_questions = [
+                    "Does every sample have its own plot?",
+                ],
+                pass_flag_questions = [
+                    "Do the boxplots have overlapping distributions?",
+                ]
+            )
+            ###################################################
+            ### Normalized data plots
+            ###################################################
+            vp.add_manual(
+                description = "Section 6 Normalized Data Quality Assessment - Density Plots",
+                start_instructions = "Navigate to section 6 - Density Plots",
+                pass_fail_questions = [
+                    "Is every sample included in the legend?",
+                    "Are axes and axe titles clear?",
+                ],
+                pass_flag_questions = [
+                    "Are all lines nearly fully overlapping?",
+                ]
+            )
+            vp.add_manual(
+                description = "Section 6 Normalized Data Quality Assessment - Pseudo Image Plots",
+                start_instructions = "Navigate to section 6 - Pseudo Image Plots",
+                pass_fail_questions = [
+                    "Does every sample have its own plot?",
+                ],
+                pass_flag_questions = [
+                    "Is each plot white-blue gradient?",
+                    "Are there clear physical streaks, bright (i.e. white) circles or other features?",
+                ]
+            )
+            vp.add_manual(
+                description = "Section 6 Normalized Data Quality Assessment - MA Plots",
+                start_instructions = "Navigate to section 6 - MA Plots",
+                pass_fail_questions = [
+                    "Does every sample have its own plot?",
+                ],
+                pass_flag_questions = [
+                    "Are positive control points distributed from left end to right end of MA 'cloud'",
+                    "Are negative control points concentrated at left end of MA 'cloud'?",
+                ]
+            )
+            vp.add_manual(
+                description = "Section 6 Normalized Data Quality Assessment - Boxplots",
+                start_instructions = "Navigate to section 6 - Boxplots",
+                pass_fail_questions = [
+                    "Does every sample have its own plot?",
+                ],
+                pass_flag_questions = [
+                    "Do the boxplots have largely the same distributions? (i.e. are the boxes all nearly horizontally aligned)",
+                ]
+            )
     # return protocol object without running or generating a report
     if defer_run:
         return vp
