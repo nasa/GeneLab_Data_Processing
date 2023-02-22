@@ -4,10 +4,12 @@ import logging
 import enum
 from typing import Union
 import itertools
+from statistics import mean
 
 log = logging.getLogger(__name__)
 
 import pandas as pd
+import pandera as pa
 
 from dp_tools.core.check_model import FlagCode, FlagEntry, FlagEntryWithOutliers
 
@@ -113,6 +115,89 @@ def utils_common_constraints_on_dataframe(
                 raise ValueError(f"Unhandled constraint types: {col_constraints}")
 
     return issues
+
+def check_dge_table_log2fc_within_reason(
+    dge_table: Path, runsheet: Path, **_
+) -> FlagEntry:
+    """ Note: This function assumes the normalized expression values are log2 transformed
+    """
+    LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD = 1  # Percent
+    PERCENT_ROWS_WITHIN_TOLERANCE = 99.9  # Percent
+
+    # data specific preprocess
+    expected_groups = utils_runsheet_to_expected_groups(runsheet, map_to_lists=True)
+    expected_comparisons = [
+        "v".join(paired_groups)
+        for paired_groups in itertools.permutations(expected_groups, 2)
+    ]
+    df_dge = pd.read_csv(dge_table)
+
+    # Track error messages
+    error_list: list[tuple[str,float]] = list()
+    for comparison in expected_comparisons:
+        query_column = f"Log2fc_{comparison}"
+        group1_mean_col = (
+            "Group.Mean_" + comparison.split(")v(")[0] + ")"
+        )  # Uses parens and adds them back to prevent slicing on 'v' within factor names
+        group2_mean_col = "Group.Mean_" + "(" + comparison.split(")v(")[1]
+        print(df_dge[group1_mean_col].describe())
+        print(df_dge[group2_mean_col].describe())
+        computed_log2fc = df_dge[group1_mean_col] - df_dge[group2_mean_col]
+        abs_percent_difference = abs(
+            ((computed_log2fc - df_dge[query_column]) / df_dge[query_column]) * 100
+        )
+        percent_within_tolerance = (
+            mean(
+                abs_percent_difference
+                < LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD
+            )
+            * 100
+        )
+
+        if percent_within_tolerance < PERCENT_ROWS_WITHIN_TOLERANCE: # add current query column to error list
+            error_list.append((query_column,percent_within_tolerance))
+
+    # inplace sort error list for deterministic order
+    error_list.sort()
+    if error_list == list():
+        code = FlagCode.GREEN
+        message = f"All log2fc values recomputed and consistent (within {LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD})"
+    else:
+        code = FlagCode.HALT
+        message = f"At least one log2fc values recomputed and is not consistent (within {LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD}). These columns were flagged: {error_list}"
+
+    return {"code": code, "message": message}
+
+def check_dge_table_sample_columns_constraints(
+    dge_table: Path, samples: set[str], **_
+) -> FlagEntry:
+    MINIMUM_COUNT = 0
+    # data specific preprocess
+    df_dge = pd.read_csv(dge_table)[samples]
+
+    schema = pa.DataFrameSchema({
+        sample: pa.Column(float)
+        for sample in samples
+    })
+
+    try:
+        schema.validate(df_dge, lazy=True)
+        error_cases = None
+        error_data = None
+    except pa.errors.SchemaErrors as err:
+        error_cases = err.failure_cases
+        error_data = err.data
+    if error_cases == error_data == None:
+        code = FlagCode.GREEN
+        message = (
+            f"All values in columns: {samples} met constraints: {schema}"
+        )
+    else:
+        code = FlagCode.HALT
+        message = (
+            f"{error_cases}:::{error_data}"
+        )
+    return {"code": code, "message": message}
 
 def check_dge_table_group_statistical_columns_constraints(
     dge_table: Path, runsheet: Path, **_
