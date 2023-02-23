@@ -193,16 +193,6 @@ data assets:
 
     resource categories: *neverPublished
 
-  ISA Archive:
-    processed location: 
-      - "Metadata"
-      - "*ISA*.zip"
-
-    tags:
-      - raw
-
-    resource categories: *neverPublished
-
   sample table:
     processed location: 
       - *DGEDataDir
