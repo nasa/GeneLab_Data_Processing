@@ -11,10 +11,47 @@ import pandas as pd
 import pandera as pa
 
 from dp_tools.core.check_model import FlagCode, FlagEntry, FlagEntryWithOutliers
+from dp_tools.core.entity_model import Dataset
 
 class GroupFormatting(enum.Enum):
     r_make_names = enum.auto()
     ampersand_join = enum.auto()
+
+def check_contrasts_table_headers(contrasts_table: Path, runsheet: Path) -> FlagEntry:
+    # data specific preprocess
+    expected_groups = utils_runsheet_to_expected_groups(runsheet, map_to_lists=True)
+    expected_comparisons = [
+        "v".join(paired_groups)
+        for paired_groups in itertools.permutations(expected_groups, 2)
+    ]
+    df_contrasts = pd.read_csv(contrasts_table, index_col=0)
+
+    # check logic
+    differences = set(expected_comparisons).symmetric_difference(
+        set(df_contrasts.columns)
+    )
+    if not differences:
+        code = FlagCode.GREEN
+        message = f"Contrasts header includes expected comparisons as determined runsheet Factor Value Columns: {sorted(set(expected_comparisons))}"
+    else:
+        code = FlagCode.HALT
+        message = f"Contrasts header does not match expected comparisons as determined runsheet Factor Value Columns: {sorted(differences)}"
+    return {"code": code, "message": message}
+
+def check_metadata_attributes_exist(
+    dataset: Dataset, expected_attrs: list[str]
+) -> FlagEntry:
+    missing_metadata_fields = list(set(expected_attrs) - set(dataset.metadata))
+
+    # check if any missing_metadata_fields are present
+    # check logic
+    if not missing_metadata_fields:
+        code = FlagCode.GREEN
+        message = f"All expected metadata keys found: Expected {expected_attrs}, Found {sorted(set(dataset.metadata))}"
+    else:
+        code = FlagCode.HALT
+        message = f"Missing dataset metadata (source from Runsheet): {sorted(missing_metadata_fields)}"
+    return {"code": code, "message": message}
 
 def check_raw_intensities_table(
     raw_intensities: Path, samples: list[str]

@@ -57,7 +57,7 @@ def validate(
         ):
             with vp.payload(payloads=[{"dataset": dataset}]):
                 vp.add(
-                    bulkRNASeq.checks.check_metadata_attributes_exist,
+                    checks.check_metadata_attributes_exist,
                     config=config["Metadata-check_metadata_attributes_exist"],
                     full_description=textwrap.dedent(f"""
                         - Check: Runsheet includes required metadata columns, {config["Metadata-check_metadata_attributes_exist"]["expected_attrs"]}
@@ -193,7 +193,7 @@ def validate(
                     ]
                 ):
                     vp.add(
-                        bulkRNASeq.checks.check_contrasts_table_headers,
+                        checks.check_contrasts_table_headers,
                         full_description=textwrap.dedent(f"""
                             - Check: Ensure contrast table header correctly formatted using runsheet as reference for groups
                                 - Reason:
