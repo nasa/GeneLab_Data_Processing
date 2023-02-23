@@ -11,7 +11,7 @@ process RUNSHEET_FROM_GLDS {
     path("dp_tools__agilent_1_channel")
 
   output:
-    path("${ gldsAccession }_microarray_v?_runsheet.csv"), emit: runsheet
+    path("${ osdAccession }_microarray_v?_runsheet.csv"), emit: runsheet
     path("*.zip"), emit: isaArchive
 
   script:
@@ -21,7 +21,7 @@ process RUNSHEET_FROM_GLDS {
     dpt-get-isa-archive --accession ${ osdAccession }
     ls dp_tools__agilent_1_channel
 
-    dpt-isa-to-runsheet --accession ${ gldsAccession } \
+    dpt-isa-to-runsheet --accession ${ osdAccession } \
       --plugin-dir dp_tools__agilent_1_channel \
       --isa-archive *.zip ${ injects }
     """
