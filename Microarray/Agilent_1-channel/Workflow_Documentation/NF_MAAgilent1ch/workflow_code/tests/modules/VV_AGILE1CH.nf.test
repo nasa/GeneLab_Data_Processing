@@ -28,6 +28,7 @@ nextflow_process {
             assert snapshot(
                 process.out.VVed_raw_reads,
                 process.out.VVed_runsheet,
+                process.out.versions
                 // process.out.log.get(0).lines(), // returns "parallel": false
                 // process.out.log.get(0).lines().count(), // returns 1
                 // process.out.log.get(0).count() // raises java.lang.NullPointerException
@@ -63,6 +64,7 @@ nextflow_process {
             assert snapshot(
                 process.out.VVed_raw_reads,
                 process.out.VVed_runsheet,
+                process.out.versions
             ).match()
         }
 

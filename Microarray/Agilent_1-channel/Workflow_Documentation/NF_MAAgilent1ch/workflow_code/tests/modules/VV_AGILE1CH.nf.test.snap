@@ -14,9 +14,12 @@
             ],
             [
                 "OSD-367_microarray_v0_runsheet.csv:md5,20d3407f692abaf4471151a7d85c0420"
+            ],
+            [
+                "versions.yml:md5,a6554ecf93aa1f25709a8cce92f6c64e"
             ]
         ],
-        "timestamp": "2023-02-23T21:01:46+0000"
+        "timestamp": "2023-02-23T22:33:56+0000"
     },
     "GLDS-367: Should run without failures": {
         "content": [
@@ -33,9 +36,12 @@
             ],
             [
                 "OSD-367_microarray_v0_runsheet.csv:md5,20d3407f692abaf4471151a7d85c0420"
+            ],
+            [
+                "versions.yml:md5,a6554ecf93aa1f25709a8cce92f6c64e"
             ]
         ],
-        "timestamp": "2023-02-23T21:01:46+0000"
+        "timestamp": "2023-02-23T22:33:55+0000"
     },
     "Should run without failures": {
         "content": [
@@ -52,6 +58,6 @@
                 "GLDS-367_microarray_v0_runsheet.csv:md5,6b066905180d502a70e4ad9fc094433d"
             ]
         ],
-        "timestamp": "2023-02-23T21:01:46+0000"
+        "timestamp": "2023-02-23T22:33:55+0000"
     }
 }
