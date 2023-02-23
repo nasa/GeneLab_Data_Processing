@@ -5,38 +5,52 @@ The current GeneLab Reference Annotation Table (GL_RefAnnotTable) pipeline is im
 
 ## Utilizing the workflow
 
-1. [Install R and R packages](#1-install-r-and-r-packages)  
+1. [Install conda, R, and R packages](#1-install-conda-r-and-r-packages)
 2. [Download the workflow files](#2-download-the-workflow-files)  
-3. [Setup Execution Permission for Workflow Scripts](#3-setup-execution-permission-for-workflow-scripts)
-4. [Run the workflow](#4-run-the-workflow)  
+3. [Run the workflow](#3-run-the-workflow)  
 
 <br>
 
-### 1. Install R and R packages
+### 1. Install conda, R, and R packages
 
-We recommend installing R via the [Comprehensive R Archive Network (CRAN)](https://cran.r-project.org/) as follows: 
+This details installing R in a [conda](https://docs.conda.io/en/latest/) environment. If you don't have conda yet, we recommend installing a Miniconda, Python3 version appropriate for your system – as exemplified [here](https://astrobiomike.github.io/unix/conda-intro#getting-and-installing-conda) along with an introduction to conda overall.
 
-1. Select the [CRAN Mirror](https://cran.r-project.org/mirrors.html) closest to your location.
-2. Click the link under the "Download and Install R" section that's consistent with your machine.
-3. Clink on the R-4.2.1 package consistent with your machine to download.
-4. Double click on the R-4.2.1.pkg downloaded in step 3 and follow the installation instructions.
+Once conda is installed on your system, we recommend installing [mamba](https://github.com/mamba-org/mamba#mamba), as it generally allows for much faster conda installations:
 
-Once R is installed, open a CLI terminal and run the following command to activate R:
+```bash
+conda install -n base -c conda-forge mamba
+```
+
+Then the starting conda environment can be created as follows: 
+
+```bash
+mamba create -n GL-gen-ref-annots -c conda-forge -c bioconda -c defaults \
+             r-base=4.2.0 r-biocmanager=1.30.18 bioconductor-panther.db=1.0.11 \
+             bioconductor-delayedarray=0.24.0 r-tidyverse=1.3.2 r-remotes=2.4.2 \
+             r-systemfonts=1.0.4 -y
+```
+
+When that finishes, activate the environment (using `conda`):
+
+```bash
+conda activate GL-gen-ref-annots
+```
+
+Once in the environment, enter R by running the following command: 
 
 ```bash
 R
 ```
 
-Within an active R environment, run the following commands to install the required R packages:
+Within the active R environment, run the following commands to install the required R packages (this may take a few minutes):
 
 ```R
-install.packages("tidyverse", version = 1.3.2, repos = "http://cran.us.r-project.org")
+BiocManager::install(version = 3.15, ask = FALSE, update = FALSE, force = TRUE)
 
-install.packages("BiocManager", version = 3.15, repos = "http://cran.us.r-project.org")
+BiocManager::install(c("STRINGdb", "rtracklayer"), version = 3.15, update = FALSE)
 
-BiocManager::install("STRINGdb", version = 3.15)
-BiocManager::install("PANTHER.db", version = 3.15)
-BiocManager::install("rtracklayer", version = 3.15)
+# when finished, we can exit R
+quit("no")
 ```
 
 <br>
@@ -46,27 +60,21 @@ BiocManager::install("rtracklayer", version = 3.15)
 All files required for utilizing the GL_RefAnnotTable workflow for generating reference annotation tables are in the [workflow_code](workflow_code) directory. To get a copy of latest GL_RefAnnotTable version on to your system, run the following command:
 
 ```bash
-curl -LO https://github.com/nasa/GeneLab_Data_Processing/releases/download/GL_RefAnnotTable_1.0.0/GL_RefAnnotTable_1.0.0.zip
+# this link won't work until i update the release to 1.0.1
+# curl -L https://github.com/nasa/GeneLab_Data_Processing/releases/download/GL_RefAnnotTable_1.0.1/GL-DPPD-7110_build-genome-annots-tab-1.0.1.R.txt > GL-DPPD-7110_build-genome-annots-tab.R
+
+## until i pack up 1.0.1, this will work
+curl -LO https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/gl-reference-annotations/GeneLab_Reference_Annotations/Workflow_Documentation/GL_RefAnnotTable/workflow_code/GL-DPPD-7110_build-genome-annots-tab.R
 ``` 
 
 <br>
 
-### 3. Setup Execution Permission for Workflow Scripts
+### 3. Run the Workflow
 
-Once you've downloaded the GL_RefAnnotTable workflow directory as a zip file, unzip the workflow then `cd` into the GL_RefAnnotTable_1.0.0 directory on the CLI. Next, run the following command to set the execution permissions for the R script:
-
-```bash
-chmod -R u+x *R
-```
-
-<br>
-
-### 4. Run the Workflow
-
-While in the GL_RefAnnotTable workflow directory, you are now able to run the workflow. Below is an example of how to run the workflow to build an annotation table for Mus musculus (mouse):
+While in the GL_RefAnnotTable workflow directory, you are now able to run the workflow. Below is an example of how to run the workflow to build an annotation table for *C. elegans*:
 
 ```bash
-Rscript GL-DPPD-7110_build-genome-annots-tab.R MOUSE
+Rscript GL-DPPD-7110_build-genome-annots-tab.R WORM
 ```
 
 **Input data:**
