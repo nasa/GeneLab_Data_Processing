@@ -3,7 +3,6 @@ nextflow_process {
     name "Test Process AGILE1CH"
     script "modules/AGILE1CH.nf"
     process "AGILE1CH"
-
     test("Should run without failures") {
 
         when {
@@ -27,7 +26,5 @@ nextflow_process {
             assert process.success
             assert snapshot(process.out.de, process.out.version).match()
         }
-
     }
-
 }

@@ -1,0 +1,23 @@
+{
+    "GLDS-542: Should run without failures": {
+        "content": [
+            [
+                "OSD-542_metadata_OSD-542-ISA.zip:md5,3c76647428718fa3425d2f8392c17671",
+                "OSD-542_microarray_v0_runsheet.csv:md5,7440cb2363e196198b7237a2ea1a8e32"
+            ],
+            [
+                "SampleTable.csv:md5,c86dfc9b3e8c521ccf5fb405c4508e1e",
+                "contrasts.csv:md5,570b193a9175afc16696efee327858ce",
+                "differential_expression.csv:md5,0e9e9b1f44885cbe80a98d08063f2319",
+                "normalized_expression.csv:md5,2714e0e20893b8417b1981d17e53f00a",
+                "raw_intensities.csv:md5,dbd70faac33605ce358ac3fb6b740747",
+                "visualization_PCA_table.csv:md5,ed6e2d5ed9e9e9f0e216c8f5df3952d7",
+                "visualization_output_table.csv:md5,1f6f0b062c6c6ea5450c614144afcf73"
+            ],
+            {
+                "Agile1CMP.html exists": true
+            }
+        ],
+        "timestamp": "2023-02-16T22:21:47+0000"
+    }
+}

@@ -5,15 +5,17 @@
                 [
                     "contrasts.csv:md5,c9af9056cef7bd0210a626cd9c6175b2",
                     "SampleTable.csv:md5,f393473808e2b9e262c7da5809e0baca",
-                    "differential_expression.csv:md5,5ce64ebe8c2a15fa47b824a22439536f",
-                    "visualization_output_table.csv:md5,48e10518f673aff74ae032ea7976b774",
-                    "visualization_PCA_table.csv:md5,6b37103ca8cacdfc2a924631e7422fa9"
+                    "differential_expression.csv:md5,f864a8c4ea88da4ee5af987f560a46bc",
+                    "visualization_output_table.csv:md5,bcc4bf70f3c6bd93a58018c3dfb2719e",
+                    "visualization_PCA_table.csv:md5,6b37103ca8cacdfc2a924631e7422fa9",
+                    "normalized_expression.csv:md5,1454f5a7e0df30d4aaf7fdc8d624bcb9",
+                    "raw_intensities.csv:md5,3d01079abeeb126dff85e27c78f16760"
                 ]
             ],
             [
-                "versions.txt:md5,94909640e607625a9d6ec911a34fe15e"
+                "versions.txt:md5,edbccba46a77e78765b349c87d61bc2c"
             ]
         ],
-        "timestamp": "2023-01-26T21:06:50+0000"
+        "timestamp": "2023-02-23T21:13:16+0000"
     }
 }
