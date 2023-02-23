@@ -209,7 +209,7 @@ ann.dbi <- target_org_db
 
 if ( ! require(ann.dbi, character.only = TRUE)) {
 
-    BiocManager::install(ann.dbi, ask = FALSE)
+    BiocManager::install(ann.dbi, ask = FALSE, update = FALSE)
 
 }
 
