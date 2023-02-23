@@ -6,8 +6,7 @@ from typing import Union
 import itertools
 from statistics import mean
 
-log = logging.getLogger(__name__)
-
+from loguru import logger as log
 import pandas as pd
 import pandera as pa
 
@@ -16,6 +15,62 @@ from dp_tools.core.check_model import FlagCode, FlagEntry, FlagEntryWithOutliers
 class GroupFormatting(enum.Enum):
     r_make_names = enum.auto()
     ampersand_join = enum.auto()
+
+def check_raw_intensities_table(
+    raw_intensities: Path, samples: list[str]
+) -> FlagEntry:
+    schema = pa.DataFrameSchema(
+        columns = {sample: pa.Column(float, pa.Check.ge(0)) for sample in samples}
+    )
+
+    log.trace(schema)
+
+    df = pd.read_csv(raw_intensities)
+
+    try:
+        schema.validate(df, lazy=True)
+        error_message = None
+    except pa.errors.SchemaErrors as err:
+        log.trace(err)
+        error_message = err.schema_errors
+    if error_message is None:
+        code = FlagCode.GREEN
+        message = (
+            f"Table conforms to schema: {repr(schema)}"
+        )
+    else:
+        code = FlagCode.HALT
+        message = (
+            f"{error_message}"
+        )
+    return {"code": code, "message": message}
+
+def check_normalized_expression_table(
+    normalized_expression: Path, samples: list[str]
+) -> FlagEntry:
+    schema = pa.DataFrameSchema(
+        columns = {sample: pa.Column(float) for sample in samples}
+    )
+
+    df = pd.read_csv(normalized_expression)
+
+    try:
+        schema.validate(df, lazy=True)
+        error_message = None
+    except pa.errors.SchemaErrors as err:
+        log.trace(err)
+        error_message = err.schema_errors
+    if error_message is None:
+        code = FlagCode.GREEN
+        message = (
+            f"Table conforms to schema: {repr(schema)}"
+        )
+    else:
+        code = FlagCode.HALT
+        message = (
+            f"{error_message}"
+        )
+    return {"code": code, "message": message}
 
 def check_viz_table_columns_constraints(
     dge_table: Path, runsheet: Path, **_
@@ -246,7 +301,7 @@ def check_dge_table_sample_columns_constraints(
     if error_cases == error_data == None:
         code = FlagCode.GREEN
         message = (
-            f"All values in columns: {samples} met constraints: {schema}"
+            f"All values in columns: {samples} met constraints: {repr(schema)}"
         )
     else:
         code = FlagCode.HALT

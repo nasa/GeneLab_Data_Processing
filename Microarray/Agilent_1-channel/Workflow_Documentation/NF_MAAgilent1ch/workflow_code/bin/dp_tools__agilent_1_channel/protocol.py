@@ -78,8 +78,59 @@ def validate(
                         "Does the runsheet open?",
                         "Is the number of samples in parity?",
                         "Do the file extensions in the 'Array Data File Name' column end in '.txt' or '.txt.gz'?",
+                        "Do all factor values exist in both tables. Does the runsheet have units included as appropriate?",
                     ]
                 )
+        with vp.component_start(
+            name="Raw Intensities",
+            description="",
+        ):
+            with vp.payload(
+                payloads=[
+                    {
+                        "raw_intensities": lambda: dataset.data_assets["raw intensities table"].path,
+                        "samples": dataset.samples
+                    }
+                ]
+            ):
+                vp.add(
+                    checks.check_raw_intensities_table,
+                    full_description=textwrap.dedent(f"""
+                        - Check: Ensure raw intensities table has all samples and values within [0,+inf)
+                            - Reason:
+                                - Part of processing output
+                            - Potential Source of Problems:
+                                - Bug in processing script or malformed raw data files
+                            - Flag Condition:
+                                - Green: All conditions met
+                                - Halt: At least one condition failed
+                    """)
+                    )
+        with vp.component_start(
+            name="Normalized expression",
+            description="",
+        ):
+            with vp.payload(
+                payloads=[
+                    {
+                        "normalized_expression": lambda: dataset.data_assets["normalized expression table"].path,
+                        "samples": dataset.samples
+                    }
+                ]
+            ):
+                vp.add(
+                    checks.check_normalized_expression_table,
+                    full_description=textwrap.dedent(f"""
+                        - Check: Ensure normalized expression table has all samples and values within (-inf,+inf)
+                            - Reason:
+                                - Part of processing output. Note: Values are log2 transformed
+                            - Potential Source of Problems:
+                                - Bug in processing script
+                            - Flag Condition:
+                                - Green: All conditions met
+                                - Halt: At least one condition failed
+                    """)
+                    )
         with vp.component_start(
             name="DE Metadata",
             description="",
