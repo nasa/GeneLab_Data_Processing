@@ -79,7 +79,7 @@ Rscript GL-DPPD-7110_build-genome-annots-tab.R WORM
 
 **Input data:**
 
-- No input files required, but a target organism must be specified as a positional command line argument, `MOUSE` is used in the example above. Run `Rscript GL-DPPD-7110_build-genome-annots-tab.R` with no positional arugments to see the list of currently available organisms. 
+- No input files required, but a target organism must be specified as a positional command line argument, `WORM` is used in the example above. Run `Rscript GL-DPPD-7110_build-genome-annots-tab.R` with no positional arugments to see the list of currently available organisms. 
 
 **Output data:**
 
