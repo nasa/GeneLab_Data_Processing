@@ -24,6 +24,7 @@ process VV_AGILE1CH {
     path("Metadata/*_runsheet.csv"), emit: VVed_runsheet
     path("00-DE/*"), emit: VVed_raw_reads
     path("VV_report.tsv.MANUAL_CHECKS_PENDING"), optional: params.skipVV, emit: log
+    path("versions.yml"), emit: versions
 
   script:
     """
@@ -35,5 +36,9 @@ process VV_AGILE1CH {
     if ${ !skipVV} ; then
       dpt validation run dp_tools__agilent_1_channel . Metadata/*_runsheet.csv
     fi
+
+    # Export versions
+    python -c "import dp_tools; print(f'- dp_tools: {dp_tools.__version__}')" > versions.yml
+
     """
 }
