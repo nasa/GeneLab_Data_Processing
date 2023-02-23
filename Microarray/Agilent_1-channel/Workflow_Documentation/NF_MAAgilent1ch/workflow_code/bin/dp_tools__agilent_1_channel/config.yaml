@@ -218,6 +218,26 @@ data assets:
             
     resource categories: *DGEAnalysisData
 
+  raw intensities table:
+    processed location: 
+      - *DGEDataDir
+      - "raw_intensities.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *DGEAnalysisData
+
+  normalized expression table:
+    processed location: 
+      - *DGEDataDir
+      - "normalized_expression.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *DGEAnalysisData
+
   DE annotated table:
     processed location: 
       - *DGEDataDir
