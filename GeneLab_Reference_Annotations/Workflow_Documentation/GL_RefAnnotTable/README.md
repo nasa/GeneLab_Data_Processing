@@ -57,7 +57,7 @@ quit("no")
 
 ### 2. Download the Workflow Files
 
-All files required for utilizing the GL_RefAnnotTable workflow for generating reference annotation tables are in the [workflow_code](workflow_code) directory. To get a copy of latest GL_RefAnnotTable version on to your system, run the following command:
+All files required for utilizing the GL_RefAnnotTable workflow for generating reference annotation tables are in the [workflow_code](workflow_code) directory. To get a copy of the latest GL_RefAnnotTable version on to your system, run the following command:
 
 ```bash
 # this link won't work until i update the release to 1.0.1
