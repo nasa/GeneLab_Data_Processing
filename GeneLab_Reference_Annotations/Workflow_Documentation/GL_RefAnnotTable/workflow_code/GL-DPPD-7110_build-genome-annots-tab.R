@@ -24,8 +24,8 @@ currently_accepted_orgs <- c("ARABIDOPSIS",
                              "RAT",
                              "WORM",
                              "YEAST",
-                             "ZEBRAFISH",
-                             "BACSU")
+                             "ZEBRAFISH")
+                             # "BACSU") # not available in currently used bioconductor version (3.15), blocking until we figure it out
                              # "ECOLI") # need to work out links to ref fasta and gtf files
 
 ## Check that at least one positional command line argument was provided ##
