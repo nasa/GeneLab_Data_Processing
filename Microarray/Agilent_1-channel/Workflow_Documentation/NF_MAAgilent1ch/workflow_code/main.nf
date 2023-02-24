@@ -101,7 +101,6 @@ workflow {
     emit:
       meta = ch_meta 
       runsheet = ch_runsheet
-      // done = SOFTWARE_VERSIONS.out 
 }
 
 workflow.onComplete {
@@ -112,17 +111,4 @@ workflow.onComplete {
       println "V&V logs location: ${ params.outputDir }/${ params.gldsAccession }/VV_Logs"
       println "Pipeline tracing/visualization files location:  ${ params.outputDir }/${ params.gldsAccession }/Resource_Usage${c_reset}"
     }
-}
-
-workflow STAGING_ONLY {
-  main:
-    STAGING( ch_glds_accession, false )
-}
-
-workflow POST_PROCESSING {
-  main:
-    ch_processed_directory = Channel.fromPath("${ params.outputDir }/${ params.gldsAccession }", checkIfExists: true)
-    ch_runsheet = Channel.fromPath("${ params.outputDir }/${ params.gldsAccession }/Metadata/*_runsheet.csv", checkIfExists: true)
-    GENERATE_MD5SUMS(ch_processed_directory, ch_runsheet )
-    UPDATE_ISA_TABLES(ch_processed_directory, ch_runsheet )
 }
