@@ -84,33 +84,19 @@ workflow {
       params.skipVV,
       "${ projectDir }/bin/dp_tools__agilent_1_channel" // dp_tools plugin
       )
-    /*
 
     // Software Version Capturing
-    nf_version = "Nextflow Version:".concat("${nextflow.version}\n<><><>\n")
-    ch_nextflow_version = Channel.value(nf_version)
-    ch_software_versions = Channel.empty()
-    RAW_FASTQC.out.version | mix(ch_software_versions) | set{ch_software_versions}
-    RAW_MULTIQC.out.version | mix(ch_software_versions) | set{ch_software_versions}
-
-    ch_software_versions | map { it.text + "\n<><><>\n"}
-                          | unique
-                          | mix(ch_nextflow_version)
-                          | collectFile(name: "software_versions.txt", newLine: true, cache: false)
-        | set{ch_final_software_versions}
-
-    // VV processes
-      
-    VV_CONCAT_FILTER( VV_RAW_READS.out.log | mix( VV_TRIMMED_READS.out.log,
-                                                  VV_STAR_ALIGNMENTS.out.log,
-                                                  VV_RSEQC.out.log,
-                                                  VV_RSEM_COUNTS.out.log,
-                                                  VV_DESEQ2_ANALYSIS.out.log,
-                                                  ) | collect )
-
-    // Generate final versions output
-    SOFTWARE_VERSIONS(ch_final_software_versions)
-    */
+    nf_version = "- nextflow: ".concat("${nextflow.version}")
+    ch_software_versions = Channel.value(nf_version)
+    AGILE1CH.out.versions | map{ it -> it.text } | mix(ch_software_versions) | set{ch_software_versions}
+    VV_AGILE1CH.out.versions | map{ it -> it.text } | mix(ch_software_versions) | set{ch_software_versions}
+    ch_software_versions | unique 
+                         | collectFile(
+                            name: "${ params.outputDir }/${ params.gldsAccession }/GeneLab/software_versions.yml", 
+                            newLine: true, 
+                            sort: true,
+                            cache: false
+                            )
 
     emit:
       meta = ch_meta 
