@@ -22,7 +22,7 @@ process AGILE1CH {
           path("normalized_expression.csv"),
           path("raw_intensities.csv"), emit: de
 
-    path("versions.txt"), emit: version // TODO: convert version reporting to json format
+    path("versions.yml"), emit: versions 
 
   script:
     def limit_biomart_query_parameter = limit_biomart_query ? "-P DEBUG_limit_biomart_query:${limit_biomart_query}" : ''
@@ -33,6 +33,6 @@ process AGILE1CH {
             -P 'organism:${organism}' \
             ${limit_biomart_query_parameter}
 
-        echo "quarto version: \$(quarto --version)" >> versions.txt
+        echo "- quarto: \$(quarto --version)" >> versions.yml
     """
 }
