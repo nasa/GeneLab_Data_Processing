@@ -898,15 +898,25 @@ write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = F
 ```{r version-reporting}
 ## print session info ##
 print("Session Info below: ")
-sessionInfo()
-## Log same info into versions.txt file
-version_output_fn <- "versions.txt"
-cat(capture.output(sessionInfo()),
-    "BioC_version_associated_with_R_version",
-    toString(tools:::.BioC_version_associated_with_R_version()),
-    file = version_output_fn,
-    append = TRUE,
-    sep = "\n")
+get_versions <- function() {
+  # Note: newlines seem duplicated here as 'glue' trims the first and last newline if they exist
+  session_info <- sessionInfo()
+  # start with just R version
+  versions_buffer <- glue::glue("- R: {session_info[['R.version']][['major']]}.{session_info[['R.version']][['minor']]}\n\n") 
+  # Get 'other attached packages'
+  for (software in session_info[["otherPkgs"]]) {
+    versions_buffer <- glue::glue("{versions_buffer}- {software[['Package']]}: {software[['Version']]}\n\n")
+  }
+  # Get 'loaded via a namespace (and not attached):'
+  for (software in session_info[["loadedOnly"]]) {
+    versions_buffer <- glue::glue("{versions_buffer}- {software[['Package']]}: {software[['Version']]}\n\n")
+  }
+
+  return(versions_buffer)
+}
+  ## Log same info into versions.txt file
+version_output_fn <- "versions.yml"
+cat(get_versions(), file = version_output_fn, append = TRUE, sep = "\n")
 ```
 
 ``` {r save-session}
