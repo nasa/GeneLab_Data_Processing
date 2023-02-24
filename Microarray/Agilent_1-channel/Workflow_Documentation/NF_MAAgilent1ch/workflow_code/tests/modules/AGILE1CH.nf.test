@@ -24,7 +24,7 @@ nextflow_process {
 
         then {
             assert process.success
-            assert snapshot(process.out.de, process.out.version).match()
+            assert snapshot(process.out.de, process.out.versions).match()
         }
     }
 }
