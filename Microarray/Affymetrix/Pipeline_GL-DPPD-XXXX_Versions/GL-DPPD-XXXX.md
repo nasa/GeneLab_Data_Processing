@@ -602,8 +602,8 @@ listToUniquePipedString <- function(str_list) {
 }
 
 unique_probe_ids <- df_mapping %>% 
-                      dplyr::group_by(!!sym(expected_attribute_name)) %>% 
                       dplyr::mutate(dplyr::across(!!sym(expected_attribute_name), as.character)) %>% # Ensure probeset ids treated as character type
+                      dplyr::group_by(!!sym(expected_attribute_name)) %>% 
                       dplyr::summarise(
                         ENSEMBL = listToUniquePipedString(ensembl_gene_id)
                         ) %>%
