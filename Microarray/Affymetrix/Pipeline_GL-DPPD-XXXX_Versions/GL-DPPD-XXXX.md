@@ -498,7 +498,7 @@ featureset_level_data <- oligo::rma(norm_data,
                                     )
 
 # Summarize background-corrected and normalized data
-print("Summarized Featureset Level Data Below") # NON_DPPD
+print("Summarized Featureset Level Data Below")
 print(paste0("Number of Arrays: ", dim(featureset_level_data)[2]))
 print(paste0("Total Number of Probesets: ", dim(oligo::getProbeInfo(featureset_level_data, target="core")['man_fsetid'])[1])) # man_fsetid means 'Manufacturer Featureset ID'. Ref: https://support.bioconductor.org/p/57191/
 print(paste0("Number of Featuresets: ", dim(unique(oligo::getProbeInfo(featureset_level_data, target="core")['man_fsetid']))[1])) # man_fsetid means 'Manufacturer Featureset ID'. Ref: https://support.bioconductor.org/p/57191/
@@ -602,7 +602,6 @@ listToUniquePipedString <- function(str_list) {
 }
 
 unique_probe_ids <- df_mapping %>% 
-                      # note: '!!sym(VAR)' syntax allows usage of variable 'VAR' in dplyr functions due to NSE. ref: https://dplyr.tidyverse.org/articles/programming.html # NON_DPPD
                       dplyr::group_by(!!sym(expected_attribute_name)) %>% 
                       dplyr::mutate(dplyr::across(!!sym(expected_attribute_name), as.character)) %>% # Ensure probeset ids treated as character type
                       dplyr::summarise(
@@ -794,17 +793,6 @@ df_interim <- df_interim %>%
 
 # Reformat column names
 reformat_names <- function(colname, group_name_mapping) {
-  # NON_DPPD:START
-  #! Converts from:
-  #!    "P.value.adj.conditionWild.Type...Space.Flight...1st.generation.conditionWild.Type...Ground.Control...4th.generation"
-  #! to something like:
-  #! "Adj.p.value(Wild Type & Space Flight & 1st generation)v(Wild Type & Ground Control & 4th generation)"
-  #! Since two groups are expected to be replace, ensure replacements happen in pairs
-
-  # Remove 'condition' from group names
-  ## This was introduced while creating design matrix
-  # Rename other columns for consistency across genomics related DE outputs
-  # NON_DPPD:END
   new_colname <- colname  %>% 
                   stringr::str_replace(pattern = "^P.value.adj.condition", replacement = "Adj.p.value_") %>%
                   stringr::str_replace(pattern = "^P.value.condition", replacement = "P.value_") %>%
