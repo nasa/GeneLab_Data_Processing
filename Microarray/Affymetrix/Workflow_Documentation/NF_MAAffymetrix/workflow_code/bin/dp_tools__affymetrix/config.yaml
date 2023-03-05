@@ -1,0 +1,272 @@
+# TOP LEVEL
+NAME: "microarray"
+VERSION: "0"
+
+# anchors for reuse
+_anchors:
+  DGEDataDir: &DGEDataDir "00-DE"
+  rseqcDataDir: &rseqcDataDir "RSeQC_Analyses" # DISCUSS: Should this be renamed to "RSeQC_Analyses" for consistent casing? -J.O. , this has been renamed and differs from the recent bash based processings
+  ERCCAnalysisDir: &ERCCAnalysisDir "ERCC_Analysis"
+  FastQC_Reports: &FastQC_Reports "FastQC_Reports"
+  neverPublished: &neverPublished
+    subcategory: null
+    subdirectory: null
+    publish to repo: false
+    include subdirectory in table: false
+    table order: -1
+
+# configuration for microarray data
+Staging:
+  General:
+    Required Metadata:
+      From ISA:
+        - ISA Field Name: Study Assay Measurement Type
+          ISA Table Source: Investigation
+          Investigation Subtable: STUDY ASSAYS
+          Runsheet Column Name: Study Assay Measurement
+          Processing Usage: >-
+            Mapping to the appropriate processing pipeline for the assay.
+          Example: transcription profiling
+
+        - ISA Field Name: Study Assay Technology Type
+          ISA Table Source: Investigation
+          Investigation Subtable: STUDY ASSAYS
+          Runsheet Column Name: Study Assay Technology Type
+          Processing Usage: >-
+            Mapping to the appropriate processing pipeline for the assay.
+          Example: DNA microarray
+
+        - ISA Field Name: Study Assay Technology Platform
+          ISA Table Source: Investigation
+          Investigation Subtable: STUDY ASSAYS
+          Runsheet Column Name: Study Assay Technology Platform
+          Processing Usage: >-
+            Mapping to the appropriate processing pipeline for the assay.
+          Example: Affymetrix
+
+        - ISA Field Name: 
+            - Characteristics[Organism]
+            - Characteristics[organism]
+          ISA Table Source: Sample
+          Runsheet Column Name: organism
+          Processing Usage: >-
+            Mapping to the appropriate alignment reference and annotation databases.
+          Example: Arabidopsis thaliana
+
+        - ISA Field Name: 
+            - Array Design REF
+          ISA Table Source: Assay
+          Runsheet Column Name: biomart_attribute
+          Processing Usage: >-
+            Used for identifying biomart attribute name for biomart mapping purposes
+          Example: agilent_wholegenome_4x44k_v1
+
+        - ISA Field Name: Source Name
+          ISA Table Source: Sample
+          Runsheet Column Name: Source Name
+          Processing Usage: >-
+            The source entity that sample is derived from.
+          Example: GSM502538 1
+
+        - ISA Field Name: Sample Name
+          ISA Table Source: Assay
+          Runsheet Column Name: sample_name
+          Runsheet Index: true
+          Processing Usage: >-
+            Sample name is used as a unique sample identifier during processing
+          Example: Atha_Col-0_Root_WT_Ctrl_45min_Rep1_GSM502538
+
+        - ISA Field Name: Label
+          ISA Table Source: Sample
+          Runsheet Column Name: Label
+          Processing Usage: >-
+            Used to determine if the dataset is one or two channel.
+          Example: Cy3
+
+        - ISA Field Name: Array Data File
+          ISA Table Source: Assay
+          Runsheet Column Name: Array Data File Name
+          Processing Usage: >-
+            Name of the raw data file(s). In some cases, this file is a 
+            dataset-wise zip folder containing all raw data files.  When this occurs, 
+            the ISA Field Named 'Comment: Array Data File Name' designates the
+            raw data file mapping between contents of the dataset-wise zip.
+            Note: Actual locations are denoted in 'array_data_file_path'
+          Example: Atha_Col-0_HypocotylCC_WT_GC_Rep2_GSM2152575_raw.CEL.gz
+    
+        - ISA Field Name: Array Data File
+          ISA Table Source: Assay
+          Runsheet Column Name: Array Data File Path
+          GLDS URL Mapping: true
+          Processing Usage: >-
+            Actual locations of the raw data files.  Can be either a local path or a uri.
+          Example: 'https://genelab-data.ndc.nasa.gov/genelab/static/media/dataset/GLDS-205/...'
+
+        - ISA Field Name: Comment[Array Data File Name]
+          ISA Table Source: Assay
+          Runsheet Column Name: Comment[Array Data File Name]
+          Value If Not Found: "N/A"
+          Processing Usage: >-
+            Actual locations of the raw data files.  Can be either a local path or a uri.
+          Example: 'https://genelab-data.ndc.nasa.gov/genelab/static/media/dataset/GLDS-205/...'
+        
+        - ISA Field Name: Factor Value[{factor_name}]
+          ISA Table Source: [Assay, Sample]
+          Runsheet Column Name: Factor Value[{factor_name}]
+          Matches Multiple Columns: true
+          Match Regex: "Factor Value\\[.*\\]"
+          Append Column Following: "Unit"
+          Processing Usage: >-
+            Factor values in a study. Used to assign experimental groups for each sample.
+            Note: On the runsheet, a subsequent 'Unit' Column value will be 
+            suffix-concatenated if it exists.
+          Example: Basal Control
+    
+        - ISA Field Name: Unit
+          ISA Table Source: [Assay, Sample]
+          Runsheet Column Name: null
+          Matches Multiple Columns: true
+          Autoload: false # handled by factor value loading above
+          Processing Usage: >-
+            Unit to be suffix-concatenated onto prior Factor value columns.
+          Example: day
+
+      From User:
+        - Runsheet Column Name: GLDS
+          Processing Usage: >-
+            The GLDS accession number
+          Example: GLDS-205
+  
+        - Runsheet Column Name: array_data_file_path
+          Processing Usage: >-
+            The location of the array data file. Can be either a url or local path.
+            Note: For GLDS raw data assets, either the filelisting json API or the OpenAPI
+            may be used to retrieve urls given the array data filename (sourced from ISA archive).
+          Example: /some/local/path OR https://genelab-data.ndc.nasa.gov/genelab/static/media/dataset/GLDS-123_microarray_E-MTAB-3289.raw.1.zip?version=1
+  
+        - Runsheet Column Name: is_array_data_file_compressed
+          Processing Usage: >-
+            Denotes if raw data files are compressed.
+            Note: This is determined by '.gz' extension during 
+            runsheet generation.
+          Example: 'TRUE'
+  
+        - Runsheet Column Name: version
+          Processing Usage: >-
+            The ISA archive version number.
+            Note: Retrieved from the GeneLab
+          Example: 2
+
+ISA Meta:
+  Valid Study Assay Technology And Measurement Types:
+    - measurement: "transcription profiling"
+      technology: "DNA microarray"
+    - measurement: "transcription profiling"
+      technology: "microarray"
+
+  # this is prepended to all file names in the curation assay table
+  Global file prefix: "{datasystem}_rna_seq_"
+
+  # configuration related to updating investigation file
+  # each must refer to a STUDY PROCESS in the 'ISA_investigation.yaml' file
+  # LEADCAP_organism should be the studied organisms scientific name with a leading cap
+  Post Processing Add Study Protocol: 
+    GeneLab Agilent 1 Channel data processing protocol::{LEADCAP_organism} V1
+
+data assets:
+  runsheet:
+    processed location: 
+      - "Metadata"
+      - "{dataset}_microarray_v0_runsheet.csv"
+
+    tags:
+      - raw
+
+    resource categories: *neverPublished
+
+  sample table:
+    processed location: 
+      - *DGEDataDir
+      - "SampleTable.csv"
+
+    tags:
+      - processed
+            
+    resource categories: &DGEAnalysisData
+      subcategory: Differential Expression Analysis Data
+      subdirectory: ""
+      publish to repo: true
+      include subdirectory in table: false
+      table order: 14
+      
+  DE contrasts table:
+    processed location: 
+      - *DGEDataDir
+      - "contrasts.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *DGEAnalysisData
+
+  raw intensities table:
+    processed location: 
+      - *DGEDataDir
+      - "raw_intensities.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *DGEAnalysisData
+
+  normalized expression table:
+    processed location: 
+      - *DGEDataDir
+      - "normalized_expression.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *DGEAnalysisData
+
+  DE annotated table:
+    processed location: 
+      - *DGEDataDir
+      - "differential_expression.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *DGEAnalysisData
+
+  DE annotated extended for viz table:
+    processed location: 
+      - *DGEDataDir
+      - "visualization_output_table.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *neverPublished
+
+  viz PCA table:
+    processed location: 
+      - *DGEDataDir
+      - "visualization_PCA_table.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *neverPublished
+
+data asset sets:
+  # These assets are not generated in the workflow, but are generated after the workflow
+  PUTATIVE: []
+  glds metadata:
+    - "runsheet"
+  processed:
+    - "viz PCA table"
+    - "DE annotated extended for viz table"
+    - "DE contrasts table"
+    - "DE annotated table"
+    - "sample table"
