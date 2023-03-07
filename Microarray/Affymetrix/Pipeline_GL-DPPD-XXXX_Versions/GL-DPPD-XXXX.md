@@ -494,7 +494,7 @@ boxplot <- oligo::boxplot(norm_data,
 ```R
 featureset_level_data <- oligo::rma(norm_data, 
                                     normalize=FALSE, 
-                                    background=FALSE,
+                                    background=FALSE
                                     )
 
 # Summarize background-corrected and normalized data
