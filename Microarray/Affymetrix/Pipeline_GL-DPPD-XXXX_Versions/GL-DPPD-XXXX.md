@@ -980,6 +980,13 @@ df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 # Save to file
 write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
 
+## Output column subset file with just normalized probeset level expression values
+write.csv(
+  df_interim[c(
+  map_primary_keytypes[[unique(df_rs$organism)]],
+  all_samples)
+  ], "normalized_expression_probeset.csv", row.names = FALSE)
+
 ### Generate and export PCA table for GeneLab visualization plots
 PCA_raw <- prcomp(t(exprs(probeset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
 write.csv(PCA_raw$x,
@@ -1044,7 +1051,8 @@ write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = F
 
 **Output Data:**
 
-- **differential_expression.csv** (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
+- **differential_expression.csv** (table containing normalized probeset expression values for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
+- **normalized_expression_probeset.csv** (table containing the background corrected, normalized probeset expression values for each sample. The biomaRt mapped Ensembl ID(s) is also included. Note: not every probeset has a biomaRt mapped Ensembl ID(s))
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
 - **raw_intensities.csv** (table containing the background corrected, unnormalized intensity values for each sample including gene annotations)
 - **normalized_expression.csv** (table containing the background corrected, normalized intensity values for each sample including gene annotations)

@@ -786,6 +786,13 @@ df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 # Save to file
 write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
 
+## Output column subset file with just normalized probeset level expression values
+write.csv(
+  df_interim[c(
+  map_primary_keytypes[[unique(df_rs$organism)]],
+  all_samples)
+  ], "normalized_expression_probeset.csv", row.names = FALSE)
+
 ### Generate and export PCA table for GeneLab visualization plots
 PCA_raw <- prcomp(t(exprs(probeset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
 write.csv(PCA_raw$x,
