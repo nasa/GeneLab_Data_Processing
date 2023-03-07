@@ -159,6 +159,16 @@ library(statmod)
 # Define path to runsheet
 runsheet <- "/path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv"
 
+## Set up output structure
+
+# Output Constants
+DIR_RAW_DATA <- "00-RawData"
+DIR_NORMALIZED_EXPRESSION <- "01-oligo_NormExp"
+DIR_DGE <- "02-limma_DGE"
+
+dir.create(DIR_RAW_DATA)
+dir.create(DIR_NORMALIZED_EXPRESSION)
+dir.create(DIR_DGE)
 
 df_rs <- read.csv(runsheet, check.names = FALSE)
 
@@ -720,8 +730,8 @@ design_data <- runsheetToDesignMatrix(runsheet)
 design <- design_data$matrix
 
 # Write SampleTable.csv and contrasts.csv file
-write.csv(design_data$groups, "SampleTable.csv")
-write.csv(design_data$contrasts, "contrasts.csv")
+write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable.csv"))
+write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts.csv"))
 ```
 
 **Input Data:**
@@ -978,19 +988,19 @@ if (!setequal(FINAL_COLUMN_ORDER, colnames(df_interim))) {
 df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 # Save to file
-write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
+write.csv(df_interim, file.path(DIR_DGE, "differential_expression.csv"), row.names = FALSE)
 
 ## Output column subset file with just normalized probeset level expression values
 write.csv(
   df_interim[c(
   "ProbesetID",
   all_samples)
-  ], "normalized_expression_probeset.csv", row.names = FALSE)
+  ], file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_probeset.csv"), row.names = FALSE)
 
 ### Generate and export PCA table for GeneLab visualization plots
 PCA_raw <- prcomp(t(exprs(probeset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
 write.csv(PCA_raw$x,
-          "visualization_PCA_table.csv"
+          file.path(DIR_DGE, "visualization_PCA_table.csv")
           )
 
 ## Generate raw intensity matrix that includes annotations
@@ -1036,7 +1046,7 @@ background_corrected_data_annotated <- oligo::exprs(background_corrected_data) %
 background_corrected_data_annotated <- background_corrected_data_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(background_corrected_data_annotated, "raw_intensities_probe.csv", row.names = FALSE)
+write.csv(background_corrected_data_annotated, file.path(DIR_RAW_DATA, "raw_intensities_probe.csv"), row.names = FALSE)
 
 ## Generate normalized expression matrix that includes annotations
 norm_data_matrix_annotated <- oligo::exprs(norm_data) %>% 
@@ -1054,7 +1064,7 @@ norm_data_matrix_annotated <- oligo::exprs(norm_data) %>%
 norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(norm_data_matrix_annotated, "normalized_intensities_probe.csv", row.names = FALSE)```
+write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe.csv"), row.names = FALSE)
 
 **Input Data:**
 

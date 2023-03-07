@@ -14,12 +14,9 @@ process PROCESS_AFFYMETRIX {
   output:
     path("Affymetrix.html"), emit: report
 
-    tuple path("contrasts.csv"),
-          path("SampleTable.csv"),
-          path("differential_expression.csv"),
-          path("visualization_PCA_table.csv"),
-          path("normalized_expression.csv"),
-          path("raw_intensities.csv"), emit: de
+    tuple path("02-limma_DGE"),
+          path("01-oligo_NormExp"),
+          path("00-RawData"), emit: de
 
     path("versions.yml"), emit: versions 
 
