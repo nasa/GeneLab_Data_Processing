@@ -84,7 +84,7 @@ annotation_file_path <- fetch_organism_specific_annotation_file_path(unique(df_r
 
 # NON_DPPD:START
 print("Here is the embedded runsheet")
-#DT::datatable(df_rs)
+DT::datatable(df_rs)
 print("Here are the expected comparison groups")
 # NON_DPPD:END
 print("Loading Raw Data...") # NON_DPPD
@@ -146,7 +146,7 @@ if ( allTrue(stringr::str_ends(local_paths, ".gz")) ) {
 df_local_paths <- data.frame(`Sample Name` = df_rs$`Sample Name`, `Local Paths` = local_paths, check.names = FALSE)
 # NON_DPPD:START
 print("Raw Data Loaded Successfully")
-#DT::datatable(df_local_paths)
+DT::datatable(df_local_paths)
 # NON_DPPD:END
 
 
@@ -164,8 +164,8 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 message(paste0("Number of Arrays: ", dim(raw_data)[2])) # NON_DPPD
 message(paste0("Number of Probes: ", dim(raw_data)[1])) # NON_DPPD
 # NON_DPPD:START
-#DT::datatable(raw_data$targets, caption = "Sample to File Mapping")
-#DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data file embedded probes to genes table")
+DT::datatable(raw_data$targets, caption = "Sample to File Mapping")
+DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data file embedded probes to genes table")
 # NON_DPPD:END
 ```
 
@@ -249,8 +249,8 @@ print(paste0("Number of Probes: ", dim(norm_data)[1]))
 message(paste0("Number of Arrays: ", dim(norm_data)[2])) # NON_DPPD
 message(paste0("Number of Probes: ", dim(norm_data)[1])) # NON_DPPD
 # NON_DPPD:START
-#DT::datatable(raw_data$targets, caption = "Sample to File Mapping")
-#DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data file embedded probes to genes table")
+DT::datatable(raw_data$targets, caption = "Sample to File Mapping")
+DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data file embedded probes to genes table")
 # NON_DPPD:END
 ```
 
@@ -325,8 +325,8 @@ message(paste0("Number of Arrays: ", dim(probeset_level_data)[2])) # NON_DPPD
 message(paste0("Total Number of Probes Assigned To A Probeset: ", dim(oligo::getProbeInfo(probeset_level_data, target="core")['man_fsetid'])[1])) # NON_DPPD
 message(paste0("Number of Probesets: ", dim(unique(oligo::getProbeInfo(probeset_level_data, target="core")['man_fsetid']))[1])) # NON_DPPD
 # NON_DPPD:START
-#DT::datatable(raw_data$targets, caption = "Sample to File Mapping")
-#DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data file embedded probes to genes table")
+DT::datatable(raw_data$targets, caption = "Sample to File Mapping")
+DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data file embedded probes to genes table")
 # NON_DPPD:END
 ```
 
@@ -558,7 +558,7 @@ lmFitPairwise <- function(norm_data, design) {
 
 # Calculate results
 res <- lmFitPairwise(probeset_level_data, design)
-#DT::datatable(limma::topTable(res)) # NON_DPPD
+DT::datatable(limma::topTable(res)) # NON_DPPD
 
 # Print DE table, without filtering
 limma::write.fit(res, adjust = 'BH', 
