@@ -271,7 +271,7 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 ```R
 oligo::hist(raw_data, 
             transfo=log2, # Log2 transform raw intensity values
-            which=c("both"), # Filter to perfect match and mismatch probes
+            which=c("all"), # Filter to perfect match and mismatch probes
             nsample=10000, # Number of probes to plot
             main = "Density of raw intensities for multiple arrays")
 legend("topright", legend = colnames(raw_data@assayData$exprs),
@@ -410,7 +410,7 @@ print(paste0("Number of Probes: ", dim(norm_data)[1]))
 ```R
 oligo::hist(norm_data, 
             transfo=log2, # Log2 transform raw intensity values
-            which=c("both"), # Filter to perfect match and mismatch probes
+            which=c("all"), # Filter to perfect match and mismatch probes
             nsample=10000, # Number of probes to plot
             main = "Density of raw intensities for multiple arrays")
 legend("topright", legend = colnames(norm_data@assayData$exprs),
