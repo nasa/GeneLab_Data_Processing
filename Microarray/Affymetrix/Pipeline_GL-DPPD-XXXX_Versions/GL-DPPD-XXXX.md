@@ -629,7 +629,7 @@ featureset_expression_matrix.biomart_mapped <- featureset_expression_matrix %>%
 - `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - `df_rs$'Array Design REF'` (array design reference specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - ENSEMBL_VERSION (reference organism Ensembl version indicated in the `ensemblVersion` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
-- `featureset_level_data` (R object containing featureset level expression values after summarization of normalized probeset level data)
+- `featureset_level_data` (R object containing featureset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-featureset-summarization))
 
 **Output Data:**
 
@@ -758,7 +758,7 @@ lmFitPairwise <- function(norm_data, design) {
 }
 
 # Calculate results
-res <- lmFitPairwise(norm_data, design)
+res <- lmFitPairwise(featureset_level_data, design)
 
 # Print DE table, without filtering
 limma::write.fit(res, adjust = 'BH', 
@@ -771,11 +771,12 @@ limma::write.fit(res, adjust = 'BH',
 **Input Data:**
 
 - `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
-- `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to, created in [Step 7c](#7c-generate-design-matrix) above)
+- `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to, created in [Step 8c](#8c-generate-design-matrix) above)
+- `featureset_level_data` (R object containing featureset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-featureset-summarization))
 
 **Output Data:**
 
-- INTERIM.csv (Statistical values from individual probe level DE analysis, including:
+- INTERIM.csv (Statistical values from individual featureset level DE analysis, including:
   - Log2fc between all pairwise comparisons
   - T statistic for all pairwise comparison tests
   - P value for all pairwise comparison tests)
