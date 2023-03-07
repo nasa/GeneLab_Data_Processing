@@ -42,8 +42,8 @@ Lauren Sanders (acting GeneLab Project Scientist)
     - [8a. Add Featureset Annotations](#8a-add-featureset-annotations)
     - [8b. Summarize Biomart Mapping vs. Manufacturer Mapping](#8b-summarize-biomart-mapping-vs-manufacturer-mapping)
     - [8c. Generate Design Matrix](#8c-generate-design-matrix)
-    - [7d. Perform Individual Featureset Level DE](#7d-perform-individual-featureset-level-de)
-    - [7e. Add Additional Columns and Format DE Table](#7e-add-additional-columns-and-format-de-table)
+    - [8d. Perform Individual Featureset Level DE](#8d-perform-individual-featureset-level-de)
+    - [8e. Add Additional Columns and Format DE Table](#8e-add-additional-columns-and-format-de-table)
 
 ---
 
@@ -121,7 +121,7 @@ dpt-isa-to-runsheet --accession OSD-### \
 
 ## 2. Load Metadata and Raw Data
 
-> Note: Steps 2 - 7 are done in R
+> Note: Steps 2 - 8 are done in R
 
 ```R
 ### Install R packages if not already installed ###
@@ -733,7 +733,7 @@ write.csv(design_data$contrasts, "contrasts.csv")
 
 <br>
 
-### 7d. Perform Individual Featureset Level DE
+### 8d. Perform Individual Featureset Level DE
 
 ```R
 lmFitPairwise <- function(norm_data, design) {
@@ -779,7 +779,7 @@ limma::write.fit(res, adjust = 'BH',
 
 <br>
 
-### 7e. Add Additional Columns and Format DE Table 
+### 8e. Add Additional Columns and Format DE Table 
 
 ```R
 ## Reformat Table for consistency across DE analyses tables within GeneLab ##
