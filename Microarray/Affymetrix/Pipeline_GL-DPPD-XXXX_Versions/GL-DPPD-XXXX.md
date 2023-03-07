@@ -1,7 +1,10 @@
 # GeneLab bioinformatics processing pipeline for Affymetrix microarray data <!-- omit in toc -->
 
-> **This page holds an overview and instructions for how GeneLab processes Affymetrix microarray datasets. Exact processing commands and GL-DPPD-XXXX version used for specific datasets are provided with their processed data in the [GeneLab Data Systems 
-(GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
+> **This page holds an overview and instructions for how GeneLab processes Affymetrix microarray datasets. Exact processing commands and GL-DPPD-XXXX version used for specific GeneLab datasets (GLDS) are provided with their processed data in the [Open Science Data 
+Repository (OSDR)](https://osdr.nasa.gov/bio/repo).**  
+> 
+> \* The pipeline detailed below is currently used for animal studies only, it will be updated soon for processing plants and microbe microarray data.
+
 ---
 
 **Date:** March 3, 2023  
@@ -42,8 +45,8 @@ Lauren Sanders (acting GeneLab Project Scientist)
     - [8a. Add Featureset Annotations](#8a-add-featureset-annotations)
     - [8b. Summarize Biomart Mapping vs. Manufacturer Mapping](#8b-summarize-biomart-mapping-vs-manufacturer-mapping)
     - [8c. Generate Design Matrix](#8c-generate-design-matrix)
-    - [7d. Perform Individual Featureset Level DE](#7d-perform-individual-featureset-level-de)
-    - [7e. Add Additional Columns and Format DE Table](#7e-add-additional-columns-and-format-de-table)
+    - [8d. Perform Individual Featureset Level DE](#8d-perform-individual-featureset-level-de)
+    - [8e. Add Additional Columns and Format DE Table](#8e-add-additional-columns-and-format-de-table)
 
 ---
 
@@ -70,9 +73,9 @@ Lauren Sanders (acting GeneLab Project Scientist)
 
 # General processing overview with example commands  
 
-> Exact processing commands for specific datasets that have been released are provided with their processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
+> Exact processing commands for a specific GLDS that has been released are provided with the processed data in the [OSDR](https://osdr.nasa.gov/bio/repo).
 > 
-> All output files in **bold** are published with the Affymetrix microarray processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects). 
+> All output files in **bold** are published with the Affymetrix microarray processed data in the [OSDR](https://osdr.nasa.gov/bio/repo). 
 
 ---
 
@@ -121,7 +124,7 @@ dpt-isa-to-runsheet --accession OSD-### \
 
 ## 2. Load Metadata and Raw Data
 
-> Note: Steps 2 - 7 are done in R
+> Note: Steps 2 - 8 are done in R
 
 ```R
 ### Install R packages if not already installed ###
@@ -271,7 +274,7 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 ```R
 oligo::hist(raw_data, 
             transfo=log2, # Log2 transform raw intensity values
-            which=c("both"), # Filter to perfect match and mismatch probes
+            which=c("all"), # Filter to perfect match and mismatch probes
             nsample=10000, # Number of probes to plot
             main = "Density of raw intensities for multiple arrays")
 legend("topright", legend = colnames(raw_data@assayData$exprs),
@@ -332,7 +335,7 @@ MA_plot <- oligo::MAplot(raw_data, ylim=c(-2, 4))
 par(mar = c(15, 4, 4, 2) + 0.1) 
 boxplot <- oligo::boxplot(raw_data, 
                           transfo=log2, # Log2 transform raw intensity values
-                          which=c("both"), # Filter to perfect match and mismatch probes
+                          which=c("all"), # Filter to perfect match and mismatch probes
                           nsample=10000, # Number of probes to plot
                           las = 3, # Make x-axis label vertical
                           main = "Boxplot of raw intensities for perfect match and mismatch probes"
@@ -410,7 +413,7 @@ print(paste0("Number of Probes: ", dim(norm_data)[1]))
 ```R
 oligo::hist(norm_data, 
             transfo=log2, # Log2 transform raw intensity values
-            which=c("both"), # Filter to perfect match and mismatch probes
+            which=c("all"), # Filter to perfect match and mismatch probes
             nsample=10000, # Number of probes to plot
             main = "Density of raw intensities for multiple arrays")
 legend("topright", legend = colnames(norm_data@assayData$exprs),
@@ -470,7 +473,7 @@ MA_plot <- oligo::MAplot(norm_data, ylim=c(-2, 4))
 par(mar = c(15, 4, 4, 2) + 0.1) 
 boxplot <- oligo::boxplot(norm_data, 
                           transfo=log2, # Log2 transform raw intensity values
-                          which=c("both"), # Filter to perfect match and mismatch probes
+                          which=c("all"), # Filter to perfect match and mismatch probes
                           nsample=10000, # Number of probes to plot
                           las = 3, # Make x-axis label vertical
                           main = "Boxplot of raw intensities for perfect match and mismatch probes"
@@ -494,11 +497,11 @@ boxplot <- oligo::boxplot(norm_data,
 ```R
 featureset_level_data <- oligo::rma(norm_data, 
                                     normalize=FALSE, 
-                                    background=FALSE,
+                                    background=FALSE
                                     )
 
 # Summarize background-corrected and normalized data
-print("Summarized Featureset Level Data Below") # NON_DPPD
+print("Summarized Featureset Level Data Below")
 print(paste0("Number of Arrays: ", dim(featureset_level_data)[2]))
 print(paste0("Total Number of Probesets: ", dim(oligo::getProbeInfo(featureset_level_data, target="core")['man_fsetid'])[1])) # man_fsetid means 'Manufacturer Featureset ID'. Ref: https://support.bioconductor.org/p/57191/
 print(paste0("Number of Featuresets: ", dim(unique(oligo::getProbeInfo(featureset_level_data, target="core")['man_fsetid']))[1])) # man_fsetid means 'Manufacturer Featureset ID'. Ref: https://support.bioconductor.org/p/57191/
@@ -602,9 +605,8 @@ listToUniquePipedString <- function(str_list) {
 }
 
 unique_probe_ids <- df_mapping %>% 
-                      # note: '!!sym(VAR)' syntax allows usage of variable 'VAR' in dplyr functions due to NSE. ref: https://dplyr.tidyverse.org/articles/programming.html # NON_DPPD
-                      dplyr::group_by(!!sym(expected_attribute_name)) %>% 
                       dplyr::mutate(dplyr::across(!!sym(expected_attribute_name), as.character)) %>% # Ensure probeset ids treated as character type
+                      dplyr::group_by(!!sym(expected_attribute_name)) %>% 
                       dplyr::summarise(
                         ENSEMBL = listToUniquePipedString(ensembl_gene_id)
                         ) %>%
@@ -627,7 +629,7 @@ featureset_expression_matrix.biomart_mapped <- featureset_expression_matrix %>%
 - `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - `df_rs$'Array Design REF'` (array design reference specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - ENSEMBL_VERSION (reference organism Ensembl version indicated in the `ensemblVersion` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
-- `featureset_level_data` (R object containing featureset level expression values after summarization of normalized probeset level data)
+- `featureset_level_data` (R object containing featureset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-featureset-summarization))
 
 **Output Data:**
 
@@ -734,7 +736,7 @@ write.csv(design_data$contrasts, "contrasts.csv")
 
 <br>
 
-### 7d. Perform Individual Featureset Level DE
+### 8d. Perform Individual Featureset Level DE
 
 ```R
 lmFitPairwise <- function(norm_data, design) {
@@ -756,7 +758,7 @@ lmFitPairwise <- function(norm_data, design) {
 }
 
 # Calculate results
-res <- lmFitPairwise(norm_data, design)
+res <- lmFitPairwise(featureset_level_data, design)
 
 # Print DE table, without filtering
 limma::write.fit(res, adjust = 'BH', 
@@ -769,18 +771,19 @@ limma::write.fit(res, adjust = 'BH',
 **Input Data:**
 
 - `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
-- `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to, created in [Step 7c](#7c-generate-design-matrix) above)
+- `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to, created in [Step 8c](#8c-generate-design-matrix) above)
+- `featureset_level_data` (R object containing featureset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-featureset-summarization))
 
 **Output Data:**
 
-- INTERIM.csv (Statistical values from individual probe level DE analysis, including:
+- INTERIM.csv (Statistical values from individual featureset level DE analysis, including:
   - Log2fc between all pairwise comparisons
   - T statistic for all pairwise comparison tests
   - P value for all pairwise comparison tests)
 
 <br>
 
-### 7e. Add Additional Columns and Format DE Table 
+### 8e. Add Additional Columns and Format DE Table 
 
 ```R
 ## Reformat Table for consistency across DE analyses tables within GeneLab ##
@@ -794,17 +797,6 @@ df_interim <- df_interim %>%
 
 # Reformat column names
 reformat_names <- function(colname, group_name_mapping) {
-  # NON_DPPD:START
-  #! Converts from:
-  #!    "P.value.adj.conditionWild.Type...Space.Flight...1st.generation.conditionWild.Type...Ground.Control...4th.generation"
-  #! to something like:
-  #! "Adj.p.value(Wild Type & Space Flight & 1st generation)v(Wild Type & Ground Control & 4th generation)"
-  #! Since two groups are expected to be replace, ensure replacements happen in pairs
-
-  # Remove 'condition' from group names
-  ## This was introduced while creating design matrix
-  # Rename other columns for consistency across genomics related DE outputs
-  # NON_DPPD:END
   new_colname <- colname  %>% 
                   stringr::str_replace(pattern = "^P.value.adj.condition", replacement = "Adj.p.value_") %>%
                   stringr::str_replace(pattern = "^P.value.condition", replacement = "P.value_") %>%
@@ -1044,7 +1036,7 @@ write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = F
 
 **Input Data:**
 
-- INTERIM.csv (Statistical values from individual probe level DE analysis, output from [Step 7d](#7d-perform-individual-featureset-level-de) above)
+- INTERIM.csv (Statistical values from individual featureset level DE analysis, output from [Step 8d](#8d-perform-individual-featureset-level-de) above)
 - `annotation_file_path` (Annotation file url from 'genelab_annots_link' column of [GL-DPPD-7110_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) corresponding to the subject organism)
 - `primary_keytype` (Keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL')
 - `background_corrected_data` (R object containing background-corrected microarray data)
@@ -1054,5 +1046,5 @@ write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = F
 
 - **differential_expression.csv** (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
-- **raw_intensities.csv** (table containing the background corrected unnormalized intensity values for each sample including gene annotations)
+- **raw_intensities.csv** (table containing the background corrected, unnormalized intensity values for each sample including gene annotations)
 - **normalized_expression.csv** (table containing the background corrected, normalized intensity values for each sample including gene annotations)
