@@ -1036,7 +1036,7 @@ write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = F
 
 **Input Data:**
 
-- INTERIM.csv (Statistical values from individual probe level DE analysis, output from [Step 7d](#7d-perform-individual-featureset-level-de) above)
+- INTERIM.csv (Statistical values from individual featureset level DE analysis, output from [Step 8d](#8d-perform-individual-featureset-level-de) above)
 - `annotation_file_path` (Annotation file url from 'genelab_annots_link' column of [GL-DPPD-7110_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) corresponding to the subject organism)
 - `primary_keytype` (Keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL')
 - `background_corrected_data` (R object containing background-corrected microarray data)
@@ -1046,5 +1046,5 @@ write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = F
 
 - **differential_expression.csv** (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
-- **raw_intensities.csv** (table containing the background corrected unnormalized intensity values for each sample including gene annotations)
+- **raw_intensities.csv** (table containing the background corrected, unnormalized intensity values for each sample including gene annotations)
 - **normalized_expression.csv** (table containing the background corrected, normalized intensity values for each sample including gene annotations)
