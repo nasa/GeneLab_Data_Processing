@@ -983,7 +983,7 @@ write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
 ## Output column subset file with just normalized probeset level expression values
 write.csv(
   df_interim[c(
-  map_primary_keytypes[[unique(df_rs$organism)]],
+  "ProbesetID",
   all_samples)
   ], "normalized_expression_probeset.csv", row.names = FALSE)
 
@@ -1005,17 +1005,38 @@ background_corrected_data_annotated <- oligo::exprs(background_corrected_data) %
   dplyr::left_join(annot, by = "ENSEMBL") %>% # Join with GeneLab Reference Annotation Table
   dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) # Convert NA mapping to 0
 
-## Perform reordering
+## Determine column order for probe level tables
+
+PROBE_INFO_COLUMN_ORDER = c(
+  "ProbesetID",
+  "ProbeID",
+  "count_ENSEMBL_mappings"
+)
+
 FINAL_COLUMN_ORDER <- c(
   ANNOTATIONS_COLUMN_ORDER, 
   PROBE_INFO_COLUMN_ORDER, 
   SAMPLE_COLUMN_ORDER
   )
 
+## Generate raw intensity matrix that includes annotations
+
+background_corrected_data_annotated <- oligo::exprs(background_corrected_data) %>% 
+  as.data.frame() %>%
+  tibble::rownames_to_column(var = "fid") %>% # Ensure rownames (probeset IDs) can be used as join key
+  dplyr::mutate(dplyr::across(fid, as.integer)) %>% # Ensure fid is integer type, consistent with getProbeInfo typing
+  dplyr::right_join(oligo::getProbeInfo(background_corrected_data), by = "fid") %>% # Add 'man_fsetid' via mapping based on fid
+  dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
+  dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
+  dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>% # Join with biomaRt ENSEMBL mappings
+  dplyr::left_join(annot, by = "ENSEMBL") %>% # Join with GeneLab Reference Annotation Table
+  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) # Convert NA mapping to 0
+
+## Perform reordering
 background_corrected_data_annotated <- background_corrected_data_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(background_corrected_data_annotated, "raw_intensities.csv", row.names = FALSE)
+write.csv(background_corrected_data_annotated, "raw_intensities_probe.csv", row.names = FALSE)
 
 ## Generate normalized expression matrix that includes annotations
 norm_data_matrix_annotated <- oligo::exprs(norm_data) %>% 
@@ -1024,22 +1045,16 @@ norm_data_matrix_annotated <- oligo::exprs(norm_data) %>%
   dplyr::mutate(dplyr::across(fid, as.integer)) %>% # Ensure fid is integer type, consistent with getProbeInfo typing
   dplyr::right_join(oligo::getProbeInfo(norm_data), by = "fid") %>% # Add 'man_fsetid' via mapping based on fid
   dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
+  dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
   dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>%
   dplyr::left_join(annot, by = "ENSEMBL") %>% # Join with GeneLab Reference Annotation Table
   dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) # Convert NA mapping to 0
 
-## Perform reordering
-FINAL_COLUMN_ORDER <- c(
-  ANNOTATIONS_COLUMN_ORDER, 
-  PROBE_INFO_COLUMN_ORDER, 
-  SAMPLE_COLUMN_ORDER
-  )
 
 norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = FALSE)
-```
+write.csv(norm_data_matrix_annotated, "normalized_intensities_probe.csv", row.names = FALSE)```
 
 **Input Data:**
 
@@ -1051,8 +1066,8 @@ write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = F
 
 **Output Data:**
 
-- **differential_expression.csv** (table containing normalized probeset expression values for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
-- **normalized_expression_probeset.csv** (table containing the background corrected, normalized probeset expression values for each sample. The biomaRt mapped Ensembl ID(s) is also included. Note: not every probeset has a biomaRt mapped Ensembl ID(s))
+- **differential_expression.csv** (table containing normalized probeset expression values for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations. The ProbesetID is the unique index column.)
+- **normalized_expression_probeset.csv** (table containing the background corrected, normalized probeset expression values for each sample. The ProbesetID is the unique index column.)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
-- **raw_intensities.csv** (table containing the background corrected, unnormalized intensity values for each sample including gene annotations)
-- **normalized_expression.csv** (table containing the background corrected, normalized intensity values for each sample including gene annotations)
+- **raw_intensities_probe.csv** (table containing the background corrected, unnormalized probe intensity values for each sample including gene annotations. The ProbeID is the unique index column.)
+- **normalized_intensities_probe.csv** (table containing the background corrected, normalized probe intensity values for each sample including gene annotations.  The ProbeID is the unique index column.)
