@@ -287,15 +287,27 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 ### 3a. Density Plot
 
 ```R
+# Plot settings
+par(
+  xpd = TRUE # Ensure legend can extend past plot area
+)
+
+number_of_sets = ceiling(dim(raw_data)[2] / 20) # Set of 20 samples, used to scale plot
+
 oligo::hist(raw_data, 
             transfo=log2, # Log2 transform raw intensity values
-            which=c("all"), # Filter to perfect match and mismatch probes
+            which=c("both"), # Filter to perfect match and mismatch probes
             nsample=10000, # Number of probes to plot
             main = "Density of raw intensities for multiple arrays")
 legend("topright", legend = colnames(raw_data@assayData$exprs),
         lty = c(1,2,3,4,5), # Seems like oligo::hist cycles through these first five line types
-        col = oligo::darkColors(n = ncol(raw_data) )
+        col = oligo::darkColors(n = ncol(raw_data)), # Ensure legend color is in sync with plot
+        ncol = number_of_sets, # Set number of columns by number of sets
+        cex = 1 + 0.2 - (number_of_sets*0.2) # Reduce scale by 20% for each column beyond 1
       )
+
+# Reset par
+par(original_par)
 ```
 
 **Input Data:**
