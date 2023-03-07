@@ -170,6 +170,11 @@ dir.create(DIR_RAW_DATA)
 dir.create(DIR_NORMALIZED_EXPRESSION)
 dir.create(DIR_DGE)
 
+## Save original par settings
+##   Par may be temporarily changed for plotting purposes and reset once the plotting is done
+
+original_par <- par()
+
 df_rs <- read.csv(runsheet, check.names = FALSE)
 
 ## Determines the organism specific annotation file to use based on the organism in the runsheet
