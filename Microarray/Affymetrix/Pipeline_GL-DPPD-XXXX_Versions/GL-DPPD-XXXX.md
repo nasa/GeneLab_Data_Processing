@@ -332,7 +332,7 @@ MA_plot <- oligo::MAplot(raw_data, ylim=c(-2, 4))
 par(mar = c(15, 4, 4, 2) + 0.1) 
 boxplot <- oligo::boxplot(raw_data, 
                           transfo=log2, # Log2 transform raw intensity values
-                          which=c("both"), # Filter to perfect match and mismatch probes
+                          which=c("all"), # Filter to perfect match and mismatch probes
                           nsample=10000, # Number of probes to plot
                           las = 3, # Make x-axis label vertical
                           main = "Boxplot of raw intensities for perfect match and mismatch probes"
@@ -470,7 +470,7 @@ MA_plot <- oligo::MAplot(norm_data, ylim=c(-2, 4))
 par(mar = c(15, 4, 4, 2) + 0.1) 
 boxplot <- oligo::boxplot(norm_data, 
                           transfo=log2, # Log2 transform raw intensity values
-                          which=c("both"), # Filter to perfect match and mismatch probes
+                          which=c("all"), # Filter to perfect match and mismatch probes
                           nsample=10000, # Number of probes to plot
                           las = 3, # Make x-axis label vertical
                           main = "Boxplot of raw intensities for perfect match and mismatch probes"
