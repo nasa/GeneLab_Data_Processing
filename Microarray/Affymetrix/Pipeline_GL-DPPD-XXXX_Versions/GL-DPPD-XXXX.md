@@ -40,12 +40,12 @@ Lauren Sanders (acting GeneLab Project Scientist)
     - [6b. Pseudo Image Plots](#6b-pseudo-image-plots)
     - [6c. MA Plots](#6c-ma-plots)
     - [6d. Boxplots](#6d-boxplots)
-  - [7. Featureset Summarization](#7-featureset-summarization)
-  - [8. Perform Featureset Differential Expression (DE)](#8-perform-featureset-differential-expression-de)
-    - [8a. Add Featureset Annotations](#8a-add-featureset-annotations)
+  - [7. Probeset Summarization](#7-probeset-summarization)
+  - [8. Perform Probeset Differential Expression (DE)](#8-perform-probeset-differential-expression-de)
+    - [8a. Add Probeset Annotations](#8a-add-probeset-annotations)
     - [8b. Summarize Biomart Mapping vs. Manufacturer Mapping](#8b-summarize-biomart-mapping-vs-manufacturer-mapping)
     - [8c. Generate Design Matrix](#8c-generate-design-matrix)
-    - [8d. Perform Individual Featureset Level DE](#8d-perform-individual-featureset-level-de)
+    - [8d. Perform Individual Probeset Level DE](#8d-perform-individual-probeset-level-de)
     - [8e. Add Additional Columns and Format DE Table](#8e-add-additional-columns-and-format-de-table)
 
 ---
@@ -492,19 +492,19 @@ boxplot <- oligo::boxplot(norm_data,
 
 ---
 
-## 7. Featureset Summarization
+## 7. Probeset Summarization
 
 ```R
-featureset_level_data <- oligo::rma(norm_data, 
+probeset_level_data <- oligo::rma(norm_data, 
                                     normalize=FALSE, 
                                     background=FALSE
                                     )
 
 # Summarize background-corrected and normalized data
-print("Summarized Featureset Level Data Below")
-print(paste0("Number of Arrays: ", dim(featureset_level_data)[2]))
-print(paste0("Total Number of Probesets: ", dim(oligo::getProbeInfo(featureset_level_data, target="core")['man_fsetid'])[1])) # man_fsetid means 'Manufacturer Featureset ID'. Ref: https://support.bioconductor.org/p/57191/
-print(paste0("Number of Featuresets: ", dim(unique(oligo::getProbeInfo(featureset_level_data, target="core")['man_fsetid']))[1])) # man_fsetid means 'Manufacturer Featureset ID'. Ref: https://support.bioconductor.org/p/57191/
+print("Summarized Probeset Level Data Below")
+print(paste0("Number of Arrays: ", dim(probeset_level_data)[2]))
+print(paste0("Total Number of Probes Assigned To A Probeset: ", dim(oligo::getProbeInfo(probeset_level_data, target="core")['man_fsetid'])[1])) # man_fsetid means 'Manufacturer Probeset ID'. Ref: https://support.bioconductor.org/p/57191/
+print(paste0("Number of Probesets: ", dim(unique(oligo::getProbeInfo(probeset_level_data, target="core")['man_fsetid']))[1])) # man_fsetid means 'Manufacturer Probeset ID'. Ref: https://support.bioconductor.org/p/57191/
 ```
 
 **Input Data:**
@@ -513,17 +513,17 @@ print(paste0("Number of Featuresets: ", dim(unique(oligo::getProbeInfo(featurese
 
 **Output Data:**
 
-- `featureset_level_data` (R object containing featureset level expression values after summarization of normalized probeset level data)
+- `probeset_level_data` (R object containing probeset level expression values after summarization of normalized probeset level data)
 
 <br>
 
 ---
 
-## 8. Perform Featureset Differential Expression (DE)
+## 8. Perform Probeset Differential Expression (DE)
 
 <br>
 
-### 8a. Add Featureset Annotations
+### 8a. Add Probeset Annotations
 
 ```R
 shortenedOrganismName <- function(long_name) {
@@ -572,7 +572,7 @@ getBioMartAttribute <- function(df_rs) {
 expected_attribute_name <- getBioMartAttribute(df_rs)
 print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
 
-probe_ids <- rownames(featureset_level_data)
+probe_ids <- rownames(probeset_level_data)
 
 
 # Create probe map
@@ -615,9 +615,9 @@ unique_probe_ids <- df_mapping %>%
                         count_ENSEMBL_mappings = 1 + stringr::str_count(ENSEMBL, stringr::fixed("|"))
                       )
 
-featureset_expression_matrix <- oligo::exprs(featureset_level_data)
+probeset_expression_matrix <- oligo::exprs(probeset_level_data)
 
-featureset_expression_matrix.biomart_mapped <- featureset_expression_matrix %>% 
+probeset_expression_matrix.biomart_mapped <- probeset_expression_matrix %>% 
   as.data.frame() %>%
   tibble::rownames_to_column(var = "ProbesetID") %>% # Ensure rownames (probeset IDs) can be used as join key
   dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>%
@@ -629,11 +629,11 @@ featureset_expression_matrix.biomart_mapped <- featureset_expression_matrix %>%
 - `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - `df_rs$'Array Design REF'` (array design reference specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - ENSEMBL_VERSION (reference organism Ensembl version indicated in the `ensemblVersion` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
-- `featureset_level_data` (R object containing featureset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-featureset-summarization))
+- `probeset_level_data` (R object containing probeset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-probeset-summarization))
 
 **Output Data:**
 
-- `featureset_expression_matrix.biomart_mapped` (R object containing featureset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html))
+- `probeset_expression_matrix.biomart_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html))
 
 <br>
 
@@ -642,9 +642,9 @@ featureset_expression_matrix.biomart_mapped <- featureset_expression_matrix %>%
 ```R
 # Pie Chart with Percentages
 slices <- c(
-    'Unique Mapping' = nrow(featureset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings == 1) %>% dplyr::distinct(ProbesetID)), 
-    'Multi Mapping' = nrow(featureset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings > 1) %>% dplyr::distinct(ProbesetID)), 
-    'No Mapping' = nrow(featureset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings == 0) %>% dplyr::distinct(ProbesetID))
+    'Unique Mapping' = nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings == 1) %>% dplyr::distinct(ProbesetID)), 
+    'Multi Mapping' = nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings > 1) %>% dplyr::distinct(ProbesetID)), 
+    'No Mapping' = nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings == 0) %>% dplyr::distinct(ProbesetID))
 )
 pct <- round(slices/sum(slices)*100)
 chart_names <- names(slices)
@@ -652,7 +652,7 @@ chart_names <- glue::glue("{names(slices)} ({slices})") # add count to labels
 chart_names <- paste(chart_names, pct) # add percents to labels
 chart_names <- paste(chart_names,"%",sep="") # ad % to labels
 pie(slices,labels = chart_names, col=rainbow(length(slices)),
-    main=glue::glue("Biomart Mapping to Ensembl Primary Keytype\n {nrow(featureset_expression_matrix.biomart_mapped %>% dplyr::distinct(ProbesetID))} Total Unique Probesets")
+    main=glue::glue("Biomart Mapping to Ensembl Primary Keytype\n {nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::distinct(ProbesetID))} Total Unique Probesets")
     )
 
 print(glue::glue("Biomart Unique Mapping Count: {slices[['Unique Mapping']]}"))
@@ -660,11 +660,11 @@ print(glue::glue("Biomart Unique Mapping Count: {slices[['Unique Mapping']]}"))
 
 **Input Data:**
 
-- `featureset_expression_matrix.biomart_mapped` (R object containing featureset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html), output from [Step 8a](#8a-add-featureset-annotations) above)
+- `probeset_expression_matrix.biomart_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html), output from [Step 8a](#8a-add-probeset-annotations) above)
 
 **Output Data:**
 
-- A pie chart denoting the biomart mapping rates for each unique featureset ID
+- A pie chart denoting the biomart mapping rates for each unique probeset ID
 - A printout denoting the count of unique mappings for biomart mapping
 
 <br>
@@ -736,7 +736,7 @@ write.csv(design_data$contrasts, "contrasts.csv")
 
 <br>
 
-### 8d. Perform Individual Featureset Level DE
+### 8d. Perform Individual Probeset Level DE
 
 ```R
 lmFitPairwise <- function(norm_data, design) {
@@ -758,7 +758,7 @@ lmFitPairwise <- function(norm_data, design) {
 }
 
 # Calculate results
-res <- lmFitPairwise(featureset_level_data, design)
+res <- lmFitPairwise(probeset_level_data, design)
 
 # Print DE table, without filtering
 limma::write.fit(res, adjust = 'BH', 
@@ -772,11 +772,11 @@ limma::write.fit(res, adjust = 'BH',
 
 - `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
 - `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to, created in [Step 8c](#8c-generate-design-matrix) above)
-- `featureset_level_data` (R object containing featureset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-featureset-summarization))
+- `probeset_level_data` (R object containing probeset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-probeset-summarization))
 
 **Output Data:**
 
-- INTERIM.csv (Statistical values from individual featureset level DE analysis, including:
+- INTERIM.csv (Statistical values from individual probeset level DE analysis, including:
   - Log2fc between all pairwise comparisons
   - T statistic for all pairwise comparison tests
   - P value for all pairwise comparison tests)
@@ -793,7 +793,7 @@ df_interim <- read.csv("INTERIM.csv")
 
 # Bind columns from biomart mapped expression table
 df_interim <- df_interim %>% 
-  dplyr::bind_cols(featureset_expression_matrix.biomart_mapped)
+  dplyr::bind_cols(probeset_expression_matrix.biomart_mapped)
 
 # Reformat column names
 reformat_names <- function(colname, group_name_mapping) {
@@ -981,7 +981,7 @@ df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
 
 ### Generate and export PCA table for GeneLab visualization plots
-PCA_raw <- prcomp(t(exprs(featureset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
+PCA_raw <- prcomp(t(exprs(probeset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
 write.csv(PCA_raw$x,
           "visualization_PCA_table.csv"
           )
@@ -1036,7 +1036,7 @@ write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = F
 
 **Input Data:**
 
-- INTERIM.csv (Statistical values from individual featureset level DE analysis, output from [Step 8d](#8d-perform-individual-featureset-level-de) above)
+- INTERIM.csv (Statistical values from individual probeset level DE analysis, output from [Step 8d](#8d-perform-individual-probeset-level-de) above)
 - `annotation_file_path` (Annotation file url from 'genelab_annots_link' column of [GL-DPPD-7110_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) corresponding to the subject organism)
 - `primary_keytype` (Keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL')
 - `background_corrected_data` (R object containing background-corrected microarray data)

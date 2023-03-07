@@ -306,39 +306,39 @@ boxplot <- oligo::boxplot(norm_data,
                           )
 ```
 
-## Featureset Summarization
+## Probeset Summarization
 
 ``` {r summarization}
 #| message = FALSE
 # Call RMA but skip normalize and background correction since those have already been applied
-featureset_level_data <- oligo::rma(norm_data, 
+probeset_level_data <- oligo::rma(norm_data, 
                                     normalize=FALSE, 
                                     background=FALSE,
                                     )
 
 # Summarize background-corrected and normalized data
-print("Summarized Featureset Level Data Below") # NON_DPPD
-print(paste0("Number of Arrays: ", dim(featureset_level_data)[2]))
-print(paste0("Total Number of Probesets: ", dim(oligo::getProbeInfo(featureset_level_data, target="core")['man_fsetid'])[1])) # man_fsetid means 'Manufacturer Featureset ID'. Ref: https://support.bioconductor.org/p/57191/
-print(paste0("Number of Featuresets: ", dim(unique(oligo::getProbeInfo(featureset_level_data, target="core")['man_fsetid']))[1])) # man_fsetid means 'Manufacturer Featureset ID'. Ref: https://support.bioconductor.org/p/57191/
-message(paste0("Number of Arrays: ", dim(featureset_level_data)[2])) # NON_DPPD
-message(paste0("Total Number of Probesets: ", dim(oligo::getProbeInfo(featureset_level_data, target="core")['man_fsetid'])[1])) # NON_DPPD
-message(paste0("Number of Featuresets: ", dim(unique(oligo::getProbeInfo(featureset_level_data, target="core")['man_fsetid']))[1])) # NON_DPPD
+print("Summarized Probeset Level Data Below") # NON_DPPD
+print(paste0("Number of Arrays: ", dim(probeset_level_data)[2]))
+print(paste0("Total Number of Probes Assigned To A Probeset: ", dim(oligo::getProbeInfo(probeset_level_data, target="core")['man_fsetid'])[1])) # man_fsetid means 'Manufacturer Probeset ID'. Ref: https://support.bioconductor.org/p/57191/
+print(paste0("Number of Probesets: ", dim(unique(oligo::getProbeInfo(probeset_level_data, target="core")['man_fsetid']))[1])) # man_fsetid means 'Manufacturer Probeset ID'. Ref: https://support.bioconductor.org/p/57191/
+message(paste0("Number of Arrays: ", dim(probeset_level_data)[2])) # NON_DPPD
+message(paste0("Total Number of Probes Assigned To A Probeset: ", dim(oligo::getProbeInfo(probeset_level_data, target="core")['man_fsetid'])[1])) # NON_DPPD
+message(paste0("Number of Probesets: ", dim(unique(oligo::getProbeInfo(probeset_level_data, target="core")['man_fsetid']))[1])) # NON_DPPD
 # NON_DPPD:START
 #DT::datatable(raw_data$targets, caption = "Sample to File Mapping")
 #DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data file embedded probes to genes table")
 # NON_DPPD:END
 ```
 
-## Perform Featureset Differential Expression and Annotation
+## Perform Probeset Differential Expression and Annotation
 
 1. Add biomart annotations first
 2. Compute all mapping statistics (i.e. multimapping (one-probe to many-genes), redudant mapping (many-probes to one-gene))
 3. Perform DE with and without filtering (assessing effects of filtering on row-wise results)
 
-### Featureset Differential Expression (DE)
+### Probeset Differential Expression (DE)
 
-#### Add Featureset Annotations
+#### Add Probeset Annotations
 
 ``` {r retrieve-probeset-annotations}
 #| message = FALSE
@@ -395,7 +395,7 @@ expected_attribute_name <- getBioMartAttribute(df_rs)
 print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
 message(paste0("Expected attribute name: '", expected_attribute_name, "'")) # NON_DPPD
 
-probe_ids <- rownames(featureset_level_data)
+probe_ids <- rownames(probeset_level_data)
 
 # DEBUG:START
 if ( is.integer(params$DEBUG_limit_biomart_query) ) {
@@ -449,9 +449,9 @@ unique_probe_ids <- df_mapping %>%
                         count_ENSEMBL_mappings = 1 + stringr::str_count(ENSEMBL, stringr::fixed("|"))
                       )
 
-featureset_expression_matrix <- oligo::exprs(featureset_level_data)
+probeset_expression_matrix <- oligo::exprs(probeset_level_data)
 
-featureset_expression_matrix.biomart_mapped <- featureset_expression_matrix %>% 
+probeset_expression_matrix.biomart_mapped <- probeset_expression_matrix %>% 
   as.data.frame() %>%
   tibble::rownames_to_column(var = "ProbesetID") %>% # Ensure rownames (probeset IDs) can be used as join key
   dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>%
@@ -464,9 +464,9 @@ featureset_expression_matrix.biomart_mapped <- featureset_expression_matrix %>%
 #| message = FALSE
 # Pie Chart with Percentages
 slices <- c(
-    'Unique Mapping' = nrow(featureset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings == 1) %>% dplyr::distinct(ProbesetID)), 
-    'Multi Mapping' = nrow(featureset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings > 1) %>% dplyr::distinct(ProbesetID)), 
-    'No Mapping' = nrow(featureset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings == 0) %>% dplyr::distinct(ProbesetID))
+    'Unique Mapping' = nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings == 1) %>% dplyr::distinct(ProbesetID)), 
+    'Multi Mapping' = nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings > 1) %>% dplyr::distinct(ProbesetID)), 
+    'No Mapping' = nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings == 0) %>% dplyr::distinct(ProbesetID))
 )
 pct <- round(slices/sum(slices)*100)
 chart_names <- names(slices)
@@ -474,7 +474,7 @@ chart_names <- glue::glue("{names(slices)} ({slices})") # add count to labels
 chart_names <- paste(chart_names, pct) # add percents to labels
 chart_names <- paste(chart_names,"%",sep="") # ad % to labels
 pie(slices,labels = chart_names, col=rainbow(length(slices)),
-    main=glue::glue("Biomart Mapping to Ensembl Primary Keytype\n {nrow(featureset_expression_matrix.biomart_mapped %>% dplyr::distinct(ProbesetID))} Total Unique Probesets")
+    main=glue::glue("Biomart Mapping to Ensembl Primary Keytype\n {nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::distinct(ProbesetID))} Total Unique Probesets")
     )
 
 print(glue::glue("Biomart Unique Mapping Count: {slices[['Unique Mapping']]}"))
@@ -557,7 +557,7 @@ lmFitPairwise <- function(norm_data, design) {
 }
 
 # Calculate results
-res <- lmFitPairwise(featureset_level_data, design)
+res <- lmFitPairwise(probeset_level_data, design)
 #DT::datatable(limma::topTable(res)) # NON_DPPD
 
 # Print DE table, without filtering
@@ -579,7 +579,7 @@ df_interim <- read.csv("INTERIM.csv")
 
 # Bind columns from biomart mapped expression table
 df_interim <- df_interim %>% 
-  dplyr::bind_cols(featureset_expression_matrix.biomart_mapped)
+  dplyr::bind_cols(probeset_expression_matrix.biomart_mapped)
 
 # Reformat column names
 reformat_names <- function(colname, group_name_mapping) {
@@ -787,7 +787,7 @@ df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
 
 ### Generate and export PCA table for GeneLab visualization plots
-PCA_raw <- prcomp(t(exprs(featureset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
+PCA_raw <- prcomp(t(exprs(probeset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
 write.csv(PCA_raw$x,
           "visualization_PCA_table.csv"
           )
