@@ -277,6 +277,7 @@ boxplot <- oligo::boxplot(raw_data,
                           which=c("all"),
                           nsample=10000, # Number of probes to plot
                           las = 3, # Make x-axis label vertical
+                          ylab="log2-intensity",
                           main = "Boxplot of raw intensities \nfor perfect match and mismatch probes"
                           )
 # Reset par
@@ -408,6 +409,7 @@ boxplot <- oligo::boxplot(norm_data,
                           which=c("all"),
                           nsample=10000, # Number of probes to plot
                           las = 3, # Make x-axis label vertical
+                          ylab="log2-intensity",
                           main = "Boxplot of normalized intensities \nfor perfect match and mismatch probes"
                           )
 # Reset par
