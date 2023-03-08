@@ -334,7 +334,7 @@ par(original_par)
 #| message: false
 #| warning: false # NAN can be produced due to log transformations
 #| layout-ncol: 2
-for ( i in seq_along(norm_data)) {
+for ( i in seq_along(1:ncol(norm_data))) {
   message(glue::glue("Drawing Psuedoimage for {colnames(norm_data)[i]}")) # NON_DPPD
   oligo::image(norm_data[,i], 
     transfo = log2,

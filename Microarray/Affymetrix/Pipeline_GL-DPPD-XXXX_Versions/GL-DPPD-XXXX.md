@@ -488,7 +488,7 @@ par(original_par)
 ### 6b. Pseudo Image Plots
 
 ```R
-for ( i in seq_along(norm_data)) {
+for ( i in seq_along(1:ncol(norm_data))) {
   oligo::image(norm_data[,i], 
     transfo = log2,
     main = colnames(norm_data)[i]
