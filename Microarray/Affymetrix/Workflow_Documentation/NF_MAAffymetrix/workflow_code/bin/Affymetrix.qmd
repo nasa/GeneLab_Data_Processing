@@ -367,7 +367,7 @@ par(original_par)
 ## Probeset Summarization
 
 ``` {r summarization}
-#| message = FALSE
+#| message: false
 # Call RMA but skip normalize and background correction since those have already been applied
 probeset_level_data <- oligo::rma(norm_data, 
                                     normalize=FALSE, 
