@@ -302,7 +302,7 @@ DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data
 ### Density Plot
 
 ``` {r qa-for-normalized-data--density-plot}
-#| fig-cap: Density of raw intensities for each array.  These are raw intensity values with background intensity values subtracted.  A lack of overlap indicates a need for normalization.
+#| fig-cap: Density of normalized intensities for each array.  A lack of overlap indicates a need for normalization.
 #| warning: false
 oligo::hist(norm_data, 
             transfo=log2, # Log2 transform raw intensity values
