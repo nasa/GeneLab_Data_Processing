@@ -791,7 +791,7 @@ design_data <- runsheetToDesignMatrix(runsheet)
 design <- design_data$matrix
 
 # Write SampleTable.csv and contrasts.csv file
-write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable.csv", row.names = FALSE))
+write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable.csv"), row.names = FALSE)
 write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts.csv"))
 ```
 
