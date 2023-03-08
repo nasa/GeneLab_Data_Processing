@@ -226,6 +226,9 @@ par(original_par)
 #| message: false
 #| warning: false # NAN can be produced due to log transformations
 #| layout-ncol: 2
+#| column: screen-inset-right # Allow images to flow all the way to the right
+#| fig-align: left
+
 for ( i in seq_along(1:ncol(raw_data))) {
   message(glue::glue("Drawing Psuedoimage for {colnames(raw_data)[i]}")) # NON_DPPD
   oligo::image(raw_data[,i], 
@@ -342,6 +345,9 @@ par(original_par)
 #| message: false
 #| warning: false # NAN can be produced due to log transformations
 #| layout-ncol: 2
+#| column: screen-inset-right # Allow images to flow all the way to the right
+#| fig-align: left
+
 for ( i in seq_along(1:ncol(norm_data))) {
   message(glue::glue("Drawing Psuedoimage for {colnames(norm_data)[i]}")) # NON_DPPD
   oligo::image(norm_data[,i], 
