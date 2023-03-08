@@ -537,7 +537,7 @@ par(
   cex.axis = dynamic_text_size
   ) 
 boxplot <- oligo::boxplot(norm_data, 
-                          transfo=log2, # Log2 transform raw intensity values
+                          transfo=log2, # Log2 transform normalized intensity values
                           which=c("both"), # Filter to perfect match and mismatch probes
                           nsample=10000, # Number of probes to plot
                           las = 3, # Make x-axis label vertical
