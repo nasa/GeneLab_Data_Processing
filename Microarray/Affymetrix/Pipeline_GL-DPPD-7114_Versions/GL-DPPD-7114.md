@@ -1,6 +1,6 @@
 # GeneLab bioinformatics processing pipeline for Affymetrix microarray data <!-- omit in toc -->
 
-> **This page holds an overview and instructions for how GeneLab processes Affymetrix microarray datasets. Exact processing commands and GL-DPPD-XXXX version used for specific GeneLab datasets (GLDS) are provided with their processed data in the [Open Science Data 
+> **This page holds an overview and instructions for how GeneLab processes Affymetrix microarray datasets. Exact processing commands and GL-DPPD-7114 version used for specific GeneLab datasets (GLDS) are provided with their processed data in the [Open Science Data 
 Repository (OSDR)](https://osdr.nasa.gov/bio/repo).**  
 > 
 > \* The pipeline detailed below is currently used for animal studies only, it will be updated soon for processing plants and microbe microarray data.
@@ -9,7 +9,7 @@ Repository (OSDR)](https://osdr.nasa.gov/bio/repo).**
 
 **Date:** March 3, 2023  
 **Revision:** -  
-**Document Number:** GL-DPPD-XXXX   
+**Document Number:** GL-DPPD-7114   
 
 **Submitted by:**  
 Jonathan Oribello (GeneLab Data Processing Team)
