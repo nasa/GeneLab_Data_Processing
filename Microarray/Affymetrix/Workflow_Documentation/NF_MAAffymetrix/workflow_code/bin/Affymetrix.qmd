@@ -259,8 +259,13 @@ MA_plot <- oligo::MAplot(
 
 ``` {r qa-for-raw-data--boxplots}
 #| warning: false # NAN can be produced due to log transformations
+#| column: screen-inset-right # Allow images to flow all the way to the right
+#| fig-width: 14
+#| fig-height: 6
+#| fig-align: left
+
 count_samples <- dim(raw_data)[2]
-dynamic_text_size <- max(0.5, 1 - (0.005 * count_samples))
+dynamic_text_size <- max(0.5, 1 - (0.002 * count_samples))
 max_samplename_length <- max(nchar(colnames(raw_data)))
 dynamic_bottom_margin <- max_samplename_length * 0.8 * dynamic_text_size
 par(
@@ -385,8 +390,13 @@ MA_plot <- oligo::MAplot(
 
 ``` {r qa-for-normalized-data--boxplots}
 #| warning: false # NAN can be produced due to log transformations
+#| column: screen-inset-right # Allow images to flow all the way to the right
+#| fig-width: 14
+#| fig-height: 6
+#| fig-align: left
+
 count_samples <- dim(norm_data)[2]
-dynamic_text_size <- max(0.5, 1 - (0.005 * count_samples))
+dynamic_text_size <- max(0.5, 1 - (0.002 * count_samples))
 max_samplename_length <- max(nchar(colnames(norm_data)))
 dynamic_bottom_margin <- max_samplename_length * 0.8 * dynamic_text_size
 par(
