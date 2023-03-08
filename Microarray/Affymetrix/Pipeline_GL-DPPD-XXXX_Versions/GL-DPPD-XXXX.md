@@ -346,7 +346,8 @@ for ( i in seq_along(1:ncol(raw_data))) {
 ```R
 MA_plot <- oligo::MAplot(
     raw_data, 
-    ylim=c(-2, 4)
+    ylim=c(-2, 4),
+    main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
 )
 ```
 
@@ -511,7 +512,8 @@ for ( i in seq_along(1:ncol(norm_data))) {
 ```R
 MA_plot <- oligo::MAplot(
     norm_data, 
-    ylim=c(-2, 4)
+    ylim=c(-2, 4),
+    main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
 )
 ```
 
