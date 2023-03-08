@@ -1128,6 +1128,7 @@ norm_data_matrix_annotated <- norm_data_matrix_annotated %>%
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe.csv"), row.names = FALSE)
+```
 
 **Input Data:**
 
