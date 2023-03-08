@@ -324,8 +324,10 @@ par(original_par)
 
 ```R
 for ( i in seq_along(1:ncol(raw_data))) {
-  print(glue::glue("Drawing Psuedoimage for {colnames(raw_data)[i]}"))
-  oligo::image(raw_data[,i], transfo = log2)
+  oligo::image(raw_data[,i], 
+    transfo = log2,
+    main = colnames(raw_data)[i]
+    )
 }
 ```
 
@@ -462,9 +464,11 @@ legend("topright", legend = colnames(norm_data@assayData$exprs),
 ### 6b. Pseudo Image Plots
 
 ```R
-for ( i in seq_along(1:ncol(norm_data))) {
-  print(glue::glue("Drawing Psuedoimage for {colnames(norm_data)[i]}"))
-  oligo::image(norm_data[,i], transfo = log2)
+for ( i in seq_along(norm_data)) {
+  oligo::image(norm_data[,i], 
+    transfo = log2,
+    main = colnames(norm_data)[i]
+    )
 }
 ```
 
