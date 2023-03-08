@@ -190,9 +190,8 @@ DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data
 ### Density Plot
 
 ``` {r qa-for-raw-data--density-plot}
-#| fig-cap: Density of raw intensities for each array.  These are raw intensity values with background intensity values subtracted.  A lack of overlap indicates a need for normalization.
+#| fig-cap: Density of raw intensities for each array. A lack of overlap indicates a need for normalization.
 #| warning: false
-# #| fig-height: !expr length(rownames(raw_data$targets)) / 2.5 # Dynamically setting figure height to prevent legend from being cutoff for many arrays
 
 # Plot settings
 par(
