@@ -296,7 +296,7 @@ number_of_sets = ceiling(dim(raw_data)[2] / 20) # Set of 20 samples, used to sca
 
 oligo::hist(raw_data, 
             transfo=log2, # Log2 transform raw intensity values
-            which=c("both"), # Filter to perfect match and mismatch probes
+            which=c("all"),
             nsample=10000, # Number of probes to plot
             main = "Density of raw intensities for multiple arrays")
 legend("topright", legend = colnames(raw_data@assayData$exprs),
@@ -374,7 +374,7 @@ par(
   ) 
 boxplot <- oligo::boxplot(raw_data, 
                           transfo=log2, # Log2 transform raw intensity values
-                          which=c("both"), # Filter to perfect match and mismatch probes
+                          which=c("all"),
                           nsample=10000, # Number of probes to plot
                           las = 3, # Make x-axis label vertical
                           main = "Boxplot of raw intensities \nfor perfect match and mismatch probes"
@@ -461,7 +461,7 @@ number_of_sets = ceiling(dim(norm_data)[2] / 20) # Set of 20 samples, used to sc
 
 oligo::hist(norm_data,
             transfo=log2, # Log2 transform normalized intensity values
-            which=c("both"), # Filter to perfect match and mismatch probes
+            which=c("all"),
             nsample=10000, # Number of probes to plot
             main = "Density of normalized intensities for multiple arrays")
 legend("topright", legend = colnames(norm_data@assayData$exprs),
@@ -538,7 +538,7 @@ par(
   ) 
 boxplot <- oligo::boxplot(norm_data, 
                           transfo=log2, # Log2 transform normalized intensity values
-                          which=c("all"), # Filter to perfect match and mismatch probes
+                          which=c("all"),
                           nsample=10000, # Number of probes to plot
                           las = 3, # Make x-axis label vertical
                           main = "Boxplot of normalized intensities \nfor perfect match and mismatch probes"
