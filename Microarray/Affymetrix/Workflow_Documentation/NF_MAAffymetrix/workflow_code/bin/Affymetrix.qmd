@@ -25,7 +25,7 @@ params:
 
 ## Validate Parameters <!-- non DPPD -->
 ``` {r validate-parameters}
-#| message = FALSE
+#| message: false
 # DEBUG: START
 dump_rdata <- function() {
   # Save debugging info to file last.dump.rda
@@ -73,7 +73,7 @@ original_par <- par()
 ## Load Metadata and Raw Data
 
 ``` {r load-runsheet-and-annotation-table-link}
-#| message = FALSE
+#| message: false
 print("Loading Runsheet...") # NON_DPPD
 
 df_rs <- read.csv(runsheet, check.names = FALSE)
@@ -220,6 +220,7 @@ par(original_par)
 ### Pseudo Image Plots
 
 ``` {r qa-for-raw-data--pseudoimage-plots}
+#| message: false
 #| warning: false # NAN can be produced due to log transformations
 #| layout-ncol: 2
 for ( i in seq_along(1:4)) {
@@ -256,7 +257,7 @@ boxplot <- oligo::boxplot(raw_data,
 Approach reference: https://www.usu.edu/math/jrstevens/stat5570/1.4.Preprocess.pdf
 
 ``` {r background-correction}
-#| message = FALSE
+#| message: false
 # NON_DPPD:  RMA -> Convolution Background Correction
 background_corrected_data <- raw_data %>% oligo::backgroundCorrect(method="rma")
 ```
@@ -264,7 +265,7 @@ background_corrected_data <- raw_data %>% oligo::backgroundCorrect(method="rma")
 ## Between Array Normalization
 
 ``` {r between-array-normalization}
-#| message = FALSE
+#| message: false
 # Normalize background-corrected data using the quantile method
 norm_data <- oligo::normalize(background_corrected_data, 
                               method = "quantile",
@@ -304,6 +305,7 @@ legend("topright", legend = colnames(norm_data@assayData$exprs),
 ### Pseudo Image Plots
 
 ``` {r qa-for-normalized-data--pseudoimage-plots}
+#| message: false
 #| warning: false # NAN can be produced due to log transformations
 #| layout-ncol: 2
 for ( i in seq_along(1:ncol(norm_data))) {
@@ -370,7 +372,7 @@ DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data
 #### Add Probeset Annotations
 
 ``` {r retrieve-probeset-annotations}
-#| message = FALSE
+#| message: false
 shortenedOrganismName <- function(long_name) {
   #' Convert organism names like 'Homo Sapiens' into 'hsapiens'
   tokens <- long_name %>% stringr::str_split(" ", simplify = TRUE)
@@ -490,7 +492,7 @@ probeset_expression_matrix.biomart_mapped <- probeset_expression_matrix %>%
 ### Summarize Biomart Mapping vs. Manufacturer Mapping
 
 ``` {r summarize-remapping-vs-original-mapping}
-#| message = FALSE
+#| message: false
 # Pie Chart with Percentages
 slices <- c(
     'Unique Mapping' = nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings == 1) %>% dplyr::distinct(ProbesetID)), 
@@ -600,7 +602,7 @@ limma::write.fit(res, adjust = 'BH',
 ### Add Additional Columns and Format DE Table 
 
 ``` {r add-additional-columns-and-format-de-table}
-#| message = FALSE
+#| message: false
 ## Reformat Table for consistency across DE analyses tables within GeneLab ##
 
 # Read in DE table 
