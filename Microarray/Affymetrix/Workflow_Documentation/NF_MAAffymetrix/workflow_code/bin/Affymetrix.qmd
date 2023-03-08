@@ -240,6 +240,10 @@ for ( i in seq_along(1:ncol(raw_data))) {
 
 ### MA Plots
 
+
+- M = Expression log-ratio (this sample vs. pseudo median reference chip)
+- A = Average log-expression
+
 ``` {r qa-for-raw-data--ma-plots}
 #| layout-ncol: 2
 #| warning: false # NAN can be produced due to log transformations
@@ -251,9 +255,6 @@ MA_plot <- oligo::MAplot(
     main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
 )
 ```
-
-- M = Expression log-ratio (this sample vs. pseudo median reference chip)
-- A = Average log-expression
 
 ### Boxplots
 
@@ -371,6 +372,9 @@ for ( i in seq_along(1:ncol(norm_data))) {
 
 ### MA Plots
 
+- M = Expression log-ratio (this sample vs. pseudo median reference chip)
+- A = Average log-expression
+
 ``` {r qa-for-normalized-data--ma-plots}
 #| layout-ncol: 2
 #| warning: false # NAN can be produced due to log transformations
@@ -383,9 +387,6 @@ MA_plot <- oligo::MAplot(
     main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
 )
 ```
-
-- M = Expression log-ratio (this sample vs. pseudo median reference chip)
-- A = Average log-expression
 
 ### Boxplots
 
