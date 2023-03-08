@@ -236,7 +236,10 @@ for ( i in seq_along(1:ncol(raw_data))) {
 ``` {r qa-for-raw-data--ma-plots}
 #| layout-ncol: 2
 #| warning: false # NAN can be produced due to log transformations
-MA_plot <- oligo::MAplot(raw_data, ylim=c(-2, 4))
+MA_plot <- oligo::MAplot(
+    raw_data, 
+    ylim=c(-2, 4)
+)
 ```
 
 ### Boxplots
@@ -324,7 +327,10 @@ for ( i in seq_along(norm_data)) {
 ``` {r qa-for-normalized-data--ma-plots}
 #| layout-ncol: 2
 #| warning: false # NAN can be produced due to log transformations
-MA_plot <- oligo::MAplot(norm_data, ylim=c(-2, 4))
+MA_plot <- oligo::MAplot(
+    norm_data, 
+    ylim=c(-2, 4)
+)
 ```
 
 ### Boxplots

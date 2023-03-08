@@ -344,7 +344,10 @@ for ( i in seq_along(1:ncol(raw_data))) {
 ### 3c. MA Plots
 
 ```R
-MA_plot <- oligo::MAplot(raw_data, ylim=c(-2, 4))
+MA_plot <- oligo::MAplot(
+    raw_data, 
+    ylim=c(-2, 4)
+)
 ```
 
 **Input Data:**
@@ -485,7 +488,10 @@ for ( i in seq_along(norm_data)) {
 ### 6c. MA Plots
 
 ```R
-MA_plot <- oligo::MAplot(norm_data, ylim=c(-2, 4))
+MA_plot <- oligo::MAplot(
+    norm_data, 
+    ylim=c(-2, 4)
+)
 ```
 
 **Input Data:**
