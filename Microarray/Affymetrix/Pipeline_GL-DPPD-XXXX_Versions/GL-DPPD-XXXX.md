@@ -791,7 +791,7 @@ design_data <- runsheetToDesignMatrix(runsheet)
 design <- design_data$matrix
 
 # Write SampleTable.csv and contrasts.csv file
-write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable.csv"))
+write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable.csv"), row.names = FALSE)
 write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts.csv"))
 ```
 
@@ -1054,6 +1054,8 @@ write.csv(df_interim, file.path(DIR_DGE, "differential_expression.csv"), row.nam
 ## Output column subset file with just normalized probeset level expression values
 write.csv(
   df_interim[c(
+  ANNOTATIONS_COLUMN_ORDER,
+  "count_ENSEMBL_mappings",
   "ProbesetID",
   all_samples)
   ], file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_probeset.csv"), row.names = FALSE)
