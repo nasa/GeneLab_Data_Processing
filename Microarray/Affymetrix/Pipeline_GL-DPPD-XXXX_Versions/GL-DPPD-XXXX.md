@@ -40,12 +40,12 @@ Lauren Sanders (acting GeneLab Project Scientist)
     - [6b. Pseudo Image Plots](#6b-pseudo-image-plots)
     - [6c. MA Plots](#6c-ma-plots)
     - [6d. Boxplots](#6d-boxplots)
-  - [7. Featureset Summarization](#7-featureset-summarization)
-  - [8. Perform Featureset Differential Expression (DE)](#8-perform-featureset-differential-expression-de)
-    - [8a. Add Featureset Annotations](#8a-add-featureset-annotations)
+  - [7. Probeset Summarization](#7-probeset-summarization)
+  - [8. Perform Probeset Differential Expression (DE)](#8-perform-probeset-differential-expression-de)
+    - [8a. Add Probeset Annotations](#8a-add-probeset-annotations)
     - [8b. Summarize Biomart Mapping vs. Manufacturer Mapping](#8b-summarize-biomart-mapping-vs-manufacturer-mapping)
     - [8c. Generate Design Matrix](#8c-generate-design-matrix)
-    - [8d. Perform Individual Featureset Level DE](#8d-perform-individual-featureset-level-de)
+    - [8d. Perform Individual Probeset Level DE](#8d-perform-individual-probeset-level-de)
     - [8e. Add Additional Columns and Format DE Table](#8e-add-additional-columns-and-format-de-table)
 
 ---
@@ -159,6 +159,21 @@ library(statmod)
 # Define path to runsheet
 runsheet <- "/path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv"
 
+## Set up output structure
+
+# Output Constants
+DIR_RAW_DATA <- "00-RawData"
+DIR_NORMALIZED_EXPRESSION <- "01-oligo_NormExp"
+DIR_DGE <- "02-limma_DGE"
+
+dir.create(DIR_RAW_DATA)
+dir.create(DIR_NORMALIZED_EXPRESSION)
+dir.create(DIR_DGE)
+
+## Save original par settings
+##   Par may be temporarily changed for plotting purposes and reset once the plotting is done
+
+original_par <- par()
 
 df_rs <- read.csv(runsheet, check.names = FALSE)
 
@@ -272,15 +287,27 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 ### 3a. Density Plot
 
 ```R
+# Plot settings
+par(
+  xpd = TRUE # Ensure legend can extend past plot area
+)
+
+number_of_sets = ceiling(dim(raw_data)[2] / 20) # Set of 20 samples, used to scale plot
+
 oligo::hist(raw_data, 
             transfo=log2, # Log2 transform raw intensity values
-            which=c("all"), # Filter to perfect match and mismatch probes
+            which=c("both"), # Filter to perfect match and mismatch probes
             nsample=10000, # Number of probes to plot
             main = "Density of raw intensities for multiple arrays")
 legend("topright", legend = colnames(raw_data@assayData$exprs),
         lty = c(1,2,3,4,5), # Seems like oligo::hist cycles through these first five line types
-        col = oligo::darkColors(n = ncol(raw_data) )
+        col = oligo::darkColors(n = ncol(raw_data)), # Ensure legend color is in sync with plot
+        ncol = number_of_sets, # Set number of columns by number of sets
+        cex = 1 + 0.2 - (number_of_sets*0.2) # Reduce scale by 20% for each column beyond 1
       )
+
+# Reset par
+par(original_par)
 ```
 
 **Input Data:**
@@ -297,8 +324,10 @@ legend("topright", legend = colnames(raw_data@assayData$exprs),
 
 ```R
 for ( i in seq_along(1:ncol(raw_data))) {
-  print(glue::glue("Drawing Psuedoimage for {colnames(raw_data)[i]}"))
-  oligo::image(raw_data[,i], transfo = log2)
+  oligo::image(raw_data[,i], 
+    transfo = log2,
+    main = colnames(raw_data)[i]
+    )
 }
 ```
 
@@ -315,7 +344,10 @@ for ( i in seq_along(1:ncol(raw_data))) {
 ### 3c. MA Plots
 
 ```R
-MA_plot <- oligo::MAplot(raw_data, ylim=c(-2, 4))
+MA_plot <- oligo::MAplot(
+    raw_data, 
+    ylim=c(-2, 4)
+)
 ```
 
 **Input Data:**
@@ -332,14 +364,23 @@ MA_plot <- oligo::MAplot(raw_data, ylim=c(-2, 4))
 ### 3d. Boxplots
 
 ```R
-par(mar = c(15, 4, 4, 2) + 0.1) 
+count_samples <- dim(raw_data)[2]
+dynamic_text_size <- max(0.5, 1 - (0.005 * count_samples))
+max_samplename_length <- max(nchar(colnames(raw_data)))
+dynamic_bottom_margin <- max_samplename_length * 0.8 * dynamic_text_size
+par(
+  mar = c(dynamic_bottom_margin, 4, 4, 2) + 0.1,
+  cex.axis = dynamic_text_size
+  ) 
 boxplot <- oligo::boxplot(raw_data, 
                           transfo=log2, # Log2 transform raw intensity values
-                          which=c("all"), # Filter to perfect match and mismatch probes
+                          which=c("both"), # Filter to perfect match and mismatch probes
                           nsample=10000, # Number of probes to plot
                           las = 3, # Make x-axis label vertical
-                          main = "Boxplot of raw intensities for perfect match and mismatch probes"
+                          main = "Boxplot of raw intensities \nfor perfect match and mismatch probes"
                           )
+# Reset par
+par(original_par)
 ```
 
 **Input Data:**
@@ -411,15 +452,27 @@ print(paste0("Number of Probes: ", dim(norm_data)[1]))
 ### 6a. Density Plot
 
 ```R
-oligo::hist(norm_data, 
-            transfo=log2, # Log2 transform raw intensity values
-            which=c("all"), # Filter to perfect match and mismatch probes
+# Plot settings
+par(
+  xpd = TRUE # Ensure legend can extend past plot area
+)
+
+number_of_sets = ceiling(dim(norm_data)[2] / 20) # Set of 20 samples, used to scale plot
+
+oligo::hist(norm_data,
+            transfo=log2, # Log2 transform normalized intensity values
+            which=c("both"), # Filter to perfect match and mismatch probes
             nsample=10000, # Number of probes to plot
-            main = "Density of raw intensities for multiple arrays")
+            main = "Density of normalized intensities for multiple arrays")
 legend("topright", legend = colnames(norm_data@assayData$exprs),
         lty = c(1,2,3,4,5), # Seems like oligo::hist cycles through these first five line types
-        col = oligo::darkColors(n = ncol(norm_data) )
+        col = oligo::darkColors(n = ncol(norm_data)), # Ensure legend color is in sync with plot
+        ncol = number_of_sets, # Set number of columns by number of sets
+        cex = 1 + 0.2 - (number_of_sets*0.2) # Reduce scale by 20% for each column beyond 1
       )
+
+# Reset par
+par(original_par)
 ```
 
 **Input Data:**
@@ -436,8 +489,10 @@ legend("topright", legend = colnames(norm_data@assayData$exprs),
 
 ```R
 for ( i in seq_along(1:ncol(norm_data))) {
-  print(glue::glue("Drawing Psuedoimage for {colnames(norm_data)[i]}"))
-  oligo::image(norm_data[,i], transfo = log2)
+  oligo::image(norm_data[,i], 
+    transfo = log2,
+    main = colnames(norm_data)[i]
+    )
 }
 ```
 
@@ -454,7 +509,10 @@ for ( i in seq_along(1:ncol(norm_data))) {
 ### 6c. MA Plots
 
 ```R
-MA_plot <- oligo::MAplot(norm_data, ylim=c(-2, 4))
+MA_plot <- oligo::MAplot(
+    norm_data, 
+    ylim=c(-2, 4)
+)
 ```
 
 **Input Data:**
@@ -470,14 +528,23 @@ MA_plot <- oligo::MAplot(norm_data, ylim=c(-2, 4))
 ### 6d. Boxplots
 
 ```R
-par(mar = c(15, 4, 4, 2) + 0.1) 
+count_samples <- dim(norm_data)[2]
+dynamic_text_size <- max(0.5, 1 - (0.005 * count_samples))
+max_samplename_length <- max(nchar(colnames(norm_data)))
+dynamic_bottom_margin <- max_samplename_length * 0.8 * dynamic_text_size
+par(
+  mar = c(dynamic_bottom_margin, 4, 4, 2) + 0.1,
+  cex.axis = dynamic_text_size
+  ) 
 boxplot <- oligo::boxplot(norm_data, 
                           transfo=log2, # Log2 transform raw intensity values
-                          which=c("all"), # Filter to perfect match and mismatch probes
+                          which=c("both"), # Filter to perfect match and mismatch probes
                           nsample=10000, # Number of probes to plot
                           las = 3, # Make x-axis label vertical
-                          main = "Boxplot of raw intensities for perfect match and mismatch probes"
+                          main = "Boxplot of normalized intensities \nfor perfect match and mismatch probes"
                           )
+# Reset par
+par(original_par)
 ```
 
 **Input Data:**
@@ -492,19 +559,19 @@ boxplot <- oligo::boxplot(norm_data,
 
 ---
 
-## 7. Featureset Summarization
+## 7. Probeset Summarization
 
 ```R
-featureset_level_data <- oligo::rma(norm_data, 
+probeset_level_data <- oligo::rma(norm_data, 
                                     normalize=FALSE, 
                                     background=FALSE
                                     )
 
 # Summarize background-corrected and normalized data
-print("Summarized Featureset Level Data Below")
-print(paste0("Number of Arrays: ", dim(featureset_level_data)[2]))
-print(paste0("Total Number of Probesets: ", dim(oligo::getProbeInfo(featureset_level_data, target="core")['man_fsetid'])[1])) # man_fsetid means 'Manufacturer Featureset ID'. Ref: https://support.bioconductor.org/p/57191/
-print(paste0("Number of Featuresets: ", dim(unique(oligo::getProbeInfo(featureset_level_data, target="core")['man_fsetid']))[1])) # man_fsetid means 'Manufacturer Featureset ID'. Ref: https://support.bioconductor.org/p/57191/
+print("Summarized Probeset Level Data Below")
+print(paste0("Number of Arrays: ", dim(probeset_level_data)[2]))
+print(paste0("Total Number of Probes Assigned To A Probeset: ", dim(oligo::getProbeInfo(probeset_level_data, target="core")['man_fsetid'])[1])) # man_fsetid means 'Manufacturer Probeset ID'. Ref: https://support.bioconductor.org/p/57191/
+print(paste0("Number of Probesets: ", dim(unique(oligo::getProbeInfo(probeset_level_data, target="core")['man_fsetid']))[1])) # man_fsetid means 'Manufacturer Probeset ID'. Ref: https://support.bioconductor.org/p/57191/
 ```
 
 **Input Data:**
@@ -513,17 +580,17 @@ print(paste0("Number of Featuresets: ", dim(unique(oligo::getProbeInfo(featurese
 
 **Output Data:**
 
-- `featureset_level_data` (R object containing featureset level expression values after summarization of normalized probeset level data)
+- `probeset_level_data` (R object containing probeset level expression values after summarization of normalized probeset level data)
 
 <br>
 
 ---
 
-## 8. Perform Featureset Differential Expression (DE)
+## 8. Perform Probeset Differential Expression (DE)
 
 <br>
 
-### 8a. Add Featureset Annotations
+### 8a. Add Probeset Annotations
 
 ```R
 shortenedOrganismName <- function(long_name) {
@@ -572,7 +639,7 @@ getBioMartAttribute <- function(df_rs) {
 expected_attribute_name <- getBioMartAttribute(df_rs)
 print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
 
-probe_ids <- rownames(featureset_level_data)
+probe_ids <- rownames(probeset_level_data)
 
 
 # Create probe map
@@ -615,9 +682,9 @@ unique_probe_ids <- df_mapping %>%
                         count_ENSEMBL_mappings = 1 + stringr::str_count(ENSEMBL, stringr::fixed("|"))
                       )
 
-featureset_expression_matrix <- oligo::exprs(featureset_level_data)
+probeset_expression_matrix <- oligo::exprs(probeset_level_data)
 
-featureset_expression_matrix.biomart_mapped <- featureset_expression_matrix %>% 
+probeset_expression_matrix.biomart_mapped <- probeset_expression_matrix %>% 
   as.data.frame() %>%
   tibble::rownames_to_column(var = "ProbesetID") %>% # Ensure rownames (probeset IDs) can be used as join key
   dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>%
@@ -629,11 +696,11 @@ featureset_expression_matrix.biomart_mapped <- featureset_expression_matrix %>%
 - `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - `df_rs$'Array Design REF'` (array design reference specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - ENSEMBL_VERSION (reference organism Ensembl version indicated in the `ensemblVersion` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
-- `featureset_level_data` (R object containing featureset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-featureset-summarization))
+- `probeset_level_data` (R object containing probeset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-probeset-summarization))
 
 **Output Data:**
 
-- `featureset_expression_matrix.biomart_mapped` (R object containing featureset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html))
+- `probeset_expression_matrix.biomart_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html))
 
 <br>
 
@@ -642,9 +709,9 @@ featureset_expression_matrix.biomart_mapped <- featureset_expression_matrix %>%
 ```R
 # Pie Chart with Percentages
 slices <- c(
-    'Unique Mapping' = nrow(featureset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings == 1) %>% dplyr::distinct(ProbesetID)), 
-    'Multi Mapping' = nrow(featureset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings > 1) %>% dplyr::distinct(ProbesetID)), 
-    'No Mapping' = nrow(featureset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings == 0) %>% dplyr::distinct(ProbesetID))
+    'Unique Mapping' = nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings == 1) %>% dplyr::distinct(ProbesetID)), 
+    'Multi Mapping' = nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings > 1) %>% dplyr::distinct(ProbesetID)), 
+    'No Mapping' = nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::filter(count_ENSEMBL_mappings == 0) %>% dplyr::distinct(ProbesetID))
 )
 pct <- round(slices/sum(slices)*100)
 chart_names <- names(slices)
@@ -652,7 +719,7 @@ chart_names <- glue::glue("{names(slices)} ({slices})") # add count to labels
 chart_names <- paste(chart_names, pct) # add percents to labels
 chart_names <- paste(chart_names,"%",sep="") # ad % to labels
 pie(slices,labels = chart_names, col=rainbow(length(slices)),
-    main=glue::glue("Biomart Mapping to Ensembl Primary Keytype\n {nrow(featureset_expression_matrix.biomart_mapped %>% dplyr::distinct(ProbesetID))} Total Unique Probesets")
+    main=glue::glue("Biomart Mapping to Ensembl Primary Keytype\n {nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::distinct(ProbesetID))} Total Unique Probesets")
     )
 
 print(glue::glue("Biomart Unique Mapping Count: {slices[['Unique Mapping']]}"))
@@ -660,11 +727,11 @@ print(glue::glue("Biomart Unique Mapping Count: {slices[['Unique Mapping']]}"))
 
 **Input Data:**
 
-- `featureset_expression_matrix.biomart_mapped` (R object containing featureset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html), output from [Step 8a](#8a-add-featureset-annotations) above)
+- `probeset_expression_matrix.biomart_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html), output from [Step 8a](#8a-add-probeset-annotations) above)
 
 **Output Data:**
 
-- A pie chart denoting the biomart mapping rates for each unique featureset ID
+- A pie chart denoting the biomart mapping rates for each unique probeset ID
 - A printout denoting the count of unique mappings for biomart mapping
 
 <br>
@@ -720,8 +787,8 @@ design_data <- runsheetToDesignMatrix(runsheet)
 design <- design_data$matrix
 
 # Write SampleTable.csv and contrasts.csv file
-write.csv(design_data$groups, "SampleTable.csv")
-write.csv(design_data$contrasts, "contrasts.csv")
+write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable.csv"))
+write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts.csv"))
 ```
 
 **Input Data:**
@@ -736,7 +803,7 @@ write.csv(design_data$contrasts, "contrasts.csv")
 
 <br>
 
-### 8d. Perform Individual Featureset Level DE
+### 8d. Perform Individual Probeset Level DE
 
 ```R
 lmFitPairwise <- function(norm_data, design) {
@@ -758,7 +825,7 @@ lmFitPairwise <- function(norm_data, design) {
 }
 
 # Calculate results
-res <- lmFitPairwise(featureset_level_data, design)
+res <- lmFitPairwise(probeset_level_data, design)
 
 # Print DE table, without filtering
 limma::write.fit(res, adjust = 'BH', 
@@ -772,11 +839,11 @@ limma::write.fit(res, adjust = 'BH',
 
 - `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
 - `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to, created in [Step 8c](#8c-generate-design-matrix) above)
-- `featureset_level_data` (R object containing featureset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-featureset-summarization))
+- `probeset_level_data` (R object containing probeset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-probeset-summarization))
 
 **Output Data:**
 
-- INTERIM.csv (Statistical values from individual featureset level DE analysis, including:
+- INTERIM.csv (Statistical values from individual probeset level DE analysis, including:
   - Log2fc between all pairwise comparisons
   - T statistic for all pairwise comparison tests
   - P value for all pairwise comparison tests)
@@ -793,7 +860,7 @@ df_interim <- read.csv("INTERIM.csv")
 
 # Bind columns from biomart mapped expression table
 df_interim <- df_interim %>% 
-  dplyr::bind_cols(featureset_expression_matrix.biomart_mapped)
+  dplyr::bind_cols(probeset_expression_matrix.biomart_mapped)
 
 # Reformat column names
 reformat_names <- function(colname, group_name_mapping) {
@@ -978,12 +1045,19 @@ if (!setequal(FINAL_COLUMN_ORDER, colnames(df_interim))) {
 df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 # Save to file
-write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
+write.csv(df_interim, file.path(DIR_DGE, "differential_expression.csv"), row.names = FALSE)
+
+## Output column subset file with just normalized probeset level expression values
+write.csv(
+  df_interim[c(
+  "ProbesetID",
+  all_samples)
+  ], file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_probeset.csv"), row.names = FALSE)
 
 ### Generate and export PCA table for GeneLab visualization plots
-PCA_raw <- prcomp(t(exprs(featureset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
+PCA_raw <- prcomp(t(exprs(probeset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
 write.csv(PCA_raw$x,
-          "visualization_PCA_table.csv"
+          file.path(DIR_DGE, "visualization_PCA_table.csv")
           )
 
 ## Generate raw intensity matrix that includes annotations
@@ -998,17 +1072,38 @@ background_corrected_data_annotated <- oligo::exprs(background_corrected_data) %
   dplyr::left_join(annot, by = "ENSEMBL") %>% # Join with GeneLab Reference Annotation Table
   dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) # Convert NA mapping to 0
 
-## Perform reordering
+## Determine column order for probe level tables
+
+PROBE_INFO_COLUMN_ORDER = c(
+  "ProbesetID",
+  "ProbeID",
+  "count_ENSEMBL_mappings"
+)
+
 FINAL_COLUMN_ORDER <- c(
   ANNOTATIONS_COLUMN_ORDER, 
   PROBE_INFO_COLUMN_ORDER, 
   SAMPLE_COLUMN_ORDER
   )
 
+## Generate raw intensity matrix that includes annotations
+
+background_corrected_data_annotated <- oligo::exprs(background_corrected_data) %>% 
+  as.data.frame() %>%
+  tibble::rownames_to_column(var = "fid") %>% # Ensure rownames (probeset IDs) can be used as join key
+  dplyr::mutate(dplyr::across(fid, as.integer)) %>% # Ensure fid is integer type, consistent with getProbeInfo typing
+  dplyr::right_join(oligo::getProbeInfo(background_corrected_data), by = "fid") %>% # Add 'man_fsetid' via mapping based on fid
+  dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
+  dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
+  dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>% # Join with biomaRt ENSEMBL mappings
+  dplyr::left_join(annot, by = "ENSEMBL") %>% # Join with GeneLab Reference Annotation Table
+  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) # Convert NA mapping to 0
+
+## Perform reordering
 background_corrected_data_annotated <- background_corrected_data_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(background_corrected_data_annotated, "raw_intensities.csv", row.names = FALSE)
+write.csv(background_corrected_data_annotated, file.path(DIR_RAW_DATA, "raw_intensities_probe.csv"), row.names = FALSE)
 
 ## Generate normalized expression matrix that includes annotations
 norm_data_matrix_annotated <- oligo::exprs(norm_data) %>% 
@@ -1017,26 +1112,20 @@ norm_data_matrix_annotated <- oligo::exprs(norm_data) %>%
   dplyr::mutate(dplyr::across(fid, as.integer)) %>% # Ensure fid is integer type, consistent with getProbeInfo typing
   dplyr::right_join(oligo::getProbeInfo(norm_data), by = "fid") %>% # Add 'man_fsetid' via mapping based on fid
   dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
+  dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
   dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>%
   dplyr::left_join(annot, by = "ENSEMBL") %>% # Join with GeneLab Reference Annotation Table
   dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) # Convert NA mapping to 0
 
-## Perform reordering
-FINAL_COLUMN_ORDER <- c(
-  ANNOTATIONS_COLUMN_ORDER, 
-  PROBE_INFO_COLUMN_ORDER, 
-  SAMPLE_COLUMN_ORDER
-  )
 
 norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = FALSE)
-```
+write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe.csv"), row.names = FALSE)
 
 **Input Data:**
 
-- INTERIM.csv (Statistical values from individual featureset level DE analysis, output from [Step 8d](#8d-perform-individual-featureset-level-de) above)
+- INTERIM.csv (Statistical values from individual probeset level DE analysis, output from [Step 8d](#8d-perform-individual-probeset-level-de) above)
 - `annotation_file_path` (Annotation file url from 'genelab_annots_link' column of [GL-DPPD-7110_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) corresponding to the subject organism)
 - `primary_keytype` (Keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL')
 - `background_corrected_data` (R object containing background-corrected microarray data)
@@ -1044,7 +1133,8 @@ write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = F
 
 **Output Data:**
 
-- **differential_expression.csv** (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
+- **differential_expression.csv** (table containing normalized probeset expression values for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations. The ProbesetID is the unique index column.)
+- **normalized_expression_probeset.csv** (table containing the background corrected, normalized probeset expression values for each sample. The ProbesetID is the unique index column.)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
-- **raw_intensities.csv** (table containing the background corrected, unnormalized intensity values for each sample including gene annotations)
-- **normalized_expression.csv** (table containing the background corrected, normalized intensity values for each sample including gene annotations)
+- **raw_intensities_probe.csv** (table containing the background corrected, unnormalized probe intensity values for each sample including gene annotations. The ProbeID is the unique index column.)
+- **normalized_intensities_probe.csv** (table containing the background corrected, normalized probe intensity values for each sample including gene annotations.  The ProbeID is the unique index column.)
