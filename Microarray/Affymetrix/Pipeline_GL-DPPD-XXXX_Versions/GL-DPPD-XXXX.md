@@ -364,14 +364,23 @@ MA_plot <- oligo::MAplot(
 ### 3d. Boxplots
 
 ```R
-par(mar = c(15, 4, 4, 2) + 0.1) 
+count_samples <- dim(raw_data)[2]
+dynamic_text_size <- max(0.5, 1 - (0.005 * count_samples))
+max_samplename_length <- max(nchar(colnames(raw_data)))
+dynamic_bottom_margin <- max_samplename_length * 0.8 * dynamic_text_size
+par(
+  mar = c(dynamic_bottom_margin, 4, 4, 2) + 0.1,
+  cex.axis = dynamic_text_size
+  ) 
 boxplot <- oligo::boxplot(raw_data, 
                           transfo=log2, # Log2 transform raw intensity values
-                          which=c("all"), # Filter to perfect match and mismatch probes
+                          which=c("both"), # Filter to perfect match and mismatch probes
                           nsample=10000, # Number of probes to plot
                           las = 3, # Make x-axis label vertical
-                          main = "Boxplot of raw intensities for perfect match and mismatch probes"
+                          main = "Boxplot of raw intensities \nfor perfect match and mismatch probes"
                           )
+# Reset par
+par(original_par)
 ```
 
 **Input Data:**
@@ -507,14 +516,23 @@ MA_plot <- oligo::MAplot(
 ### 6d. Boxplots
 
 ```R
-par(mar = c(15, 4, 4, 2) + 0.1) 
+count_samples <- dim(norm_data)[2]
+dynamic_text_size <- max(0.5, 1 - (0.005 * count_samples))
+max_samplename_length <- max(nchar(colnames(norm_data)))
+dynamic_bottom_margin <- max_samplename_length * 0.8 * dynamic_text_size
+par(
+  mar = c(dynamic_bottom_margin, 4, 4, 2) + 0.1,
+  cex.axis = dynamic_text_size
+  ) 
 boxplot <- oligo::boxplot(norm_data, 
                           transfo=log2, # Log2 transform raw intensity values
-                          which=c("all"), # Filter to perfect match and mismatch probes
+                          which=c("both"), # Filter to perfect match and mismatch probes
                           nsample=10000, # Number of probes to plot
                           las = 3, # Make x-axis label vertical
-                          main = "Boxplot of raw intensities for perfect match and mismatch probes"
+                          main = "Boxplot of normalized intensities \nfor perfect match and mismatch probes"
                           )
+# Reset par
+par(original_par)
 ```
 
 **Input Data:**
