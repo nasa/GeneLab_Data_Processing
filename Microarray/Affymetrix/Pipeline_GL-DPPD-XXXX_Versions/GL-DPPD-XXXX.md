@@ -292,7 +292,7 @@ par(
   xpd = TRUE # Ensure legend can extend past plot area
 )
 
-number_of_sets = ceiling(dim(raw_data)[2] / 20) # Set of 20 samples, used to scale plot
+number_of_sets = ceiling(dim(norm_data)[2] / 30) # Set of 30 samples, used to scale plot
 
 oligo::hist(raw_data, 
             transfo=log2, # Log2 transform raw intensity values
@@ -457,7 +457,7 @@ par(
   xpd = TRUE # Ensure legend can extend past plot area
 )
 
-number_of_sets = ceiling(dim(norm_data)[2] / 20) # Set of 20 samples, used to scale plot
+number_of_sets = ceiling(dim(norm_data)[2] / 30) # Set of 30 samples, used to scale plot
 
 oligo::hist(norm_data,
             transfo=log2, # Log2 transform normalized intensity values

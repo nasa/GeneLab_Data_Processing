@@ -192,13 +192,17 @@ DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data
 ``` {r qa-for-raw-data--density-plot}
 #| fig-cap: Density of raw intensities for each array. A lack of overlap indicates a need for normalization.
 #| warning: false
+#| column: screen-inset-right # Allow images to flow all the way to the right
+#| fig-width: 14
+#| fig-height: 8
+#| fig-align: left
 
 # Plot settings
 par(
   xpd = TRUE # Ensure legend can extend past plot area
 )
 
-number_of_sets = ceiling(dim(raw_data)[2] / 20) # Set of 20 samples, used to scale plot
+number_of_sets = ceiling(dim(raw_data)[2] / 30) # Set of 30 samples, used to scale plot
 
 oligo::hist(raw_data, 
             transfo=log2, # Log2 transform raw intensity values
@@ -304,13 +308,17 @@ DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data
 ``` {r qa-for-normalized-data--density-plot}
 #| fig-cap: Density of normalized intensities for each array.  A lack of overlap indicates a need for normalization.
 #| warning: false
+#| column: screen-inset-right # Allow images to flow all the way to the right
+#| fig-width: 14
+#| fig-height: 8
+#| fig-align: left
 
 # Plot settings
 par(
   xpd = TRUE # Ensure legend can extend past plot area
 )
 
-number_of_sets = ceiling(dim(norm_data)[2] / 20) # Set of 20 samples, used to scale plot
+number_of_sets = ceiling(dim(norm_data)[2] / 30) # Set of 30 samples, used to scale plot
 
 oligo::hist(norm_data, 
             transfo=log2, # Log2 transform normalized intensity values
