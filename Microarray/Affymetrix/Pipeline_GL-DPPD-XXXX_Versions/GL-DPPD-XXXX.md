@@ -292,11 +292,11 @@ par(
   xpd = TRUE # Ensure legend can extend past plot area
 )
 
-number_of_sets = ceiling(dim(raw_data)[2] / 20) # Set of 20 samples, used to scale plot
+number_of_sets = ceiling(dim(raw_data)[2] / 30) # Set of 30 samples, used to scale plot
 
 oligo::hist(raw_data, 
             transfo=log2, # Log2 transform raw intensity values
-            which=c("both"), # Filter to perfect match and mismatch probes
+            which=c("all"),
             nsample=10000, # Number of probes to plot
             main = "Density of raw intensities for multiple arrays")
 legend("topright", legend = colnames(raw_data@assayData$exprs),
@@ -346,7 +346,8 @@ for ( i in seq_along(1:ncol(raw_data))) {
 ```R
 MA_plot <- oligo::MAplot(
     raw_data, 
-    ylim=c(-2, 4)
+    ylim=c(-2, 4),
+    main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
 )
 ```
 
@@ -374,9 +375,10 @@ par(
   ) 
 boxplot <- oligo::boxplot(raw_data, 
                           transfo=log2, # Log2 transform raw intensity values
-                          which=c("both"), # Filter to perfect match and mismatch probes
+                          which=c("all"),
                           nsample=10000, # Number of probes to plot
                           las = 3, # Make x-axis label vertical
+                          ylab="log2-intensity",
                           main = "Boxplot of raw intensities \nfor perfect match and mismatch probes"
                           )
 # Reset par
@@ -457,11 +459,11 @@ par(
   xpd = TRUE # Ensure legend can extend past plot area
 )
 
-number_of_sets = ceiling(dim(norm_data)[2] / 20) # Set of 20 samples, used to scale plot
+number_of_sets = ceiling(dim(norm_data)[2] / 30) # Set of 30 samples, used to scale plot
 
 oligo::hist(norm_data,
             transfo=log2, # Log2 transform normalized intensity values
-            which=c("both"), # Filter to perfect match and mismatch probes
+            which=c("all"),
             nsample=10000, # Number of probes to plot
             main = "Density of normalized intensities for multiple arrays")
 legend("topright", legend = colnames(norm_data@assayData$exprs),
@@ -511,7 +513,8 @@ for ( i in seq_along(1:ncol(norm_data))) {
 ```R
 MA_plot <- oligo::MAplot(
     norm_data, 
-    ylim=c(-2, 4)
+    ylim=c(-2, 4),
+    main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
 )
 ```
 
@@ -538,9 +541,10 @@ par(
   ) 
 boxplot <- oligo::boxplot(norm_data, 
                           transfo=log2, # Log2 transform normalized intensity values
-                          which=c("both"), # Filter to perfect match and mismatch probes
+                          which=c("all"),
                           nsample=10000, # Number of probes to plot
                           las = 3, # Make x-axis label vertical
+                          ylab="log2-intensity",
                           main = "Boxplot of normalized intensities \nfor perfect match and mismatch probes"
                           )
 # Reset par
@@ -787,7 +791,7 @@ design_data <- runsheetToDesignMatrix(runsheet)
 design <- design_data$matrix
 
 # Write SampleTable.csv and contrasts.csv file
-write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable.csv"))
+write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable.csv"), row.names = FALSE)
 write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts.csv"))
 ```
 
@@ -1050,6 +1054,8 @@ write.csv(df_interim, file.path(DIR_DGE, "differential_expression.csv"), row.nam
 ## Output column subset file with just normalized probeset level expression values
 write.csv(
   df_interim[c(
+  ANNOTATIONS_COLUMN_ORDER,
+  "count_ENSEMBL_mappings",
   "ProbesetID",
   all_samples)
   ], file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_probeset.csv"), row.names = FALSE)
