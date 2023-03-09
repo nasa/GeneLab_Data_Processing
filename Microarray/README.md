@@ -12,7 +12,7 @@
 
 * [Agilent 1-channel](Agilent_1-channel)  
 * [Agilent 2-channel](Agilent_2-channel)  
-* [Affymetrix 1-channel](Affymetrix_1-channel)  
+* [Affymetrix](Affymetrix)  
 * [Illumina 1-channel](Illumina_1-channel)  
 * [Nimblegen 1-channel](Nimblegen_1-channel)  
 * [Nimblegen 2-channel](Nimblegen_2-channel)  

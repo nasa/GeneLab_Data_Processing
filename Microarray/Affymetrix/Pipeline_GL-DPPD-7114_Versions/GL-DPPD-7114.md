@@ -1,15 +1,15 @@
 # GeneLab bioinformatics processing pipeline for Affymetrix microarray data <!-- omit in toc -->
 
-> **This page holds an overview and instructions for how GeneLab processes Affymetrix microarray datasets. Exact processing commands and GL-DPPD-XXXX version used for specific GeneLab datasets (GLDS) are provided with their processed data in the [Open Science Data 
+> **This page holds an overview and instructions for how GeneLab processes Affymetrix microarray datasets. Exact processing commands and GL-DPPD-7114 version used for specific GeneLab datasets (GLDS) are provided with their processed data in the [Open Science Data 
 Repository (OSDR)](https://osdr.nasa.gov/bio/repo).**  
 > 
 > \* The pipeline detailed below is currently used for animal studies only, it will be updated soon for processing plants and microbe microarray data.
 
 ---
 
-**Date:** March 3, 2023  
+**Date:** March XX, 2023  
 **Revision:** -  
-**Document Number:** GL-DPPD-XXXX   
+**Document Number:** GL-DPPD-7114   
 
 **Submitted by:**  
 Jonathan Oribello (GeneLab Data Processing Team)
@@ -60,6 +60,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
 |tibble|3.1.8|[https://tibble.tidyverse.org](https://tibble.tidyverse.org)|
 |stringr|1.5.0|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
 |R.utils|2.12.2|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
+|oligo|1.58.0|[https://bioconductor.org/packages/3.14/bioc/html/oligo.html](https://bioconductor.org/packages/3.14/bioc/html/oligo.html)|
 |limma|3.50.3|[https://bioconductor.org/packages/3.14/bioc/html/limma.html](https://bioconductor.org/packages/3.14/bioc/html/limma.html)|
 |glue|1.6.2|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
 |biomaRt|2.50.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
@@ -1128,6 +1129,7 @@ norm_data_matrix_annotated <- norm_data_matrix_annotated %>%
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe.csv"), row.names = FALSE)
+```
 
 **Input Data:**
 
