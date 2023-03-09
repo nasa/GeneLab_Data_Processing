@@ -60,6 +60,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
 |tibble|3.1.8|[https://tibble.tidyverse.org](https://tibble.tidyverse.org)|
 |stringr|1.5.0|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
 |R.utils|2.12.2|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
+|oligo|1.58.0|[https://bioconductor.org/packages/3.14/bioc/html/oligo.html](https://bioconductor.org/packages/3.14/bioc/html/oligo.html)|
 |limma|3.50.3|[https://bioconductor.org/packages/3.14/bioc/html/limma.html](https://bioconductor.org/packages/3.14/bioc/html/limma.html)|
 |glue|1.6.2|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
 |biomaRt|2.50.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
