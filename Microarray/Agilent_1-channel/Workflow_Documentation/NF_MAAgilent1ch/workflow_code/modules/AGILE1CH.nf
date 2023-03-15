@@ -14,13 +14,12 @@ process AGILE1CH {
   output:
     path("Agile1CMP.html"), emit: report
 
-    tuple path("contrasts.csv"),
-          path("SampleTable.csv"),
-          path("differential_expression.csv"),
-          path("visualization_output_table.csv"),
-          path("visualization_PCA_table.csv"),
-          path("normalized_expression.csv"),
-          path("raw_intensities.csv"), emit: de
+    tuple path("02-limma_DGE/contrasts.csv"),
+          path("02-limma_DGE/SampleTable.csv"),
+          path("02-limma_DGE/differential_expression.csv"),
+          path("02-limma_DGE/visualization_PCA_table.csv"),
+          path("01-limma_NormExp/normalized_expression.csv"),
+          path("00-RawData/raw_intensities.csv"), emit: de
 
     path("versions.yml"), emit: versions 
 

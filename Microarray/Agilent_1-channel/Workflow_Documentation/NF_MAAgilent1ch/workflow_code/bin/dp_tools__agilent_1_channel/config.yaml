@@ -248,16 +248,6 @@ data assets:
             
     resource categories: *DGEAnalysisData
 
-  DE annotated extended for viz table:
-    processed location: 
-      - *DGEDataDir
-      - "visualization_output_table.csv"
-
-    tags:
-      - processed
-            
-    resource categories: *neverPublished
-
   viz PCA table:
     processed location: 
       - *DGEDataDir
