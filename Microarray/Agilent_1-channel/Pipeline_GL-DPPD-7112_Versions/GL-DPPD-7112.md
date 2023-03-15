@@ -154,6 +154,16 @@ library(statmod)
 # Define path to runsheet
 runsheet <- "/path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv"
 
+## Set up output structure
+
+# Output Constants
+DIR_RAW_DATA <- "00-RawData"
+DIR_NORMALIZED_EXPRESSION <- "01-limma_NormExp"
+DIR_DGE <- "02-limma_DGE"
+
+dir.create(DIR_RAW_DATA)
+dir.create(DIR_NORMALIZED_EXPRESSION)
+dir.create(DIR_DGE)
 
 # fileEncoding removes strange characters from the column names
 df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
@@ -704,8 +714,8 @@ design_data <- runsheetToDesignMatrix(runsheet)
 design <- design_data$matrix
 
 # Write SampleTable.csv and contrasts.csv file
-write.csv(design_data$groups, "SampleTable.csv")
-write.csv(design_data$contrasts, "contrasts.csv")
+write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable.csv"), row.names = FALSE)
+write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts.csv"))
 ```
 
 **Input Data:**
@@ -978,7 +988,7 @@ if (!setequal(FINAL_COLUMN_ORDER, colnames(df_interim))) {
 df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 # Save to file
-write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
+write.csv(df_interim, file.path(DIR_DGE, "differential_expression.csv"), row.names = FALSE)
 
 ### Add columns needed to generate GeneLab visualization plots
 ## Add column to indicate the sign (positive/negative) of log2fc for each pairwise comparison
@@ -1018,7 +1028,7 @@ exp_raw <- log2(norm_data$E) # negatives get converted to NA
 exp_raw <- na.omit(norm_data$E)
 PCA_raw <- prcomp(t(exp_raw), scale = FALSE)
 write.csv(PCA_raw$x,
-          "visualization_PCA_table.csv"
+          file.path(DIR_DGE, "visualization_PCA_table.csv")
           )
 
 ## Generate raw intensity matrix that includes annotations
@@ -1047,7 +1057,7 @@ FINAL_COLUMN_ORDER <- c(
 raw_data_matrix_annotated <- raw_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(raw_data_matrix_annotated, "raw_intensities.csv", row.names = FALSE)
+write.csv(raw_data_matrix_annotated, file.path(DIR_RAW_DATA, "raw_intensities.csv"), row.names = FALSE)
 
 
 ## Generate normalized expression matrix that includes annotations
@@ -1069,7 +1079,7 @@ norm_data_matrix_annotated <- merge(
 norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = FALSE)
+write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression.csv"), row.names = FALSE)
 ```
 
 **Input Data:**
