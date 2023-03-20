@@ -242,6 +242,8 @@ for ( array_i in seq(colnames(raw_data$E)) ) {
 ``` {r qa-for-raw-data--foreground-background-plots}
 #| layout-ncol: 2
 #| warning: false # NAN can be produced due to log transformations
+#| column: screen-inset-right # Allow images to flow all the way to the right
+#| fig-align: left
 for ( array_i in seq(colnames(raw_data$E)) ) {
   message(glue::glue("FB Plot for array: {array_i} of {length(colnames(raw_data$E))}")) # NON_DPPD
   sample_name <- rownames(raw_data$targets)[array_i]
