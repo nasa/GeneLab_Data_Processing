@@ -311,7 +311,7 @@ legend("topright", legend = colnames(raw_data),
 ### 3b. Pseudo Image Plots
 
 ```R
-agilentImagePlot <- function(eListRaw) {
+agilentImagePlot <- function(eListRaw, transform_func = identity) {
   # Adapted from this discussion: https://support.bioconductor.org/p/15523/
   copy_raw_data <- eListRaw
   copy_raw_data$genes$Block <- 1 # Agilent arrays only have one block
@@ -325,12 +325,12 @@ agilentImagePlot <- function(eListRaw) {
   y <- rep(NA,nr*nc)
   i <- (r-1)*nc+c
   for ( array_i in seq(colnames(copy_raw_data$E)) ) {
-    y[i] <- log2(copy_raw_data$E[,array_i])
+    y[i] <- transform_func(copy_raw_data$E[,array_i])
     limma::imageplot(y,copy_raw_data$printer, main = rownames(copy_raw_data$targets)[array_i])
   }
 }
 
-agilentImagePlot(raw_data)
+agilentImagePlot(raw_data, transform_func = function(expression_matrix) log2(expression_matrix + 1))
 ```
 
 **Input Data:**
@@ -491,7 +491,9 @@ legend("topright", legend = colnames(norm_data),
 ### 6b. Pseudo Image Plots
 
 ```R
-agilentImagePlot(norm_data)
+agilentImagePlot(norm_data, 
+                 transform_func = function(expression_matrix) log2(2**expression_matrix + 1) # Compute as log2 of normalized expression after adding a +1 offset to prevent negative values in the pseudoimage
+                 )
 ```
 
 **Input Data:**
