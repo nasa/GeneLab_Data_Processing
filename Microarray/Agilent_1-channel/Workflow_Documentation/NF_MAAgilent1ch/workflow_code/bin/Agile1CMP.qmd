@@ -925,20 +925,61 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 ## Version Reporting <!-- non DPPD -->
 
 ```{r version-reporting}
-## print session info ##
-print("Session Info below: ")
 get_versions <- function() {
+  clean_url_field <- function(url_vector) {
+    # URL field can include multiple entries and newline characters
+    #   This helper function extracts just the first url
+
+    # Handle empty fields, populate downstream
+    if (is.null(url_vector)) {  
+      return("NO URLS ENCODED")
+    }
+    tryCatch(
+    {return(
+        (url_vector %>% 
+          stringr::str_split(pattern = ",") %>% # Often split on commas
+          dplyr::first() %>% # Get first token after comma split
+          stringr::str_split(pattern = " ") %>% # Sometimes just spaces to split, e.g. URL: https://github.com/jeroen/curl (devel) https://curl.se/libcurl/  \n(upstream)
+          dplyr::first() %>% # Get first token after space split
+          stringr::str_replace_all(pattern = "\n", replacement = "") # Never allow newlines, hopefully unlikely after prior steps to isolate first url token
+        )[[1]]
+      )},
+    error = function(cond) {
+            print(url_vector)
+            stop(cond)
+        }
+    )
+ 
+  }
+
   # Note: newlines seem duplicated here as 'glue' trims the first and last newline if they exist
   session_info <- sessionInfo()
   # start with just R version
-  versions_buffer <- glue::glue("- R: {session_info[['R.version']][['major']]}.{session_info[['R.version']][['minor']]}\n\n") 
+  versions_buffer <- glue::glue_collapse(c(
+    glue::glue("- name: R"),
+    glue::glue("  version: {session_info[['R.version']][['major']]}.{session_info[['R.version']][['minor']]}"),
+    glue::glue("  homepage: https://www.r-project.org/"),
+    glue::glue("  workflow task: PROCESS_AGILE1CH")
+    ), sep = "\n") 
   # Get 'other attached packages'
   for (software in session_info[["otherPkgs"]]) {
-    versions_buffer <- glue::glue("{versions_buffer}- {software[['Package']]}: {software[['Version']]}\n\n")
+    versions_buffer <- glue::glue_collapse(c(
+      versions_buffer,
+      glue::glue("- name: {software[['Package']]}"),
+      glue::glue("  version: {software[['Version']]}"),
+      glue::glue("  homepage: {clean_url_field(software[['URL']])}"),
+      glue::glue("  workflow task: PROCESS_AGILE1CH")
+      ), sep = "\n") 
   }
   # Get 'loaded via a namespace (and not attached):'
   for (software in session_info[["loadedOnly"]]) {
-    versions_buffer <- glue::glue("{versions_buffer}- {software[['Package']]}: {software[['Version']]}\n\n")
+    versions_buffer <- glue::glue_collapse(c(
+      versions_buffer,
+      glue::glue("- name: {software[['Package']]}"),
+      glue::glue("  version: {software[['Version']]}"),
+      glue::glue("  homepage: {clean_url_field(software[['URL']])}"),
+      glue::glue("  workflow task: PROCESS_AGILE1CH")
+      ), sep = "\n") 
   }
 
   return(versions_buffer)
@@ -946,6 +987,10 @@ get_versions <- function() {
   ## Log same info into versions.txt file
 version_output_fn <- "versions.yml"
 cat(get_versions(), file = version_output_fn, append = TRUE, sep = "\n")
+
+## Print for report
+print("Session Info below: ")
+print(sessionInfo())
 ```
 
 ``` {r save-session}
