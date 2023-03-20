@@ -106,6 +106,31 @@ def validate(
                                 - Halt: At least one condition failed
                     """)
                     )
+            with vp.payload(
+                payloads=[
+                    {
+                        "organism": lambda: dataset.metadata["organism"],
+                        "samples": lambda: set(dataset.samples),
+                        "dge_table": lambda: dataset.data_assets[
+                            "raw intensities table"
+                        ].path,
+                        "runsheet": lambda: dataset.data_assets["runsheet"].path,
+                    }
+                ]
+            ):
+                vp.add(
+                    bulkRNASeq.checks.check_dge_table_annotation_columns_exist,
+                    full_description=textwrap.dedent(f"""
+                            - Check: Ensure ['SYMBOL','GENENAME','REFSEQ','ENTREZID','STRING_id','GOSLIMS_IDS','ENSEMBL'] columns exist (note: 'ENSEMBL' is replaced by 'TAIR' for Arabidospis)
+                                - Reason:
+                                    - These columns should be populated during annotation for all single gene mapping probes
+                                - Potential Source of Problems:
+                                    - Bug in processing script during annotation step
+                                - Flag Condition:
+                                    - Green: All columns present
+                                    - Halt: At least one column is missing
+                        """)
+                    )
         with vp.component_start(
             name="Normalized expression",
             description="",
@@ -130,6 +155,31 @@ def validate(
                                 - Green: All conditions met
                                 - Halt: At least one condition failed
                     """)
+                    )
+            with vp.payload(
+                payloads=[
+                    {
+                        "organism": lambda: dataset.metadata["organism"],
+                        "samples": lambda: set(dataset.samples),
+                        "dge_table": lambda: dataset.data_assets[
+                            "normalized expression table"
+                        ].path,
+                        "runsheet": lambda: dataset.data_assets["runsheet"].path,
+                    }
+                ]
+            ):
+                vp.add(
+                    bulkRNASeq.checks.check_dge_table_annotation_columns_exist,
+                    full_description=textwrap.dedent(f"""
+                            - Check: Ensure ['SYMBOL','GENENAME','REFSEQ','ENTREZID','STRING_id','GOSLIMS_IDS','ENSEMBL'] columns exist (note: 'ENSEMBL' is replaced by 'TAIR' for Arabidospis)
+                                - Reason:
+                                    - These columns should be populated during annotation for all single gene mapping probes
+                                - Potential Source of Problems:
+                                    - Bug in processing script during annotation step
+                                - Flag Condition:
+                                    - Green: All columns present
+                                    - Halt: At least one column is missing
+                        """)
                     )
         with vp.component_start(
             name="DE Metadata",
