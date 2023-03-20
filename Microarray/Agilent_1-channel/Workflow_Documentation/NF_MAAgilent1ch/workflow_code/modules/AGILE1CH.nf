@@ -1,7 +1,8 @@
 process AGILE1CH {
   publishDir "${ params.outputDir }/${ params.gldsAccession }/GeneLab",
     pattern: "Agile1CMP.html",
-    mode: params.publish_dir_mode
+    mode: params.publish_dir_mode,
+    saveAs: { "NF_MAAgilent1ch_v${workflow.manifest.version}.html" }
   stageInMode 'copy'
 
   input:
