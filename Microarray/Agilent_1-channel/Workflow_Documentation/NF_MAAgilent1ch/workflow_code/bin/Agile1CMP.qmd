@@ -258,7 +258,7 @@ for ( array_i in seq(colnames(raw_data$E)) ) {
 #| column: screen-inset-right # Allow images to flow all the way to the right
 #| fig-align: left
 
-boxplotExpressionSafeMargin <- function(data, transform_func = identity, ylab = "Log2 transformed intensities") {
+boxplotExpressionSafeMargin <- function(data, transform_func = identity, ylab = "Log2 intensity") {
   # NON_DPPD:START
   #' plot boxplots of expression values
   #'

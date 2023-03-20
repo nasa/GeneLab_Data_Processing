@@ -386,7 +386,7 @@ for ( array_i in seq(colnames(raw_data$E)) ) {
 ### 3e. Boxplots
 
 ```R
-boxplotExpressionSafeMargin <- function(data, transform_func = identity, ylab = "Log2 transformed intensities") {
+boxplotExpressionSafeMargin <- function(data, transform_func = identity, ylab = "Log2 intensity") {
   longest_sample_name_length <- max(nchar(rownames(data$targets))) * 1
   bottom_margin <- min(35, longest_sample_name_length)
   par(mar=c(bottom_margin,5, 4, 2))
