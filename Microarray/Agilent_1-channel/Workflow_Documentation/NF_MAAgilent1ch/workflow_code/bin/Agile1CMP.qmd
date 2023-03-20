@@ -170,7 +170,10 @@ DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data
 ``` {r qa-for-raw-data--density-plot}
 #| fig-cap: Density of raw intensities for each array.  These are raw intensity values with background intensity values subtracted.  A lack of overlap indicates a need for normalization. # TODO: include me in DPPD
 #| warning: false
-#| fig-height: !expr length(rownames(raw_data$targets)) / 2.5 # Dynamically setting figure height to prevent legend from being cutoff for many arrays
+#| column: screen-inset-right # Allow images to flow all the way to the right
+#| fig-width: 14
+#| fig-height: 9
+#| fig-align: left
 limma::plotDensities(raw_data, 
                      log = TRUE, 
                      legend = "topright")
@@ -181,7 +184,8 @@ limma::plotDensities(raw_data,
 ``` {r qa-for-raw-data--pseudoimage-plots}
 #| warning: false # NAN can be produced due to log transformations
 #| layout-ncol: 2
-agilentImagePlot <- function(eListRaw) {
+#| column: screen-inset-right # Allow images to flow all the way to the right
+#| fig-align: left
   # Adapted from this discussion: https://support.bioconductor.org/p/15523/
   copy_raw_data <- eListRaw
   copy_raw_data$genes$Block <- 1 # Agilent arrays only have one block
@@ -208,6 +212,8 @@ agilentImagePlot(raw_data)
 ``` {r qa-for-raw-data--ma-plots}
 #| layout-ncol: 2
 #| warning: false # NAN can be produced due to log transformations
+#| column: screen-inset-right # Allow images to flow all the way to the right
+#| fig-align: left
 for ( array_i in seq(colnames(raw_data$E)) ) {
   message(glue::glue("MA Plot for array: {array_i} of {length(colnames(raw_data$E))}")) # NON_DPPD
   sample_name <- rownames(raw_data$targets)[array_i]
@@ -232,7 +238,8 @@ for ( array_i in seq(colnames(raw_data$E)) ) {
 
 ``` {r qa-for-raw-data--boxplots}
 #| warning: false # NAN can be produced due to log transformations
-boxplotExpressionSafeMargin <- function(data) {
+#| column: screen-inset-right # Allow images to flow all the way to the right
+#| fig-align: left
   # NON_DPPD:START
   #' plot boxplots of expression values
   #'
@@ -248,7 +255,7 @@ boxplotExpressionSafeMargin <- function(data) {
 boxplotExpressionSafeMargin(raw_data)
 ```
 G
-## Background Correction
+
 
 ``` {r background-correction}
 background_corrected_data <- limma::backgroundCorrect(raw_data, method = "normexp")
@@ -281,7 +288,10 @@ DT::datatable(head(norm_data$genes, n = 20), caption = "First 20 rows of normali
 ``` {r qa-for-norm-data--density-plot}
 #| fig-cap: Density of norm intensities for each array.  Near complete overlap is expected after normalization.
 #| warning: false
-#| fig-height: !expr length(rownames(norm_data$targets)) / 2.5 # Dynamically setting figure height to prevent legend from being cutoff for many arrays
+#| column: screen-inset-right # Allow images to flow all the way to the right
+#| fig-width: 14
+#| fig-height: 9
+#| fig-align: left
 limma::plotDensities(norm_data, 
                      log = TRUE, 
                      legend = "topright")
@@ -292,7 +302,8 @@ limma::plotDensities(norm_data,
 ``` {r qa-for-norm-data--pseudoimage-plots}
 #| warning: false # NAN can be produced due to log transformations
 #| layout-ncol: 2
-agilentImagePlot(norm_data)
+#| column: screen-inset-right # Allow images to flow all the way to the right
+#| fig-align: left
 ```
 
 ### MA Plots
@@ -300,6 +311,8 @@ agilentImagePlot(norm_data)
 ``` {r qa-for-norm-data--ma-plots}
 #| layout-ncol: 2
 #| warning: false # NAN can be produced due to log transformations
+#| column: screen-inset-right # Allow images to flow all the way to the right
+#| fig-align: left
 for ( array_i in seq(colnames(norm_data$E)) ) {
   sample_name <- rownames(norm_data$targets)[array_i]
   limma::plotMA(norm_data,array=array_i,xlab="Average log-expression",ylab="Expression log-ratio (this sample vs. others)", main = sample_name, status=norm_data$genes$ControlType)
@@ -311,6 +324,9 @@ for ( array_i in seq(colnames(norm_data$E)) ) {
 
 ``` {r qa-for-norm-data--boxplots}
 #| warning: false # NAN can be produced due to log transformations
+#| column: screen-inset-right # Allow images to flow all the way to the right
+#| fig-align: left
+
 boxplotExpressionSafeMargin(norm_data)
 ```
 
@@ -332,7 +348,7 @@ Based on this discussion, the folowing approach is utilized:
 2. Compute all mapping statistics (i.e. multimapping (one-probe to many-genes), redudant mapping (many-probes to one-gene))
 3. Perform DE with and without filtering (assessing effects of filtering on row-wise results)
 
-Don't summarize the results from the probe level since any probe with a single gene mapping being DE implies the gene a DEG. https://support.bioconductor.org/p/93796/#116605
+Don't summarize the results from the probe level since any probe with a single gene mapping being DE implies the gene is a DEG. https://support.bioconductor.org/p/93796/#116605
 
 
 ### Probe Differential Expression (DE)
@@ -570,7 +586,8 @@ limma::write.fit(res, adjust = 'BH',
 ### Add Additional Columns and Format DE Table 
 
 ``` {r add-additional-columns-and-format-de-table}
-#| message = FALSE
+#| warning: false
+#| message: false
 ## Reformat Table for consistency across DE analyses tables within GeneLab ##
 
 # Read in DE table 
