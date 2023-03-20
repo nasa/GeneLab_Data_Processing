@@ -19,9 +19,13 @@ process AGILE1CH {
           path("02-limma_DGE/differential_expression.csv"),
           path("02-limma_DGE/visualization_PCA_table.csv"),
           path("01-limma_NormExp/normalized_expression.csv"),
-          path("00-RawData/raw_intensities.csv"), emit: de
+          path("00-RawData/raw_intensities.csv"), emit: de_all_files
 
-    path("versions.yml"), emit: versions 
+    tuple path("02-limma_DGE"),
+          path("01-limma_NormExp"),
+          path("00-RawData"), emit: de
+
+    path("versions.yml"), emit: versions // Note: Quarto version captured in script body.  R versions captured during render (part of qmd code).
 
   script:
     def limit_biomart_query_parameter = limit_biomart_query ? "-P DEBUG_limit_biomart_query:${limit_biomart_query}" : ''
@@ -32,6 +36,11 @@ process AGILE1CH {
             -P 'organism:${organism}' \
             ${limit_biomart_query_parameter}
 
-        echo "- quarto: \$(quarto --version)" >> versions.yml
+        cat >> versions.yml <<END_OF_VERSIONS
+        - name: quarto
+          version: \$(quarto --version)
+          homepage: https://quarto.org/
+          workflow task: ${task.process}
+        END_OF_VERSIONS
     """
 }

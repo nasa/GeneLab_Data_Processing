@@ -4,10 +4,9 @@ VERSION: "0"
 
 # anchors for reuse
 _anchors:
-  DGEDataDir: &DGEDataDir "00-DE"
-  rseqcDataDir: &rseqcDataDir "RSeQC_Analyses" # DISCUSS: Should this be renamed to "RSeQC_Analyses" for consistent casing? -J.O. , this has been renamed and differs from the recent bash based processings
-  ERCCAnalysisDir: &ERCCAnalysisDir "ERCC_Analysis"
-  FastQC_Reports: &FastQC_Reports "FastQC_Reports"
+  RawDataDir: &RawDataDir "00-RawData"
+  NormExpDir: &NormExpDir "01-limma_NormExp"
+  DGEDataDir: &DGEDataDir "02-limma_DGE"
   neverPublished: &neverPublished
     subcategory: null
     subdirectory: null
@@ -220,7 +219,7 @@ data assets:
 
   raw intensities table:
     processed location: 
-      - *DGEDataDir
+      - *RawDataDir
       - "raw_intensities.csv"
 
     tags:
@@ -230,7 +229,7 @@ data assets:
 
   normalized expression table:
     processed location: 
-      - *DGEDataDir
+      - *NormExpDir
       - "normalized_expression.csv"
 
     tags:
