@@ -63,9 +63,9 @@ Lauren Sanders (acting GeneLab Project Scientist)
 |biomaRt|2.50.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
 |matrixStats|0.63.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
 |statmod|1.5.0|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
-|dp_tools|1.2.0|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
+|dp_tools|1.3.0|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |singularity|3.9|[https://sylabs.io](https://sylabs.io)|
-|Quarto|1.1.251|[https://quarto.org](https://quarto.org)|
+|Quarto|1.2.313|[https://quarto.org](https://quarto.org)|
 
 ---
 
@@ -80,6 +80,8 @@ Lauren Sanders (acting GeneLab Project Scientist)
 ## 1. Create Sample RunSheet
 
 > Notes: 
+> - Rather than running the commands below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_Agile1CMP-A/examples/README.md).
+> 
 > - These command line tools are part of the [dp_tools](https://github.com/J-81/dp_tools) program.
 
 ```bash
@@ -154,6 +156,16 @@ library(statmod)
 # Define path to runsheet
 runsheet <- "/path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv"
 
+## Set up output structure
+
+# Output Constants
+DIR_RAW_DATA <- "00-RawData"
+DIR_NORMALIZED_EXPRESSION <- "01-limma_NormExp"
+DIR_DGE <- "02-limma_DGE"
+
+dir.create(DIR_RAW_DATA)
+dir.create(DIR_NORMALIZED_EXPRESSION)
+dir.create(DIR_DGE)
 
 # fileEncoding removes strange characters from the column names
 df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
@@ -270,9 +282,22 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 ### 3a. Density Plot
 
 ```R
+# Plot settings
+par(
+  xpd = TRUE # Ensure legend can extend past plot area
+)
+
+number_of_sets = ceiling(dim(raw_data)[2] / 30) # Set of 30 samples, used to scale plot
+
 limma::plotDensities(raw_data, 
                      log = TRUE, 
-                     legend = "topright")
+                     legend = FALSE)
+legend("topright", legend = colnames(raw_data),
+        lty = 1, # Solid line
+        col = 1:ncol(raw_data), # Ensure legend color is in sync with plot
+        ncol = number_of_sets, # Set number of columns by number of sets
+        cex = max(0.3, 1 + 0.2 - (number_of_sets*0.2)) # Reduce scale by 20% for each column beyond 1, minimum of 0.3
+      )
 ```
 
 **Input Data:**
@@ -288,7 +313,7 @@ limma::plotDensities(raw_data,
 ### 3b. Pseudo Image Plots
 
 ```R
-agilentImagePlot <- function(eListRaw) {
+agilentImagePlot <- function(eListRaw, transform_func = identity) {
   # Adapted from this discussion: https://support.bioconductor.org/p/15523/
   copy_raw_data <- eListRaw
   copy_raw_data$genes$Block <- 1 # Agilent arrays only have one block
@@ -302,12 +327,12 @@ agilentImagePlot <- function(eListRaw) {
   y <- rep(NA,nr*nc)
   i <- (r-1)*nc+c
   for ( array_i in seq(colnames(copy_raw_data$E)) ) {
-    y[i] <- log2(copy_raw_data$E[,array_i])
+    y[i] <- transform_func(copy_raw_data$E[,array_i])
     limma::imageplot(y,copy_raw_data$printer, main = rownames(copy_raw_data$targets)[array_i])
   }
 }
 
-agilentImagePlot(raw_data)
+agilentImagePlot(raw_data, transform_func = function(expression_matrix) log2(expression_matrix + 1))
 ```
 
 **Input Data:**
@@ -361,14 +386,14 @@ for ( array_i in seq(colnames(raw_data$E)) ) {
 ### 3e. Boxplots
 
 ```R
-boxplotExpressionSafeMargin <- function(data) {
+boxplotExpressionSafeMargin <- function(data, transform_func = identity, ylab = "Log2 transformed intensities") {
   longest_sample_name_length <- max(nchar(rownames(data$targets))) * 1
   bottom_margin <- min(35, longest_sample_name_length)
-  par(mar=c(bottom_margin,2,1,1))
-  boxplot(log2(data$E), las=2)
+  par(mar=c(bottom_margin,5, 4, 2))
+  boxplot(transform_func(data$E), las=2, ylab = ylab)
 }
 
-boxplotExpressionSafeMargin(raw_data)
+boxplotExpressionSafeMargin(raw_data, transform_func = log2)
 ```
 
 **Input Data:**
@@ -437,9 +462,22 @@ print(paste0("Number of Probes: ", dim(norm_data)[1]))
 ### 6a. Density Plot
 
 ```R
+# Plot settings
+par(
+  xpd = TRUE # Ensure legend can extend past plot area
+)
+
+number_of_sets = ceiling(dim(norm_data)[2] / 30) # Set of 30 samples, used to scale plot
+
 limma::plotDensities(norm_data, 
                      log = TRUE, 
-                     legend = "topright")
+                     legend = FALSE)
+legend("topright", legend = colnames(norm_data),
+        lty = 1, # Solid line
+        col = 1:ncol(norm_data), # Ensure legend color is in sync with plot
+        ncol = number_of_sets, # Set number of columns by number of sets
+        cex = max(0.3, 1 + 0.2 - (number_of_sets*0.2)) # Reduce scale by 20% for each column beyond 1, minimum of 0.3
+      )
 ```
 
 **Input Data:**
@@ -455,7 +493,9 @@ limma::plotDensities(norm_data,
 ### 6b. Pseudo Image Plots
 
 ```R
-agilentImagePlot(norm_data)
+agilentImagePlot(norm_data, 
+                 transform_func = function(expression_matrix) log2(2**expression_matrix + 1) # Compute as log2 of normalized expression after adding a +1 offset to prevent negative values in the pseudoimage
+                 )
 ```
 
 **Input Data:**
@@ -609,7 +649,7 @@ norm_data$genes <- norm_data$genes %>%
 
 - `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - `df_rs$'Array Design REF'` (array design reference specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
-- ENSEMBL_VERSION (reference organism Ensembl version indicated in the `ensemblVersion` column of the [GL-DPPD-7110_annotations.csv](../../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
+- ENSEMBL_VERSION (reference organism Ensembl version indicated in the `ensemblVersion` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
 - `norm_data$genes` (Manufacturer's probe metadata, including probe IDs and sequence position gene annotations associated with the `norm_data` R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
 
 **Output Data:**
@@ -704,8 +744,8 @@ design_data <- runsheetToDesignMatrix(runsheet)
 design <- design_data$matrix
 
 # Write SampleTable.csv and contrasts.csv file
-write.csv(design_data$groups, "SampleTable.csv")
-write.csv(design_data$contrasts, "contrasts.csv")
+write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable.csv"), row.names = FALSE)
+write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts.csv"))
 ```
 
 **Input Data:**
@@ -978,39 +1018,7 @@ if (!setequal(FINAL_COLUMN_ORDER, colnames(df_interim))) {
 df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 # Save to file
-write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
-
-### Add columns needed to generate GeneLab visualization plots
-## Add column to indicate the sign (positive/negative) of log2fc for each pairwise comparison
-df <- df_interim
-updown_table <- sign(df[,grep("Log2fc_",colnames(df))])
-colnames(updown_table) <- gsub("Log2fc","Updown",grep("Log2fc_",colnames(df),value = TRUE))
-df <- cbind(df,updown_table)
-rm(updown_table)
-## Add column to indicate contrast significance with p <= 0.1
-sig.1_table <- df[,grep("Adj.p.value_",colnames(df))]<=.1
-colnames(sig.1_table) <- gsub("Adj.p.value","Sig.1",grep("Adj.p.value_",colnames(df),value = TRUE))
-df <- cbind(df,sig.1_table)
-rm(sig.1_table)
-## Add column to indicate contrast significance with p <= 0.05
-sig.05_table <- df[,grep("Adj.p.value_",colnames(df))]<=.05
-colnames(sig.05_table) <- gsub("Adj.p.value","Sig.05",grep("Adj.p.value_",colnames(df),value = TRUE))
-df <- cbind(df, sig.05_table)
-rm(sig.05_table)
-## Add columns for the volcano plot with p-value and adjusted p-value
-log_pval_table <- log2(df[,grep("P.value_", colnames(df))])
-colnames(log_pval_table) <- paste0("Log2_", colnames(log_pval_table))
-df <- cbind(df, log_pval_table)
-rm(log_pval_table)
-log_adj_pval_table <- log2(df[,grep("Adj.p.value_", colnames(df))])
-colnames(log_adj_pval_table) <- paste0("Log2_", colnames(log_adj_pval_table))
-df <- cbind(df, log_adj_pval_table)
-rm(log_adj_pval_table)
-
-write.csv(df,
-          row.names = FALSE,
-          "visualization_output_table.csv"
-          )
+write.csv(df_interim, file.path(DIR_DGE, "differential_expression.csv"), row.names = FALSE)
 
 ### Generate and export PCA table for GeneLab visualization plots
 ## Only use positive expression values, negative values can make up a small portion ( < 0.5% ) of normalized expression values and cannot be log transformed
@@ -1018,7 +1026,7 @@ exp_raw <- log2(norm_data$E) # negatives get converted to NA
 exp_raw <- na.omit(norm_data$E)
 PCA_raw <- prcomp(t(exp_raw), scale = FALSE)
 write.csv(PCA_raw$x,
-          "visualization_PCA_table.csv"
+          file.path(DIR_DGE, "visualization_PCA_table.csv")
           )
 
 ## Generate raw intensity matrix that includes annotations
@@ -1047,7 +1055,7 @@ FINAL_COLUMN_ORDER <- c(
 raw_data_matrix_annotated <- raw_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(raw_data_matrix_annotated, "raw_intensities.csv", row.names = FALSE)
+write.csv(raw_data_matrix_annotated, file.path(DIR_RAW_DATA, "raw_intensities.csv"), row.names = FALSE)
 
 
 ## Generate normalized expression matrix that includes annotations
@@ -1069,7 +1077,7 @@ norm_data_matrix_annotated <- merge(
 norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = FALSE)
+write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression.csv"), row.names = FALSE)
 ```
 
 **Input Data:**
@@ -1083,7 +1091,6 @@ write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = F
 **Output Data:**
 
 - **differential_expression.csv** (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
-- visualization_output_table.csv (file used to generate GeneLab DGE visualizations)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
 - **raw_intensities.csv** (table containing the background corrected unnormalized intensity values for each sample including gene annotations)
 - **normalized_expression.csv** (table containing the background corrected, normalized intensity values for each sample including gene annotations)
