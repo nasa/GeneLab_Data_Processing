@@ -9,6 +9,7 @@ include { PARSE_ANNOTATION_TABLE } from './modules/PARSE_ANNOTATION_TABLE.nf'
 include { VV_AGILE1CH } from './modules/VV_AGILE1CH.nf'
 include { AGILE1CH } from './modules/AGILE1CH.nf'
 include { RUNSHEET_FROM_GLDS } from './modules/RUNSHEET_FROM_GLDS.nf'
+include { GENERATE_SOFTWARE_TABLE } from './modules/GENERATE_SOFTWARE_TABLE'
 
 /**************************************************
 * HELP MENU  **************************************
@@ -86,17 +87,22 @@ workflow {
       )
 
     // Software Version Capturing
-    nf_version = "- nextflow: ".concat("${nextflow.version}")
+    nf_version = "- name: nextflow\n  ".concat(
+"""
+- version: ${nextflow.version}
+- homepage: https://www.nextflow.io
+- workflow task: N/A
+""")
     ch_software_versions = Channel.value(nf_version)
     AGILE1CH.out.versions | map{ it -> it.text } | mix(ch_software_versions) | set{ch_software_versions}
     VV_AGILE1CH.out.versions | map{ it -> it.text } | mix(ch_software_versions) | set{ch_software_versions}
     ch_software_versions | unique 
                          | collectFile(
-                            name: "${ params.outputDir }/${ params.gldsAccession }/GeneLab/software_versions.yml", 
                             newLine: true, 
                             sort: true,
                             cache: false
                             )
+                         | GENERATE_SOFTWARE_TABLE
 
     emit:
       meta = ch_meta 
