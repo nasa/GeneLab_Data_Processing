@@ -269,8 +269,8 @@ for ( array_i in seq(colnames(raw_data$E)) ) {
 
 boxplotExpressionSafeMargin(raw_data)
 ```
-G
 
+## Background Correction
 
 ``` {r background-correction}
 background_corrected_data <- limma::backgroundCorrect(raw_data, method = "normexp")
