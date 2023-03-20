@@ -10,7 +10,7 @@ nextflow_pipeline {
                 // define parameters here. Example: 
                 osdAccession = "OSD-542"
                 gldsAccession = "GLDS-542"
-                outputDir = file("test-datasets-extended/testdata")
+                outputDir = file("/tmp/.nf-test/tests/f8e4a2468b9782955384329fe1207804/output")
             }
         }
 
