@@ -384,14 +384,14 @@ for ( array_i in seq(colnames(raw_data$E)) ) {
 ### 3e. Boxplots
 
 ```R
-boxplotExpressionSafeMargin <- function(data) {
+boxplotExpressionSafeMargin <- function(data, transform_func = identity, ylab = "Log2 transformed intensities") {
   longest_sample_name_length <- max(nchar(rownames(data$targets))) * 1
   bottom_margin <- min(35, longest_sample_name_length)
-  par(mar=c(bottom_margin,2,1,1))
-  boxplot(log2(data$E), las=2)
+  par(mar=c(bottom_margin,5, 4, 2))
+  boxplot(transform_func(data$E), las=2, ylab = ylab)
 }
 
-boxplotExpressionSafeMargin(raw_data)
+boxplotExpressionSafeMargin(raw_data, transform_func = log2)
 ```
 
 **Input Data:**
