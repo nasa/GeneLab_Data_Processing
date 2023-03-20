@@ -280,9 +280,22 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 ### 3a. Density Plot
 
 ```R
+# Plot settings
+par(
+  xpd = TRUE # Ensure legend can extend past plot area
+)
+
+number_of_sets = ceiling(dim(raw_data)[2] / 30) # Set of 30 samples, used to scale plot
+
 limma::plotDensities(raw_data, 
                      log = TRUE, 
-                     legend = "topright")
+                     legend = FALSE)
+legend("topright", legend = colnames(raw_data),
+        lty = 1, # Solid line
+        col = 1:ncol(raw_data), # Ensure legend color is in sync with plot
+        ncol = number_of_sets, # Set number of columns by number of sets
+        cex = 1 + 0.2 - (number_of_sets*0.2) # Reduce scale by 20% for each column beyond 1
+      )
 ```
 
 **Input Data:**
@@ -447,9 +460,22 @@ print(paste0("Number of Probes: ", dim(norm_data)[1]))
 ### 6a. Density Plot
 
 ```R
+# Plot settings
+par(
+  xpd = TRUE # Ensure legend can extend past plot area
+)
+
+number_of_sets = ceiling(dim(norm_data)[2] / 30) # Set of 30 samples, used to scale plot
+
 limma::plotDensities(norm_data, 
                      log = TRUE, 
-                     legend = "topright")
+                     legend = FALSE)
+legend("topright", legend = colnames(norm_data),
+        lty = 1, # Solid line
+        col = 1:ncol(norm_data), # Ensure legend color is in sync with plot
+        ncol = number_of_sets, # Set number of columns by number of sets
+        cex = 1 + 0.2 - (number_of_sets*0.2) # Reduce scale by 20% for each column beyond 1
+      )
 ```
 
 **Input Data:**
