@@ -107,6 +107,9 @@ def main():
     samples = list(datasystem.dataset.samples)
     ValidationProtocol.append_sample_column(report["flag_table"], samples=samples)
     df = report["flag_table"]
+
+    # Replace any newlines in validation report
+    df['message'] = df['message'].str.replace("\n","::")
     output_fn = f"VV_log.tsv"
     df.to_csv(output_fn, sep="\t")
 
