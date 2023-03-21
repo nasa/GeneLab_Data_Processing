@@ -225,7 +225,12 @@ data assets:
     tags:
       - processed
             
-    resource categories: *DGEAnalysisData
+    resource categories:
+      subcategory: Raw Intensities Table
+      subdirectory: ""
+      publish to repo: true
+      include subdirectory in table: false
+      table order: 1
 
   normalized expression table:
     processed location: 
@@ -235,7 +240,12 @@ data assets:
     tags:
       - processed
             
-    resource categories: *DGEAnalysisData
+    resource categories:
+      subcategory: Normalized Expression Table
+      subdirectory: ""
+      publish to repo: true
+      include subdirectory in table: false
+      table order: 2
 
   DE annotated table:
     processed location: 
