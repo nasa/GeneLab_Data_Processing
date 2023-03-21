@@ -12,7 +12,7 @@ process AGILE1CH {
     val(limit_biomart_query) // DEBUG option, limits biomart queries to the number specified if not set to false
 
   output:
-    path("Agile1CMP.html"), emit: report
+    path("NF_MAAgilent1ch_v${workflow.manifest.version}.html"), emit: report
 
     tuple path("02-limma_DGE/contrasts.csv"),
           path("02-limma_DGE/SampleTable.csv"),
