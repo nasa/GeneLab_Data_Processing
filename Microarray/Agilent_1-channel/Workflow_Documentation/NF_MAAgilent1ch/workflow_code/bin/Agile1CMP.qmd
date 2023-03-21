@@ -189,7 +189,7 @@ legend("topright", legend = colnames(raw_data),
         lty = 1, # Solid line
         col = 1:ncol(raw_data), # Ensure legend color is in sync with plot
         ncol = number_of_sets, # Set number of columns by number of sets
-        cex = max(0.3, 1 + 0.2 - (number_of_sets*0.2)) # Reduce scale by 20% for each column beyond 1, minimum of 0.3
+        cex = max(0.5, 1 + 0.2 - (number_of_sets*0.2)) # Reduce scale by 20% for each column beyond 1, minimum of 0.5
       )
 ```
 
@@ -326,7 +326,7 @@ legend("topright", legend = colnames(norm_data),
         lty = 1, # Solid line
         col = 1:ncol(norm_data), # Ensure legend color is in sync with plot
         ncol = number_of_sets, # Set number of columns by number of sets
-        cex = max(0.3, 1 + 0.2 - (number_of_sets*0.2)) # Reduce scale by 20% for each column beyond 1, minimum of 0.3
+        cex = max(0.5, 1 + 0.2 - (number_of_sets*0.2)) # Reduce scale by 20% for each column beyond 1, minimum of 0.5
       )
 ```
 
