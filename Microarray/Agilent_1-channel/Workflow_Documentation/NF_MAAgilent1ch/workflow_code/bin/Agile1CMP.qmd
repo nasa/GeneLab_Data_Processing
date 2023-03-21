@@ -289,7 +289,7 @@ background_corrected_data <- limma::backgroundCorrect(raw_data, method = "normex
 # Normalize background-corrected data using the quantile method
 norm_data <- limma::normalizeBetweenArrays(background_corrected_data, method = "quantile")
 print("Summarized Normalized Data Below") # NON_DPPD
-print("Note: These are expected to be the same values as the normalized data since no filtering/summarization has been performed") # NON_DPPD
+print("Note: These are expected to be the same values as the raw data since no filtering/summarization has been performed") # NON_DPPD
 
 # Summarize background-corrected and normalized data
 print(paste0("Number of Arrays: ", dim(norm_data)[2]))
