@@ -257,8 +257,8 @@ for ( array_i in seq(colnames(raw_data$E)) ) {
 #| warning: false # NAN can be produced due to log transformations
 #| column: screen-inset-right # Allow images to flow all the way to the right
 #| fig-align: left
-
-boxplotExpressionSafeMargin <- function(data, transform_func = identity, ylab = "Log2 intensity") {
+#| fig-width: 14
+#| fig-height: !expr ncol(raw_data) * 0.2
   # NON_DPPD:START
   #' plot boxplots of expression values
   #'
@@ -362,7 +362,8 @@ for ( array_i in seq(colnames(norm_data$E)) ) {
 #| warning: false # NAN can be produced due to log transformations
 #| column: screen-inset-right # Allow images to flow all the way to the right
 #| fig-align: left
-
+#| fig-width: 14
+#| fig-height: !expr ncol(norm_data) * 0.2
 boxplotExpressionSafeMargin(norm_data)
 ```
 
