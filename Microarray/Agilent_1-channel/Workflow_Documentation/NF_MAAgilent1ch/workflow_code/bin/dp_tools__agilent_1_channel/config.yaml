@@ -173,7 +173,7 @@ ISA Meta:
       technology: "microarray"
 
   # this is prepended to all file names in the curation assay table
-  Global file prefix: "{datasystem}_microarray_"
+  Global file prefix: "{datasystem}_array_"
 
   # configuration related to updating investigation file
   # each must refer to a STUDY PROCESS in the 'ISA_investigation.yaml' file
