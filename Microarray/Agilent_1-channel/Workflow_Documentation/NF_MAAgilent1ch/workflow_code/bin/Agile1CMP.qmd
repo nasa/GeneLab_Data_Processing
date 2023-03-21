@@ -79,7 +79,6 @@ annotation_file_path <- fetch_organism_specific_annotation_file_path(unique(df_r
 # NON_DPPD:START
 print("Here is the embedded runsheet")
 DT::datatable(df_rs)
-print("Here are the expected comparison groups")
 # NON_DPPD:END
 print("Loading Raw Data...") # NON_DPPD
 allTrue <- function(i_vector) {
