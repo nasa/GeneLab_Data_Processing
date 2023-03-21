@@ -1,8 +1,7 @@
 process AGILE1CH {
   publishDir "${ params.outputDir }/${ params.gldsAccession }/GeneLab",
-    pattern: "Agile1CMP.html",
-    mode: params.publish_dir_mode,
-    saveAs: { "NF_MAAgilent1ch_v${workflow.manifest.version}.html" }
+    pattern: "NF_MAAgilent1ch_v${workflow.manifest.version}.html",
+    mode: params.publish_dir_mode
   stageInMode 'copy'
 
   input:
@@ -36,6 +35,9 @@ process AGILE1CH {
             -P 'annotation_file_path:${annotation_file_path}' \
             -P 'organism:${organism}' \
             ${limit_biomart_query_parameter}
+
+        # Rename report
+        mv Agile1CMP.html NF_MAAgilent1ch_v${workflow.manifest.version}.html
 
         cat >> versions.yml <<END_OF_VERSIONS
         - name: quarto
