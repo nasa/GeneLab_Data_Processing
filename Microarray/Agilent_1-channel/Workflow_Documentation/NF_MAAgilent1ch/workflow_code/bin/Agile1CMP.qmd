@@ -259,16 +259,19 @@ for ( array_i in seq(colnames(raw_data$E)) ) {
 #| fig-align: left
 #| fig-width: 14
 #| fig-height: !expr ncol(raw_data) * 0.2
+boxplotExpressionSafeMargin <- function(data, transform_func = identity, xlab = "Log2 Intensity") {
   # NON_DPPD:START
   #' plot boxplots of expression values
   #'
   #' Ensures the plot labels are vertical and fit the plot
   #' @param data: limma::EListRaw or limma::EList
   # NON_DPPD:END
-  longest_sample_name_length <- max(nchar(rownames(data$targets))) * 1
-  bottom_margin <- min(35, longest_sample_name_length)
-  par(mar=c(bottom_margin,5, 4, 2))
-  boxplot(transform_func(data$E), las=2, ylab = ylab)
+  # Basic box plot
+  df_data <- as.data.frame(transform_func(data$E))
+  ggplot2::ggplot(stack(df_data), ggplot2::aes(x=values, y=ind)) + 
+    ggplot2::geom_boxplot() + 
+    ggplot2::scale_y_discrete(limits=rev) +
+    ggplot2::labs(y= "Sample Name", x = xlab)
 }
 
 boxplotExpressionSafeMargin(raw_data, transform_func = log2)

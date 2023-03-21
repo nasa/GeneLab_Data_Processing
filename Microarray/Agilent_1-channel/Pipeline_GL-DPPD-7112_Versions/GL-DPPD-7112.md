@@ -60,6 +60,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
 |R.utils|2.12.2|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
 |limma|3.50.3|[https://bioconductor.org/packages/3.14/bioc/html/limma.html](https://bioconductor.org/packages/3.14/bioc/html/limma.html)|
 |glue|1.6.2|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
+|ggplot2|3.4.0|[https://ggplot2.tidyverse.org](https://ggplot2.tidyverse.org)|
 |biomaRt|2.50.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
 |matrixStats|0.63.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
 |statmod|1.5.0|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
@@ -386,11 +387,13 @@ for ( array_i in seq(colnames(raw_data$E)) ) {
 ### 3e. Boxplots
 
 ```R
-boxplotExpressionSafeMargin <- function(data, transform_func = identity, ylab = "Log2 intensity") {
-  longest_sample_name_length <- max(nchar(rownames(data$targets))) * 1
-  bottom_margin <- min(35, longest_sample_name_length)
-  par(mar=c(bottom_margin,5, 4, 2))
-  boxplot(transform_func(data$E), las=2, ylab = ylab)
+boxplotExpressionSafeMargin <- function(data, transform_func = identity, xlab = "Log2 Intensity") {
+  # Basic box plot
+  df_data <- as.data.frame(transform_func(data$E))
+  ggplot2::ggplot(stack(df_data), ggplot2::aes(x=values, y=ind)) + 
+    ggplot2::geom_boxplot() + 
+    ggplot2::scale_y_discrete(limits=rev) +
+    ggplot2::labs(y= "Sample Name", x = xlab)
 }
 
 boxplotExpressionSafeMargin(raw_data, transform_func = log2)
