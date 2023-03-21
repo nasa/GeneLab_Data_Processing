@@ -14,6 +14,7 @@ AGILENT_SOFTWARE_DPPD = [
     "R.utils",
     "limma",
     "glue",
+    "ggplot2",
     "biomaRt",
     "matrixStats",
     "statmod",
