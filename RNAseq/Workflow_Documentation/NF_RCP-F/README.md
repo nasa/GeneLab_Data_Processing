@@ -61,7 +61,6 @@ document](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md):
    4b. [Approach 2: Run the workflow on a GeneLab RNAseq dataset using local Ensembl reference fasta and gtf files](#4b-approach-2-run-the-workflow-on-a-genelab-rnaseq-dataset-using-local-ensembl-reference-fasta-and-gtf-files)  
    4c. [Approach 3: Run the workflow on a non-GLDS dataset using a user-created runsheet](#4c-approach-3-run-the-workflow-on-a-non-glds-dataset-using-a-user-created-runsheet)  
 5. [Additional Output Files](#5-additional-output-files)  
-6. [Known Issues to Look Out For](#6-known-issues-to-look-out-for)  
 
 <br>
 
@@ -81,13 +80,6 @@ Nextflow can be installed either through [Anaconda](https://anaconda.org/biocond
 > conda install -c bioconda nextflow
 > nextflow self-update
 > ```
-  
-  
-After Nextflow is installed, run the following command to set the Nextflow version to address [known issues with the latest Nextflow versions](#6-known-issues-to-look-out-for):
-
-```bash
-export NXF_VER=21.10.6
-```
 
 <br>
 
@@ -109,9 +101,9 @@ All files required for utilizing the NF_RCP-F GeneLab workflow for processing RN
 copy of latest NF_RCP-F version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
 
 ```bash
-wget https://github.com/asaravia-butler/GeneLab_Data_Processing/releases/download/NF_RCP-F_1.0.0/NF_RCP-F_1.0.0.zip
+wget https://github.com/asaravia-butler/GeneLab_Data_Processing/releases/download/NF_RCP-F_1.0.1/NF_RCP-F_1.0.1.zip
 
-unzip NF_RCP-F_1.0.0.zip
+unzip NF_RCP-F_1.0.1.zip
 ```
 
 <br>
@@ -123,10 +115,10 @@ unzip NF_RCP-F_1.0.0.zip
 Although Nextflow can fetch Singularity images from a url, doing so may cause issues as detailed [here](https://github.com/nextflow-io/nextflow/issues/1210).
 
 To avoid this issue, run the following command to fetch the Singularity images prior to running the NF_RCP-F workflow:
-> Note: This command should be run in the location containing the `NF_RCP-F_1.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files) above. Depending on your network speed, fetching the images will take ~20 minutes.  
+> Note: This command should be run in the location containing the `NF_RCP-F_1.0.1` directory that was downloaded in [step 2](#2-download-the-workflow-files) above. Depending on your network speed, fetching the images will take ~20 minutes.  
 
 ```bash
-bash NF_RCP-F_1.0.0/bin/prepull_singularity.sh NF_RCP-F_1.0.0/config/software/by_docker_image.config
+bash NF_RCP-F_1.0.1/bin/prepull_singularity.sh NF_RCP-F_1.0.1/config/software/by_docker_image.config
 ```
 
 
@@ -142,7 +134,7 @@ export NXF_SINGULARITY_CACHEDIR=$(pwd)/singularity
 
 ### 4. Run the Workflow
 
-While in the location containing the `NF_RCP-F_1.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are three examples of how to run the NF_RCP-F workflow:
+While in the location containing the `NF_RCP-F_1.0.1` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are three examples of how to run the NF_RCP-F workflow:
 > Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --ensemblVersion) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
 
 <br>
@@ -150,7 +142,7 @@ While in the location containing the `NF_RCP-F_1.0.0` directory that was downloa
 #### 4a. Approach 1: Run the workflow on a GeneLab RNAseq dataset with automatic retrieval of Ensembl reference fasta and gtf files
 
 ```bash
-nextflow run NF_RCP-F_1.0.0/main.nf \ 
+nextflow run NF_RCP-F_1.0.1/main.nf \ 
    -profile singularity \
    --gldsAccession GLDS-194 
 ```
@@ -160,7 +152,7 @@ nextflow run NF_RCP-F_1.0.0/main.nf \
 #### 4b. Approach 2: Run the workflow on a GeneLab RNAseq dataset using local Ensembl reference fasta and gtf files
 
 ```bash
-nextflow run NF_RCP-F_1.0.0/main.nf \ 
+nextflow run NF_RCP-F_1.0.1/main.nf \ 
    -profile singularity \
    --gldsAccession GLDS-194 \
    --ensemblVersion 107 \
@@ -176,7 +168,7 @@ nextflow run NF_RCP-F_1.0.0/main.nf \
 > Note: Specifications for creating a runsheet manually are described [here](examples/runsheet/README.md).
 
 ```bash
-nextflow run NF_RCP-F_1.0.0/main.nf \ 
+nextflow run NF_RCP-F_1.0.1/main.nf \ 
    -profile singularity \
    --runsheetPath </path/to/runsheet> 
 ```
@@ -185,7 +177,7 @@ nextflow run NF_RCP-F_1.0.0/main.nf \
 
 **Required Parameters For All Approaches:**
 
-* `NF_RCP-F_1.0.0/main.nf` - Instructs Nextflow to run the NF_RCP-F workflow 
+* `NF_RCP-F_1.0.1/main.nf` - Instructs Nextflow to run the NF_RCP-F workflow 
 
 * `-profile` - Specifies the configuration profile(s) to load, `singularity` instructs Nextflow to setup and use singularity for all software called in the workflow
 
@@ -231,7 +223,7 @@ nextflow run NF_RCP-F_1.0.0/main.nf \
 All parameters listed above and additional optional arguments for the RCP workflow, including debug related options that may not be immediately useful for most users, can be viewed by running the following command:
 
 ```bash
-nextflow run NF_RCP-F_1.0.0/main.nf --help
+nextflow run NF_RCP-F_1.0.1/main.nf --help
 ```
 
 See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details common to all nextflow workflows.
@@ -279,13 +271,3 @@ Standard Nextflow resource usage logs are also produced as follows:
 
 <br>
 
----
-
-### 6. Known Issues to Look Out For
-
-**Recent Nextflow versions introduced a bug that causes the workflow to fail during retrieval of files from the GeneLab Repository.**
-
-- [Nextflow Issue 2918 Link](https://github.com/nextflow-io/nextflow/issues/2918)
-- This will be fixed in an upcoming release of Nextflow. In the meantime, the workflow should work with Nextflow Version 21.10.6, which predates the introduction of the bug.
-   - We recommend setting the environment variable 'NXF_VER=21.10.6' to allow Nextflow to automatically update/downgrade to that version on launch.
-  
