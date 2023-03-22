@@ -9,6 +9,7 @@ import re
 import os, sys
 import numpy as np
 import codecs
+import warnings
 import argparse
 import tempfile
 import zipfile
@@ -422,39 +423,17 @@ def s_file_parse(s_file):
 # output : none
 # **************************************************************************************************************
 def a_file_parse(a_file, i_file, metadata_directory):
+    for filename, device_type in i_file.assay_map.items():
+        if device_type == "":
+            warnings.warn("Found 'null' device type, likely due to empty field, skipping")
+            continue
 
-    for i in range(len(i_file.assay_tech_types)):
-        device_type = i_file.assay_tech_types[i]
+        if device_type == "Image analysis":
+            warnings.warn("Image analysis data file parsing is not yet supported.")
+            continue
+
         # replace spaces with _ to match file name
         device_type = device_type.replace(" ", "_")
-        # Exception for old DNA microarray datasets were files were named just DNA microarray
-        if device_type == "DNA_microarray":
-            device_type = "microarray"
-
-        # open assay file for device type
-        file_found = 0
-        filename = ""
-        for file in i_file.assay_file_names:
-            # compare case insensitively
-            # compare with '-' matching '_'
-            if device_type.lower().replace("-", "_") in file.lower().replace("-", "_"):
-                filename = file
-                file_found = 1
-            else:
-                if device_type == "microarray":
-                    if "GeneChip" in file:
-                        filename = file
-                        file_found = 1
-                if device_type == "mass_spectrometry":
-                    if "proteomics" in file:
-                        filename = file
-                        file_found = 1
-
-        if file_found == 0:
-            print(
-                "ERROR: Could not find an assay file for the device type.\n Make sure the assay file name contains the device type or contact Ana to add it."
-            )
-            sys.exit()
 
         file_name_a = metadata_directory + "/" + filename
         if file_name_a == "":
@@ -463,19 +442,17 @@ def a_file_parse(a_file, i_file, metadata_directory):
                 + device_type
                 + ". Please make sure the metadata files are complete and named correctly."
             )
-            print("The device type must be included in the asssay file name.")
+            print("The device type must be included in the assay file name.")
             sys.exit()
-        try:
-            f1 = open(
-                os.path.join(metadata_directory, file_name_a),
-                "r",
-                encoding="windows-1252",
-            )
-            assay_file = f1.read()
-            f1.close()
-            assay_file = clean_file(assay_file)
-        except Exception as e:
-            print(e)
+
+        f1 = open(
+            os.path.join(metadata_directory, file_name_a),
+            "r",
+            encoding="windows-1252",
+        )
+        assay_file = f1.read()
+        f1.close()
+        assay_file = clean_file(assay_file)
 
         if assay_file == "":
             print("ERROR: The assay file for " + device_type + "is empty.")
@@ -539,19 +516,19 @@ def create_table(i_file, s_file, a_file, data_columns, column_index, glds_num):
     line += "Sample Name\t"
 
     # Next columns are file names, for headers add file type and assay type between ()
-    for i in range(len(i_file.assay_tech_types)):
+    for assay_type in i_file.assay_tech_types:
         # for nucleotide sequencing, bisulfite sequencing and rna sequencing Raw Data File is included
-        if "sequencing" in i_file.assay_tech_types[i].lower():
-            header.append("Raw Data File (" + i_file.assay_tech_types[i] + ")")
-            line += "Raw Data File (" + i_file.assay_tech_types[i] + ")\t"
+        if "sequencing" in assay_type.lower():
+            header.append("Raw Data File (" + assay_type + ")")
+            line += "Raw Data File (" + assay_type + ")\t"
         # for microarray array data file is included
-        elif "microarray" in i_file.assay_tech_types[i].lower():
-            header.append("Array Data File (" + i_file.assay_tech_types[i] + ")")
-            line += "Array Data File (" + i_file.assay_tech_types[i] + ")\t"
+        elif "microarray" in assay_type.lower():
+            header.append("Array Data File (" + assay_type + ")")
+            line += "Array Data File (" + assay_type + ")\t"
         # for mass spectrometry raw spectral data file is included
-        elif "spectrometry" in i_file.assay_tech_types[i].lower():
-            header.append("Raw Spectral Data File (" + i_file.assay_tech_types[i] + ")")
-            line += "Raw Spectral Data File (" + i_file.assay_tech_types[i] + ")\t"
+        elif "spectrometry" in assay_type.lower():
+            header.append("Raw Spectral Data File (" + assay_type + ")")
+            line += "Raw Spectral Data File (" + assay_type + ")\t"
 
     # GLDS #
     header.append("GLDS-#")
@@ -614,6 +591,13 @@ def create_table(i_file, s_file, a_file, data_columns, column_index, glds_num):
 
             # column 2 -> n = number of device types : file names
             if j > 0 and j <= len(i_file.assay_tech_types):
+                if i_file.assay_tech_types[j - 1] == 'Image analysis':
+                    warnings.warn("Image analysis data file parsing is not yet supported.")
+                    continue
+                if i_file.assay_tech_types[j - 1] == '':
+                    warnings.warn("Found 'null' device type, likely due to empty field, skipping")
+                    continue
+
                 assay_row = -1
                 for row, element in enumerate(a_file.sample_names[j - 1]):
                     # check if sample is included in specific assay file
@@ -632,6 +616,13 @@ def create_table(i_file, s_file, a_file, data_columns, column_index, glds_num):
 
             # column n+2 : device type
             if j == len(i_file.assay_tech_types) + 2:
+                if i_file.assay_tech_types[j - 1 - 2] == '':
+                    warnings.warn("Found 'null' device type, likely due to empty field, skipping")
+                    continue
+                if i_file.assay_tech_types[j - 1 - 2] == 'Image analysis':
+                    warnings.warn("Image analysis data file parsing is not yet supported.")
+                    continue
+
                 # flag to see if it's first value added
                 flag = 0
                 for k in range(len(i_file.assay_tech_types)):
@@ -801,6 +792,10 @@ class investigation_file_class:
         self.assay_file_names = []
         # list of device types (for each device type there must be an assay file)
         self.assay_tech_types = []
+
+    @property
+    def assay_map(self):
+        return {assay_filename:assay_type for  assay_filename, assay_type in zip(self.assay_file_names, self.assay_tech_types)}
 
 
 if __name__ == "__main__":

@@ -209,13 +209,11 @@ workflow {
 
     QUANTIFY_RSEM_GENES( ch_samples_txt, rsem_ch )
 
-    organism_ch = channel.fromPath( params.reference_table )
 
     // Note: This is loaded as a zip file to ensure correct caching (directories don't seem to yield identical hases)
     ch_r_scripts = channel.fromPath( "${ projectDir }/bin/dge_annotation_R_scripts.zip" ) 
 
     DGE_BY_DESEQ2(STAGING.out.runsheet, 
-                  organism_ch, 
                   COUNT_ALIGNED.out.gene_counts | toSortedList, 
                   ch_meta, 
                   REFERENCES.out.gene_annotations, 

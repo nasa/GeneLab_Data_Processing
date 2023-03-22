@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3](https://github.com/asaravia-butler/GeneLab_Data_Processing/tree/NF_RCP-F_1.0.3/RNAseq/Workflow_Documentation/NF_RCP-F) - 2023-01-25
+
+### Added
+
+- Test coverage using [nf-test](https://github.com/askimed/nf-test) approach
+
+### Changed
+
+- Updated software versions (via container update)
+  - tximport == 1.27.1
+
+### Fixed
+
+- 'ERCC Non detection causes non-silent error' #65
+- 'This function is not compatible with certain updated ISA archive metadata filenaming' #56
+- 'Groups can become misassigned during group statistic calculation' #55
+- 'sample to filename mapping fails when sample names are prefix substrings of other sample names' #60
+- Fixed Singularity specific container issue related to DESeq2 steps
+
 ## [1.0.2](https://github.com/asaravia-butler/GeneLab_Data_Processing/tree/NF_RCP-F_1.0.2/RNAseq/Workflow_Documentation/NF_RCP-F) - 2022-11-30
 
 ### Added

@@ -296,9 +296,11 @@ def main(software_versions_path: Path):
     df = df.set_index(keys="Program")
     # print(df.head())
     # find any software not in conserved list (e.g. organism specific annotation databases)
-    extra_software = set(df.index).difference(set(PUBLISH_TABLE_ORDER))
+    extra_software = list(set(df.index).difference(set(PUBLISH_TABLE_ORDER)))
+    # sort to ensure reproducible output
+    extra_software.sort()
     # and add to end of the table
-    PUBLISH_TABLE_ORDER.extend(list(extra_software))
+    PUBLISH_TABLE_ORDER.extend(extra_software)
     # print(PUBLISH_TABLE_ORDER)
     print(df)
     print(PUBLISH_TABLE_ORDER)

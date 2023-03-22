@@ -5,7 +5,6 @@ process DGE_BY_DESEQ2 {
 
   input:
     path("runsheet.csv")
-    path(organisms_csv)
     path("Rsem_gene_counts/*")
     val(meta)
     path(annotation_file)
