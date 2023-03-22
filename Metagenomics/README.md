@@ -9,6 +9,7 @@
 * [Illumina](Illumina)  
 
 <br>
+
 ---
 
 ## Licenses
@@ -21,6 +22,7 @@ The software for the Metagenomics pipelines is released under the [NASA Open Sou
 Licenses for the 3rd party open source software utilized in the Metagenomics pipelines can be found in the [3rd_Party_Licenses sub-directory](../3rd_Party_Licenses/Amplicon_and_Metagenomics_3rd_Party_Software.md) on the GeneLab_Data_Processing GitHub repository landing page. 
 
 <br>
+
 ---
 
 ## Notices
