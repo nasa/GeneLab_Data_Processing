@@ -37,6 +37,12 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
 
 - Fixed edge case where `contrasts.csv` and `ERCCnorm_contrasts.csv` table header and rows could become out of sync with each other in [step 9c](#9c-configure-metadata-sample-grouping-and-group-comparisons) and [step 9e](#9e-perform-dge-on-datasets-with-ercc-spike-in) by generating rows from header rather than generating both separately.
 
+- Updated R version from 4.1.2 to 4.1.3.
+
+- Fixed edge case where certain scripts would crash if sample names were prefixes of other sample names. This had affected [step 4c](#4c-tablulate-star-counts-in-r), [step 8c](#8c-calculate-total-number-of-genes-expressed-per-sample-in-r), and [step 9d](#9d-import-rsem-genecounts).
+
+- Fixed rare edge case where groupwise mean and standard deviations could become misassociated to incorrect groups. This had affected [step 9f](#9f-prepare-genelab-dge-tables-with-annotations-on-datasets-with-ercc-spike-in) and [step 9i](#9i-prepare-genelab-dge-tables-with-annotations-on-datasets-without-ercc-spike-in).
+
 ---
 
 # Table of contents  
@@ -110,12 +116,12 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
 |geneBody_coverage|4.0.0|[http://rseqc.sourceforge.net/#genebody-coverage-py](http://rseqc.sourceforge.net/#genebody-coverage-py)|
 |inner_distance|4.0.0|[http://rseqc.sourceforge.net/#inner-distance-py](http://rseqc.sourceforge.net/#inner-distance-py)|
 |read_distribution|4.0.0|[http://rseqc.sourceforge.net/#read-distribution-py](http://rseqc.sourceforge.net/#read-distribution-py)|
-|R|4.1.2|[https://www.r-project.org/](https://www.r-project.org/)|
+|R|4.1.3|[https://www.r-project.org/](https://www.r-project.org/)|
 |Bioconductor|3.14.0|[https://bioconductor.org](https://bioconductor.org)|
 |DESeq2|1.34|[https://bioconductor.org/packages/release/bioc/html/DESeq2.html](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)|
-|tximport|1.22|[https://bioconductor.org/packages/release/bioc/html/tximport.html](https://bioconductor.org/packages/release/bioc/html/tximport.html)|
+|tximport|1.27.1|[https://github.com/mikelove/tximport](https://github.com/mikelove/tximport)|
 |tidyverse|1.3.1|[https://www.tidyverse.org](https://www.tidyverse.org)|
-|dp_tools|1.1.5|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
+|dp_tools|1.1.8|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |singularity|3.9|[https://sylabs.io/](https://sylabs.io/)|
 |stringr|1.4.1|[https://github.com/tidyverse/stringr](https://github.com/tidyverse/stringr)|
 |pandas|1.5.0|[https://github.com/pandas-dev/pandas](https://github.com/pandas-dev/pandas)|
@@ -455,7 +461,7 @@ study <- read.csv(Sys.glob(file.path(work_dir,"samples.txt")), header = FALSE, r
 ff <- list.files(file.path(align_dir), pattern = "ReadsPerGene.out.tab", recursive=TRUE, full.names = TRUE)
 
 ## Reorder the *genes.results files to match the ordering of the ISA samples
-ff <- ff[sapply(rownames(study), function(x)grep(paste0(x,'_ReadsPerGene.out.tab$'), ff, value=FALSE))]
+ff <- ff[sapply(rownames(study), function(x)grep(paste0(align_dir, '/', x,'_ReadsPerGene.out.tab$'), ff, value=FALSE))]
 
 # Remove the first 4 lines
 counts.files <- lapply( ff, read.table, skip = 4 )
@@ -942,7 +948,7 @@ samples <- read.csv(Sys.glob(file.path(work_dir,"samples.txt")), header = FALSE,
 files <- list.files(file.path(counts_dir),pattern = ".genes.results", full.names = TRUE)
 
 ### reorder the genes.results files to match the ordering of the samples in the metadata file
-files <- files[sapply(rownames(samples), function(x)grep(paste0(x,'.genes.results$'), files, value=FALSE))]
+files <- files[sapply(rownames(samples), function(x)grep(paste0(counts_dir, '/',  x,'.genes.results$'), files, value=FALSE))]
 
 names(files) <- rownames(samples)
 txi.rsem <- tximport(files, type = "rsem", txIn = FALSE, txOut = FALSE)
@@ -981,7 +987,7 @@ sessionInfo()
 
 ### 9a. Create Sample RunSheet
 
-> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_RCP-F/examples/README.md).
+> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_RCP-F/examples/runsheet/README.md).
 
 ```bash
 ### Download the *ISA.zip file from the GeneLab Repository ###
@@ -1137,7 +1143,7 @@ files <- list.files(file.path(counts_dir),pattern = ".genes.results", full.names
 
 ### Reorder the *genes.results files to match the ordering of the ISA samples ###
 
-files <- files[sapply(rownames(study), function(x)grep(paste0(x,".genes.results$"), files, value=FALSE))]
+files <- files[sapply(rownames(study), function(x)grep(paste0(counts_dir, '/', x,".genes.results$"), files, value=FALSE))]
 
 names(files) <- rownames(study)
 txi.rsem <- tximport(files, type = "rsem", txIn = FALSE, txOut = FALSE)
@@ -1386,19 +1392,18 @@ reduced_output_table_1$LRT.p.value <- res_1_lrt@listData$padj
 ### Generate and add group mean and stdev columns to the (non-ERCC) DGE table ###
 
 tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- group
-group_means <- as.data.frame(t(aggregate(. ~ group,data = tcounts,mean)))
-group_means <- group_means[-c(1),]
-colnames(group_means) <- paste0("Group.Mean_",levels(factor(names(group))))
-group_stdev <- as.data.frame(t(aggregate(. ~ group,data = tcounts,sd)))
-group_stdev <- group_stdev[-c(1),]
-colnames(group_stdev) <- paste0("Group.Stdev_",levels(factor(names(group))))
+tcounts$group <- names(group) # Used final table group name formatting (e.g. '( Space Flight & Blue Light )' )
 
-output_table_1 <- cbind(output_table_1,group_means)
-reduced_output_table_1 <- cbind(reduced_output_table_1,group_means)
+group_means <- as.data.frame(t(aggregate(. ~ group,data = tcounts,mean))) # Compute group name group-wise means
+colnames(group_means) <- paste0("Group.Mean_", group_means['group',]) # assign group name as column names
 
-output_table_1 <- cbind(output_table_1,group_stdev)
-reduced_output_table_1 <- cbind(reduced_output_table_1,group_stdev)
+group_stdev <- as.data.frame(t(aggregate(. ~ group,data = tcounts,sd))) # Compute group name group-wise standard deviation
+colnames(group_stdev) <- paste0("Group.Stdev_", group_stdev['group',]) # assign group name as column names
+
+group_means <- group_means[-c(1),] # Drop group name row from data rows (now present as column names)
+group_stdev <- group_stdev[-c(1),] # Drop group name row from data rows (now present as column names)
+output_table_1 <- cbind(output_table_1,group_means, group_stdev) # Column bind the group-wise data
+reduced_output_table_1 <- cbind(reduced_output_table_1,group_means, group_stdev) # Column bind the group-wise data
 
 rm(group_stdev,group_means,tcounts)
 
@@ -1515,19 +1520,18 @@ reduced_output_table_2$LRT.p.value <- res_2_lrt@listData$padj
 ### Generate and add group mean and stdev columns to the ERCC-normalized DGE table ###
 
 tcounts <- as.data.frame(t(ERCCnormCounts))
-tcounts$group_sub <- group_sub
-group_means <- as.data.frame(t(aggregate(. ~ group_sub,data = tcounts,mean)))
-group_means <- group_means[-c(1),]
-colnames(group_means) <- paste0("Group.Mean_",levels(factor(names(group_sub))))
-group_stdev <- as.data.frame(t(aggregate(. ~ group_sub,data = tcounts,sd)))
-group_stdev <- group_stdev[-c(1),]
-colnames(group_stdev) <- paste0("Group.Stdev_",levels(factor(names(group_sub))))
+tcounts$group_sub <- names(group_sub) # Used final table group name formatting (e.g. '( Space Flight & Blue Light )' )
 
-output_table_2 <- cbind(output_table_2,group_means)
-reduced_output_table_2 <- cbind(reduced_output_table_2,group_means)
+group_means <- as.data.frame(t(aggregate(. ~ group_sub,data = tcounts,mean))) # Compute group name group-wise means
+colnames(group_means) <- paste0("Group.Mean_", group_means['group_sub',]) # assign group name as column names
 
-output_table_2 <- cbind(output_table_2,group_stdev)
-reduced_output_table_2 <- cbind(reduced_output_table_2,group_stdev)
+group_stdev <- as.data.frame(t(aggregate(. ~ group_sub,data = tcounts,sd))) # Compute group name group-wise standard deviation
+colnames(group_stdev) <- paste0("Group.Stdev_", group_stdev['group_sub',]) # assign group name as column names
+
+group_means <- group_means[-c(1),] # Drop group name row from data rows (now present as column names)
+group_stdev <- group_stdev[-c(1),] # Drop group name row from data rows (now present as column names)
+output_table_2 <- cbind(output_table_2,group_means, group_stdev) # Column bind the group-wise data
+reduced_output_table_2 <- cbind(reduced_output_table_2,group_means, group_stdev) # Column bind the group-wise data
 
 rm(group_stdev,group_means,tcounts)
 
@@ -1734,19 +1738,18 @@ reduced_output_table_1$LRT.p.value <- res_1_lrt@listData$padj
 ### Generate and add group mean and stdev columns to the DGE table ###
 
 tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- group
-group_means <- as.data.frame(t(aggregate(. ~ group,data = tcounts,mean)))
-group_means <- group_means[-c(1),]
-colnames(group_means) <- paste0("Group.Mean_",levels(factor(names(group))))
-group_stdev <- as.data.frame(t(aggregate(. ~ group,data = tcounts,sd)))
-group_stdev <- group_stdev[-c(1),]
-colnames(group_stdev) <- paste0("Group.Stdev_",levels(factor(names(group))))
+tcounts$group <- names(group) # Used final table group name formatting (e.g. '( Space Flight & Blue Light )' )
 
-output_table_1 <- cbind(output_table_1,group_means)
-reduced_output_table_1 <- cbind(reduced_output_table_1,group_means)
+group_means <- as.data.frame(t(aggregate(. ~ group,data = tcounts,mean))) # Compute group name group-wise means
+colnames(group_means) <- paste0("Group.Mean_", group_means['group',]) # assign group name as column names
 
-output_table_1 <- cbind(output_table_1,group_stdev)
-reduced_output_table_1 <- cbind(reduced_output_table_1,group_stdev)
+group_stdev <- as.data.frame(t(aggregate(. ~ group,data = tcounts,sd))) # Compute group name group-wise standard deviation
+colnames(group_stdev) <- paste0("Group.Stdev_", group_stdev['group',]) # assign group name as column names
+
+group_means <- group_means[-c(1),] # Drop group name row from data rows (now present as column names)
+group_stdev <- group_stdev[-c(1),] # Drop group name row from data rows (now present as column names)
+output_table_1 <- cbind(output_table_1,group_means, group_stdev) # Column bind the group-wise data
+reduced_output_table_1 <- cbind(reduced_output_table_1,group_means, group_stdev) # Column bind the group-wise data
 
 rm(group_stdev,group_means,tcounts)
 
