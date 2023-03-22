@@ -109,7 +109,7 @@ All files required for utilizing the NF_RCP-F GeneLab workflow for processing RN
 copy of latest NF_RCP-F version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
 
 ```bash
-wget https://github.com/asaravia-butler/GeneLab_Data_Processing/releases/download/NF_RCP-F_1.0.0/NF_RCP-F_1.0.0.zip
+wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/NF_RCP-F_1.0.0/NF_RCP-F_1.0.0.zip
 
 unzip NF_RCP-F_1.0.0.zip
 ```
