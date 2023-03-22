@@ -25,7 +25,7 @@ params:
 
 ```{r, setup, include=FALSE}
 knitr::opts_knit$set(root.dir = params$work_dir)
-suppressMessages(library(knitr))
+library(knitr)
 ```
 
 ```{r libary-loading, message = params$verbose, warning = params$verbose}
@@ -34,9 +34,9 @@ suppressMessages(library(knitr))
 options(timeout=600)
 
 # Import libraries (tximport, DESeq2, tidyverse, Risa)
-suppressMessages(library(tximport))
-suppressMessages(library(DESeq2))
-suppressMessages(library(stringr))
+library(tximport)
+library(DESeq2)
+library(stringr)
 
 params
 yaml::write_yaml(params, "last_params.yml")
@@ -66,7 +66,7 @@ compare_csv <- compare_csv_from_runsheet(params$runsheet_path)
 
 ```{r isa-to-compare_df, include=(!is.null(params$isa_path)), eval=(!is.null(params$isa_path))}
 # TODO: Remove this route, ISA zip support will be dropped as of DPPD-7101-F
-suppressMessages(library(Risa))
+library(Risa)
 
 compare_csv_from_isa_archive <- function(isa_path) {
     td = tempdir()

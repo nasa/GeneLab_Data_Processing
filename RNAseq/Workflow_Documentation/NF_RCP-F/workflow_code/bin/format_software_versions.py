@@ -14,6 +14,8 @@ PUBLISH_TABLE_ORDER = [
     "MultiQC",
     "Cutadapt",
     "TrimGalore!",
+    "gtfToGenePred",
+    "genePredToBed",
     "STAR",
     "RSEM",
     "R",
@@ -25,6 +27,20 @@ PUBLISH_TABLE_ORDER = [
     # "PANTHER.db",
 ]
 
+# Certain tools lack a way to print version information and thus cannot be capture dynamically as part of the workflow
+# As a workaround, those tool versions should be manually specified here
+MANUALLY_DEFINED = [
+    {
+        "Program": "gtfToGenePred",
+        "Version": "377",
+        "Relevant Links": "https://anaconda.org/bioconda/ucsc-gtftogenepred",
+    },
+    {
+        "Program": "genePredToBed",
+        "Version": "377",
+        "Relevant Links": "https://anaconda.org/bioconda/ucsc-genepredtobed",
+    },
+]
 
 def _parse_samtools_block(text) -> dict:
     """Parses an Samtools version output"""
@@ -273,6 +289,9 @@ def main(software_versions_path: Path):
             print(f"WARNING: Script does not know how to parse: {text_block}")
             pass
     # print(results)
+    # Add manually defined versions
+    results.extend(MANUALLY_DEFINED)
+
     df = pd.DataFrame(results)
     df = df.set_index(keys="Program")
     # print(df.head())
