@@ -1,0 +1,86 @@
+---
+title: Extend Differential Expresssion Table To Generate Visualization Table
+output: 
+    html_document:
+        code_folding: show
+params:
+    input_table_path: "norm_counts_output/Normalized_Counts.csv"
+    table_sep: ","
+    pca_table_output_prefix: ""
+    pca_table_output_suffix: ""
+    output_base_fn: "visualization_PCA_table"
+    work_dir: "." # should be set to launch directory 
+---
+
+## Results {.tabset}
+
+### Setup
+```{r, setup, include=FALSE}
+knitr::opts_knit$set(root.dir = params$work_dir)
+library(knitr)
+```
+
+```{r}
+# allow more flexibility in download time
+# useful for slower connections where the default of 60 seconds might be exceeded
+options(timeout = 600)
+
+library(dplyr)
+library(tibble)
+```
+
+### Output
+
+```{r, load-table-to-extend}
+normCounts <- read.csv(params$input_table_path,
+                       sep = params$table_sep,
+                       row.names = 1,
+                       check.names = FALSE
+                      )
+# DT::datatable(head(df),
+#   caption = "First few rows of the input table on load",
+#   extensions = "FixedColumns",
+#   options = list(
+#     dom = "t",
+#     scrollX = TRUE,
+#     fixedColumns = TRUE
+#   )
+# )
+```
+
+```{r, add-viz-columns}
+### Generate and export PCA table for GeneLab visualization plots
+## Add 1 to all counts to avoid issues with log transformation
+exp_raw <- log2(normCounts + 1)
+PCA_raw <- prcomp(t(exp_raw), scale = FALSE)
+dir.create(dirname(paste0(params$pca_table_output_prefix, "_")), recursive = TRUE)
+write.csv(PCA_raw$x,
+          paste0(params$pca_table_output_prefix,
+                 params$output_base_fn,
+                 params$pca_table_output_suffix)
+          )
+
+# DT::datatable(as.data.frame(PCA_raw$x),
+#   caption = "PCA Table",
+#   extensions = "FixedColumns",
+#   options = list(
+#     dom = "t",
+#     scrollX = TRUE,
+#     fixedColumns = FALSE
+#   )
+# )
+```
+
+```{r version-reporting}
+## print session info ##
+print("Session Info below: ")
+sessionInfo()
+## Log same info into versions.txt file
+version_output_fn <- "versions.txt"
+cat(capture.output(sessionInfo()),
+    "BioC_version_associated_with_R_version",
+    toString(tools:::.BioC_version_associated_with_R_version()),
+    file = version_output_fn,
+    append = TRUE,
+    sep = "\n")
+```

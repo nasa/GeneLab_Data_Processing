@@ -1,0 +1,10 @@
+name: ucsc_gtf_Pred_BED
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - python
+  - ucsc-gtftogenepred
+  - ucsc-genepredtobed
