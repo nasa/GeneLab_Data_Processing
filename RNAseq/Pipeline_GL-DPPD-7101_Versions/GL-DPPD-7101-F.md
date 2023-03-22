@@ -39,9 +39,9 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
 
 - Updated R version from 4.1.2 to 4.1.3.
 
-- Fixed edge case where certain scripts would crash if sample names were prefixes of other sample names. This had affected [step 4c](#4c-tablulate-star-counts-in-r), [step 8c](#8c-calculate-total-number-of-genes-expressed-per-sample-in-r), and [step 9d](#9d-import-rsem-genecounts)
+- Fixed edge case where certain scripts would crash if sample names were prefixes of other sample names. This had affected [step 4c](#4c-tablulate-star-counts-in-r), [step 8c](#8c-calculate-total-number-of-genes-expressed-per-sample-in-r), and [step 9d](#9d-import-rsem-genecounts).
 
-- Fixed rare edge case where groupwise mean and standard deviations could become misassociated to incorrect groups. This had affected [step 9f](#9f-prepare-genelab-dge-tables-with-annotations-on-datasets-with-ercc-spike-in) and [step 9i](#9i-prepare-genelab-dge-tables-with-annotations-on-datasets-without-ercc-spike-in)
+- Fixed rare edge case where groupwise mean and standard deviations could become misassociated to incorrect groups. This had affected [step 9f](#9f-prepare-genelab-dge-tables-with-annotations-on-datasets-with-ercc-spike-in) and [step 9i](#9i-prepare-genelab-dge-tables-with-annotations-on-datasets-without-ercc-spike-in).
 
 ---
 
@@ -121,6 +121,8 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
 |DESeq2|1.34|[https://bioconductor.org/packages/release/bioc/html/DESeq2.html](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)|
 |tximport|1.27.1|[https://github.com/mikelove/tximport](https://github.com/mikelove/tximport)|
 |tidyverse|1.3.1|[https://www.tidyverse.org](https://www.tidyverse.org)|
+|dp_tools|1.1.5|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
+|singularity|3.9|[https://sylabs.io/](https://sylabs.io/)|
 |stringr|1.4.1|[https://github.com/tidyverse/stringr](https://github.com/tidyverse/stringr)|
 |dp_tools|1.1.8|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |pandas|1.5.0|[https://github.com/pandas-dev/pandas](https://github.com/pandas-dev/pandas)|
