@@ -1097,7 +1097,7 @@ compare_csv_from_runsheet <- function(runsheet_path) {
 
 ### Load metadata from runsheet csv file ###
 
-compare_csv <- compare_csv_from_runsheet(params$runsheet_path)
+compare_csv <- compare_csv_from_runsheet(runsheet_path)
 
 
 ### Create data frame containing all samples and respective factors ###
