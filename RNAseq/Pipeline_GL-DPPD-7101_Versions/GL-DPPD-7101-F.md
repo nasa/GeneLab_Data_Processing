@@ -37,6 +37,12 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
 
 - Fixed edge case where `contrasts.csv` and `ERCCnorm_contrasts.csv` table header and rows could become out of sync with each other in [step 9c](#9c-configure-metadata-sample-grouping-and-group-comparisons) and [step 9e](#9e-perform-dge-on-datasets-with-ercc-spike-in) by generating rows from header rather than generating both separately.
 
+- Updated R version from 4.1.2 to 4.1.3.
+
+- Fixed edge case where certain scripts would crash if sample names were prefixes of other sample names. This had affected [step 4c](#4c-tablulate-star-counts-in-r), [step 8c](#8c-calculate-total-number-of-genes-expressed-per-sample-in-r), and [step 9d](#9d-import-rsem-genecounts)
+
+- Fixed rare edge case where groupwise mean and standard deviations could become misassociated to incorrect groups. This had affected [step 9f](#9f-prepare-genelab-dge-tables-with-annotations-on-datasets-with-ercc-spike-in) and [step 9i](#9i-prepare-genelab-dge-tables-with-annotations-on-datasets-without-ercc-spike-in)
+
 ---
 
 # Table of contents  
@@ -110,20 +116,20 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
 |geneBody_coverage|4.0.0|[http://rseqc.sourceforge.net/#genebody-coverage-py](http://rseqc.sourceforge.net/#genebody-coverage-py)|
 |inner_distance|4.0.0|[http://rseqc.sourceforge.net/#inner-distance-py](http://rseqc.sourceforge.net/#inner-distance-py)|
 |read_distribution|4.0.0|[http://rseqc.sourceforge.net/#read-distribution-py](http://rseqc.sourceforge.net/#read-distribution-py)|
-|R|4.1.2|[https://www.r-project.org/](https://www.r-project.org/)|
+|R|4.1.3|[https://www.r-project.org/](https://www.r-project.org/)|
 |Bioconductor|3.14.0|[https://bioconductor.org](https://bioconductor.org)|
 |DESeq2|1.34|[https://bioconductor.org/packages/release/bioc/html/DESeq2.html](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)|
-|tximport|1.22|[https://bioconductor.org/packages/release/bioc/html/tximport.html](https://bioconductor.org/packages/release/bioc/html/tximport.html)|
+|tximport|1.27.1|[https://github.com/mikelove/tximport](https://github.com/mikelove/tximport)|
 |tidyverse|1.3.1|[https://www.tidyverse.org](https://www.tidyverse.org)|
-|dp_tools|1.1.5|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
-|singularity|3.9|[https://sylabs.io/](https://sylabs.io/)|
 |stringr|1.4.1|[https://github.com/tidyverse/stringr](https://github.com/tidyverse/stringr)|
+|dp_tools|1.1.8|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |pandas|1.5.0|[https://github.com/pandas-dev/pandas](https://github.com/pandas-dev/pandas)|
 |seaborn|0.12.0|[https://seaborn.pydata.org/](https://seaborn.pydata.org/)|
 |matplotlib|3.6.0|[https://matplotlib.org/stable](https://matplotlib.org/stable)|
 |jupyter notebook|6.4.12|[https://jupyter-notebook.readthedocs.io/](https://jupyter-notebook.readthedocs.io/)|
 |numpy|1.23.3|[https://numpy.org/](https://numpy.org/)|
 |scipy|1.9.1|[https://scipy.org/](https://scipy.org/)|
+|singularity|3.9|[https://sylabs.io/](https://sylabs.io/)|
 
 ---
 
@@ -455,7 +461,7 @@ study <- read.csv(Sys.glob(file.path(work_dir,"samples.txt")), header = FALSE, r
 ff <- list.files(file.path(align_dir), pattern = "ReadsPerGene.out.tab", recursive=TRUE, full.names = TRUE)
 
 ## Reorder the *genes.results files to match the ordering of the ISA samples
-ff <- ff[sapply(rownames(study), function(x)grep(paste0(x,'_ReadsPerGene.out.tab$'), ff, value=FALSE))]
+ff <- ff[sapply(rownames(study), function(x)grep(paste0(align_dir, '/', x,'_ReadsPerGene.out.tab$'), ff, value=FALSE))]
 
 # Remove the first 4 lines
 counts.files <- lapply( ff, read.table, skip = 4 )
@@ -942,7 +948,7 @@ samples <- read.csv(Sys.glob(file.path(work_dir,"samples.txt")), header = FALSE,
 files <- list.files(file.path(counts_dir),pattern = ".genes.results", full.names = TRUE)
 
 ### reorder the genes.results files to match the ordering of the samples in the metadata file
-files <- files[sapply(rownames(samples), function(x)grep(paste0(x,'.genes.results$'), files, value=FALSE))]
+files <- files[sapply(rownames(samples), function(x)grep(paste0(counts_dir, '/',  x,'.genes.results$'), files, value=FALSE))]
 
 names(files) <- rownames(samples)
 txi.rsem <- tximport(files, type = "rsem", txIn = FALSE, txOut = FALSE)
@@ -981,7 +987,7 @@ sessionInfo()
 
 ### 9a. Create Sample RunSheet
 
-> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_RCP-F/examples/README.md).
+> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_RCP-F/examples/runsheet/README.md).
 
 ```bash
 ### Download the *ISA.zip file from the GeneLab Repository ###
@@ -1137,7 +1143,7 @@ files <- list.files(file.path(counts_dir),pattern = ".genes.results", full.names
 
 ### Reorder the *genes.results files to match the ordering of the ISA samples ###
 
-files <- files[sapply(rownames(study), function(x)grep(paste0(x,".genes.results$"), files, value=FALSE))]
+files <- files[sapply(rownames(study), function(x)grep(paste0(counts_dir, '/', x,".genes.results$"), files, value=FALSE))]
 
 names(files) <- rownames(study)
 txi.rsem <- tximport(files, type = "rsem", txIn = FALSE, txOut = FALSE)
@@ -1386,19 +1392,18 @@ reduced_output_table_1$LRT.p.value <- res_1_lrt@listData$padj
 ### Generate and add group mean and stdev columns to the (non-ERCC) DGE table ###
 
 tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- group
-group_means <- as.data.frame(t(aggregate(. ~ group,data = tcounts,mean)))
-group_means <- group_means[-c(1),]
-colnames(group_means) <- paste0("Group.Mean_",levels(factor(names(group))))
-group_stdev <- as.data.frame(t(aggregate(. ~ group,data = tcounts,sd)))
-group_stdev <- group_stdev[-c(1),]
-colnames(group_stdev) <- paste0("Group.Stdev_",levels(factor(names(group))))
+tcounts$group <- names(group) # Used final table group name formatting (e.g. '( Space Flight & Blue Light )' )
 
-output_table_1 <- cbind(output_table_1,group_means)
-reduced_output_table_1 <- cbind(reduced_output_table_1,group_means)
+group_means <- as.data.frame(t(aggregate(. ~ group,data = tcounts,mean))) # Compute group name group-wise means
+colnames(group_means) <- paste0("Group.Mean_", group_means['group',]) # assign group name as column names
 
-output_table_1 <- cbind(output_table_1,group_stdev)
-reduced_output_table_1 <- cbind(reduced_output_table_1,group_stdev)
+group_stdev <- as.data.frame(t(aggregate(. ~ group,data = tcounts,sd))) # Compute group name group-wise standard deviation
+colnames(group_stdev) <- paste0("Group.Stdev_", group_stdev['group',]) # assign group name as column names
+
+group_means <- group_means[-c(1),] # Drop group name row from data rows (now present as column names)
+group_stdev <- group_stdev[-c(1),] # Drop group name row from data rows (now present as column names)
+output_table_1 <- cbind(output_table_1,group_means, group_stdev) # Column bind the group-wise data
+reduced_output_table_1 <- cbind(reduced_output_table_1,group_means, group_stdev) # Column bind the group-wise data
 
 rm(group_stdev,group_means,tcounts)
 
@@ -1515,19 +1520,18 @@ reduced_output_table_2$LRT.p.value <- res_2_lrt@listData$padj
 ### Generate and add group mean and stdev columns to the ERCC-normalized DGE table ###
 
 tcounts <- as.data.frame(t(ERCCnormCounts))
-tcounts$group_sub <- group_sub
-group_means <- as.data.frame(t(aggregate(. ~ group_sub,data = tcounts,mean)))
-group_means <- group_means[-c(1),]
-colnames(group_means) <- paste0("Group.Mean_",levels(factor(names(group_sub))))
-group_stdev <- as.data.frame(t(aggregate(. ~ group_sub,data = tcounts,sd)))
-group_stdev <- group_stdev[-c(1),]
-colnames(group_stdev) <- paste0("Group.Stdev_",levels(factor(names(group_sub))))
+tcounts$group_sub <- names(group_sub) # Used final table group name formatting (e.g. '( Space Flight & Blue Light )' )
 
-output_table_2 <- cbind(output_table_2,group_means)
-reduced_output_table_2 <- cbind(reduced_output_table_2,group_means)
+group_means <- as.data.frame(t(aggregate(. ~ group_sub,data = tcounts,mean))) # Compute group name group-wise means
+colnames(group_means) <- paste0("Group.Mean_", group_means['group_sub',]) # assign group name as column names
 
-output_table_2 <- cbind(output_table_2,group_stdev)
-reduced_output_table_2 <- cbind(reduced_output_table_2,group_stdev)
+group_stdev <- as.data.frame(t(aggregate(. ~ group_sub,data = tcounts,sd))) # Compute group name group-wise standard deviation
+colnames(group_stdev) <- paste0("Group.Stdev_", group_stdev['group_sub',]) # assign group name as column names
+
+group_means <- group_means[-c(1),] # Drop group name row from data rows (now present as column names)
+group_stdev <- group_stdev[-c(1),] # Drop group name row from data rows (now present as column names)
+output_table_2 <- cbind(output_table_2,group_means, group_stdev) # Column bind the group-wise data
+reduced_output_table_2 <- cbind(reduced_output_table_2,group_means, group_stdev) # Column bind the group-wise data
 
 rm(group_stdev,group_means,tcounts)
 
@@ -1734,19 +1738,18 @@ reduced_output_table_1$LRT.p.value <- res_1_lrt@listData$padj
 ### Generate and add group mean and stdev columns to the DGE table ###
 
 tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- group
-group_means <- as.data.frame(t(aggregate(. ~ group,data = tcounts,mean)))
-group_means <- group_means[-c(1),]
-colnames(group_means) <- paste0("Group.Mean_",levels(factor(names(group))))
-group_stdev <- as.data.frame(t(aggregate(. ~ group,data = tcounts,sd)))
-group_stdev <- group_stdev[-c(1),]
-colnames(group_stdev) <- paste0("Group.Stdev_",levels(factor(names(group))))
+tcounts$group <- names(group) # Used final table group name formatting (e.g. '( Space Flight & Blue Light )' )
 
-output_table_1 <- cbind(output_table_1,group_means)
-reduced_output_table_1 <- cbind(reduced_output_table_1,group_means)
+group_means <- as.data.frame(t(aggregate(. ~ group,data = tcounts,mean))) # Compute group name group-wise means
+colnames(group_means) <- paste0("Group.Mean_", group_means['group',]) # assign group name as column names
 
-output_table_1 <- cbind(output_table_1,group_stdev)
-reduced_output_table_1 <- cbind(reduced_output_table_1,group_stdev)
+group_stdev <- as.data.frame(t(aggregate(. ~ group,data = tcounts,sd))) # Compute group name group-wise standard deviation
+colnames(group_stdev) <- paste0("Group.Stdev_", group_stdev['group',]) # assign group name as column names
+
+group_means <- group_means[-c(1),] # Drop group name row from data rows (now present as column names)
+group_stdev <- group_stdev[-c(1),] # Drop group name row from data rows (now present as column names)
+output_table_1 <- cbind(output_table_1,group_means, group_stdev) # Column bind the group-wise data
+reduced_output_table_1 <- cbind(reduced_output_table_1,group_means, group_stdev) # Column bind the group-wise data
 
 rm(group_stdev,group_means,tcounts)
 
@@ -1933,7 +1936,8 @@ import matplotlib.pyplot as plt
 accession = 'GLDS-NNN' # Replace Ns with GLDS number
 isaPath = 'path/to/GLDS-NNN-ISA.zip' # Replace with path to ISA archive file
 zip_file_object = zipfile.ZipFile(isaPath, "r")
-list_of_ISA_files = zip_file_object.namelist() 
+list_of_ISA_files = zip_file_object.namelist()
+UnnormalizedCountsPath = '/path/to/GLDS-NNN_rna_seq_RSEM_Unnormalized_Counts.csv'
 
 # Print contents of ISA zip file to view file order
 list_of_ISA_files
@@ -1970,7 +1974,7 @@ assay_table.head(n=3)
 
 # Get raw counts table
 
-raw_counts_table = pd.read_csv('/path/to/RSEM_Unnormalized_Counts.csv', index_col=0) 
+raw_counts_table = pd.read_csv(UnnormalizedCountsPath, index_col=0) 
 raw_counts_table.index.rename('Gene_ID', inplace=True)
 print(raw_counts_table.head(n=3))
 
@@ -2048,8 +2052,8 @@ print(merged_ercc)
 
 ### Filter and calculate mean counts per million of Mix1 and Mix2 spiked samples in each of the 4 groups
 ## Check the 'Parameter Value[Spike-in Mix Number]' column of the assay table
-## If the values do not have a space, change 'Mix 1' and 'Mix 2' to 'Mix1' and 'Mix2', respectively
 
+## If the values do not have a space, change 'Mix 1' and 'Mix 2' to 'Mix1' and 'Mix2', respectively
 # Filter Mix1 CPM and Mix2 CPM in group A 
 
 Adf = merged_ercc.loc[merged_ercc['ERCC group'] == 'A']
@@ -2189,44 +2193,33 @@ print('Number of ERCC detected in group D (out of 23) =', ddf['Avg Mix1 CPM/ Avg
 #Calculate and plot ERCC metrics from individual samples, including limit of detection, dynamic range, and R^2 of counts vs. concentration.
 
 #View the ERCC table
+
 print(ercc_table.head(n=3))
 
-# Check assay_table header to identify the 'Sample Name' column and the column title indicating the 'Spike-in Mix Nmber' if it's indicated in the metadata.
-
-pd.set_option('display.max_columns', None)
-print(assay_table.head(n=3))
-
-# Get ERCC counts for all samples
-
-ercc_counts = raw_counts_table[raw_counts_table.index.str.contains('^ERCC-')] 
-ercc_counts = ercc_counts.sort_values(by=list(ercc_counts), ascending=False)
-print(ercc_counts.head())
-
-
 # Make a dictionary for ERCC concentrations for Mix 1
+
 mix1_conc_dict = dict(zip(ercc_table['ERCC ID'], ercc_table['concentration in Mix 1 (attomoles/ul)']))
 
+
 # Get samples spiked with Mix 1
+
 mix1_samples = assay_table[assay_table['Parameter Value[Spike-in Mix Number]'] == 'Mix 1']['Sample Name']
 
-# Get ERCC counts for Mix 1 spiked samples
-ercc_counts_mix_1 = ercc_counts[mix1_samples]
-ercc_counts_mix_1['ERCC conc (attomoles/ul)'] = ercc_counts_mix_1.index.map(mix1_conc_dict)
-print(ercc_counts_mix_1.head(n=3))
-
-
 # Make a dictionary for ERCC concentrations for Mix 2
+
 mix2_conc_dict = dict(zip(ercc_table['ERCC ID'], ercc_table['concentration in Mix 2 (attomoles/ul)']))
 
+
 # Get samples spiked with Mix 2
+
 mix2_samples = assay_table[assay_table['Parameter Value[Spike-in Mix Number]'] == 'Mix 2']['Sample Name']
+
 
 # Get ERCC counts for Mix 2 spiked samples
 
 ercc_counts_mix_2 = ercc_counts[mix2_samples]
 ercc_counts_mix_2['ERCC conc (attomoles/ul)'] = ercc_counts_mix_2.index.map(mix2_conc_dict)
 print(ercc_counts_mix_2.head(n=3))
-
 
 # Create a scatter plot of log(2) ERCC counts versus log(2) ERCC concentration for each sample
 
@@ -2261,6 +2254,40 @@ for ax in axs.flat:
     counter = counter + 1
 
 
+
+# Create a scatter plot of log(2) ERCC counts versus log(2) ERCC concentration for each sample
+
+columns_mix_1 = ercc_counts_mix_1.columns.drop(['ERCC conc (attomoles/ul)'])
+columns_mix_2 = ercc_counts_mix_2.columns.drop(['ERCC conc (attomoles/ul)'])
+all_columns = columns_mix_1.to_list() + columns_mix_2.to_list()
+total_columns = len(columns_mix_1) + len(columns_mix_2) 
+side_size = np.int32(np.ceil(np.sqrt(total_columns)))# calculate grid side size. take sqrt of total plots and round up.
+fig, axs = plt.subplots(side_size, side_size, figsize=(15,15), sharex='all', sharey='all'); #change figsize x,y labels if needed.
+fig.tight_layout(pad=1, w_pad=2.5, h_pad=3.5)
+
+counter = 0
+for ax in axs.flat:
+    
+    if(counter < len(columns_mix_1)):
+      ax.scatter(x=np.log2(ercc_counts_mix_1['ERCC conc (attomoles/ul)']), y=np.log2(ercc_counts_mix_1[all_columns[counter]]+1), s=7);
+      ax.set_title(all_columns[counter][-45:], fontsize=9);
+      ax.set_xlabel('log2 ERCC conc (attomoles/ ul)', fontsize=9);
+      ax.set_ylabel('log2 Counts per million', fontsize=9);
+      ax.tick_params(direction='in', axis='both', labelsize=8, labelleft=True, labelbottom=True);
+      
+    elif(counter >= len(columns_mix_1) and counter < total_columns):
+      ax.scatter(x=np.log2(ercc_counts_mix_2['ERCC conc (attomoles/ul)']), y=np.log2(ercc_counts_mix_2[all_columns[counter]]+1), s=7);
+      ax.set_title(all_columns[counter][-45:], fontsize=9);
+      ax.set_xlabel('log2 ERCC conc (attomoles/ ul)', fontsize=9);
+      ax.set_ylabel('log2 Counts per million', fontsize=9);
+      ax.tick_params(direction='in', axis='both', labelsize=8, labelleft=True, labelbottom=True);
+       
+    else:
+      pass
+
+    counter = counter + 1
+
+
 ## Calculate and plot linear regression of log(2) ERCC counts versus log(2) ERCC concentration for each sample
 
 # Filter counts > 0
@@ -2288,7 +2315,8 @@ for i in range(0, len(ercc_counts_mix_2.columns)-1):
   nonzero_counts_list_2.append(nonzero_counts_sorted)
 
 
-# Plot each sample using linear regression of scatter plot with x = log2 Conc and y = log2 Counts.  Return min, max, R^2 and dynamic range (max / min) values.
+# Plot each sample using linear regression of scatter plot with x = log2 Conc and y = log2 Counts.
+# Return min, max, R^2 and dynamic range (max / min) values.
 
 samples = []
 mins = []
@@ -2435,15 +2463,17 @@ os.makedirs(name="ERCC_analysis", exist_ok=True)
 
 stats = pd.DataFrame(list(zip(samples, mins, maxs, dyranges, rs)))
 stats.columns = ['Samples', 'Min', 'Max', 'Dynamic range', 'R']
-stats.to_csv('ERCC_analysis/ERCC_stats_GLDS-NNN.csv', index = False) 
-stats.filter(items = ['Samples', 'Dynamic range']).to_csv('ERCC_analysis/ERCC_dynrange_GLDS-NNN_mqc.csv', index = False) 
-stats.filter(items = ['Samples', 'R']).to_csv('ERCC_analysis/ERCC_rsq_GLDS-NNN_mqc.csv', index = False) 
+stats.to_csv('ERCC_analysis/ERCC_stats_GLDS-NNN.csv', index = False)
+stats.filter(items = ['Samples', 'Dynamic range']).to_csv('ERCC_analysis/ERCC_dynrange_GLDS-NNN_mqc.csv', index = False)
+stats.filter(items = ['Samples', 'R']).to_csv('ERCC_analysis/ERCC_rsq_GLDS-NNN_mqc.csv', index = False)
 
 
 
 ### Generate data and metadata files needed for ERCC DESeq2 analysis
 
-# ERCC Mix 1 and Mix 2 are distributed so that half the samples receive Mix 1 spike-in and half receive Mix 2 spike-in. Transcripts in Mix 1 and Mix 2 are present at a known ratio, so we can determine how well these patterns are revealed in the dataset.
+# ERCC Mix 1 and Mix 2 are distributed so that half the samples receive Mix 1 spike-in and half receive Mix 2 spike-in.
+
+# Transcripts in Mix 1 and Mix 2 are present at a known ratio, so we can determine how well these patterns are revealed in the dataset.
 
 # Get sample table
 
@@ -2453,7 +2483,7 @@ pd.set_option('display.max_columns', None)
 print(combined)
 
 # Create metadata table containing samples and their respective ERCC spike-in Mix number
-# Sometimes Number in [Spike-in Mix Number] is spelled 'number' and this could cause error in mismatch search 
+# Note: Sometimes "Number" in [Spike-in Mix Number] is spelled "number" and this could cause error in mismatch search 
 
 ERCCmetadata = combined[['Parameter Value[Spike-in Mix Number]']]
 ERCCmetadata.index = ERCCmetadata.index.str.replace('-','_')
