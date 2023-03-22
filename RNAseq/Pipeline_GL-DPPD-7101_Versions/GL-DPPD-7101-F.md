@@ -2253,41 +2253,6 @@ for ax in axs.flat:
 
     counter = counter + 1
 
-
-
-# Create a scatter plot of log(2) ERCC counts versus log(2) ERCC concentration for each sample
-
-columns_mix_1 = ercc_counts_mix_1.columns.drop(['ERCC conc (attomoles/ul)'])
-columns_mix_2 = ercc_counts_mix_2.columns.drop(['ERCC conc (attomoles/ul)'])
-all_columns = columns_mix_1.to_list() + columns_mix_2.to_list()
-total_columns = len(columns_mix_1) + len(columns_mix_2) 
-side_size = np.int32(np.ceil(np.sqrt(total_columns)))# calculate grid side size. take sqrt of total plots and round up.
-fig, axs = plt.subplots(side_size, side_size, figsize=(15,15), sharex='all', sharey='all'); #change figsize x,y labels if needed.
-fig.tight_layout(pad=1, w_pad=2.5, h_pad=3.5)
-
-counter = 0
-for ax in axs.flat:
-    
-    if(counter < len(columns_mix_1)):
-      ax.scatter(x=np.log2(ercc_counts_mix_1['ERCC conc (attomoles/ul)']), y=np.log2(ercc_counts_mix_1[all_columns[counter]]+1), s=7);
-      ax.set_title(all_columns[counter][-45:], fontsize=9);
-      ax.set_xlabel('log2 ERCC conc (attomoles/ ul)', fontsize=9);
-      ax.set_ylabel('log2 Counts per million', fontsize=9);
-      ax.tick_params(direction='in', axis='both', labelsize=8, labelleft=True, labelbottom=True);
-      
-    elif(counter >= len(columns_mix_1) and counter < total_columns):
-      ax.scatter(x=np.log2(ercc_counts_mix_2['ERCC conc (attomoles/ul)']), y=np.log2(ercc_counts_mix_2[all_columns[counter]]+1), s=7);
-      ax.set_title(all_columns[counter][-45:], fontsize=9);
-      ax.set_xlabel('log2 ERCC conc (attomoles/ ul)', fontsize=9);
-      ax.set_ylabel('log2 Counts per million', fontsize=9);
-      ax.tick_params(direction='in', axis='both', labelsize=8, labelleft=True, labelbottom=True);
-       
-    else:
-      pass
-
-    counter = counter + 1
-
-
 ## Calculate and plot linear regression of log(2) ERCC counts versus log(2) ERCC concentration for each sample
 
 # Filter counts > 0
