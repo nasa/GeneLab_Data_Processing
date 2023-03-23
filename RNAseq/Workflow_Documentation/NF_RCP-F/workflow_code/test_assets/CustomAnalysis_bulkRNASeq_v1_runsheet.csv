@@ -1,0 +1,5 @@
+Sample Name,has_ERCC,organism,paired_end,read1_path,Factor Value[Spaceflight],Factor Value[Dissection Condition],Original Sample Name
+Mmus_C57-6J_LVR_GC_C_Rep1_M36,False,Mus musculus,False,https://genelab-data.ndc.nasa.gov/geode-py/ws/studies/GLDS-48/download?file=GLDS-48_rna_seq_Mmus_C57-6J_LVR_GC_C_Rep1_M36_R1_raw.fastq.gz,Ground Control,Carcass,Mmus_C57-6J_LVR_GC_C_Rep1_M36
+Mmus_C57-6J_LVR_GC_C_Rep2_M37,False,Mus musculus,False,https://genelab-data.ndc.nasa.gov/geode-py/ws/studies/GLDS-48/download?file=GLDS-48_rna_seq_Mmus_C57-6J_LVR_GC_C_Rep2_M37_R1_raw.fastq.gz,Ground Control,Carcass,Mmus_C57-6J_LVR_GC_C_Rep2_M37
+Mmus_C57-6J_LVR_FLT_C_Rep1_M25,False,Mus musculus,False,https://genelab-data.ndc.nasa.gov/geode-py/ws/studies/GLDS-48/download?file=GLDS-48_rna_seq_Mmus_C57-6J_LVR_FLT_C_Rep1_M25_R1_raw.fastq.gz,Space Flight,Carcass,Mmus_C57-6J_LVR_FLT_C_Rep1_M25
+Mmus_C57-6J_LVR_FLT_C_Rep2_M26,False,Mus musculus,False,https://genelab-data.ndc.nasa.gov/geode-py/ws/studies/GLDS-48/download?file=GLDS-48_rna_seq_Mmus_C57-6J_LVR_FLT_C_Rep2_M26_R1_raw.fastq.gz,Space Flight,Carcass,Mmus_C57-6J_LVR_FLT_C_Rep2_M26

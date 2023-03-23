@@ -1,0 +1,107 @@
+---
+title: Add Gene Annotations
+output: 
+    html_document:
+        code_folding: show
+params:
+    input_table_path: ""
+    table_sep: ","
+    annotation_file_path: ""
+    primary_keytype: "" # Denotes the name of the identifier column (e.g. ENSEMBL, TAIR)
+    annotated_output_prefix: ""
+    work_dir: "." # should be set to launch directory 
+---
+
+## Results {.tabset}
+
+### Setup
+```{r, setup, include=FALSE}
+knitr::opts_knit$set(root.dir = params$work_dir)
+```
+
+```{r}
+# allow more flexibility in download time
+# useful for slower connections where the default of 60 seconds might be exceeded
+options(timeout = 600)
+
+suppressMessages(library(dplyr))
+suppressMessages(library(tibble))
+```
+
+### Output
+```{r, load-annotation-table}
+### Read in annotation table for the appropriate organism ###
+
+annot <- read.table(
+            params$annotation_file_path,
+            sep = "\t",
+            header = TRUE,
+            quote = "",
+            comment.char = "",
+        )
+
+# DT::datatable(head(annot),
+#   caption = "First few rows of the annotation table",
+#   extensions = "FixedColumns",
+#   options = list(
+#     dom = "t",
+#     scrollX = TRUE,
+#     fixedColumns = TRUE
+#   )
+# )
+```
+
+```{r, load-table-to-annotate}
+df <- read.csv(params$input_table_path,
+                 sep = params$table_sep,
+                 check.names = FALSE # don't rename column names with check.names
+                 )
+# DT::datatable(head(df),
+#   caption = "First few rows of the input table on load",
+#   extensions = "FixedColumns",
+#   options = list(
+#     dom = "t",
+#     scrollX = TRUE,
+#     fixedColumns = TRUE
+#   )
+# )
+```
+
+```{r, add-annotations}
+### Combine annotations table and the (non-ERCC) normalized counts table
+df2 <- merge(
+                annot,
+                df,
+                by = params$primary_keytype,
+                # ensure all original dge rows are kept.
+                # If unmatched in the annotation database, then fill missing with NAN
+                all.y = TRUE
+            )
+
+# DT::datatable(head(df2),
+#   caption = "First few rows of the annotated output table",
+#   extensions = "FixedColumns",
+#   options = list(
+#     dom = "t",
+#     scrollX = TRUE,
+#     fixedColumns = FALSE
+#   )
+# )
+
+dir.create(dirname(paste0(params$annotated_output_prefix, "_")), recursive = TRUE)
+write.csv(df2, row.names = FALSE, paste0(params$annotated_output_prefix, "differential_expression.csv"))
+```
+
+```{r verson-reporting}
+## print session info ##
+print("Session Info below: ")
+sessionInfo()
+## Log same info into versions.txt file
+version_output_fn <- "versions.txt"
+cat(capture.output(sessionInfo()),
+    "BioC_version_associated_with_R_version",
+    toString(tools:::.BioC_version_associated_with_R_version()),
+    file = version_output_fn,
+    append = TRUE,
+    sep = "\n")
+```
