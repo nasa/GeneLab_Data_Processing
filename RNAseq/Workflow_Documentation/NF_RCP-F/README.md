@@ -272,4 +272,3 @@ Standard Nextflow resource usage logs are also produced as follows:
      - Resource_Usage/execution_trace_{timestamp}.txt (an execution tracing file that contains information about each process executed in the workflow, including: submission time, start time, completion time, cpu and memory used, machine-readable output)
 
 <br>
-
