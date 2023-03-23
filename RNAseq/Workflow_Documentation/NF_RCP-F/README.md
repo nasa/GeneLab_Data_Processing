@@ -24,8 +24,8 @@ document](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md):
 1. **Analysis Staging Subworkflow**
 
    - Description:
-     - This subworkflow extracts the metadata parameters (e.g. organism, library layout) needed for processing from the GLDS ISA archive and retrieves the raw reads files hosted on the [GeneLab Data Repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
-       > *GLDS ISA archive*: ISA directory containing Investigation, Study, and Assay (ISA) metadata files for a respective GLDS dataset - the *ISA.zip file is located in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) under 'STUDY FILES' -> 'Study Metadata Files' for any GLDS dataset in the GeneLab Data Repository.
+     - This subworkflow extracts the metadata parameters (e.g. organism, library layout) needed for processing from the OSD/GLDS ISA archive and retrieves the raw reads files hosted on the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
+       > *OSD/GLDS ISA archive*: ISA directory containing Investigation, Study, and Assay (ISA) metadata files for a respective GLDS dataset - the *ISA.zip file is located in the [OSDR](https://osdr.nasa.gov/bio/repo/) under 'Files' -> 'Study Metadata Files' for any GeneLab Data Set (GLDS) in the OSDR.
 
 2. **RNASeq Consensus Pipeline Subworkflow**
 
@@ -149,7 +149,9 @@ nextflow run NF_RCP-F_1.0.3/main.nf \
 
 <br>
 
-#### 4b. Approach 2: Run the workflow on a GeneLab RNAseq dataset using local Ensembl reference fasta and gtf files
+#### 4b. Approach 2: Run the workflow on a GeneLab RNAseq dataset using local reference fasta and gtf files
+
+> Note: The `--ref_source` and `--ensemblVersion` parameters should match the reference source and version number of the local reference fasta and gtf files used
 
 ```bash
 nextflow run NF_RCP-F_1.0.3/main.nf \ 
@@ -235,13 +237,13 @@ See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nex
 ### 5. Additional Output Files
 
 The outputs from the Analysis Staging and V&V Pipeline Subworkflows are described below:
-> Note: The outputs from the RNASeq Consensus Pipeline Subworkflow are documented in the [GL-DPPD-7101-F.md](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md) processing protocol.
+> Note: The outputs from the RNASeq Consensus Pipeline Subworkflow are documented in the [GL-DPPD-7101-F](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md) processing protocol.
 
 **Analysis Staging Subworkflow**
 
    - Output:
      - \*_bulkRNASeq_v1_runsheet.csv (table containing metadata required for processing, including the raw reads files location)
-     - \*-ISA.zip (the ISA archive of the GLDS datasets to be processed, downloaded from the GeneLab Data Repository)
+     - \*-ISA.zip (the ISA archive of the GLDS datasets to be processed, downloaded from the OSDR)
      - \*_metadata_table.txt (table that includes additional information about the GLDS dataset, not used for processing)
    
    
@@ -270,4 +272,3 @@ Standard Nextflow resource usage logs are also produced as follows:
      - Resource_Usage/execution_trace_{timestamp}.txt (an execution tracing file that contains information about each process executed in the workflow, including: submission time, start time, completion time, cpu and memory used, machine-readable output)
 
 <br>
-
