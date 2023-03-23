@@ -132,7 +132,7 @@ files <- list.files(
 
 # Replace spaces in sample names from ISA with "_", consistent with runsheet generation
 samples = str_replace_all(rownames(study), " ", "_")
-reordering <- sapply(samples, function(x)grep(paste0(x,".genes.results$"), files, value=FALSE))
+reordering <- sapply(samples, function(x)grep(paste0("Rsem_gene_counts/", x,".genes.results$"), files, value=FALSE))
 files <- files[reordering]
 names(files) <- samples
 txi.rsem <- tximport(files, type = "rsem", txIn = FALSE, txOut = FALSE)
@@ -219,12 +219,12 @@ dim(ercc_dds_gpB)
 ## Identify and list samples that do not contain counts for ERCC genes
 ## This is to make sure all samples indeed contain ERCC spike-in
 NON_DETECTION_THRESHOLD = 0
-cat("Samples that do not have detectable ERCC spike-ins: ", colnames(ercc_dds[,colSums(counts(ercc_dds)) < NON_DETECTION_THRESHOLD]), sep="\n")
-cat("Samples that do not have detectable ERCC group B spike-ins: ", colnames(ercc_dds[,colSums(counts(ercc_dds_gpB)) < NON_DETECTION_THRESHOLD]), sep="\n")
+cat("Samples that do not have detectable ERCC spike-ins: ", colnames(ercc_dds[,colSums(counts(ercc_dds)) == NON_DETECTION_THRESHOLD]), sep="\n")
+cat("Samples that do not have detectable ERCC group B spike-ins: ", colnames(ercc_dds[,colSums(counts(ercc_dds_gpB)) == NON_DETECTION_THRESHOLD]), sep="\n")
 
 
 # Create a new group object WITHOUT the samples that don't have detectable ERCC group B spike-ins
-remove <- colnames(dds[,colSums(counts(ercc_dds_gpB)) < NON_DETECTION_THRESHOLD])
+remove <- colnames(dds[,colSums(counts(ercc_dds_gpB)) == NON_DETECTION_THRESHOLD])
 
 study_sub <- subset(study,!rownames(study) %in% remove) # new study object with non-ERCC-gpB samples removed
 
@@ -266,13 +266,9 @@ ERCC_rawCounts = as.data.frame(counts(ercc_dds))
 write.csv(ERCC_rawCounts, file = output_fn)
 print(sprintf("DEBUG: %s: Output file written '%s' ", Sys.time(), output_fn))
 
-## Remove samples that do not contain ERCC counts
-## Note: All samples should contain ERCC spike-in and thus ERCC counts, if some samples do not contain ERCC counts, those samples should be removed and not used for downstream analysis
-ercc_dds <- ercc_dds[, colSums(counts(ercc_dds)) > 0]
-
 ## First remove samples that do not contain ERCC counts
 ## Note: All samples should contain ERCC spike-in and thus ERCC counts, if some samples do not contain ERCC counts, those samples should be removed and not used for downstream analysis
-dds_1 <- dds[, colSums(counts(ercc_dds_gpB)) >= NON_DETECTION_THRESHOLD]
+dds_1 <- dds[, colSums(counts(ercc_dds_gpB)) > NON_DETECTION_THRESHOLD]
 sampleTable <- data.frame(condition = factor(group_sub)) # create a new sampleTable with only the kept samples
 rownames(sampleTable) <- rownames(study_sub)
 dds_1$condition <- sampleTable$condition # reassign the condition to the subset condition to keep the groups and levels consistent with the "keep" samples
@@ -359,16 +355,18 @@ output_table_1$All.stdev <- rowSds(as.matrix(normCounts), na.rm = TRUE, dims = 1
 ## Generate and add group mean and stdev columns to the (non-ER\CC) normalized counts table
 print(sprintf("DEBUG: %s: Computing group mean and stdev", Sys.time()))
 tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- group
-group_means <- as.data.frame(t(aggregate(. ~ group,data = tcounts,mean)))
-group_means <- group_means[-c(1),]
-colnames(group_means) <- paste0("Group.Mean_",levels(factor(names(group))))
-group_stdev <- as.data.frame(t(aggregate(. ~ group,data = tcounts,sd)))
-group_stdev <- group_stdev[-c(1),]
-colnames(group_stdev) <- paste0("Group.Stdev_",levels(factor(names(group))))
-output_table_1 <- cbind(output_table_1,group_means)
+tcounts$group <- names(group) # Used final table group name formatting (e.g. '( Space Flight & Blue Light )' )
 
-output_table_1 <- cbind(output_table_1,group_stdev)
+group_means <- as.data.frame(t(aggregate(. ~ group,data = tcounts,mean))) # Compute group name group-wise means
+colnames(group_means) <- paste0("Group.Mean_", group_means['group',]) # assign group name as column names
+
+group_stdev <- as.data.frame(t(aggregate(. ~ group,data = tcounts,sd))) # Compute group name group-wise standard deviation
+colnames(group_stdev) <- paste0("Group.Stdev_", group_stdev['group',]) # assign group name as column names
+
+group_means <- group_means[-c(1),] # Drop group name row from data rows (now present as column names)
+group_stdev <- group_stdev[-c(1),] # Drop group name row from data rows (now present as column names)
+output_table_1 <- cbind(output_table_1,group_means, group_stdev) # Column bind the group-wise data
+
 
 print(sprintf("DEBUG: %s: Done Computing grup mean and stdev", Sys.time() ))
 rm(group_stdev,group_means,tcounts)

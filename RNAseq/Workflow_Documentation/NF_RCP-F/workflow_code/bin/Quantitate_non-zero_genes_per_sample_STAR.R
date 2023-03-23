@@ -27,7 +27,7 @@ files <- list.files(file.path(counts_dir), pattern = "_ReadsPerGene.out.tab", fu
 print(sprintf("DEBUG: %s: %s files", Sys.time(), paste(files, collapse = ", ")))
 
 ### reorder the genes.results files to match the ordering of the samples in the metadata file
-reordering <- sapply(rownames(samples), function(x) grep(paste0(x, "_ReadsPerGene.out.tab$"), files, value = FALSE))
+reordering <- sapply(rownames(samples), function(x) grep(paste0("02-STAR_Alignment/", x, "_ReadsPerGene.out.tab$"), files, value = FALSE))
 print(sprintf("DEBUG: %s: %s", Sys.time(), toString(reordering)))
 files <- files[reordering]
 names(files) <- rownames(samples)

@@ -1,0 +1,45 @@
+nextflow_pipeline {
+
+    name "Test Workflow main.nf"
+    script "main.nf"
+
+    test("GLDS-48:Mouse,SingleEnd,NonERCC: Should run without failures") {
+
+        when {
+            params {
+                gldsAccession = 'GLDS-48' // GeneLab Data Accession Number, e.g. GLDS-104
+                use_dummy_gene_counts = true // Use random gene counts for Deseq2, this addresses an issue where low/zero gene counts causes DGE analysis to fail
+                genomeSubsample = 19 // Subsamples the reference fasta and gtf to a single sequence (often representing a single chromosome)
+                truncateTo = 300 // Subsamples the raw reads files to the specified number of reads for EACH raw reads file.
+            }
+        }
+
+        then {
+            def TEST_DATASET = "GLDS-48"
+            def TEST_SAMPLE_1 = "Mmus_C57-6J_LVR_FLT_C_Rep1_M25"
+            def TEST_SAMPLE_2 = "Mmus_C57-6J_LVR_GC_C_Rep1_M36"
+            def TEST_SAMPLE_3 = "Mmus_C57-6J_LVR_GC_C_Rep5_M40"
+            def TEST_SAMPLE_4 = "Mmus_C57-6J_LVR_GC_I_Rep1_M31"
+            def TEST_SAMPLE_5 = "Mmus_C57-6J_LVR_GC_I_Rep2_M32"
+            assert workflow.success
+            assert snapshot(
+                            path("${params.outputDir}/${ TEST_DATASET }/Metadata").list(),
+                            path("${params.outputDir}/${ TEST_DATASET }/00-RawData/Fastq").list(),
+                            path("${params.outputDir}/${ TEST_DATASET }/01-TG_Preproc/Fastq").list(),
+                            path("${params.outputDir}/${ TEST_DATASET }/02-STAR_Alignment/STAR_NumNonZeroGenes.csv"),
+                            path("${params.outputDir}/${ TEST_DATASET }/02-STAR_Alignment/STAR_Unnormalized_Counts.csv"),
+                            path("${params.outputDir}/${ TEST_DATASET }/03-RSEM_Counts/${ TEST_SAMPLE_2 }.genes.results"),
+                            path("${params.outputDir}/${ TEST_DATASET }/03-RSEM_Counts/${ TEST_SAMPLE_2 }.isoforms.results"),
+                            path("${params.outputDir}/${ TEST_DATASET }/03-RSEM_Counts/RSEM_NumNonZeroGenes.csv"),
+                            path("${params.outputDir}/${ TEST_DATASET }/03-RSEM_Counts/RSEM_Unnormalized_Counts.csv"),
+                            path("${params.outputDir}/${ TEST_DATASET }/04-DESeq2_NormCounts").list(),
+                            path("${params.outputDir}/${ TEST_DATASET }/05-DESeq2_DGE").list(),
+                            path("${params.outputDir}/${ TEST_DATASET }/GeneLab").list(),
+                            path("${params.outputDir}/${ TEST_DATASET }/RSeQC_Analyses/02_geneBody_coverage/${ TEST_SAMPLE_3 }/${ TEST_SAMPLE_3 }.geneBodyCoverage.txt"),
+                            path("${params.outputDir}/${ TEST_DATASET }/RSeQC_Analyses/03_infer_experiment/${ TEST_SAMPLE_3 }_infer_expt.out"),
+                            // path("${params.outputDir}/${ TEST_DATASET }/RSeQC_Analyses/04_inner_distance/${ TEST_SAMPLE_4 }/${ TEST_SAMPLE_4 }.inner_distance.txt"),
+                            path("${params.outputDir}/${ TEST_DATASET }/RSeQC_Analyses/05_read_distribution/${ TEST_SAMPLE_5 }_read_dist.out"),
+                            ).match()
+        }
+    }
+}
