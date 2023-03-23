@@ -1915,6 +1915,8 @@ Output data with considering ERCC spike-in genes:
 ### 10a. Evaluate ERCC Count Data in Python
 
 ```python
+### Setting up the notebook
+
 # import python packages
 import pandas as pd
 pd.set_option('mode.chained_assignment', None) # suppress chained indexing warnings
@@ -1926,6 +1928,7 @@ import seaborn as sns
 from scipy.stats import linregress
 import matplotlib.pyplot as plt
 
+
 ### Get and parse data and metadata
 
 # Get and unzip ISA.zip to extract metadata.
@@ -1933,33 +1936,43 @@ import matplotlib.pyplot as plt
 accession = 'GLDS-NNN' # Replace Ns with GLDS number
 isaPath = '/path/to/GLDS-NNN_metadata_GLDS-NNN-ISA.zip' # Replace with path to ISA archive file
 zip_file_object =  zipfile.ZipFile(isaPath, "r")
-list_of_ISA_files = zip_file_object.namelist() # Print contents of zip file. Pick relevant one from list
+list_of_ISA_files = zip_file_object.namelist()
 UnnormalizedCountsPath = '/path/to/GLDS-NNN_rna_seq_RSEM_Unnormalized_Counts.csv'
 
+# Print contents of ISA zip file to view file order
 list_of_ISA_files
 
 # There are datasets that have multiple assays (including microarray), so the RNAseq ISA files from the above output must be selected. 
 # Txt files outputted above are indexed as 0, 1, 2, etc. Fill in the indexed number corresponding to the sample (s_*txt) and assay files for RNAseq (a_*_(RNA-Seq).txt) in the code block below.
 
 # Extract metadata from the sample file (s_*txt)
+
 sample_file = list_of_ISA_files[1] # replace [1] with index corresponding to the (s_*txt) file
 file = zip_file_object.open(sample_file)
 sample_table = pd.read_csv(zip_file_object.open(sample_file), sep='\t')
 
+
 # Extract metadata from the assay (a_*_(RNA-Seq).txt) file
+
 assay_file = list_of_ISA_files[0] # replace [0] with index corresponding to the (a_*_(RNA-Seq).txt) file
 file = zip_file_object.open(assay_file)
 assay_table = pd.read_csv(zip_file_object.open(assay_file), sep='\t')
 
+
 # Check the sample table
+
 pd.set_option('display.max_columns', None)
 print(sample_table.head(n=3))
 
+
 # Check the assay table
+
 pd.set_option('display.max_columns', None)
 assay_table.head(n=3)
 
-### Get raw counts table
+
+
+# Get raw counts table
 
 raw_counts_table = pd.read_csv(UnnormalizedCountsPath, index_col=0) 
 raw_counts_table.index.rename('Gene_ID', inplace=True)
@@ -1969,7 +1982,8 @@ raw_counts_transcripts = raw_counts_table[raw_counts_table.index.str.contains('^
 raw_counts_transcripts = raw_counts_transcripts.sort_values(by=list(raw_counts_transcripts), ascending=False)
 print(raw_counts_transcripts)
 
-### Get ERCC counts
+
+# Get ERCC counts
 
 ercc_counts = raw_counts_table[raw_counts_table.index.str.contains('^ERCC-')] 
 ercc_counts.reset_index(inplace=True)
@@ -1977,14 +1991,17 @@ ercc_counts = ercc_counts.rename(columns={'Gene_ID':'ERCC ID'})
 ercc_counts = ercc_counts.sort_values(by=list(ercc_counts), ascending=False)
 print(ercc_counts.head())
 
-### Get files containing ERCC gene concentrations and metadata
+# Get files containing ERCC gene concentrations and metadata
 
 ercc_url = 'https://assets.thermofisher.com/TFS-Assets/LSG/manuals/cms_095046.txt'
 ercc_table = pd.read_csv(ercc_url, '\t')
 print(ercc_table.head(n=3))
 
-## Calculate the number of ERCC genes detected in each of the 4 (A, B, C and D) groups for each sample
-### Extract ERCC counts and calculate the log(2)
+
+
+### Calculate the number of ERCC genes detected in each of the 4 (A, B, C and D) groups for each sample
+
+# Extract ERCC counts and calculate the log(2)
 
 meltERCC = ercc_counts.melt(id_vars=['ERCC ID'])
 meltERCC['log2 Count'] = meltERCC['value']+1
@@ -1992,7 +2009,7 @@ meltERCC['log2 Count'] = np.log2(meltERCC['log2 Count'])
 meltERCC = meltERCC.rename(columns={'variable':'Sample Name', 'value':'Count'})
 print(meltERCC.head(n=3))
 
-### Build Mix dictionary to link sample name to mix added and read depth using the assay table
+# Build Mix dictionary to link sample name to mix added and read depth using the assay table
 
 mix_dict = assay_table.filter(['Sample Name','Parameter Value[Spike-in Mix Number]', 
                        'Parameter Value[Read Depth]'])
@@ -2001,35 +2018,43 @@ mix_dict = mix_dict.rename(columns={'Parameter Value[Spike-in Mix Number]':'Mix'
                                     'Total Reads'})
 print(mix_dict.head(n=3))
 
-### Make combined ercc counts and assay table
+
+# Make combined ercc counts and assay table
 
 merged_ercc = meltERCC.merge(mix_dict, on='Sample Name')
 print(merged_ercc)
 
-### Read ERCC info including concentrations from merged_ercc table
+# Read ERCC info including concentrations from merged_ercc table
 
 groupA = ercc_table.loc[ercc_table['subgroup'] == 'A']['ERCC ID']
 groupB = ercc_table.loc[ercc_table['subgroup'] == 'B']['ERCC ID']
 groupC = ercc_table.loc[ercc_table['subgroup'] == 'C']['ERCC ID']
 groupD = ercc_table.loc[ercc_table['subgroup'] == 'D']['ERCC ID']
 
-### Make a dictionary for ERCC groups
+
+# Make a dictionary for ERCC groups
 
 group_dict = dict(zip(ercc_table['ERCC ID'], ercc_table['subgroup']))
 
-### Calculate ERCC counts per million and log(2) counts per million
+
+# Calculate ERCC counts per million and log(2) counts per million
 
 merged_ercc['Count per million'] = merged_ercc['Count'] / (merged_ercc['Total Reads'] / 1000000.0)
 merged_ercc['log2 Count per million'] = np.log2(merged_ercc['Count per million']+1)
 
-### Add ERCC group column
+
+# Add ERCC group column
 
 merged_ercc['ERCC group'] = merged_ercc['ERCC ID'].map(group_dict)
 merged_ercc = merged_ercc.sort_values(by=['Mix'], ascending=True)
 print(merged_ercc)
 
-## Filter and calculate mean counts per million of Mix1 and Mix2 spiked samples in each of the 4 groups
-### Filter Mix1 CPM and Mix2 CPM in group A 
+
+### Filter and calculate mean counts per million of Mix1 and Mix2 spiked samples in each of the 4 groups
+## Check the 'Parameter Value[Spike-in Mix Number]' column of the assay table
+## If the values do not have a space, change 'Mix 1' and 'Mix 2' to 'Mix1' and 'Mix2', respectively
+
+# Filter Mix1 CPM and Mix2 CPM in group A 
 
 Adf = merged_ercc.loc[merged_ercc['ERCC group'] == 'A']
 Amix1df = Adf.loc[Adf['Mix']=='Mix 1']
@@ -2045,7 +2070,8 @@ adf = Amix1df.merge(Amix2df, on='ERCC ID', suffixes=('', '_2'))
 adf = adf.reset_index()
 adf['Avg Mix1 CPM/ Avg Mix2 CPM'] = (adf['Avg Mix1 CPM'] / adf['Avg Mix2 CPM'])
 
-### Filter Mix1 CPM and Mix2 CPM in group B
+
+# Filter Mix1 CPM and Mix2 CPM in group B
 
 Bdf = merged_ercc.loc[merged_ercc['ERCC group'] == 'B']
 Bmix1df = Bdf.loc[Bdf['Mix']=='Mix 1']
@@ -2061,7 +2087,8 @@ bdf = Bmix1df.merge(Bmix2df, on='ERCC ID')
 bdf = bdf.reset_index()
 bdf['Avg Mix1 CPM/ Avg Mix2 CPM'] = (bdf['Avg Mix1 CPM'] / bdf['Avg Mix2 CPM'])
 
-### Filter Mix1 CPM and Mix2 CPM in group C
+
+# Filter Mix1 CPM and Mix2 CPM in group C
 
 Cdf = merged_ercc.loc[merged_ercc['ERCC group'] == 'C']
 Cmix1df = Cdf.loc[Cdf['Mix']=='Mix 1']
@@ -2077,7 +2104,8 @@ cdf = Cmix1df.merge(Cmix2df, on='ERCC ID')
 cdf = cdf.reset_index()
 cdf['Avg Mix1 CPM/ Avg Mix2 CPM'] = (cdf['Avg Mix1 CPM'] / cdf['Avg Mix2 CPM'])
 
-### Filter Mix1 CPM and Mix2 CPM in group D
+
+# Filter Mix1 CPM and Mix2 CPM in group D
 
 Ddf = merged_ercc.loc[merged_ercc['ERCC group'] == 'D']
 Dmix1df = Ddf.loc[Ddf['Mix']=='Mix 1']
@@ -2093,7 +2121,9 @@ ddf = Dmix1df.merge(Dmix2df, on='ERCC ID')
 ddf = ddf.reset_index()
 ddf['Avg Mix1 CPM/ Avg Mix2 CPM'] = (ddf['Avg Mix1 CPM'] / ddf['Avg Mix2 CPM'])
 
-## Multi-sample ERCC analyses
+
+##### Multi-sample ERCC analyses
+
 ### Create box and whisker plots of the log(2) CPM for each ERCC detected in group A in Mix 1 and Mix 2 spiked samples
 
 a = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupA, hue="Mix",data=merged_ercc[merged_ercc['ERCC ID'].isin(groupA)], kind="box", col="ERCC group", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']))
@@ -2107,6 +2137,7 @@ a1.set_xticklabels(rotation=90)
 plt.title("ERCC Group A")
 a1.set(ylim=(0, 6))
 print('Number of ERCC detected in group A (out of 23) =', adf['Avg Mix1 CPM/ Avg Mix2 CPM'].count())
+
 
 ### Create box and whisker plots of the log(2) CPM for each ERCC detected in group B in Mix 1 and Mix 2 spiked samples
 
@@ -2123,6 +2154,7 @@ plt.title("ERCC Group B")
 b.set(ylim=(0, 2))
 print('Number of ERCC detected in group B (out of 23) =', bdf['Avg Mix1 CPM/ Avg Mix2 CPM'].count())
 
+
 ### Create box and whisker plots of the log(2) CPM for each ERCC detected in group C in Mix 1 and Mix 2 spiked samples
 
 c = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupC, hue="Mix", data=merged_ercc[merged_ercc['ERCC ID'].isin(groupC)], kind="box", col="ERCC group", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']))
@@ -2137,6 +2169,7 @@ c.set_xticklabels(rotation=90)
 plt.title("ERCC Group C")
 c.set(ylim=(0, 2))
 print('Number of ERCC detected in group C (out of 23) =', cdf['Avg Mix1 CPM/ Avg Mix2 CPM'].count())
+
 
 ### Create box and whisker plots of the log(2) CPM for each ERCC detected in group D in Mix 1 and Mix 2 spiked samples
 
@@ -2153,11 +2186,13 @@ plt.title("ERCC Group D")
 d.set(ylim=(0, 1))
 print('Number of ERCC detected in group D (out of 23) =', ddf['Avg Mix1 CPM/ Avg Mix2 CPM'].count())
 
-## Individual sample ERCC analyses
-# Calculate and plot ERCC metrics from individual samples, including limit of detection, dynamic range, and R^2 of counts vs. concentration.
+
+
+##### Individual sample ERCC analyses
+
+#Calculate and plot ERCC metrics from individual samples, including limit of detection, dynamic range, and R^2 of counts vs. concentration.
 
 #View the ERCC table
-
 print(ercc_table.head(n=3))
 
 # Check assay_table header to identify the 'Sample Name' column and the column title indicating the 'Spike-in Mix Nmber' if it's indicated in the metadata.
@@ -2171,26 +2206,23 @@ ercc_counts = raw_counts_table[raw_counts_table.index.str.contains('^ERCC-')]
 ercc_counts = ercc_counts.sort_values(by=list(ercc_counts), ascending=False)
 print(ercc_counts.head())
 
-# Make a dictionary for ERCC concentrations for Mix 1
 
+# Make a dictionary for ERCC concentrations for Mix 1
 mix1_conc_dict = dict(zip(ercc_table['ERCC ID'], ercc_table['concentration in Mix 1 (attomoles/ul)']))
 
 # Get samples spiked with Mix 1
-
 mix1_samples = assay_table[assay_table['Parameter Value[Spike-in Mix Number]'] == 'Mix 1']['Sample Name']
 
 # Get ERCC counts for Mix 1 spiked samples
-
 ercc_counts_mix_1 = ercc_counts[mix1_samples]
 ercc_counts_mix_1['ERCC conc (attomoles/ul)'] = ercc_counts_mix_1.index.map(mix1_conc_dict)
 print(ercc_counts_mix_1.head(n=3))
 
-# Make a dictionary for ERCC concentrations for Mix 2
 
+# Make a dictionary for ERCC concentrations for Mix 2
 mix2_conc_dict = dict(zip(ercc_table['ERCC ID'], ercc_table['concentration in Mix 2 (attomoles/ul)']))
 
 # Get samples spiked with Mix 2
-
 mix2_samples = assay_table[assay_table['Parameter Value[Spike-in Mix Number]'] == 'Mix 2']['Sample Name']
 
 # Get ERCC counts for Mix 2 spiked samples
@@ -2198,6 +2230,7 @@ mix2_samples = assay_table[assay_table['Parameter Value[Spike-in Mix Number]'] =
 ercc_counts_mix_2 = ercc_counts[mix2_samples]
 ercc_counts_mix_2['ERCC conc (attomoles/ul)'] = ercc_counts_mix_2.index.map(mix2_conc_dict)
 print(ercc_counts_mix_2.head(n=3))
+
 
 # Create a scatter plot of log(2) ERCC counts versus log(2) ERCC concentration for each sample
 
@@ -2231,6 +2264,7 @@ for ax in axs.flat:
 
     counter = counter + 1
 
+
 ## Calculate and plot linear regression of log(2) ERCC counts versus log(2) ERCC concentration for each sample
 
 # Filter counts > 0
@@ -2257,8 +2291,8 @@ for i in range(0, len(ercc_counts_mix_2.columns)-1):
   nonzero_counts_sorted = nonzero_counts.sort_values('Conc')
   nonzero_counts_list_2.append(nonzero_counts_sorted)
 
-# Plot each sample using linear regression of scatter plot with x = log2 Conc and y = log2 Counts.
-# Return min, max, R^2 and dynamic range (max / min) values.
+
+# Plot each sample using linear regression of scatter plot with x = log2 Conc and y = log2 Counts.  Return min, max, R^2 and dynamic range (max / min) values.
 
 samples = []
 mins = []
@@ -2343,6 +2377,7 @@ for ax in axs.flat:
       ax.tick_params(direction='in', axis='both', labelsize=9, labelleft=True, labelbottom=True);
       samples.append(all_columns[counter])
 
+
       if(len(xvalues) == 0):
         mins.append('NaN')
         maxs.append('NaN')
@@ -2393,6 +2428,7 @@ for ax in axs.flat:
 
     counter = counter + 1
 
+
 # Create directory for saved files
 
 import os
@@ -2403,13 +2439,15 @@ os.makedirs(name="ERCC_analysis", exist_ok=True)
 
 stats = pd.DataFrame(list(zip(samples, mins, maxs, dyranges, rs)))
 stats.columns = ['Samples', 'Min', 'Max', 'Dynamic range', 'R']
-stats.to_csv('ERCC_analysis/ERCC_stats_GLDS-NNN.csv', index = False)
-stats.filter(items = ['Samples', 'Dynamic range']).to_csv('ERCC_analysis/ERCC_dynrange_GLDS-NNN_mqc.csv', index = False)
-stats.filter(items = ['Samples', 'R']).to_csv('ERCC_analysis/ERCC_rsq_GLDS-NNN_mqc.csv', index = False)
+stats.to_csv('ERCC_analysis/ERCC_stats_GLDS-NNN.csv', index = False) 
+stats.filter(items = ['Samples', 'Dynamic range']).to_csv('ERCC_analysis/ERCC_dynrange_GLDS-NNN_mqc.csv', index = False) 
+stats.filter(items = ['Samples', 'R']).to_csv('ERCC_analysis/ERCC_rsq_GLDS-NNN_mqc.csv', index = False) 
 
-## Generate data and metadata files needed for ERCC DESeq2 analysis
-# ERCC Mix 1 and Mix 2 are distributed so that ~half the samples receive Mix 1 spike-in and ~half receive Mix 2 spike-in. 
-# Transcripts in Mix 1 and Mix 2 are present at a known ratio, so we can determine how well these patterns are revealed in the dataset.
+
+
+### Generate data and metadata files needed for ERCC DESeq2 analysis
+
+# ERCC Mix 1 and Mix 2 are distributed so that half the samples receive Mix 1 spike-in and half receive Mix 2 spike-in. Transcripts in Mix 1 and Mix 2 are present at a known ratio, so we can determine how well these patterns are revealed in the dataset.
 
 # Get sample table
 
@@ -2419,7 +2457,7 @@ pd.set_option('display.max_columns', None)
 print(combined)
 
 # Create metadata table containing samples and their respective ERCC spike-in Mix number
-# Note: Sometimes "Number" in [Spike-in Mix Number] is spelled "number" and this could cause error in mismatch search 
+# Sometimes Number in [Spike-in Mix Number] is spelled 'number' and this could cause error in mismatch search 
 
 ERCCmetadata = combined[['Parameter Value[Spike-in Mix Number]']]
 ERCCmetadata.index = ERCCmetadata.index.str.replace('-','_')
@@ -2459,6 +2497,7 @@ ERCCcounts.to_csv('ERCC_analysis/ERCCcounts.csv')
 ### 10b. Perform DESeq2 Analysis of ERCC Counts in R
 
 ```R
+
 ## Install R packages if not already installed
 
 if (!requireNamespace("BiocManager", quietly = TRUE))
@@ -2478,6 +2517,7 @@ coldata <- read.csv('ERCC_analysis/ERCCmetadata.csv', row.names=1) #INPUT
 coldata$Mix <- factor(coldata$Mix)
 all(rownames(coldata) == colnames(cts))
 
+
 ## Make DESeqDataSet object
 
 dds <- DESeqDataSetFromMatrix(countData = cts,
@@ -2485,12 +2525,14 @@ dds <- DESeqDataSetFromMatrix(countData = cts,
                               design = ~ Mix)
 dds
 
+
 ## Filter out ERCC genes with counts of less than 10 in all samples #####
 
 keepGenes <- rowSums(counts(dds)) > 10
 dds <- dds[keepGenes,]
 
 dds
+
 
 ## Run DESeq2 analysis and calculate results
 
@@ -2520,32 +2562,37 @@ write.csv(normcounts, 'ERCC_analysis/ERCC_normcounts.csv') #OUTPUT
 ### 10c. Analyze ERCC DESeq2 Results in Python
 
 ```python
-## Import python packages
+
+# Import python packages
 
 import pandas as pd
 from urllib.request import urlopen, quote, urlretrieve
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-## Import ERCC DESeq2 results
+
+# Import ERCC DESeq2 results
 
 deseq2out = pd.read_csv('ERCC_analysis/ERCC_DESeq2.csv', index_col=0) # INPUT
 #deseq2out.index = deseq2out.index.str.replace('_','-')
 deseq2out.rename(columns ={'baseMean' : 'meanNormCounts'}, inplace = True)
 print(deseq2out.head())
 
-## Get files containing ERCC gene concentrations and metadata
+
+# Get files containing ERCC gene concentrations and metadata
 
 ercc_url = 'https://assets.thermofisher.com/TFS-Assets/LSG/manuals/cms_095046.txt'
 ercc_table = pd.read_csv(ercc_url, '\t', index_col='ERCC ID')
 print(ercc_table.head(n=3))
 
-## Combine ERCC DESeq2 results and ercc_table
+
+# Combine ERCC DESeq2 results and ercc_table
 
 combined = deseq2out.merge(ercc_table, left_index=True, right_index=True)
 print(combined.head())
 
-## Filter p-value and adj. p-value cutoff at 10^-3
+
+# Filter p-value and adj. p-value cutoff at 10^-3
 
 combined['cleaned_padj'] = combined['padj']
 combined.loc[(combined.cleaned_padj < 0.001),'cleaned_padj']=0.001
@@ -2555,12 +2602,14 @@ combined.loc[(combined.cleaned_pvalue < 0.001),'cleaned_pvalue']=0.001
 
 print(combined.head())
 
-## Export the filtered combined ERCC DESeq2 results and ercc_table
-### Remember to change file name to GLDS# analyzing
+
+# Export the filtered combined ERCC DESeq2 results and ercc_table
+# Remember to change file name to GLDS# analyzing
 
 combined.filter(items = ['ERCC ID', 'meanNormCounts', 'cleaned_pvalue','cleaned_padj']).to_csv('ERCC_analysis/ERCC_lodr_GLDS-NNN_mqc.csv') 
 
-## Plot p-value vs. mean normalized ERCC counts
+
+# Plot p-value vs. mean normalized ERCC counts
 
 fig, ax = plt.subplots(figsize=(10, 7))
 
@@ -2576,7 +2625,8 @@ sns.lineplot(data=combined, x="meanNormCounts", y="cleaned_pvalue",
 ax.set_xscale("linear");
 ax.set_yscale("log");
 
-## Plot Adjp-value vs. mean normalized ERCC counts
+
+# Plot Adjp-value vs. mean normalized ERCC counts
 
 fig, ax = plt.subplots(figsize=(10, 7))
 
