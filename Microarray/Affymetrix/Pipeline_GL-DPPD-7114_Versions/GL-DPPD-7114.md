@@ -140,6 +140,7 @@ if (!require("BiocManager", quietly = TRUE))
 BiocManager::install(version = "3.14")
 BiocManager::install("limma")
 BiocManager::install("biomaRt")
+BiocManager::install("oligo")
 
 
 ### Import libraries ###
@@ -154,6 +155,7 @@ library(matrixStats)
 library(limma)
 library(biomaRt)
 library(statmod)
+library(oligo)
 
 
 
