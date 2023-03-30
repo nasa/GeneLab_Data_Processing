@@ -143,20 +143,8 @@ BiocManager::install("biomaRt")
 BiocManager::install("oligo")
 
 
-### Import libraries ###
-
-library(tidyverse)
-library(dplyr)
-library(tibble)
-library(stringr)
-library(R.utils)
-library(glue)
-library(matrixStats)
-library(limma)
-library(biomaRt)
-library(statmod)
-library(oligo)
-
+## Note: Only dplyr is explicitly loaded. Other library functions are called with explicit namespace (e.g. LIBRARYNAME::FUNCTION)
+library(dplyr) # Ensure infix operator is available, methods should still reference dplyr namespace otherwise
 
 
 # Define path to runsheet
