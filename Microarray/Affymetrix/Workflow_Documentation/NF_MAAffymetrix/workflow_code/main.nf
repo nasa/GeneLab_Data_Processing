@@ -15,24 +15,25 @@ include { GENERATE_SOFTWARE_TABLE } from './modules/GENERATE_SOFTWARE_TABLE'
 * HELP MENU  **************************************
 **************************************************/
 if (params.help) {
-  println("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅")
-  println("┇ Microarray Affymetrix Pipeline: $workflow.manifest.version  ┇")
-  println("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅")
+  println("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅")
+  println("┇ Affymetrix Microarray Pipeline: $workflow.manifest.version  ┇")
+  println("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅")
   println("Usage example 1: Processing GLDS datasets using genome fasta and gtf from Ensembl")
-  println("   > nextflow run ./main.nf --gldsAccession GLDS-194")
+  println("   > nextflow run ./main.nf --osdAccession OSD-266 --gldsAccession GLDS-266")
   println()
-  println("Usage example 3: Processing Other datasets")
+  println("Usage example 2: Processing Other datasets")
   println("   Note: This requires a user-created runsheet.")
   println("   > nextflow run ./main.nf --runsheetPath </path/to/runsheet>")
   println()
   println("arguments:")
   println("  --help                show this help message and exit")
+  println("  --osdAccession OSD-000")
+  println("                        the OSD accession id to process through the Affymetrix Microarray Pipeline.")
   println("  --gldsAccession GLDS-000")
-  println("                        the GLDS accession id to process through the RNASeq Concensus Pipeline.")
+  println("                        the GLDS accession id to process through the Affymetrix Microarray Pipeline.")
   println("  --runsheetPath        Use a local runsheet instead one automatically generated from a GLDS ISA archive.")
   println("  --skipVV              Skip automated V&V. Default: false")
   println("  --outputDir           Directory to save staged raw files and processed files. Default: <launch directory>")
-  // println("  -stub-run             runs the workflow forcing 'unstranded' RSEM settings and using dummy gene counts in the differential gene expression (DGE) analysis. Useful when combined with the --truncateTo parameter this often leads to low gene counts and errors in the DGE analysis")  
   exit 0
   }
 
