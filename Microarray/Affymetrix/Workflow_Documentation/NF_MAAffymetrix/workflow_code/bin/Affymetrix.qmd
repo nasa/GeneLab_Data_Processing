@@ -30,14 +30,14 @@ params:
 #| cache: false
 #| message: false
 # DEBUG: START
-dump_rdata <- function() {
-  # Save debugging info to file last.dump.rda
-  save.image("debug.RDATA")
-  # Quit R with error status
-  q(status = 1)
-}
+# dump_rdata <- function() {
+#   # Save debugging info to file last.dump.rda
+#   save.image("debug.RDATA")
+#   # Quit R with error status
+#   q(status = 1)
+# }
 
-options(error = dump_rdata) 
+# options(error = dump_rdata) 
 # DEBUG: END
 
 # Ensure requisite package downloads occur in task directory
