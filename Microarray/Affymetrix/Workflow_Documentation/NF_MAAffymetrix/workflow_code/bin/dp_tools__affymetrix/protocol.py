@@ -88,7 +88,7 @@ def validate(
             with vp.payload(
                 payloads=[
                     {
-                        "raw_intensities": lambda: dataset.data_assets["raw intensities table"].path,
+                        "raw_intensities": lambda: dataset.data_assets["raw probe intensities table"].path,
                         "samples": dataset.samples
                     }
                 ]
@@ -113,7 +113,7 @@ def validate(
             with vp.payload(
                 payloads=[
                     {
-                        "normalized_expression": lambda: dataset.data_assets["normalized expression table"].path,
+                        "normalized_expression": lambda: dataset.data_assets["normalized probeset expression table"].path,
                         "samples": dataset.samples
                     }
                 ]
@@ -121,7 +121,7 @@ def validate(
                 vp.add(
                     checks.check_normalized_expression_table,
                     full_description=textwrap.dedent(f"""
-                        - Check: Ensure normalized expression table has all samples and values within (-inf,+inf)
+                        - Check: Ensure normalized probeset expression table has all samples and values within (-inf,+inf)
                             - Reason:
                                 - Part of processing output. Note: Values are log2 transformed
                             - Potential Source of Problems:
