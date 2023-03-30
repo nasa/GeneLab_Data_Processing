@@ -76,6 +76,7 @@ original_par <- par()
 ## Load Metadata and Raw Data
 
 ``` {r load-runsheet-and-annotation-table-link}
+#| cache: false
 #| message: false
 print("Loading Runsheet...") # NON_DPPD
 
