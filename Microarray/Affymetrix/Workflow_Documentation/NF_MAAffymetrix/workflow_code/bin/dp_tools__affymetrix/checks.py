@@ -585,7 +585,7 @@ def check_sample_table_for_correct_group_assignments(
     Returns:
         FlagEntry: A check result
     """
-    df_sample = pd.read_csv(sampleTable, index_col=0).set_index("sample", ).sort_index()
+    df_sample = pd.read_csv(sampleTable, index_col="sample").sort_index()
     # data specific preprocess
     df_rs = (
         pd.read_csv(runsheet, index_col="Sample Name", dtype=str) # Ensure no factor value columns are misinterpreted as numeric
