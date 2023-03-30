@@ -6,7 +6,13 @@ process VV_AFFYMETRIX {
     saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }.tsv.MANUAL_CHECKS_PENDING" }
   // V&V'ed data publishing
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
-    pattern: '00-DE/**',
+    pattern: '00-RawData/**',
+    mode: params.publish_dir_mode
+  publishDir "${ params.outputDir }/${ params.gldsAccession }",
+    pattern: '01-oligo_NormExp/**',
+    mode: params.publish_dir_mode
+  publishDir "${ params.outputDir }/${ params.gldsAccession }",
+    pattern: '02-limma_DGE/**',
     mode: params.publish_dir_mode
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
     pattern: 'Metadata/**',
@@ -16,13 +22,15 @@ process VV_AFFYMETRIX {
 
   input:
     path("VV_INPUT/Metadata/*") // While files from processing are staged, we instead want to use the files located in the publishDir for QC
-    path("VV_INPUT/00-DE/*") // "While files from processing are staged, we instead want to use the files located in the publishDir for QC
+    path("VV_INPUT/*") // "While files from processing are staged, we instead want to use the files located in the publishDir for QC
     val(skipVV) // Skips running V&V but will still publish the files
     path("dp_tools__affymetrix_channel")
   
   output:
     path("Metadata/*_runsheet.csv"), emit: VVed_runsheet
-    path("00-DE/*"), emit: VVed_raw_reads
+    path("00-RawData/*"), emit: VVed_rawData
+    path("01-oligo_NormExp/*"), emit: VVed_NormExp
+    path("02-limma_DGE/*"), emit: VVed_DGE
     path("VV_report.tsv.MANUAL_CHECKS_PENDING"), optional: params.skipVV, emit: log
     path("versions.yml"), emit: versions
 
@@ -38,7 +46,11 @@ process VV_AFFYMETRIX {
     fi
 
     # Export versions
-    python -c "import dp_tools; print(f'- dp_tools: {dp_tools.__version__}')" > versions.yml
-
+    cat >> versions.yml <<END_OF_VERSIONS
+    - name: dp_tools
+      version: \$(python -c "import dp_tools; print(dp_tools.__version__)")
+      homepage: https://github.com/J-81/dp_tools
+      workflow task: ${task.process}
+    END_OF_VERSIONS
     """
 }
