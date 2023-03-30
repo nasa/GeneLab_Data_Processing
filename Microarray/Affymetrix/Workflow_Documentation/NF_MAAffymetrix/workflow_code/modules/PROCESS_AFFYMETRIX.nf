@@ -1,6 +1,6 @@
 process PROCESS_AFFYMETRIX {
   publishDir "${ params.outputDir }/${ params.gldsAccession }/GeneLab",
-    pattern: "Affymetrix.html",
+    pattern: "NF_MAAffymetrix_v${workflow.manifest.version}.html",
     mode: params.publish_dir_mode
   stageInMode 'copy'
 
@@ -12,7 +12,7 @@ process PROCESS_AFFYMETRIX {
     val(limit_biomart_query) // DEBUG option, limits biomart queries to the number specified if not set to false
 
   output:
-    path("Affymetrix.html"), emit: report
+    path("NF_MAAffymetrix_v${workflow.manifest.version}.html"), emit: report
 
     tuple path("02-limma_DGE"),
           path("01-oligo_NormExp"),
@@ -29,6 +29,14 @@ process PROCESS_AFFYMETRIX {
             -P 'organism:${organism}' \
             ${limit_biomart_query_parameter}
 
-        echo "- quarto: \$(quarto --version)" >> versions.yml
+        # Rename report
+        mv Affymetrix.html NF_MAAffymetrix_v${workflow.manifest.version}.html
+
+        cat >> versions.yml <<END_OF_VERSIONS
+        - name: quarto
+          version: \$(quarto --version)
+          homepage: https://quarto.org/
+          workflow task: ${task.process}
+        END_OF_VERSIONS
     """
 }
