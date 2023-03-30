@@ -20,11 +20,14 @@ params:
   annotation_file_path: NULL # str, Annotation file from 'genelab_annots_link' column of https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv
   organism: NULL # str, Used to determine primary keytype
   DEBUG_limit_biomart_query: NULL # int, If supplied, only the first n probeIDs are queried
-  
+
+# execute: # DEBUG
+#   cache: true
 ---
 
 ## Validate Parameters <!-- non DPPD -->
 ``` {r validate-parameters}
+#| cache: false
 #| message: false
 # DEBUG: START
 dump_rdata <- function() {
