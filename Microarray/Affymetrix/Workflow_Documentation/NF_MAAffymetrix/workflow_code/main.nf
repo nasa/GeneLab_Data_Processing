@@ -44,7 +44,11 @@ println "\n"
 **************************************************/
 // Get all params sourced data into channels
 // Set up channel containing glds accession number
-if ( !params.outputDir ) {  params.outputDir = "$workflow.launchDir" }
+if ( !params.outputDir ) {  
+  println("Parameter: 'outputDir' was not specified. Using default: <workflow launch directory>")
+  params.outputDir = "$workflow.launchDir" 
+  }
+println("Resolved output directory: ${ params.outputDir }")
 
 /**************************************************
 * WORKFLOW SPECIFIC PRINTOUTS  ********************
