@@ -841,7 +841,8 @@ limma::write.fit(res, adjust = 'BH',
 - INTERIM.csv (Statistical values from individual probeset level DE analysis, including:
   - Log2fc between all pairwise comparisons
   - T statistic for all pairwise comparison tests
-  - P value for all pairwise comparison tests)
+  - P value for all pairwise comparison tests
+  - Adjusted P value for all pairwise comparison tests)
 
 <br>
 
