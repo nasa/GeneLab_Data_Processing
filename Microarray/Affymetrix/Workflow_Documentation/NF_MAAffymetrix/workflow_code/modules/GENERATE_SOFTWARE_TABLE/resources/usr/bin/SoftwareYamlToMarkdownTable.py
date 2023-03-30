@@ -36,6 +36,7 @@ ASSUMED_SOFTWARE = [{
 HOMEPAGE_MAP = {
     "statmod":"https://cran.r-project.org/web/packages/statmod/index.html",
     "biomaRt":"https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html", # UPDATE ON biomaRt version update
+    "oligo":"https://www.bioconductor.org/packages/3.14/bioc/html/oligo.html", # UPDATE ON biomaRt version update
 }
 
 @click.command()
