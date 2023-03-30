@@ -689,7 +689,7 @@ probeset_expression_matrix.biomart_mapped <- probeset_expression_matrix %>%
 **Input Data:**
 
 - `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
-- `df_rs$'Array Design REF'` (array design reference specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
+- `df_rs$'biomart_attribute'` (array design biomart identifier specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - ENSEMBL_VERSION (reference organism Ensembl version indicated in the `ensemblVersion` column of the [GL-DPPD-7110_annotations.csv](../../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
 - `probeset_level_data` (R object containing probeset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-probeset-summarization))
 
