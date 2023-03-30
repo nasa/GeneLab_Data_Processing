@@ -1,0 +1,63 @@
+{
+    "GLDS-542: Should run without failures": {
+        "content": [
+            [
+                [
+                    "SampleTable.csv:md5,f393473808e2b9e262c7da5809e0baca",
+                    "contrasts.csv:md5,c9af9056cef7bd0210a626cd9c6175b2",
+                    "differential_expression.csv:md5,1bce5936134e25585716ebe983743c32",
+                    "normalized_expression.csv:md5,baae31c588f25cf574df54ee4937cbaa",
+                    "raw_intensities.csv:md5,21b8fe8485e30baabd33d4341be08a78",
+                    "visualization_PCA_table.csv:md5,6b37103ca8cacdfc2a924631e7422fa9",
+                    "visualization_output_table.csv:md5,e1aa48627dde500d26443891de6c23d9"
+                ]
+            ],
+            [
+                "OSD-367_microarray_v0_runsheet.csv:md5,20d3407f692abaf4471151a7d85c0420"
+            ],
+            [
+                "versions.yml:md5,a6554ecf93aa1f25709a8cce92f6c64e"
+            ]
+        ],
+        "timestamp": "2023-02-23T22:33:56+0000"
+    },
+    "GLDS-367: Should run without failures": {
+        "content": [
+            [
+                [
+                    "SampleTable.csv:md5,f393473808e2b9e262c7da5809e0baca",
+                    "contrasts.csv:md5,c9af9056cef7bd0210a626cd9c6175b2",
+                    "differential_expression.csv:md5,1bce5936134e25585716ebe983743c32",
+                    "normalized_expression.csv:md5,baae31c588f25cf574df54ee4937cbaa",
+                    "raw_intensities.csv:md5,21b8fe8485e30baabd33d4341be08a78",
+                    "visualization_PCA_table.csv:md5,6b37103ca8cacdfc2a924631e7422fa9",
+                    "visualization_output_table.csv:md5,e1aa48627dde500d26443891de6c23d9"
+                ]
+            ],
+            [
+                "OSD-367_microarray_v0_runsheet.csv:md5,20d3407f692abaf4471151a7d85c0420"
+            ],
+            [
+                "versions.yml:md5,a6554ecf93aa1f25709a8cce92f6c64e"
+            ]
+        ],
+        "timestamp": "2023-02-23T22:33:55+0000"
+    },
+    "Should run without failures": {
+        "content": [
+            [
+                [
+                    "SampleTable.csv:md5,f393473808e2b9e262c7da5809e0baca",
+                    "contrasts.csv:md5,c9af9056cef7bd0210a626cd9c6175b2",
+                    "differential_expression.csv:md5,7aabea95a4b1d09ec26fb826daa17f08",
+                    "visualization_PCA_table.csv:md5,6b37103ca8cacdfc2a924631e7422fa9",
+                    "visualization_output_table.csv:md5,6cac37993daf664d1be489b1f5a9befd"
+                ]
+            ],
+            [
+                "GLDS-367_microarray_v0_runsheet.csv:md5,6b066905180d502a70e4ad9fc094433d"
+            ]
+        ],
+        "timestamp": "2023-02-23T22:33:55+0000"
+    }
+}
