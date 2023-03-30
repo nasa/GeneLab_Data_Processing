@@ -4,10 +4,9 @@ VERSION: "0"
 
 # anchors for reuse
 _anchors:
-  DGEDataDir: &DGEDataDir "00-DE"
-  rseqcDataDir: &rseqcDataDir "RSeQC_Analyses" # DISCUSS: Should this be renamed to "RSeQC_Analyses" for consistent casing? -J.O. , this has been renamed and differs from the recent bash based processings
-  ERCCAnalysisDir: &ERCCAnalysisDir "ERCC_Analysis"
-  FastQC_Reports: &FastQC_Reports "FastQC_Reports"
+  RawDir: &RawDir "00-RawData"
+  NormDir: &NormDir "01-oligo_NormExp"
+  DGEDataDir: &DGEDataDir "02-limma_DGE"
   neverPublished: &neverPublished
     subcategory: null
     subdirectory: null
@@ -59,7 +58,7 @@ Staging:
           Runsheet Column Name: biomart_attribute
           Processing Usage: >-
             Used for identifying biomart attribute name for biomart mapping purposes
-          Example: agilent_wholegenome_4x44k_v1
+          Example: AFFY MoGene 2 1 st v1
 
         - ISA Field Name: Source Name
           ISA Table Source: Sample
@@ -165,13 +164,13 @@ ISA Meta:
       technology: "microarray"
 
   # this is prepended to all file names in the curation assay table
-  Global file prefix: "{datasystem}_rna_seq_"
+  Global file prefix: "{datasystem}_microarray_"
 
   # configuration related to updating investigation file
   # each must refer to a STUDY PROCESS in the 'ISA_investigation.yaml' file
   # LEADCAP_organism should be the studied organisms scientific name with a leading cap
   Post Processing Add Study Protocol: 
-    GeneLab Agilent 1 Channel data processing protocol::{LEADCAP_organism} V1
+    GeneLab Affymetrix data processing protocol::{LEADCAP_organism} V1
 
 data assets:
   runsheet:
@@ -209,25 +208,50 @@ data assets:
             
     resource categories: *DGEAnalysisData
 
-  raw intensities table:
+  raw probe intensities table:
     processed location: 
-      - *DGEDataDir
-      - "raw_intensities.csv"
+      - *RawDir
+      - "raw_intensities_probe.csv"
 
     tags:
       - processed
             
-    resource categories: *DGEAnalysisData
+    resource categories:
+      subcategory: Raw Intensities Table
+      subdirectory: ""
+      publish to repo: true
+      include subdirectory in table: false
+      table order: 1
 
-  normalized expression table:
+  normalized probe intensities table:
     processed location: 
-      - *DGEDataDir
-      - "normalized_expression.csv"
+      - *NormDir
+      - "normalized_intensities_probe.csv"
 
     tags:
       - processed
             
-    resource categories: *DGEAnalysisData
+    resource categories:
+      subcategory: Normalized Expression Table
+      subdirectory: ""
+      publish to repo: true
+      include subdirectory in table: false
+      table order: 2
+
+  normalized probeset expression table:
+    processed location: 
+      - *NormDir
+      - "normalized_expression_probeset.csv"
+
+    tags:
+      - processed
+            
+    resource categories:
+      subcategory: Normalized Expression Table
+      subdirectory: ""
+      publish to repo: true
+      include subdirectory in table: false
+      table order: 2
 
   DE annotated table:
     processed location: 
@@ -238,16 +262,6 @@ data assets:
       - processed
             
     resource categories: *DGEAnalysisData
-
-  DE annotated extended for viz table:
-    processed location: 
-      - *DGEDataDir
-      - "visualization_output_table.csv"
-
-    tags:
-      - processed
-            
-    resource categories: *neverPublished
 
   viz PCA table:
     processed location: 
