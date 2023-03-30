@@ -569,7 +569,7 @@ probeset_expression_matrix.biomart_mapped <- probeset_expression_matrix %>%
   dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) )
 ```
 
-### Summarize Biomart Mapping vs. Manufacturer Mapping
+### Summarize Biomart Mapping
 
 ``` {r summarize-remapping-vs-original-mapping}
 #| message: false

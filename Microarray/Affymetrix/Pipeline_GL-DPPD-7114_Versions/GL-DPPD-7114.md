@@ -43,7 +43,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
   - [7. Probeset Summarization](#7-probeset-summarization)
   - [8. Perform Probeset Differential Expression (DE)](#8-perform-probeset-differential-expression-de)
     - [8a. Add Probeset Annotations](#8a-add-probeset-annotations)
-    - [8b. Summarize Biomart Mapping vs. Manufacturer Mapping](#8b-summarize-biomart-mapping-vs-manufacturer-mapping)
+    - [8b. Summarize Biomart Mapping](#8b-summarize-biomart-mapping)
     - [8c. Generate Design Matrix](#8c-generate-design-matrix)
     - [8d. Perform Individual Probeset Level DE](#8d-perform-individual-probeset-level-de)
     - [8e. Add Additional Columns and Format DE Table](#8e-add-additional-columns-and-format-de-table)
@@ -711,7 +711,7 @@ probeset_expression_matrix.biomart_mapped <- probeset_expression_matrix %>%
 
 <br>
 
-### 8b. Summarize Biomart Mapping vs. Manufacturer Mapping
+### 8b. Summarize Biomart Mapping
 
 ```R
 # Pie Chart with Percentages
