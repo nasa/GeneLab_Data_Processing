@@ -255,6 +255,20 @@ raw_data <- limma::read.maimages(df_local_paths$`Local Paths`,
                                  names = df_local_paths$`Sample Name` # Map column names as Sample Names (instead of default filenames)
                                  )
 
+# Handle raw data which lacks certain replaceable column data
+
+## This likely arises as Agilent Feature Extraction (the process that generates the raw data files on OSDR) 
+##   gives some user flexibilty in what probe column to ouput
+
+## Missing ProbeUID "Unique integer for each unique probe in a design"
+### Source: https://www.agilent.com/cs/library/usermanuals/public/GEN-MAN-G4460-90057.pdf Page 178
+### Remedy: Assign unique integers for each probe
+
+if ( !("ProbeUID" %in% colnames(raw_data$genes)) ) {
+  # Assign unique integers for each probe
+  print("Assigning `ProbeUID` as original files did not include them")
+  raw_data$genes$ProbeUID <- seq_len(nrow(raw_data$genes))
+}
 
 # Summarize raw data
 print(paste0("Number of Arrays: ", dim(raw_data)[2]))

@@ -1,0 +1,26 @@
+{
+    "GLDS-271: Should run without failures": {
+        "content": [
+            [
+                "GLDS-271_metadata_GLDS-271-ISA.zip:md5,83733ce544893bcc887393260032b5ab",
+                "OSD-271_microarray_v0_runsheet.csv:md5,57e7f040e691bf181b3adeffdf196f6f"
+            ],
+            [
+                "raw_intensities.csv:md5,94e1ae2bea50b698ab48b7388745cf3b"
+            ],
+            [
+                "normalized_expression.csv:md5,b569714c6caafe8c52397496dfa319f9"
+            ],
+            [
+                "SampleTable.csv:md5,d18946983951cdf916aaf1e49cc47a29",
+                "contrasts.csv:md5,35ce1c9a57b76d6a281198636e9d4d16",
+                "differential_expression.csv:md5,43b3bd3e169a3c0fb9fc8f7a70a2f7db",
+                "visualization_PCA_table.csv:md5,8185f12496c8467aa2affcfd0d982e62"
+            ],
+            {
+                "NF_MAAgilent1ch_v1.0.0.html exists": true
+            }
+        ],
+        "timestamp": "2023-03-31T16:16:20+0000"
+    }
+}
