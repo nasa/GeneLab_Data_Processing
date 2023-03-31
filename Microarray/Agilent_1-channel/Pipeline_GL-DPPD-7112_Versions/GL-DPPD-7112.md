@@ -1025,8 +1025,9 @@ FINAL_COLUMN_ORDER <- c(
 
 ## Assert final column order includes all columns from original table
 if (!setequal(FINAL_COLUMN_ORDER, colnames(df_interim))) {
-  FINAL_COLUMN_ORDER_STRING <- paste(FINAL_COLUMN_ORDER, collapse = ":::::")
-  stop(glue::glue("Column reordering attempt resulted in different sets of columns than orignal. Order attempted: {FINAL_COLUMN_ORDER_STRING}"))
+  NOT_IN_DF_INTERIM <- paste(setdiff(FINAL_COLUMN_ORDER, colnames(df_interim)), collapse = ":::")
+  NOT_IN_FINAL_COLUMN_ORDER <- paste(setdiff(colnames(df_interim), FINAL_COLUMN_ORDER), collapse = ":::")
+  stop(glue::glue("Column reordering attempt resulted in different sets of columns than original. Names unique to 'df_interim': {NOT_IN_FINAL_COLUMN_ORDER}. Names unique to 'FINAL_COLUMN_ORDER': {NOT_IN_DF_INTERIM}."))
 }
 
 ## Perform reordering
