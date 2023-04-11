@@ -11,3 +11,4 @@
 ## Select a microarray platform for more info:
 
 * [Agilent 1-channel](Agilent_1-channel)  
+* [Affymetrix](Affymetrix)

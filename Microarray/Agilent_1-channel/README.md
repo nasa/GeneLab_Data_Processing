@@ -1,7 +1,7 @@
 # GeneLab bioinformatics processing pipeline for Agilent 1-channel microarray data
 
 
-> **The document [`GL-DPPD-7112.md`](Pipeline_GL-DPPD-7112_Versions/GL-DPPD-7112.md) holds an overview and example commands for how GeneLab processes Agilent 1-channel microarray datasets. See the [Repository Links](#repository-links) descriptions below for more information. Processed data output files and processing code is provided for each GLDS dataset along with the processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
+> **The document [`GL-DPPD-7112.md`](Pipeline_GL-DPPD-7112_Versions/GL-DPPD-7112.md) holds an overview and example commands for how GeneLab processes Agilent 1-channel microarray datasets. See the [Repository Links](#repository-links) descriptions below for more information. Processed data output files and processing code is provided for each GLDS dataset along with the processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 
 --- 
 
