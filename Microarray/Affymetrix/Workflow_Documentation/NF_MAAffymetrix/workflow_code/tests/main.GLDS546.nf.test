@@ -3,14 +3,14 @@ nextflow_pipeline {
     name "Test Workflow main.nf"
     script "main.nf"
 
-    test("GLDS-266: Should run without failures") {
+    test("GLDS-546: Should run without failures") {
 
         when {
             params {
                 // define parameters here. Example: 
-                osdAccession = "OSD-266"
-                gldsAccession = "GLDS-266"
-                biomart_attribute = "AFFY MoGene 2 1 st v1"
+                osdAccession = "OSD-546"
+                gldsAccession = "GLDS-546"
+                // biomart_attribute = "AFFY HuGene 1 0 st v1" IN ISA
                 limit_biomart_query = 300
             }
         }
