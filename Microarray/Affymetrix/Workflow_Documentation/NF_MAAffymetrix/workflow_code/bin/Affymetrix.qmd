@@ -29,16 +29,6 @@ params:
 ``` {r validate-parameters}
 #| cache: false
 #| message: false
-# DEBUG: START
-# dump_rdata <- function() {
-#   # Save debugging info to file last.dump.rda
-#   save.image("debug.RDATA")
-#   # Quit R with error status
-#   q(status = 1)
-# }
-
-# options(error = dump_rdata) 
-# DEBUG: END
 
 # Ensure requisite package downloads occur in task directory
 #   This is necessary since oligo attempts to install an annotations package when loading raw files.
@@ -446,10 +436,6 @@ DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data
 ```
 
 ## Perform Probeset Differential Expression and Annotation
-
-1. Add biomart annotations first
-2. Compute all mapping statistics (i.e. multimapping (one-probe to many-genes), redudant mapping (many-probes to one-gene))
-3. Perform DE with and without filtering (assessing effects of filtering on row-wise results)
 
 ### Probeset Differential Expression (DE)
 
@@ -1034,8 +1020,4 @@ cat(get_versions(), file = version_output_fn, append = TRUE, sep = "\n")
 ## Print for report
 print("Session Info below: ")
 print(sessionInfo())
-```
-
-``` {r dev-dump-rdata-postrun}
-#save.image("success.RDATA") # DEBUG: Very large RDATA file!
 ```
