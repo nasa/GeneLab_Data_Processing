@@ -17,6 +17,6 @@ process GENERATE_MD5SUMS {
     """
     generate_md5sum_files.py  --root-path ${ data_dir } \\
                               --runsheet-path ${ runsheet } \\
-                              --plug-in-dir ${ dp_tools__agilent_1_channel }
+                              --plug-in-dir "dp_tools__affymetrix"
     """
 }

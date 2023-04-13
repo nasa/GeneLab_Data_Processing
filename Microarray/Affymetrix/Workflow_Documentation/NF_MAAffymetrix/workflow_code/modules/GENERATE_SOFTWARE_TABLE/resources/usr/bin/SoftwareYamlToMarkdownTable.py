@@ -6,10 +6,11 @@ import click
 import pandas as pd
 
 
-AGILENT_SOFTWARE_DPPD = [
+AFFYMETRIX_SOFTWARE_DPPD = [
     "R",
     "DT",
     "dplyr",
+    "tibble",
     "stringr",
     "R.utils",
     "oligo",
@@ -21,9 +22,10 @@ AGILENT_SOFTWARE_DPPD = [
     "dp_tools",
     "singularity",
     "Quarto",
+    "nextflow"
 ]
 
-AGILENT_SOFTWARE_DPPD = [s.lower() for s in AGILENT_SOFTWARE_DPPD]
+AFFYMETRIX_SOFTWARE_DPPD = [s.lower() for s in AFFYMETRIX_SOFTWARE_DPPD]
 
 ASSUMED_SOFTWARE = [{
     "name": "singularity",
@@ -50,9 +52,9 @@ def yamlToMarkdown(input_yaml: Path):
     df = pd.DataFrame(data)
 
     # Filter to direct software used (i.e. exclude dependencies of the software)
-    df = df.loc[df["name"].str.lower().isin(AGILENT_SOFTWARE_DPPD)]
+    df = df.loc[df["name"].str.lower().isin(AFFYMETRIX_SOFTWARE_DPPD)]
 
-    assert len(AGILENT_SOFTWARE_DPPD) == len(df), f"Not all software accounted for! Missing: {set(AGILENT_SOFTWARE_DPPD) - set(df['name'].str.lower())}"
+    assert len(AFFYMETRIX_SOFTWARE_DPPD) == len(df), f"Not all software accounted for! Missing: {set(AFFYMETRIX_SOFTWARE_DPPD) - set(df['name'].str.lower())}"
 
     print(df.apply(lambda row: print(row) , axis="columns"))
     df['homepage'] = df.apply(lambda row: HOMEPAGE_MAP[row['name']] if row['homepage'] == "NO URLS ENCODED" else row['homepage'], axis="columns")
