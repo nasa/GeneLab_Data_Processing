@@ -317,7 +317,7 @@ DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data
 ### Density Plot
 
 ``` {r qa-for-normalized-data--density-plot}
-#| fig-cap: Density of normalized intensities for each array.  A lack of overlap indicates a need for normalization.
+#| fig-cap: Density of normalized intensities for each array.  Compared to the raw data density plot, array densities should overlap more.
 #| warning: false
 #| column: screen-inset-right # Allow images to flow all the way to the right
 #| fig-width: 14
