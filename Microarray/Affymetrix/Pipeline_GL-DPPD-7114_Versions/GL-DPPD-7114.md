@@ -165,6 +165,7 @@ dir.create(DIR_DGE)
 ##   Par may be temporarily changed for plotting purposes and reset once the plotting is done
 
 original_par <- par()
+options(preferRaster=TRUE) # use Raster when possible to avoid antialiasing artifacts in images
 
 df_rs <- read.csv(runsheet, check.names = FALSE)
 
