@@ -637,9 +637,9 @@ write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable.csv"), row.names =
 write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts.csv"))
 ```
 
-### Perform Individual Probe Level DE
+### Perform Individual Probeset Level DE
 
-``` {r perform-probe-differential-expression}
+``` {r perform-probeset-differential-expression}
 lmFitPairwise <- function(norm_data, design) {
     #' Perform all pairwise comparisons
 
