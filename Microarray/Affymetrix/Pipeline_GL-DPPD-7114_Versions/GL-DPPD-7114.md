@@ -1051,8 +1051,8 @@ write.csv(df_interim, file.path(DIR_DGE, "differential_expression.csv"), row.nam
 write.csv(
   df_interim[c(
   ANNOTATIONS_COLUMN_ORDER,
-  "count_ENSEMBL_mappings",
   "ProbesetID",
+  "count_ENSEMBL_mappings",
   all_samples)
   ], file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_probeset.csv"), row.names = FALSE)
 
