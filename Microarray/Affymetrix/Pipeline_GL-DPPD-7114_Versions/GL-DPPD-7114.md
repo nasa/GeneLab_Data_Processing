@@ -358,7 +358,7 @@ MA_plot <- oligo::MAplot(
 
 ```R
 max_samplename_length <- max(nchar(colnames(raw_data)))
-dynamic_lefthand_margin <- max_samplename_length * 1
+dynamic_lefthand_margin <- max(max_samplename_length * 0.7, 10)
 par(
   mar = c(8, dynamic_lefthand_margin, 8, 2) + 0.1, # mar is the margin around the plot. c(bottom, left, top, right)
   xpd = TRUE
@@ -525,7 +525,7 @@ MA_plot <- oligo::MAplot(
 
 ```R
 max_samplename_length <- max(nchar(colnames(norm_data)))
-dynamic_lefthand_margin <- max_samplename_length * 1
+dynamic_lefthand_margin <- max(max_samplename_length * 0.7, 10)
 par(
   mar = c(8, dynamic_lefthand_margin, 8, 2) + 0.1, # mar is the margin around the plot. c(bottom, left, top, right)
   xpd = TRUE
