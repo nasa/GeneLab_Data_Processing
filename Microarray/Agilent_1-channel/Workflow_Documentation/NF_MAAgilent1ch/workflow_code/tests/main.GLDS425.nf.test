@@ -22,7 +22,6 @@ nextflow_pipeline {
                             path("${params.outputDir}/${params.gldsAccession}/00-RawData").list(),
                             path("${params.outputDir}/${params.gldsAccession}/01-limma_NormExp").list(),
                             path("${params.outputDir}/${params.gldsAccession}/02-limma_DGE").list(),
-                            [ 'NF_MAAgilent1ch_v1.0.0.html exists' : path("${params.outputDir}/${params.gldsAccession}/GeneLab/NF_MAAgilent1ch_v1.0.0.html").exists()],
                             ).match()
         }
 
