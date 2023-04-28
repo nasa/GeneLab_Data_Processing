@@ -582,20 +582,6 @@ shortenedOrganismName <- function(long_name) {
 }
 
 
-# locate dataset
-expected_dataset_name <- shortenedOrganismName(unique(df_rs$organism)) %>% stringr::str_c("_gene_ensembl")
-print(paste0("Expected dataset name: '", expected_dataset_name, "'"))
-
-
-# Specify Ensembl version used in current GeneLab reference annotations
-ENSEMBL_VERSION <- '107'
-
-ensembl <- biomaRt::useEnsembl(biomart = "genes", 
-                               dataset = expected_dataset_name,
-                               version = ENSEMBL_VERSION)
-print(ensembl)
-
-
 getBioMartAttribute <- function(df_rs) {
   #' Returns resolved biomart attribute source from runsheet
 
@@ -612,33 +598,106 @@ getBioMartAttribute <- function(df_rs) {
   }
 }
 
-expected_attribute_name <- getBioMartAttribute(df_rs)
-print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
+get_ensembl_genomes_mappings_from_ftp <- function(organism, ensembl_genomes_portal, ensembl_genomes_version, biomart_attribute) {
+  #' Obtain mapping table directly from ftp.  Useful when biomart live service no longer exists for desired version
+  
+  request_url <- glue::glue("https://ftp.ebi.ac.uk/ensemblgenomes/pub/{ensembl_genomes_portal}/release-{ensembl_genomes_version}/mysql/{ensembl_genomes_portal}_mart_{ensembl_genomes_version}/{organism}_eg_gene__efg_{biomart_attribute}__dm.txt.gz")
 
-probe_ids <- unique(norm_data$genes$ProbeName)
+  print(glue::glue("Mappings file URL: {request_url}"))
+
+  # Create a temporary file name
+  temp_file <- tempfile(fileext = ".gz")
+
+  # Download the gzipped table file using the download.file function
+  download.file(url = request_url, destfile = temp_file, method = "libcurl") # Use 'libcurl' to support ftps
+
+  # Uncompress the file
+  uncompressed_temp_file <- tempfile()
+  gzcon <- gzfile(temp_file, "rt")
+  content <- readLines(gzcon)
+  writeLines(content, uncompressed_temp_file)
+  close(gzcon)
 
 
-# Create probe map
-# Run Biomart Queries in chunks to prevent request timeouts
-#   Note: If timeout is occuring (possibly due to larger load on biomart), reduce chunk size
-CHUNK_SIZE= 8000
-probe_id_chunks <- split(probe_ids, ceiling(seq_along(probe_ids) / CHUNK_SIZE))
-df_mapping <- data.frame()
-for (i in seq_along(probe_id_chunks)) {
-  probe_id_chunk <- probe_id_chunks[[i]]
-  print(glue::glue("Running biomart query chunk {i} of {length(probe_id_chunks)}. Total probes IDS in query ({length(probe_id_chunk)})"))
-  chunk_results <- biomaRt::getBM(
-      attributes = c(
-          expected_attribute_name,
-          "ensembl_gene_id"
-          ), 
-          filters = expected_attribute_name, 
-          values = probe_id_chunk, 
-          mart = ensembl)
+  # Load the data into a dataframe
+  mapping <- read.table(uncompressed_temp_file, # Read the uncompressed file
+                        # Add column names as follows: MAPID, TAIR, PROBEID
+                        col.names = c("MAPID", "ensembl_gene_id", biomart_attribute),
+                        header = FALSE, # No header in original table
+                        sep = "\t") # Tab separated
 
-  df_mapping <- df_mapping %>% dplyr::bind_rows(chunk_results)
-  Sys.sleep(10) # Slight break between requests to prevent back-to-back requests
+  # Clean up temporary files
+  unlink(temp_file)
+  unlink(uncompressed_temp_file)
+
+  return(mapping)
 }
+
+
+organism <- shortenedOrganismName(unique(df_rs$organism))
+
+if (organism %in% c("athaliana")) {
+  ensembl_genomes_version = "54"
+  ensembl_genomes_portal = "plants"
+  print(glue::glue("Using ensembl genomes ftp to get specific version of probe id mapping table. Ensembl genomes portal: {ensembl_genomes_portal}, version: {ensembl_genomes_version}"))
+  expected_attribute_name <- getBioMartAttribute(df_rs)
+  df_mapping <- get_ensembl_genomes_mappings_from_ftp(
+    organism = organism,
+    ensembl_genomes_portal = ensembl_genomes_portal,
+    ensembl_genomes_version = ensembl_genomes_version,
+    biomart_attribute = expected_attribute_name
+    )
+
+  # TAIR from the mapping tables tend to be in the format 'AT1G01010.1' but the raw data has 'AT1G01010'
+  # So here we remove the '.NNN' from the mapping table where .NNN is any number
+  df_mapping$ensembl_gene_id <- stringr::str_replace_all(df_mapping$ensembl_gene_id, "\\.\\d+$", "")
+} else {
+  # Use biomart from main Ensembl website which archives keep each release on the live service
+  # locate dataset
+  expected_dataset_name <- shortenedOrganismName(unique(df_rs$organism)) %>% stringr::str_c("_gene_ensembl")
+  print(paste0("Expected dataset name: '", expected_dataset_name, "'"))
+
+
+  # Specify Ensembl version used in current GeneLab reference annotations
+  ENSEMBL_VERSION <- '107'
+
+  print(glue::glue("Using Ensembl biomart to get specific version of mapping table. Ensembl version: {ENSEMBL_VERSION}"))
+
+  ensembl <- biomaRt::useEnsembl(biomart = "genes", 
+                                dataset = expected_dataset_name,
+                                version = ENSEMBL_VERSION)
+  print(ensembl)
+
+  expected_attribute_name <- getBioMartAttribute(df_rs)
+  print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
+
+  probe_ids <- unique(norm_data$genes$ProbeName)
+
+
+  # Create probe map
+  # Run Biomart Queries in chunks to prevent request timeouts
+  #   Note: If timeout is occuring (possibly due to larger load on biomart), reduce chunk size
+  CHUNK_SIZE= 1500
+  probe_id_chunks <- split(probe_ids, ceiling(seq_along(probe_ids) / CHUNK_SIZE))
+  df_mapping <- data.frame()
+  for (i in seq_along(probe_id_chunks)) {
+    probe_id_chunk <- probe_id_chunks[[i]]
+    print(glue::glue("Running biomart query chunk {i} of {length(probe_id_chunks)}. Total probes IDS in query ({length(probe_id_chunk)})"))
+    chunk_results <- biomaRt::getBM(
+        attributes = c(
+            expected_attribute_name,
+            "ensembl_gene_id"
+            ), 
+            filters = expected_attribute_name, 
+            values = probe_id_chunk, 
+            mart = ensembl)
+
+    df_mapping <- df_mapping %>% dplyr::bind_rows(chunk_results)
+    Sys.sleep(10) # Slight break between requests to prevent back-to-back requests
+  }
+}
+
+# At this point, we have df_mapping from either the biomart live service or the ensembl genomes ftp archive depending on the organism
 
 # Convert list of multi-mapped genes to string
 listToUniquePipedString <- function(str_list) {
