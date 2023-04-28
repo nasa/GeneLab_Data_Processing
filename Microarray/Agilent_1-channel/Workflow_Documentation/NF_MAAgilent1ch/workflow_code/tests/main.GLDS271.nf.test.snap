@@ -17,11 +17,8 @@
                 "differential_expression.csv:md5,43b3bd3e169a3c0fb9fc8f7a70a2f7db",
                 "visualization_PCA_table.csv:md5,8185f12496c8467aa2affcfd0d982e62"
             ],
-            [
-                "NF_MAAgilent1ch_v1.0.1.html:md5,a26cc4ead0433796bf24e01a169e12fa",
-                "software_versions.md:md5,3611452371a61ccbbf8292fc6bbca357"
-            ]
+            "software_versions.md:md5,50a6ee7b99f0bb484286d08c1f7136e0"
         ],
-        "timestamp": "2023-04-27T22:57:19+0000"
+        "timestamp": "2023-04-28T21:02:43+0000"
     }
 }

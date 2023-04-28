@@ -1,0 +1,24 @@
+{
+    "GLDS-22: Should run without failures. First Test Case for Arabidopsis": {
+        "content": [
+            [
+                "OSD-22_metadata_OSD-22-ISA.zip:md5,54b9d89f37c99cc3b782ecb6b4f31c66",
+                "OSD-22_microarray_v0_runsheet.csv:md5,315cca3328a4fc58c0f2cb2862ec92e8"
+            ],
+            [
+                "raw_intensities.csv:md5,b796344835c59716d224f79d0a47abb6"
+            ],
+            [
+                "normalized_expression.csv:md5,031169ae9804ca0f97e0a5d530a40e88"
+            ],
+            [
+                "SampleTable.csv:md5,e06ec67d73d670aa67efaef842721895",
+                "contrasts.csv:md5,8d35c6eb5c8f554f902b26b782af9ecf",
+                "differential_expression.csv:md5,2c50db17385bef00f4f2c0a1a4b89606",
+                "visualization_PCA_table.csv:md5,588788b7b14c555ec34f1db88130cea1"
+            ],
+            "software_versions.md:md5,c39595e6b3b78288520518e77223b285"
+        ],
+        "timestamp": "2023-04-28T20:59:14+0000"
+    }
+}

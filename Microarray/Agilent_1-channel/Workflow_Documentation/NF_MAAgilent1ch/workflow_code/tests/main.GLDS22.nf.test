@@ -4,15 +4,13 @@ nextflow_pipeline {
     script "main.nf"
     tag "core"
 
-    test("GLDS-271: Should run without failures") {
+    test("GLDS-22: Should run without failures. First Test Case for Arabidopsis") {
 
         when {
             params {
                 // define parameters here. Example: 
-                osdAccession = "OSD-271"
-                gldsAccession = "GLDS-271"
-                limit_biomart_query = 300
-                biomart_attribute = "AGILENT SurePrint G3 GE 8x60k"
+                osdAccession = "OSD-22"
+                gldsAccession = "GLDS-22"
             }
         }
 
