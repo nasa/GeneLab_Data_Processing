@@ -287,7 +287,7 @@ def validate(
                         """)
                     )
                 vp.add(
-                    bulkRNASeq.checks.check_dge_table_group_columns_constraints,
+                    checks.check_dge_table_group_columns_constraints,
                     full_description=textwrap.dedent(f"""
                             - Check: Ensure ["Group.Stdev_", "Group.Mean_"] are properly computed
                                 - Reason:
