@@ -1075,7 +1075,7 @@ get_versions <- function() {
     glue::glue("- name: R"),
     glue::glue("  version: {session_info[['R.version']][['major']]}.{session_info[['R.version']][['minor']]}"),
     glue::glue("  homepage: https://www.r-project.org/"),
-    glue::glue("  workflow task: PROCESS_AGILE1CH")
+    glue::glue("  workflow task: PROCESS_AFFYMETRIX")
     ), sep = "\n") 
   # Get 'other attached packages'
   for (software in session_info[["otherPkgs"]]) {
@@ -1084,7 +1084,7 @@ get_versions <- function() {
       glue::glue("- name: {software[['Package']]}"),
       glue::glue("  version: {software[['Version']]}"),
       glue::glue("  homepage: {clean_url_field(software[['URL']])}"),
-      glue::glue("  workflow task: PROCESS_AGILE1CH")
+      glue::glue("  workflow task: PROCESS_AFFYMETRIX")
       ), sep = "\n") 
   }
   # Get 'loaded via a namespace (and not attached):'
@@ -1094,7 +1094,7 @@ get_versions <- function() {
       glue::glue("- name: {software[['Package']]}"),
       glue::glue("  version: {software[['Version']]}"),
       glue::glue("  homepage: {clean_url_field(software[['URL']])}"),
-      glue::glue("  workflow task: PROCESS_AGILE1CH")
+      glue::glue("  workflow task: PROCESS_AFFYMETRIX")
       ), sep = "\n") 
   }
   return(versions_buffer)
