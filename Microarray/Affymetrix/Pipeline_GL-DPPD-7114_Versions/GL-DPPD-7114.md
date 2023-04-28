@@ -756,6 +756,32 @@ if (organism %in% c("athaliana")) {
 }
 
 # At this point, we have df_mapping from either the biomart live service or the ensembl genomes ftp archive depending on the organism
+
+listToUniquePipedString <- function(str_list) {
+  #! convert lists into strings denoting unique elements separated by '|' characters
+  #! e.g. c("GO1","GO2","GO2","G03") -> "GO1|GO2|GO3"
+  return(toString(unique(str_list)) %>% stringr::str_replace_all(pattern = stringr::fixed(", "), replacement = "|"))
+}
+
+unique_probe_ids <- df_mapping %>% 
+                      # note: '!!sym(VAR)' syntax allows usage of variable 'VAR' in dplyr functions due to NSE. ref: https://dplyr.tidyverse.org/articles/programming.html # NON_DPPD
+                      dplyr::mutate(dplyr::across(!!sym(expected_attribute_name), as.character)) %>% # Ensure probeset ids treated as character type
+                      dplyr::group_by(!!sym(expected_attribute_name)) %>% 
+                      dplyr::summarise(
+                        ENSEMBL = listToUniquePipedString(ensembl_gene_id)
+                        ) %>%
+                      # Count number of ensembl IDS mapped
+                      dplyr::mutate( 
+                        count_ENSEMBL_mappings = 1 + stringr::str_count(ENSEMBL, stringr::fixed("|"))
+                      )
+
+probeset_expression_matrix <- oligo::exprs(probeset_level_data)
+
+probeset_expression_matrix.biomart_mapped <- probeset_expression_matrix %>% 
+  as.data.frame() %>%
+  tibble::rownames_to_column(var = "ProbesetID") %>% # Ensure rownames (probeset IDs) can be used as join key
+  dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>%
+  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) )
 ```
 
 **Input Data:**
