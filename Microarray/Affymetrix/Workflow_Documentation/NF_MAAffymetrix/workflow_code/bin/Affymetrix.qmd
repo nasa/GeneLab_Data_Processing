@@ -237,6 +237,15 @@ for ( i in seq_along(1:ncol(raw_data))) {
 
 ### MA Plots
 
+``` {r report-ma-plots-approach}
+#| column: screen-inset-right # Allow images to flow all the way to the right
+
+if (inherits(raw_data, "GeneFeatureSet")) {
+  print("Raw data is a GeneFeatureSet, using exprs() to access expression values and adding 0.0001 to avoid log(0)")
+} else if (inherits(raw_data, "ExpressionSet")) { 
+  print("Raw data is an ExpressionSet. Using default approach for this class for MA Plot")
+}
+```
 
 - M = Expression log-ratio (this sample vs. pseudo median reference chip)
 - A = Average log-expression
@@ -246,11 +255,20 @@ for ( i in seq_along(1:ncol(raw_data))) {
 #| warning: false # NAN can be produced due to log transformations
 #| column: screen-inset-right # Allow images to flow all the way to the right
 
-MA_plot <- oligo::MAplot(
-    raw_data, 
+if (inherits(raw_data, "GeneFeatureSet")) {
+  MA_plot <- oligo::MAplot(
+    exprs(raw_data) + 0.0001,
+    transfo=log2,
     ylim=c(-2, 4),
     main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
-)
+  )
+} else if (inherits(raw_data, "ExpressionSet")) { 
+  MA_plot <- oligo::MAplot(
+    raw_data,
+    ylim=c(-2, 4),
+    main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
+  )
+}
 ```
 
 ### Boxplots

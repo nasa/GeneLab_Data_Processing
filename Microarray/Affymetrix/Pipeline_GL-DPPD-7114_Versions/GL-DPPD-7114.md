@@ -336,11 +336,26 @@ for ( i in seq_along(1:ncol(raw_data))) {
 ### 3c. MA Plots
 
 ```R
-MA_plot <- oligo::MAplot(
-    raw_data, 
+if (inherits(raw_data, "GeneFeatureSet")) {
+  print("Raw data is a GeneFeatureSet, using exprs() to access expression values and adding 0.0001 to avoid log(0)")
+} else if (inherits(raw_data, "ExpressionSet")) { 
+  print("Raw data is an ExpressionSet. Using default approach for this class for MA Plot")
+}
+
+if (inherits(raw_data, "GeneFeatureSet")) {
+  MA_plot <- oligo::MAplot(
+    exprs(raw_data) + 0.0001,
+    transfo=log2,
     ylim=c(-2, 4),
     main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
-)
+  )
+} else if (inherits(raw_data, "ExpressionSet")) { 
+  MA_plot <- oligo::MAplot(
+    raw_data,
+    ylim=c(-2, 4),
+    main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
+  )
+}
 ```
 
 **Input Data:**
