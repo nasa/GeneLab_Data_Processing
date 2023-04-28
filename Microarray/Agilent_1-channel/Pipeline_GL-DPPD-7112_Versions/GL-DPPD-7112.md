@@ -1005,7 +1005,8 @@ map_primary_keytypes <- c(
 df_interim <- merge(
                 annot,
                 df_interim,
-                by = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.x = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.y = "ENSEMBL",
                 # ensure all original dge rows are kept.
                 # If unmatched in the annotation database, then fill missing with NAN
                 all.y = TRUE
@@ -1084,10 +1085,12 @@ FINAL_COLUMN_ORDER <- c(
 
 ## Assert final column order includes all columns from original table
 if (!setequal(FINAL_COLUMN_ORDER, colnames(df_interim))) {
+  write.csv(FINAL_COLUMN_ORDER, "FINAL_COLUMN_ORDER.csv")
   NOT_IN_DF_INTERIM <- paste(setdiff(FINAL_COLUMN_ORDER, colnames(df_interim)), collapse = ":::")
   NOT_IN_FINAL_COLUMN_ORDER <- paste(setdiff(colnames(df_interim), FINAL_COLUMN_ORDER), collapse = ":::")
   stop(glue::glue("Column reordering attempt resulted in different sets of columns than original. Names unique to 'df_interim': {NOT_IN_FINAL_COLUMN_ORDER}. Names unique to 'FINAL_COLUMN_ORDER': {NOT_IN_DF_INTERIM}."))
 }
+
 
 ## Perform reordering
 df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
@@ -1114,7 +1117,8 @@ raw_data_matrix <- background_corrected_data$genes %>%
 raw_data_matrix_annotated <- merge(
                 annot,
                 raw_data_matrix,
-                by = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.x = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.y = "ENSEMBL",
                 # ensure all original dge rows are kept.
                 # If unmatched in the annotation database, then fill missing with NAN
                 all.y = TRUE
@@ -1143,7 +1147,8 @@ norm_data_matrix <- norm_data$genes %>%
 norm_data_matrix_annotated <- merge(
                 annot,
                 norm_data_matrix,
-                by = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.x = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.y = "ENSEMBL",
                 # ensure all original dge rows are kept.
                 # If unmatched in the annotation database, then fill missing with NAN
                 all.y = TRUE
