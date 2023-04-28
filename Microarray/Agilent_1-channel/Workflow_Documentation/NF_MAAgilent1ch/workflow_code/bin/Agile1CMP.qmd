@@ -823,7 +823,8 @@ map_primary_keytypes <- c(
 df_interim <- merge(
                 annot,
                 df_interim,
-                by = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.x = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.y = "ENSEMBL",
                 # ensure all original dge rows are kept.
                 # If unmatched in the annotation database, then fill missing with NAN
                 all.y = TRUE
@@ -932,7 +933,8 @@ raw_data_matrix <- background_corrected_data$genes %>%
 raw_data_matrix_annotated <- merge(
                 annot,
                 raw_data_matrix,
-                by = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.x = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.y = "ENSEMBL",
                 # ensure all original dge rows are kept.
                 # If unmatched in the annotation database, then fill missing with NAN
                 all.y = TRUE
@@ -960,7 +962,8 @@ norm_data_matrix <- norm_data$genes %>%
 norm_data_matrix_annotated <- merge(
                 annot,
                 norm_data_matrix,
-                by = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.x = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.y = "ENSEMBL",
                 # ensure all original dge rows are kept.
                 # If unmatched in the annotation database, then fill missing with NAN
                 all.y = TRUE
