@@ -1099,9 +1099,23 @@ get_versions <- function() {
   }
   return(versions_buffer)
 }
-  ## Log same info into versions.txt file
+
+## Note Libraries that were NOT used during processing
+versions_buffer <- get_versions()
+
+if (organism %in% c("athaliana")) {
+  versions_buffer <- glue::glue_collapse(c(
+    versions_buffer,
+    glue::glue("- name: biomaRt"),
+    glue::glue("  version: (Not used for plant datasets)"),
+    glue::glue("  homepage: https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html"),
+    glue::glue("  workflow task: PROCESS_AFFYMETRIX")
+    ), sep = "\n")
+}
+
+## Log same info into versions.txt file
 version_output_fn <- "versions.yml"
-cat(get_versions(), file = version_output_fn, append = TRUE, sep = "\n")
+cat(versions_buffer, file = version_output_fn, append = TRUE, sep = "\n")
 ## Print for report
 print("Session Info below: ")
 print(sessionInfo())
