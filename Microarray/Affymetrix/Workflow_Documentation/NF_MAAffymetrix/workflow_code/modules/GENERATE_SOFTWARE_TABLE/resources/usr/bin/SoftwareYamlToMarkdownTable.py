@@ -63,6 +63,9 @@ def yamlToMarkdown(input_yaml: Path):
 
     df = df.rename({"name":"Program","version":"Version","homepage":"Relevant Links"}, axis="columns")
 
+    # Sort by program name for deterministic output
+    df = df.sort_values("Program")
+
     with open("software_versions.md", "w") as f:
         f.write(df[["Program","Version","Relevant Links"]].to_markdown(index = False))
     
