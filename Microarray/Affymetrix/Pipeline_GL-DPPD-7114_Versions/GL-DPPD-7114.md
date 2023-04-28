@@ -167,8 +167,8 @@ dir.create(DIR_DGE)
 original_par <- par()
 options(preferRaster=TRUE) # use Raster when possible to avoid antialiasing artifacts in images
 
-df_rs <- read.csv(runsheet, check.names = FALSE)
-
+df_rs <- read.csv(runsheet, check.names = FALSE) %>% 
+          dplyr::mutate_all(function(x) iconv(x, "latin1", "ASCII", sub="")) # Convert all characters to ascii, when not possible, remove the character
 ## Determines the organism specific annotation file to use based on the organism in the runsheet
 fetch_organism_specific_annotation_file_path <- function(organism) {
   # Uses the GeneLab GL-DPPD-7110_annotations.csv file to find the organism specific annotation file path
@@ -739,13 +739,13 @@ print(glue::glue("Biomart Unique Mapping Count: {slices[['Unique Mapping']]}"))
 ```R
 # Pull all factors for each sample in the study from the runsheet created in Step 1
 runsheetToDesignMatrix <- function(runsheet_path) {
-    df = read.csv(runsheet_path)
-    # get only Factor Value columns
+    df <- read.csv(runsheet, check.names = FALSE) %>% 
+              dplyr::mutate_all(function(x) iconv(x, "latin1", "ASCII", sub="")) # Convert all characters to ascii, when not possible, remove the character    # get only Factor Value columns
     factors = as.data.frame(df[,grep("Factor.Value", colnames(df), ignore.case=TRUE)])
     colnames(factors) = paste("factor",1:dim(factors)[2], sep= "_")
     
     # Load metadata from runsheet csv file
-    compare_csv = data.frame(sample_id = df[,c("Sample.Name")], factors)
+    compare_csv = data.frame(sample_id = df[,c("Sample Name")], factors)
 
     # Create data frame containing all samples and respective factors
     study <- as.data.frame(compare_csv[,2:dim(compare_csv)[2]])
@@ -769,13 +769,13 @@ runsheetToDesignMatrix <- function(runsheet_path) {
     contrasts <- cbind(contrasts,contrasts[c(2,1),])
     colnames(contrasts) <- contrast.names
     sampleTable <- data.frame(condition=factor(group))
-    rownames(sampleTable) <- df[,c("Sample.Name")]
+    rownames(sampleTable) <- df[,c("Sample Name")]
 
     condition <- sampleTable[,'condition']
     names_mapping <- as.data.frame(cbind(safe_name = as.character(condition), original_name = group_names))
 
     design <- model.matrix(~ 0 + condition)
-    design_data <- list( matrix = design, mapping = names_mapping, groups = as.data.frame( cbind(sample = df[,c("Sample.Name")], group = group_names) ), contrasts = contrasts )
+    design_data <- list( matrix = design, mapping = names_mapping, groups = as.data.frame( cbind(sample = df[,c("Sample Name")], group = group_names) ), contrasts = contrasts )
     return(design_data)
 }
 

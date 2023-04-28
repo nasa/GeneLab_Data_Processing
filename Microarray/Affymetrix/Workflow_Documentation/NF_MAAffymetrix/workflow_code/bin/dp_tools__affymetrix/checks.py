@@ -5,6 +5,7 @@ import enum
 from typing import Union
 import itertools
 from statistics import mean
+import re
 
 from loguru import logger as log
 import pandas as pd
@@ -16,6 +17,128 @@ from dp_tools.core.entity_model import Dataset
 class GroupFormatting(enum.Enum):
     r_make_names = enum.auto()
     ampersand_join = enum.auto()
+    ampersand_join_and_remove_non_ascii = enum.auto()
+
+def utils_runsheet_to_expected_groups(
+    runsheet: Path,
+    formatting: GroupFormatting = GroupFormatting.ampersand_join,
+    limit_to_samples: list = None,
+    map_to_lists: bool = False,
+) -> Union[dict[str, str], dict[str, list[str]]]:
+    df_rs = (
+        pd.read_csv(runsheet, index_col="Sample Name", dtype=str)
+        .filter(regex="^Factor Value\[.*\]")
+        .sort_index()
+    )  # using only Factor Value columns
+
+    if limit_to_samples:
+        df_rs = df_rs.filter(items=limit_to_samples, axis="rows")
+
+    match formatting:
+        case GroupFormatting.r_make_names:
+            expected_conditions_based_on_runsheet = (
+                df_rs.apply(lambda x: "...".join(x), axis="columns")
+                .apply(r_style_make_names)  # join factors with '...'
+                .to_dict()
+            )  # reformat entire group in the R style
+        case GroupFormatting.ampersand_join:
+            expected_conditions_based_on_runsheet = df_rs.apply(
+                lambda x: f"({' & '.join(x)})", axis="columns"
+            ).to_dict()
+        case GroupFormatting.ampersand_join_and_remove_non_ascii:
+            def remove_non_ascii(s) -> str:
+                if isinstance(s, str):
+                    new = re.sub(r'[^\x00-\x7F]+', '', s)
+                    print(new, s)
+                    return new
+                else:
+                    return s
+
+            df_rs = df_rs.applymap(remove_non_ascii)
+
+            expected_conditions_based_on_runsheet = df_rs.apply(
+                lambda x: f"({' & '.join(x)})", axis="columns"
+            ).to_dict()
+        case _:
+            raise ValueError(
+                f"Formatting method invalid, must be one of the following: {list(GroupFormatting)}. Supplied: {formatting}"
+            )
+
+    # convert from {sample: group} dict
+    #         to {group: [samples]} dict
+    if map_to_lists:
+        unique_groups = set(expected_conditions_based_on_runsheet.values())
+        reformatted_dict: dict[str, list[str]] = dict()
+        for query_group in unique_groups:
+            reformatted_dict[query_group] = [
+                sample
+                for sample, group in expected_conditions_based_on_runsheet.items()
+                if group == query_group
+            ]
+        expected_conditions_based_on_runsheet: dict[str, list[str]] = reformatted_dict
+
+    return expected_conditions_based_on_runsheet
+
+def check_dge_table_group_columns_constraints(
+    dge_table: Path, runsheet: Path, samples: set[str], **_
+) -> FlagEntry:
+    FLOAT_TOLERANCE = (
+        0.001  # Percent allowed difference due to float precision differences
+    )
+    # data specific preprocess
+    GROUP_PREFIXES = ["Group.Stdev_", "Group.Mean_"]
+    expected_groups = utils_runsheet_to_expected_groups(runsheet, formatting=GroupFormatting.ampersand_join_and_remove_non_ascii, limit_to_samples=samples)
+    query_columns = {
+        "".join(comb)
+        for comb in itertools.product(GROUP_PREFIXES, expected_groups.values())
+    }
+
+    expected_group_lists = utils_runsheet_to_expected_groups(
+        runsheet, formatting=GroupFormatting.ampersand_join_and_remove_non_ascii, map_to_lists=True, limit_to_samples=samples
+    )
+    df_dge = pd.read_csv(dge_table)
+
+    # issue trackers
+    issues: dict[str, list[str]] = {
+        f"mean computation deviates by more than {FLOAT_TOLERANCE} percent": [],
+        f"standard deviation deviates by more than {FLOAT_TOLERANCE} percent": [],
+    }
+
+    group: str
+    sample_set: list[str]
+    for group, sample_set in expected_group_lists.items():
+        abs_percent_differences = abs(
+            (df_dge[f"Group.Mean_{group}"] - df_dge[sample_set].mean(axis="columns"))
+            / df_dge[sample_set].mean(axis="columns")
+            * 100
+        )
+        if any(abs_percent_differences > FLOAT_TOLERANCE):
+            issues[
+                f"mean computation deviates by more than {FLOAT_TOLERANCE} percent"
+            ].append(group)
+
+        abs_percent_differences = abs(
+            (df_dge[f"Group.Stdev_{group}"] - df_dge[sample_set].std(axis="columns"))
+            / df_dge[sample_set].mean(axis="columns")
+            * 100
+        )
+        if any(abs_percent_differences > FLOAT_TOLERANCE):
+            issues[
+                f"standard deviation deviates by more than {FLOAT_TOLERANCE} percent"
+            ].append(group)
+
+    # check logic
+    contraint_description = f"Group mean and standard deviations are correctly computed from samplewise normalized counts within a tolerance of {FLOAT_TOLERANCE} percent (to accomodate minor float related differences )"
+    if not any([issue_type for issue_type in issues.values()]):
+        code = FlagCode.GREEN
+        message = f"All values in columns: {query_columns} met constraint: {contraint_description}"
+    else:
+        code = FlagCode.HALT
+        message = (
+            f"Issues found {issues} that"
+            f"fail the contraint: {contraint_description}."
+        )
+    return {"code": code, "message": message}
 
 def check_contrasts_table_headers(contrasts_table: Path, runsheet: Path) -> FlagEntry:
     # data specific preprocess
@@ -165,52 +288,6 @@ def check_viz_table_columns_constraints(
         )
     return {"code": code, "message": message}
 
-def utils_runsheet_to_expected_groups(
-    runsheet: Path,
-    formatting: GroupFormatting = GroupFormatting.ampersand_join,
-    limit_to_samples: list = None,
-    map_to_lists: bool = False,
-) -> Union[dict[str, str], dict[str, list[str]]]:
-    df_rs = (
-        pd.read_csv(runsheet, index_col="Sample Name", dtype=str)
-        .filter(regex="^Factor Value\[.*\]")
-        .sort_index()
-    )  # using only Factor Value columns
-
-    if limit_to_samples:
-        df_rs = df_rs.filter(items=limit_to_samples, axis="rows")
-
-    match formatting:
-        case GroupFormatting.r_make_names:
-            expected_conditions_based_on_runsheet = (
-                df_rs.apply(lambda x: "...".join(x), axis="columns")
-                .apply(r_style_make_names)  # join factors with '...'
-                .to_dict()
-            )  # reformat entire group in the R style
-        case GroupFormatting.ampersand_join:
-            expected_conditions_based_on_runsheet = df_rs.apply(
-                lambda x: f"({' & '.join(x)})", axis="columns"
-            ).to_dict()
-        case _:
-            raise ValueError(
-                f"Formatting method invalid, must be one of the following: {list(GroupFormatting)}"
-            )
-
-    # convert from {sample: group} dict
-    #         to {group: [samples]} dict
-    if map_to_lists:
-        unique_groups = set(expected_conditions_based_on_runsheet.values())
-        reformatted_dict: dict[str, list[str]] = dict()
-        for query_group in unique_groups:
-            reformatted_dict[query_group] = [
-                sample
-                for sample, group in expected_conditions_based_on_runsheet.items()
-                if group == query_group
-            ]
-        expected_conditions_based_on_runsheet: dict[str, list[str]] = reformatted_dict
-
-    return expected_conditions_based_on_runsheet
-
 ## Dataframe and Series specific helper functions
 def nonNull(df: pd.DataFrame) -> bool:
     # negation since it checks if any are null
@@ -273,7 +350,7 @@ def check_dge_table_log2fc_within_reason(
     PERCENT_ROWS_WITHIN_TOLERANCE = 99.9  # Percent
 
     # data specific preprocess
-    expected_groups = utils_runsheet_to_expected_groups(runsheet, map_to_lists=True)
+    expected_groups = utils_runsheet_to_expected_groups(runsheet, formatting = GroupFormatting.ampersand_join_and_remove_non_ascii, map_to_lists=True)
     expected_comparisons = [
         "v".join(paired_groups)
         for paired_groups in itertools.permutations(expected_groups, 2)
@@ -350,7 +427,7 @@ def check_dge_table_sample_columns_constraints(
 def check_dge_table_group_statistical_columns_constraints(
     dge_table: Path, runsheet: Path, **_
 ) -> FlagEntry:
-    expected_groups = utils_runsheet_to_expected_groups(runsheet, map_to_lists=True)
+    expected_groups = utils_runsheet_to_expected_groups(runsheet, formatting = GroupFormatting.ampersand_join_and_remove_non_ascii, map_to_lists=True)
     expected_comparisons = [
         "v".join(paired_groups)
         for paired_groups in itertools.permutations(expected_groups, 2)
@@ -529,7 +606,7 @@ def check_dge_table_comparison_statistical_columns_exist(
 ) -> FlagEntry:
     # data specific preprocess
     COMPARISON_PREFIXES = ["Log2fc_", "T.stat_", "P.value_", "Adj.p.value_"]
-    expected_groups = utils_runsheet_to_expected_groups(runsheet, map_to_lists=True)
+    expected_groups = utils_runsheet_to_expected_groups(runsheet, formatting = GroupFormatting.ampersand_join_and_remove_non_ascii, map_to_lists=True)
     expected_comparisons = [
         "v".join(paired_groups)
         for paired_groups in itertools.permutations(expected_groups, 2)
