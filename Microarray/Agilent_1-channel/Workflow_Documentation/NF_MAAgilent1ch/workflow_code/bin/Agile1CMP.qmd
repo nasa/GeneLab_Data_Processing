@@ -1067,7 +1067,3 @@ cat(versions_buffer, file = version_output_fn, append = TRUE, sep = "\n")
 print("Session Info below: ")
 print(sessionInfo())
 ```
-
-``` {r save-session}
-#save.image(file = paste0(params$id, ".RData")) # DEBUG
-```
