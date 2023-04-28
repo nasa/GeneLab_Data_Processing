@@ -1013,7 +1013,7 @@ annot <- read.table(
 
 # Join annotation table and uniquely mapped data
 
-# Determine appropriate keytype
+# Determine appropriate keytype as found in annotation tables
 map_primary_keytypes <- c(
   'Caenorhabditis elegans' = 'ENSEMBL',
   'Danio rerio' = 'ENSEMBL',
@@ -1028,7 +1028,8 @@ map_primary_keytypes <- c(
 df_interim <- merge(
                 annot,
                 df_interim,
-                by = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.x = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.y = "ENSEMBL",
                 # ensure all original dge rows are kept.
                 # If unmatched in the annotation database, then fill missing with NAN
                 all.y = TRUE
@@ -1139,9 +1140,11 @@ background_corrected_data_annotated <- oligo::exprs(background_corrected_data) %
   dplyr::mutate(dplyr::across(fid, as.integer)) %>% # Ensure fid is integer type, consistent with getProbeInfo typing
   dplyr::right_join(oligo::getProbeInfo(background_corrected_data), by = "fid") %>% # Add 'man_fsetid' via mapping based on fid
   dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
+  dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
   dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>% # Join with biomaRt ENSEMBL mappings
-  dplyr::left_join(annot, by = "ENSEMBL") %>% # Join with GeneLab Reference Annotation Table
-  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) # Convert NA mapping to 0
+  dplyr::left_join(annot, by = c("ENSEMBL" = map_primary_keytypes[[unique(df_rs$organism)]])) %>% # Join with GeneLab Reference Annotation Table using key name expected in organism specific annotation table
+  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) %>% # Convert NA mapping to 0
+  dplyr::rename( !!map_primary_keytypes[[unique(df_rs$organism)]] := ENSEMBL ) 
 
 ## Determine column order for probe level tables
 
@@ -1167,8 +1170,9 @@ background_corrected_data_annotated <- oligo::exprs(background_corrected_data) %
   dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
   dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
   dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>% # Join with biomaRt ENSEMBL mappings
-  dplyr::left_join(annot, by = "ENSEMBL") %>% # Join with GeneLab Reference Annotation Table
-  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) # Convert NA mapping to 0
+  dplyr::left_join(annot, by = c("ENSEMBL" = map_primary_keytypes[[unique(df_rs$organism)]])) %>% # Join with GeneLab Reference Annotation Table using key name expected in organism specific annotation table
+  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) %>% # Convert NA mapping to 0
+  dplyr::rename( !!map_primary_keytypes[[unique(df_rs$organism)]] := ENSEMBL ) 
 
 ## Perform reordering
 background_corrected_data_annotated <- background_corrected_data_annotated %>% 
