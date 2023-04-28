@@ -1,0 +1,24 @@
+{
+    "GLDS-428: Should run without failures. First test case for Arabidposis Thaliana Biomart support": {
+        "content": [
+            [
+                "GLDS-428_metadata_GLDS-428-ISA.zip:md5,fdaed5f7172d0c67b35da3d8194eb0ef",
+                "OSD-428_microarray_v0_runsheet.csv:md5,72a1b5f955b3dea320ca43a47a21914a"
+            ],
+            [
+                "raw_intensities_probe.csv:md5,aa475c65ef4a4f3a5273db890518bff2"
+            ],
+            [
+                "normalized_expression_probeset.csv:md5,521f8dee0e92017863d37c2ceebfe090",
+                "normalized_intensities_probe.csv:md5,410dcdcbc2d3ac24d1827b2dd085e0c7"
+            ],
+            [
+                "SampleTable.csv:md5,1f6c9b6c611b7eb05f93526a0e22c24d",
+                "contrasts.csv:md5,b80c6dd982176be22fd93110c78cc747",
+                "differential_expression.csv:md5,211a0c972d2e2e58b867800647d2cfc7",
+                "visualization_PCA_table.csv:md5,97804c3f739651a4849483fddf3ee8f2"
+            ]
+        ],
+        "timestamp": "2023-04-27T22:26:43+0000"
+    }
+}

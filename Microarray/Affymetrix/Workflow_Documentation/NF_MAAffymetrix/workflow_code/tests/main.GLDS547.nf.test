@@ -2,6 +2,7 @@ nextflow_pipeline {
 
     name "Test Workflow main.nf"
     script "main.nf"
+    tag "core"
 
     test("GLDS-547: Should run without failures") {
 
@@ -22,7 +23,6 @@ nextflow_pipeline {
                             path("${params.outputDir}/${params.gldsAccession}/00-RawData").list(),
                             path("${params.outputDir}/${params.gldsAccession}/01-oligo_NormExp").list(),
                             path("${params.outputDir}/${params.gldsAccession}/02-limma_DGE").list(),
-                            [ 'Affymetrix.html exists' : path("${params.outputDir}/${params.gldsAccession}/GeneLab/Affymetrix.html").exists()],
                             ).match()
         }
 

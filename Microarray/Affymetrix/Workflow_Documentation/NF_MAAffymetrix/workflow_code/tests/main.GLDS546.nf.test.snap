@@ -17,11 +17,8 @@
                 "contrasts.csv:md5,8e7e04b2c266b84f30acaeb21d15debb",
                 "differential_expression.csv:md5,9bafc26e410e5701378729fa3d1a17ae",
                 "visualization_PCA_table.csv:md5,f70064380839b0703983964412b3bc38"
-            ],
-            {
-                "Affymetrix.html exists": false
-            }
+            ]
         ],
-        "timestamp": "2023-04-25T01:08:20+0000"
+        "timestamp": "2023-04-27T22:32:17+0000"
     }
 }

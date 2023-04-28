@@ -2,16 +2,16 @@ nextflow_pipeline {
 
     name "Test Workflow main.nf"
     script "main.nf"
+    tag "core"
 
-    test("GLDS-266: Should run without failures") {
+    test("GLDS-428: Should run without failures. First test case for Arabidposis Thaliana Biomart support") {
 
         when {
             params {
                 // define parameters here. Example: 
-                osdAccession = "OSD-266"
-                gldsAccession = "GLDS-266"
-                biomart_attribute = "AFFY MoGene 2 1 st v1"
-                limit_biomart_query = 300
+                osdAccession = "OSD-428"
+                gldsAccession = "GLDS-428"
+                biomart_attribute = "AFFY AraGene"
             }
         }
 
