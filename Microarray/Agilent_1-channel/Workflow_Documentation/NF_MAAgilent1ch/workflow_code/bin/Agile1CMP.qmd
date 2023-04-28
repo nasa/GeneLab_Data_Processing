@@ -385,31 +385,14 @@ boxplotExpressionSafeMargin(norm_data)
 
 
 
-## Perform Probeset Differential Expression
-
-### Approach Motivation
-
-Based on bioconductor discussions with Gordon Smyth ("[Smyth's] research group created the limma, edgeR, goseq, Rsubread, csaw and diffHic packages.") here: https://support.bioconductor.org/p/116616/#116674
-
-Summarization using `avereps` is 'deliberately designed for cases when each probe is associated with exactly one gene'.
-
-Given good quality gene annotations (which this analysis should have by using bioMart Ensembl Gene annotations), 'most Agilent probes should map to a unique gene'.
-
-Based on this discussion, the folowing approach is utilized:
-
-1. Add biomart annotations first
-2. Compute all mapping statistics (i.e. multimapping (one-probe to many-genes), redudant mapping (many-probes to one-gene))
-3. Perform DE with and without filtering (assessing effects of filtering on row-wise results)
-
-Don't summarize the results from the probe level since any probe with a single gene mapping being DE implies the gene is a DEG. https://support.bioconductor.org/p/93796/#116605
-
+## Perform Probe Differential Expression
 
 ### Probe Differential Expression (DE)
 
 #### Add Probe Annotations
 
-``` {r retrieve-probeset-annotations}
-#| message = FALSE
+``` {r retrieve-probe-annotations}
+#| message: false
 shortenedOrganismName <- function(long_name) {
   #' Convert organism names like 'Homo Sapiens' into 'hsapiens'
   tokens <- long_name %>% stringr::str_split(" ", simplify = TRUE)
