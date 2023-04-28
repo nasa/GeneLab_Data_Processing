@@ -14,11 +14,11 @@
 
 * [**Pipeline_GL-DPPD-7114_Versions**](Pipeline_GL-DPPD-7114_Versions)
 
-  - Contains the current and previous GeneLab Affymetrix microarray data processing pipeline (NF_MAAffy) versions documentation
+  - Contains the current and previous GeneLab Affymetrix microarray data processing pipeline (NF_MAAffymetrix) versions documentation
 
 * [**Workflow_Documentation**](Workflow_Documentation)
 
-  - Contains instructions for installing and running the GeneLab NF_MAAffy workflow
+  - Contains instructions for installing and running the GeneLab NF_MAAffymetrix workflow
 
 ---
 **Developed and maintained by:**  
