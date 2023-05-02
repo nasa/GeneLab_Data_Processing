@@ -1093,7 +1093,7 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 
 **Output Data:**
 
-- **differential_expression.csv** (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
+- **differential_expression.csv** (table containing normalized expression for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
 - **raw_intensities.csv** (table containing the background corrected unnormalized intensity values for each sample including gene annotations)
 - **normalized_expression.csv** (table containing the background corrected, normalized intensity values for each sample including gene annotations)
