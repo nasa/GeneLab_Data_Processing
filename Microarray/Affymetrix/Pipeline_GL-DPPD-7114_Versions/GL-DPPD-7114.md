@@ -1135,7 +1135,7 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 
 **Output Data:**
 
-- **differential_expression.csv** (table containing normalized probeset expression values for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations. The ProbesetID is the unique index column.)
+- **differential_expression.csv** (table containing normalized probeset expression values for each sample, group statistics, Limma probeset DE results for each pairwise comparison, and gene annotations. The ProbesetID is the unique index column.)
 - **normalized_expression_probeset.csv** (table containing the background corrected, normalized probeset expression values for each sample. The ProbesetID is the unique index column.)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
 - **raw_intensities_probe.csv** (table containing the background corrected, unnormalized probe intensity values for each sample including gene annotations. The ProbeID is the unique index column.)
