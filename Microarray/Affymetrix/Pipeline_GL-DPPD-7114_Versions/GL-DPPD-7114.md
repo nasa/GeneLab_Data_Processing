@@ -1193,14 +1193,17 @@ norm_data_matrix_annotated <- oligo::exprs(norm_data) %>%
   dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
   dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
   dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>%
-  dplyr::left_join(annot, by = "ENSEMBL") %>% # Join with GeneLab Reference Annotation Table
-  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) # Convert NA mapping to 0
+  dplyr::left_join(annot, by = c("ENSEMBL" = map_primary_keytypes[[unique(df_rs$organism)]])) %>% # Join with GeneLab Reference Annotation Table using key name expected in organism specific annotation table
+  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) %>% # Convert NA mapping to 0
+  dplyr::rename( !!map_primary_keytypes[[unique(df_rs$organism)]] := ENSEMBL ) 
+
 
 
 norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe.csv"), row.names = FALSE)
+
 ```
 
 **Input Data:**
