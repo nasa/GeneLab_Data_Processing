@@ -709,14 +709,6 @@ if (organism %in% c("athaliana")) {
 
   probe_ids <- rownames(probeset_level_data)
 
-  # DEBUG:START
-  if ( is.integer(params$DEBUG_limit_biomart_query) ) {
-    warning(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
-    message(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
-    probe_ids <- probe_ids[1:params$DEBUG_limit_biomart_query]
-  }
-  # DEBUG:END
-
   # Create probe map
   # Run Biomart Queries in chunks to prevent request timeouts
   #   Note: If timeout is occuring (possibly due to larger load on biomart), reduce chunk size
@@ -749,7 +741,6 @@ listToUniquePipedString <- function(str_list) {
 }
 
 unique_probe_ids <- df_mapping %>% 
-                      # note: '!!sym(VAR)' syntax allows usage of variable 'VAR' in dplyr functions due to NSE. ref: https://dplyr.tidyverse.org/articles/programming.html # NON_DPPD
                       dplyr::mutate(dplyr::across(!!sym(expected_attribute_name), as.character)) %>% # Ensure probeset ids treated as character type
                       dplyr::group_by(!!sym(expected_attribute_name)) %>% 
                       dplyr::summarise(
