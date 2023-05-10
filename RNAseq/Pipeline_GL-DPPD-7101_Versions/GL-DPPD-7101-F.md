@@ -122,7 +122,7 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
 |tximport|1.27.1|[https://github.com/mikelove/tximport](https://github.com/mikelove/tximport)|
 |tidyverse|1.3.1|[https://www.tidyverse.org](https://www.tidyverse.org)|
 |stringr|1.4.1|[https://github.com/tidyverse/stringr](https://github.com/tidyverse/stringr)|
-|dp_tools|1.1.8|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
+|dp_tools|1.3.3|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |pandas|1.5.0|[https://github.com/pandas-dev/pandas](https://github.com/pandas-dev/pandas)|
 |seaborn|0.12.0|[https://seaborn.pydata.org/](https://seaborn.pydata.org/)|
 |matplotlib|3.6.0|[https://matplotlib.org/stable](https://matplotlib.org/stable)|
