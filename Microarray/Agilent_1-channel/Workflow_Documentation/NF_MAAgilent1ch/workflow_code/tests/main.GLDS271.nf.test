@@ -4,14 +4,15 @@ nextflow_pipeline {
     script "main.nf"
     tag "core"
 
-    test("GLDS-548: Should run without failures") {
+    test("GLDS-271: Should run without failures") {
 
         when {
             params {
                 // define parameters here. Example: 
-                osdAccession = "OSD-548"
-                gldsAccession = "GLDS-548"
+                osdAccession = "OSD-271"
+                gldsAccession = "GLDS-271"
                 limit_biomart_query = 300
+                biomart_attribute = "AGILENT SurePrint G3 GE 8x60k"
             }
         }
 
@@ -22,6 +23,7 @@ nextflow_pipeline {
                             path("${params.outputDir}/${params.gldsAccession}/00-RawData").list(),
                             path("${params.outputDir}/${params.gldsAccession}/01-limma_NormExp").list(),
                             path("${params.outputDir}/${params.gldsAccession}/02-limma_DGE").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/GeneLab/software_versions.md")
                             ).match()
         }
 

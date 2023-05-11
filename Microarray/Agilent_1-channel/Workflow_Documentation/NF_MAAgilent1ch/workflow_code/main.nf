@@ -90,9 +90,9 @@ workflow {
     // Software Version Capturing
     nf_version = "- name: nextflow\n  ".concat(
 """
-- version: ${nextflow.version}
-- homepage: https://www.nextflow.io
-- workflow task: N/A
+  version: ${nextflow.version}
+  homepage: https://www.nextflow.io
+  workflow task: N/A
 """)
     ch_software_versions = Channel.value(nf_version)
     AGILE1CH.out.versions | map{ it -> it.text } | mix(ch_software_versions) | set{ch_software_versions}

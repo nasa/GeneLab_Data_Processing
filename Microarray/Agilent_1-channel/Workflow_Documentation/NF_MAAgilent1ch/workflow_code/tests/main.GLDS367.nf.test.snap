@@ -16,12 +16,9 @@
                 "contrasts.csv:md5,c9af9056cef7bd0210a626cd9c6175b2",
                 "differential_expression.csv:md5,1bce5936134e25585716ebe983743c32",
                 "visualization_PCA_table.csv:md5,6b37103ca8cacdfc2a924631e7422fa9"
-            ],
-            {
-                "Agile1CMP.html exists": true
-            }
+            ]
         ],
-        "timestamp": "2023-03-20T16:09:23+0000"
+        "timestamp": "2023-04-27T23:01:03+0000"
     },
     "Direct runsheet version: Should run without failures": {
         "content": [
@@ -41,6 +38,6 @@
                 "Agile1CMP.html exists": true
             }
         ],
-        "timestamp": "2023-03-20T16:09:22+0000"
+        "timestamp": "2023-04-27T23:01:02+0000"
     }
 }

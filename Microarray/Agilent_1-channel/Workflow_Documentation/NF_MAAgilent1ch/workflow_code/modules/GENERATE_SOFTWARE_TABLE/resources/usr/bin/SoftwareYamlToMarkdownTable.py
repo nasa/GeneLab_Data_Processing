@@ -21,6 +21,7 @@ AGILENT_SOFTWARE_DPPD = [
     "dp_tools",
     "singularity",
     "Quarto",
+    "nextflow"
 ]
 
 AGILENT_SOFTWARE_DPPD = [s.lower() for s in AGILENT_SOFTWARE_DPPD]
@@ -59,6 +60,9 @@ def yamlToMarkdown(input_yaml: Path):
     print(df[['name','version','homepage']])
 
     df = df.rename({"name":"Program","version":"Version","homepage":"Relevant Links"}, axis="columns")
+
+    # Sort by program name for deterministic output
+    df = df.sort_values("Program")
 
     with open("software_versions.md", "w") as f:
         f.write(df[["Program","Version","Relevant Links"]].to_markdown(index = False))
