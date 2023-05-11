@@ -813,12 +813,12 @@ def validate(
                         payloads=(
                             [
                                 {
-                                    "file": lambda: sample.data_assets[
+                                    "file": lambda sample=sample: sample.data_assets[
                                         "raw forward reads fastq GZ"
                                     ].path
                                 },
                                 {
-                                    "file": lambda: sample.data_assets[
+                                    "file": lambda sample=sample: sample.data_assets[
                                         "raw reverse reads fastq GZ"
                                     ].path
                                 },
@@ -826,7 +826,7 @@ def validate(
                             if dataset.metadata["paired_end"]
                             else [
                                 {
-                                    "file": lambda: sample.data_assets[
+                                    "file": lambda sample=sample: sample.data_assets[
                                         "raw reads fastq GZ"
                                     ].path
                                 },
@@ -862,12 +862,12 @@ def validate(
                         payloads=(
                             [
                                 {
-                                    "file": lambda: sample.data_assets[
+                                    "file": lambda sample=sample: sample.data_assets[
                                         "trimmed forward reads fastq GZ"
                                     ].path
                                 },
                                 {
-                                    "file": lambda: sample.data_assets[
+                                    "file": lambda sample=sample: sample.data_assets[
                                         "trimmed reverse reads fastq GZ"
                                     ].path
                                 },
@@ -875,7 +875,7 @@ def validate(
                             if dataset.metadata["paired_end"]
                             else [
                                 {
-                                    "file": lambda: sample.data_assets[
+                                    "file": lambda sample=sample: sample.data_assets[
                                         "trimmed reads fastq GZ"
                                     ].path
                                 }
@@ -912,12 +912,12 @@ def validate(
                     with vp.payload(
                         payloads=[
                             {
-                                "file": lambda: sample.data_assets[
+                                "file": lambda sample=sample: sample.data_assets[
                                     "aligned ToTranscriptome Bam"
                                 ].path,
                             },
                             {
-                                "file": lambda: sample.data_assets[
+                                "file": lambda sample=sample: sample.data_assets[
                                     "aligned SortedByCoord Bam"
                                 ].path,
                             },
@@ -933,7 +933,7 @@ def validate(
                     with vp.payload(
                         payloads=[
                             {
-                                "multiqc_inputs": lambda: [
+                                "multiqc_inputs": lambda sample=sample: [
                                     sample.data_assets["aligned log Final"].path
                                 ],
                             },
@@ -965,7 +965,7 @@ def validate(
                         with vp.payload(
                             payloads=[
                                 {
-                                    "input_dir": lambda: sample.data_assets[
+                                    "input_dir": lambda sample=sample: sample.data_assets[
                                         "genebody coverage out"
                                     ].path
                                 },
@@ -980,7 +980,7 @@ def validate(
                         with vp.payload(
                             payloads=[
                                 {
-                                    "input_dir": lambda: sample.data_assets[
+                                    "input_dir": lambda sample=sample: sample.data_assets[
                                         "inner distance out"
                                     ].path
                                 },
