@@ -277,7 +277,7 @@ if (inherits(raw_data, "GeneFeatureSet")) {
 #| warning: false # NAN can be produced due to log transformations
 #| column: screen-inset-right # Allow images to flow all the way to the right
 #| fig-width: 14
-#| fig-height: !expr max(8, dim(raw_data)[2] * 0.2)
+#| fig-height: !expr max(8, 2 + dim(raw_data)[2] * 0.2)
 #| fig-align: left
 max_samplename_length <- max(nchar(colnames(raw_data)))
 dynamic_lefthand_margin <- max(max_samplename_length * 0.7, 10)
@@ -409,7 +409,7 @@ MA_plot <- oligo::MAplot(
 #| warning: false # NAN can be produced due to log transformations
 #| column: screen-inset-right # Allow images to flow all the way to the right
 #| fig-width: 14
-#| fig-height: !expr max(8, dim(norm_data)[2] * 0.2)
+#| fig-height: !expr max(8, 2 + dim(norm_data)[2] * 0.2)
 #| fig-align: left
 max_samplename_length <- max(nchar(colnames(norm_data)))
 dynamic_lefthand_margin <- max(max_samplename_length * 0.7, 10)
