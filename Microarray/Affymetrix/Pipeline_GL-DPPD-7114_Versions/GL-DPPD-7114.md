@@ -618,21 +618,6 @@ shortenedOrganismName <- function(long_name) {
   return(short_name)
 }
 
-
-# locate dataset
-expected_dataset_name <- shortenedOrganismName(unique(df_rs$organism)) %>% stringr::str_c("_gene_ensembl")
-print(paste0("Expected dataset name: '", expected_dataset_name, "'"))
-
-
-# Specify Ensembl version used in current GeneLab reference annotations
-ENSEMBL_VERSION <- '107'
-
-ensembl <- biomaRt::useEnsembl(biomart = "genes", 
-                               dataset = expected_dataset_name,
-                               version = ENSEMBL_VERSION)
-print(ensembl)
-
-
 getBioMartAttribute <- function(df_rs) {
   #' Returns resolved biomart attribute source from runsheet
 
@@ -724,14 +709,6 @@ if (organism %in% c("athaliana")) {
 
   probe_ids <- rownames(probeset_level_data)
 
-  # DEBUG:START
-  if ( is.integer(params$DEBUG_limit_biomart_query) ) {
-    warning(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
-    message(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
-    probe_ids <- probe_ids[1:params$DEBUG_limit_biomart_query]
-  }
-  # DEBUG:END
-
   # Create probe map
   # Run Biomart Queries in chunks to prevent request timeouts
   #   Note: If timeout is occuring (possibly due to larger load on biomart), reduce chunk size
@@ -764,7 +741,6 @@ listToUniquePipedString <- function(str_list) {
 }
 
 unique_probe_ids <- df_mapping %>% 
-                      # note: '!!sym(VAR)' syntax allows usage of variable 'VAR' in dplyr functions due to NSE. ref: https://dplyr.tidyverse.org/articles/programming.html # NON_DPPD
                       dplyr::mutate(dplyr::across(!!sym(expected_attribute_name), as.character)) %>% # Ensure probeset ids treated as character type
                       dplyr::group_by(!!sym(expected_attribute_name)) %>% 
                       dplyr::summarise(
@@ -1217,14 +1193,17 @@ norm_data_matrix_annotated <- oligo::exprs(norm_data) %>%
   dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
   dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
   dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>%
-  dplyr::left_join(annot, by = "ENSEMBL") %>% # Join with GeneLab Reference Annotation Table
-  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) # Convert NA mapping to 0
+  dplyr::left_join(annot, by = c("ENSEMBL" = map_primary_keytypes[[unique(df_rs$organism)]])) %>% # Join with GeneLab Reference Annotation Table using key name expected in organism specific annotation table
+  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) %>% # Convert NA mapping to 0
+  dplyr::rename( !!map_primary_keytypes[[unique(df_rs$organism)]] := ENSEMBL ) 
+
 
 
 norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe.csv"), row.names = FALSE)
+
 ```
 
 **Input Data:**
