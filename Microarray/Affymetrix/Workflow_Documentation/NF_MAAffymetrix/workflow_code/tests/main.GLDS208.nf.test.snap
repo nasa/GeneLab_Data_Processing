@@ -2,8 +2,8 @@
     "GLDS-208: Should run without failures. ": {
         "content": [
             [
-                "GLDS-208_metadata_GLDS-208-ISA.zip:md5,4da671e29b031686d00430b6659130d7",
-                "OSD-208_microarray_v0_runsheet.csv:md5,3bf0cf6bdc9afcda60ea7fbf599103f7"
+                "OSD-208_metadata_OSD-208-ISA.zip:md5,7d4ef51b3ca16463ca2ff5057df6f95a",
+                "OSD-208_microarray_v0_runsheet.csv:md5,c6224e7e99d9cbb0e174bf0869a41756"
             ],
             [
                 "raw_intensities_probe.csv:md5,2a346c6736cdc5422337a09c9bec3d3b"
@@ -22,6 +22,6 @@
                 "Affymetrix.html exists": false
             }
         ],
-        "timestamp": "2023-04-27T01:20:48+0000"
+        "timestamp": "2023-05-17T19:10:34+0000"
     }
 }
