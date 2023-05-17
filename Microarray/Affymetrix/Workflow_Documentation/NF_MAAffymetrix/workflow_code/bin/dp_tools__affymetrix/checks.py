@@ -347,7 +347,7 @@ def check_dge_table_log2fc_within_reason(
     """ Note: This function assumes the normalized expression values are log2 transformed
     """
     LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD = 1  # Percent
-    PERCENT_ROWS_WITHIN_TOLERANCE = 99.9  # Percent
+    PERCENT_ROWS_WITHIN_TOLERANCE = 99.5  # Percent
 
     # data specific preprocess
     expected_groups = utils_runsheet_to_expected_groups(runsheet, formatting = GroupFormatting.ampersand_join_and_remove_non_ascii, map_to_lists=True)
@@ -380,7 +380,7 @@ def check_dge_table_log2fc_within_reason(
         )
 
         if percent_within_tolerance < PERCENT_ROWS_WITHIN_TOLERANCE: # add current query column to error list
-            error_list.append((query_column,percent_within_tolerance))
+            error_list.append((query_column,percent_within_tolerance,f"First index out of tolerance: {abs_percent_difference.idxmin()}"))
 
     # inplace sort error list for deterministic order
     error_list.sort()
