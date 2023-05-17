@@ -9,6 +9,7 @@ include { PARSE_ANNOTATION_TABLE } from './modules/PARSE_ANNOTATION_TABLE.nf'
 include { VV_AFFYMETRIX } from './modules/VV_AFFYMETRIX.nf'
 include { PROCESS_AFFYMETRIX } from './modules/PROCESS_AFFYMETRIX.nf'
 include { RUNSHEET_FROM_GLDS } from './modules/RUNSHEET_FROM_GLDS.nf'
+include { RUNSHEET_FROM_ISA } from './modules/RUNSHEET_FROM_ISA.nf'
 include { GENERATE_SOFTWARE_TABLE } from './modules/GENERATE_SOFTWARE_TABLE'
 
 /**************************************************
@@ -57,15 +58,26 @@ println("Resolved output directory: ${ params.outputDir }")
 
 workflow {
 	main:
-    if ( !params.runsheetPath ) {
+    if ( !params.runsheetPath && !params.isaArchivePath) {
         RUNSHEET_FROM_GLDS( 
           params.osdAccession,
           params.gldsAccession,
           "${ projectDir }/bin/dp_tools__affymetrix" // dp_tools plugin
         ) 
         RUNSHEET_FROM_GLDS.out.runsheet | set{ ch_runsheet }
-    } else {
+    } else if ( !params.runsheetPath && params.isaArchivePath ) {
+        RUNSHEET_FROM_ISA( 
+          params.osdAccession,
+          params.gldsAccession,
+          params.isaArchivePath,
+          "${ projectDir }/bin/dp_tools__affymetrix" // dp_tools plugin
+        )
+        RUNSHEET_FROM_ISA.out.runsheet | set{ ch_runsheet }
+    } else if ( params.runsheetPath && !params.isaArchivePath ) {
         ch_runsheet = channel.fromPath( params.runsheetPath )
+    } else if ( params.runsheetPath && params.isaArchivePath ) {
+        System.err.println("Error: User supplied both runsheetPath and isaArchivePath.  Only one or neither is allowed to be supplied!") // Print error message to System.err
+        System.exit(1) // Exit with error code 1
     }
 
 
