@@ -11,6 +11,7 @@ include { PROCESS_AFFYMETRIX } from './modules/PROCESS_AFFYMETRIX.nf'
 include { RUNSHEET_FROM_GLDS } from './modules/RUNSHEET_FROM_GLDS.nf'
 include { RUNSHEET_FROM_ISA } from './modules/RUNSHEET_FROM_ISA.nf'
 include { GENERATE_SOFTWARE_TABLE } from './modules/GENERATE_SOFTWARE_TABLE'
+include { DUMP_META } from './modules/DUMP_META'
 
 /**************************************************
 * HELP MENU  **************************************
@@ -121,9 +122,8 @@ workflow {
                             )
                          | GENERATE_SOFTWARE_TABLE
 
-    emit:
-      meta = ch_meta 
-      runsheet = ch_runsheet
+    // export meta for post processing usage
+    ch_meta | DUMP_META
 }
 
 workflow.onComplete {
