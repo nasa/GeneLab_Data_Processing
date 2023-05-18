@@ -7,6 +7,7 @@ c_reset = "\033[0m";
 
 include { GENERATE_MD5SUMS } from './modules/GENERATE_MD5SUMS.nf'
 include { UPDATE_ISA_TABLES } from './modules/UPDATE_ISA_TABLES.nf'
+include { GENERATE_PROTOCOL } from './modules/POST_PROCESSING/GENERATE_PROTOCOL'
 
 /**************************************************
 * HELP MENU  **************************************
@@ -37,6 +38,8 @@ workflow {
   main:
     ch_processed_directory = Channel.fromPath("${ params.outputDir }/${ params.gldsAccession }", checkIfExists: true)
     ch_runsheet = Channel.fromPath("${ params.outputDir }/${ params.gldsAccession }/Metadata/*_runsheet.csv", checkIfExists: true)
+    ch_software_versions = Channel.fromPath("${params.outputDir}/${params.gldsAccession}/GeneLab/software_versions.md", checkIfExists: true)
+    ch_processing_meta = Channel.fromPath("${params.outputDir}/${params.gldsAccession}/GeneLab/meta.sh", checkIfExists: true)
     GENERATE_MD5SUMS(      
       ch_processed_directory, 
       ch_runsheet,       
@@ -46,5 +49,9 @@ workflow {
       ch_processed_directory, 
       ch_runsheet,       
       "${ projectDir }/bin/dp_tools__affymetrix_channel" // dp_tools plugin
+    )
+    GENERATE_PROTOCOL(
+      ch_software_versions,
+      ch_processing_meta
     )
 }
