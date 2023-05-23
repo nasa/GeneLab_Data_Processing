@@ -36,7 +36,7 @@ document](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114.md):
 
        |Flag Codes|Flag Name|Interpretation|
        |:---------|:--------|:-------------|
-       | 2    | MANUAL   | Special flag that indicates a manual check that is advised. Often used to advise what assess in QA plots. |
+       | 2    | MANUAL   | Special flag that indicates a manual check that is advised. Often used to advise what should be visually assessed in QA plots. |
        | 20    | GREEN   | Indicates the check passed all validation conditions |
        | 30    | YELLOW  | Indicates the check was flagged for minor issues (e.g. slight outliers) |
        | 50    | RED     | Indicates the check was flagged for moderate issues (e.g. major outliers) |
