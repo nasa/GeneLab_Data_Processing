@@ -54,6 +54,7 @@ document](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114.md):
 - [3. Run the Workflow](#3-run-the-workflow)
   - [3a. Approach 1: Run the workflow on a GeneLab Affymetrix Microarray dataset](#3a-approach-1-run-the-workflow-on-a-genelab-affymetrix-microarray-dataset)
   - [3b. Approach 2: Run the workflow on a non-GLDS dataset using a user-created runsheet](#3b-approach-2-run-the-workflow-on-a-non-glds-dataset-using-a-user-created-runsheet)
+  - [3c. Approach 3: Run the workflow using an ISA Archive](#3c-approach-3-run-the-workflow-using-an-isa-archive)
 - [4. Additional Output Files](#4-additional-output-files)
 
 
@@ -131,6 +132,18 @@ nextflow run NF_MAAffymetrix_1.0.1/main.nf \
 nextflow run NF_MAAffymetrix_1.0.1/main.nf \ 
    -profile singularity \
    --runsheetPath </path/to/runsheet> 
+```
+
+<br>
+
+#### 3c. Approach 3: Run the workflow using an ISA Archive
+
+> Note: Specifications for the ISA Tab Archive format can be found [here](https://isa-specs.readthedocs.io/en/latest/isatab.html).
+
+```bash
+nextflow run NF_MAAffymetrix_1.0.1/main.nf \ 
+   -profile singularity \
+   --isaArchivePath </path/to/isaArchive> 
 ```
 
 <br>
