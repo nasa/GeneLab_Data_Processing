@@ -1,7 +1,7 @@
 process GENERATE_MD5SUMS {
   // Generates tabular data indicating genelab standard publishing files, md5sum generation, and tool version table formatting
   tag "${ params.gldsAccession }"
-  publishDir "${ params.outputDir }/${ params.gldsAccession }/GeneLab",
+  publishDir "${ params.resultsDir }/GeneLab",
     mode: params.publish_dir_mode
 
   input:

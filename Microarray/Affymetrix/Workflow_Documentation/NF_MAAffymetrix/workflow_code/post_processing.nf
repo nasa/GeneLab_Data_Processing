@@ -26,9 +26,14 @@ println "\n"
 /**************************************************
 * CHECK REQUIRED PARAMS AND LOAD  *****************
 **************************************************/
-// Get all params sourced data into channels
-// Set up channel containing glds accession number
-if ( !params.outputDir ) {  params.outputDir = "$workflow.launchDir" }
+// if ( !params.resultsDir && params.osdAccession && params.gldsAccession ) {  
+//   println("Parameter: 'resultsDir' was not specified but osdAccession and gldsAccession supplied. Using default: <workflow launch directory>/<osdAccession>_<gldsAccession>")
+//   params.resultsDir = "${workflow.launchDir}/${params.osdAccession}_${params.gldsAccession}" 
+// } else if ( !params.resultsDir ) {
+//   println("Parameter: 'resultsDir' was not specified. Using default: <workflow launch directory>")
+//   params.resultsDir = "${workflow.launchDir}"
+// }
+println("Resolved output directory: ${ params.resultsDir }")
 
 /**************************************************
 * WORKFLOW SPECIFIC PRINTOUTS  ********************
@@ -36,10 +41,10 @@ if ( !params.outputDir ) {  params.outputDir = "$workflow.launchDir" }
 
 workflow {
   main:
-    ch_processed_directory = Channel.fromPath("${ params.outputDir }/${ params.gldsAccession }", checkIfExists: true)
-    ch_runsheet = Channel.fromPath("${ params.outputDir }/${ params.gldsAccession }/Metadata/*_runsheet.csv", checkIfExists: true)
-    ch_software_versions = Channel.fromPath("${params.outputDir}/${params.gldsAccession}/GeneLab/software_versions.md", checkIfExists: true)
-    ch_processing_meta = Channel.fromPath("${params.outputDir}/${params.gldsAccession}/GeneLab/meta.sh", checkIfExists: true)
+    ch_processed_directory = Channel.fromPath("${ params.resultsDir }", checkIfExists: true)
+    ch_runsheet = Channel.fromPath("${ params.resultsDir }/Metadata/*_runsheet.csv", checkIfExists: true)
+    ch_software_versions = Channel.fromPath("${params.resultsDir}/GeneLab/software_versions.md", checkIfExists: true)
+    ch_processing_meta = Channel.fromPath("${params.resultsDir}/GeneLab/meta.sh", checkIfExists: true)
     GENERATE_MD5SUMS(      
       ch_processed_directory, 
       ch_runsheet,       

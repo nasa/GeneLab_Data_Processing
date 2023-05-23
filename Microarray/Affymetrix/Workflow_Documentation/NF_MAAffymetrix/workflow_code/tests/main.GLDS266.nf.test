@@ -18,10 +18,10 @@ nextflow_pipeline {
         then {
             assert workflow.success
             assert snapshot(
-                            path("${params.outputDir}/${params.gldsAccession}/Metadata").list(),
-                            path("${params.outputDir}/${params.gldsAccession}/00-RawData").list(),
-                            path("${params.outputDir}/${params.gldsAccession}/01-oligo_NormExp").list(),
-                            path("${params.outputDir}/${params.gldsAccession}/02-limma_DGE").list(),
+                            path("${ params.outputDir }/Metadata").list(),
+                            path("${ params.outputDir }/00-RawData").list(),
+                            path("${ params.outputDir }/01-oligo_NormExp").list(),
+                            path("${ params.outputDir }/02-limma_DGE").list(),
                             ).match()
         }
 

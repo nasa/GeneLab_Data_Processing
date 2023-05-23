@@ -1,5 +1,5 @@
 process PROCESS_AFFYMETRIX {
-  publishDir "${ params.outputDir }/${ params.gldsAccession }/GeneLab",
+  publishDir "${ params.resultsDir }/GeneLab",
     pattern: "NF_MAAffymetrix_v${workflow.manifest.version}.html",
     mode: params.publish_dir_mode
   stageInMode 'copy'

@@ -2,7 +2,7 @@
     "GLDS-282: Should run without failures. ": {
         "content": [
             [
-                "GLDS-282_metadata_GLDS-282-ISA.zip:md5,17b92628b23d9bfebdbde669229473ec",
+                "OSD-282_metadata_OSD-282-ISA.zip:md5,ac36e255473e1b256a9cc8f1221c0581",
                 "OSD-282_microarray_v0_runsheet.csv:md5,3bdfc97fd0253bd37f907e5faed78336"
             ],
             [
@@ -22,6 +22,6 @@
                 "Affymetrix.html exists": false
             }
         ],
-        "timestamp": "2023-04-27T00:12:32+0000"
+        "timestamp": "2023-05-18T16:48:22+0000"
     }
 }

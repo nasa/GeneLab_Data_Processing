@@ -1,6 +1,6 @@
 process GENERATE_PROTOCOL {
   tag "${ params.gldsAccession }"
-  publishDir "${ params.outputDir }/${ params.gldsAccession }/GeneLab",
+  publishDir "${ params.resultsDir }/GeneLab",
     mode: params.publish_dir_mode
 
   input:

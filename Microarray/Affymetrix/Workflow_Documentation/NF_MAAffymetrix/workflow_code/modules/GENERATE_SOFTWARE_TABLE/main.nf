@@ -1,5 +1,5 @@
 process GENERATE_SOFTWARE_TABLE {
-  publishDir "${ params.outputDir }/${ params.gldsAccession }/GeneLab",
+  publishDir "${ params.resultsDir }/GeneLab",
     pattern: "software_versions.md",
     mode: params.publish_dir_mode
 

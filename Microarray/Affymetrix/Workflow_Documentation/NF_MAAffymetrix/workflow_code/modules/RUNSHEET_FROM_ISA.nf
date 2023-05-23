@@ -1,7 +1,7 @@
 process RUNSHEET_FROM_ISA {
   // Generates Runsheet using a path to an ISA archive
   tag "${ gldsAccession }"
-  publishDir "${ params.outputDir }/${ gldsAccession }/Metadata",
+  publishDir "${ params.resultsDir }/Metadata",
     pattern: "*.zip",
     mode: params.publish_dir_mode
 

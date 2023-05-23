@@ -35,7 +35,7 @@ if (params.help) {
   println("                        the GLDS accession id to process through the Affymetrix Microarray Pipeline.")
   println("  --runsheetPath        Use a local runsheet instead one automatically generated from a GLDS ISA archive.")
   println("  --skipVV              Skip automated V&V. Default: false")
-  println("  --outputDir           Directory to save staged raw files and processed files. Default: <launch directory>")
+  println("  --resultsDir           Directory to save staged raw files and processed files. Default: <launch directory>")
   exit 0
   }
 
@@ -45,13 +45,7 @@ println "\n"
 /**************************************************
 * CHECK REQUIRED PARAMS AND LOAD  *****************
 **************************************************/
-// Get all params sourced data into channels
-// Set up channel containing glds accession number
-if ( !params.outputDir ) {  
-  println("Parameter: 'outputDir' was not specified. Using default: <workflow launch directory>")
-  params.outputDir = "$workflow.launchDir" 
-  }
-println("Resolved output directory: ${ params.outputDir }")
+println("Resolved output directory: ${ params.resultsDir }")
 
 /**************************************************
 * WORKFLOW SPECIFIC PRINTOUTS  ********************
@@ -130,8 +124,8 @@ workflow.onComplete {
     println "${c_bright_green}Pipeline completed at: $workflow.complete"
     println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
     if ( workflow.success ) {
-      println "Raw and Processed data location: ${ params.outputDir }/${ params.gldsAccession }"
-      println "V&V logs location: ${ params.outputDir }/${ params.gldsAccession }/VV_Logs"
-      println "Pipeline tracing/visualization files location:  ${ params.outputDir }/${ params.gldsAccession }/Resource_Usage${c_reset}"
+      println "Raw and Processed data location: ${ params.resultsDir }"
+      println "V&V logs location: ${ params.resultsDir }/VV_Logs"
+      println "Pipeline tracing/visualization files location:  ${ params.resultsDir }/Resource_Usage${c_reset}"
     }
 }

@@ -1,20 +1,20 @@
 process VV_AFFYMETRIX {
   // Log publishing
-  publishDir "${ params.outputDir }/${ params.gldsAccession }",
+  publishDir "${ params.resultsDir }",
     pattern:  "VV_report.tsv.MANUAL_CHECKS_PENDING" ,
     mode: params.publish_dir_mode,
     saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }.tsv.MANUAL_CHECKS_PENDING" }
   // V&V'ed data publishing
-  publishDir "${ params.outputDir }/${ params.gldsAccession }",
+  publishDir "${ params.resultsDir }",
     pattern: '00-RawData/**',
     mode: params.publish_dir_mode
-  publishDir "${ params.outputDir }/${ params.gldsAccession }",
+  publishDir "${ params.resultsDir }",
     pattern: '01-oligo_NormExp/**',
     mode: params.publish_dir_mode
-  publishDir "${ params.outputDir }/${ params.gldsAccession }",
+  publishDir "${ params.resultsDir }",
     pattern: '02-limma_DGE/**',
     mode: params.publish_dir_mode
-  publishDir "${ params.outputDir }/${ params.gldsAccession }",
+  publishDir "${ params.resultsDir }",
     pattern: 'Metadata/**',
     mode: params.publish_dir_mode
 
