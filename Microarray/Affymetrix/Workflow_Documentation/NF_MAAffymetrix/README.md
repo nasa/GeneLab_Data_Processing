@@ -162,7 +162,7 @@ nextflow run NF_MAAffymetrix_1.0.1/main.nf \
 
 * `--skipVV` - skip the automated V&V processes (Default: the automated V&V processes are active) 
 
-* `--outputDir` - specifies the directory to save the raw and processed data files (Default: files are saved in the launch directory)  
+* `--resultsDir` - specifies the output directory for all files produced by the workflow (Default: <OSD-NNN_GLDS-NNN> if OSD and GLDS accessions are specified.  Otherwise, the workflow launch directory.) 
 
 <br>
 
