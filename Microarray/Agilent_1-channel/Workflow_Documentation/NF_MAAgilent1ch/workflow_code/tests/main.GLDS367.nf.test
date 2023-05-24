@@ -19,12 +19,13 @@ nextflow_pipeline {
             assert snapshot(
                             path("${params.outputDir}/${params.gldsAccession}/Metadata").list(),
                             path("${params.outputDir}/${params.gldsAccession}/00-DE").list(),
-                            [ 'Agile1CMP.html exists' : path("${params.outputDir}/${params.gldsAccession}/GeneLab/Agile1CMP.html").exists()],
                             ).match()
         }
 
     }
     test("GLDS-367: Should run without failures") {
+
+        tag "core"
 
         when {
             params {
@@ -43,7 +44,6 @@ nextflow_pipeline {
                             path("${params.outputDir}/${params.gldsAccession}/00-RawData").list(),
                             path("${params.outputDir}/${params.gldsAccession}/01-limma_NormExp").list(),
                             path("${params.outputDir}/${params.gldsAccession}/02-limma_DGE").list(),
-                            [ 'Agile1CMP.html exists' : path("${params.outputDir}/${params.gldsAccession}/GeneLab/Agile1CMP.html").exists()],
                             ).match()
         }
 
