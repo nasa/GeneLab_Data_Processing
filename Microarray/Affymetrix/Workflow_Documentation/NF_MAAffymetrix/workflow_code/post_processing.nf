@@ -26,13 +26,6 @@ println "\n"
 /**************************************************
 * CHECK REQUIRED PARAMS AND LOAD  *****************
 **************************************************/
-// if ( !params.resultsDir && params.osdAccession && params.gldsAccession ) {  
-//   println("Parameter: 'resultsDir' was not specified but osdAccession and gldsAccession supplied. Using default: <workflow launch directory>/<osdAccession>_<gldsAccession>")
-//   params.resultsDir = "${workflow.launchDir}/${params.osdAccession}_${params.gldsAccession}" 
-// } else if ( !params.resultsDir ) {
-//   println("Parameter: 'resultsDir' was not specified. Using default: <workflow launch directory>")
-//   params.resultsDir = "${workflow.launchDir}"
-// }
 println("Resolved output directory: ${ params.resultsDir }")
 
 /**************************************************
