@@ -2,7 +2,9 @@
 
 ## [2.0.3](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_MGIllumina_2.0.3/Metagenomics/Illumina/Workflow_Documentation/SW_MGIllumina)
 - added config file for multiqc to trim suffixes from sample names and not include paths in output report
-- added version number to top of primary Snakefile
+- packaging multiqc html in with data dir in a zip to match what RNAseq workflow does
+- restructured fastqc and multiqc rules using inheritance to reduce some redundancy
+- added workflow version number to top of primary Snakefile
 
 ## [2.0.2](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_MGIllumina_2.0.2/Metagenomics/Illumina/Workflow_Documentation/SW_MGIllumina)
 - updating bit package from 1.8.47 to 1.8.53
