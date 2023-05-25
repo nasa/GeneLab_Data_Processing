@@ -1,9 +1,5 @@
 # Workflow change log
 
-## [2.0.3](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_MGIllumina_2.0.3/Metagenomics/Illumina/Workflow_Documentation/SW_MGIllumina)
-- added config file for multiqc to trim suffixes from sample names and not include paths in output report
-- added version number to top of primary Snakefile
-
 ## [2.0.2](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_MGIllumina_2.0.2/Metagenomics/Illumina/Workflow_Documentation/SW_MGIllumina)
 - updating bit package from 1.8.47 to 1.8.53
     - some users were having trouble with conda installing an appropriate goatools (dependency of bit) on some systems, bumping to a later version of bit seemed to resolve the issue
