@@ -35,22 +35,23 @@ raw_R2_suffix:
 trim_primers:
     "TRUE"
 
-## primer sequences if we are trimming them
+## primer sequences if we are trimming them (include anchoring symbols, e.g. '^', as needed, see: https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types)
 F_primer:
-    "GTGCCAGCMGCCGCGGTAA"
+    "^GTGCCAGCMGCCGCGGTAA"
 R_primer:
-    "GGACTACHVGGGTWTCTAA"
+    "^GGACTACHVGGGTWTCTAA"
 
-## should cutadapt treat these as linked primers? (https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-both-ends-of-paired-end-reads)
+## should cutadapt treat these as linked primers? (https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads)
 primers_linked:
     "TRUE"
 
-## if primers are linked, we need to provide them as below, where the second half, following three periods, is the other primer reverse-complemented (see https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-both-ends-of-paired-end-reads)
+## if primers are linked, we need to provide them as below, where the second half, following three periods, is the other primer reverse-complemented (see https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads)
   # (can reverse complement while retaining ambiguous bases at this site: http://arep.med.harvard.edu/labgc/adnan/projects/Utilities/revcomp.html)
+  # include anchoring symbols, e.g. '^', as needed, see: https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types
 F_linked_primer:
-    "GTGCCAGCMGCCGCGGTAA...TTAGAWACCCBDGTAGTCC"
+    "^GTGCCAGCMGCCGCGGTAA...TTAGAWACCCBDGTAGTCC"
 R_linked_primer:
-    "GGACTACHVGGGTWTCTAA...TTACCGCGGCKGCTGGCAC"
+    "^GGACTACHVGGGTWTCTAA...TTACCGCGGCKGCTGGCAC"
 
 ## discard untrimmed, sets the "--discard-untrimmed" option if TRUE
 discard_untrimmed:
