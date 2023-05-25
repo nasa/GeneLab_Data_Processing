@@ -60,12 +60,13 @@ Lauren Sanders (acting GeneLab Project Scientist)
 |R.utils|2.12.2|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
 |limma|3.50.3|[https://bioconductor.org/packages/3.14/bioc/html/limma.html](https://bioconductor.org/packages/3.14/bioc/html/limma.html)|
 |glue|1.6.2|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
+|ggplot2|3.4.0|[https://ggplot2.tidyverse.org](https://ggplot2.tidyverse.org)|
 |biomaRt|2.50.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
 |matrixStats|0.63.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
 |statmod|1.5.0|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
-|dp_tools|1.2.0|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
+|dp_tools|1.3.1|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |singularity|3.9|[https://sylabs.io](https://sylabs.io)|
-|Quarto|1.1.251|[https://quarto.org](https://quarto.org)|
+|Quarto|1.2.313|[https://quarto.org](https://quarto.org)|
 
 ---
 
@@ -80,6 +81,8 @@ Lauren Sanders (acting GeneLab Project Scientist)
 ## 1. Create Sample RunSheet
 
 > Notes: 
+> - Rather than running the commands below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_Agile1CMP-A/examples/README.md).
+> 
 > - These command line tools are part of the [dp_tools](https://github.com/J-81/dp_tools) program.
 
 ```bash
@@ -154,6 +157,16 @@ library(statmod)
 # Define path to runsheet
 runsheet <- "/path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv"
 
+## Set up output structure
+
+# Output Constants
+DIR_RAW_DATA <- "00-RawData"
+DIR_NORMALIZED_EXPRESSION <- "01-limma_NormExp"
+DIR_DGE <- "02-limma_DGE"
+
+dir.create(DIR_RAW_DATA)
+dir.create(DIR_NORMALIZED_EXPRESSION)
+dir.create(DIR_DGE)
 
 # fileEncoding removes strange characters from the column names
 df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM') 
@@ -242,6 +255,20 @@ raw_data <- limma::read.maimages(df_local_paths$`Local Paths`,
                                  names = df_local_paths$`Sample Name` # Map column names as Sample Names (instead of default filenames)
                                  )
 
+# Handle raw data which lacks certain replaceable column data
+
+## This likely arises as Agilent Feature Extraction (the process that generates the raw data files on OSDR) 
+##   gives some user flexibilty in what probe column to ouput
+
+## Missing ProbeUID "Unique integer for each unique probe in a design"
+### Source: https://www.agilent.com/cs/library/usermanuals/public/GEN-MAN-G4460-90057.pdf Page 178
+### Remedy: Assign unique integers for each probe
+
+if ( !("ProbeUID" %in% colnames(raw_data$genes)) ) {
+  # Assign unique integers for each probe
+  print("Assigning `ProbeUID` as original files did not include them")
+  raw_data$genes$ProbeUID <- seq_len(nrow(raw_data$genes))
+}
 
 # Summarize raw data
 print(paste0("Number of Arrays: ", dim(raw_data)[2]))
@@ -270,9 +297,22 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 ### 3a. Density Plot
 
 ```R
+# Plot settings
+par(
+  xpd = TRUE # Ensure legend can extend past plot area
+)
+
+number_of_sets = ceiling(dim(raw_data)[2] / 30) # Set of 30 samples, used to scale plot
+
 limma::plotDensities(raw_data, 
                      log = TRUE, 
-                     legend = "topright")
+                     legend = FALSE)
+legend("topright", legend = colnames(raw_data),
+        lty = 1, # Solid line
+        col = 1:ncol(raw_data), # Ensure legend color is in sync with plot
+        ncol = number_of_sets, # Set number of columns by number of sets
+        cex = max(0.5, 1 + 0.2 - (number_of_sets*0.2)) # Reduce scale by 20% for each column beyond 1, minimum of 0.5
+      )
 ```
 
 **Input Data:**
@@ -288,7 +328,7 @@ limma::plotDensities(raw_data,
 ### 3b. Pseudo Image Plots
 
 ```R
-agilentImagePlot <- function(eListRaw) {
+agilentImagePlot <- function(eListRaw, transform_func = identity) {
   # Adapted from this discussion: https://support.bioconductor.org/p/15523/
   copy_raw_data <- eListRaw
   copy_raw_data$genes$Block <- 1 # Agilent arrays only have one block
@@ -302,12 +342,12 @@ agilentImagePlot <- function(eListRaw) {
   y <- rep(NA,nr*nc)
   i <- (r-1)*nc+c
   for ( array_i in seq(colnames(copy_raw_data$E)) ) {
-    y[i] <- log2(copy_raw_data$E[,array_i])
+    y[i] <- transform_func(copy_raw_data$E[,array_i])
     limma::imageplot(y,copy_raw_data$printer, main = rownames(copy_raw_data$targets)[array_i])
   }
 }
 
-agilentImagePlot(raw_data)
+agilentImagePlot(raw_data, transform_func = function(expression_matrix) log2(expression_matrix + 1))
 ```
 
 **Input Data:**
@@ -361,14 +401,16 @@ for ( array_i in seq(colnames(raw_data$E)) ) {
 ### 3e. Boxplots
 
 ```R
-boxplotExpressionSafeMargin <- function(data) {
-  longest_sample_name_length <- max(nchar(rownames(data$targets))) * 1
-  bottom_margin <- min(35, longest_sample_name_length)
-  par(mar=c(bottom_margin,2,1,1))
-  boxplot(log2(data$E), las=2)
+boxplotExpressionSafeMargin <- function(data, transform_func = identity, xlab = "Log2 Intensity") {
+  # Basic box plot
+  df_data <- as.data.frame(transform_func(data$E))
+  ggplot2::ggplot(stack(df_data), ggplot2::aes(x=values, y=ind)) + 
+    ggplot2::geom_boxplot() + 
+    ggplot2::scale_y_discrete(limits=rev) +
+    ggplot2::labs(y= "Sample Name", x = xlab)
 }
 
-boxplotExpressionSafeMargin(raw_data)
+boxplotExpressionSafeMargin(raw_data, transform_func = log2)
 ```
 
 **Input Data:**
@@ -437,9 +479,22 @@ print(paste0("Number of Probes: ", dim(norm_data)[1]))
 ### 6a. Density Plot
 
 ```R
+# Plot settings
+par(
+  xpd = TRUE # Ensure legend can extend past plot area
+)
+
+number_of_sets = ceiling(dim(norm_data)[2] / 30) # Set of 30 samples, used to scale plot
+
 limma::plotDensities(norm_data, 
                      log = TRUE, 
-                     legend = "topright")
+                     legend = FALSE)
+legend("topright", legend = colnames(norm_data),
+        lty = 1, # Solid line
+        col = 1:ncol(norm_data), # Ensure legend color is in sync with plot
+        ncol = number_of_sets, # Set number of columns by number of sets
+        cex = max(0.5, 1 + 0.2 - (number_of_sets*0.2)) # Reduce scale by 20% for each column beyond 1, minimum of 0.5
+      )
 ```
 
 **Input Data:**
@@ -455,7 +510,9 @@ limma::plotDensities(norm_data,
 ### 6b. Pseudo Image Plots
 
 ```R
-agilentImagePlot(norm_data)
+agilentImagePlot(norm_data, 
+                 transform_func = function(expression_matrix) log2(2**expression_matrix + 1) # Compute as log2 of normalized expression after adding a +1 offset to prevent negative values in the pseudoimage
+                 )
 ```
 
 **Input Data:**
@@ -525,20 +582,6 @@ shortenedOrganismName <- function(long_name) {
 }
 
 
-# locate dataset
-expected_dataset_name <- shortenedOrganismName(unique(df_rs$organism)) %>% stringr::str_c("_gene_ensembl")
-print(paste0("Expected dataset name: '", expected_dataset_name, "'"))
-
-
-# Specify Ensembl version used in current GeneLab reference annotations
-ENSEMBL_VERSION <- '107'
-
-ensembl <- biomaRt::useEnsembl(biomart = "genes", 
-                               dataset = expected_dataset_name,
-                               version = ENSEMBL_VERSION)
-print(ensembl)
-
-
 getBioMartAttribute <- function(df_rs) {
   #' Returns resolved biomart attribute source from runsheet
 
@@ -555,33 +598,106 @@ getBioMartAttribute <- function(df_rs) {
   }
 }
 
-expected_attribute_name <- getBioMartAttribute(df_rs)
-print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
+get_ensembl_genomes_mappings_from_ftp <- function(organism, ensembl_genomes_portal, ensembl_genomes_version, biomart_attribute) {
+  #' Obtain mapping table directly from ftp.  Useful when biomart live service no longer exists for desired version
+  
+  request_url <- glue::glue("https://ftp.ebi.ac.uk/ensemblgenomes/pub/{ensembl_genomes_portal}/release-{ensembl_genomes_version}/mysql/{ensembl_genomes_portal}_mart_{ensembl_genomes_version}/{organism}_eg_gene__efg_{biomart_attribute}__dm.txt.gz")
 
-probe_ids <- unique(norm_data$genes$ProbeName)
+  print(glue::glue("Mappings file URL: {request_url}"))
+
+  # Create a temporary file name
+  temp_file <- tempfile(fileext = ".gz")
+
+  # Download the gzipped table file using the download.file function
+  download.file(url = request_url, destfile = temp_file, method = "libcurl") # Use 'libcurl' to support ftps
+
+  # Uncompress the file
+  uncompressed_temp_file <- tempfile()
+  gzcon <- gzfile(temp_file, "rt")
+  content <- readLines(gzcon)
+  writeLines(content, uncompressed_temp_file)
+  close(gzcon)
 
 
-# Create probe map
-# Run Biomart Queries in chunks to prevent request timeouts
-#   Note: If timeout is occuring (possibly due to larger load on biomart), reduce chunk size
-CHUNK_SIZE= 8000
-probe_id_chunks <- split(probe_ids, ceiling(seq_along(probe_ids) / CHUNK_SIZE))
-df_mapping <- data.frame()
-for (i in seq_along(probe_id_chunks)) {
-  probe_id_chunk <- probe_id_chunks[[i]]
-  print(glue::glue("Running biomart query chunk {i} of {length(probe_id_chunks)}. Total probes IDS in query ({length(probe_id_chunk)})"))
-  chunk_results <- biomaRt::getBM(
-      attributes = c(
-          expected_attribute_name,
-          "ensembl_gene_id"
-          ), 
-          filters = expected_attribute_name, 
-          values = probe_id_chunk, 
-          mart = ensembl)
+  # Load the data into a dataframe
+  mapping <- read.table(uncompressed_temp_file, # Read the uncompressed file
+                        # Add column names as follows: MAPID, TAIR, PROBEID
+                        col.names = c("MAPID", "ensembl_gene_id", biomart_attribute),
+                        header = FALSE, # No header in original table
+                        sep = "\t") # Tab separated
 
-  df_mapping <- df_mapping %>% dplyr::bind_rows(chunk_results)
-  Sys.sleep(10) # Slight break between requests to prevent back-to-back requests
+  # Clean up temporary files
+  unlink(temp_file)
+  unlink(uncompressed_temp_file)
+
+  return(mapping)
 }
+
+
+organism <- shortenedOrganismName(unique(df_rs$organism))
+
+if (organism %in% c("athaliana")) {
+  ensembl_genomes_version = "54"
+  ensembl_genomes_portal = "plants"
+  print(glue::glue("Using ensembl genomes ftp to get specific version of probe id mapping table. Ensembl genomes portal: {ensembl_genomes_portal}, version: {ensembl_genomes_version}"))
+  expected_attribute_name <- getBioMartAttribute(df_rs)
+  df_mapping <- get_ensembl_genomes_mappings_from_ftp(
+    organism = organism,
+    ensembl_genomes_portal = ensembl_genomes_portal,
+    ensembl_genomes_version = ensembl_genomes_version,
+    biomart_attribute = expected_attribute_name
+    )
+
+  # TAIR from the mapping tables tend to be in the format 'AT1G01010.1' but the raw data has 'AT1G01010'
+  # So here we remove the '.NNN' from the mapping table where .NNN is any number
+  df_mapping$ensembl_gene_id <- stringr::str_replace_all(df_mapping$ensembl_gene_id, "\\.\\d+$", "")
+} else {
+  # Use biomart from main Ensembl website which archives keep each release on the live service
+  # locate dataset
+  expected_dataset_name <- shortenedOrganismName(unique(df_rs$organism)) %>% stringr::str_c("_gene_ensembl")
+  print(paste0("Expected dataset name: '", expected_dataset_name, "'"))
+
+
+  # Specify Ensembl version used in current GeneLab reference annotations
+  ENSEMBL_VERSION <- '107'
+
+  print(glue::glue("Using Ensembl biomart to get specific version of mapping table. Ensembl version: {ENSEMBL_VERSION}"))
+
+  ensembl <- biomaRt::useEnsembl(biomart = "genes", 
+                                dataset = expected_dataset_name,
+                                version = ENSEMBL_VERSION)
+  print(ensembl)
+
+  expected_attribute_name <- getBioMartAttribute(df_rs)
+  print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
+
+  probe_ids <- unique(norm_data$genes$ProbeName)
+
+
+  # Create probe map
+  # Run Biomart Queries in chunks to prevent request timeouts
+  #   Note: If timeout is occuring (possibly due to larger load on biomart), reduce chunk size
+  CHUNK_SIZE= 1500
+  probe_id_chunks <- split(probe_ids, ceiling(seq_along(probe_ids) / CHUNK_SIZE))
+  df_mapping <- data.frame()
+  for (i in seq_along(probe_id_chunks)) {
+    probe_id_chunk <- probe_id_chunks[[i]]
+    print(glue::glue("Running biomart query chunk {i} of {length(probe_id_chunks)}. Total probes IDS in query ({length(probe_id_chunk)})"))
+    chunk_results <- biomaRt::getBM(
+        attributes = c(
+            expected_attribute_name,
+            "ensembl_gene_id"
+            ), 
+            filters = expected_attribute_name, 
+            values = probe_id_chunk, 
+            mart = ensembl)
+
+    df_mapping <- df_mapping %>% dplyr::bind_rows(chunk_results)
+    Sys.sleep(10) # Slight break between requests to prevent back-to-back requests
+  }
+}
+
+# At this point, we have df_mapping from either the biomart live service or the ensembl genomes ftp archive depending on the organism
 
 # Convert list of multi-mapped genes to string
 listToUniquePipedString <- function(str_list) {
@@ -609,7 +725,7 @@ norm_data$genes <- norm_data$genes %>%
 
 - `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - `df_rs$'Array Design REF'` (array design reference specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
-- ENSEMBL_VERSION (reference organism Ensembl version indicated in the `ensemblVersion` column of the [GL-DPPD-7110_annotations.csv](../../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
+- ENSEMBL_VERSION (reference organism Ensembl version indicated in the `ensemblVersion` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
 - `norm_data$genes` (Manufacturer's probe metadata, including probe IDs and sequence position gene annotations associated with the `norm_data` R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
 
 **Output Data:**
@@ -704,8 +820,8 @@ design_data <- runsheetToDesignMatrix(runsheet)
 design <- design_data$matrix
 
 # Write SampleTable.csv and contrasts.csv file
-write.csv(design_data$groups, "SampleTable.csv")
-write.csv(design_data$contrasts, "contrasts.csv")
+write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable.csv"), row.names = FALSE)
+write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts.csv"))
 ```
 
 **Input Data:**
@@ -784,9 +900,7 @@ reformat_names <- function(colname, group_name_mapping) {
                   stringr::str_replace(pattern = stringr::fixed("Genes.ProbeName"), replacement = "ProbeName") %>% 
                   stringr::str_replace(pattern = stringr::fixed("Genes.count_ENSEMBL_mappings"), replacement = "count_ENSEMBL_mappings") %>% 
                   stringr::str_replace(pattern = stringr::fixed("Genes.ProbeUID"), replacement = "ProbeUID") %>% 
-                  stringr::str_replace(pattern = stringr::fixed("Genes.SYMBOL"), replacement = "SYMBOL") %>% 
                   stringr::str_replace(pattern = stringr::fixed("Genes.ENSEMBL"), replacement = "ENSEMBL") %>% 
-                  stringr::str_replace(pattern = stringr::fixed("Genes.GOSLIM_IDS"), replacement = "GOSLIM_IDS") %>% 
                   stringr::str_replace(pattern = ".condition", replacement = "v")
   
   # remap to group names before make.names was applied
@@ -891,7 +1005,8 @@ map_primary_keytypes <- c(
 df_interim <- merge(
                 annot,
                 df_interim,
-                by = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.x = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.y = "ENSEMBL",
                 # ensure all original dge rows are kept.
                 # If unmatched in the annotation database, then fill missing with NAN
                 all.y = TRUE
@@ -970,47 +1085,18 @@ FINAL_COLUMN_ORDER <- c(
 
 ## Assert final column order includes all columns from original table
 if (!setequal(FINAL_COLUMN_ORDER, colnames(df_interim))) {
-  FINAL_COLUMN_ORDER_STRING <- paste(FINAL_COLUMN_ORDER, collapse = ":::::")
-  stop(glue::glue("Column reordering attempt resulted in different sets of columns than orignal. Order attempted: {FINAL_COLUMN_ORDER_STRING}"))
+  write.csv(FINAL_COLUMN_ORDER, "FINAL_COLUMN_ORDER.csv")
+  NOT_IN_DF_INTERIM <- paste(setdiff(FINAL_COLUMN_ORDER, colnames(df_interim)), collapse = ":::")
+  NOT_IN_FINAL_COLUMN_ORDER <- paste(setdiff(colnames(df_interim), FINAL_COLUMN_ORDER), collapse = ":::")
+  stop(glue::glue("Column reordering attempt resulted in different sets of columns than original. Names unique to 'df_interim': {NOT_IN_FINAL_COLUMN_ORDER}. Names unique to 'FINAL_COLUMN_ORDER': {NOT_IN_DF_INTERIM}."))
 }
+
 
 ## Perform reordering
 df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 # Save to file
-write.csv(df_interim, "differential_expression.csv", row.names = FALSE)
-
-### Add columns needed to generate GeneLab visualization plots
-## Add column to indicate the sign (positive/negative) of log2fc for each pairwise comparison
-df <- df_interim
-updown_table <- sign(df[,grep("Log2fc_",colnames(df))])
-colnames(updown_table) <- gsub("Log2fc","Updown",grep("Log2fc_",colnames(df),value = TRUE))
-df <- cbind(df,updown_table)
-rm(updown_table)
-## Add column to indicate contrast significance with p <= 0.1
-sig.1_table <- df[,grep("Adj.p.value_",colnames(df))]<=.1
-colnames(sig.1_table) <- gsub("Adj.p.value","Sig.1",grep("Adj.p.value_",colnames(df),value = TRUE))
-df <- cbind(df,sig.1_table)
-rm(sig.1_table)
-## Add column to indicate contrast significance with p <= 0.05
-sig.05_table <- df[,grep("Adj.p.value_",colnames(df))]<=.05
-colnames(sig.05_table) <- gsub("Adj.p.value","Sig.05",grep("Adj.p.value_",colnames(df),value = TRUE))
-df <- cbind(df, sig.05_table)
-rm(sig.05_table)
-## Add columns for the volcano plot with p-value and adjusted p-value
-log_pval_table <- log2(df[,grep("P.value_", colnames(df))])
-colnames(log_pval_table) <- paste0("Log2_", colnames(log_pval_table))
-df <- cbind(df, log_pval_table)
-rm(log_pval_table)
-log_adj_pval_table <- log2(df[,grep("Adj.p.value_", colnames(df))])
-colnames(log_adj_pval_table) <- paste0("Log2_", colnames(log_adj_pval_table))
-df <- cbind(df, log_adj_pval_table)
-rm(log_adj_pval_table)
-
-write.csv(df,
-          row.names = FALSE,
-          "visualization_output_table.csv"
-          )
+write.csv(df_interim, file.path(DIR_DGE, "differential_expression.csv"), row.names = FALSE)
 
 ### Generate and export PCA table for GeneLab visualization plots
 ## Only use positive expression values, negative values can make up a small portion ( < 0.5% ) of normalized expression values and cannot be log transformed
@@ -1018,7 +1104,7 @@ exp_raw <- log2(norm_data$E) # negatives get converted to NA
 exp_raw <- na.omit(norm_data$E)
 PCA_raw <- prcomp(t(exp_raw), scale = FALSE)
 write.csv(PCA_raw$x,
-          "visualization_PCA_table.csv"
+          file.path(DIR_DGE, "visualization_PCA_table.csv")
           )
 
 ## Generate raw intensity matrix that includes annotations
@@ -1031,7 +1117,8 @@ raw_data_matrix <- background_corrected_data$genes %>%
 raw_data_matrix_annotated <- merge(
                 annot,
                 raw_data_matrix,
-                by = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.x = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.y = "ENSEMBL",
                 # ensure all original dge rows are kept.
                 # If unmatched in the annotation database, then fill missing with NAN
                 all.y = TRUE
@@ -1047,7 +1134,7 @@ FINAL_COLUMN_ORDER <- c(
 raw_data_matrix_annotated <- raw_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(raw_data_matrix_annotated, "raw_intensities.csv", row.names = FALSE)
+write.csv(raw_data_matrix_annotated, file.path(DIR_RAW_DATA, "raw_intensities.csv"), row.names = FALSE)
 
 
 ## Generate normalized expression matrix that includes annotations
@@ -1060,7 +1147,8 @@ norm_data_matrix <- norm_data$genes %>%
 norm_data_matrix_annotated <- merge(
                 annot,
                 norm_data_matrix,
-                by = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.x = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.y = "ENSEMBL",
                 # ensure all original dge rows are kept.
                 # If unmatched in the annotation database, then fill missing with NAN
                 all.y = TRUE
@@ -1069,7 +1157,7 @@ norm_data_matrix_annotated <- merge(
 norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = FALSE)
+write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression.csv"), row.names = FALSE)
 ```
 
 **Input Data:**
@@ -1082,8 +1170,7 @@ write.csv(norm_data_matrix_annotated, "normalized_expression.csv", row.names = F
 
 **Output Data:**
 
-- **differential_expression.csv** (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
-- visualization_output_table.csv (file used to generate GeneLab DGE visualizations)
+- **differential_expression.csv** (table containing normalized expression for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
 - **raw_intensities.csv** (table containing the background corrected unnormalized intensity values for each sample including gene annotations)
 - **normalized_expression.csv** (table containing the background corrected, normalized intensity values for each sample including gene annotations)

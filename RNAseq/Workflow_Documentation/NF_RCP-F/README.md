@@ -58,7 +58,7 @@ document](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md):
 3. [Fetch Singularity Images](#3-fetch-singularity-images)  
 4. [Run the Workflow](#4-run-the-workflow)  
    4a. [Approach 1: Run the workflow on a GeneLab RNAseq dataset with automatic retrieval of Ensembl reference fasta and gtf files](#4a-approach-1-run-the-workflow-on-a-genelab-rnaseq-dataset-with-automatic-retrieval-of-ensembl-reference-fasta-and-gtf-files)  
-   4b. [Approach 2: Run the workflow on a GeneLab RNAseq dataset using local Ensembl reference fasta and gtf files](#4b-approach-2-run-the-workflow-on-a-genelab-rnaseq-dataset-using-local-ensembl-reference-fasta-and-gtf-files)  
+   4b. [Approach 2: Run the workflow on a GeneLab RNAseq dataset using local Ensembl reference fasta and gtf files](#4b-approach-2-run-the-workflow-on-a-genelab-rnaseq-dataset-using-local-reference-fasta-and-gtf-files)  
    4c. [Approach 3: Run the workflow on a non-GLDS dataset using a user-created runsheet](#4c-approach-3-run-the-workflow-on-a-non-glds-dataset-using-a-user-created-runsheet)  
 5. [Additional Output Files](#5-additional-output-files)  
 

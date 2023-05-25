@@ -24,5 +24,6 @@
 ---
 **Developed and maintained by:**  
 
-Lauren Sanders
+Lauren Sanders   
+Amanda Saravia-Butler
 
