@@ -1,6 +1,6 @@
 ---
 title: "Affymetrix Processing"
-subtitle: "Workflow Version: NF_MAAffymetrix_1.0.1"
+subtitle: "Workflow Version: NF_MAAffymetrix_1.0.2"
 date: now
 title-block-banner: true
 format:
@@ -210,7 +210,7 @@ legend("topright", legend = colnames(raw_data@assayData$exprs),
         lty = c(1,2,3,4,5), # Seems like oligo::hist cycles through these first five line types
         col = oligo::darkColors(n = ncol(raw_data)), # Ensure legend color is in sync with plot
         ncol = number_of_sets, # Set number of columns by number of sets
-        cex = 1 + 0.2 - (number_of_sets*0.2) # Reduce scale by 20% for each column beyond 1
+        cex = max(0.35, 1 + 0.2 - (number_of_sets*0.2)) # Reduce scale by 20% for each column beyond 1 with minimum of 35%
       )
 
 # Reset par
@@ -277,7 +277,7 @@ if (inherits(raw_data, "GeneFeatureSet")) {
 #| warning: false # NAN can be produced due to log transformations
 #| column: screen-inset-right # Allow images to flow all the way to the right
 #| fig-width: 14
-#| fig-height: !expr max(8, dim(raw_data)[2] * 0.2)
+#| fig-height: !expr max(8, 2 + dim(raw_data)[2] * 0.2)
 #| fig-align: left
 max_samplename_length <- max(nchar(colnames(raw_data)))
 dynamic_lefthand_margin <- max(max_samplename_length * 0.7, 10)
@@ -360,7 +360,7 @@ legend("topright", legend = colnames(norm_data@assayData$exprs),
         lty = c(1,2,3,4,5), # Seems like oligo::hist cycles through these first five line types
         col = oligo::darkColors(n = ncol(norm_data)), # Ensure legend color is in sync with plot
         ncol = number_of_sets, # Set number of columns by number of sets
-        cex = 1 + 0.2 - (number_of_sets*0.2) # Reduce scale by 20% for each column beyond 1
+        cex = max(0.35, 1 + 0.2 - (number_of_sets*0.2)) # Reduce scale by 20% for each column beyond 1
       )
 
 # Reset par
@@ -409,7 +409,7 @@ MA_plot <- oligo::MAplot(
 #| warning: false # NAN can be produced due to log transformations
 #| column: screen-inset-right # Allow images to flow all the way to the right
 #| fig-width: 14
-#| fig-height: !expr max(8, dim(norm_data)[2] * 0.2)
+#| fig-height: !expr max(8, 2 + dim(norm_data)[2] * 0.2)
 #| fig-align: left
 max_samplename_length <- max(nchar(colnames(norm_data)))
 dynamic_lefthand_margin <- max(max_samplename_length * 0.7, 10)

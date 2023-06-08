@@ -66,7 +66,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
 |biomaRt|2.50.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
 |matrixStats|0.63.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
 |statmod|1.5.0|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
-|dp_tools|1.3.2|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
+|dp_tools|1.3.4|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |singularity|3.9|[https://sylabs.io](https://sylabs.io)|
 |Quarto|1.1.251|[https://quarto.org](https://quarto.org)|
 
@@ -295,7 +295,7 @@ legend("topright", legend = colnames(raw_data@assayData$exprs),
         lty = c(1,2,3,4,5), # Seems like oligo::hist cycles through these first five line types
         col = oligo::darkColors(n = ncol(raw_data)), # Ensure legend color is in sync with plot
         ncol = number_of_sets, # Set number of columns by number of sets
-        cex = 1 + 0.2 - (number_of_sets*0.2) # Reduce scale by 20% for each column beyond 1
+        cex = max(0.35, 1 + 0.2 - (number_of_sets*0.2)) # Reduce scale by 20% for each column beyond 1 with minimum of 35%
       )
 
 # Reset par
@@ -478,7 +478,7 @@ legend("topright", legend = colnames(norm_data@assayData$exprs),
         lty = c(1,2,3,4,5), # Seems like oligo::hist cycles through these first five line types
         col = oligo::darkColors(n = ncol(norm_data)), # Ensure legend color is in sync with plot
         ncol = number_of_sets, # Set number of columns by number of sets
-        cex = 1 + 0.2 - (number_of_sets*0.2) # Reduce scale by 20% for each column beyond 1
+        cex = max(0.35, 1 + 0.2 - (number_of_sets*0.2)) # Reduce scale by 20% for each column beyond 1 with minimum of 35%
       )
 
 # Reset par
@@ -618,21 +618,6 @@ shortenedOrganismName <- function(long_name) {
   return(short_name)
 }
 
-
-# locate dataset
-expected_dataset_name <- shortenedOrganismName(unique(df_rs$organism)) %>% stringr::str_c("_gene_ensembl")
-print(paste0("Expected dataset name: '", expected_dataset_name, "'"))
-
-
-# Specify Ensembl version used in current GeneLab reference annotations
-ENSEMBL_VERSION <- '107'
-
-ensembl <- biomaRt::useEnsembl(biomart = "genes", 
-                               dataset = expected_dataset_name,
-                               version = ENSEMBL_VERSION)
-print(ensembl)
-
-
 getBioMartAttribute <- function(df_rs) {
   #' Returns resolved biomart attribute source from runsheet
 
@@ -724,14 +709,6 @@ if (organism %in% c("athaliana")) {
 
   probe_ids <- rownames(probeset_level_data)
 
-  # DEBUG:START
-  if ( is.integer(params$DEBUG_limit_biomart_query) ) {
-    warning(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
-    message(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
-    probe_ids <- probe_ids[1:params$DEBUG_limit_biomart_query]
-  }
-  # DEBUG:END
-
   # Create probe map
   # Run Biomart Queries in chunks to prevent request timeouts
   #   Note: If timeout is occuring (possibly due to larger load on biomart), reduce chunk size
@@ -764,7 +741,6 @@ listToUniquePipedString <- function(str_list) {
 }
 
 unique_probe_ids <- df_mapping %>% 
-                      # note: '!!sym(VAR)' syntax allows usage of variable 'VAR' in dplyr functions due to NSE. ref: https://dplyr.tidyverse.org/articles/programming.html # NON_DPPD
                       dplyr::mutate(dplyr::across(!!sym(expected_attribute_name), as.character)) %>% # Ensure probeset ids treated as character type
                       dplyr::group_by(!!sym(expected_attribute_name)) %>% 
                       dplyr::summarise(
@@ -1217,14 +1193,17 @@ norm_data_matrix_annotated <- oligo::exprs(norm_data) %>%
   dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
   dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
   dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>%
-  dplyr::left_join(annot, by = "ENSEMBL") %>% # Join with GeneLab Reference Annotation Table
-  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) # Convert NA mapping to 0
+  dplyr::left_join(annot, by = c("ENSEMBL" = map_primary_keytypes[[unique(df_rs$organism)]])) %>% # Join with GeneLab Reference Annotation Table using key name expected in organism specific annotation table
+  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) %>% # Convert NA mapping to 0
+  dplyr::rename( !!map_primary_keytypes[[unique(df_rs$organism)]] := ENSEMBL ) 
+
 
 
 norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe.csv"), row.names = FALSE)
+
 ```
 
 **Input Data:**
@@ -1237,7 +1216,7 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 
 **Output Data:**
 
-- **differential_expression.csv** (table containing normalized probeset expression values for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations. The ProbesetID is the unique index column.)
+- **differential_expression.csv** (table containing normalized probeset expression values for each sample, group statistics, Limma probeset DE results for each pairwise comparison, and gene annotations. The ProbesetID is the unique index column.)
 - **normalized_expression_probeset.csv** (table containing the background corrected, normalized probeset expression values for each sample. The ProbesetID is the unique index column.)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
 - **raw_intensities_probe.csv** (table containing the background corrected, unnormalized probe intensity values for each sample including gene annotations. The ProbeID is the unique index column.)

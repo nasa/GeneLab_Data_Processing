@@ -36,7 +36,7 @@ document](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114.md):
 
        |Flag Codes|Flag Name|Interpretation|
        |:---------|:--------|:-------------|
-       | 2    | MANUAL   | Special flag that indicates a manual check that is advised. Often used to advise what assess in QA plots. |
+       | 2    | MANUAL   | Special flag that indicates a manual check that is advised. Often used to advise what should be visually assessed in QA plots. |
        | 20    | GREEN   | Indicates the check passed all validation conditions |
        | 30    | YELLOW  | Indicates the check was flagged for minor issues (e.g. slight outliers) |
        | 50    | RED     | Indicates the check was flagged for moderate issues (e.g. major outliers) |
@@ -54,6 +54,7 @@ document](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114.md):
 - [3. Run the Workflow](#3-run-the-workflow)
   - [3a. Approach 1: Run the workflow on a GeneLab Affymetrix Microarray dataset](#3a-approach-1-run-the-workflow-on-a-genelab-affymetrix-microarray-dataset)
   - [3b. Approach 2: Run the workflow on a non-GLDS dataset using a user-created runsheet](#3b-approach-2-run-the-workflow-on-a-non-glds-dataset-using-a-user-created-runsheet)
+  - [3c. Approach 3: Run the workflow using an ISA Archive](#3c-approach-3-run-the-workflow-using-an-isa-archive)
 - [4. Additional Output Files](#4-additional-output-files)
 
 
@@ -96,9 +97,9 @@ All files required for utilizing the NF_MAAffymetrix GeneLab workflow for proces
 copy of latest NF_MAAffymetrix version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
 
 ```bash
-wget https://github.com/asaravia-butler/GeneLab_Data_Processing/releases/download/NF_MAAffymetrix_1.0.1/NF_MAAffymetrix_1.0.1.zip
+wget https://github.com/asaravia-butler/GeneLab_Data_Processing/releases/download/NF_MAAffymetrix_1.0.2/NF_MAAffymetrix_1.0.2.zip
 
-unzip NF_MAAffymetrix_1.0.1.zip
+unzip NF_MAAffymetrix_1.0.2.zip
 ```
 
 <br>
@@ -107,7 +108,7 @@ unzip NF_MAAffymetrix_1.0.1.zip
 
 ### 3. Run the Workflow
 
-While in the location containing the `NF_MAAffymetrix_1.0.1` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are three examples of how to run the NF_MAAffymetrix workflow:
+While in the location containing the `NF_MAAffymetrix_1.0.2` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are three examples of how to run the NF_MAAffymetrix workflow:
 > Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --ensemblVersion) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
 
 <br>
@@ -115,7 +116,7 @@ While in the location containing the `NF_MAAffymetrix_1.0.1` directory that was 
 #### 3a. Approach 1: Run the workflow on a GeneLab Affymetrix Microarray dataset
 
 ```bash
-nextflow run NF_MAAffymetrix_1.0.1/main.nf \ 
+nextflow run NF_MAAffymetrix_1.0.2/main.nf \ 
    -profile singularity \
    --osdAccession OSD-266 \
    --gldsAccession GLDS-266 
@@ -128,16 +129,28 @@ nextflow run NF_MAAffymetrix_1.0.1/main.nf \
 > Note: Specifications for creating a runsheet manually are described [here](examples/runsheet/README.md).
 
 ```bash
-nextflow run NF_MAAffymetrix_1.0.1/main.nf \ 
+nextflow run NF_MAAffymetrix_1.0.2/main.nf \ 
    -profile singularity \
    --runsheetPath </path/to/runsheet> 
 ```
 
 <br>
 
+#### 3c. Approach 3: Run the workflow using an ISA Archive
+
+> Note: Specifications for the ISA Tab Archive format can be found [here](https://isa-specs.readthedocs.io/en/latest/isatab.html).
+
+```bash
+nextflow run NF_MAAffymetrix_1.0.2/main.nf \ 
+   -profile singularity \
+   --isaArchivePath </path/to/isaArchive> 
+```
+
+<br>
+
 **Required Parameters For All Approaches:**
 
-* `NF_MAAffymetrix_1.0.1/main.nf` - Instructs Nextflow to run the NF_MAAffymetrix workflow 
+* `NF_MAAffymetrix_1.0.2/main.nf` - Instructs Nextflow to run the NF_MAAffymetrix workflow 
 
 * `-profile` - Specifies the configuration profile(s) to load, `singularity` instructs Nextflow to setup and use singularity for all software called in the workflow
 
@@ -162,14 +175,14 @@ nextflow run NF_MAAffymetrix_1.0.1/main.nf \
 
 * `--skipVV` - skip the automated V&V processes (Default: the automated V&V processes are active) 
 
-* `--outputDir` - specifies the directory to save the raw and processed data files (Default: files are saved in the launch directory)  
+* `--resultsDir` - specifies the output directory for all files produced by the workflow (Default: <OSD-NNN_GLDS-NNN> if OSD and GLDS accessions are specified.  Otherwise, the workflow launch directory.) 
 
 <br>
 
 All parameters listed above and additional optional arguments for the NF_MAAffymetrix workflow, including debug related options that may not be immediately useful for most users, can be viewed by running the following command:
 
 ```bash
-nextflow run NF_MAAffymetrix_1.0.1/main.nf --help
+nextflow run NF_MAAffymetrix_1.0.2/main.nf --help
 ```
 
 See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details common to all nextflow workflows.
@@ -183,7 +196,7 @@ See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nex
 All R code steps and output are rendered within a Quarto document yielding the following:
 
    - Output:
-     - NF_MAAffymetrix_1.0.1.html (html report containing executed code and output including QA plots)
+     - NF_MAAffymetrix_1.0.2.html (html report containing executed code and output including QA plots)
   
 
 The outputs from the Analysis Staging and V&V Pipeline Subworkflows are described below:

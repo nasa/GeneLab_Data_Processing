@@ -4,27 +4,52 @@ nextflow_pipeline {
     script "main.nf"
     tag "core"
 
-    test("GLDS-428: Should run without failures. First test case for Arabidposis Thaliana Biomart support") {
+    // test("GLDS-428: Should run without failures. First test case for Arabidposis Thaliana Biomart support") {
+
+    //     when {
+    //         params {
+    //             // define parameters here. Example: 
+    //             osdAccession = "OSD-428"
+    //             gldsAccession = "GLDS-428"
+    //             biomart_attribute = "AFFY AraGene"
+    //         }
+    //     }
+
+    //     then {
+    //         assert workflow.success
+    //         assert snapshot(
+    //                         path("${ params.outputDir }/Metadata").list(),
+    //                         path("${ params.outputDir }/00-RawData").list(),
+    //                         path("${ params.outputDir }/01-oligo_NormExp").list(),
+    //                         path("${ params.outputDir }/02-limma_DGE").list(),
+    //                         ).match()
+    //     }
+
+    // }
+
+    test("GLDS-428: Local ISA Archive Version: Should run without failures.") {
 
         when {
             params {
                 // define parameters here. Example: 
                 osdAccession = "OSD-428"
                 gldsAccession = "GLDS-428"
-                biomart_attribute = "AFFY AraGene"
+                isaArchivePath = "${ baseDir }/tests/assets/CLEANED_GLDS-428_metadata_GLDS-428-ISA.zip"
             }
         }
 
         then {
             assert workflow.success
             assert snapshot(
-                            path("${params.outputDir}/${params.gldsAccession}/Metadata").list(),
-                            path("${params.outputDir}/${params.gldsAccession}/00-RawData").list(),
-                            path("${params.outputDir}/${params.gldsAccession}/01-oligo_NormExp").list(),
-                            path("${params.outputDir}/${params.gldsAccession}/02-limma_DGE").list(),
+                            path("${ params.outputDir }/Metadata").list(),
+                            path("${ params.outputDir }/00-RawData").list(),
+                            path("${ params.outputDir }/01-oligo_NormExp").list(),
+                            path("${ params.outputDir }/02-limma_DGE").list(),
+                            [ 'Affymetrix.html exists' : path("${ params.outputDir }/GeneLab/Affymetrix.html").exists()],
                             ).match()
         }
 
     }
+
 
 }
