@@ -1,7 +1,6 @@
 # GeneLab processing commands for GLDS-120
-The metadata for this dataset was updated to be consistent with the updated GeneLab plant metadata standards, therefore the RSEM raw 
-counts data was used as input to re-run differential gene expression (DGE) analysis using pipeline version 
-[GL-DPPD-7101-F](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md).
+The metadata for this dataset was updated to be consistent with the updated GeneLab plant metadata standards, therefore the RSEM raw counts data was used as input to re-run differential gene expression (DGE) analysis using pipeline version 
+[GL-DPPD-7101-F](../../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md).
 
 The raw and processed data are available from: [https://osdr.nasa.gov/bio/repo/data/studies/OSD-120](https://osdr.nasa.gov/bio/repo/data/studies/OSD-120)
 
