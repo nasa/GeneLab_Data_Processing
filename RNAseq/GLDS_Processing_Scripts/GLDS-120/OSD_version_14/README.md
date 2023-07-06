@@ -1,6 +1,5 @@
 # GeneLab processing commands for GLDS-120
-The incorrect RSEM `--strandedness` setting was used to generate the original processed data, therefore this dataset was re-processed 
-starting with the RSEM counts step using pipeline version [GL-DPPD-7101-D](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-D.md).
+The incorrect RSEM `--strandedness` setting was used to generate the original processed data, therefore this dataset was re-processed starting with the RSEM counts step using pipeline version [GL-DPPD-7101-D](../../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-D.md).
 > For the re-processed data, the RSEM `--strandedness` was set to none.
 
 The raw and processed data are available from: [https://osdr.nasa.gov/bio/repo/data/studies/OSD-120](https://osdr.nasa.gov/bio/repo/data/studies/OSD-120)
