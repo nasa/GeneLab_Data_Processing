@@ -56,4 +56,4 @@ jobs:
           ls test-datasets
           ls
           ls ${GITHUB_WORKSPACE}
-          ./nf-test test ${GITHUB_WORKSPACE}
+          ./nf-test test ${GITHUB_WORKSPACE}/RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/tests/*.test
