@@ -53,7 +53,5 @@ jobs:
 
       - name: Run pipeline with test data
         run: |
-          ls test-datasets
-          ls
-          ls ${GITHUB_WORKSPACE}
-          ./nf-test test ${GITHUB_WORKSPACE}/RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/tests/*.test
+          cd ${GITHUB_WORKSPACE}/RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/
+          ./nf-test test tests/*.test
