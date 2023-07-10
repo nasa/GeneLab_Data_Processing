@@ -54,4 +54,6 @@ jobs:
       - name: Run pipeline with test data
         run: |
           ls test-datasets
+          ls
+          ls ${GITHUB_WORKSPACE}
           ./nf-test test ${GITHUB_WORKSPACE}
