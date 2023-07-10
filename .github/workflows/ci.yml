@@ -29,6 +29,7 @@ jobs:
       - name: Install nf-test
         run: |
           curl -fsSL https://code.askimed.com/install/nf-test | bash
+          chmod u+x nf-test
 
       - name: Hash Github Workspace
         id: hash_workspace
@@ -53,4 +54,4 @@ jobs:
       - name: Run pipeline with test data
         run: |
           ls test-datasets
-          nf-test test ${GITHUB_WORKSPACE}
+          ./nf-test test ${GITHUB_WORKSPACE}
