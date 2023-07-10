@@ -27,9 +27,12 @@ jobs:
           version: "${{ matrix.NXF_VER }}"
 
       - name: Install nf-test
+        id: nf-test
         run: |
           curl -fsSL https://code.askimed.com/install/nf-test | bash
           chmod u+x nf-test
+          echo "::set-output name=bin_path::$(pwd)/nf-test"
+          
 
       - name: Hash Github Workspace
         id: hash_workspace
@@ -54,4 +57,4 @@ jobs:
       - name: Run pipeline with test data
         run: |
           cd ${GITHUB_WORKSPACE}/RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/
-          ./nf-test test tests/*.test
+          ${{ steps.nf-test.outputs.bin_path}} test tests/*.test
