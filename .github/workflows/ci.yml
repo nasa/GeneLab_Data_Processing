@@ -26,6 +26,10 @@ jobs:
         with:
           version: "${{ matrix.NXF_VER }}"
 
+      - name: Install nf-test
+        run: |
+          curl -fsSL https://code.askimed.com/install/nf-test | bash
+
       - name: Hash Github Workspace
         id: hash_workspace
         run: |
