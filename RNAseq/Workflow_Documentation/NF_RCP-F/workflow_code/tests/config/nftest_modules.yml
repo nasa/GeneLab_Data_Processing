@@ -1,3 +1,3 @@
-fastqc:
+dge:
   - RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/modules/dge/**
   - RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/tests/modules/dge/**

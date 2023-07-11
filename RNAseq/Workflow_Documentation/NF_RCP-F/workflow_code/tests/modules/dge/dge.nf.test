@@ -3,6 +3,7 @@ nextflow_process {
     name "Test Process DGE_BY_DESEQ2"
     script "modules/dge.nf"
     process "DGE_BY_DESEQ2"
+    tag 'dge'
     
     test("Baseline_ON_GLDS-194:Should run without failures AND PASS VV VALIDATION") {
         tag 'dev'
