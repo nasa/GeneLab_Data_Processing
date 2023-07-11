@@ -46,7 +46,6 @@ process DGE_BY_DESEQ2 {
         --annotation_file_path ${annotation_file} \\
         --extended_table_output_prefix "dge_output/"\\
         --extended_table_output_suffix ".csv" \\
-        --verbose
 
     if ${ meta.has_ercc ? 'true' : 'false'}
     then
@@ -61,7 +60,6 @@ process DGE_BY_DESEQ2 {
             --annotation_file_path ${annotation_file} \\
             --extended_table_output_prefix "dge_output_ercc/"\\
             --extended_table_output_suffix "_ERCCnorm.csv" \\
-            --verbose
     fi
     """
 }

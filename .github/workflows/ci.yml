@@ -9,14 +9,35 @@ env:
   NXF_ANSI_LOG: false
 
 jobs:
-  test:
-    name: Run pipeline with test data
+  changes:
+    name: Check for changes
     runs-on: ubuntu-latest
+    outputs:
+      # Expose matched filters as job 'modules' output variable
+      modules: ${{ steps.filter.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: "RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/tests/config/nftest_modules.yml"
+
+  test:
+    name: ${{ matrix.tags }} ${{ matrix.profile }}
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.modules != '[]'
     strategy:
       matrix:
         NXF_VER:
           - "22.10.1"
           - "latest-everything"
+        profile:
+          - "docker"
+          - "singularity"
+        tags: ["${{ fromJson(needs.changes.outputs.modules) }}"]
+
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@v3
@@ -25,6 +46,12 @@ jobs:
         uses: nf-core/setup-nextflow@v1
         with:
           version: "${{ matrix.NXF_VER }}"
+
+      - name: Set up Singularity
+        if: matrix.profile == 'singularity'
+        uses: eWaterCycle/setup-singularity@v5
+        with:
+          singularity-version: 3.7.1
 
       - name: Install nf-test
         id: nf-test
@@ -54,8 +81,18 @@ jobs:
           ref: NF_RCP-F
           path: test-datasets/
 
-      - name: Run pipeline with test data
+      # Test the module
+      - name: Run nf-test
         run: |
           ls test-datasets/
+          echo "ls done"
           cd ${GITHUB_WORKSPACE}/RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/
-          ${{ steps.nf-test.outputs.bin_path}} test tests/*.test
+          ${{ steps.nf-test.outputs.bin_path}} test \
+            --profile=${{ matrix.profile }} \
+            --tag ${{ matrix.tags }} \
+            --tap=test.tap
+
+      - uses: pcolby/tap-summary@v1
+        with:
+          path: >-
+            test.tap
