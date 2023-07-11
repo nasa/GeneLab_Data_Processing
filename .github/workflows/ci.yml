@@ -70,7 +70,7 @@ jobs:
         id: cache-testdata
         uses: actions/cache@v3
         with:
-          path: RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/test-datasets/
+          path: RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/test-datasets
           key: ${{ steps.hash_workspace.outputs.digest }}
 
       - name: Check out test data
@@ -79,14 +79,14 @@ jobs:
         with:
           repository: J-81/test-datasets-extended
           ref: NF_RCP-F
-          path: RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/test-datasets/
+          path: RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/test-datasets
 
       # Test the module
       - name: Run nf-test
         run: |
           cd ${GITHUB_WORKSPACE}/RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/
           ls -l
-          ls -l test-datasets/testdata/NF_RCP-F/GLDS-194/Metadata/GLDS-194_bulkRNASeq_v1_runsheet.csv
+          ls -l test-datasets
           pwd
           echo 'done'
           ${{ steps.nf-test.outputs.bin_path}} test \
