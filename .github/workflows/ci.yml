@@ -21,6 +21,7 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: filter
         with:
+          base: 'DEV_NF_RCP-F'
           filters: "RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/tests/config/nftest_modules.yml"
 
   test:
