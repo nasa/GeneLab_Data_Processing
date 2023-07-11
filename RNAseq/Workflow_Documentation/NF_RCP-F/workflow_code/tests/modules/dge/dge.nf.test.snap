@@ -1,5 +1,22 @@
 {
-    "Baseline_ON_GLDS-194:Should run without failures AND PASS VV VALIDATION": {
+    "GLDS-321:55_.ISSUE": {
+        "content": [
+            [
+                "summary.txt:md5,2ae67caf20a32f00b87e0f340a4c505b"
+            ],
+            [
+                [
+                    "Normalized_Counts.csv:md5,c148732be1d0b1bb61278bfef612f07b",
+                    "RSEM_Unnormalized_Counts.csv:md5,fd101e235076c3ae66c513bc96017b33"
+                ]
+            ],
+            [
+                "versions.txt:md5,5fac4f3186014a43b8aa3b41d66b2311"
+            ]
+        ],
+        "timestamp": "2023-07-11T22:30:32+0000"
+    },
+    "GLDS-194": {
         "content": [
             [
                 "summary.txt:md5,6c202fd3c11a747e40a49d1369e8875f"
@@ -20,126 +37,6 @@
                 "versions.txt:md5,1865b6b8900d83ec7881f58fe301da11"
             ]
         ],
-        "timestamp": "2023-07-11T21:35:03+0000"
-    },
-    "ISSUE_55_ON_GLDS-321:Should run without failures AND PASS VV VALIDATION": {
-        "content": [
-            [
-                [
-                    "contrasts.csv:md5,1b63fd558a509d430609c5d824f7c090",
-                    "SampleTable.csv:md5,308d0c4af88b557ef857f3be8eb2a339",
-                    "differential_expression.csv:md5,de5fe517a08851b0a4817c459ce95d8a",
-                    "visualization_output_table.csv:md5,7f72442d40a030d50211db3ab6885dfb",
-                    "visualization_PCA_table.csv:md5,c19f946356e520bd9bf68606d639f21c"
-                ]
-            ],
-            [
-                [
-                    "Normalized_Counts.csv:md5,c148732be1d0b1bb61278bfef612f07b",
-                    "RSEM_Unnormalized_Counts.csv:md5,fd101e235076c3ae66c513bc96017b33"
-                ]
-            ],
-            [
-                "versions.txt:md5,5fac4f3186014a43b8aa3b41d66b2311"
-            ],
-            {
-                "Passes bulkRNASeq.checks.check_dge_table_group_columns_constraints": true,
-                "dp_tools_version": "1.1.8"
-            }
-        ],
-        "timestamp": "2023-07-11T21:35:02+0000"
-    },
-    "Baseline_ON_GLDS-194 TECH REP VERSION:Should run without failures AND PASS VV VALIDATION": {
-        "content": [
-            [
-                [
-                    "contrasts.csv:md5,66d74b686885ffd4eccdf55823c0e3ce",
-                    "SampleTable.csv:md5,bfd18bbc7d34e41c23f0c9107f5d75c9",
-                    "differential_expression.csv:md5,00cf45e546529c81c0a43ae1b8495a59",
-                    "visualization_output_table.csv:md5,58578caedc33e6a0230ba80abe61f0d5",
-                    "visualization_PCA_table.csv:md5,5c461d35b12d5946c2105f705a03c6d3"
-                ]
-            ],
-            [
-                [
-                    "Normalized_Counts.csv:md5,b4ba348d5446f8ba546a46b966087c1b",
-                    "RSEM_Unnormalized_Counts.csv:md5,931c6070b5e19909929c5a217713500b"
-                ]
-            ],
-            [
-                
-            ],
-            [
-                
-            ],
-            [
-                "versions.txt:md5,5fac4f3186014a43b8aa3b41d66b2311"
-            ],
-            {
-                "Passes bulkRNASeq.checks.check_dge_table_group_columns_constraints": true,
-                "dp_tools_version": "1.1.8"
-            }
-        ],
-        "timestamp": "2023-07-11T21:35:02+0000"
-    },
-    "GLDS-423 TECH REP VERSION:Should run without failures AND PASS VV VALIDATION": {
-        "content": [
-            [
-                [
-                    "contrasts.csv:md5,6ec6d3af26f8d482b64112b88d4e8417",
-                    "SampleTable.csv:md5,e007d8494abcd37c46c012fabe91d2e7",
-                    "differential_expression.csv:md5,76fd2a34d35cd3110198a0b22b381846",
-                    "visualization_output_table.csv:md5,0427f37905a2b55a595bfbeefddff1ac",
-                    "visualization_PCA_table.csv:md5,24e62c90c57550de57bac0b35c3a0121"
-                ]
-            ],
-            [
-                [
-                    "Normalized_Counts.csv:md5,0ce1b39d28e7cce080e0661c56ed5f76",
-                    "RSEM_Unnormalized_Counts.csv:md5,5e3ee6c36e6ebefa1bd947c2fa586b99"
-                ]
-            ],
-            [
-                
-            ],
-            [
-                
-            ],
-            [
-                "versions.txt:md5,5fac4f3186014a43b8aa3b41d66b2311"
-            ],
-            {
-                "Passes bulkRNASeq.checks.check_dge_table_group_columns_constraints": true,
-                "dp_tools_version": "1.1.8"
-            }
-        ],
-        "timestamp": "2023-07-11T21:35:02+0000"
-    },
-    "ISSUE_55_ON_Mock:Should run without failures": {
-        "content": [
-            [
-                [
-                    "contrasts.csv:md5,b99c88e9c92f1d1588727df47523c4ad",
-                    "SampleTable.csv:md5,229c988f09fbfeca182da7011f6f93b4",
-                    "differential_expression.csv:md5,f58b6f602598a0c25379afd0c5e87a71",
-                    "visualization_output_table.csv:md5,d056472d2ac135cad9ee4d9f33bde387",
-                    "visualization_PCA_table.csv:md5,1293b99878d7a7eb0e02dc6a38e33d39"
-                ]
-            ],
-            [
-                [
-                    "Normalized_Counts.csv:md5,393160aee08165165ccd2b8579a45161",
-                    "RSEM_Unnormalized_Counts.csv:md5,6759e0e7ec07960691d3913b3877c129"
-                ]
-            ],
-            [
-                "versions.txt:md5,6e364ecf476a7729d5edd52335fb074a"
-            ],
-            {
-                "Passes bulkRNASeq.checks.check_dge_table_group_columns_constraints": true,
-                "dp_tools_version": "1.1.8"
-            }
-        ],
-        "timestamp": "2023-07-11T21:35:02+0000"
+        "timestamp": "2023-07-11T22:30:32+0000"
     }
 }
