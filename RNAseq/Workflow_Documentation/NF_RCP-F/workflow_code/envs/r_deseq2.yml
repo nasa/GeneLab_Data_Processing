@@ -1,8 +1,0 @@
-channels:
-  - bioconda
-  - conda-forge
-  - defaults
-dependencies:
-  - R
-  - r-biocmanager
-  - r-rnetcdf

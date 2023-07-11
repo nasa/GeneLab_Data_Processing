@@ -1,8 +1,0 @@
-name: main
-channels:
-  - bioconda
-  - conda-forge
-  - defaults
-dependencies:
-  - nextflow=20.07
-  - python=3.8
