@@ -1,11 +1,11 @@
 nextflow_process {
 
     name "Test Process DGE_BY_DESEQ2"
-    script "modules/dge/dge.nf"
+    script "modules/DGE_BY_DESEQ2/main.nf"
     process "DGE_BY_DESEQ2"
     
     test("GLDS-194") {
-        tag 'dge'
+        tag 'DGE_BY_DESEQ2'
 
         when {
             params {
@@ -38,7 +38,7 @@ nextflow_process {
     }
 
     test("GLDS-321:55_.ISSUE") {
-        tag 'dge'
+        tag 'DGE_BY_DESEQ2'
 
         when {
             params {
