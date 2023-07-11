@@ -25,7 +25,7 @@ jobs:
           filters: "RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/tests/config/nftest_modules.yml"
 
   test:
-    name: ${{ matrix.tags }} ${{ matrix.profile }}
+    name: ${{ matrix.tags }} ${{ matrix.profile }} ${{ matrix.NXF_VER }}
     runs-on: ubuntu-latest
     needs: changes
     if: needs.changes.outputs.modules != '[]'
@@ -59,7 +59,7 @@ jobs:
         run: |
           curl -fsSL https://code.askimed.com/install/nf-test | bash
           chmod u+x nf-test
-          echo "::set-output name=bin_path::$(pwd)/nf-test"
+          echo "bin_path=$(pwd)/nf-test" >> $GITHUB_OUTPUT
           
 
       - name: Hash Github Workspace
