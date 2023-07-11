@@ -2,13 +2,7 @@
     "Baseline_ON_GLDS-194:Should run without failures AND PASS VV VALIDATION": {
         "content": [
             [
-                [
-                    "contrasts.csv:md5,66d74b686885ffd4eccdf55823c0e3ce",
-                    "SampleTable.csv:md5,bfd18bbc7d34e41c23f0c9107f5d75c9",
-                    "differential_expression.csv:md5,00cf45e546529c81c0a43ae1b8495a59",
-                    "visualization_output_table.csv:md5,58578caedc33e6a0230ba80abe61f0d5",
-                    "visualization_PCA_table.csv:md5,5c461d35b12d5946c2105f705a03c6d3"
-                ]
+                "summary.txt:md5,6c202fd3c11a747e40a49d1369e8875f"
             ],
             [
                 [
@@ -17,20 +11,16 @@
                 ]
             ],
             [
-                
+                "ERCCnorm_summary.txt:md5,1f77ed6cd1a8435038859b0361f6b047"
             ],
             [
-                
+                "ERCC_Normalized_Counts.csv:md5,b1d9d5a546a23b6709a9f8c60548b6a7"
             ],
             [
-                "versions.txt:md5,5fac4f3186014a43b8aa3b41d66b2311"
-            ],
-            {
-                "Passes bulkRNASeq.checks.check_dge_table_group_columns_constraints": true,
-                "dp_tools_version": "1.1.8"
-            }
+                "versions.txt:md5,1865b6b8900d83ec7881f58fe301da11"
+            ]
         ],
-        "timestamp": "2023-06-15T17:38:07+0000"
+        "timestamp": "2023-07-11T21:35:03+0000"
     },
     "ISSUE_55_ON_GLDS-321:Should run without failures AND PASS VV VALIDATION": {
         "content": [
@@ -57,7 +47,7 @@
                 "dp_tools_version": "1.1.8"
             }
         ],
-        "timestamp": "2023-06-15T17:38:07+0000"
+        "timestamp": "2023-07-11T21:35:02+0000"
     },
     "Baseline_ON_GLDS-194 TECH REP VERSION:Should run without failures AND PASS VV VALIDATION": {
         "content": [
@@ -90,7 +80,7 @@
                 "dp_tools_version": "1.1.8"
             }
         ],
-        "timestamp": "2023-06-15T17:38:07+0000"
+        "timestamp": "2023-07-11T21:35:02+0000"
     },
     "GLDS-423 TECH REP VERSION:Should run without failures AND PASS VV VALIDATION": {
         "content": [
@@ -123,7 +113,7 @@
                 "dp_tools_version": "1.1.8"
             }
         ],
-        "timestamp": "2023-06-15T17:38:07+0000"
+        "timestamp": "2023-07-11T21:35:02+0000"
     },
     "ISSUE_55_ON_Mock:Should run without failures": {
         "content": [
@@ -150,6 +140,6 @@
                 "dp_tools_version": "1.1.8"
             }
         ],
-        "timestamp": "2023-06-15T17:38:07+0000"
+        "timestamp": "2023-07-11T21:35:02+0000"
     }
 }

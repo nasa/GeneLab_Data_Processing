@@ -28,6 +28,9 @@ process DGE_BY_DESEQ2 {
           path("dge_output_ercc/visualization_output_table_ERCCnorm.csv"),
           path("dge_output_ercc/visualization_PCA_table_ERCCnorm.csv"), optional: true, emit: dge_ercc
 
+    path("dge_output/summary.txt"), emit: summary
+    path("dge_output_ercc/ERCCnorm_summary.txt"), optional: true, emit: summary_ercc
+
     path("versions.txt"), emit: version
 
   script:
