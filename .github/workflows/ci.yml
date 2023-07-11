@@ -94,4 +94,4 @@ jobs:
       - uses: pcolby/tap-summary@v1
         with:
           path: >-
-            test.tap
+            ${GITHUB_WORKSPACE}/RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/test.tap
