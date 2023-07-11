@@ -85,6 +85,9 @@ jobs:
       - name: Run nf-test
         run: |
           cd ${GITHUB_WORKSPACE}/RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/
+          ls -l
+          pwd
+          echo 'done'
           ${{ steps.nf-test.outputs.bin_path}} test \
             --profile=${{ matrix.profile }} \
             --tag ${{ matrix.tags }} \
