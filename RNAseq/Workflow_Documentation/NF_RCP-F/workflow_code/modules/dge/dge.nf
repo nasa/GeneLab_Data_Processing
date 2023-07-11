@@ -61,5 +61,7 @@ process DGE_BY_DESEQ2 {
             --extended_table_output_prefix "dge_output_ercc/"\\
             --extended_table_output_suffix "_ERCCnorm.csv" \\
     fi
+
+    echo "done"
     """
 }
