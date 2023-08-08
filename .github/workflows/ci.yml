@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install Nextflow
-        uses: nf-core/setup-nextflow@v1
+        uses: nf-core/setup-nextflow@be72b1dc0f932cea69aef64479ac863a86516c0c
         with:
           version: "${{ matrix.NXF_VER }}"
 
