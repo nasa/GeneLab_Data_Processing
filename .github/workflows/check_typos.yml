@@ -15,8 +15,9 @@ jobs:
             fail-fast: false
         steps:
           - uses: actions/checkout@v3
-          - uses: codespell-project/actions-codespell@master
+          - uses: codespell-project/codespell-problem-matcher@v1
+          - uses: codespell-project/actions-codespell@v2.0
             with:
               check_filenames: true
-              skip: "*.yml,*.cff,*.js,*.lock"
-              ignore_words_list: RNAseq
+              skip: "*.yml,*.cff,*.js,*.lock,*.pdf,*.ipynb"
+              ignore_words_file: ".codespellignore"
