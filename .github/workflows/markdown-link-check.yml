@@ -2,9 +2,7 @@ name: Check Markdown links
 
 on:
   create: # runs when a reference (branch or tag) is created
-    tags:
-      - v* # wildcard can be used to match tag patterns, this example matches tags like v1.0, v2.3.4, etc.
-
+      
 jobs:
   markdown-link-check:
     runs-on: ubuntu-latest
