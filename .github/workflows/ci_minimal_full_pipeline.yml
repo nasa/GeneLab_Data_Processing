@@ -69,7 +69,8 @@ jobs:
           ${{ steps.nf-test.outputs.bin_path}} test \
             --profile=${{ matrix.profile }} \
             --tag core \
-            --tap=test.tap
+            --tap=test.tap \
+            tests/*.test
 
       - uses: pcolby/tap-summary@v1
         with:
