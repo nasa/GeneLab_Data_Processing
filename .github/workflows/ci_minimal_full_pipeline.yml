@@ -1,7 +1,6 @@
 name: CI Minimal Dataset Full Pipeline
 # This workflow runs the pipeline with the minimal test dataset to check that it completes without any syntax errors
-on:
-  create: # runs when a reference (branch or tag) is created
+on: push
 
 env:
   NXF_ANSI_LOG: false
