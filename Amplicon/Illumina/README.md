@@ -2,7 +2,7 @@
 
 > **The document [`GL-DPPD-7104-A.md`](Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-A.md) holds an overview and example commands for how GeneLab processes Illumina amplicon sequencing datasets. See the [Repository Links](#repository-links) descriptions below for more information. Processed data output files and processing code are provided for each GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 > 
-> Note: The exact processing commands and AmpIllumina version used for specific GLDS datasets can be found in the *_processing_info.tar file under "Files" for each respective GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/). 
+> Note: The exact processing commands and AmpIllumina version used for specific GLDS datasets can be found in the *_processing_info.zip file under "Files" for each respective GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/). 
 
 --- 
 
@@ -24,7 +24,7 @@
 * [**GLDS_Processing_Scripts**](GLDS_Processing_Scripts)
 
   - Contains the exact processing commands and AmpIllumina version used for select GLDS datasets that have been released and are available in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/)
-    > Note: Exact processing commands and AmpIllumina version used for datasets not available in this sub-directory can be found in the *_processing_info.tar file under "Files" for each respective GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
+    > Note: Exact processing commands and AmpIllumina version used for datasets not available in this sub-directory can be found in the *_processing_info.zip file under "Files" for each respective GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 
 ---
 **Developed and maintained by:**  
