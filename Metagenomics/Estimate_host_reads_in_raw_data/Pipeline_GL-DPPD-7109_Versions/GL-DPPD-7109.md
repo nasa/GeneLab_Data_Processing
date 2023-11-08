@@ -157,5 +157,6 @@ cat <( printf "Sample_ID\tTotal_fragments\tTotal_host_fragments\tPercent_host\n"
 **Output data:**
 
 * Host-read-count-summary.tsv (a tab-separated file with 4 columns: "Sample\_ID", "Total\_fragments", "Total\_host\_fragments", "Percent\_host")
+*Note: The percent host reads estimated for each sample is provided in the assay table on the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).*
 
 ---
