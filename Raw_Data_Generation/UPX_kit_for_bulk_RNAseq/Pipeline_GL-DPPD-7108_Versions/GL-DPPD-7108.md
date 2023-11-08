@@ -48,7 +48,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
 
 # General processing overview with example commands   
 
-> Output files listed in **bold** below are included with the raw data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
+> Output files listed in **bold** below are included with the raw data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 
 ---
 
