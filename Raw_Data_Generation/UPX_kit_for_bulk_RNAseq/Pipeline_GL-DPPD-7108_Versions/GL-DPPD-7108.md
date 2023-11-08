@@ -48,6 +48,8 @@ Lauren Sanders (acting GeneLab Project Scientist)
 
 # General processing overview with example commands   
 
+> Output files listed in **bold** below are included with the raw data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
+
 ---
 
 ## 1. Demultiplex Sample Pools  
@@ -187,7 +189,7 @@ GL-bulk-RNAseq-qiagen-UPX-demultiplex -c /path/to/${sample_pool}_cellIDs.txt \
 
 **Output Data:**
 - *Demux-cellID-read-counts.tsv (table containing the number of reads identified for each cell ID within a sample pool)
-- *cellID_R1_raw.fastq.gz (fastq file containing reads from an individual sample within a sample pool)
+- **\*cellID_R1_raw.fastq.gz** (fastq file containing reads from an individual sample within a sample pool)
   > **Note:** After all sample pool fastq files have been parsed, individual sample fastq files can be renamed. 
 
 <br>
