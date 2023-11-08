@@ -1,6 +1,6 @@
 # Bioinformatics pipeline for Illumina metagenomics data
 
-> **This document holds an overview and some example commands of how GeneLab processes Illumina metagenomics datasets. Exact processing commands for specific datasets that have been released are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
+> **This document holds an overview and some example commands of how GeneLab processes Illumina metagenomics datasets. Exact processing commands for specific datasets that have been released are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 
 ---
 
@@ -72,7 +72,7 @@ Jonathan Galazka (GeneLab Project Scientist)
 
 # General processing overview with example commands
 
-> Exact processing commands for specific datasets are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).  
+> Exact processing commands and output files listed in **bold** below are included with each Metagenomics Seq processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).  
 
 ## Pre-processing
 ### 1. Raw Data QC
@@ -88,7 +88,7 @@ fastqc -o raw_fastqc_output *raw.fastq.gz
 
 **Input data:**
 
-* *raw.fastq.gz (raw reads)
+* *raw.fastq.gz (raw reads, after human read removal)
 
 **Output data:**
 
@@ -115,8 +115,8 @@ multiqc -o raw_multiqc_output -n raw_multiqc -z raw_fastqc_output/
 
 **Output data:**
 
-* raw_multiqc_output/raw_multiqc_report.html (multiqc output html summary)
-* raw_multiqc_output/raw_multiqc_data.zip (zipped directory containing multiqc output data)
+* **raw_multiqc_output/raw_multiqc_report.html** (multiqc output html summary)
+* **raw_multiqc_output/raw_multiqc_data.zip** (zipped directory containing multiqc output data)
 
 <br>  
 
@@ -125,13 +125,13 @@ multiqc -o raw_multiqc_output -n raw_multiqc -z raw_fastqc_output/
 ### 2. Quality filtering/trimming
 
 ```      
-bbduk.sh in=sample-1-R1-raw.fastq.gz in2=sample-1-R2-raw.fastq.gz out1=sample-1-R1-trimmed.fastq.gz \
-         out2=sample-1-R2-trimmed.fastq.gz ref=ref-adapters.fa ktrim=l k=17 ftm=5 qtrim=rl \
+bbduk.sh in=sample-1-R1-raw.fastq.gz in2=sample-1-R2-raw.fastq.gz out1=sample-1_R1_filtered.fastq.gz \
+         out2=sample-1_R2_filtered.fastq.gz ref=ref-adapters.fa ktrim=l k=17 ftm=5 qtrim=rl \
          trimq=10 mlf=0.5 maxns=0 > bbduk.log 2>&1
          
 # if libraries were prepared with the Swift1S kit
-# bbduk.sh in=sample-1-R1-raw.fastq.gz in2=sample-1-R2-raw.fastq.gz out1=sample-1-R1-trimmed.fastq.gz \
-         out2=sample-1-R2-trimmed.fastq.gz ref=ref-adapters.fa ktrim=l k=17 ftm=5 qtrim=rl \
+# bbduk.sh in=sample-1-R1-raw.fastq.gz in2=sample-1-R2-raw.fastq.gz out1=sample-1_R1_filtered.fastq.gz \
+         out2=sample-1_R2_filtered.fastq.gz ref=ref-adapters.fa ktrim=l k=17 ftm=5 qtrim=rl \
          trimq=10 mlf=0.5 maxns=0 swift=t > bbduk.log 2>&1
 
 ```
@@ -168,7 +168,7 @@ bbduk.sh in=sample-1-R1-raw.fastq.gz in2=sample-1-R2-raw.fastq.gz out1=sample-1-
 
 **Output data:**
 
-* *-trimmed.fastq.gz (filtered/trimmed reads)
+* **\*_filtered.fastq.gz** (filtered/trimmed reads)
 * bbduk.log (log file of standard output and error from bbduk run)
 
 <br>
@@ -197,7 +197,7 @@ fastqc -o trimmed_fastqc_output/ *trimmed.fastq.gz
 
 #### 3a. Compile Filtered/Trimmed Data QC
 ```
-multiqc -o trimmed_multiqc_output -n trimmed_multiqc -z trimmed_fastqc_output/
+multiqc -o filtered_multiqc_output -n filtered_multiqc -z filtered_fastqc_output/
 ```
 
 **Parameter Definitions:**
@@ -205,16 +205,16 @@ multiqc -o trimmed_multiqc_output -n trimmed_multiqc -z trimmed_fastqc_output/
 *	`-o` – the output directory to store results
 *	`-n` – the filename prefix of results
 *	`-z` – specifies to zip the output data directory
-*	`trimmed_fastqc_output/` – the directory holding the output data from the fastqc run, provided as a positional argument
+*	`filtered_fastqc_output/` – the directory holding the output data from the fastqc run, provided as a positional argument
 
 **Input data:**
 
-* trimmed_fastqc_output/*fastqc.zip (FastQC output data)
+* filtered_fastqc_output/*fastqc.zip (FastQC output data)
 
 **Output data:**
 
-* trimmed_multiqc_output/trimmed_multiqc_report.html (multiqc output html summary)
-* trimmed_multiqc_output/trimmed_multiqc_data.zip (zipped directory containing multiqc output data)
+* **filtered_multiqc_output/filtered_multiqc_report.html** (multiqc output html summary)
+* **filtered_multiqc_output/filtered_multiqc_data.zip** (zipped directory containing multiqc output data)
 
 <br>
 
