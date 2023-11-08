@@ -135,9 +135,7 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
 
 # General processing overview with example commands  
 
-> Exact processing commands for specific datasets are provided in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) directory.
-> 
-> All output files marked with a \# are published for each RNAseq processed dataset in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects). 
+> Exact processing commands and output files listed in **bold** below are included with each RNAseq processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/). 
 
 ---
 
@@ -186,8 +184,8 @@ multiqc --interactive -n raw_multiqc -o /path/to/raw_multiqc/output/directory /p
 
 **Output Data:**
 
-- raw_multiqc.html\# (multiqc report)
-- /raw_multiqc_data\# (directory containing multiqc data)
+- **raw_multiqc.html** (multiqc report)
+- **/raw_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -229,8 +227,8 @@ trim_galore --gzip \
 
 **Output Data:**
 
-- *fastq.gz\# (trimmed reads)
-- *trimming_report.txt\# (trimming report)
+- **\*fastq.gz** (trimmed reads)
+- **\*trimming_report.txt** (trimming report)
 
 <br>
 
@@ -275,8 +273,8 @@ multiqc --interactive -n trimmed_multiqc -o /path/to/trimmed_multiqc/output/dire
 
 **Output Data:**
 
-- trimmed_multiqc.html\# (multiqc report)
-- /trimmed_multiqc_data\# (directory containing multiqc data)
+- **trimmed_multiqc.html** (multiqc report)
+- **/trimmed_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -402,12 +400,12 @@ STAR --twopassMode Basic \
 **Output Data:**
 
 - *Aligned.sortedByCoord.out.bam (sorted mapping to genome)
-- *Aligned.toTranscriptome.out.bam\# (sorted mapping to transcriptome)
-- *Log.final.out\# (log file containing alignment info/stats such as reads mapped, etc)
+- **\*Aligned.toTranscriptome.out.bam** (sorted mapping to transcriptome)
+- **\*Log.final.out** (log file containing alignment info/stats such as reads mapped, etc)
 - *ReadsPerGene.out.tab (tab delimitated file containing STAR read counts per gene with 4 columns that correspond to different strandedness options: column 1 = gene ID, column 2 = counts for unstranded RNAseq, column 3 = counts for 1st read strand aligned with RNA, column 4 = counts for 2nd read strand aligned with RNA)
 - *Log.out (main log file containing detailed info about the STAR run)
 - *Log.progress.out (minute-by-minute report containing job progress statistics, such as the number of processed reads, % of mapped reads etc.)
-- *SJ.out.tab\# (high confidence collapsed splice junctions in tab-delimited format)
+- **\*SJ.out.tab** (high confidence collapsed splice junctions in tab-delimited format)
 - *_STARgenome (directory containing the following:)
   - sjdbInfo.txt
   - sjdbList.out.tab
@@ -438,8 +436,8 @@ multiqc --interactive -n align_multiqc -o /path/to/aligned_multiqc/output/direct
 
 **Output Data:**
 
-- align_multiqc.html\# (multiqc report)
-- /align_multiqc_data\# (directory containing multiqc data)
+- **align_multiqc.html** (multiqc report)
+- **/align_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -492,7 +490,7 @@ sessionInfo()
 
 **Output Data:**
 
-- STAR_Unnormalized_Counts.csv\# (Table containing raw STAR counts for each sample)
+- **STAR_Unnormalized_Counts.csv** (Table containing raw STAR counts for each sample)
 
 <br>
 
@@ -517,7 +515,7 @@ samtools sort -m 3G \
 
 **Output Data:**
 
-- *Aligned.sortedByCoord_sorted.out.bam\# (samtools sorted genome aligned bam file)
+- **\*Aligned.sortedByCoord_sorted.out.bam** (samtools sorted genome aligned bam file)
 
 <br>
 
@@ -538,7 +536,7 @@ samtools index -@ NumberOfThreads /path/to/*Aligned.sortedByCoord_sorted.out.bam
 
 **Output Data:**
 
-- *Aligned.sortedByCoord_sorted.out.bam.bai\# (index of sorted mapping to genome file)
+- **\*Aligned.sortedByCoord_sorted.out.bam.bai** (index of sorted mapping to genome file)
 
 <br>
 
@@ -646,8 +644,8 @@ multiqc --interactive -n infer_exp_multiqc -o /path/to/infer_exp_multiqc/output/
 
 **Output Data:**
 
-- infer_exp_multiqc.html\# (multiqc report)
-- /infer_exp_multiqc_data\# (directory containing multiqc data)
+- **infer_exp_multiqc.html** (multiqc report)
+- **/infer_exp_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -699,8 +697,8 @@ multiqc --interactive -n genebody_cov_multiqc -o /path/to/geneBody_coverage_mult
 
 **Output Data:**
 
-- geneBody_cov_multiqc.html\# (multiqc report)
-- /geneBody_cov_multiqc_data\# (directory containing multiqc data)
+- **geneBody_cov_multiqc.html** (multiqc report)
+- **/geneBody_cov_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -758,8 +756,8 @@ multiqc --interactive -n inner_dist_multiqc /path/to/inner_dist_multiqc/output/d
 
 **Output Data:**
 
-- inner_distance_multiqc.html\# (multiqc report)
-- /inner_distance_multiqc_data\# (directory containing multiqc data)
+- **inner_distance_multiqc.html** (multiqc report)
+- **/inner_distance_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -808,8 +806,8 @@ multiqc --interactive -n read_dist_multiqc -o /path/to/read_dist_multiqc/output/
 
 **Output Data:**
 
-- read_dist_multiqc.html\# (multiqc report)
-- /read_dist_multiqc_data\# (directory containing multiqc data)
+- **read_dist_multiqc.html** (multiqc report)
+- **/read_dist_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -894,8 +892,8 @@ rsem-calculate-expression --num-threads NumberOfThreads \
 
 **Output Data:**
 
-- *genes.results\# (counts per gene)
-- *isoforms.results\# (counts per isoform)
+- **\*genes.results** (counts per gene)
+- **\*isoforms.results** (counts per isoform)
 - *stat (directory containing the following stats files)
   - *cnt
   - *model
@@ -925,8 +923,8 @@ multiqc --interactive -n RSEM_count_multiqc -o /path/to/RSEM_count_multiqc/outpu
 
 **Output Data:**
 
-- RSEM_count_multiqc.html\# (multiqc report)
-- /RSEM_count_multiqc_data\# (directory containing multiqc data)
+- **RSEM_count_multiqc.html** (multiqc report)
+- **/RSEM_count_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -1019,7 +1017,7 @@ dpt-isa-to-runsheet --accession GLDS-### \
 
 - *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, used to define sample groups - the *ISA.zip file is located in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) under 'Study Files' -> 'metadata')
 
-- {GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv\# (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
+- **{GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv** (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
 
 <br>
 
@@ -1871,35 +1869,36 @@ sessionInfo()
 
 Output data without considering ERCC spike-in genes:
 
-- RSEM_Unnormalized_Counts.csv\# (table containing raw RSEM gene counts for each sample)
-- Normalized_Counts.csv\# (table containing normalized gene counts for each sample)
-- SampleTable.csv\# (table containing samples and their respective groups)
+- **RSEM_Unnormalized_Counts.csv** (table containing raw RSEM gene counts for each sample)
+- **Normalized_Counts.csv** (table containing normalized gene counts for each sample)
+- **SampleTable.csv** (table containing samples and their respective groups)
 - visualization_output_table.csv (file used to generate GeneLab DGE visualizations)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
-- differential_expression.csv\# (table containing normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations) 
-- contrasts.csv\# (table containing all pairwise comparisons)
+- **differential_expression.csv** (table containing normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations) 
+- **contrasts.csv** (table containing all pairwise comparisons)
 
 Output data with considering ERCC spike-in genes:
+*Note: ERCC-normalized data are only available upon request. GeneLab encourages users to use the normalized and DGE data without considering ERCC spike-in genes.*
 
 - ERCC_rawCounts_unfiltered.csv (table containing raw ERCC unfiltered counts)
 - ERCC_rawCounts_filtered.csv (ERCC counts table after removing ERCC genes with low counts)
-- ERCC_Normalized_Counts.csv\# (table containing ERCC-normalized gene counts for each sample)
-- ERCCnorm_SampleTable.csv\# (table containing samples with detectable ERCC group B genes and their respective groups)
+- ERCC_Normalized_Counts.csv (table containing ERCC-normalized gene counts for each sample)
+- ERCCnorm_SampleTable.csv (table containing samples with detectable ERCC group B genes and their respective groups)
 - visualization_output_table_ERCCnorm.csv (file used to generate GeneLab DGE visualizations for ERCC-normalized data)
 - visualization_PCA_table_ERCCnorm.csv (file used to generate GeneLab PCA plots for ERCC-normalized data)
-- ERCCnorm_differential_expression.csv\# (table containing ERCC-normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations)
-- ERCCnorm_contrasts.csv\# (table containing all pairwise comparisons for samples containing ERCC spike-in)
+- ERCCnorm_differential_expression.csv (table containing ERCC-normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations)
+- ERCCnorm_contrasts.csv (table containing all pairwise comparisons for samples containing ERCC spike-in)
 
 
 **Output Data for Datasets without ERCC Spike-In:**
 
-- RSEM_Unnormalized_Counts.csv\# (table containing raw RSEM gene counts for each sample)
-- Normalized_Counts.csv\# (table containing normalized gene counts for each sample)
-- SampleTable.csv\# (table containing samples and their respective groups)
+- **RSEM_Unnormalized_Counts.csv** (table containing raw RSEM gene counts for each sample)
+- **Normalized_Counts.csv** (table containing normalized gene counts for each sample)
+- **SampleTable.csv** (table containing samples and their respective groups)
 - visualization_output_table.csv (file used to generate GeneLab DGE visualizations)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
-- differential_expression.csv\# (table containing normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations) 
-- contrasts.csv\# (table containing all pairwise comparisons)
+- **differential_expression.csv** (table containing normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations) 
+- **contrasts.csv** (table containing all pairwise comparisons)
 
 > Note: RNAseq processed data interactive tables and plots are found in the [GLDS visualization portal](https://visualization.genelab.nasa.gov/data/studies).
 
@@ -2651,4 +2650,4 @@ ax.set_yscale("log");
 
 - ERCC_analysis/ERCC_lodr_*.csv (ERCC Gene Table including mean counts, adjusted p-value and p-value, and filtered to genes with both adj. p-value and p-value < 0.001)
 
-> All steps of the ERCC Spike-In Data Analysis are performed in a Jupyter Notebook (JN) and the completed JN is exported as an html file and published in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) for the respective dataset.
+> All steps of the ERCC Spike-In Data Analysis are performed in a Jupyter Notebook (JN) and the completed JN is exported as an html file (**ERCC_analysis.html**) and published in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/) for the respective dataset.
