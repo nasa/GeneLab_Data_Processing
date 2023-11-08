@@ -177,17 +177,17 @@ bbduk.sh in=sample-1-R1-raw.fastq.gz in2=sample-1-R2-raw.fastq.gz out1=sample-1_
 
 ### 3. Filtered/Trimmed Data QC
 ```
-fastqc -o trimmed_fastqc_output/ *trimmed.fastq.gz
+fastqc -o filtered_fastqc_output/ *filtered.fastq.gz
 ```
 
 **Parameter Definitions:**
 
 *	`-o` – the output directory to store results  
-*	`*trimmed.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces in between them  
+*	`*filtered.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces in between them  
 
 **Input data:**
 
-* *trimmed.fastq.gz (filtered/trimmed reads)
+* *filtered.fastq.gz (filtered/trimmed reads)
 
 **Output data:**
 
@@ -223,7 +223,7 @@ multiqc -o filtered_multiqc_output -n filtered_multiqc -z filtered_fastqc_output
 ## Assembly-based processing
 ### 4. Sample assembly
 ```
-megahit -1 sample-1-R1-trimmed.fastq.gz -2 sample-1-R2-trimmed.fastq.gz \
+megahit -1 sample-1_R1_filtered.fastq.gz -2 sample-1_R2_filtered.fastq.gz \
         -o sample-1-assembly -t 10 --min-contig-length 500 > sample-1-assembly.log 2>&1
 ```
 
@@ -567,8 +567,8 @@ bowtie2-build sample-1-assembly.fasta sample-1-assembly-bt-index
 
 #### 9b. Performing mapping, conversion to bam, and sorting
 ```
-bowtie2 --threads 15 -x sample-1-assembly-bt-index -1 sample-1-R1-trimmed.fastq.gz \
-        -2 sample-1-R2-trimmed.fastq.gz 2> sample-1-mapping.log | samtools view -b | samtools sort -@ 15 > sample-1.bam
+bowtie2 --threads 15 -x sample-1-assembly-bt-index -1 sample-1_R1_filtered.fastq.gz \
+        -2 sample-1_R2_filtered.fastq.gz 2> sample-1-mapping.log | samtools view -b | samtools sort -@ 15 > sample-1.bam
 ```
 
 **Parameter Definitions:**  
@@ -958,7 +958,7 @@ metaphlan --install
 #### 16a. Running humann3 (which also runs metaphlan3)
 ```bash
   # forward and reverse reads need to be provided combined if paired-end (if not paired-end, single-end reads are provided to the --input argument next)
-cat sample-1-R1-trimmed.fastq.gz sample-1-R2-trimmed.fastq.gz > sample-1-combined.fastq.gz
+cat sample-1_R1_filtered.fastq.gz sample-1_R2_filtered.fastq.gz > sample-1-combined.fastq.gz
 
 humann --input sample-1-combined.fastq.gz --output sample-1-humann3-out-dir --threads 15 \
        --output-basename sample-1 --metaphlan-options "--unknown_estimation --add_viruses \
