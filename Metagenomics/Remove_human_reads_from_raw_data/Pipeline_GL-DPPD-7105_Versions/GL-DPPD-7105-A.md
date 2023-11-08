@@ -1,6 +1,6 @@
 # GeneLab removal of human reads from metagenomics datasets
 
-> **It is NASA's policy that any human reads are to be removed from metagenomics datasets prior to being hosted in [GeneLab's data repository](https://genelab-data.ndc.nasa.gov/genelab/projects). As such, all metagenomics datasets are screened against a human reference-genome [kraken2](https://github.com/DerrickWood/kraken2/wiki) database. This document holds an overview and some example commands of how GeneLab does performs this.**
+> **It is NASA's policy that any human reads are to be removed from metagenomics datasets prior to being hosted in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/). As such, all metagenomics datasets are screened against a human reference-genome [kraken2](https://github.com/DerrickWood/kraken2/wiki) database. This document holds an overview and some example commands of how GeneLab does performs this.**
 
 ---
 
@@ -48,6 +48,8 @@ Jonathan Galazka (GeneLab Project Scientist)
 
 # General processing overview with example commands
 
+> Output files listed in **bold** below are included with each Metagenomics dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
+
 ## 1. Build kraken2 database
 
 ```bash
@@ -87,8 +89,8 @@ kraken2 --db kraken2-human-db --gzip-compressed --threads 4 --use-names --paired
         --unclassified-out sample-1_R#.fastq sample-1-R1.fq.gz sample-1-R2.fq.gz
         
 # renaming and gzipping output files
-mv sample-1_R_1.fastq sample-1-R1-human-reads-removed.fastq && gzip sample-1-R1-human-reads-removed.fastq
-mv sample-1_R_2.fastq sample-1-R2-human-reads-removed.fastq && gzip sample-1-R2-human-reads-removed.fastq
+mv sample-1_R_1.fastq sample-1_R1_HRremoved_raw.fastq && gzip sample-1_R1_HRremoved_raw.fastq
+mv sample-1_R_2.fastq sample-1_R2_HRremoved_raw.fastq && gzip sample-1_R2_HRremoved_raw.fastq
 ```
 
 **Parameter Definitions:**
@@ -112,18 +114,18 @@ mv sample-1_R_2.fastq sample-1-R2-human-reads-removed.fastq && gzip sample-1-R2-
 
 * sample-1-kraken2-output.txt (kraken2 read-based output file (one line per read))
 * sample-1-kraken2-report.tsv (kraken2 report output file (one line per taxa, with number of reads assigned to it))
-* sample-1-R1-human-reads-removed.fastq.gz (human-read removed, gzipped forward-reads fastq file)
-* sample-1-R2-human-reads-removed.fastq.gz (human-read removed, gzipped reverse-reads fastq file)
+* **sample-1_R1_HRremoved_raw.fastq.gz** (human-read removed, gzipped forward-reads fastq file)
+* **sample-1_R2_HRremoved_raw.fastq.gz** (human-read removed, gzipped reverse-reads fastq file)
 
 ### Example if single-end reads
 
 ```bash
 kraken2 --db kraken2-human-db --gzip-compressed --threads 4 --use-names \
         --output sample-1-kraken2-output.txt --report sample-1-kraken2-report.tsv \
-        --unclassified-out sample-1-human-reads-removed.fastq sample-1.fq.gz
+        --unclassified-out sample-1_HRremoved_raw.fastq sample-1.fq.gz
 
 # gzipping output file
-gzip sample-1-human-reads-removed.fastq
+gzip sample-1_HRremoved_raw.fastq
 ```
 
 **Parameter Definitions:**
@@ -145,7 +147,7 @@ gzip sample-1-human-reads-removed.fastq
 
 * sample-1-kraken2-output.txt (kraken2 read-based output file (one line per read))
 * sample-1-kraken2-report.tsv (kraken2 report output file (one line per taxa, with number of reads assigned to it))
-* sample-1-human-reads-removed.fastq.gz (human-read removed, gzipped reads fastq file)
+* **sample-1_HRremoved_raw.fastq.gz** (human-read removed, gzipped reads fastq file)
 
 ---
 
@@ -171,5 +173,6 @@ cat <( printf "Sample_ID\tTotal_fragments_before\tTotal_fragments_after\tPercent
 **Output data:**
 
 * Human-read-removal-summary.tsv (a tab-separated file with 4 columns: "Sample_ID", "Total_fragments_before", "Total_fragments_after", "Percent_human_reads_removed")
+* *Note: The percent human reads removed from each sample is provided in the assay table on the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).*
 
 ---
