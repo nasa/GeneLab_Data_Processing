@@ -1,6 +1,6 @@
 # GeneLab bioinformatics processing pipeline for Methylation Sequencing (Methyl-Seq) data
 
-> **The document [`GL-DPPD-7113.md`](Pipeline_GL-DPPD-7113_Versions/GL-DPPD-7113.md) holds an overview and example commands for how GeneLab processes Methylation Sequencing (Methyl-Seq) data. Processed data output files along with processing code is provided with each GLDS dataset in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).** 
+> **The document [`GL-DPPD-7113.md`](Pipeline_GL-DPPD-7113_Versions/GL-DPPD-7113.md) holds an overview and example commands for how GeneLab processes Methylation Sequencing (Methyl-Seq) data. Processed data output files along with processing code is provided with each GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).** 
 
 ---
 
