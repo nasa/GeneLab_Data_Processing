@@ -1,6 +1,6 @@
 # Bioinformatics pipeline for Methylation Sequencing (Methyl-Seq) data
 
-> **This document holds an overview and some example commands of how GeneLab processes bisulfite sequencing (methylseq) datasets. Exact processing commands for specific datasets that have been released are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**
+> **This document holds an overview and some example commands of how GeneLab processes bisulfite sequencing (methylseq) datasets. Exact processing commands for specific datasets that have been released are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**
 
 ---
 
@@ -81,9 +81,7 @@ Jonathan Galazka (GeneLab Project Scientist)
 
 # General processing overview with example commands
 
-> Exact processing commands for specific datasets that have been released are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects). 
->
-> Output files listed in **bold** below are included with the processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
+> Exact processing commands and output files listed in **bold** below are included with each RNAseq processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 
 ---
 
@@ -308,7 +306,7 @@ mv sample-1_R2_trimmed.fastq_trimmed.fq.gz sample-1_R2_trimmed.fastq.gz
 
 **Output Data:**
 
-* **gzip-compressed fastq files** (adapter-trimmed/quality-filtered reads)
+* **\*trimmed.fastq.gz** (adapter-trimmed/quality-filtered reads)
 * **\*trimming_report.txt** (trimming report)
 
 <br>
@@ -362,7 +360,7 @@ multiqc --interactive -o trimmed_multiqc_data/ -n trimmed_multiqc -z trimmed_fas
 **Output data:**
 
 * **trimmed_multiqc.html** (multiqc output html summary)
-* **trimmed_multiqc_data.zip** (zipped directory containing multiqc output data)
+* **trimmed_multiqc_data** (directory containing multiqc output data)
 
 <br>
 
@@ -399,23 +397,23 @@ bismark_genome_preparation --bowtie2 \
 
 * the reference genome directory that was provided as input will now hold indexes for the bisulfite-converted reference genome (all `*.bt2` files are indexes, all `*.fa` files are converted versions of the reference genome)
 * bismark_reference_genome/Bisulfite_Genome/
-  * **CT_converion/**
-    * **BS_CT.1.bt2**
-    * **BS_CT.2.bt2**
-    * **BS_CT.3.bt2**
-    * **BS_CT.4.bt2**
-    * **BS_CT.rev.1.bt2**
-    * **BS_CT.rev.2.bt2**
-    * **genome_mfa.CT_conversion.fa**
-  * **GA_conversion/**
-    * **BS_GA.1.bt2**
-    * **BS_GA.2.bt2**
-    * **BS_GA.3.bt2**
-    * **BS_GA.4.bt2**
-    * **BS_GA.rev.1.bt2**
-    * **BS_GA.rev.2.bt2**
-    * **genome_mfa.GA_conversion.fa**
-  * **\*.txt** (captured standard output from the command)
+  * CT_converion/
+    * BS_CT.1.bt2
+    * BS_CT.2.bt2
+    * BS_CT.3.bt2
+    * BS_CT.4.bt2
+    * BS_CT.rev.1.bt2
+    * BS_CT.rev.2.bt2
+    * genome_mfa.CT_conversion.fa
+  * GA_conversion/
+    * BS_GA.1.bt2
+    * BS_GA.2.bt2
+    * BS_GA.3.bt2
+    * BS_GA.4.bt2
+    * BS_GA.rev.1.bt2
+    * BS_GA.rev.2.bt2
+    * genome_mfa.GA_conversion.fa
+  * \*.txt (captured standard output from the command)
 
 
 
@@ -730,7 +728,7 @@ genePredToBed reference.genePred reference.bed
 **Output data:**
 
 * reference.genePred (intermediate genome annotation file in genePred format)
-* **reference.bed** (genome annotation file in BED format)
+* reference.bed (genome annotation file in BED format)
 
 <br>
 
