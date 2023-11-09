@@ -1,7 +1,6 @@
 # GeneLab bioinformatics processing pipeline for Affymetrix microarray data <!-- omit in toc -->
 
-> **This page holds an overview and instructions for how GeneLab processes Affymetrix microarray datasets. Exact processing commands and GL-DPPD-7114 version used for specific GeneLab datasets (GLDS) are provided with their processed data in the [Open Science Data 
-Repository (OSDR)](https://osdr.nasa.gov/bio/repo).**  
+> **This page holds an overview and instructions for how GeneLab processes Affymetrix microarray datasets. Exact processing commands and GL-DPPD-7114 version used for specific GeneLab datasets (GLDS) are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo).**  
 > 
 > \* The pipeline detailed below is currently used for animal and Arabidopsis Thaliana studies only, it will be updated soon for processing microbe microarray data and other plant data.
 
@@ -74,9 +73,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
 
 # General processing overview with example commands  
 
-> Exact processing commands for a specific GLDS that has been released are provided with the processed data in the [OSDR](https://osdr.nasa.gov/bio/repo).
-> 
-> All output files in **bold** are published with the Affymetrix microarray processed data in the [OSDR](https://osdr.nasa.gov/bio/repo). 
+> Exact processing commands and output files listed in **bold** below are included with each Microarray processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 
 ---
 
@@ -1221,3 +1218,5 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
 - **raw_intensities_probe.csv** (table containing the background corrected, unnormalized probe intensity values for each sample including gene annotations. The ProbeID is the unique index column.)
 - **normalized_intensities_probe.csv** (table containing the background corrected, normalized probe intensity values for each sample including gene annotations.  The ProbeID is the unique index column.)
+
+> All steps of the Microarray pipeline are performed using R markdown and the completed R markdown is rendered (via Quarto) as an html file (**NF_MAAffymetrix_\*.html**) and published in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/) for the respective dataset.
