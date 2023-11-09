@@ -275,7 +275,7 @@ bit-rename-fasta-headers -i sample-1-assembly/final.contigs.fa -w c_sample-1 -o 
 
 **Output files:**
 
-* sample-1-assembly.fasta (contig-renamed assembly file)
+* **sample-1-assembly.fasta** (contig-renamed assembly file)
 
 
 #### 5b. Summarizing assemblies
@@ -297,7 +297,7 @@ bit-summarize-assembly -o assembly-summaries.tsv *assembly.fasta
 
 **Output files:**
 
-* assembly-summaries.tsv (table of assembly summary statistics)
+* **assembly-summaries.tsv** (table of assembly summary statistics)
 
 <br>
 
@@ -332,9 +332,9 @@ prodigal -a sample-1-genes.faa -d sample-1-genes.fasta -f gff -p meta -c -q \
 
 **Output data:**
 
-* sample-1-genes.faa (gene-calls amino-acid fasta file)
-* sample-1-genes.fasta (gene-calls nucleotide fasta file)
-* sample-1-genes.gff (gene-calls in general feature format)
+* **sample-1-genes.faa** (gene-calls amino-acid fasta file)
+* **sample-1-genes.fasta** (gene-calls nucleotide fasta file)
+* **sample-1-genes.gff** (gene-calls in general feature format)
 
 <br>
 
