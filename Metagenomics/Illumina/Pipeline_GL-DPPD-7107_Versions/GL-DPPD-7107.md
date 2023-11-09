@@ -568,7 +568,7 @@ bowtie2-build sample-1-assembly.fasta sample-1-assembly-bt-index
 #### 9b. Performing mapping, conversion to bam, and sorting
 ```
 bowtie2 --threads 15 -x sample-1-assembly-bt-index -1 sample-1_R1_filtered.fastq.gz \
-        -2 sample-1_R2_filtered.fastq.gz 2> sample-1-mapping.log | samtools view -b | samtools sort -@ 15 > sample-1.bam
+        -2 sample-1_R2_filtered.fastq.gz 2> sample-1-mapping-info.txt | samtools view -b | samtools sort -@ 15 > sample-1.bam
 ```
 
 **Parameter Definitions:**  
@@ -579,7 +579,7 @@ bowtie2 --threads 15 -x sample-1-assembly-bt-index -1 sample-1_R1_filtered.fastq
 
 *	`-1 and -2` – specifies the forward and reverse reads to map (if single-end data, neither `-1` nor `-2` are provided, and the single-end reads are passed to `-r`)
 
-* `2> sample-1-mapping.log` – capture the printed summary results in a log file
+* `2> sample-1-mapping-info.txt` – capture the printed summary results in a log file
 
 *	`samtools view -b` – convert the output directly to bam format (compressed)
 
@@ -604,9 +604,9 @@ samtools index -@ 15 sample-1.bam
 
 **Output data:**
 
-* sample-1.bam (mapping file)
+* **sample-1.bam** (mapping file)
 * sample-1.bam.bai (bam index file)
-* sample-1-mapping.log (read-mapping log file)
+* **sample-1-mapping-info.txt** (read-mapping log file)
 
 <br>
 
@@ -695,7 +695,7 @@ rm sample-1*tmp sample-1-gene-coverages.tsv sample-1-annotations.tsv sample-1-ge
 
 **Output data:**
 
-* sample-1-gene-coverage-annotation-and-tax.tsv (table with combined gene coverage, annotation, and taxonomy info)
+* **sample-1-gene-coverage-annotation-and-tax.tsv** (table with combined gene coverage, annotation, and taxonomy info)
 
 <br>
 
@@ -726,7 +726,7 @@ rm sample-1*tmp sample-1-contig-coverages.tsv sample-1-contig-tax-out.tsv
 
 **Output data:**
 
-* sample-1-contig-coverage-and-tax.tsv (table with combined contig coverage and taxonomy info)
+* **sample-1-contig-coverage-and-tax.tsv** (table with combined contig coverage and taxonomy info)
 
 <br>
 
@@ -754,8 +754,8 @@ bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o GLDS-
 
 **Output data:**
 
-* GLDS-286-KO-function-coverages.tsv (table with all samples combined based on KO annotations; normalized to coverage per million genes covered)
-* GLDS-286-taxonomy-coverages.tsv (table with all samples combined based on gene-level taxonomic classifications; normalized to coverage per million genes covered)
+* **GLDS-\*-KO-function-coverages-CPM.tsv** (table with all samples combined based on KO annotations; normalized to coverage per million genes covered)
+* **GLDS-\*-taxonomy-coverages-CPM.tsv** (table with all samples combined based on gene-level taxonomic classifications; normalized to coverage per million genes covered)
 
 <br>
 
@@ -765,9 +765,9 @@ bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o GLDS-
 
 #### 14a. Binning contigs
 ```
-jgi_summarize_bam_contig_depths --outputDepth sample-1-depth.tsv --percentIdentity 97 --minContigLength 1000 --minContigDepth 1.0  --referenceFasta sample-1-assembly.fasta sample-1.bam
+jgi_summarize_bam_contig_depths --outputDepth sample-1-metabat-assembly-depth.tsv --percentIdentity 97 --minContigLength 1000 --minContigDepth 1.0  --referenceFasta sample-1-assembly.fasta sample-1.bam
 
-metabat2  --inFile sample-1-assembly.fasta --outFile sample-1 --abdFile sample-1-depth.tsv -t 4
+metabat2  --inFile sample-1-assembly.fasta --outFile sample-1 --abdFile sample-1-metabat-assembly-depth.tsv -t 4
 ```
 
 **Parameter Definitions:**  
@@ -791,14 +791,14 @@ metabat2  --inFile sample-1-assembly.fasta --outFile sample-1 --abdFile sample-1
 
 **Output data:**
 
-* sample-1-depth.tsv (tab-delimited summary of coverages)
-* sample-1-bin\*.fa (fasta files of recovered bins)
+* **sample-1-metabat-assembly-depth.tsv** (tab-delimited summary of coverages)
+* **sample-1-bin\*.fasta** (fasta files of recovered bins)
 
 #### 14b. Bin quality assessment
 Utilizes the default `checkm` database available [here](https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz), `checkm_data_2015_01_16.tar.gz`.
 
 ```
-checkm lineage_wf -f checkm-bins-summary.tsv --tab_table -x fa ./ checkm-output-dir
+checkm lineage_wf -f checkm_bins-overview.tsv --tab_table -x fa ./ checkm-output-dir
 ```
 
 **Parameter Definitions:**  
@@ -816,35 +816,35 @@ checkm lineage_wf -f checkm-bins-summary.tsv --tab_table -x fa ./ checkm-output-
 
 **Output data:**
 
-* checkm-bins-summary.tsv (tab-delimited file with quality estimates per bin)
+* **checkm_bins-overview.tsv** (tab-delimited file with quality estimates per bin)
 * checkm-output-dir (directory holding detailed checkm outputs)
 
 #### 14c. Filtering MAGs
 
 ```
-cat <( head -n 1 checkm-bins-summary.tsv ) \
-    <( awk -F $'\t' ' $12 >= 90 && $13 <= 10 && $14 == 0 ' checkm-bins-summary.tsv | sed 's/bin./MAG-/' ) \
-    > checkm-MAGs-summary.tsv
+cat <( head -n 1 checkm_bins-overview.tsv ) \
+    <( awk -F $'\t' ' $12 >= 90 && $13 <= 10 && $14 == 0 ' checkm_bins-overview.tsv | sed 's/bin./MAG-/' ) \
+    > checkm-MAGs-overview.tsv
     
 # copying bins into a MAGs directory in order to run tax classification
-awk -F $'\t' ' $12 >= 90 && $13 <= 10 && $14 == 0 ' checkm-bins-summary.tsv | cut -f 1 > MAG-bin-IDs.tmp
+awk -F $'\t' ' $12 >= 90 && $13 <= 10 && $14 == 0 ' checkm_bins-overview.tsv | cut -f 1 > MAG-bin-IDs.tmp
 
 mkdir MAGs
 for ID in MAG-bin-IDs.tmp
 do
     MAG_ID=$(echo $ID | sed 's/bin./MAG-/')
-    cp ${ID}.fa MAGs/${MAG_ID}.fa
+    cp ${ID}.fasta MAGs/${MAG_ID}.fasta
 done
 ```
 
 **Input data:**
 
-* checkm-bins-summary.tsv (tab-delimited file with quality estimates per bin)
+* checkm_bins-overview.tsv (tab-delimited file with quality estimates per bin)
 
 **Output data:**
 
-* checkm-MAGs-summary.tsv (tab-delimited file with quality estimates per MAG)
-* MAGs/\*.fa (directory holding high-quality MAGs)
+* **checkm-MAGs-overview.tsv** (tab-delimited file with quality estimates per MAG)
+* **MAGs/\*.fasta** (directory holding high-quality MAGs)
 
 
 
@@ -864,7 +864,7 @@ gtdbtk classify_wf --genome_dir MAGs/ -x fa --out_dir gtdbtk-output-dir
 
 **Input data:**
 
-* MAGs/\*.fa (directory holding high-quality MAGs)
+* **MAGs/\*.fasta (directory holding high-quality MAGs)
 
 **Output data:**
 
@@ -913,7 +913,7 @@ done
 
 **Output data:**
 
-* MAG-level-KO-annotations.tsv (tab-delimited table holding MAGs and their KO annotations)
+* **MAG-level-KO-annotations.tsv** (tab-delimited table holding MAGs and their KO annotations)
 
 
 #### 15b. Summarizing KO annotations with KEGG-Decoder
@@ -936,9 +936,9 @@ KEGG-decoder -v interactive -i MAG-level-KO-annotations.tsv -o MAG-KEGG-Decoder-
 
 **Output data:**
 
-* MAG-KEGG-Decoder-out.tsv (tab-delimited table holding MAGs and their proportions of genes held known to be required for specific pathways/metabolisms)
+* **MAG-KEGG-Decoder-out.tsv** (tab-delimited table holding MAGs and their proportions of genes held known to be required for specific pathways/metabolisms)
 
-* MAG-KEGG-Decoder-out.html (interactive heatmap html file of the above output table)
+* **MAG-KEGG-Decoder-out.html** (interactive heatmap html file of the above output table)
 
 <br>
 
@@ -1086,15 +1086,15 @@ merge_metaphlan_tables.py *-humann3-out-dir/*_humann_temp/*_metaphlan_bugs_list.
 
 **Output data:**
 
-* gene-families.tsv (gene-family abundances) 
-* gene-families-grouped-by-taxa.tsv (gene-family abundances grouped by taxa)
-* gene-families-cpm.tsv (gene-family abundances normalized to copies-per-million)
-* gene-families-KO-cpm.tsv (KO term abundances normalized to copies-per-million)
-* pathway-abundances.tsv (pathway abundances)
-* pathway-abundances-grouped-by-taxa.tsv (pathway abundances grouped by taxa)
-* pathway-abundances-cpm.tsv (pathway abundances normalized to copies-per-million)
-* pathway-coverages.tsv (pathway coverages)
-* pathway-coverages-grouped-by-taxa.tsv (pathway coverages grouped by taxa)
-* metaphlan-taxonomy.tsv (metaphlan estimated taxonomic relative abundances)
+* **gene-families.tsv** (gene-family abundances) 
+* **gene-families-grouped-by-taxa.tsv** (gene-family abundances grouped by taxa)
+* **gene-families-cpm.tsv** (gene-family abundances normalized to copies-per-million)
+* **gene-families-KO-cpm.tsv** (KO term abundances normalized to copies-per-million)
+* **pathway-abundances.tsv** (pathway abundances)
+* **pathway-abundances-grouped-by-taxa.tsv** (pathway abundances grouped by taxa)
+* **pathway-abundances-cpm.tsv** (pathway abundances normalized to copies-per-million)
+* **pathway-coverages.tsv** (pathway coverages)
+* **pathway-coverages-grouped-by-taxa.tsv** (pathway coverages grouped by taxa)
+* **metaphlan-taxonomy.tsv** (metaphlan estimated taxonomic relative abundances)
 
 ---
