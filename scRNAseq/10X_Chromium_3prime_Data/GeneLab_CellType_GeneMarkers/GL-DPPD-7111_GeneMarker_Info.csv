@@ -1,5 +1,5 @@
 ﻿Species,Tissue,Gene Marker File
-Mus musculus,blood,{GL-DPPD-7111_Mmus_Blood_CellType_GeneMarkers.csv}(GL-DPPD-7111_GeneMarker_Files/GL-DPPD-7111_Mmus_Blood_CellType_GeneMarkers.csv)
+Mus musculus,blood,{GL-DPPD-7111_Mmus_Blood_CellType_GeneMarkers.csv}(https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/scRNAseq/10X_Chromium_3prime_Data/GeneLab_CellType_GeneMarkers/GL-DPPD-7111_GeneMarker_Files/GL-DPPD-7111_Mmus_Blood_CellType_GeneMarkers.csv)
 Mus musculus,spleen,[GL-DPPD-7111_Mmus_Spleen_CellType_GeneMarkers.csv](GL-DPPD-7111_GeneMarker_Files/GL-DPPD-7111_Mmus_Spleen_CellType_GeneMarkers.csv)
 Mus musculus,bone marrow,[GL-DPPD-7111_Mmus_BoneMarrow_CellType_GeneMarkers.csv](GL-DPPD-7111_GeneMarker_Files/GL-DPPD-7111_Mmus_BoneMarrow_CellType_GeneMarkers.csv)
 Mus musculus,brain,[GL-DPPD-7111_Mmus_Brain_CellType_GeneMarkers.csv](GL-DPPD-7111_GeneMarker_Files/GL-DPPD-7111_Mmus_Brain_CellType_GeneMarkers.csv)
