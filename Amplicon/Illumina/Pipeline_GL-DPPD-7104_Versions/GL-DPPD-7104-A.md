@@ -1,6 +1,6 @@
 # Bioinformatics pipeline for amplicon Illumina sequencing data  
 
-> **This page holds an overview and instructions for how GeneLab processes Illumina amplicon datasets. Exact processing commands for specific datasets that have been released are available in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory and/or are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
+> **This page holds an overview and instructions for how GeneLab processes Illumina amplicon datasets. Exact processing commands for specific datasets that have been released are available in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory and/or are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 
 ---
 
@@ -66,7 +66,9 @@ Anushree Sonic (Genelab Configuration Manager)
 
 # General processing overview with example commands  
 
-> Exact processing commands for specific datasets are available in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory of this repository, and/or are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).  
+> Exact processing commands for specific datasets are available in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory of this repository, and/or are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
+>
+> Output files listed in **bold** below are included with each Amplicon Seq processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 
 ---
 
@@ -110,8 +112,8 @@ multiqc -o raw_multiqc_output raw_fastqc_output
 
 **Output Data:**
 
-* multiqc_report.html (multiqc output html summary)
-* multiqc_data (directory containing multiqc output data)
+* **raw_multiqc_report.html** (multiqc output html summary)
+* **raw_multiqc_data** (directory containing multiqc output data)
 
 <br>  
 
@@ -121,7 +123,7 @@ multiqc -o raw_multiqc_output raw_fastqc_output
 
 The location and orientation of primers in the data is important to understand in deciding how to do this step. `cutadapt` has many options for primer identification and removal. They are described in detail on their documentation page here: [https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types](https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types)  
 
-The following example commands show how it was done for some samples of [GLDS-200](https://genelab-data.ndc.nasa.gov/genelab/accession/GLDS-200/), which was 2x250 sequencing of the 16S gene using these primers:  
+The following example commands show how it was done for some samples of [GLDS-200](https://osdr.nasa.gov/bio/repo/data/studies/OSD-200), which was 2x250 sequencing of the 16S gene using these primers:  
 * forward: 5’-GTGCCAGCMGCCGCGGTAA-3’  
 * reverse: 5’-GGACTACVSGGGTATCTAAT-3’  
 
@@ -156,9 +158,9 @@ cutadapt -a ^GTGCCAGCMGCCGCGGTAA...ATTAGATACCCSBGTAGTCC -A ^GGACTACVSGGGTATCTAAT
 
 **Output Data:**
 
-* fastq, compressed or uncompressed (trimmed reads)
-* tsv (per sample read counts before and after trimming)
-* log (log file of standard output and error from cutadapt)
+* **trimmed.fastq.gz**, compressed or uncompressed (trimmed reads)
+* **trimmed-read-counts.tsv** (per sample read counts before and after trimming)
+* **cutadapt.log** (log file of standard output and error from cutadapt)
 
 <br>
 
@@ -172,7 +174,7 @@ Specific settings required will depend on the dataset being processing. These in
 * [https://astrobiomike.github.io/amplicon/dada2_workflow_ex](https://astrobiomike.github.io/amplicon/dada2_workflow_ex)  
 
 
-The following is an example from a [GLDS-200](https://genelab-data.ndc.nasa.gov/genelab/accession/GLDS-200/) sample that used paired-end 2x250 sequencing with the following 16S primers:  
+The following is an example from a [GLDS-200](https://osdr.nasa.gov/bio/repo/data/studies/OSD-200) sample that used paired-end 2x250 sequencing with the following 16S primers:  
 * forward: 5’-GTGCCAGCMGCCGCGGTAA-3’
 * reverse: 5’- GGACTACVSGGGTATCTAAT-3’
 
@@ -217,8 +219,8 @@ filtered_out <- filterAndTrim(fwd=“Primer-trimmed-R1.fq.gz”, filt=“Filtere
 
 **Output Data:**
 
-* fastq, compressed or uncompressed (filtered reads)
-* tsv (per sample read counts before and after filtering)
+* **filtered.fastq.gz**, compressed or uncompressed (filtered reads)
+* **filtered-read-counts.tsv** (per sample read counts before and after filtering)
 
 <br>
 
@@ -261,8 +263,8 @@ multiqc -o filtered_multiqc_output  filtered_fastqc_output
 
 **Output Data:**
 
-* multiqc_report.html (multiqc output html summary)
-* multiqc_data (directory containing multiqc output data)
+* **filtered_multiqc_report.html** (multiqc output html summary)
+* **filtered_multiqc_data** (directory containing multiqc output data)
 
 <br>
 
@@ -271,7 +273,7 @@ multiqc -o filtered_multiqc_output  filtered_fastqc_output
 ## 5. Calculate error model, apply DADA2 algorithm, assign taxonomy, and create output tables
 > The following is run in an R environment.  
 
-These example commands as written assumes paired-end data, with notes included on what would be different if working with single-end data. The taxonomy reference database used below is as an example only, suitable for the example 16S dataset ([GLDS-200](https://genelab-data.ndc.nasa.gov/genelab/accession/GLDS-200/)) used here. But others designed for DECIPHER can be found here: [http://www2.decipher.codes/Downloads.html](http://www2.decipher.codes/Downloads.html)  
+These example commands as written assumes paired-end data, with notes included on what would be different if working with single-end data. The taxonomy reference database used below is as an example only, suitable for the example 16S dataset ([GLDS-200](https://osdr.nasa.gov/bio/repo/data/studies/OSD-200)) used here. But others designed for DECIPHER can be found here: [http://www2.decipher.codes/Downloads.html](http://www2.decipher.codes/Downloads.html)  
 
 <br>
 
@@ -489,10 +491,10 @@ write.table(tax_and_count_tab, "Taxonomy_and_counts.tsv", sep="\t", quote=FALSE,
 
 **Output Data:**
 
-* fasta (inferred sequences)
-* count_table.tsv (count table)
-* taxonomy_table.tsv (taxonomy table)
-* taxonomy_and_counts.tsv (combined taxonomy and count table)
-* biom (count and taxonomy table in biom format)
-* read_count_tracking.tsv (read counts at each processing step)
+* **ASVs.fasta** (inferred sequences)
+* **counts.tsv** (count table)
+* **taxonomy.tsv** (taxonomy table)
+* **taxonomy-and-counts.tsv** (combined taxonomy and count table)
+* **taxonomy-and-counts.biom** (count and taxonomy table in biom format)
+* **read-count-tracking.tsv** (read counts at each processing step)
 

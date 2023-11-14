@@ -1,0 +1,411 @@
+---
+title: Normalization and Differential Gene Expression Analysis
+output: 
+    html_document:
+        code_folding: show
+params:
+    input_gene_results_dir: ""
+    # One and only one of the following must be specified
+    runsheet_path: NULL 
+    isa_path: NULL
+
+    primary_keytype: "" # Denotes the name of the indentifier column (e.g. ENSEMBL, TAIR)
+    normalization: "default" # ENUM like, supports "ERCC-groupB" and "default"
+    normalized_counts_output_prefix: ""
+    dge_output_prefix: ""
+    DEBUG_MODE_LIMIT_GENES: FALSE
+    DEBUG_MODE_ADD_DUMMY_COUNTS: FALSE
+    work_dir: "." # should be set to launch directory 
+    verbose: FALSE
+---
+
+## Substeps {.tabset}
+
+### 1. Setup
+
+```{r, setup, include=FALSE}
+knitr::opts_knit$set(root.dir = params$work_dir)
+library(knitr)
+```
+
+```{r libary-loading, message = params$verbose, warning = params$verbose}
+# allow more flexibility in download time
+# useful for slower connections where the default of 60 seconds might be exceeded
+options(timeout=600)
+
+# Import libraries (tximport, DESeq2, tidyverse, Risa)
+library(tximport)
+library(DESeq2)
+library(stringr)
+
+params
+yaml::write_yaml(params, "last_params.yml")
+```
+```{r validate_params}
+# assert either runsheet_path OR isa_path supplied in params
+if (!xor(!is.null(params$runsheet_path), !is.null(params$isa_path))) {
+    stop("Must supply EITHER runsheet_path or isa_path in params")
+}
+```
+
+### 2. Load Study Metadata
+```{r runsheet-to-compare_df, include=(!is.null(params$runsheet_path)), eval=(!is.null(params$runsheet_path))}
+compare_csv_from_runsheet <- function(runsheet_path) {
+    df = read.csv(runsheet_path)
+    # get only Factor Value columns
+    factors = as.data.frame(df[,grep("Factor.Value", colnames(df), ignore.case=TRUE)])
+    colnames(factors) = paste("factor",1:dim(factors)[2], sep= "_")
+
+    result = data.frame(sample_id = df[,c("Sample.Name")], factors)	
+    return(result)
+}
+# Loading metadata from runsheet csv file
+compare_csv <- compare_csv_from_runsheet(params$runsheet_path)
+#DT::datatable(compare_csv, caption = "Data Frame of parsed runsheet filtered to required columns")
+```
+
+```{r isa-to-compare_df, include=(!is.null(params$isa_path)), eval=(!is.null(params$isa_path))}
+# TODO: Remove this route, ISA zip support will be dropped as of DPPD-7101-F
+library(Risa)
+
+compare_csv_from_isa_archive <- function(isa_path) {
+    td = tempdir()
+    unzip(isa_path, exdir = td)
+    isa <- Risa::readISAtab(path = td)
+    n = as.numeric(which(isa@assay.technology.types == "RNA Sequencing (RNA-Seq)"))
+    isa_tabs <- isa@assay.tabs[[n]]@assay.file
+    factors <- as.data.frame(isa@factors[[1]], stringsAsFactors = FALSE)
+    colnames(factors) <- paste("factor",1:dim(factors)[2], sep = "_")
+    return(data.frame(sample_id = isa_tabs$`Sample Name`, factors))
+}
+# Loading metadata from isa archive
+compare_csv <- compare_csv_from_isa_archive(params$isa_path)
+#DT::datatable(compare_csv, caption = "Data Frame of parsed isa archive filtered to required metadata")
+```
+
+```{r compare_df-to-study_df}
+study <- as.data.frame(compare_csv[,2:dim(compare_csv)[2]])
+colnames(study) <- colnames(compare_csv)[2:dim(compare_csv)[2]]
+rownames(study) <- compare_csv[,1]
+#DT::datatable(study, caption = "TBA")
+```
+
+```{r study_df-to-group_df}
+##### Format groups and indicate the group that each sample belongs to #####
+if (dim(study) >= 2){
+    group<-apply(study,1,paste,collapse = " & ") # concatenate multiple factors into one condition per sample
+} else{
+    group<-study[,1]
+}
+group_names <- paste0("(",group,")",sep = "") # human readable group names
+group <- sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", group))) # group naming compatible with R models, this maintains the default behaviour of make.names with the exception that 'X' is never prepended to group namesnames(group) <- group_names
+names(group) <- group_names
+#DT::datatable(as.data.frame(group), caption = "TBA")
+```
+
+```{r group_df-to-contrasts_df}
+##### Format contrasts table, defining pairwise comparisons for all groups #####
+contrast.names <- combn(levels(factor(names(group))),2) # generate matrix of pairwise group combinations for comparison
+contrasts <- apply(contrast.names, MARGIN=2, function(col) sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", stringr::str_sub(col, 2, -2)))))
+contrast.names <- c(paste(contrast.names[1,],contrast.names[2,],sep = "v"),paste(contrast.names[2,],contrast.names[1,],sep = "v")) # format combinations for output table files names
+contrasts <- cbind(contrasts,contrasts[c(2,1),])
+colnames(contrasts) <- contrast.names
+rm(contrast.names)
+# DT::datatable(contrasts, caption = "TBA", extensions = 'FixedColumns',
+#   options = list(
+#     dom = 't',
+#     scrollX = TRUE,
+#     fixedColumns = FALSE
+#   ))
+```
+
+### 3. Load Gene Counts
+```{r load-gene-counts }
+##### Import RSEM raw (gene) count data #####
+files <- list.files(
+            path = params$input_gene_results_dir, 
+            pattern = ".genes.results", 
+            full.names = TRUE
+        )
+
+## Reorder the *genes.results files to match the ordering of the ISA samples
+
+# Replace spaces in sample names from ISA with "_", consistent with runsheet generation
+samples = str_replace_all(rownames(study), " ", "_")
+reordering <- sapply(samples, function(x)grep(paste0("Rsem_gene_counts/", x,".genes.results$"), files, value=FALSE))
+files <- files[reordering]
+names(files) <- samples
+txi.rsem <- tximport(files, type = "rsem", txIn = FALSE, txOut = FALSE)
+if ((dim(txi.rsem$counts)[2] == nrow(study)) == FALSE) {
+    stop(sprintf("Assert statement: '%s' was False: Sample count mismatch after comparing imported gene results and runsheet", deparse(quote(dim(txi.rsem$counts)[2] == nrow(study))) )) }
+
+if (params$DEBUG_MODE_LIMIT_GENES) {
+    txi.rsem <- lapply(txi.rsem, tail, n = 150)
+    print(sprintf("DEBUG: %s: Limiting analysis to last 150 genes", Sys.time()))
+}
+
+if (params$DEBUG_MODE_ADD_DUMMY_COUNTS) {
+    set.seed(11202119)
+    txi.rsem$counts <- txi.rsem$counts + matrix(sample( 0:5000, NROW(txi.rsem$counts)*NCOL(txi.rsem$counts), replace=TRUE),nrow=NROW(txi.rsem$counts))
+    print(sprintf("DEBUG: %s: Replacing original counts with random values from 0 to 5000", Sys.time()))
+}
+
+## Add 1 to genes with lengths of zero - needed to make DESeqDataSet object
+print(sprintf("DEBUG: %s: Converting %d zero length genes to 1-length of %d genes (%f %% total)", Sys.time(), length(txi.rsem$length[txi.rsem$length == 0]), length(txi.rsem$length), length(txi.rsem$length[txi.rsem$length == 0])/length(txi.rsem$length)))
+txi.rsem$length[txi.rsem$length == 0] <- 1
+
+print(sprintf("DEBUG: %s Printing: '%s' below", Sys.time(), 'txi.rsem'))
+print(txi.rsem, quote = TRUE)
+```
+
+```{r viz-head-loaded-counts}
+#DT::datatable(head(txi.rsem$counts))
+```
+
+```{r create-sample-table}
+## Create data frame defining which group each sample belongs to
+sampleTable <- data.frame(condition=factor(group))
+rownames(sampleTable) <- colnames(txi.rsem$counts)
+#DT::datatable(sampleTable, caption = "TBA")
+```
+
+### 4. DGE
+```{r load-deseq2-dataset}
+# Create dataset
+dds <- DESeq2::DESeqDataSetFromTximport(
+        txi = txi.rsem,
+        colData = sampleTable,
+        design = ~condition
+    )
+summary(dds)
+```
+
+```{r ercc-based-normalization, include = (params$normalization == "ERCC-groupB"), eval = (params$normalization == "ERCC-groupB")}
+ercc_rows_all <- grep("ERCC-",rownames(dds))
+ercc_dds_all <- dds[ercc_rows_all,]
+if ((length(ercc_rows_all) == 92) == FALSE) { 
+    stop(sprintf("Assert statement: '%s' was False: Expected 92 ERCC rows but found %d instead", deparse(quote(length(ercc_rows_all) == 92)) , length(ercc_rows_all))) }
+
+## Print ERCC unfiltered raw counts table
+output_fn = file.path(getwd(), 'ERCC_rawCounts_unfiltered.csv')
+ERCC_rawCounts_all = as.data.frame(counts(ercc_dds_all))
+write.csv(ERCC_rawCounts_all,file=output_fn)
+#DT::datatable(head(ERCC_rawCounts_all))
+```
+
+```{r filter-genes-by-normalized-counts}
+##### Filter out genes with counts of less than 10 in all samples #####
+keep <- rowSums(counts(dds)) > 10
+print(sprintf("DEBUG: %s: Removed %d genes for having dataset wide count sum less than 10. (%f%% of all genes)", Sys.time(), sum(!keep), sum(!keep)/length(keep)*100))
+dds <- dds[keep,]
+summary(dds)
+dim(dds)
+```
+
+```{r ercc-normalized-dge-analysis, include = (params$normalization == "ERCC-groupB"), eval = (params$normalization == "ERCC-groupB")}
+## Make a DESeqDataSet object using only filtered ERCC genes, which will be used to generate ERCC counts table
+ercc_rows <- grep("ERCC-",rownames(dds))
+ercc_dds <- dds[ercc_rows,]
+print(sprintf("DEBUG: %s Printing head of: '%s' below", Sys.time(), 'counts(ercc_dds)'))
+print(head(counts(ercc_dds)), quote = TRUE)
+
+## Create list of rows containing ERCC group B genes to use for ERCC-normalization
+## Note: ERCC group B genes should be the same concentration in all samples
+ercc_rows_gpB <- grep("ERCC-00096|ERCC-00171|ERCC-00009|ERCC-00042|ERCC-00060|ERCC-00035|ERCC-00025|ERCC-00051|ERCC-00053|ERCC-00148|ERCC-00126|ERCC-00034|ERCC-00150|ERCC-00067|ERCC-00031|ERCC-00109|ERCC-00073|ERCC-00158|ERCC-00104|ERCC-00142|ERCC-00138|ERCC-00117|ERCC-00075",rownames(dds))
+ercc_dds_gpB <- dds[ercc_rows_gpB,]
+summary(ercc_dds_gpB)
+dim(ercc_dds_gpB)
+
+## Identify and list samples that do not contain counts for ERCC genes
+## This is to make sure all samples indeed contain ERCC spike-in
+NON_DETECTION_THRESHOLD = 0
+cat("Samples that do not have detectable ERCC spike-ins: ", colnames(ercc_dds[,colSums(counts(ercc_dds)) == NON_DETECTION_THRESHOLD]), sep="\n")
+cat("Samples that do not have detectable ERCC group B spike-ins: ", colnames(ercc_dds[,colSums(counts(ercc_dds_gpB)) == NON_DETECTION_THRESHOLD]), sep="\n")
+
+
+# Create a new group object WITHOUT the samples that don't have detectable ERCC group B spike-ins
+remove <- colnames(dds[,colSums(counts(ercc_dds_gpB)) == NON_DETECTION_THRESHOLD])
+
+study_sub <- subset(study,!rownames(study) %in% remove) # new study object with non-ERCC-gpB samples removed
+
+## New group object with with non-ERCC-gpB samples removed
+if (dim(study_sub) >= 2){
+    group_sub<-apply(study_sub,1,paste,collapse = " & ") # concatenate multiple factors into one condition per sample
+} else{
+    group_sub<-study_sub[,1]
+}
+group_names <- paste0("(",group_sub,")",sep = "") # human readable group names
+group_sub <- sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", group_sub))) # group naming compatible with R models, this maintains the default behaviour of make.names with the exception that 'X' is never prepended to group names
+names(group_sub) <- group_names
+rm(group_names)
+print(sprintf("DEBUG: %s Printing: '%s' below", Sys.time(), 'group_sub'))
+print(group_sub, quote = TRUE)
+
+## New contrasts object that only reflects the groups in the subset group object
+contrasts_sub.names <- combn(levels(factor(names(group_sub))),2) # generate matrix of pairwise group combinations for comparison
+contrasts_sub <- apply(contrasts_sub.names, MARGIN=2, function(col) sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", stringr::str_sub(col, 2, -2))))) # limited make.names call for each group (also removes leading parentheses)
+contrasts_sub.names <- c(paste(contrasts_sub.names[1,],contrasts_sub.names[2,],sep = "v"),paste(contrasts_sub.names[2,],contrasts_sub.names[1,],sep = "v")) # format combinations for output table files names
+contrasts_sub <- cbind(contrasts_sub,contrasts_sub[c(2,1),])
+colnames(contrasts_sub) <- contrasts_sub.names
+rm(contrasts_sub.names)
+print(sprintf("DEBUG: %s Printing: '%s' below", Sys.time(), 'contrasts_sub'))
+print(contrasts_sub, quote = TRUE)
+
+## If no samples to remove, reassign group_sub, study_sub and contrasts_sub back to the original variable contents
+if (length(remove) == 0) {
+    print(sprintf("DEBUG: %s: No samples to remove, proceeding with full group, study and contrasts dataframes", Sys.time()))
+    group_sub <- group
+    study_sub <- study
+    contrasts_sub <- contrasts
+}
+
+## Print ERCC filtered raw counts table
+## Note: These data are used internally at GeneLab for QC
+output_fn <- file.path(getwd(), 'ERCC_rawCounts_filtered.csv')
+ERCC_rawCounts = as.data.frame(counts(ercc_dds))
+write.csv(ERCC_rawCounts, file = output_fn)
+print(sprintf("DEBUG: %s: Output file written '%s' ", Sys.time(), output_fn))
+
+## First remove samples that do not contain ERCC counts
+## Note: All samples should contain ERCC spike-in and thus ERCC counts, if some samples do not contain ERCC counts, those samples should be removed and not used for downstream analysis
+dds_1 <- dds[, colSums(counts(ercc_dds_gpB)) > NON_DETECTION_THRESHOLD]
+sampleTable <- data.frame(condition = factor(group_sub)) # create a new sampleTable with only the kept samples
+rownames(sampleTable) <- rownames(study_sub)
+dds_1$condition <- sampleTable$condition # reassign the condition to the subset condition to keep the groups and levels consistent with the "keep" samples
+summary(dds_1)
+dim(dds_1)
+```
+
+```{r ERCC-groupB-normalized-dge-analysis, include = (params$normalization == "ERCC-groupB"), eval = (params$normalization == "ERCC-groupB")}
+dds_1 <- tryCatch(
+            expr = { estimateSizeFactors(dds_1, controlGenes=ercc_rows_gpB) },
+            error = function(e) { estimateSizeFactors(dds_1, type="poscounts", controlGenes=ercc_rows_gpB)}
+)
+
+dds_1 <- dds_1[-c(ercc_rows),] # remove ERCCs from counts table after normalization
+dds_1 <- estimateDispersions(dds_1)
+dds_1 <- nbinomWaldTest(dds_1)
+```
+
+```{r default-normalized-dge-analysis, include = (params$normalization == "default"), eval = (params$normalization == "default")}
+# remove ERCC genes if any are present
+if (length(grep("ERCC-", rownames(dds))) != 0) {
+    dds <- dds[-c(grep("ERCC-", rownames(dds))), ]
+}
+dds_1 <- DESeq(dds)
+```
+
+```{r output-normalized-counts-related-files}
+normCounts <- as.data.frame(counts(dds_1, normalized = TRUE))
+dir.create(dirname(paste0(params$normalized_counts_output_prefix, "_")), recursive = TRUE)
+write.csv(
+    txi.rsem$counts,
+    file = paste0(params$normalized_counts_output_prefix, "RSEM_Unnormalized_Counts.csv")
+    )
+write.csv(
+    normCounts,
+    file =  paste0(params$normalized_counts_output_prefix, "Normalized_Counts.csv")
+    )
+```
+
+```{r prep-counts-for-dge}
+## Add 1 to all counts to avoid issues with log transformation
+print(sprintf("DEBUG: %s Printing head of: '%s' below", Sys.time(), 'normCounts'))
+print(head(normCounts), quote = TRUE)
+print(sprintf("DEBUG: %s: Adding 1 to all normalized counts to avoid issues with log transformation", Sys.time()))
+normCounts <- normCounts + 1
+print(sprintf("DEBUG: %s Printing head of: '%s' below", Sys.time(), 'normCounts'))
+print(head(normCounts), quote = TRUE)
+
+## output table 1 will be used to generate computer-readable DGE table,
+## which is used to create GeneLab visualization plots
+output_table_1 <- tibble::rownames_to_column(normCounts, var = params$primary_keytype)
+```
+
+```{r run-deseq2-LRT}
+##### Generate F statistic p-value (similar to ANOVA p-value) using DESeq2 likelihood ratio test (LRT) design #####
+
+print(sprintf("DEBUG: %s: Generating Likelihood Ratio Test Based Statistics", Sys.time()))
+dds_1_lrt <- DESeq(dds_1, test = "LRT", reduced = ~ 1)
+res_1_lrt <- results(dds_1_lrt)
+## Add F statistic p-value (similar to ANOVA p-value) column to the (non-ERCC) normalized counts table
+output_table_1$LRT.p.value <- res_1_lrt@listData$padj
+```
+
+```{r wald-test-iteration}
+## Iterate through Wald Tests to generate pairwise comparisons of all groups
+for (i in 1:dim(contrasts)[2]){
+  res_1 <- results(dds_1, contrast=c("condition",contrasts[1,i],contrasts[2,i]))
+  res_1 <- as.data.frame(res_1@listData)[,c(2,4,5,6)]
+  colnames(res_1)<-c(paste0("Log2fc_",colnames(contrasts)[i]),paste0("Stat_",colnames(contrasts)[i]),paste0("P.value_",colnames(contrasts)[i]),paste0("Adj.p.value_",colnames(contrasts)[i]))
+  output_table_1<-cbind(output_table_1,res_1)
+  rm(res_1)
+}
+```
+
+```{r}
+## Generate and add all sample mean column to the (non-ERCC) normalized counts table
+output_table_1$All.mean <- rowMeans(normCounts, na.rm = TRUE, dims = 1)
+
+## Generate and add all sample stdev column to the (non-ERCC) normalized counts table
+output_table_1$All.stdev <- rowSds(as.matrix(normCounts), na.rm = TRUE, dims = 1)
+```
+
+```{r}
+## Generate and add group mean and stdev columns to the (non-ER\CC) normalized counts table
+print(sprintf("DEBUG: %s: Computing group mean and stdev", Sys.time()))
+tcounts <- as.data.frame(t(normCounts))
+tcounts$group <- names(group) # Used final table group name formatting (e.g. '( Space Flight & Blue Light )' )
+
+group_means <- as.data.frame(t(aggregate(. ~ group,data = tcounts,mean))) # Compute group name group-wise means
+colnames(group_means) <- paste0("Group.Mean_", group_means['group',]) # assign group name as column names
+
+group_stdev <- as.data.frame(t(aggregate(. ~ group,data = tcounts,sd))) # Compute group name group-wise standard deviation
+colnames(group_stdev) <- paste0("Group.Stdev_", group_stdev['group',]) # assign group name as column names
+
+group_means <- group_means[-c(1),] # Drop group name row from data rows (now present as column names)
+group_stdev <- group_stdev[-c(1),] # Drop group name row from data rows (now present as column names)
+output_table_1 <- cbind(output_table_1,group_means, group_stdev) # Column bind the group-wise data
+
+
+print(sprintf("DEBUG: %s: Done Computing grup mean and stdev", Sys.time() ))
+rm(group_stdev,group_means,tcounts)
+```
+
+```{r output-dge-related-files}
+# note: the paste0 here is ensure no string file name prefixes still create their directories
+# e.g. dge_output/
+dir.create(dirname(paste0(params$dge_output_prefix,"_")), recursive = TRUE)
+write.csv(contrasts, paste0(params$dge_output_prefix, "contrasts.csv"))
+write.csv(output_table_1,
+          row.names = FALSE,
+          paste0(params$dge_output_prefix, "differential_expression_no_annotations.csv")
+         )
+write.csv(
+    sampleTable,
+    file =  paste0(params$dge_output_prefix, "SampleTable.csv")
+)
+# DT::datatable(head(output_table_1, n = 30),
+#   caption = "First 30 rows of differential gene expression table",
+#   extensions = "FixedColumns",
+#   options = list(
+#     dom = "t",
+#     scrollX = TRUE,
+#     fixedColumns = TRUE
+#   )
+# )
+```
+
+```{r version-reporting}
+## print session info ##
+print("Session Info below: ")
+sessionInfo()
+## Log same info into versions.txt file
+version_output_fn <- "versions.txt"
+cat(capture.output(sessionInfo()),
+    "BioC_version_associated_with_R_version",
+    toString(tools:::.BioC_version_associated_with_R_version()),
+    file = version_output_fn,
+    append = TRUE,
+    sep = "\n")
+```

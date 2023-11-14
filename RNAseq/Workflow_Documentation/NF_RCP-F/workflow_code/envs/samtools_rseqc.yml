@@ -1,0 +1,10 @@
+name: samtools_rseqc
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - python
+  - rseqc 
+  - samtools >= 1.13

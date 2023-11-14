@@ -4,22 +4,27 @@
 # GeneLab_Data_Processing
 
 ## About
-The [NASA GeneLab](https://genelab.nasa.gov/) Data Processing team and [Analysis Working Group](https://genelab.nasa.gov/awg/charter) members have created standard pipelines for processing omics data from spaceflight and space-relevant experiments. This repository contains the processing pipelines that have been standardized to date for the assay types indicated below. Each subdirectory in this repository holds current and previous pipeline versions for the respective assay type, including detailed descriptions and processing instructions as well as the exact processing commands used to generate processed data for datasets hosted in the [GeneLab Data Repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
+The [NASA GeneLab](https://genelab.nasa.gov/) Data Processing team and [Analysis Working Group](https://osdr.nasa.gov/bio/awg/about.html) members have created standard pipelines for processing omics data from spaceflight and space-relevant experiments. This repository contains the processing pipelines that have been standardized to date for the assay types indicated below. Each subdirectory in this repository holds current and previous pipeline versions for the respective assay type, including detailed descriptions and processing instructions as well as the exact processing commands used to generate processed data for datasets hosted in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 
 ---
 
 ## Assay Types
 Click on an assay type below for data processing information.  
 - [Create GeneLab Reference Annotations](GeneLab_Reference_Annotations)
+- [Raw Data Generation](Raw_Data_Generation)
 - [Amplicon Sequencing](Amplicon) 
   - [Illumina](Amplicon/Illumina)  
   - [454 and Ion-Torrent](Amplicon/454-and-IonTorrent)  
 - [Metagenomics](Metagenomics)  
-  - [Removing human reads](Metagenomics/Remove_human_reads_from_raw_data)  
+  - [Remove human reads](Metagenomics/Remove_human_reads_from_raw_data)
+  - [Estimate host reads](Metagenomics/Estimate_host_reads_in_raw_data)
   - [Illumina](Metagenomics/Illumina)  
 - [(bulk) RNAseq](RNAseq)  
 - [single cell RNAseq](scRNAseq)  
-
+- [Methylation Sequencing](Methyl-Seq)
+- [Microarray](Microarray)
+  - [Agilent 1-channel](Microarray/Agilent_1-channel)
+  - [Affymetrix](Microarray/Affymetrix)
 
 ---
 

@@ -1,6 +1,6 @@
 # Bioinformatics pipeline for 454 and IonTorrent amplicon sequencing data  
 
-> **This page holds an overview and some example commands of how GeneLab processes 454 and IonTorrent amplicon datasets. Exact processing commands for specific datasets that have been released are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
+> **This page holds an overview and some example commands of how GeneLab processes 454 and IonTorrent amplicon datasets. Exact processing commands for specific datasets that have been released are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 
 ---
 
@@ -66,7 +66,7 @@ Jonathan Galazka (GeneLab Project Scientist)
 
 # General processing overview with example commands
 
-> Exact processing commands for specific datasets are provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).  
+> Exact processing commands and output files listed in **bold** below are included with each Amplicon Seq processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).  
 
 ---
 
@@ -112,8 +112,8 @@ multiqc -o raw_multiqc_output -n raw_multiqc -z raw_fastqc_output/
 
 **Output data:**
 
-* raw_multiqc_output/raw_multiqc_report.html (multiqc output html summary)
-* raw_multiqc_output/raw_multiqc_data.zip (zipped directory containing multiqc output data)
+* **raw_multiqc_output/raw_multiqc_report.html** (multiqc output html summary)
+* **raw_multiqc_output/raw_multiqc_data.zip** (zipped directory containing multiqc output data)
 
 ---
 
@@ -122,7 +122,7 @@ multiqc -o raw_multiqc_output -n raw_multiqc -z raw_fastqc_output/
 
 The location and orientation of primers in the data is important to understand in deciding how to do this step. `cutadapt` has many options for primer identification and removal. They are described in detail on their documentation page here: [https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types](https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types)  
 
-The following example command shows how it was done for [GLDS-72](https://genelab-data.ndc.nasa.gov/genelab/accession/GLDS-72/), which was 454 sequencing of the 16S gene using these primers:  
+The following example command shows how it was done for [GLDS-72](https://osdr.nasa.gov/bio/repo/data/studies/OSD-72), which was 454 sequencing of the 16S gene using these primers:  
 * forward: 5’-AGAGTTTGATCCTGGCTCAG-3’  
 * reverse: 5’- GCTGCCTCCCGTAGGAGT-3’  
 
@@ -149,7 +149,7 @@ cutadapt -g AGAGTTTGATCCTGGCTCAG -a GCTGCCTCCCGTAGGAGT \
 
 **Output data:**
 
-* sample-1_trimmed.fastq.gz (primer-trimmed reads)
+* **sample-1_trimmed.fastq.gz** (primer-trimmed reads)
 
 ---
 
@@ -183,7 +183,7 @@ bbduk.sh in=sample-1_trimmed.fastq.gz out=sample-1_filtered.fastq.gz \
 
 **Output data:**
 
-* sample-1_filtered.fastq.gz (filtered reads)
+* **sample-1_filtered.fastq.gz** (filtered reads)
 
 ---
 
@@ -229,8 +229,8 @@ multiqc -o filtered_multiqc_output -n filtered_multiqc -z filtered_fastqc_output
 
 **Output data:**
 
-* filtered_multiqc_output/filtered_multiqc_report.html (multiqc output html summary)
-* filtered_multiqc_output/filtered_multiqc_data.zip (zipped directory containing multiqc output data)
+* **filtered_multiqc_output/filtered_multiqc_report.html** (multiqc output html summary)
+* **filtered_multiqc_output/filtered_multiqc_data.zip** (zipped directory containing multiqc output data)
 
 
 ---
@@ -363,7 +363,7 @@ vsearch --uchime_denovo rep-seqs-no-singletons.fasta --sizein --nonchimeras OTUs
 
 **Output data:**
 
-* OTUs.fasta (representative sequences, with singletons and chimeras removed)
+* **OTUs.fasta** (representative sequences, with singletons and chimeras removed)
 
 
 ### 5c. Map reads to OTUs
@@ -389,7 +389,7 @@ vsearch --usearch_global all-samples-seqs.fasta -db OTUs.fasta --sizein \
 
 **Output data:**
 
-* counts.tsv (count table of representative sequences per sample)
+* **counts.tsv** (count table of representative sequences per sample)
 
 
 ---
@@ -489,8 +489,9 @@ write.table(tax_and_count_tab, "taxonomy-and-counts.tsv", sep="\t", quote=FALSE,
 
 **Output data:**
 
-* taxonomy-and-counts.tsv (table with taxonomy of representative sequences and counts per sample)
-* taxonomy-and-counts.biom (biom formatted file with taxonomy of representative sequences and counts per sample)
+* **taxonomy.tsv** (taxonomy table)
+* **taxonomy-and-counts.tsv** (table with taxonomy of representative sequences and counts per sample)
+* **taxonomy-and-counts.biom** (biom formatted file with taxonomy of representative sequences and counts per sample)
 
 ---
 

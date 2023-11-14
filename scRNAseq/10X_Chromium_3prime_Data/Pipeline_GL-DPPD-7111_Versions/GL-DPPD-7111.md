@@ -1,8 +1,6 @@
 # GeneLab bioinformatics processing pipeline for 10X Chromium 3' single cell RNA-sequencing data
 
-> **This page holds an overview and instructions for how GeneLab processes single cell RNA-sequencing (scRNAseq) datasets. Exact processing commands and GL-DPPD-7111 version used for specific datasets are available in the 
-[GLDS_Processing_Scripts](../GLDS_Processing_Scripts) directory and processed data output files are provided in the [GeneLab Data Systems 
-(GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
+> **This page holds an overview and instructions for how GeneLab processes single cell RNA-sequencing (scRNAseq) datasets. Exact processing commands, GL-DPPD-7111 version used, and processed data output files for specific datasets are provided in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 >  
   > Note: Unlike [bulkRNAseq](../../../RNAseq), for scRNAseq trimming is performed during the [STARsolo alignment step](#3a-align-reads-to-reference-genome-with-starsolo) of the pipeline.
 
@@ -49,9 +47,7 @@ Jonathan Galazka (GeneLab Project Scientist)
 
 # General processing overview with example commands  
 
-> Exact processing commands for specific datasets are provided in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) directory.
-> 
-> All output files marked with a \# are published for each RNAseq processed dataset in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects). 
+> Exact processing commands and output files listed in **bold** below are included with each scRNAseq processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 
 ---
 
@@ -103,8 +99,8 @@ multiqc --interactive \
 
 **Output Data:**
 
-- raw_multiqc.html\# (multiqc report)
-- /raw_multiqc_data\# (directory containing multiqc data)
+- **raw_multiqc.html** (multiqc report)
+- **/raw_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -229,15 +225,15 @@ STAR --runThreadN <NumberOfThreads> \
 
 **Output Data:**
 
-- *Aligned.bam\# (binary sequence alignment map with reads mapping to the genome)
-- *Log.final.out\# (log file containing alignment info/stats such as reads mapped, etc)
+- **\*Aligned.bam** (binary sequence alignment map with reads mapping to the genome)
+- **\*Log.final.out** (log file containing alignment info/stats such as reads mapped, etc)
 - *Log.out (main log file containing detailed info about the STAR run)
 - *Log.progress.out (minute-by-minute report containing job progress statistics, such as the number of processed reads, %
 of mapped reads etc.)
-- *SJ.out.tab\# (high confidence collapsed splice junctions in tab-delimited format)
+- **\*SJ.out.tab** (high confidence collapsed splice junctions in tab-delimited format)
 - /*Solo.out (directory containing the following:)
-  - Barcodes.stats\# (barcode statistics)
-  - /Gene\# (sub-directory containing the following outputs using the `Gene` soloFeatures setting:)
+  - **Barcodes.stats** (barcode statistics)
+  - **/Gene** (sub-directory containing the following outputs using the `Gene` soloFeatures setting:)
     > Note: All files in the `/Gene` output directory are published in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) as a `Gene.zip` file for each respective GLDS dataset.
     - Features.stats (quantitated features statistics)
     - Summary.csv (table contining summary statistics for filtered cells)
@@ -251,7 +247,7 @@ of mapped reads etc.)
       - barcodes.tsv (table containing remaining barcodes after filtering)
       - features.tsv (table containing remaining gene IDs and symbols after filtering)
       - matrix.mtx (table containing the unique-gene UMI filtered counts)
-  - /GeneFull (sub-directory containing the following outputs using the `GeneFull` soloFeatures setting:)
+  - **/GeneFull** (sub-directory containing the following outputs using the `GeneFull` soloFeatures setting:)
      > Note: All files in the `/GeneFull` output directory are published in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) as a `GeneFull.zip` file for each respective GLDS dataset.
     - Features.stats (quantitated features statistics)
     - Summary.csv (table contining summary statistics for filtered cells)
@@ -265,7 +261,7 @@ of mapped reads etc.)
       - barcodes.tsv (table containing remaining barcodes after filtering)
       - features.tsv (table containing remaining gene IDs and symbols after filtering)
       - matrix.mtx (table containing the unique-gene UMI filtered counts)
-  - /SJ (sub-directory containing the following outputs using the `SJ` soloFeatures setting:)
+  - **/SJ** (sub-directory containing the following outputs using the `SJ` soloFeatures setting:)
      > Note: All files in the `/SJ` output directory are published in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) as a `SJ.zip` file for each respective GLDS dataset.
     - Features.stats (quantitated features statistics)
     - Summary.csv (table contining summary statistics for filtered cells)
@@ -273,7 +269,7 @@ of mapped reads etc.)
       - barcodes.tsv (table containing all barcodes processed)
       - features.tsv (table containing all gene IDs and symbols)
       - matrix.mtx (table containing the raw counts for annotated and novel splice junctions)
-  - /Velocyto (sub-directory containing the following:)
+  - **/Velocyto** (sub-directory containing the following:)
     > Note: All files in the `/Velocyto` output directory are published in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) as a `Velocyto.zip` file for each respective GLDS dataset.
     - Features.stats (quantitated features statistics)
     - Summary.csv (table contining summary statistics for filtered cells)
@@ -308,7 +304,7 @@ multiqc --interactive \
 
 **Output Data:**
 
-- align_multiqc.html\# (multiqc report)
-- /align_multiqc_data\# (directory containing multiqc data)
+- **align_multiqc.html** (multiqc report)
+- **/align_multiqc_data** (directory containing multiqc data)
 
    

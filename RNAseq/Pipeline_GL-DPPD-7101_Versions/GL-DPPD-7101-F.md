@@ -1,6 +1,6 @@
 # GeneLab bioinformatics processing pipeline for Illumina RNA-sequencing data
 
-> **This page holds an overview and instructions for how GeneLab processes RNAseq datasets. Exact processing commands and GL-DPPD-7101 version used for specific datasets are available in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) directory and processed data output files are provided in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
+> **This page holds an overview and instructions for how GeneLab processes RNAseq datasets. Exact processing commands, GL-DPPD-7101 version used, and processed data output files for specific datasets are provided in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 
 ---
 
@@ -36,6 +36,12 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
   > Note: In most cases, the ERCCnorm_SampleTable.csv and SampleTable.csv files are the same. They will only differ when, for the ERCC-based analysis, samples are removed due to a lack of detectable Group B ERCC spike-in genes.
 
 - Fixed edge case where `contrasts.csv` and `ERCCnorm_contrasts.csv` table header and rows could become out of sync with each other in [step 9c](#9c-configure-metadata-sample-grouping-and-group-comparisons) and [step 9e](#9e-perform-dge-on-datasets-with-ercc-spike-in) by generating rows from header rather than generating both separately.
+
+- Updated R version from 4.1.2 to 4.1.3.
+
+- Fixed edge case where certain scripts would crash if sample names were prefixes of other sample names. This had affected [step 4c](#4c-tablulate-star-counts-in-r), [step 8c](#8c-calculate-total-number-of-genes-expressed-per-sample-in-r), and [step 9d](#9d-import-rsem-genecounts).
+
+- Fixed rare edge case where groupwise mean and standard deviations could become misassociated to incorrect groups. This had affected [step 9f](#9f-prepare-genelab-dge-tables-with-annotations-on-datasets-with-ercc-spike-in) and [step 9i](#9i-prepare-genelab-dge-tables-with-annotations-on-datasets-without-ercc-spike-in).
 
 ---
 
@@ -110,28 +116,26 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
 |geneBody_coverage|4.0.0|[http://rseqc.sourceforge.net/#genebody-coverage-py](http://rseqc.sourceforge.net/#genebody-coverage-py)|
 |inner_distance|4.0.0|[http://rseqc.sourceforge.net/#inner-distance-py](http://rseqc.sourceforge.net/#inner-distance-py)|
 |read_distribution|4.0.0|[http://rseqc.sourceforge.net/#read-distribution-py](http://rseqc.sourceforge.net/#read-distribution-py)|
-|R|4.1.2|[https://www.r-project.org/](https://www.r-project.org/)|
+|R|4.1.3|[https://www.r-project.org/](https://www.r-project.org/)|
 |Bioconductor|3.14.0|[https://bioconductor.org](https://bioconductor.org)|
 |DESeq2|1.34|[https://bioconductor.org/packages/release/bioc/html/DESeq2.html](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)|
-|tximport|1.22|[https://bioconductor.org/packages/release/bioc/html/tximport.html](https://bioconductor.org/packages/release/bioc/html/tximport.html)|
+|tximport|1.27.1|[https://github.com/mikelove/tximport](https://github.com/mikelove/tximport)|
 |tidyverse|1.3.1|[https://www.tidyverse.org](https://www.tidyverse.org)|
-|dp_tools|1.1.5|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
-|singularity|3.9|[https://sylabs.io/](https://sylabs.io/)|
 |stringr|1.4.1|[https://github.com/tidyverse/stringr](https://github.com/tidyverse/stringr)|
+|dp_tools|1.1.8|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |pandas|1.5.0|[https://github.com/pandas-dev/pandas](https://github.com/pandas-dev/pandas)|
 |seaborn|0.12.0|[https://seaborn.pydata.org/](https://seaborn.pydata.org/)|
 |matplotlib|3.6.0|[https://matplotlib.org/stable](https://matplotlib.org/stable)|
 |jupyter notebook|6.4.12|[https://jupyter-notebook.readthedocs.io/](https://jupyter-notebook.readthedocs.io/)|
 |numpy|1.23.3|[https://numpy.org/](https://numpy.org/)|
 |scipy|1.9.1|[https://scipy.org/](https://scipy.org/)|
+|singularity|3.9|[https://sylabs.io/](https://sylabs.io/)|
 
 ---
 
 # General processing overview with example commands  
 
-> Exact processing commands for specific datasets are provided in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) directory.
-> 
-> All output files marked with a \# are published for each RNAseq processed dataset in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects). 
+> Exact processing commands and output files listed in **bold** below are included with each RNAseq processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/). 
 
 ---
 
@@ -180,8 +184,8 @@ multiqc --interactive -n raw_multiqc -o /path/to/raw_multiqc/output/directory /p
 
 **Output Data:**
 
-- raw_multiqc.html\# (multiqc report)
-- /raw_multiqc_data\# (directory containing multiqc data)
+- **raw_multiqc.html** (multiqc report)
+- **/raw_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -223,8 +227,8 @@ trim_galore --gzip \
 
 **Output Data:**
 
-- *fastq.gz\# (trimmed reads)
-- *trimming_report.txt\# (trimming report)
+- **\*fastq.gz** (trimmed reads)
+- **\*trimming_report.txt** (trimming report)
 
 <br>
 
@@ -269,8 +273,8 @@ multiqc --interactive -n trimmed_multiqc -o /path/to/trimmed_multiqc/output/dire
 
 **Output Data:**
 
-- trimmed_multiqc.html\# (multiqc report)
-- /trimmed_multiqc_data\# (directory containing multiqc data)
+- **trimmed_multiqc.html** (multiqc report)
+- **/trimmed_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -396,12 +400,12 @@ STAR --twopassMode Basic \
 **Output Data:**
 
 - *Aligned.sortedByCoord.out.bam (sorted mapping to genome)
-- *Aligned.toTranscriptome.out.bam\# (sorted mapping to transcriptome)
-- *Log.final.out\# (log file containing alignment info/stats such as reads mapped, etc)
+- **\*Aligned.toTranscriptome.out.bam** (sorted mapping to transcriptome)
+- **\*Log.final.out** (log file containing alignment info/stats such as reads mapped, etc)
 - *ReadsPerGene.out.tab (tab delimitated file containing STAR read counts per gene with 4 columns that correspond to different strandedness options: column 1 = gene ID, column 2 = counts for unstranded RNAseq, column 3 = counts for 1st read strand aligned with RNA, column 4 = counts for 2nd read strand aligned with RNA)
 - *Log.out (main log file containing detailed info about the STAR run)
 - *Log.progress.out (minute-by-minute report containing job progress statistics, such as the number of processed reads, % of mapped reads etc.)
-- *SJ.out.tab\# (high confidence collapsed splice junctions in tab-delimited format)
+- **\*SJ.out.tab** (high confidence collapsed splice junctions in tab-delimited format)
 - *_STARgenome (directory containing the following:)
   - sjdbInfo.txt
   - sjdbList.out.tab
@@ -432,8 +436,8 @@ multiqc --interactive -n align_multiqc -o /path/to/aligned_multiqc/output/direct
 
 **Output Data:**
 
-- align_multiqc.html\# (multiqc report)
-- /align_multiqc_data\# (directory containing multiqc data)
+- **align_multiqc.html** (multiqc report)
+- **/align_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -455,7 +459,7 @@ study <- read.csv(Sys.glob(file.path(work_dir,"samples.txt")), header = FALSE, r
 ff <- list.files(file.path(align_dir), pattern = "ReadsPerGene.out.tab", recursive=TRUE, full.names = TRUE)
 
 ## Reorder the *genes.results files to match the ordering of the ISA samples
-ff <- ff[sapply(rownames(study), function(x)grep(paste0(x,'_ReadsPerGene.out.tab$'), ff, value=FALSE))]
+ff <- ff[sapply(rownames(study), function(x)grep(paste0(align_dir, '/', x,'_ReadsPerGene.out.tab$'), ff, value=FALSE))]
 
 # Remove the first 4 lines
 counts.files <- lapply( ff, read.table, skip = 4 )
@@ -486,7 +490,7 @@ sessionInfo()
 
 **Output Data:**
 
-- STAR_Unnormalized_Counts.csv\# (Table containing raw STAR counts for each sample)
+- **STAR_Unnormalized_Counts.csv** (Table containing raw STAR counts for each sample)
 
 <br>
 
@@ -511,7 +515,7 @@ samtools sort -m 3G \
 
 **Output Data:**
 
-- *Aligned.sortedByCoord_sorted.out.bam\# (samtools sorted genome aligned bam file)
+- **\*Aligned.sortedByCoord_sorted.out.bam** (samtools sorted genome aligned bam file)
 
 <br>
 
@@ -532,7 +536,7 @@ samtools index -@ NumberOfThreads /path/to/*Aligned.sortedByCoord_sorted.out.bam
 
 **Output Data:**
 
-- *Aligned.sortedByCoord_sorted.out.bam.bai\# (index of sorted mapping to genome file)
+- **\*Aligned.sortedByCoord_sorted.out.bam.bai** (index of sorted mapping to genome file)
 
 <br>
 
@@ -640,8 +644,8 @@ multiqc --interactive -n infer_exp_multiqc -o /path/to/infer_exp_multiqc/output/
 
 **Output Data:**
 
-- infer_exp_multiqc.html\# (multiqc report)
-- /infer_exp_multiqc_data\# (directory containing multiqc data)
+- **infer_exp_multiqc.html** (multiqc report)
+- **/infer_exp_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -693,8 +697,8 @@ multiqc --interactive -n genebody_cov_multiqc -o /path/to/geneBody_coverage_mult
 
 **Output Data:**
 
-- geneBody_cov_multiqc.html\# (multiqc report)
-- /geneBody_cov_multiqc_data\# (directory containing multiqc data)
+- **geneBody_cov_multiqc.html** (multiqc report)
+- **/geneBody_cov_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -752,8 +756,8 @@ multiqc --interactive -n inner_dist_multiqc /path/to/inner_dist_multiqc/output/d
 
 **Output Data:**
 
-- inner_distance_multiqc.html\# (multiqc report)
-- /inner_distance_multiqc_data\# (directory containing multiqc data)
+- **inner_distance_multiqc.html** (multiqc report)
+- **/inner_distance_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -802,8 +806,8 @@ multiqc --interactive -n read_dist_multiqc -o /path/to/read_dist_multiqc/output/
 
 **Output Data:**
 
-- read_dist_multiqc.html\# (multiqc report)
-- /read_dist_multiqc_data\# (directory containing multiqc data)
+- **read_dist_multiqc.html** (multiqc report)
+- **/read_dist_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -888,8 +892,8 @@ rsem-calculate-expression --num-threads NumberOfThreads \
 
 **Output Data:**
 
-- *genes.results\# (counts per gene)
-- *isoforms.results\# (counts per isoform)
+- **\*genes.results** (counts per gene)
+- **\*isoforms.results** (counts per isoform)
 - *stat (directory containing the following stats files)
   - *cnt
   - *model
@@ -919,8 +923,8 @@ multiqc --interactive -n RSEM_count_multiqc -o /path/to/RSEM_count_multiqc/outpu
 
 **Output Data:**
 
-- RSEM_count_multiqc.html\# (multiqc report)
-- /RSEM_count_multiqc_data\# (directory containing multiqc data)
+- **RSEM_count_multiqc.html** (multiqc report)
+- **/RSEM_count_multiqc_data** (directory containing multiqc data)
 
 <br>
 
@@ -942,7 +946,7 @@ samples <- read.csv(Sys.glob(file.path(work_dir,"samples.txt")), header = FALSE,
 files <- list.files(file.path(counts_dir),pattern = ".genes.results", full.names = TRUE)
 
 ### reorder the genes.results files to match the ordering of the samples in the metadata file
-files <- files[sapply(rownames(samples), function(x)grep(paste0(x,'.genes.results$'), files, value=FALSE))]
+files <- files[sapply(rownames(samples), function(x)grep(paste0(counts_dir, '/',  x,'.genes.results$'), files, value=FALSE))]
 
 names(files) <- rownames(samples)
 txi.rsem <- tximport(files, type = "rsem", txIn = FALSE, txOut = FALSE)
@@ -981,7 +985,7 @@ sessionInfo()
 
 ### 9a. Create Sample RunSheet
 
-> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_RCP-F/examples/README.md).
+> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_RCP-F/examples/runsheet/README.md).
 
 ```bash
 ### Download the *ISA.zip file from the GeneLab Repository ###
@@ -1013,7 +1017,7 @@ dpt-isa-to-runsheet --accession GLDS-### \
 
 - *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, used to define sample groups - the *ISA.zip file is located in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) under 'Study Files' -> 'metadata')
 
-- {GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv\# (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
+- **{GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv** (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
 
 <br>
 
@@ -1091,7 +1095,7 @@ compare_csv_from_runsheet <- function(runsheet_path) {
 
 ### Load metadata from runsheet csv file ###
 
-compare_csv <- compare_csv_from_runsheet(params$runsheet_path)
+compare_csv <- compare_csv_from_runsheet(runsheet_path)
 
 
 ### Create data frame containing all samples and respective factors ###
@@ -1137,7 +1141,7 @@ files <- list.files(file.path(counts_dir),pattern = ".genes.results", full.names
 
 ### Reorder the *genes.results files to match the ordering of the ISA samples ###
 
-files <- files[sapply(rownames(study), function(x)grep(paste0(x,".genes.results$"), files, value=FALSE))]
+files <- files[sapply(rownames(study), function(x)grep(paste0(counts_dir, '/', x,".genes.results$"), files, value=FALSE))]
 
 names(files) <- rownames(study)
 txi.rsem <- tximport(files, type = "rsem", txIn = FALSE, txOut = FALSE)
@@ -1386,19 +1390,18 @@ reduced_output_table_1$LRT.p.value <- res_1_lrt@listData$padj
 ### Generate and add group mean and stdev columns to the (non-ERCC) DGE table ###
 
 tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- group
-group_means <- as.data.frame(t(aggregate(. ~ group,data = tcounts,mean)))
-group_means <- group_means[-c(1),]
-colnames(group_means) <- paste0("Group.Mean_",levels(factor(names(group))))
-group_stdev <- as.data.frame(t(aggregate(. ~ group,data = tcounts,sd)))
-group_stdev <- group_stdev[-c(1),]
-colnames(group_stdev) <- paste0("Group.Stdev_",levels(factor(names(group))))
+tcounts$group <- names(group) # Used final table group name formatting (e.g. '( Space Flight & Blue Light )' )
 
-output_table_1 <- cbind(output_table_1,group_means)
-reduced_output_table_1 <- cbind(reduced_output_table_1,group_means)
+group_means <- as.data.frame(t(aggregate(. ~ group,data = tcounts,mean))) # Compute group name group-wise means
+colnames(group_means) <- paste0("Group.Mean_", group_means['group',]) # assign group name as column names
 
-output_table_1 <- cbind(output_table_1,group_stdev)
-reduced_output_table_1 <- cbind(reduced_output_table_1,group_stdev)
+group_stdev <- as.data.frame(t(aggregate(. ~ group,data = tcounts,sd))) # Compute group name group-wise standard deviation
+colnames(group_stdev) <- paste0("Group.Stdev_", group_stdev['group',]) # assign group name as column names
+
+group_means <- group_means[-c(1),] # Drop group name row from data rows (now present as column names)
+group_stdev <- group_stdev[-c(1),] # Drop group name row from data rows (now present as column names)
+output_table_1 <- cbind(output_table_1,group_means, group_stdev) # Column bind the group-wise data
+reduced_output_table_1 <- cbind(reduced_output_table_1,group_means, group_stdev) # Column bind the group-wise data
 
 rm(group_stdev,group_means,tcounts)
 
@@ -1515,19 +1518,18 @@ reduced_output_table_2$LRT.p.value <- res_2_lrt@listData$padj
 ### Generate and add group mean and stdev columns to the ERCC-normalized DGE table ###
 
 tcounts <- as.data.frame(t(ERCCnormCounts))
-tcounts$group_sub <- group_sub
-group_means <- as.data.frame(t(aggregate(. ~ group_sub,data = tcounts,mean)))
-group_means <- group_means[-c(1),]
-colnames(group_means) <- paste0("Group.Mean_",levels(factor(names(group_sub))))
-group_stdev <- as.data.frame(t(aggregate(. ~ group_sub,data = tcounts,sd)))
-group_stdev <- group_stdev[-c(1),]
-colnames(group_stdev) <- paste0("Group.Stdev_",levels(factor(names(group_sub))))
+tcounts$group_sub <- names(group_sub) # Used final table group name formatting (e.g. '( Space Flight & Blue Light )' )
 
-output_table_2 <- cbind(output_table_2,group_means)
-reduced_output_table_2 <- cbind(reduced_output_table_2,group_means)
+group_means <- as.data.frame(t(aggregate(. ~ group_sub,data = tcounts,mean))) # Compute group name group-wise means
+colnames(group_means) <- paste0("Group.Mean_", group_means['group_sub',]) # assign group name as column names
 
-output_table_2 <- cbind(output_table_2,group_stdev)
-reduced_output_table_2 <- cbind(reduced_output_table_2,group_stdev)
+group_stdev <- as.data.frame(t(aggregate(. ~ group_sub,data = tcounts,sd))) # Compute group name group-wise standard deviation
+colnames(group_stdev) <- paste0("Group.Stdev_", group_stdev['group_sub',]) # assign group name as column names
+
+group_means <- group_means[-c(1),] # Drop group name row from data rows (now present as column names)
+group_stdev <- group_stdev[-c(1),] # Drop group name row from data rows (now present as column names)
+output_table_2 <- cbind(output_table_2,group_means, group_stdev) # Column bind the group-wise data
+reduced_output_table_2 <- cbind(reduced_output_table_2,group_means, group_stdev) # Column bind the group-wise data
 
 rm(group_stdev,group_means,tcounts)
 
@@ -1734,19 +1736,18 @@ reduced_output_table_1$LRT.p.value <- res_1_lrt@listData$padj
 ### Generate and add group mean and stdev columns to the DGE table ###
 
 tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- group
-group_means <- as.data.frame(t(aggregate(. ~ group,data = tcounts,mean)))
-group_means <- group_means[-c(1),]
-colnames(group_means) <- paste0("Group.Mean_",levels(factor(names(group))))
-group_stdev <- as.data.frame(t(aggregate(. ~ group,data = tcounts,sd)))
-group_stdev <- group_stdev[-c(1),]
-colnames(group_stdev) <- paste0("Group.Stdev_",levels(factor(names(group))))
+tcounts$group <- names(group) # Used final table group name formatting (e.g. '( Space Flight & Blue Light )' )
 
-output_table_1 <- cbind(output_table_1,group_means)
-reduced_output_table_1 <- cbind(reduced_output_table_1,group_means)
+group_means <- as.data.frame(t(aggregate(. ~ group,data = tcounts,mean))) # Compute group name group-wise means
+colnames(group_means) <- paste0("Group.Mean_", group_means['group',]) # assign group name as column names
 
-output_table_1 <- cbind(output_table_1,group_stdev)
-reduced_output_table_1 <- cbind(reduced_output_table_1,group_stdev)
+group_stdev <- as.data.frame(t(aggregate(. ~ group,data = tcounts,sd))) # Compute group name group-wise standard deviation
+colnames(group_stdev) <- paste0("Group.Stdev_", group_stdev['group',]) # assign group name as column names
+
+group_means <- group_means[-c(1),] # Drop group name row from data rows (now present as column names)
+group_stdev <- group_stdev[-c(1),] # Drop group name row from data rows (now present as column names)
+output_table_1 <- cbind(output_table_1,group_means, group_stdev) # Column bind the group-wise data
+reduced_output_table_1 <- cbind(reduced_output_table_1,group_means, group_stdev) # Column bind the group-wise data
 
 rm(group_stdev,group_means,tcounts)
 
@@ -1868,35 +1869,36 @@ sessionInfo()
 
 Output data without considering ERCC spike-in genes:
 
-- RSEM_Unnormalized_Counts.csv\# (table containing raw RSEM gene counts for each sample)
-- Normalized_Counts.csv\# (table containing normalized gene counts for each sample)
-- SampleTable.csv\# (table containing samples and their respective groups)
+- **RSEM_Unnormalized_Counts.csv** (table containing raw RSEM gene counts for each sample)
+- **Normalized_Counts.csv** (table containing normalized gene counts for each sample)
+- **SampleTable.csv** (table containing samples and their respective groups)
 - visualization_output_table.csv (file used to generate GeneLab DGE visualizations)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
-- differential_expression.csv\# (table containing normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations) 
-- contrasts.csv\# (table containing all pairwise comparisons)
+- **differential_expression.csv** (table containing normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations) 
+- **contrasts.csv** (table containing all pairwise comparisons)
 
 Output data with considering ERCC spike-in genes:
+*Note: ERCC-normalized data are only available upon request. GeneLab encourages users to use the normalized and DGE data without considering ERCC spike-in genes.*
 
 - ERCC_rawCounts_unfiltered.csv (table containing raw ERCC unfiltered counts)
 - ERCC_rawCounts_filtered.csv (ERCC counts table after removing ERCC genes with low counts)
-- ERCC_Normalized_Counts.csv\# (table containing ERCC-normalized gene counts for each sample)
-- ERCCnorm_SampleTable.csv\# (table containing samples with detectable ERCC group B genes and their respective groups)
+- ERCC_Normalized_Counts.csv (table containing ERCC-normalized gene counts for each sample)
+- ERCCnorm_SampleTable.csv (table containing samples with detectable ERCC group B genes and their respective groups)
 - visualization_output_table_ERCCnorm.csv (file used to generate GeneLab DGE visualizations for ERCC-normalized data)
 - visualization_PCA_table_ERCCnorm.csv (file used to generate GeneLab PCA plots for ERCC-normalized data)
-- ERCCnorm_differential_expression.csv\# (table containing ERCC-normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations)
-- ERCCnorm_contrasts.csv\# (table containing all pairwise comparisons for samples containing ERCC spike-in)
+- ERCCnorm_differential_expression.csv (table containing ERCC-normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations)
+- ERCCnorm_contrasts.csv (table containing all pairwise comparisons for samples containing ERCC spike-in)
 
 
 **Output Data for Datasets without ERCC Spike-In:**
 
-- RSEM_Unnormalized_Counts.csv\# (table containing raw RSEM gene counts for each sample)
-- Normalized_Counts.csv\# (table containing normalized gene counts for each sample)
-- SampleTable.csv\# (table containing samples and their respective groups)
+- **RSEM_Unnormalized_Counts.csv** (table containing raw RSEM gene counts for each sample)
+- **Normalized_Counts.csv** (table containing normalized gene counts for each sample)
+- **SampleTable.csv** (table containing samples and their respective groups)
 - visualization_output_table.csv (file used to generate GeneLab DGE visualizations)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
-- differential_expression.csv\# (table containing normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations) 
-- contrasts.csv\# (table containing all pairwise comparisons)
+- **differential_expression.csv** (table containing normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations) 
+- **contrasts.csv** (table containing all pairwise comparisons)
 
 > Note: RNAseq processed data interactive tables and plots are found in the [GLDS visualization portal](https://visualization.genelab.nasa.gov/data/studies).
 
@@ -1931,9 +1933,10 @@ import matplotlib.pyplot as plt
 # Get and unzip ISA.zip to extract metadata.
 
 accession = 'GLDS-NNN' # Replace Ns with GLDS number
-isaPath = 'path/to/GLDS-NNN-ISA.zip' # Replace with path to ISA archive file
-zip_file_object = zipfile.ZipFile(isaPath, "r")
-list_of_ISA_files = zip_file_object.namelist() 
+isaPath = '/path/to/GLDS-NNN_metadata_GLDS-NNN-ISA.zip' # Replace with path to ISA archive file
+zip_file_object =  zipfile.ZipFile(isaPath, "r")
+list_of_ISA_files = zip_file_object.namelist()
+UnnormalizedCountsPath = '/path/to/GLDS-NNN_rna_seq_RSEM_Unnormalized_Counts.csv'
 
 # Print contents of ISA zip file to view file order
 list_of_ISA_files
@@ -1970,7 +1973,7 @@ assay_table.head(n=3)
 
 # Get raw counts table
 
-raw_counts_table = pd.read_csv('/path/to/RSEM_Unnormalized_Counts.csv', index_col=0) 
+raw_counts_table = pd.read_csv(UnnormalizedCountsPath, index_col=0) 
 raw_counts_table.index.rename('Gene_ID', inplace=True)
 print(raw_counts_table.head(n=3))
 
@@ -2647,4 +2650,4 @@ ax.set_yscale("log");
 
 - ERCC_analysis/ERCC_lodr_*.csv (ERCC Gene Table including mean counts, adjusted p-value and p-value, and filtered to genes with both adj. p-value and p-value < 0.001)
 
-> All steps of the ERCC Spike-In Data Analysis are performed in a Jupyter Notebook (JN) and the completed JN is exported as an html file and published in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) for the respective dataset.
+> All steps of the ERCC Spike-In Data Analysis are performed in a Jupyter Notebook (JN) and the completed JN is exported as an html file (**ERCC_analysis.html**) and published in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/) for the respective dataset.

@@ -1,6 +1,7 @@
 ############################################################################################
 ## Snakefile for GeneLab Illumina metagenomics processing workflow                        ##
 ## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##
+## Version 2.0.3                                                                          ##
 ############################################################################################
 
 import os
@@ -102,8 +103,8 @@ if config["workflow"] == "both":
             config["bins_dir"] + config["additional_filename_prefix"] + "bins-overview.tsv",
             config["assemblies_dir"] + config["additional_filename_prefix"] + "assembly-summaries.tsv",
             config["assembly_based_dir"] + config["additional_filename_prefix"] + "Assembly-based-processing-overview.tsv",
-            config["fastqc_out_dir"] + config["additional_filename_prefix"] + "raw_multiqc_data.zip",
-            config["fastqc_out_dir"] + config["additional_filename_prefix"] + "filtered_multiqc_data.zip",
+            config["fastqc_out_dir"] + config["additional_filename_prefix"] + "raw_multiqc_report.zip",
+            config["fastqc_out_dir"] + config["additional_filename_prefix"] + "filtered_multiqc_report.zip",
             config["read_based_dir"] + config["additional_filename_prefix"] + "Gene-families-cpm.tsv",
             config["read_based_dir"] + config["additional_filename_prefix"] + "Gene-families-KO-cpm.tsv",
             config["read_based_dir"] + config["additional_filename_prefix"] + "Metaphlan-taxonomy.tsv"
@@ -124,8 +125,8 @@ elif config["workflow"] == "assembly-based":
             config["bins_dir"] + config["additional_filename_prefix"] + "bins-overview.tsv",
             config["assemblies_dir"] + config["additional_filename_prefix"] + "assembly-summaries.tsv",
             config["assembly_based_dir"] + config["additional_filename_prefix"] + "Assembly-based-processing-overview.tsv",
-            config["fastqc_out_dir"] + config["additional_filename_prefix"] + "raw_multiqc_data.zip",
-            config["fastqc_out_dir"] + config["additional_filename_prefix"] + "filtered_multiqc_data.zip"
+            config["fastqc_out_dir"] + config["additional_filename_prefix"] + "raw_multiqc_report.zip",
+            config["fastqc_out_dir"] + config["additional_filename_prefix"] + "filtered_multiqc_report.zip"
         shell:
             """
             bash scripts/combine-benchmarks.sh
@@ -135,8 +136,8 @@ elif config["workflow"] == "read-based":
 
     rule all:
         input:
-            config["fastqc_out_dir"] + config["additional_filename_prefix"] + "raw_multiqc_data.zip",
-            config["fastqc_out_dir"] + config["additional_filename_prefix"] + "filtered_multiqc_data.zip",
+            config["fastqc_out_dir"] + config["additional_filename_prefix"] + "raw_multiqc_report.zip",
+            config["fastqc_out_dir"] + config["additional_filename_prefix"] + "filtered_multiqc_report.zip",
             config["read_based_dir"] + config["additional_filename_prefix"] + "Gene-families-cpm.tsv",
             config["read_based_dir"] + config["additional_filename_prefix"] + "Gene-families-KO-cpm.tsv",
             config["read_based_dir"] + config["additional_filename_prefix"] + "Metaphlan-taxonomy.tsv"
@@ -1528,58 +1529,8 @@ else:
 
 
 if config["single_end_data"] != "TRUE":
+
     # QC rules if this is paired-end data
-    rule filtered_multiqc_PE:
-        """
-        This rule collates all trimmed/filtered fastqc outputs.
-        """
-
-        conda:
-            "envs/qc.yaml"
-        input:
-            expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list),
-            expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list)
-        params:
-            out_filename_prefix = config["additional_filename_prefix"] + "filtered_multiqc",
-            fastqc_out_dir = config["fastqc_out_dir"],
-            filtered_reads_dir = config["filtered_reads_dir"],
-            int_output = config["fastqc_out_dir"] + config["additional_filename_prefix"] + "filtered_multiqc.html"
-        output:
-            html = config["fastqc_out_dir"] + config["additional_filename_prefix"] + "filtered_multiqc_report.html",
-            data = config["fastqc_out_dir"] + config["additional_filename_prefix"] + "filtered_multiqc_data.zip"
-        benchmark:
-            "benchmarks/filtered_multiqc-benchmarks.tsv"
-        shell:
-            """
-            multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix}  {params.filtered_reads_dir} > /dev/null 2>&1
-            # removing the individual fastqc files and temp locations
-            rm -rf {params.filtered_reads_dir}*fastqc*
-            # renaming html file
-            mv {params.int_output} {output.html}
-            """
-
-
-    rule filtered_fastqc_PE:
-        """
-        This rule runs fastqc on all trimmed/filtered input fastq files.
-        """
-
-        conda:
-            "envs/qc.yaml"
-        input:
-            config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"],
-            config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"]
-        output:
-            config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.zip",
-            config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.zip"
-        benchmark:
-            "benchmarks/filtered_fastqc-{ID}-benchmarks.tsv"
-        shell:
-            """
-            fastqc {input} -t 2 -q
-            """
-
-
     rule raw_multiqc_PE:
         """
         This rule collates all raw fastqc outputs.
@@ -1591,22 +1542,33 @@ if config["single_end_data"] != "TRUE":
             expand(config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list),
             expand(config["raw_reads_dir"] + "{ID}" + config["raw_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list)
         params:
+            reads_dir = config["raw_reads_dir"],
+            int_out_dir = config["additional_filename_prefix"] + "raw_multiqc_report",
             out_filename_prefix = config["additional_filename_prefix"] + "raw_multiqc",
-            raw_reads_dir = config["raw_reads_dir"],
-            fastqc_out_dir = config["fastqc_out_dir"],
-            int_output = config["fastqc_out_dir"] + config["additional_filename_prefix"] + "raw_multiqc.html"
+            int_out_data_dir = config["additional_filename_prefix"] + "raw_multiqc_data",
+            int_html_file = config["additional_filename_prefix"] + "raw_multiqc.html",
+            int_zip = config["additional_filename_prefix"] + "raw_multiqc_report.zip",
+            config_file = "config/multiqc.config"
         output:
-            html = config["fastqc_out_dir"] + config["additional_filename_prefix"] + "raw_multiqc_report.html",
-            data = config["fastqc_out_dir"] + config["additional_filename_prefix"] + "raw_multiqc_data.zip"
+            final_out_zip = config["fastqc_out_dir"] + config["additional_filename_prefix"] + "raw_multiqc_report.zip"
         benchmark:
             "benchmarks/raw_multiqc-benchmarks.tsv"
         shell:
             """
-            multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix} {params.raw_reads_dir} > /dev/null 2>&1
+            multiqc -q -n {params.out_filename_prefix} --force --cl-config 'max_table_rows: 99999999' --interactive --config {params.config_file} {input} > /dev/null 2>&1
+            
             # removing the individual fastqc files
-            rm -rf {params.raw_reads_dir}*fastqc*
-            # renaming html file
-            mv {params.int_output} {output.html}
+            rm -rf {params.reads_dir}*fastqc*
+
+            # making an output report directory and moving things into it
+            mkdir -p {params.int_out_dir}
+            mv {params.int_html_file} {params.int_out_data_dir} {params.int_out_dir}
+            
+            # zipping and removing unzipped dir
+            zip -q -r {params.int_zip} {params.int_out_dir} && rm -rf {params.int_out_dir}
+
+            # moving to final wanted location
+            mv {params.int_zip} {output.final_out_zip}
             """
 
 
@@ -1630,56 +1592,39 @@ if config["single_end_data"] != "TRUE":
             fastqc {input} -t 2 -q
             """
 
-else:
-    # rules if this is single-end data
-    rule filtered_multiqc_SE:
-        """
-        This rule collates all trimmed/filtered fastqc outputs.
-        """
 
-        conda:
-            "envs/qc.yaml"
+    use rule raw_multiqc_PE as filtered_multiqc_PE with:
         input:
-            expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list)
+            expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list),
+            expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list)
         params:
+            reads_dir = config["filtered_reads_dir"],
+            int_out_dir = config["additional_filename_prefix"] + "filtered_multiqc_report",
             out_filename_prefix = config["additional_filename_prefix"] + "filtered_multiqc",
-            fastqc_out_dir = config["fastqc_out_dir"],
-            filtered_reads_dir = config["filtered_reads_dir"],
-            int_output = config["fastqc_out_dir"] + config["additional_filename_prefix"] + "filtered_multiqc.html"
+            int_out_data_dir = config["additional_filename_prefix"] + "filtered_multiqc_data",
+            int_html_file = config["additional_filename_prefix"] + "filtered_multiqc.html",
+            int_zip = config["additional_filename_prefix"] + "filtered_multiqc_report.zip",
+            config_file = "config/multiqc.config"
         output:
-            html = config["fastqc_out_dir"] + config["additional_filename_prefix"] + "filtered_multiqc_report.html",
-            data = config["fastqc_out_dir"] + config["additional_filename_prefix"] + "filtered_multiqc_data.zip"
+            final_out_zip = config["fastqc_out_dir"] + config["additional_filename_prefix"] + "filtered_multiqc_report.zip"
         benchmark:
             "benchmarks/filtered_multiqc-benchmarks.tsv"
-        shell:
-            """
-            multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix}  {params.filtered_reads_dir} > /dev/null 2>&1
-            # removing the individual fastqc files and temp locations
-            rm -rf {params.filtered_reads_dir}*fastqc*
-            # renaming html file
-            mv {params.int_output} {output.html}
-            """
 
 
-    rule filtered_fastqc_SE:
-        """
-        This rule runs fastqc on all trimmed/filtered input fastq files.
-        """
-
-        conda:
-            "envs/qc.yaml"
+    use rule raw_fastqc_PE as filtered_fastqc_PE with:
         input:
-            config["filtered_reads_dir"] + "{ID}" + config["filtered_suffix"]
+            config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"],
+            config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"]
         output:
-            config["filtered_reads_dir"] + "{ID}" + config["filtered_suffix"].rsplit(".", 2)[0] + "_fastqc.zip"
+            config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.zip",
+            config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.zip"
         benchmark:
             "benchmarks/filtered_fastqc-{ID}-benchmarks.tsv"
-        shell:
-            """
-            fastqc {input} -t 2 -q
-            """
 
 
+
+else:
+    # QC rules if this is single-end data
     rule raw_multiqc_SE:
         """
         This rule collates all raw fastqc outputs.
@@ -1690,22 +1635,33 @@ else:
         input:
             expand(config["raw_reads_dir"] + "{ID}" + config["raw_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list)
         params:
+            reads_dir = config["raw_reads_dir"],
+            int_out_dir = config["additional_filename_prefix"] + "raw_multiqc_report",
             out_filename_prefix = config["additional_filename_prefix"] + "raw_multiqc",
-            raw_reads_dir = config["raw_reads_dir"],
-            fastqc_out_dir = config["fastqc_out_dir"],
-            int_output = config["fastqc_out_dir"] + config["additional_filename_prefix"] + "raw_multiqc.html"
+            int_out_data_dir = config["additional_filename_prefix"] + "raw_multiqc_data",
+            int_html_file = config["additional_filename_prefix"] + "raw_multiqc.html",
+            int_zip = config["additional_filename_prefix"] + "raw_multiqc_report.zip",
+            config_file = "config/multiqc.config"
         output:
-            html = config["fastqc_out_dir"] + config["additional_filename_prefix"] + "raw_multiqc_report.html",
-            data = config["fastqc_out_dir"] + config["additional_filename_prefix"] + "raw_multiqc_data.zip"
+            final_out_zip = config["fastqc_out_dir"] + config["additional_filename_prefix"] + "raw_multiqc_report.zip"
         benchmark:
             "benchmarks/raw_multiqc-benchmarks.tsv"
         shell:
             """
-            multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix} {params.raw_reads_dir} > /dev/null 2>&1
+            multiqc -q -n {params.out_filename_prefix} --force --cl-config 'max_table_rows: 99999999' --interactive --config {params.config_file} {input} > /dev/null 2>&1
+            
             # removing the individual fastqc files
-            rm -rf {params.raw_reads_dir}*fastqc*
-            # renaming html file
-            mv {params.int_output} {output.html}
+            rm -rf {params.reads_dir}*fastqc*
+
+            # making an output report directory and moving things into it
+            mkdir -p {params.int_out_dir}
+            mv {params.int_html_file} {params.int_out_data_dir} {params.int_out_dir}
+            
+            # zipping and removing unzipped dir
+            zip -q -r {params.int_zip} {params.int_out_dir} && rm -rf {params.int_out_dir}
+
+            # moving to final wanted location
+            mv {params.int_zip} {output.final_out_zip}
             """
 
 
@@ -1727,6 +1683,31 @@ else:
             fastqc {input} -t 2 -q
             """
 
+
+    use rule raw_multiqc_SE as filtered_multiqc_SE with:
+        input:
+            expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list)
+        params:
+            reads_dir = config["filtered_reads_dir"],
+            int_out_dir = config["additional_filename_prefix"] + "filtered_multiqc_report",
+            out_filename_prefix = config["additional_filename_prefix"] + "filtered_multiqc",
+            int_out_data_dir = config["additional_filename_prefix"] + "filtered_multiqc_data",
+            int_html_file = config["additional_filename_prefix"] + "filtered_multiqc.html",
+            int_zip = config["additional_filename_prefix"] + "filtered_multiqc_report.zip",
+            config_file = "config/multiqc.config"
+        output:
+            final_out_zip = config["fastqc_out_dir"] + config["additional_filename_prefix"] + "filtered_multiqc_report.zip"
+        benchmark:
+            "benchmarks/filtered_multiqc-benchmarks.tsv"
+
+
+    use rule raw_fastqc_SE as filtered_fastqc_SE with:
+        input:
+            config["filtered_reads_dir"] + "{ID}" + config["filtered_suffix"]
+        output:
+            config["filtered_reads_dir"] + "{ID}" + config["filtered_suffix"].rsplit(".", 2)[0] + "_fastqc.zip"
+        benchmark:
+            "benchmarks/filtered_fastqc-{ID}-benchmarks.tsv"
 
 
 ### database checking and setup rules ###
