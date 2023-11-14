@@ -144,7 +144,7 @@ While in the location containing the `NF_RCP-F_1.0.3` directory that was downloa
 ```bash
 nextflow run NF_RCP-F_1.0.3/main.nf \ 
    -profile singularity \
-   --gldsAccession GLDS-194 
+   --gldsAccession OSD-194 
 ```
 
 <br>
@@ -156,7 +156,7 @@ nextflow run NF_RCP-F_1.0.3/main.nf \
 ```bash
 nextflow run NF_RCP-F_1.0.3/main.nf \ 
    -profile singularity \
-   --gldsAccession GLDS-194 \
+   --gldsAccession OSD-194 \
    --ensemblVersion 107 \
    --ref_source ensembl \ 
    --ref_fasta </path/to/fasta> \ 
@@ -165,13 +165,14 @@ nextflow run NF_RCP-F_1.0.3/main.nf \
 
 <br>
 
-#### 4c. Approach 3: Run the workflow on a non-GLDS dataset using a user-created runsheet
+#### 4c. Approach 3: Run the workflow on a non-OSD dataset using a user-created runsheet
 
 > Note: Specifications for creating a runsheet manually are described [here](examples/runsheet/README.md).
 
 ```bash
 nextflow run NF_RCP-F_1.0.3/main.nf \ 
    -profile singularity \
+   --gldsAccession output_directory \
    --runsheetPath </path/to/runsheet> 
 ```
 
@@ -183,8 +184,11 @@ nextflow run NF_RCP-F_1.0.3/main.nf \
 
 * `-profile` - Specifies the configuration profile(s) to load, `singularity` instructs Nextflow to setup and use singularity for all software called in the workflow
 
-* `--gldsAccession GLDS-###` – specifies the GLDS dataset to process through the RCP workflow (replace ### with the GLDS number)  
-  > Note: A manually-generated runsheet can be supplied with the `--runsheetPath` option in place of the `--gldsAccession GLDS-###`, as indicated in [Approach 3 above](#4c-approach-3-run-the-workflow-on-a-non-glds-dataset-using-a-user-created-runsheet), to process a non-GLDS dataset.
+* `--gldsAccession OSD-###` – specifies the OSD dataset to process through the RCP workflow (replace ### with the OSD number)  
+  > Note: The primary output directory will be titled "OSD-###"
+
+* `--gldsAccession output_directory` – specifies the output directory name to use when processing a non-OSD dataset, as indicated in [Approach 3 above](#4c-approach-3-run-the-workflow-on-a-non-glds-dataset-using-a-user-created-runsheet)
+
 
 <br>
 
@@ -210,13 +214,14 @@ nextflow run NF_RCP-F_1.0.3/main.nf \
 
 * `--force_single_end` - forces the analysis to use single end processing; for paired end datasets, this means only R1 is used; for single end datasets, this should have no effect  
 
-* `--stageLocal TRUE|FALSE` - TRUE = download the raw reads files for the GLDS dataset indicated, FALSE = disable raw reads download and processing (Default: TRUE)  
+* `--stageLocal TRUE|FALSE` - TRUE = download the raw reads files for the OSD dataset indicated, FALSE = disable raw reads download and processing (Default: TRUE)  
 
 * `--referenceStorePath` - specifies the directory to store the Ensembl fasta and gtf files (Default: within the directory structure created by default in the launch directory)  
 
 * `--derivedStorePath` - specifies the directory to store the tool-specific indices created during processing (Default: within the directory structure created by default in the launch directory) 
 
-* `--runsheetPath` - specifies the path to a local runsheet (Default: a runsheet is automatically generated using the metadata on the GeneLab Repository for the GLDS dataset being processed) 
+* `--runsheetPath` - specifies the path to a local runsheet (Default: a runsheet is automatically generated using the metadata on the GeneLab Repository for the OSD dataset being processed)
+  > This is required when prcessing a non-OSD dataset as indicated in [Approach 3 above](#4c-approach-3-run-the-workflow-on-a-non-glds-dataset-using-a-user-created-runsheet)
    
 <br>
 
@@ -243,8 +248,8 @@ The outputs from the Analysis Staging and V&V Pipeline Subworkflows are describe
 
    - Output:
      - \*_bulkRNASeq_v1_runsheet.csv (table containing metadata required for processing, including the raw reads files location)
-     - \*-ISA.zip (the ISA archive of the GLDS datasets to be processed, downloaded from the OSDR)
-     - \*_metadata_table.txt (table that includes additional information about the GLDS dataset, not used for processing)
+     - \*-ISA.zip (the ISA archive of the OSD datasets to be processed, downloaded from the OSDR)
+     - \*_metadata_table.txt (table that includes additional information about the OSD dataset, not used for processing)
    
    
 **V&V Pipeline Subworkflow**
