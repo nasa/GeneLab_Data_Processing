@@ -3,7 +3,7 @@
 ## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                              ##
 ##################################################################################
 
-# as called from the associated Snakefile, this expects to be run as: Rscript full-R-processing.R <left_trunc> <right_trunc> <left_maxEE> <right_maxEE> <TRUE/FALSE - GL trimmed primers or not> <unique-sample-IDs-file> <starting_reads_dir_for_R> <filtered_reads_dir> <input_file_R1_suffix> <input_file_R2_suffix> <filtered_filename_R1_suffix> <filtered_filename_R2_suffix> <final_outputs_directory> <output_prefix> <target_region>
+# as called from the associated Snakefile, this expects to be run as: Rscript full-R-processing.R <left_trunc> <right_trunc> <left_maxEE> <right_maxEE> <TRUE/FALSE - GL trimmed primers or not> <unique-sample-IDs-file> <starting_reads_dir_for_R> <filtered_reads_dir> <input_file_R1_suffix> <input_file_R2_suffix> <filtered_filename_R1_suffix> <filtered_filename_R2_suffix> <final_outputs_directory> <output_prefix> <target_region> <concatenate_reads_only>
     # where <left_trim> and <right_trim> are the values to be passed to the truncLen parameter of dada2's filterAndTrim()
     # and <left_maxEE> and <right_maxEE> are the values to be passed to the maxEE parameter of dada2's filterAndTrim()
 
@@ -29,6 +29,7 @@ if (length(args) < 15) {
     suppressWarnings(final_outputs_dir <- args[13])
     suppressWarnings(output_prefix <- args[14])
     suppressWarnings(target_region <- args[15])
+    suppressWarnings(concatenate_reads_only <- args[16])
 
 }
 
@@ -37,7 +38,13 @@ if ( is.na(left_trunc) || is.na(right_trunc) || is.na(left_maxEE) || is.na(right
 }
 
 if ( ! GL_trimmed_primers %in% c("TRUE", "FALSE") ) {
-    stop("The fifth positional argument needs to be 'TRUE' or 'FALSE' for whether or not GL trimmed primers on this dataset, see top of R script for more info.", call.=FALSE)    
+    stop("The fifth positional argument needs to be 'TRUE' or 'FALSE' for whether or not GL trimmed primers on this dataset, see top of R script and config.yaml for more info.", call.=FALSE)    
+} else {
+    GL_trimmed_primers <- as.logical(GL_trimmed_primers)
+}
+
+if ( ! concatenate_reads_only %in% c("TRUE", "FALSE") ) {
+    stop("The sixteenth positional argument needs to be 'TRUE' or 'FALSE' for whether or not the mergePairs function of dada2 should just concatenate the reads on this dataset, see top of R script and config.yaml for more info.", call.=FALSE)    
 } else {
     GL_trimmed_primers <- as.logical(GL_trimmed_primers)
 }
@@ -92,8 +99,17 @@ reverse_errors <- learnErrors(reverse_filtered_reads, multithread=TRUE)
 forward_seqs <- dada(forward_filtered_reads, err=forward_errors, pool="pseudo", multithread=TRUE)
 reverse_seqs <- dada(reverse_filtered_reads, err=reverse_errors, pool="pseudo", multithread=TRUE)
 
-    # merging forward and reverse reads
-merged_contigs <- mergePairs(forward_seqs, forward_filtered_reads, reverse_seqs, reverse_filtered_reads, verbose=TRUE)
+    # merging forward and reverse reads (just concatenating if that was specified)
+if ( concatenate_reads_only ) {
+
+    merged_contigs <- mergePairs(forward_seqs, forward_filtered_reads, reverse_seqs, reverse_filtered_reads, verbose=TRUE, justConcatenate=TRUE)
+
+} else {
+
+    merged_contigs <- mergePairs(forward_seqs, forward_filtered_reads, reverse_seqs, reverse_filtered_reads, verbose=TRUE)
+
+}
+
 
     # generating a sequence table that holds the counts of each sequence per sample
 seqtab <- makeSequenceTable(merged_contigs)
@@ -159,10 +175,19 @@ if ( target_region == "16S" ) {
     # removing downloaded file
     file.remove("UNITE_v2020_February2020.RData")
 
-    ranks <- c("kingdom", "phylum", "class", "order", "family", "genus", "species")
+    ranks <- c("domain", "kingdom", "phylum", "class", "order", "family", "genus", "species")
 
-} else { 
+} else if (target_region == "18S" ) {
 
+    download.file("http://www2.decipher.codes/Classification/TrainingSets/PR2_v4_13_March2021.RData", "PR2_v4_13_March2021.RData")    
+    # loading reference taxonomy object
+    load("PR2_v4_13_March2021.RData")
+    # removing downloaded file
+    file.remove("PR2_v4_13_March2021.RData")
+
+    ranks <- c("kingdom", "division", "phylum", "class", "order", "family", "genus", "species")
+
+} else {
     cat("\n\n  The requested target_region of ", target_region, " is not accepted.\n\n")
     quit(status = 1)
 }
@@ -201,7 +226,7 @@ asv_tab <- data.frame("ASV_ID"=asv_ids, asv_tab, check.names=FALSE)
 write.table(asv_tab, paste0(final_outputs_dir, output_prefix, "counts.tsv"), sep="\t", quote=F, row.names=FALSE)
 
     # making and writing out a taxonomy table:
-    # vector of desired ranks was created above in ITS/16S target_region if statement
+    # vector of desired ranks was created above in ITS/16S/18S target_region if statement
 
     # creating table of taxonomy and setting any that are unclassified as "NA"
 tax_tab <- t(sapply(tax_info, function(x) {
@@ -214,11 +239,16 @@ tax_tab <- t(sapply(tax_info, function(x) {
 colnames(tax_tab) <- ranks
 row.names(tax_tab) <- NULL
 
-# need to add a column for domain if this is ITS
-if (target_region == "ITS" ) {
+# need to add a column for domain if this is ITS (due to how the reference taxonomy object is structured)
+if ( target_region == "ITS" ) {
     tax_tab <- data.frame("ASV_ID"=asv_ids, "domain"="Eukarya", tax_tab, check.names=FALSE)
 } else {
     tax_tab <- data.frame("ASV_ID"=asv_ids, tax_tab, check.names=FALSE)
+}
+
+# need to change "kingdom" to "domain" if this is 18S (due to how the reference taxonomy object is structured)
+if ( target_region == "18S" ) {
+    colnames(tax_tab)[colnames(tax_tab) == "kingdom"] <- "domain"
 }
 
 write.table(tax_tab, paste0(final_outputs_dir, output_prefix, "taxonomy.tsv"), sep = "\t", quote=F, row.names=FALSE)

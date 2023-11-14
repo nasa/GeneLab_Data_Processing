@@ -57,9 +57,21 @@ R_linked_primer:
 discard_untrimmed:
     "TRUE"
 
-## target region (16S or ITS acceptable; determines which reference database is used for taxonomic classification)
+## target region (16S, 18S, or ITS is acceptable)
+  # this determines which reference database is used for taxonomic classification
+  # all are pulled from the pre-packaged DECIPHER downloads page here: http://www2.decipher.codes/Downloads.html
+  # 16S uses SILVA
+  # ITS uses UNITE
+  # 18S uses PR2
 target_region:
     "16S"
+
+## concatenate only with dada2 instead of merging paired reads if TRUE
+  # this is typically used with primers like 515-926, that captured 18S fragments that are typically too long to merge
+  # note that 16S and 18S should have been separated already prior to running this workflow
+  # this should likely be left as FALSE for any option other than "18S" above
+concatenate_reads_only:
+    "FALSE"
 
 ## values to be passed to dada2's filterAndTrim() function:
 left_trunc:
