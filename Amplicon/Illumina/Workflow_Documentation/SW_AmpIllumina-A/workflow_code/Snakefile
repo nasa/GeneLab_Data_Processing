@@ -1,7 +1,7 @@
 ############################################################################################
 ## Snakefile for GeneLab's Illumina amplicon workflow                                     ##
 ## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##
-## Version 1.0.1                                                                          ##
+## Version 1.1.0                                                                          ##
 ############################################################################################
 
 import os
@@ -145,14 +145,15 @@ if config["data_type"] == "PE":
                 filtered_R2_suffix = config["filtered_R2_suffix"],
                 final_outputs_dir = config["final_outputs_dir"],
                 target_region = config["target_region"],
-                output_prefix = config["output_prefix"]
+                output_prefix = config["output_prefix"],
+                concatenate_reads_only = config["concatenate_reads_only"]
             log:
                 "R-processing.log"
             benchmark:
                 "benchmarks/run_R-benchmarks.tsv"
             shell:
                 """
-                Rscript scripts/Illumina-PE-R-processing.R "{params.left_trunc}" "{params.right_trunc}" "{params.left_maxEE}" "{params.right_maxEE}" "{params.trim_primers}" "{sample_IDs_file}" "{params.trimmed_reads_dir}" "{params.filtered_reads_dir}" "{params.primer_trimmed_R1_suffix}" "{params.primer_trimmed_R2_suffix}" "{params.filtered_R1_suffix}" "{params.filtered_R2_suffix}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" > {log} 2>&1
+                Rscript scripts/Illumina-PE-R-processing.R "{params.left_trunc}" "{params.right_trunc}" "{params.left_maxEE}" "{params.right_maxEE}" "{params.trim_primers}" "{sample_IDs_file}" "{params.trimmed_reads_dir}" "{params.filtered_reads_dir}" "{params.primer_trimmed_R1_suffix}" "{params.primer_trimmed_R2_suffix}" "{params.filtered_R1_suffix}" "{params.filtered_R2_suffix}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" "{params.concatenate_reads_only}" > {log} 2>&1
                 """
 
     # if we did not trim the primers
@@ -187,14 +188,15 @@ if config["data_type"] == "PE":
                 filtered_R2_suffix = config["filtered_R2_suffix"],
                 final_outputs_dir = config["final_outputs_dir"],
                 target_region = config["target_region"],
-                output_prefix = config["output_prefix"]
+                output_prefix = config["output_prefix"],
+                concatenate_reads_only = config["concatenate_reads_only"]
             log:
                 "R-processing.log"
             benchmark:
                 "benchmarks/run_R-benchmarks.tsv"
             shell:
                 """
-                Rscript scripts/Illumina-PE-R-processing.R "{params.left_trunc}" "{params.right_trunc}" "{params.left_maxEE}" "{params.right_maxEE}" "{params.trim_primers}" "{sample_IDs_file}" "{params.raw_reads_dir}" "{params.filtered_reads_dir}" "{params.raw_R1_suffix}" "{params.raw_R2_suffix}" "{params.filtered_R1_suffix}" "{params.filtered_R2_suffix}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" > {log} 2>&1
+                Rscript scripts/Illumina-PE-R-processing.R "{params.left_trunc}" "{params.right_trunc}" "{params.left_maxEE}" "{params.right_maxEE}" "{params.trim_primers}" "{sample_IDs_file}" "{params.raw_reads_dir}" "{params.filtered_reads_dir}" "{params.raw_R1_suffix}" "{params.raw_R2_suffix}" "{params.filtered_R1_suffix}" "{params.filtered_R2_suffix}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" "{params.concatenate_reads_only}" > {log} 2>&1
                 """
 
 

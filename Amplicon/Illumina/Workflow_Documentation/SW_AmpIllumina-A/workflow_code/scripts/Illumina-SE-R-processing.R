@@ -145,6 +145,16 @@ if ( target_region == "16S" ) {
 
     ranks <- c("kingdom", "phylum", "class", "order", "family", "genus", "species")
 
+} else if (target_region == "18S" ) {
+
+    download.file("http://www2.decipher.codes/Classification/TrainingSets/PR2_v4_13_March2021.RData", "PR2_v4_13_March2021.RData")    
+    # loading reference taxonomy object
+    load("PR2_v4_13_March2021.RData")
+    # removing downloaded file
+    file.remove("PR2_v4_13_March2021.RData")
+
+    ranks <- c("kingdom", "division", "phylum", "class", "order", "family", "genus", "species")
+
 } else { 
 
     cat("\n\n  The requested target_region of ", target_region, " is not accepted.\n\n")
@@ -203,6 +213,11 @@ if (target_region == "ITS" ) {
     tax_tab <- data.frame("ASV_ID"=asv_ids, "domain"="Eukarya", tax_tab, check.names=FALSE)
 } else {
     tax_tab <- data.frame("ASV_ID"=asv_ids, tax_tab, check.names=FALSE)
+}
+
+# need to change "kingdom" to "domain" if this is 18S (due to how the reference taxonomy object is structured)
+if ( target_region == "18S" ) {
+    colnames(tax_tab)[colnames(tax_tab) == "kingdom"] <- "domain"
 }
 
 write.table(tax_tab, paste0(final_outputs_dir, output_prefix, "taxonomy.tsv"), sep = "\t", quote=F, row.names=FALSE)
