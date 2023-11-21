@@ -58,9 +58,7 @@ ___
 All files required for utilizing the GeneLab workflow for processing Illumina amplicon sequencing data are in the [workflow_code](workflow_code) directory. To get a copy of latest SW_AmpIllumina-A version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands:
 
 ```bash
-## Change to NASA GitHub when ready 
-wget https://github.com/asaravia-butler/GeneLab_Data_Processing_TESTING/releases/download/SW_AmpIllumina-A_1.2.0/SW_AmpIllumina-A_1.2.0.zip
-#wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/SW_AmpIllumina-A_1.2.0/SW_AmpIllumina-A_1.2.0.zip
+wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/SW_AmpIllumina-A_1.2.0/SW_AmpIllumina-A_1.2.0.zip
 
 unzip SW_AmpIllumina-A_1.2.0.zip
 ```
@@ -104,6 +102,10 @@ ___
 ```bash
 python ./scripts/run_workflow.py --runsheetPath </path/to/runsheet> --run "snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p"
 ```
+
+<br>
+
+___
 
 **Parameter Definitions for `run_workflow.py`:** 
 
@@ -153,6 +155,7 @@ python ./scripts/run_workflow.py --runsheetPath </path/to/runsheet> --run "snake
 * `--specify-runsheet` - specifies the runsheet to use when multiple runsheets are generated.
    > *Optional argument used in Approach 1 for datasets that have multiple assays for the same amplicon target (e.g. [OSD-249](https://osdr.nasa.gov/bio/repo/data/studies/OSD-249)).*
 
+<br>
 
 **Parameter Definitions for `snakemake`**
 
