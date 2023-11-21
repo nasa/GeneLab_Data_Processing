@@ -154,7 +154,7 @@ if ( target_region == "16S" ) {
     file.remove("PR2_v4_13_March2021.RData")
 
     ranks <- c("kingdom", "division", "phylum", "class", "order", "family", "genus", "species")
-
+    
 } else { 
 
     cat("\n\n  The requested target_region of ", target_region, " is not accepted.\n\n")

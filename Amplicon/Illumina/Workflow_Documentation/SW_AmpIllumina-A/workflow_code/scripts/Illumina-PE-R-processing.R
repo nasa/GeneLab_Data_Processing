@@ -38,7 +38,7 @@ if ( is.na(left_trunc) || is.na(right_trunc) || is.na(left_maxEE) || is.na(right
 }
 
 if ( ! GL_trimmed_primers %in% c("TRUE", "FALSE") ) {
-    stop("The fifth positional argument needs to be 'TRUE' or 'FALSE' for whether or not GL trimmed primers on this dataset, see top of R script and config.yaml for more info.", call.=FALSE)    
+    stop("The fifth positional argument needs to be 'TRUE' or 'FALSE' for whether or not GL trimmed primers on this dataset, see top of R script for more info.", call.=FALSE)    
 } else {
     GL_trimmed_primers <- as.logical(GL_trimmed_primers)
 }
@@ -109,7 +109,6 @@ if ( concatenate_reads_only ) {
     merged_contigs <- mergePairs(forward_seqs, forward_filtered_reads, reverse_seqs, reverse_filtered_reads, verbose=TRUE)
 
 }
-
 
     # generating a sequence table that holds the counts of each sequence per sample
 seqtab <- makeSequenceTable(merged_contigs)

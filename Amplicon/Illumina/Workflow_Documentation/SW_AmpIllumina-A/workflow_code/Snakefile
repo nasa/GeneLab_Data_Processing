@@ -49,9 +49,9 @@ if len(set(sample_ID_list)) != len(sample_ID_list):
 ########################################
 
 if config["trim_primers"] == "TRUE":
-    needed_dirs = [config["fastqc_out_dir"], config["trimmed_reads_dir"], config["filtered_reads_dir"], config["final_outputs_dir"], "benchmarks"]
+    needed_dirs = [config["info_out_dir"], config["fastqc_out_dir"], config["trimmed_reads_dir"], config["filtered_reads_dir"], config["final_outputs_dir"], config["plots_dir"], "benchmarks"]
 else:
-    needed_dirs = [config["fastqc_out_dir"], config["filtered_reads_dir"], config["final_outputs_dir"], "benchmarks"]
+    needed_dirs = [config["info_out_dir"], config["fastqc_out_dir"], config["filtered_reads_dir"], config["final_outputs_dir"], config["plots_dir"], "benchmarks"]
 
 for dir in needed_dirs:
     try:
@@ -85,10 +85,12 @@ if config["data_type"] == "PE":
                 config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
                 config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv",
                 config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_report.zip",
-                config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.zip"
+                config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.zip",
+                config["plots_dir"] + config["output_prefix"] + "color_legend.png"
             shell:
                 """
                 bash scripts/combine-benchmarks.sh
+                python scripts/copy_info.py 
                 """
 
     # if we are not trimming the primers
@@ -105,10 +107,12 @@ if config["data_type"] == "PE":
                 config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
                 config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv",
                 config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_report.zip",
-                config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.zip"
+                config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.zip",
+                config["plots_dir"] + config["output_prefix"] + "color_legend.png"
             shell:
                 """
                 bash scripts/combine-benchmarks.sh
+                python scripts/copy_info.py 
                 """
 
 
@@ -369,10 +373,12 @@ if config["data_type"] == "SE":
                 config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
                 config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv",
                 config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_report.zip",
-                config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.zip"
+                config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.zip",
+                config["plots_dir"] + config["output_prefix"] + "color_legend.png"
             shell:
                 """
                 bash scripts/combine-benchmarks.sh
+                python scripts/copy_info.py 
                 """
 
     # if we are not trimming the primers
@@ -388,10 +394,12 @@ if config["data_type"] == "SE":
                 config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
                 config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv",
                 config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_report.zip",
-                config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.zip"
+                config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.zip",
+                config["plots_dir"] + config["output_prefix"] + "color_legend.png"
             shell:
                 """
                 bash scripts/combine-benchmarks.sh
+                python scripts/copy_info.py 
                 """
 
 
@@ -609,6 +617,31 @@ if config["data_type"] == "SE":
 ##################################################################
 #### rules that are the same whether paired-end or single-end ####
 ##################################################################
+rule r_visualizations:
+    """ This rule generates R visualizations using trimmed read data and grouping info from the runsheet"""
+    conda:
+        "envs/R_visualizations.yaml"
+    input:
+        runsheet = config["runsheet"],
+        sample_info = config["sample_info_file"],
+        counts = config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
+        taxonomy = config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv"
+    output:
+        # Use completion flag file in place of plot outputs for variable plots
+        legend = config["plots_dir"] + config["output_prefix"] + "color_legend.png"
+    params:
+        plots_dir = config["plots_dir"],
+        output_prefix = config["output_prefix"]
+    log:
+        "R-visualizations.log"
+    benchmark:
+        "benchmarks/r-visualizations-benchmarks.tsv"
+    shell:
+        """
+        Rscript scripts/Illumina-R-visualizations.R "{input.runsheet}" "{input.sample_info}" "{input.counts}" "{input.taxonomy}" "{params.plots_dir}" "{params.output_prefix}"  > {log} 2>&1
+        """
+
+
 rule zip_biom:
     input:
         config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom"
