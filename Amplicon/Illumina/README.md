@@ -27,5 +27,9 @@
     > Note: Exact processing commands and AmpIllumina version used for datasets not available in this sub-directory can be found in the *_processing_info.zip file under "Files" for each respective GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 
 ---
-**Developed and maintained by:**  
+**Developed by:**  
 Michael D. Lee (Mike.Lee@nasa.gov)
+**Maintained by:**
+Michael D. Lee (Mike.Lee@nasa.gov)
+Alexis Torres (alexis.torres@nasa.gov)
+Amanda Saravia-Butler (amanda.m.saravia-butler@nasa.gov)
