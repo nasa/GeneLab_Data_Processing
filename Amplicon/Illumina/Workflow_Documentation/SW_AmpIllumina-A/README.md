@@ -15,7 +15,8 @@ The current GeneLab Illumina amplicon sequencing data processing pipeline (AmpIl
 3. [Run the workflow using `run_workflow.py`](#3-run-the-workflow-using-run_workflowpy)   
    3a. [Approach 1: Run the workflow on a GeneLab Amplicon (Illumina) sequencing dataset with automatic retrieval of raw read files and metadata](#3a-approach-1-run-the-workflow-on-a-genelab-amplicon-illumina-sequencing-dataset-with-automatic-retrieval-of-raw-read-files-and-metadata)   
    3b. [Approach 2: Run the workflow on a non-OSD dataset using a user-created runsheet](#3b-approach-2-run-the-workflow-on-a-non-osd-dataset-using-a-user-created-runsheet)   
-4. [Additional output files](#additional-output-files)
+4. [Parameter Definitions](#4-parameter-definitions)
+5. [Additional output files](#5-additional-output-files)
 
 <br>
 
@@ -107,6 +108,10 @@ python ./scripts/run_workflow.py --runsheetPath </path/to/runsheet> --run "snake
 
 ___
 
+### 4. Parameter Definitions
+
+<br>
+
 **Parameter Definitions for `run_workflow.py`:** 
 
 * `--OSD OSD-###` - specifies the OSD dataset to process through the SW_AmpIllumina workflow (replace ### with the OSD number)
@@ -170,7 +175,7 @@ See `snakemake -h` and [Snakemake's documentation](https://snakemake.readthedocs
 
 ___
 
-### Additional Output Files
+### 5. Additional Output Files
 
 The outputs from the `run_workflow.py` and differential abundance analysis (DAA) / visualizations scripts are described below:
 > Note: Outputs from the Amplicon Seq - Illumina pipeline are documented in the [GL-DPPD-7104-A.md](../../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-A.md) processing protocol.
