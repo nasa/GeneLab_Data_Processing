@@ -28,8 +28,8 @@
 
 ---
 **Developed by:**  
-Michael D. Lee (Mike.Lee@nasa.gov)
-**Maintained by:**
-Michael D. Lee (Mike.Lee@nasa.gov)
-Alexis Torres (alexis.torres@nasa.gov)
-Amanda Saravia-Butler (amanda.m.saravia-butler@nasa.gov)
+Michael D. Lee (Mike.Lee@nasa.gov)  
+**Maintained by:**  
+Michael D. Lee (Mike.Lee@nasa.gov)  
+Alexis Torres (alexis.torres@nasa.gov)  
+Amanda Saravia-Butler (amanda.m.saravia-butler@nasa.gov)  
