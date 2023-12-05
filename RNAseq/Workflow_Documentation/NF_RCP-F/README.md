@@ -101,9 +101,9 @@ All files required for utilizing the NF_RCP-F GeneLab workflow for processing RN
 copy of latest NF_RCP-F version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
 
 ```bash
-wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/NF_RCP-F_1.0.3/NF_RCP-F_1.0.3.zip
+wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/NF_RCP-F_4/NF_RCP-F_1.0.4.zip
 
-unzip NF_RCP-F_1.0.3.zip
+unzip NF_RCP-F_1.0.4.zip
 ```
 
 <br>
@@ -115,10 +115,10 @@ unzip NF_RCP-F_1.0.3.zip
 Although Nextflow can fetch Singularity images from a url, doing so may cause issues as detailed [here](https://github.com/nextflow-io/nextflow/issues/1210).
 
 To avoid this issue, run the following command to fetch the Singularity images prior to running the NF_RCP-F workflow:
-> Note: This command should be run in the location containing the `NF_RCP-F_1.0.3` directory that was downloaded in [step 2](#2-download-the-workflow-files) above. Depending on your network speed, fetching the images will take ~20 minutes.  
+> Note: This command should be run in the location containing the `NF_RCP-F_1.0.4` directory that was downloaded in [step 2](#2-download-the-workflow-files) above. Depending on your network speed, fetching the images will take ~20 minutes.  
 
 ```bash
-bash NF_RCP-F_1.0.3/bin/prepull_singularity.sh NF_RCP-F_1.0.3/config/software/by_docker_image.config
+bash NF_RCP-F_1.0.4/bin/prepull_singularity.sh NF_RCP-F_1.0.4/config/software/by_docker_image.config
 ```
 
 
@@ -134,7 +134,7 @@ export NXF_SINGULARITY_CACHEDIR=$(pwd)/singularity
 
 ### 4. Run the Workflow
 
-While in the location containing the `NF_RCP-F_1.0.3` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are three examples of how to run the NF_RCP-F workflow:
+While in the location containing the `NF_RCP-F_1.0.4` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are three examples of how to run the NF_RCP-F workflow:
 > Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --ensemblVersion) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
 
 <br>
@@ -142,7 +142,7 @@ While in the location containing the `NF_RCP-F_1.0.3` directory that was downloa
 #### 4a. Approach 1: Run the workflow on a GeneLab RNAseq dataset with automatic retrieval of Ensembl reference fasta and gtf files
 
 ```bash
-nextflow run NF_RCP-F_1.0.3/main.nf \ 
+nextflow run NF_RCP-F_1.0.4/main.nf \ 
    -profile singularity \
    --gldsAccession OSD-194 
 ```
@@ -154,7 +154,7 @@ nextflow run NF_RCP-F_1.0.3/main.nf \
 > Note: The `--ref_source` and `--ensemblVersion` parameters should match the reference source and version number of the local reference fasta and gtf files used
 
 ```bash
-nextflow run NF_RCP-F_1.0.3/main.nf \ 
+nextflow run NF_RCP-F_1.0.4/main.nf \ 
    -profile singularity \
    --gldsAccession OSD-194 \
    --ensemblVersion 107 \
@@ -170,7 +170,7 @@ nextflow run NF_RCP-F_1.0.3/main.nf \
 > Note: Specifications for creating a runsheet manually are described [here](examples/runsheet/README.md).
 
 ```bash
-nextflow run NF_RCP-F_1.0.3/main.nf \ 
+nextflow run NF_RCP-F_1.0.4/main.nf \ 
    -profile singularity \
    --gldsAccession output_directory \
    --runsheetPath </path/to/runsheet> 
@@ -180,7 +180,7 @@ nextflow run NF_RCP-F_1.0.3/main.nf \
 
 **Required Parameters For All Approaches:**
 
-* `NF_RCP-F_1.0.3/main.nf` - Instructs Nextflow to run the NF_RCP-F workflow 
+* `NF_RCP-F_1.0.4/main.nf` - Instructs Nextflow to run the NF_RCP-F workflow 
 
 * `-profile` - Specifies the configuration profile(s) to load, `singularity` instructs Nextflow to setup and use singularity for all software called in the workflow
 
@@ -230,7 +230,7 @@ nextflow run NF_RCP-F_1.0.3/main.nf \
 All parameters listed above and additional optional arguments for the RCP workflow, including debug related options that may not be immediately useful for most users, can be viewed by running the following command:
 
 ```bash
-nextflow run NF_RCP-F_1.0.3/main.nf --help
+nextflow run NF_RCP-F_1.0.4/main.nf --help
 ```
 
 See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details common to all nextflow workflows.

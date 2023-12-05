@@ -1,0 +1,1308 @@
+# TOP LEVEL
+NAME: "bulkRNASeq"
+VERSION: "1"
+
+# anchors for reuse
+_anchors:
+  rawDataDir: &rawDataDir "00-RawData"
+  trimDataDir: &trimDataDir "01-TG_Preproc"
+  alignDataDir: &alignDataDir "02-STAR_Alignment"
+  countsDataDir: &countsDataDir "03-RSEM_Counts"
+  normCountsDataDir: &normCountsDataDir "04-DESeq2_NormCounts"
+  DGEDataDir: &DGEDataDir "05-DESeq2_DGE"
+  rseqcDataDir: &rseqcDataDir "RSeQC_Analyses" # DISCUSS: Should this be renamed to "RSeQC_Analyses" for consistent casing? -J.O. , this has been renamed and differs from the recent bash based processings
+  ERCCAnalysisDir: &ERCCAnalysisDir "ERCC_Analysis"
+  FastQC_Reports: &FastQC_Reports "FastQC_Reports"
+  neverPublished: &neverPublished
+    subcategory: null
+    subdirectory: null
+    publish to repo: false
+    include subdirectory in table: false
+    table order: -1
+
+Staging:
+  General:
+    Required Metadata:
+      From ISA:
+        # - ISA Field Name: Study Assay Measurement Type
+        #   ISA Table Source: Investigation
+        #   Investigation Subtable: STUDY ASSAYS
+        #   Runsheet Column Name: Study Assay Measurement Type
+        #   Processing Usage: >-
+        #     Mapping to the appropriate processing pipeline for the assay.
+        #   Example: transcription profiling
+
+        # - ISA Field Name: Study Assay Technology Type
+        #   ISA Table Source: Investigation
+        #   Investigation Subtable: STUDY ASSAYS
+        #   Runsheet Column Name: Study Assay Technology Type
+        #   Processing Usage: >-
+        #     Mapping to the appropriate processing pipeline for the assay.
+        #   Example: DNA microarray
+
+        # - ISA Field Name: Study Assay Technology Platform
+        #   ISA Table Source: Investigation
+        #   Investigation Subtable: STUDY ASSAYS
+        #   Runsheet Column Name: Study Assay Technology Platform
+        #   Processing Usage: >-
+        #     Mapping to the appropriate processing pipeline for the assay.
+        #   Example: Affymetrix
+
+        - ISA Field Name: Study Protocol Type
+          ISA Table Source: Investigation
+          Investigation Subtable: STUDY PROTOCOLS
+          # will return a boolean indicating if any of the following includes
+          True If Includes At Least One:
+            - spike-in quality control role
+            - spike-in protocol
+            - spike-in control
+            - spike-in control protocol
+          Runsheet Column Name: has_ERCC
+          Processing Usage: >-
+            Indicates is ERCC spike-in has been added. This can be automatically
+            determined from the ISA archive as well based on 'Study Protocol Name' and 'Study Protocol Type'
+          Example: 'TRUE'
+
+        - ISA Field Name: 
+            - Characteristics[Organism]
+            - Characteristics[organism]
+          ISA Table Source: Sample
+          Runsheet Column Name: organism
+          Processing Usage: >-
+            Mapping to the appropriate alignment reference and annotation databases.
+          Example: Arabidopsis thaliana
+
+        - ISA Field Name: Sample Name
+          ISA Table Source: Assay
+          Runsheet Column Name: sample_name
+          Runsheet Index: true
+          Processing Usage: >-
+            Sample name is used as a unique sample identifier during processing
+          Example: Atha_Col-0_Root_WT_Ctrl_45min_Rep1_GSM502538
+    
+        - ISA Field Name: 
+            - Parameter Value[library layout]
+            - Parameter Value[Library Layout]
+          ISA Table Source: Assay
+          Runsheet Column Name: paired_end
+          Remapping: {"PAIRED":true, "Paired":true, "SINGLE":false}
+          Processing Usage: >-
+            Indicates if the sequencing was paired end. This controls how a variety of tools are invoked 
+            including in-house written scripts.
+          Example: 'TRUE'
+    
+        # this entry denotes the following:
+        # retrive from that ISA field name
+        # multiple values (separated by ",")
+        # index those to certain runsheet columns
+        # if the index doesn't exist, optional prevents raising an exception
+        # GLDS URL Mapping means the names are searched against the GLDS filelisting json for urls
+        # an exception will be raised if one and only one url is not mapped to each filename
+        - ISA Field Name: 
+            - Parameter Value[Merged Sequence Data File]
+            - Characteristics[Merged Sequence Data File]
+            - Raw Data File
+          ISA Table Source: Assay
+          Multiple Values Per Entry: true
+          Multiple Values Delimiter: '\s*,\s*' # whitespace surrounded comma
+          Runsheet Column Name: 
+            - {'name':'read1_path', 'index':0}
+            - {'name':'read2_path', 'index':1, 'optional':true}
+          GLDS URL Mapping: true
+          Processing Usage: >-
+            Location to the raw data fastq file. May be a url or local path.
+          Example: 'https://genelab-data.ndc.nasa.gov/genelab/static/media/dataset/GLDS-194_rna...'
+
+        - ISA Field Name: Factor Value[{factor_name}]
+          ISA Table Source: [Assay, Sample]
+          Runsheet Column Name: Factor Value[{factor_name}]
+          Matches Multiple Columns: true
+          Match Regex: "Factor Value\\[.*\\]"
+          Append Column Following: "Unit"
+          Processing Usage: >-
+            Factor values in a study. Used to assign experimental groups for each sample.
+            Note: On the runsheet, a subsequent 'Unit' Column value will be 
+            suffix-concatenated if it exists.
+          Example: Basal Control
+    
+        - ISA Field Name: Unit
+          ISA Table Source: [Assay, Sample]
+          Runsheet Column Name: null
+          Matches Multiple Columns: true
+          Autoload: false # handled by factor value loading above
+          Processing Usage: >-
+            Unit to be suffix-concatenated onto prior Factor value columns.
+          Example: day
+
+      From User:
+        # Removed since unused by Processing via the runsheet
+        # - Runsheet Column Name: GLDS
+        #   Processing Usage: >-
+        #     The GLDS accession number
+        #   Example: GLDS-205
+  
+        - Runsheet Column Name: read1_path
+          # used to generate candidate file names for searching GLDS repository filelisting
+          Data Asset Keys: ["raw forward reads fastq GZ", "raw reads fastq GZ"]
+          Processing Usage: >-
+            The location of either the forward reads (paired end) or only reads file (single end) 
+            raw fastq file. Can be either a url or local path.
+            Note: For GLDS raw data assets, either the filelisting json API or the OpenAPI
+            may be used to retrieve urls given the array data filename (sourced from ISA archive).
+          Example: /some/local/path OR https://genelab-data.ndc.nasa.gov/genelab/static/media/dataset/GLDS-123_microarray_E-MTAB-3289.raw.1.zip?version=1
+    
+  
+        - Runsheet Column Name: read2_path
+          Data Asset Keys: ["raw reverse reads fastq GZ"]
+          Processing Usage: >-
+            The location of either the reverse reads (paired end)
+            raw fastq file. Can be either a url or local path.
+            For single end studies, this should be an empty string.
+            Note: For GLDS raw data assets, either the filelisting json API or the OpenAPI
+            may be used to retrieve urls given the array data filename (sourced from ISA archive).
+          Example: /some/local/path OR https://genelab-data.ndc.nasa.gov/genelab/static/media/dataset/GLDS-123_microarray_E-MTAB-3289.raw.1.zip?version=1
+
+ISA Meta:
+  Valid Study Assay Technology And Measurement Types:
+    - measurement: "transcription profiling"
+      technology: "RNA Sequencing (RNA-Seq)"
+
+  # this is prepended to all file names in the curation assay table
+  Global file prefix: "{datasystem}_rna_seq_"
+
+  # configuration related to updating investigation file
+  # each must refer to a STUDY PROCESS in the 'ISA_investigation.yaml' file
+  # LEADCAP_organism should be the studied organisms scientific name with a leading cap
+  Post Processing Add Study Protocol: 
+    GeneLab RNAseq data processing protocol::{LEADCAP_organism} V1
+
+data assets:
+  runsheet:
+    processed location: 
+      - "Metadata"
+      - "{dataset}_bulkRNASeq_v1_runsheet.csv"
+
+    tags:
+      - raw
+
+    resource categories: *neverPublished
+
+  ISA Archive:
+    processed location: 
+      - "Metadata"
+      - "*-ISA.zip"
+
+    tags:
+      - raw
+
+    resource categories: *neverPublished
+
+  raw MultiQC directory:
+    processed location: 
+      - *rawDataDir
+      - *FastQC_Reports
+      - "raw_multiqc_report"
+
+    tags:
+      - raw
+
+    resource categories: *neverPublished
+
+  raw MultiQC directory ZIP:
+    processed location: 
+      - *rawDataDir
+      - *FastQC_Reports
+      - "raw_multiqc_report.zip"
+    
+    tags:
+      - raw
+
+    resource categories: &MergedSequenceData_MultiQCReports
+      subcategory: Merged Sequence Data
+      subdirectory: Multiqc Reports
+      publish to repo: true
+      include subdirectory in table: true
+      table order: 1
+
+  raw forward reads fastq GZ:
+    processed location:
+      - *rawDataDir
+      - "Fastq"
+      - "{sample}_R1_raw.fastq.gz"
+
+    tags:
+      - raw
+
+    resource categories: &MergedSequenceData_Fastq
+      subcategory: Merged Sequence Data
+      subdirectory: Fastq
+      publish to repo: true
+      include subdirectory in table: false
+      table order: 0
+
+  raw reverse reads fastq GZ:
+    processed location:
+      - *rawDataDir
+      - "Fastq"
+      - "{sample}_R2_raw.fastq.gz"
+
+    tags:
+      - raw
+      
+    resource categories: *MergedSequenceData_Fastq
+
+  raw reads fastq GZ:
+    processed location:
+      - *rawDataDir
+      - "Fastq"
+      - "{sample}_raw.fastq.gz"
+
+    tags:
+      - raw
+      
+    resource categories: *MergedSequenceData_Fastq
+
+  raw forward reads fastQC HTML:
+    processed location:
+      - *rawDataDir
+      - *FastQC_Reports
+      - "{sample}_R1_raw_fastqc.html"
+
+    tags:
+      - raw
+      
+    resource categories: *neverPublished
+
+  # J.Oribello: We should revisit this, fastQC includes some unique (not parsed
+  # into multiQC) relevant information like the actual overrepresented sequence strings
+  raw reverse reads fastQC HTML:
+    processed location:
+      - *rawDataDir
+      - *FastQC_Reports
+      - "{sample}_R2_raw_fastqc.html"
+
+    tags:
+      - raw
+      
+    resource categories: *neverPublished
+
+  raw reads fastQC HTML:
+    processed location:
+      - *rawDataDir
+      - *FastQC_Reports
+      - "{sample}_raw_fastqc.html"
+
+    tags:
+      - raw
+      
+    resource categories: *neverPublished
+
+  raw forward reads fastQC ZIP: 
+    processed location:
+      - *rawDataDir
+      - *FastQC_Reports
+      - "{sample}_R1_raw_fastqc.zip"
+
+    tags:
+      - raw
+      
+    resource categories: *neverPublished
+
+  raw reverse reads fastQC ZIP:
+    processed location:
+      - *rawDataDir
+      - *FastQC_Reports
+      - "{sample}_R2_raw_fastqc.zip"
+
+    tags:
+      - raw
+      
+    resource categories: *neverPublished
+
+  raw reads fastQC ZIP:
+    processed location:
+      - *rawDataDir
+      - *FastQC_Reports
+      - "{sample}_raw_fastqc.zip"
+
+    tags:
+      - raw
+      
+    resource categories: *neverPublished
+
+  trimmed fastQC MultiQC directory:
+    processed location: 
+      - *trimDataDir
+      - *FastQC_Reports
+      - "trimmed_multiqc_report"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  trimmed fastQC MultiQC directory ZIP:
+    processed location: 
+      - *trimDataDir
+      - *FastQC_Reports
+      - "trimmed_multiqc_report.zip"
+
+    tags:
+      - processed
+      
+    resource categories: &TrimmedSequenceData_MultiQCReports
+      subcategory: Trimmed Sequence Data
+      subdirectory: Multiqc Reports
+      publish to repo: true
+      include subdirectory in table: true
+      table order: 4
+
+  trimmed forward reads fastq GZ: &trimmedFastqGZ
+    processed location:
+      - *trimDataDir
+      - "Fastq"
+      - "{sample}_R1_trimmed.fastq.gz"
+
+    tags:
+      - processed
+      
+    resource categories:
+      subcategory: Trimmed Sequence Data
+      subdirectory: Fastq
+      publish to repo: true
+      include subdirectory in table: false
+      table order: 3
+
+  trimmed reverse reads fastq GZ:
+    <<: *trimmedFastqGZ
+    processed location:
+      - *trimDataDir
+      - "Fastq"
+      - "{sample}_R2_trimmed.fastq.gz"
+
+    tags:
+      - processed
+      
+  trimmed reads fastq GZ:
+    <<: *trimmedFastqGZ
+    processed location:
+      - *trimDataDir
+      - "Fastq"
+      - "{sample}_trimmed.fastq.gz"
+
+    tags:
+      - processed
+      
+  trimmed forward reads fastQC HTML: &trimmedForwardReadsFastQCHTML
+    processed location:
+      - *trimDataDir
+      - *FastQC_Reports
+      - "{sample}_R1_trimmed_fastqc.html"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  trimmed reverse reads fastQC HTML: 
+    <<: *trimmedForwardReadsFastQCHTML
+    processed location:
+      - *trimDataDir
+      - *FastQC_Reports
+      - "{sample}_R2_trimmed_fastqc.html"
+
+    tags:
+      - processed
+      
+  trimmed reads fastQC HTML: 
+    <<: *trimmedForwardReadsFastQCHTML
+    processed location:
+      - *trimDataDir
+      - *FastQC_Reports
+      - "{sample}_trimmed_fastqc.html"
+
+    tags:
+      - processed
+      
+  trimmed forward reads fastQC ZIP: &trimmedForwardReadsFastQCZIP
+    processed location:
+      - *trimDataDir
+      - *FastQC_Reports
+      - "{sample}_R1_trimmed_fastqc.zip"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  trimmed reverse reads fastQC ZIP: 
+    <<: *trimmedForwardReadsFastQCZIP
+    processed location:
+      - *trimDataDir
+      - *FastQC_Reports
+      - "{sample}_R2_trimmed_fastqc.zip"
+
+    tags:
+      - processed
+      
+  trimmed reads fastQC ZIP: 
+    <<: *trimmedForwardReadsFastQCZIP
+    processed location:
+      - *trimDataDir
+      - *FastQC_Reports
+      - "{sample}_trimmed_fastqc.zip"
+
+    tags:
+      - processed
+      
+  trimming MultiQC directory:
+    processed location: 
+      - *trimDataDir
+      - &trimmingReportsDir "Trimming_Reports"
+      - "trimming_multiqc_report"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  forward reads trimming report: &trimmedForwardReadsFastQCTrimmingReport
+    processed location:
+      - *trimDataDir
+      - *trimmingReportsDir
+      - "{sample}_R1_raw.fastq.gz_trimming_report.txt"
+
+    tags:
+      - processed
+      
+    resource categories: 
+      subcategory: Trimmed Sequence Data
+      subdirectory: Trimming Reports
+      publish to repo: true
+      include subdirectory in table: true
+      table order: 5
+
+  reverse reads trimming report: 
+    <<: *trimmedForwardReadsFastQCTrimmingReport
+    processed location:
+      - *trimDataDir
+      - *trimmingReportsDir
+      - "{sample}_R2_raw.fastq.gz_trimming_report.txt"
+
+    tags:
+      - processed
+      
+  reads trimming report: 
+    <<: *trimmedForwardReadsFastQCTrimmingReport
+    processed location:
+      - *trimDataDir
+      - *trimmingReportsDir
+      - "{sample}_raw.fastq.gz_trimming_report.txt"
+
+    tags:
+      - processed
+      
+  aligned MultiQC directory:
+    processed location: 
+      - *alignDataDir
+      - "align_multiqc_report"
+
+    resource categories: *neverPublished
+
+    tags:
+      - processed
+      
+  aligned MultiQC directory ZIP:
+    processed location: 
+      - *alignDataDir
+      - "align_multiqc_report.zip"
+
+    tags:
+      - processed
+      
+    resource categories: &AlignedSequenceData_MultiQCReports
+      subcategory: Aligned Sequence Data # RENAME: from 'Aligned sequence data'. For consistency with Title casing across the board
+      subdirectory: MultiQC Reports # RENAME: from 'MultiQC Reports'. For consistency with Title casing across the board
+      publish to repo: true
+      include subdirectory in table: true
+      table order: 8
+
+  aligned ToTranscriptome Bam:
+    processed location: 
+      - *alignDataDir
+      - "{sample}"
+      - "{sample}_Aligned.toTranscriptome.out.bam"
+
+    tags:
+      - processed
+      
+    resource categories: &AlignedSequenceData_AlignedData
+      subcategory: Aligned Sequence Data
+      subdirectory: Aligned Data
+      publish to repo: true
+      include subdirectory in table: false
+      table order: 6
+
+  aligned SortedByCoord Bam:
+    processed location: 
+      - *alignDataDir
+      - "{sample}"
+      - "{sample}_Aligned.sortedByCoord.out.bam"
+
+    tags:
+      - processed
+      
+    resource categories:  *neverPublished
+
+  aligned SortedByCoord ResortedBam:
+    processed location: 
+      - *alignDataDir
+      - "{sample}"
+      - "{sample}_Aligned.sortedByCoord_sorted.out.bam"
+
+    tags:
+      - processed
+      
+    resource categories: *AlignedSequenceData_AlignedData
+
+  aligned SortedByCoord ResortedBamIndex:
+    processed location: 
+      - *alignDataDir
+      - "{sample}"
+      - "{sample}_Aligned.sortedByCoord_sorted.out.bam.bai"
+
+    tags:
+      - processed
+      
+    resource categories: *AlignedSequenceData_AlignedData
+
+  aligned log Final:
+    processed location: 
+      - *alignDataDir
+      - "{sample}"
+      - "{sample}_Log.final.out"
+
+    tags:
+      - processed
+      
+    resource categories: &AlignedSequenceData_AlignmentLogs
+      subcategory: Aligned Sequence Data
+      subdirectory: Alignment Logs
+      publish to repo: true
+      include subdirectory in table: true
+      table order: 7
+
+  aligned log Progress:
+    processed location: 
+      - *alignDataDir
+      - "{sample}"
+      - "{sample}_Log.progress.out"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  aligned log Full:
+    processed location: 
+      - *alignDataDir
+      - "{sample}"
+      - "{sample}_Log.out"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  aligned sjTab:
+    processed location: 
+      - *alignDataDir
+      - "{sample}"
+      - "{sample}_SJ.out.tab"
+
+    tags:
+      - processed
+      
+    resource categories: *AlignedSequenceData_AlignedData
+
+  genebody coverage MultiQC directory:
+    processed location: 
+      - *rseqcDataDir
+      - "02_geneBody_coverage"
+      - "geneBody_cov_multiqc_report"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  genebody coverage MultiQC directory ZIP:
+    processed location: 
+      - *rseqcDataDir
+      - "02_geneBody_coverage"
+      - "geneBody_cov_multiqc_report.zip"
+
+    tags:
+      - processed
+      
+    resource categories: &RSeQC_MultiQCReports
+      subcategory: RSeQC
+      subdirectory: MultiQC Reports
+      publish to repo: true
+      include subdirectory in table: true
+      table order: 9
+
+  infer experiment MultiQC directory:
+    processed location: 
+      - *rseqcDataDir
+      - "03_infer_experiment"
+      - "infer_exp_multiqc_report"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  infer experiment MultiQC directory ZIP:
+    processed location: 
+      - *rseqcDataDir
+      - "03_infer_experiment"
+      - "infer_exp_multiqc_report.zip"
+
+    tags:
+      - processed
+      
+    resource categories: *RSeQC_MultiQCReports
+
+  inner distance MultiQC directory:
+    processed location: 
+      - *rseqcDataDir
+      - "04_inner_distance"
+      - "inner_dist_multiqc_report"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  inner distance MultiQC directory ZIP:
+    processed location: 
+      - *rseqcDataDir
+      - "04_inner_distance"
+      - "inner_dist_multiqc_report.zip"
+
+    tags:
+      - processed
+      
+    resource categories: *RSeQC_MultiQCReports
+
+  read distribution MultiQC directory:
+    processed location: 
+      - *rseqcDataDir
+      - "05_read_distribution"
+      - "read_dist_multiqc_report"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  read distribution MultiQC directory ZIP:
+    processed location: 
+      - *rseqcDataDir
+      - "05_read_distribution"
+      - "read_dist_multiqc_report.zip"
+
+    tags:
+      - processed
+      
+    resource categories: *RSeQC_MultiQCReports
+
+  genebody coverage out:
+    processed location: 
+      - *rseqcDataDir
+      - "02_geneBody_coverage"
+      - "{sample}"
+
+    tags:
+      - processed
+      
+    # TODO: DISCUSS Consider this for directories that are handled the same but should validate contents
+    # is directory: true
+    # contents:
+    #   - ["{sample}.geneBodyCoverage.r"]
+    #   - ["{sample}.geneBodyCoverage.txt"]
+    #   - ["{sample}.geneBodyCoverage.curves.pdf"]
+
+    resource categories: *neverPublished
+
+  infer experiment out:
+    processed location: 
+      - *rseqcDataDir
+      - "03_infer_experiment"
+      - "{sample}_infer_expt.out"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  inner distance out:
+    processed location: 
+      - *rseqcDataDir
+      - "04_inner_distance"
+      - "{sample}"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  read distribution out:
+    processed location: 
+      - *rseqcDataDir
+      - "05_read_distribution"
+      - "{sample}_read_dist.out"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  RSEM counts MultiQC directory:
+    processed location: 
+      - *countsDataDir
+      - "RSEM_count_multiqc_report" # RENAMED from count_multiqc_report  as of 4/14/2022
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  RSEM counts MultiQC directory ZIP:
+    processed location: 
+      - *countsDataDir
+      - "RSEM_count_multiqc_report.zip"
+
+    tags:
+      - processed
+      
+    resource categories: &RawCountsData_MultiQCReports
+      subcategory: Raw Counts Data
+      subdirectory: Multiqc Reports
+      publish to repo: true
+      include subdirectory in table: true
+      table order: 11
+
+  star number non-zero count genes table:
+    processed location: 
+      - *alignDataDir
+      - "STAR_NumNonZeroGenes.csv"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  star unnormalized counts table:
+    processed location: 
+      - *alignDataDir
+      - "STAR_Unnormalized_Counts.csv"
+
+    tags:
+      - processed
+      
+    resource categories: &RawCountsTables
+      subcategory: Raw Counts Tables
+      subdirectory: ""
+      publish to repo: true
+      include subdirectory in table: false
+      table order: 12
+
+  rsem number non-zero count genes table:
+    processed location: 
+      - *countsDataDir
+      - "RSEM_NumNonZeroGenes.csv"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  rsem unnormalized counts table:
+    processed location: 
+      - *countsDataDir
+      - "RSEM_Unnormalized_Counts.csv" # RENAMED from 'Unnormalized_Counts.csv'
+
+    tags:
+      - processed
+      
+    resource categories: *RawCountsTables
+
+  sample reads per gene table:
+    processed location: 
+      - *alignDataDir
+      - "{sample}"
+      - "{sample}_ReadsPerGene.out.tab"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished # TODO: Discuss, should this be repo published? In what way?
+
+  sample gene counts table:
+    processed location: 
+      - *countsDataDir
+      # Removed - "{sample}", DISCUSS: Since this directory contains multiple files per sample, should this be nested in sample-wise dirs consistent with STAR and RSeQC. J.O.
+      - "{sample}.genes.results"
+
+    tags:
+      - processed
+      
+    resource categories: &RawCountsData_CountData
+      subcategory: Raw Counts Data
+      subdirectory: Count Data
+      publish to repo: true
+      include subdirectory in table: false
+      table order: 10
+
+  sample isoform counts table:
+    processed location: 
+      - *countsDataDir
+      # Removed - "{sample}", DISCUSS: Since this directory contains multiple files per sample, should this be nested in sample-wise dirs consistent with STAR and RSeQC. J.O.
+      - "{sample}.isoforms.results"
+
+    tags:
+      - processed
+            
+    resource categories: *RawCountsData_CountData
+
+  sample counts stats directory:
+    processed location: 
+      - *countsDataDir
+      # Removed - "{sample}", DISCUSS: Since this directory contains multiple files per sample, should this be nested in sample-wise dirs consistent with STAR and RSeQC. J.O.
+      - "{sample}.stat"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+  DESeq2 normalized counts table:
+    processed location: 
+      - *normCountsDataDir
+      - "Normalized_Counts.csv"
+
+    tags:
+      - processed
+            
+    resource categories: &normalizedCountsData
+      subcategory: Normalized Counts Data
+      subdirectory: ""
+      publish to repo: true
+      include subdirectory in table: false
+      table order: 13
+
+  ERCC normalized DESeq2 normalized counts table:
+    processed location: 
+      - *normCountsDataDir
+      - "ERCC_Normalized_Counts.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *normalizedCountsData
+
+  sample table:
+    processed location: 
+      - *DGEDataDir
+      - "SampleTable.csv"
+
+    tags:
+      - processed
+            
+    resource categories: &DGEAnalysisData
+      subcategory: Differential Expression Analysis Data
+      subdirectory: ""
+      publish to repo: true
+      include subdirectory in table: false
+      table order: 14
+
+  ERCC sample table:
+    processed location: 
+      - *DGEDataDir
+      - &erccSubDir "ERCC_NormDGE"
+      - "ERCCnorm_SampleTable.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *DGEAnalysisData
+
+  DESeq2 unnormalized counts table:
+    processed location: 
+      - *normCountsDataDir
+      - "RSEM_Unnormalized_Counts.csv" # RENAMED: from "Unnormalized_Counts.csv" for clarity
+
+    tags:
+      - processed
+            
+    resource categories: *neverPublished # DISCUSS: temporary name clash resolution for publishables
+
+  DESeq2 contrasts table:
+    processed location: 
+      - *DGEDataDir
+      - "contrasts.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *DGEAnalysisData
+
+  ERCC normalized DESeq2 contrasts table:
+    processed location: 
+      - *DGEDataDir
+      - *erccSubDir
+      - "ERCCnorm_contrasts.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *DGEAnalysisData
+
+  DESeq2 annotated DGE table:
+    processed location: 
+      - *DGEDataDir
+      - "differential_expression.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *DGEAnalysisData
+
+  ERCC normalized DESeq2 annotated DGE table:
+    processed location: 
+      - *DGEDataDir
+      - *erccSubDir
+      - "ERCCnorm_differential_expression.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *DGEAnalysisData
+
+  DESeq2 annotated DGE extended for viz table:
+    processed location: 
+      - *DGEDataDir
+      - "visualization_output_table.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *neverPublished
+
+  ERCC normalized DESeq2 annotated DGE extended for viz table:
+    processed location: 
+      - *DGEDataDir
+      - *erccSubDir
+      - "visualization_output_table_ERCCnorm.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *neverPublished
+
+  DESeq2 viz PCA table:
+    processed location: 
+      - *DGEDataDir
+      - "visualization_PCA_table.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *neverPublished
+
+  ERCC normalized DESeq2 viz PCA table:
+    processed location: 
+      - *DGEDataDir
+      - *erccSubDir
+      - "visualization_PCA_table_ERCCnorm.csv"
+
+    tags:
+      - processed
+            
+    resource categories: *neverPublished
+
+
+  ERCC analysis HTML:
+    processed location: 
+      - *ERCCAnalysisDir
+      - "ERCC_analysis.html"
+
+    tags:
+      - processed
+
+    conditional on dataset:
+      - has_ERCC: [True]
+            
+    resource categories:
+      subcategory: ERCC Analyses
+      subdirectory: ""
+      publish to repo: true
+      include subdirectory in table: false
+      table order: 15
+
+    # NOTE: this is while the ERCC analysis sits outside the full pipeline and
+    # once incoporated, it should be validated for existence!
+    validate exists: false 
+
+# Assets that are no longer generated by the latest pipeline
+Archived Data Assets:
+
+  # DISCUSS: When Trim Galore MQC if made clearer, publishing this should be revisited
+  # Currently this only reports the direct cutadapt related trimming and misses Trim-Galore
+  # Specific metrics.
+  # - Jonathan Oribello
+  trimming MultiQC directory ZIP:
+    processed location: 
+      - *trimDataDir
+      - *trimmingReportsDir
+      - "trimming_multiqc_report.zip"
+
+    tags:
+      - processed
+      
+    resource categories: *neverPublished
+
+
+data asset sets:
+  # These assets are not generated in the workflow, but are generated after the workflow
+  PUTATIVE:
+    - "ERCC analysis HTML"
+  glds metadata:
+    - "ISA Archive"
+  has ercc:
+    - "ERCC normalized DESeq2 normalized counts table"
+    - "ERCC sample table"
+    - "ERCC normalized DESeq2 contrasts table"
+    - "ERCC normalized DESeq2 annotated DGE table"
+    - "ERCC normalized DESeq2 annotated DGE extended for viz table"
+    - "ERCC normalized DESeq2 viz PCA table"
+    # NOTE: Not part of NF_WF yet - "ERCC analysis HTML"
+  demuliplexed paired end raw data:
+    - "runsheet"
+    - "raw forward reads fastq GZ"
+    - "raw reverse reads fastq GZ"
+  qc reports for paired end raw data:
+    - "raw forward reads fastQC HTML"
+    - "raw reverse reads fastQC HTML"
+    - "raw forward reads fastQC ZIP"
+    - "raw reverse reads fastQC ZIP"
+    - "raw MultiQC directory"
+    - "raw MultiQC directory ZIP"
+  paired end trimmed reads:
+    - "trimmed forward reads fastq GZ"
+    - "trimmed reverse reads fastq GZ"
+  qc reports for paired end trimmed reads data:
+    - "trimmed forward reads fastQC HTML"
+    - "trimmed reverse reads fastQC HTML"
+    - "trimmed forward reads fastQC ZIP"
+    - "trimmed reverse reads fastQC ZIP"
+    - "trimmed fastQC MultiQC directory"
+    - "trimming MultiQC directory"
+    - "forward reads trimming report"
+    - "reverse reads trimming report"
+  demuliplexed single end raw data:
+    - "runsheet"
+    - "raw reads fastq GZ"
+  qc reports for single end raw data:
+    - "raw reads fastQC HTML"
+    - "raw reads fastQC ZIP"
+    - "raw MultiQC directory"
+    - "raw MultiQC directory ZIP"
+  single end trimmed reads:
+    - "trimmed reads fastq GZ"
+  qc reports for single end trimmed reads data:
+    - "trimmed reads fastQC HTML"
+    - "trimmed reads fastQC ZIP"
+    - "trimmed fastQC MultiQC directory"
+    - "trimming MultiQC directory"
+    - "reads trimming report"
+  STAR alignments:
+    - "aligned MultiQC directory"
+    - "aligned MultiQC directory ZIP"
+    - "aligned ToTranscriptome Bam"
+    - "aligned SortedByCoord Bam"
+    - "aligned SortedByCoord ResortedBam"
+    - "aligned SortedByCoord ResortedBamIndex"
+    - "aligned log Final"
+    - "aligned log Progress"
+    - "aligned log Full"
+    - "aligned sjTab"
+    - "sample reads per gene table"
+    - "star number non-zero count genes table"
+    - "star unnormalized counts table"
+  RSeQC output for paired end data:
+    - "genebody coverage MultiQC directory"
+    - "genebody coverage MultiQC directory ZIP"
+    - "infer experiment MultiQC directory"
+    - "infer experiment MultiQC directory ZIP"
+    - "inner distance MultiQC directory"
+    - "inner distance MultiQC directory ZIP"
+    - "read distribution MultiQC directory"
+    - "read distribution MultiQC directory ZIP"
+    - "genebody coverage out"
+    - "infer experiment out"
+    - "inner distance out"
+    - "read distribution out"
+  RSeQC output for single end data:
+    - "genebody coverage MultiQC directory"
+    - "genebody coverage MultiQC directory ZIP"
+    - "infer experiment MultiQC directory"
+    - "infer experiment MultiQC directory ZIP"
+    - "read distribution MultiQC directory"
+    - "read distribution MultiQC directory ZIP"
+    - "genebody coverage out"
+    - "infer experiment out"
+    - "read distribution out"
+  RSEM counts:
+    - "RSEM counts MultiQC directory"
+    - "RSEM counts MultiQC directory ZIP"
+    - "rsem number non-zero count genes table"
+    - "rsem unnormalized counts table"
+    - "sample gene counts table"
+    - "sample isoform counts table"
+    - "sample counts stats directory"
+  is single end full:
+    - "runsheet"
+    - "ISA Archive"
+    - "raw MultiQC directory"
+    - "raw MultiQC directory ZIP"
+    - "raw reads fastq GZ"
+    - "raw reads fastQC HTML"
+    - "raw reads fastQC ZIP"
+    - "trimmed fastQC MultiQC directory"
+    - "trimmed fastQC MultiQC directory ZIP"
+    - "trimmed reads fastq GZ"
+    - "trimmed reads fastQC HTML"
+    - "trimmed reads fastQC ZIP"
+    - "trimming MultiQC directory"
+    - "reads trimming report"
+    - "aligned MultiQC directory"
+    - "aligned MultiQC directory ZIP"
+    - "aligned ToTranscriptome Bam"
+    - "aligned SortedByCoord Bam"
+    - "aligned SortedByCoord ResortedBam"
+    - "aligned SortedByCoord ResortedBamIndex"
+    - "aligned log Final"
+    - "aligned log Progress"
+    - "aligned log Full"
+    - "aligned sjTab"
+    - "genebody coverage MultiQC directory"
+    - "genebody coverage MultiQC directory ZIP"
+    - "infer experiment MultiQC directory"
+    - "infer experiment MultiQC directory ZIP"
+    - "read distribution MultiQC directory"
+    - "read distribution MultiQC directory ZIP"
+    - "genebody coverage out"
+    - "infer experiment out"
+    - "read distribution out"
+    - "RSEM counts MultiQC directory"
+    - "RSEM counts MultiQC directory ZIP"
+    - "star number non-zero count genes table"
+    - "star unnormalized counts table"
+    - "rsem number non-zero count genes table"
+    - "rsem unnormalized counts table"
+    - "sample reads per gene table"
+    - "sample gene counts table"
+    - "sample isoform counts table"
+    - "sample counts stats directory"
+    - "DESeq2 normalized counts table"
+    - "sample table"
+    - "DESeq2 unnormalized counts table"
+    - "DESeq2 contrasts table"
+    - "DESeq2 annotated DGE table"
+    - "DESeq2 annotated DGE extended for viz table"
+    - "DESeq2 viz PCA table"
+  is paired end full:
+    - "runsheet"
+    - "ISA Archive"
+    - "raw MultiQC directory"
+    - "raw MultiQC directory ZIP"
+    - "raw forward reads fastq GZ"
+    - "raw reverse reads fastq GZ"
+    - "raw forward reads fastQC HTML"
+    - "raw reverse reads fastQC HTML"
+    - "raw forward reads fastQC ZIP"
+    - "raw reverse reads fastQC ZIP"
+    - "trimmed fastQC MultiQC directory"
+    - "trimmed fastQC MultiQC directory ZIP"
+    - "trimmed forward reads fastq GZ"
+    - "trimmed reverse reads fastq GZ"
+    - "trimmed forward reads fastQC HTML"
+    - "trimmed reverse reads fastQC HTML"
+    - "trimmed forward reads fastQC ZIP"
+    - "trimmed reverse reads fastQC ZIP"
+    - "trimming MultiQC directory"
+    - "forward reads trimming report"
+    - "reverse reads trimming report"
+    - "aligned MultiQC directory"
+    - "aligned MultiQC directory ZIP"
+    - "aligned ToTranscriptome Bam"
+    - "aligned SortedByCoord Bam"
+    - "aligned SortedByCoord ResortedBam"
+    - "aligned SortedByCoord ResortedBamIndex"
+    - "aligned log Final"
+    - "aligned log Progress"
+    - "aligned log Full"
+    - "aligned sjTab"
+    - "genebody coverage MultiQC directory"
+    - "genebody coverage MultiQC directory ZIP"
+    - "infer experiment MultiQC directory"
+    - "infer experiment MultiQC directory ZIP"
+    - "inner distance MultiQC directory"
+    - "inner distance MultiQC directory ZIP"
+    - "read distribution MultiQC directory"
+    - "read distribution MultiQC directory ZIP"
+    - "genebody coverage out"
+    - "infer experiment out"
+    - "inner distance out"
+    - "read distribution out"
+    - "RSEM counts MultiQC directory"
+    - "RSEM counts MultiQC directory ZIP"
+    - "star number non-zero count genes table"
+    - "star unnormalized counts table"
+    - "rsem number non-zero count genes table"
+    - "rsem unnormalized counts table"
+    - "sample reads per gene table"
+    - "sample gene counts table"
+    - "sample isoform counts table"
+    - "sample counts stats directory"
+    - "DESeq2 normalized counts table"
+    - "sample table"
+    - "DESeq2 unnormalized counts table"
+    - "DESeq2 contrasts table"
+    - "DESeq2 annotated DGE table"
+    - "DESeq2 annotated DGE extended for viz table"
+    - "DESeq2 viz PCA table"
+  DGE Output:
+    - "DESeq2 normalized counts table"
+    - "sample table"
+    - "DESeq2 unnormalized counts table"
+    - "DESeq2 contrasts table"
+    - "DESeq2 annotated DGE table"
+    - "DESeq2 annotated DGE extended for viz table"
+    - "DESeq2 viz PCA table"
+  ERCC DGE Output:
+    - "ERCC normalized DESeq2 normalized counts table"
+    - "ERCC sample table"
+    - "ERCC normalized DESeq2 contrasts table"
+    - "ERCC normalized DESeq2 annotated DGE table"
+    - "ERCC normalized DESeq2 annotated DGE extended for viz table"
+    - "ERCC normalized DESeq2 viz PCA table"
+    # NOTE: Not part of NF_WF yet - "ERCC analysis HTML"
+  RSEM Output:
+    - "RSEM counts MultiQC directory"
+    - "RSEM counts MultiQC directory ZIP"
+    - "rsem number non-zero count genes table"
+    - "rsem unnormalized counts table"

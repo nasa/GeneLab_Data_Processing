@@ -65,14 +65,10 @@ process TRIMGALORE {
     path("versions.txt"), emit: version
 
   script:
-    /*
-     * comments -> --ilumina # if adapters are not illumina, replace with adapters
-     *   --paired  # only for PE studies, # if SE use only single read file
-     */
+
     """
     trim_galore --gzip \
     --cores $task.cpus \
-    --illumina \
     --phred33 \
     ${ meta.paired_end ? '--paired' : '' } \
     $reads \
