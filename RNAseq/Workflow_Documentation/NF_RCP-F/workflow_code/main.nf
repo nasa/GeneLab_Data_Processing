@@ -240,6 +240,7 @@ workflow {
                   RAW_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] } | flatten | collect,
                   RAW_MULTIQC.out.zipped_report,
                   RAW_MULTIQC.out.unzipped_report,
+                  "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
                 )
     VV_TRIMMED_READS( ch_meta,
                       STAGING.out.runsheet,
@@ -250,13 +251,15 @@ workflow {
                       TRIMGALORE.out.reports | collect,
                       TRIM_MULTIQC.out.zipped_report,
                       TRIM_MULTIQC.out.unzipped_report,
+                      "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
                     )
     VV_STAR_ALIGNMENTS( STAGING.out.runsheet,
                         ALIGN_STAR.out.publishables | collect,
                         QUANTIFY_STAR_GENES.out.publishables | collect,
                         ALIGN_MULTIQC.out.zipped_report,
                         ALIGN_MULTIQC.out.unzipped_report,
-                        STRANDEDNESS.out.bam_bed | collect
+                        STRANDEDNESS.out.bam_bed | collect,
+                        "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
                       )
     VV_RSEQC( ch_meta,
               STAGING.out.runsheet,
@@ -265,12 +268,14 @@ workflow {
               STRANDEDNESS.out.infer_experiment_multiqc,
               STRANDEDNESS.out.inner_distance_multiqc,
               STRANDEDNESS.out.read_distribution_multiqc,
+              "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
             )
     VV_RSEM_COUNTS( STAGING.out.runsheet,
                     COUNT_ALIGNED.out.only_counts | collect,
                     QUANTIFY_RSEM_GENES.out.publishables,
                     COUNT_MULTIQC.out.zipped_report,
                     COUNT_MULTIQC.out.unzipped_report,
+                    "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
                   )
     VV_DESEQ2_ANALYSIS( ch_meta,
                         STAGING.out.runsheet,
@@ -281,6 +286,7 @@ workflow {
                         DGE_BY_DESEQ2.out.dge,
                         DGE_BY_DESEQ2.out.norm_counts_ercc | ifEmpty( { file("NO_FILES.placeholder") }),
                         DGE_BY_DESEQ2.out.dge_ercc | ifEmpty( { file("NO_FILES.placeholder") }),
+                        "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
                   )
 
     // Software Version Capturing

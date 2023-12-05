@@ -10,6 +10,8 @@ log = logging.getLogger(__name__)
 
 from dp_tools.core.check_model import ValidationProtocol
 
+from .checks import *
+
 CONFIG = {
     "Metadata-check_metadata_attributes_exist": {
         "expected_attrs": ["paired_end", "has_ERCC", "organism"]
@@ -150,8 +152,27 @@ CONFIG = {
     },
 }
 
+# Manual kept in sync for now
+COMPONENTS_LIST = [
+    "Metadata",  # for raw reads V&V
+    "Raw Reads",  # for raw reads V&V
+    "Raw Reads By Sample",  # for raw reads V&V
+    "Trim Reads",  # for trim reads V&V
+    "Trimmed Reads By Sample",  # for trim reads V&V
+    "STAR Alignments",  # for star alignment V&V
+    "STAR Alignments By Sample",  # for star alignment V&V
+    "RSeQC By Sample",  # for RSeQC V&V
+    "RSeQC",  # for RSeQC V&V
+    "RSEM Counts",  # for after RSEM V&V
+    "Unnormalized Gene Counts",  # for after RSEM V&V
+    "DGE Metadata",  # for post DGE
+    "DGE Metadata ERCC",  # for post DGE
+    "DGE Output",  # for post DGE
+    "DGE Output ERCC",  # for post DGE
+]
 
-def validate_bulkRNASeq(
+
+def validate(
     dataset: Dataset,
     config_path: Path = None,
     run_args: dict = None,
@@ -174,6 +195,23 @@ def validate_bulkRNASeq(
 
     if protocol_args is None:
         protocol_args = dict()
+
+
+    # Modify protocol_args to convert run_components to skip_components based on COMPONENTS_LIST
+    if (
+        "run_components" in protocol_args
+        and protocol_args.get("run_components") is not None
+    ):
+        protocol_args["skip_components"] = [
+            c for c in COMPONENTS_LIST if c not in protocol_args["run_components"]
+        ]
+        # Check if any run components are not in COMPONENTS_LIST
+        if set(protocol_args["run_components"]) - set(COMPONENTS_LIST):
+            raise ValueError(
+                f"run_components contains components not in COMPONENTS_LIST. Unique to run_components: {set(protocol_args['run_components']) - set(COMPONENTS_LIST)}. All Components: {COMPONENTS_LIST}"
+            )
+        del protocol_args["run_components"]
+        
     # init validation protocol
     vp = ValidationProtocol(**protocol_args)
     # fmt: on

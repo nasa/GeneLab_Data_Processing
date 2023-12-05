@@ -47,40 +47,43 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
 
 # Table of contents  
 
-- [**Software used**](#software-used)
-- [**General processing overview with example commands**](#general-processing-overview-with-example-commands)
-  - [**1. Raw Data QC**](#1-raw-data-qc)
+- [GeneLab bioinformatics processing pipeline for Illumina RNA-sequencing data](#genelab-bioinformatics-processing-pipeline-for-illumina-rna-sequencing-data)
+  - [Updates from previous version](#updates-from-previous-version)
+- [Table of contents](#table-of-contents)
+- [Software used](#software-used)
+- [General processing overview with example commands](#general-processing-overview-with-example-commands)
+  - [1. Raw Data QC](#1-raw-data-qc)
     - [1a. Raw Data QC](#1a-raw-data-qc)
     - [1b. Compile Raw Data QC](#1b-compile-raw-data-qc)
-  - [**2. Trim/Filter Raw Data and Trimmed Data QC**](#2-trimfilter-raw-data-and-trimmed-data-qc)
+  - [2. Trim/Filter Raw Data and Trimmed Data QC](#2-trimfilter-raw-data-and-trimmed-data-qc)
     - [2a. Trim/Filter Raw Data](#2a-trimfilter-raw-data)
     - [2b. Trimmed Data QC](#2b-trimmed-data-qc)
     - [2c. Compile Trimmed Data QC](#2c-compile-trimmed-data-qc)
-  - [**3. Build STAR Reference**](#3-build-star-reference)
-  - [**4. Align Reads to Reference Genome then Sort and Index**](#4-align-reads-to-reference-genome-then-sort-and-index)
+  - [3. Build STAR Reference](#3-build-star-reference)
+  - [4. Align Reads to Reference Genome then Sort and Index](#4-align-reads-to-reference-genome-then-sort-and-index)
     - [4a. Align Reads to Reference Genome with STAR](#4a-align-reads-to-reference-genome-with-star)
     - [4b. Compile Alignment Logs](#4b-compile-alignment-logs)
     - [4c. Tablulate STAR Counts in R](#4c-tablulate-star-counts-in-r)
     - [4d. Sort Aligned Reads](#4d-sort-aligned-reads)
     - [4e. Index Sorted Aligned Reads](#4e-index-sorted-aligned-reads)
-  - [**5. Create Reference BED File**](#5-create-reference-bed-file)
+  - [5. Create Reference BED File](#5-create-reference-bed-file)
     - [5a. Convert GTF to genePred File](#5a-convert-gtf-to-genepred-file)
     - [5b. Convert genePred to BED File](#5b-convert-genepred-to-bed-file)
-  - [**6. Assess Strandedness, GeneBody Coverage, Inner Distance, and Read Distribution with RSeQC**](#6-assess-strandedness-genebody-coverage-inner-distance-and-read-distribution-with-rseqc)
+  - [6. Assess Strandedness, GeneBody Coverage, Inner Distance, and Read Distribution with RSeQC](#6-assess-strandedness-genebody-coverage-inner-distance-and-read-distribution-with-rseqc)
     - [6a. Determine Read Strandedness](#6a-determine-read-strandedness)
     - [6b. Compile Strandedness Reports](#6b-compile-strandedness-reports)
     - [6c. Evaluate GeneBody Coverage](#6c-evaluate-genebody-coverage)
     - [6d. Compile GeneBody Coverage Reports](#6d-compile-genebody-coverage-reports)
-    - [6e. Determine Inner Distance (For Paired End Datasets)](#6e-determine-inner-distance-for-paired-end-datasets-only)
+    - [6e. Determine Inner Distance (For Paired End Datasets ONLY)](#6e-determine-inner-distance-for-paired-end-datasets-only)
     - [6f. Compile Inner Distance Reports](#6f-compile-inner-distance-reports)
     - [6g. Assess Read Distribution](#6g-assess-read-distribution)
     - [6h. Compile Read Distribution Reports](#6h-compile-read-distribution-reports)
-  - [**7. Build RSEM Reference**](#7-build-rsem-reference)
-  - [**8. Quantitate Aligned Reads**](#8-quantitate-aligned-reads)
+  - [7. Build RSEM Reference](#7-build-rsem-reference)
+  - [8. Quantitate Aligned Reads](#8-quantitate-aligned-reads)
     - [8a. Count Aligned Reads with RSEM](#8a-count-aligned-reads-with-rsem)
     - [8b. Compile RSEM Count Logs](#8b-compile-rsem-count-logs)
     - [8c. Calculate Total Number of Genes Expressed Per Sample in R](#8c-calculate-total-number-of-genes-expressed-per-sample-in-r)
-  - [**9. Normalize Read Counts, Perform Differential Gene Expression Analysis, and Add Gene Annotations in R**](#9-normalize-read-counts-perform-differential-gene-expression-analysis-and-add-gene-annotations-in-r)
+  - [9. Normalize Read Counts, Perform Differential Gene Expression Analysis, and Add Gene Annotations in R](#9-normalize-read-counts-perform-differential-gene-expression-analysis-and-add-gene-annotations-in-r)
     - [9a. Create Sample RunSheet](#9a-create-sample-runsheet)
     - [9b. Environment Set Up](#9b-environment-set-up)
     - [9c. Configure Metadata, Sample Grouping, and Group Comparisons](#9c-configure-metadata-sample-grouping-and-group-comparisons)
@@ -91,8 +94,7 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
     - [9h. Perform DGE on Datasets Without ERCC Spike-In](#9h-perform-dge-on-datasets-without-ercc-spike-in)
     - [9i. Prepare GeneLab DGE Tables with Annotations on Datasets Without ERCC Spike-In](#9i-prepare-genelab-dge-tables-with-annotations-on-datasets-without-ercc-spike-in)
     - [9j. Export GeneLab DGE Tables with Annotations for Datasets Without ERCC Spike-In](#9j-export-genelab-dge-tables-with-annotations-for-datasets-without-ercc-spike-in)
-
-  - [**10. Evaluate ERCC Spike-In Data**](#10-evaluate-ercc-spike-in-data)
+  - [10. Evaluate ERCC Spike-In Data](#10-evaluate-ercc-spike-in-data)
     - [10a. Evaluate ERCC Count Data in Python](#10a-evaluate-ercc-count-data-in-python)
     - [10b. Perform DESeq2 Analysis of ERCC Counts in R](#10b-perform-deseq2-analysis-of-ercc-counts-in-r)
     - [10c. Analyze ERCC DESeq2 Results in Python](#10c-analyze-ercc-deseq2-results-in-python)
@@ -122,7 +124,7 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
 |tximport|1.27.1|[https://github.com/mikelove/tximport](https://github.com/mikelove/tximport)|
 |tidyverse|1.3.1|[https://www.tidyverse.org](https://www.tidyverse.org)|
 |stringr|1.4.1|[https://github.com/tidyverse/stringr](https://github.com/tidyverse/stringr)|
-|dp_tools|1.1.8|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
+|dp_tools|1.3.3|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |pandas|1.5.0|[https://github.com/pandas-dev/pandas](https://github.com/pandas-dev/pandas)|
 |seaborn|0.12.0|[https://seaborn.pydata.org/](https://seaborn.pydata.org/)|
 |matplotlib|3.6.0|[https://matplotlib.org/stable](https://matplotlib.org/stable)|
