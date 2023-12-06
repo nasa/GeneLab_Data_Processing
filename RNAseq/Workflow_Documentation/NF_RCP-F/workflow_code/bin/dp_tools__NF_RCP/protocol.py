@@ -196,7 +196,6 @@ def validate(
     if protocol_args is None:
         protocol_args = dict()
 
-
     # Modify protocol_args to convert run_components to skip_components based on COMPONENTS_LIST
     if (
         "run_components" in protocol_args
@@ -211,7 +210,7 @@ def validate(
                 f"run_components contains components not in COMPONENTS_LIST. Unique to run_components: {set(protocol_args['run_components']) - set(COMPONENTS_LIST)}. All Components: {COMPONENTS_LIST}"
             )
         del protocol_args["run_components"]
-        
+
     # init validation protocol
     vp = ValidationProtocol(**protocol_args)
     # fmt: on
@@ -934,8 +933,8 @@ def validate(
                     with vp.payload(
                         payloads=[
                             {
-                                "multiqc_inputs": lambda: [
-                                    sample=sample.data_assets["aligned log Final"].path
+                                "multiqc_inputs": lambda sample=sample: [
+                                    sample.data_assets["aligned log Final"].path
                                 ],
                             },
                         ]
