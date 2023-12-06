@@ -28,6 +28,9 @@ process DGE_BY_DESEQ2 {
           path("dge_output_ercc/visualization_output_table_ERCCnorm.csv"),
           path("dge_output_ercc/visualization_PCA_table_ERCCnorm.csv"), optional: true, emit: dge_ercc
 
+    path("dge_output/summary.txt"), emit: summary
+    path("dge_output_ercc/ERCCnorm_summary.txt"), optional: true, emit: summary_ercc
+
     path("versions.txt"), emit: version
 
   script:
@@ -45,8 +48,7 @@ process DGE_BY_DESEQ2 {
         --dge_output_prefix "dge_output/" \\
         --annotation_file_path ${annotation_file} \\
         --extended_table_output_prefix "dge_output/"\\
-        --extended_table_output_suffix ".csv" \\
-        --verbose
+        --extended_table_output_suffix ".csv"
 
     if ${ meta.has_ercc ? 'true' : 'false'}
     then
@@ -60,8 +62,8 @@ process DGE_BY_DESEQ2 {
             --dge_output_prefix "dge_output_ercc/ERCCnorm_" \\
             --annotation_file_path ${annotation_file} \\
             --extended_table_output_prefix "dge_output_ercc/"\\
-            --extended_table_output_suffix "_ERCCnorm.csv" \\
-            --verbose
+            --extended_table_output_suffix "_ERCCnorm.csv"
     fi
+    # bump
     """
 }

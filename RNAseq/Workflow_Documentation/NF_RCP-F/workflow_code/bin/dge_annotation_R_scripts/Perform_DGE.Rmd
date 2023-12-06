@@ -7,7 +7,6 @@ params:
     input_gene_results_dir: ""
     # One and only one of the following must be specified
     runsheet_path: NULL 
-    isa_path: NULL
 
     primary_keytype: "" # Denotes the name of the indentifier column (e.g. ENSEMBL, TAIR)
     normalization: "default" # ENUM like, supports "ERCC-groupB" and "default"
@@ -15,41 +14,63 @@ params:
     dge_output_prefix: ""
     DEBUG_MODE_LIMIT_GENES: FALSE
     DEBUG_MODE_ADD_DUMMY_COUNTS: FALSE
-    work_dir: "." # should be set to launch directory 
-    verbose: FALSE
+    work_dir: "." # NON_DPPD: should be set to launch directory 
+    SUMMARY_FILE_PATH: "summary.txt"
 ---
 
 ## Substeps {.tabset}
 
 ### 1. Setup
-
+<!---  START:NON_DPPD --->
 ```{r, setup, include=FALSE}
 knitr::opts_knit$set(root.dir = params$work_dir)
 library(knitr)
 ```
 
-```{r libary-loading, message = params$verbose, warning = params$verbose}
+```{r libary-loading}
 # allow more flexibility in download time
 # useful for slower connections where the default of 60 seconds might be exceeded
 options(timeout=600)
 
-# Import libraries (tximport, DESeq2, tidyverse, Risa)
+# Import libraries (tximport, DESeq2, tidyverse)
 library(tximport)
 library(DESeq2)
 library(stringr)
 
 params
+SUMMARY_FILE_PATH <- params$SUMMARY_FILE_PATH
 yaml::write_yaml(params, "last_params.yml")
-```
-```{r validate_params}
-# assert either runsheet_path OR isa_path supplied in params
-if (!xor(!is.null(params$runsheet_path), !is.null(params$isa_path))) {
-    stop("Must supply EITHER runsheet_path or isa_path in params")
-}
+#  END:NON_DPPD
+
+# START:ONLY_DPPD
+# params <- c(
+#     runsheet_path = "/path/to/runsheet", # Used for downloading
+#     input_gene_results_dir = "/path/to/genes_results_files", # Location of the gene results files
+#     primary_keytype = "", # Denotes the name of the indentifier column (e.g. ENSEMBL, TAIR)
+#     normalization = "", # ENUM like, supports "ERCC-groupB" and "default"
+#     normalized_counts_output_prefix = "", # Output prefix for normalized counts files
+#     dge_output_prefix = "" # Output prefix for DGE files
+# )
+# END:ONLY_DPPD
 ```
 
 ### 2. Load Study Metadata
-```{r runsheet-to-compare_df, include=(!is.null(params$runsheet_path)), eval=(!is.null(params$runsheet_path))}
+```{r runsheet-to-compare_df}
+#' Calculate the square of a number
+#'
+#' This function takes a numeric input and returns its square.
+#'
+#' @param x Numeric value to be squared.
+#'
+#' @return The square of the input value.
+#'
+#' @examples
+#' square(2)
+#' # Output: 4
+#'
+#' square(-3)
+#' # Output: 9
+#'
 compare_csv_from_runsheet <- function(runsheet_path) {
     df = read.csv(runsheet_path)
     # get only Factor Value columns
@@ -62,25 +83,6 @@ compare_csv_from_runsheet <- function(runsheet_path) {
 # Loading metadata from runsheet csv file
 compare_csv <- compare_csv_from_runsheet(params$runsheet_path)
 #DT::datatable(compare_csv, caption = "Data Frame of parsed runsheet filtered to required columns")
-```
-
-```{r isa-to-compare_df, include=(!is.null(params$isa_path)), eval=(!is.null(params$isa_path))}
-# TODO: Remove this route, ISA zip support will be dropped as of DPPD-7101-F
-library(Risa)
-
-compare_csv_from_isa_archive <- function(isa_path) {
-    td = tempdir()
-    unzip(isa_path, exdir = td)
-    isa <- Risa::readISAtab(path = td)
-    n = as.numeric(which(isa@assay.technology.types == "RNA Sequencing (RNA-Seq)"))
-    isa_tabs <- isa@assay.tabs[[n]]@assay.file
-    factors <- as.data.frame(isa@factors[[1]], stringsAsFactors = FALSE)
-    colnames(factors) <- paste("factor",1:dim(factors)[2], sep = "_")
-    return(data.frame(sample_id = isa_tabs$`Sample Name`, factors))
-}
-# Loading metadata from isa archive
-compare_csv <- compare_csv_from_isa_archive(params$isa_path)
-#DT::datatable(compare_csv, caption = "Data Frame of parsed isa archive filtered to required metadata")
 ```
 
 ```{r compare_df-to-study_df}
@@ -130,8 +132,7 @@ files <- list.files(
 
 ## Reorder the *genes.results files to match the ordering of the ISA samples
 
-# Replace spaces in sample names from ISA with "_", consistent with runsheet generation
-samples = str_replace_all(rownames(study), " ", "_")
+samples = rownames(study)
 reordering <- sapply(samples, function(x)grep(paste0("Rsem_gene_counts/", x,".genes.results$"), files, value=FALSE))
 files <- files[reordering]
 names(files) <- samples
@@ -335,12 +336,12 @@ output_table_1$LRT.p.value <- res_1_lrt@listData$padj
 ```{r wald-test-iteration}
 ## Iterate through Wald Tests to generate pairwise comparisons of all groups
 for (i in 1:dim(contrasts)[2]){
-  res_1 <- results(dds_1, contrast=c("condition",contrasts[1,i],contrasts[2,i]))
-  res_1 <- as.data.frame(res_1@listData)[,c(2,4,5,6)]
-  colnames(res_1)<-c(paste0("Log2fc_",colnames(contrasts)[i]),paste0("Stat_",colnames(contrasts)[i]),paste0("P.value_",colnames(contrasts)[i]),paste0("Adj.p.value_",colnames(contrasts)[i]))
-  output_table_1<-cbind(output_table_1,res_1)
-  rm(res_1)
+    res_1 <- results(dds_1, contrast=c("condition",contrasts[1,i],contrasts[2,i]))
+    res_1 <- as.data.frame(res_1@listData)[,c(2,4,5,6)]
+    colnames(res_1)<-c(paste0("Log2fc_",colnames(contrasts)[i]),paste0("Stat_",colnames(contrasts)[i]),paste0("P.value_",colnames(contrasts)[i]),paste0("Adj.p.value_",colnames(contrasts)[i]))
+    output_table_1<-cbind(output_table_1,res_1)
 }
+
 ```
 
 ```{r}
@@ -385,6 +386,16 @@ write.csv(
     sampleTable,
     file =  paste0(params$dge_output_prefix, "SampleTable.csv")
 )
+
+# Create summary file based on output_table_1
+output <- capture.output(summary(output_table_1))
+
+# Open file connection
+conn <- file(paste0(params$dge_output_prefix, "summary.txt"), "w")
+
+# Write the captured output to the file
+writeLines(output, conn)
+
 # DT::datatable(head(output_table_1, n = 30),
 #   caption = "First 30 rows of differential gene expression table",
 #   extensions = "FixedColumns",

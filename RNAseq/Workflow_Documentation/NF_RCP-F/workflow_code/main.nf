@@ -22,7 +22,7 @@ include { BUILD_STAR;
           CONCAT_ERCC;
           QUANTIFY_STAR_GENES;
           QUANTIFY_RSEM_GENES } from './modules/genome.nf'
-include { DGE_BY_DESEQ2 } from './modules/dge.nf'
+include { DGE_BY_DESEQ2 } from './modules/DGE_BY_DESEQ2'
 include { VV_RAW_READS;
           VV_TRIMMED_READS;
           VV_STAR_ALIGNMENTS;
