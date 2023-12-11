@@ -108,6 +108,12 @@ def convert_isa_to_runsheet(accession_number, isa_zip):
 def handle_runsheet_selection(runsheet_files, target=None, specified_runsheet=None):
     selected_runsheet = None
 
+    # Change specified_runsheet to a basename in case a path is used as an arg for run_workflow.py
+    if specified_runsheet:
+        specified_runsheet_basename = os.path.basename(specified_runsheet)
+    else:
+        specified_runsheet_basename = None
+
     # Use the specified runsheet if provided
     if specified_runsheet and specified_runsheet in runsheet_files:
         selected_runsheet = specified_runsheet

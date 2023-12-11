@@ -10,13 +10,13 @@ The current GeneLab Illumina amplicon sequencing data processing pipeline (AmpIl
 
 ## Utilizing the workflow <!-- omit in toc -->
 
-1. [Install conda, mamba, and `genelab-utils` package](#1-install-conda-mamba-and-genelab-utils-package)
-2. [Download the workflow template files](#2-download-the-workflow-template-files)
-3. [Run the workflow using `run_workflow.py`](#3-run-the-workflow-using-run_workflowpy)   
-   3a. [Approach 1: Run the workflow on a GeneLab Amplicon (Illumina) sequencing dataset with automatic retrieval of raw read files and metadata](#3a-approach-1-run-the-workflow-on-a-genelab-amplicon-illumina-sequencing-dataset-with-automatic-retrieval-of-raw-read-files-and-metadata)   
-   3b. [Approach 2: Run the workflow on a non-OSD dataset using a user-created runsheet](#3b-approach-2-run-the-workflow-on-a-non-osd-dataset-using-a-user-created-runsheet)   
-4. [Parameter Definitions](#4-parameter-definitions)
-5. [Additional output files](#5-additional-output-files)
+- [1. Install conda, mamba, `genelab-utils`, and `dp-tools` package](#1-install-conda-mamba-genelab-utils-and-dp-tools-package)
+- [2. Download the workflow template files](#2-download-the-workflow-template-files)
+- [3. Run the workflow using `run_workflow.py`](#3-run-the-workflow-using-run_workflowpy)
+  - [3a. Approach 1: Run the workflow on a GeneLab Amplicon (Illumina) sequencing dataset with automatic retrieval of raw read files and metadata](#3a-approach-1-run-the-workflow-on-a-genelab-amplicon-illumina-sequencing-dataset-with-automatic-retrieval-of-raw-read-files-and-metadata)
+  - [3b. Approach 2: Run the workflow on a non-OSD dataset using a user-created runsheet](#3b-approach-2-run-the-workflow-on-a-non-osd-dataset-using-a-user-created-runsheet)
+- [4. Parameter Definitions](#4-parameter-definitions)
+- [5. Additional Output Files](#5-additional-output-files)
 
 <br>
 
@@ -189,10 +189,12 @@ The outputs from the `run_workflow.py` and differential abundance analysis (DAA)
   - dendrogram_by_group.png (Dendrogram of euclidean distance - based hierarchical clustering of the samples, colored by experimental groups) 
   - PCoA_w_labels.png (Principle Coordinates Analysis plot of VST transformed ASV counts, with sample labels)
   - PCoA_without_labels.png (Principle Coordinates Analysis plot of VST transformed ASV counts, without labels)
-  - Rarefaction.png (Rarefaction plot visualizing species richness for each sample)
-  - richness_by_sample.png (Chao1 richness estimates and Shannon diversity estimates for each sample)
-  - richness_by_group.png (Chao1 richness estimates and Shannon diversity estimates for each group)
+  - rarefaction.png (Rarefaction plot visualizing species richness for each sample)
+  - alpha_diversity_by_sample.png (Chao1 richness estimates and Shannon diversity estimates for each sample)
+  - alpha_diversity_by_group.png (Chao1 richness estimates and Shannon diversity estimates for each group)
   - relative_classes.png (Bar plot taxonomic summary of proportions of phyla identified in each group, by class)
   - relative_phyla.png (Bar plot taxonomic summary of proportions of phyla identified in each group, by phyla)
+  - samplewise_relative_classes.png (Bar plot taxonomic summary of proportions of phyla identified in each sample, by class)
+  - samplewise_relative_phyla.png (Bar plot taxonomic summary of proportions of phyla identified in each sample, by phyla)
   - {group1}\_vs_{group2}.csv (Differential abundance tables for all pairwise contrasts of groups)
   - volcano\_{group1}\_vs_{group2}.png (Volcano plots for all pairwise contrasts of groups)
