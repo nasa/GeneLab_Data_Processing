@@ -1,7 +1,9 @@
 ############################################################################################
 ## Configuration file for GeneLab Illumina amplicon processing workflow                   ##
-## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##
+## Initially developed by Michael D. Lee (Mike.Lee@nasa.gov)                              ##
+## Developed and maintained by Michael D. Lee and Alexis Torres (alexis.torres@nasa.gov)  ##
 ############################################################################################
+
 
 ############################################################
 ##################### VARIABLES TO SET #####################
