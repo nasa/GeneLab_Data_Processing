@@ -1,7 +1,8 @@
 ############################################################################################
 ## Snakefile for GeneLab's Illumina amplicon workflow                                     ##
-## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##
-## Version 1.1.0                                                                          ##
+## Version 1.2.1                                                                          ##
+## Initially developed by Michael D. Lee (Mike.Lee@nasa.gov)                              ##
+## Developed and maintained by Michael D. Lee and Alexis Torres (alexis.torres@nasa.gov)  ##
 ############################################################################################
 
 import os
