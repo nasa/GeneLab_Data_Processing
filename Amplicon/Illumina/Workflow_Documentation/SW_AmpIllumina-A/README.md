@@ -49,7 +49,7 @@ conda activate genelab-utils
 ___
 
 ### 2. Download the workflow template files
-All files required for utilizing the GeneLab workflow for processing Illumina amplicon sequencing data are in the [workflow_code](workflow_code) directory. To get a copy of latest SW_AmpIllumina-A version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands:
+<!-- All files required for utilizing the GeneLab workflow for processing Illumina amplicon sequencing data are in the [workflow_code](workflow_code) directory. To get a copy of latest SW_AmpIllumina-A version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands:
 
 ```bash
 wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/SW_AmpIllumina-A_1.2.0/SW_AmpIllumina-A_1.2.0.zip
@@ -61,8 +61,8 @@ This downloaded the workflow into a directory called `SW_AmpIllumina-A_1.2.0`. T
 
 ```bash
 cd SW_AmpIllumina-A_1.2.0
-```
-<!-- 
+``` -->
+
 All files required for utilizing the GeneLab workflow for processing Illumina amplicon sequencing data are in the [workflow_code](workflow_code) directory. To get a copy of the latest SW_AmpIllumina-A version on to your system, run the following command:
 
 ```bash
@@ -75,7 +75,7 @@ This downloaded the workflow into a directory called `SW_AmpIllumina-*/`, with t
 > ```bash
 > GL-get-workflow Amplicon-Illumina --wanted-version 1.0.0
 > ```
--->
+
 <br>
 
 ___
