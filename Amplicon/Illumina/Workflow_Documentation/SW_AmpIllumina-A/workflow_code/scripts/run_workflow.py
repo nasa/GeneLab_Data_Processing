@@ -42,6 +42,33 @@ def process_osd_argument(osd_arg):
         print("Invalid format for --OSD argument. Use 'numeric', 'OSD-numeric', or 'GLDS-numeric'.")
         sys.exit(1)
 
+# Check provided OSD/GLDS is not on the list of those that can't be autoprocessed
+def check_provided_osd_or_glds(osd_arg):
+    # dictionaries of OSD/GLDS accessions and reason for not running, key = ID: value = reason
+    not_autoprocessable_OSD_dict = {
+        "OSD-65": "This dataset has multiple different primers mixed in different orientations in each individual sample, and the workflow is unable to handle it in an automated fashion.",
+        "OSD-66": "This dataset is not a standard amplicon dataset. It is comprised of hundreds of different primers targeting different regions of specific organisms, and the workflow is unable to handle it.",
+        "OSD-82": "This dataset is still multiplexed, and we don't yet have the mapping information to split the samples apart appropriately."
+    }
+
+    not_autoprocessable_GLDS_dict = {
+        "GLDS-65": "This dataset has multiple different primers mixed in different orientations in each individual sample, and the workflow is unable to handle it in an automated fashion.",
+        "GLDS-66": "This dataset is not a standard amplicon dataset. It is comprised of hundreds of different primers targeting different regions of specific organisms, and the workflow is unable to handle it.",
+        "GLDS-82": "This dataset is still multiplexed, and we don't yet have the mapping information to split the samples apart appropriately."
+    }
+
+    # checking based on OSD IDs
+    if osd_arg in not_autoprocessable_OSD_dict:
+        print(f"\nThe specified dataset {osd_arg} is unable to be processed with this workflow.")
+        print(f"    Reason: {not_autoprocessable_OSD_dict[osd_arg]}\n")
+        sys.exit(1)
+
+    # checking based on GLDS IDs
+    if osd_arg in not_autoprocessable_GLDS_dict:
+        print(f"\n The specified dataset {osd_arg} is unable to be processed with this workflow.")
+        print(f"    Reason: {not_autoprocessable_GLDS_dict[osd_arg]}\n")
+        sys.exit(1)
+
 # Run dpt-get-isa-archive in a temp folder, move it back to cd, return the filename
 def download_isa_archive(accession_number):
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -576,6 +603,10 @@ def main():
     # If OSD is used, pull ISA metadata for the study, create and select the runsheet
     if args.OSD:
         accession_number = process_osd_argument(args.OSD)
+
+        # checking OSD/GLDS ID is not on the list of those the workflow definitely can't handle
+        check_provided_osd_or_glds(args.OSD)
+
         isa_zip = download_isa_archive(accession_number)
         if isa_zip:
             runsheet_files = convert_isa_to_runsheet(accession_number, isa_zip)
