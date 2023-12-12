@@ -63,7 +63,7 @@ def check_provided_osd_or_glds(osd_arg):
         print(f"    Reason: {not_autoprocessable_OSD_dict[osd_arg]}\n")
         sys.exit(1)
 
-    # checking based on OSD IDs
+    # checking based on GLDS IDs
     if osd_arg in not_autoprocessable_GLDS_dict:
         print(f"\n The specified dataset {osd_arg} is unable to be processed with this workflow.")
         print(f"    Reason: {not_autoprocessable_GLDS_dict[osd_arg]}\n")
