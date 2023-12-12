@@ -92,10 +92,8 @@ g_legend <- function(a.gplot){
 ###########################################
 
 # Assign the directory paths to variables
-dendrogram_out_dir <- paste0(final_outputs_dir, "dendrogram", .Platform$file.sep)
-pcoa_out_dir <- paste0(final_outputs_dir, "PCoA", .Platform$file.sep)
-rarefaction_out_dir <- paste0(final_outputs_dir, "rarefaction", .Platform$file.sep)
-richness_out_dir <- paste0(final_outputs_dir, "alpha_diversity", .Platform$file.sep)
+beta_diversity_out_dir <- paste0(final_outputs_dir, "beta_diversity", .Platform$file.sep)
+alpha_diversity_out_dir <- paste0(final_outputs_dir, "alpha_diversity", .Platform$file.sep)
 taxonomy_out_dir <- paste0(final_outputs_dir, "taxonomy", .Platform$file.sep)
 de_out_dir <- paste0(final_outputs_dir, "da", .Platform$file.sep)
 
@@ -103,7 +101,7 @@ abundance_out_dir <- paste0(de_out_dir, "differential_abundance", .Platform$file
 volcano_out_dir <- paste0(de_out_dir, "volcano", .Platform$file.sep)
 
 # List of all directory variables
-out_dirs <- list(final_outputs_dir, dendrogram_out_dir, pcoa_out_dir, rarefaction_out_dir, richness_out_dir, taxonomy_out_dir, de_out_dir, abundance_out_dir, volcano_out_dir)
+out_dirs <- list(final_outputs_dir, beta_diversity_out_dir, alpha_diversity_out_dir, taxonomy_out_dir, de_out_dir, abundance_out_dir, volcano_out_dir)
 
 # Loop through each directory path to check and create if necessary
 for (dir_path in out_dirs) {
@@ -321,7 +319,7 @@ ordination_plot_u <- plot_ordination(vst_physeq, vst_pcoa, color = "groups") +
                      legend.title.align = 0.5) +
   annotate("text", x = Inf, y = -Inf, label = paste("R2:", toString(round(r2_value, 3))), hjust = 1.1, vjust = -2, size = 4)+
   annotate("text", x = Inf, y = -Inf, label = paste("Pr(>F)", toString(round(prf_value,4))), hjust = 1.1, vjust = -0.5, size = 4)+ ggtitle("PCoA")
-ggsave(filename=paste0(pcoa_out_dir, output_prefix, "PCoA_without_labels", ".png"), plot=ordination_plot_u, width = 11.1, height = 8.33, dpi = 300)
+ggsave(filename=paste0(beta_diversity_out_dir, output_prefix, "PCoA_without_labels", ".png"), plot=ordination_plot_u, width = 11.1, height = 8.33, dpi = 300)
 # Save labeled PCoA plot
 ordination_plot <- plot_ordination(vst_physeq, vst_pcoa, color = "groups") + 
   geom_point(size = 1) + 
@@ -341,7 +339,7 @@ ordination_plot <- plot_ordination(vst_physeq, vst_pcoa, color = "groups") +
                      legend.title.align = 0.5) +
   annotate("text", x = Inf, y = -Inf, label = paste("R2:", toString(round(r2_value, 3))), hjust = 1.1, vjust = -2, size = 4)+
   annotate("text", x = Inf, y = -Inf, label = paste("Pr(>F)", toString(round(prf_value,4))), hjust = 1.1, vjust = -0.5, size = 4)+ ggtitle("PCoA")
-ggsave(filename=paste0(pcoa_out_dir, output_prefix, "PCoA_w_labels", ".png"), plot=ordination_plot, width = 11.1, height = 8.33, dpi = 300)
+ggsave(filename=paste0(beta_diversity_out_dir, output_prefix, "PCoA_w_labels", ".png"), plot=ordination_plot, width = 11.1, height = 8.33, dpi = 300)
 ########################
 
 #4. Alpha diversity
@@ -372,7 +370,7 @@ rareplot <- ggplot(p, aes(x = Sample, y = Species, group = Site, color = groups)
         panel.grid.minor = element_blank(),
         plot.margin = margin(t = 10, r = 20, b = 10, l = 10, unit = "pt")) +
   guides(color = guide_legend(title = "Groups"))
-ggsave(filename = paste0(rarefaction_out_dir, output_prefix, "rarefaction.png"), plot=rareplot, width = 8.33, height = 8.33, dpi = 300)
+ggsave(filename = paste0(alpha_diversity_out_dir, output_prefix, "rarefaction_curves.png"), plot=rareplot, width = 8.33, height = 8.33, dpi = 300)
 
 # 4b. Richness and diversity estimates
 
@@ -416,7 +414,7 @@ richness_plot <- plot_richness(ASV_physeq, color = "groups", measures = c("Chao1
                                vjust = 0.5,  # Vertically center the text
                                hjust = 1)
   )
-ggsave(paste0(richness_out_dir, output_prefix, "alpha_diversity_by_sample", ".png"), plot=richness_plot, width = 11.1, height = 8.33, dpi = 300)
+ggsave(paste0(alpha_diversity_out_dir, output_prefix, "richness_and_diversity_estimates_by_sample", ".png"), plot=richness_plot, width = 11.1, height = 8.33, dpi = 300)
 
 richness_by_group <- plot_richness(ASV_physeq, x = "groups", color = "groups", measures = c("Chao1", "Shannon")) +
   scale_color_manual(values = unique(sample_info_tab[[color_colname]][order(sample_info_tab[[groups_colname]])]),
@@ -433,7 +431,7 @@ richness_by_group <- plot_richness(ASV_physeq, x = "groups", color = "groups", m
     legend.title.align = 0.5,
     legend.title = element_blank()
   ) 
-ggsave(filename = paste0(richness_out_dir, output_prefix, "alpha_diversity_by_group", ".png"), plot=richness_by_group, width = 11.1, height = 8.33, dpi = 300)
+ggsave(filename = paste0(alpha_diversity_out_dir, output_prefix, "richness_and_diversity_estimates_by_group", ".png"), plot=richness_by_group, width = 11.1, height = 8.33, dpi = 300)
 
 # Extract legend from unlabeled pca plot, also save it as its own plot
 legend <- g_legend(ordination_plot)

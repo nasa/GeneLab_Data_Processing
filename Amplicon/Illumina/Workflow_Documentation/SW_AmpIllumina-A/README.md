@@ -10,7 +10,7 @@ The current GeneLab Illumina amplicon sequencing data processing pipeline (AmpIl
 
 ## Utilizing the workflow <!-- omit in toc -->
 
-- [1. Install conda, mamba, `genelab-utils`, and `dp-tools` package](#1-install-conda-mamba-genelab-utils-and-dp-tools-package)
+- [1. Install conda, mamba, and `genelab-utils` package](#1-install-conda-mamba-and-genelab-utils-package)
 - [2. Download the workflow template files](#2-download-the-workflow-template-files)
 - [3. Run the workflow using `run_workflow.py`](#3-run-the-workflow-using-run_workflowpy)
   - [3a. Approach 1: Run the workflow on a GeneLab Amplicon (Illumina) sequencing dataset with automatic retrieval of raw read files and metadata](#3a-approach-1-run-the-workflow-on-a-genelab-amplicon-illumina-sequencing-dataset-with-automatic-retrieval-of-raw-read-files-and-metadata)
@@ -22,7 +22,7 @@ The current GeneLab Illumina amplicon sequencing data processing pipeline (AmpIl
 
 ___
 
-### 1. Install conda, mamba, `genelab-utils`, and `dp-tools` package
+### 1. Install conda, mamba, and `genelab-utils` package
 We recommend installing a Miniconda, Python3 version appropriate for your system, as exemplified in [the above link](https://astrobiomike.github.io/unix/conda-intro#getting-and-installing-conda).  
 
 Once conda is installed on your system, we recommend installing [mamba](https://github.com/mamba-org/mamba#mamba), as it generally allows for much faster conda installations:
@@ -36,7 +36,7 @@ conda install -n base -c conda-forge mamba
 Once mamba is installed, you can install the genelab-utils conda package in a new environment with the following command:
 
 ```bash
-mamba create -n genelab-utils -c conda-forge -c bioconda -c defaults -c astrobiomike 'genelab-utils>=1.1.02' git pip
+mamba create -n genelab-utils -c conda-forge -c bioconda -c defaults -c astrobiomike 'genelab-utils==1.3.22=py312_1'
 ```
 
 The environment then needs to be activated by running the following command:
@@ -44,13 +44,6 @@ The environment then needs to be activated by running the following command:
 ```bash
 conda activate genelab-utils
 ```
-
-Once the `genelab-utils` environment is active, use `pip` to install the `dp-tools` package by running the following command:
-
-```bash
-pip install git+https://github.com/torres-alexis/dp_tools.git@amplicon_updates
-```
-
 <br>
 
 ___
@@ -69,7 +62,20 @@ This downloaded the workflow into a directory called `SW_AmpIllumina-A_1.2.0`. T
 ```bash
 cd SW_AmpIllumina-A_1.2.0
 ```
+<!-- 
+All files required for utilizing the GeneLab workflow for processing Illumina amplicon sequencing data are in the [workflow_code](workflow_code) directory. To get a copy of the latest SW_AmpIllumina-A version on to your system, run the following command:
 
+```bash
+GL-get-workflow Amplicon-Illumina
+```
+
+This downloaded the workflow into a directory called `SW_AmpIllumina-*/`, with the workflow version number at the end.
+
+> Note: If wanting an earlier version, the wanted version can be provided as an optional argument like so:
+> ```bash
+> GL-get-workflow Amplicon-Illumina --wanted-version 1.0.0
+> ```
+-->
 <br>
 
 ___
@@ -189,9 +195,9 @@ The outputs from the `run_workflow.py` and differential abundance analysis (DAA)
   - dendrogram_by_group.png (Dendrogram of euclidean distance - based hierarchical clustering of the samples, colored by experimental groups) 
   - PCoA_w_labels.png (Principle Coordinates Analysis plot of VST transformed ASV counts, with sample labels)
   - PCoA_without_labels.png (Principle Coordinates Analysis plot of VST transformed ASV counts, without labels)
-  - rarefaction.png (Rarefaction plot visualizing species richness for each sample)
-  - alpha_diversity_by_sample.png (Chao1 richness estimates and Shannon diversity estimates for each sample)
-  - alpha_diversity_by_group.png (Chao1 richness estimates and Shannon diversity estimates for each group)
+  - rarefaction_curves.png (Rarefaction plot visualizing species richness for each sample)
+  - richness_and_diversity_estimates_by_sample.png (Chao1 richness estimates and Shannon diversity estimates for each sample)
+  - richness_and_diversity_estimates_by_group.png (Chao1 richness estimates and Shannon diversity estimates for each group)
   - relative_classes.png (Bar plot taxonomic summary of proportions of phyla identified in each group, by class)
   - relative_phyla.png (Bar plot taxonomic summary of proportions of phyla identified in each group, by phyla)
   - samplewise_relative_classes.png (Bar plot taxonomic summary of proportions of phyla identified in each sample, by class)
