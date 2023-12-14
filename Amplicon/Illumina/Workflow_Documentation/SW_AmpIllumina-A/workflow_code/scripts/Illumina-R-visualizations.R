@@ -263,7 +263,7 @@ legend_colors <- unique(sample_info_tab$color)
 num_unique_groups <- length(legend_groups)
 legend_cex <- ifelse(num_unique_groups > 5, 1 / (num_unique_groups / 5), 1)
 
-png(file.path(dendrogram_out_dir, paste0(output_prefix, "dendrogram_by_group", ".png")),
+png(file.path(beta_diversity_out_dir, paste0(output_prefix, "dendrogram_by_group", ".png")),
     width = width_in_pixels,
     height = height_in_pixels,
     res = dpi)
