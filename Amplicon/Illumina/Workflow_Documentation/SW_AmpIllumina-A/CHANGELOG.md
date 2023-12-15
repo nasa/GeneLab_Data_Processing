@@ -1,5 +1,13 @@
 # Workflow change log
 
+## [1.2.1](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_AmpIllumina-A_1.2.1/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-A)
+- Added GeneLab_Data_Processing/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md, including visualization script outputs
+- Removed wget SW_AmpIllumina-A_1.2.0.zip instructions and added GL-get-workflow instructions to SW_AmpIllumina usage instructions
+- Removed dp-tools installation from SW_AmpIllumina usage instructions since it is now included in the genelab-utils installation
+- Added datasets that are cannot be autoprocessed to run_workflow.py
+- Set default for --anchor-primers to FALSE and set the default for --primers-linked to FALSE
+- Visualization script changes: added samplewise taxonomy plots, renamed and moved plots related to alpha or beta diversity
+  
 ## [1.2.0](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_AmpIllumina-A_1.2.0/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-A)
 - Added runsheet dependency, runsheet definition in [config.yaml](workflow_code/config.yaml)
 - Added [run_workflow.py](workflow_code/scripts/run_workflow.py)

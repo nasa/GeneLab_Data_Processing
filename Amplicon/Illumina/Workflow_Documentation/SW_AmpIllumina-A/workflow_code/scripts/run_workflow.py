@@ -532,14 +532,14 @@ def main():
     
     parser.add_argument('--primers-linked',
                         choices=['TRUE', 'FALSE'],
-                        default='TRUE',
-                        help='If set to TRUE, instructs cutadapt to treat the primers as linked. Default: TRUE',
+                        default='FALSE',
+                        help='If set to TRUE, instructs cutadapt to treat the primers as linked. Default: FALSE',
                         type=str)
 
     parser.add_argument('--anchor-primers',
                         choices=['TRUE', 'FALSE'],
-                        default='TRUE',
-                        help='Indicates if primers should be anchored (TRUE) or not (FALSE). Default: TRUE',
+                        default='FALSE',
+                        help='Indicates if primers should be anchored (TRUE) or not (FALSE). Default: FALSE',
                         type=str)
 
     parser.add_argument('--discard-untrimmed',

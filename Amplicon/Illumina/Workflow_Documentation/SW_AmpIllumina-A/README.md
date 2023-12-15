@@ -2,7 +2,7 @@
 
 
 ## General workflow info <!-- omit in toc -->
-The current GeneLab Illumina amplicon sequencing data processing pipeline (AmpIllumina), [GL-DPPD-7104-A.md](../../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-A.md), is implemented as a [Snakemake](https://snakemake.readthedocs.io/en/stable/) workflow and utilizes [conda](https://docs.conda.io/en/latest/) environments to install/run all tools. This workflow (SW_AmpIllumina-A) is run using the command line interface (CLI) of any unix-based system. The workflow can be used even if you are unfamiliar with Snakemake and conda, but if you want to learn more about those, [this Snakemake tutorial](https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html) within [Snakemake's documentation](https://snakemake.readthedocs.io/en/stable/) is a good place to start for that, and an introduction to conda with installation help and links to other resources can be found [here at Happy Belly Bioinformatics](https://astrobiomike.github.io/unix/conda-intro).  
+The current GeneLab Illumina amplicon sequencing data processing pipeline (AmpIllumina), [GL-DPPD-7104-B.md](../../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md), is implemented as a [Snakemake](https://snakemake.readthedocs.io/en/stable/) workflow and utilizes [conda](https://docs.conda.io/en/latest/) environments to install/run all tools. This workflow (SW_AmpIllumina-A) is run using the command line interface (CLI) of any unix-based system. The workflow can be used even if you are unfamiliar with Snakemake and conda, but if you want to learn more about those, [this Snakemake tutorial](https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html) within [Snakemake's documentation](https://snakemake.readthedocs.io/en/stable/) is a good place to start for that, and an introduction to conda with installation help and links to other resources can be found [here at Happy Belly Bioinformatics](https://astrobiomike.github.io/unix/conda-intro).  
 
 <br>
 
@@ -82,7 +82,7 @@ ___
 
 ### 3. Run the workflow using `run_workflow.py`
 
-While in the `SW_AmpIllumina-A_1.2.0` directory that was downloaded in [step 2](#2-download-the-workflow-template-files), you are now able to run the workflow using the `run_workflow.py` script in the [scripts/](workflow_code/scripts) sub-directory to set up the configuration files needed to execute the workflow.
+While in the `SW_AmpIllumina-A_1.2.1` directory that was downloaded in [step 2](#2-download-the-workflow-template-files), you are now able to run the workflow using the `run_workflow.py` script in the [scripts/](workflow_code/scripts) sub-directory to set up the configuration files needed to execute the workflow.
 
 > Note: The commands to run the workflow in each approach listed below allows for two sets of options. The options specified outside of the quotation marks are specific to the `run_workflow.py` script, and the options specified within the quotation marks are specific to `snakemake`.
 
@@ -139,10 +139,10 @@ ___
 * `--min_trimmed_length` - specifies the minimum length of trimmed reads during cutadapt filtering. For paired-end data: if one read gets filtered, both reads are discarded. Default: 130
    > *Note: For paired-end data, all filtering and trimming should leave a minimum of an 8-base overlap of forward and reverse reads.*
 
-* `--primers-linked TRUE/FALSE` - if set to TRUE, instructs cutadapt to treat the primers as linked. Default: TRUE
+* `--primers-linked TRUE/FALSE` - if set to TRUE, instructs cutadapt to treat the primers as linked. Default: FALSE
    > *Note: See [cutadapt documentation here](https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads) for more info.*
 
-* `--anchor-primers TRUE/FALSE` - indicates if primers should be anchored (TRUE) or not (FALSE) when provided to cutadapt. Default: TRUE
+* `--anchor-primers TRUE/FALSE` - indicates if primers should be anchored (TRUE) or not (FALSE) when provided to cutadapt. Default: FALSE
    > *Note: See [cutadapt documention here](https://cutadapt.readthedocs.io/en/stable/guide.html#anchored-5adapters) for more info.*
 
 * `--discard-untrimmed TRUE/FALSE` - if set to TRUE, instructs cutadapt to remove reads if the primers were not found in the expected location; if set to FALSE, these reads are kept. Default: TRUE
@@ -184,7 +184,7 @@ ___
 ### 5. Additional Output Files
 
 The outputs from the `run_workflow.py` and differential abundance analysis (DAA) / visualizations scripts are described below:
-> Note: Outputs from the Amplicon Seq - Illumina pipeline are documented in the [GL-DPPD-7104-A.md](../../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-A.md) processing protocol.
+> Note: Outputs from the Amplicon Seq - Illumina pipeline are documented in the [GL-DPPD-7104-B.md](../../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md) processing protocol.
 
 - **Metadata Outputs:**
   - \*_AmpSeq_v1_runsheet.csv (table containing metadata required for processing, including the raw reads files location)
@@ -202,5 +202,6 @@ The outputs from the `run_workflow.py` and differential abundance analysis (DAA)
   - relative_phyla.png (Bar plot taxonomic summary of proportions of phyla identified in each group, by phyla)
   - samplewise_relative_classes.png (Bar plot taxonomic summary of proportions of phyla identified in each sample, by class)
   - samplewise_relative_phyla.png (Bar plot taxonomic summary of proportions of phyla identified in each sample, by phyla)
+  - normalized_counts.tsv (Size factor normalized ASV counts table)
   - {group1}\_vs_{group2}.csv (Differential abundance tables for all pairwise contrasts of groups)
   - volcano\_{group1}\_vs_{group2}.png (Volcano plots for all pairwise contrasts of groups)
