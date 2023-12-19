@@ -141,7 +141,6 @@ workflow {
                           | set { ch_meta }
 
     STAGING.out.raw_reads | map{ it -> it[1] } | collect | set { ch_all_raw_reads }
-    STAGING.out.raw_reads | map{ it -> it[1] } | collect | set { ch_all_raw_reads }
     STAGING.out.raw_reads | map { it[0].id }
                           | collectFile(name: "samples.txt", sort: true, newLine: true)
                           | set { ch_samples_txt }

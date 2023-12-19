@@ -67,7 +67,7 @@ for (i in 2:length(files)) {
 
 ##### Export unnormalized gene counts table
 # setwd(file.path(counts_dir))
-write.csv(df_full, file = "STAR_Unnormalized_Counts.csv")
+write.csv(df_full, file = "STAR_Unnormalized_Counts_GLbulkRNAseq.csv")
 
 ##### Count the number of genes with non-zero counts for each sample
 num_nonzero_genes <- (as.matrix(colSums(df_full > 0), row.names = 1))
@@ -75,7 +75,7 @@ colnames(num_nonzero_genes) <- c("Number of genes with non-zero counts")
 
 ##### Export the number of genes with non-zero counts for each sample
 # setwd(file.path(counts_dir))
-write.csv(num_nonzero_genes, file = "STAR_NumNonZeroGenes.csv")
+write.csv(num_nonzero_genes, file = "STAR_NumNonZeroGenes_GLbulkRNAseq.csv")
 
 ## print session info ##
 print("Session Info below: ")

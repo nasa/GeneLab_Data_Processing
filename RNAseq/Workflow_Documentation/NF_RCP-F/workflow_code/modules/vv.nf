@@ -9,7 +9,7 @@ process VV_RAW_READS {
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
     pattern:  "VV_log.tsv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }.tsv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }_GLbulkRNAseq.tsv" }
   // V&V'ed data publishing
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
     pattern: '00-RawData/**',
@@ -31,8 +31,8 @@ process VV_RAW_READS {
     path("Metadata/*_runsheet.csv"), emit: VVed_runsheet
     path("00-RawData/Fastq"), emit: VVed_raw_reads
     path("00-RawData/FastQC_Reports/*{_fastqc.html,_fastqc.zip}"), emit: VVed_raw_fastqc
-    path("00-RawData/FastQC_Reports/raw_multiqc_report.zip"), emit: VVed_raw_zipped_multiqc_report
-    path("00-RawData/FastQC_Reports/raw_multiqc_report"), emit: VVed_raw_unzipped_multiqc_report
+    path("00-RawData/FastQC_Reports/raw_multiqc_GLbulkRNAseq_report.zip"), emit: VVed_raw_zipped_multiqc_report
+    path("00-RawData/FastQC_Reports/raw_multiqc_GLbulkRNAseq_report"), emit: VVed_raw_unzipped_multiqc_report
     path("VV_log.tsv"), optional: params.skipVV, emit: log
 
   script:
@@ -58,7 +58,7 @@ process VV_TRIMMED_READS {
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
     pattern:  "VV_log.tsv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }.tsv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }_GLbulkRNAseq.tsv" }
   // V&V'ed data publishing
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
     pattern: '01-TG_Preproc/**',
@@ -81,8 +81,8 @@ process VV_TRIMMED_READS {
   output:
     path("01-TG_Preproc/Fastq"), emit: VVed_trimmed_reads
     path("01-TG_Preproc/FastQC_Reports/*{_fastqc.html,_fastqc.zip}"), emit: VVed_trimmed_fastqc
-    path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc_report.zip"), emit: VVed_trimmed_zipped_multiqc_report
-    path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc_report"), emit: VVed_trimmed_unzipped_multiqc_report
+    path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc_GLbulkRNAseq_report.zip"), emit: VVed_trimmed_zipped_multiqc_report
+    path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc_GLbulkRNAseq_report"), emit: VVed_trimmed_unzipped_multiqc_report
     path("01-TG_Preproc/Trimming_Reports"), emit: VVed_trimming_reports_all
     path("VV_log.tsv"), optional: params.skipVV, emit: log
 
@@ -110,7 +110,7 @@ process VV_STAR_ALIGNMENTS {
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
     pattern:  "VV_log.tsv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }.tsv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }_GLbulkRNAseq.tsv" }
   // V&V'ed data publishing
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
     pattern: '02-STAR_Alignment',
@@ -155,7 +155,7 @@ process VV_RSEQC {
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
     pattern:  "VV_log.tsv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }.tsv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }_GLbulkRNAseq.tsv" }
   // V&V'ed data publishing
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
     pattern: 'RSeQC_Analyses',
@@ -218,7 +218,7 @@ process VV_RSEM_COUNTS {
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
     pattern:  "VV_log.tsv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }.tsv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }_GLbulkRNAseq.tsv" }
   // V&V'ed data publishing
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
     pattern: '03-RSEM_Counts',
@@ -262,7 +262,7 @@ process VV_DESEQ2_ANALYSIS {
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
     pattern:  "VV_log.tsv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }.tsv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }_GLbulkRNAseq.tsv" }
   // V&V'ed data publishing
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
     pattern: '{04-DESeq2_NormCounts,05-DESeq2_DGE}',
@@ -320,7 +320,7 @@ process VV_CONCAT_FILTER {
     path("VV_in.tsv")
 
   output:
-    tuple path("VV_log_final.tsv"), path("VV_log_final_only_issues.tsv")
+    tuple path("VV_log_final_GLbulkRNAseq.tsv"), path("VV_log_final_only_issues_GLbulkRNAseq.tsv")
 
   script:
     """

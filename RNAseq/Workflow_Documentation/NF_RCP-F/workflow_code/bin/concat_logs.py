@@ -5,7 +5,7 @@ from pathlib import Path
 
 logs = sorted(list(Path.cwd().glob("VV_in.tsv*")))
 
-OUTPUT_FN = Path("VV_log_final.tsv")
+OUTPUT_FN = Path("VV_log_final_GLbulkRNAseq.tsv")
 
 for i, log in enumerate(logs):
     with open(log, "r") as in_f:

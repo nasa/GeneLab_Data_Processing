@@ -11,22 +11,22 @@ process DGE_BY_DESEQ2 {
     path("dge_annotation_R_scripts.zip")
 
   output:
-    tuple path("norm_counts_output/Normalized_Counts.csv"),
-          path("norm_counts_output/RSEM_Unnormalized_Counts.csv"), emit: norm_counts
+    tuple path("norm_counts_output/Normalized_Counts_GLbulkRNAseq.csv"),
+          path("norm_counts_output/RSEM_Unnormalized_Counts_GLbulkRNAseq.csv"), emit: norm_counts
 
-    tuple path("dge_output/contrasts.csv"),
-          path("dge_output/SampleTable.csv"),
-          path("dge_output/differential_expression.csv"),
-          path("dge_output/visualization_output_table.csv"),
-          path("dge_output/visualization_PCA_table.csv"), emit: dge
+    tuple path("dge_output/contrasts_GLbulkRNAseq.csv"),
+          path("dge_output/SampleTable_GLbulkRNAseq.csv"),
+          path("dge_output/differential_expression_GLbulkRNAseq.csv"),
+          path("dge_output/visualization_output_table_GLbulkRNAseq.csv"),
+          path("dge_output/visualization_PCA_table_GLbulkRNAseq.csv"), emit: dge
 
-    path("norm_counts_output/ERCC_Normalized_Counts.csv"), optional: true, emit: norm_counts_ercc
+    path("norm_counts_output/ERCC_Normalized_Counts_GLbulkRNAseq.csv"), optional: true, emit: norm_counts_ercc
 
-    tuple path("dge_output_ercc/ERCCnorm_contrasts.csv"),
-          path("dge_output_ercc/ERCCnorm_SampleTable.csv"),
-          path("dge_output_ercc/ERCCnorm_differential_expression.csv"),
-          path("dge_output_ercc/visualization_output_table_ERCCnorm.csv"),
-          path("dge_output_ercc/visualization_PCA_table_ERCCnorm.csv"), optional: true, emit: dge_ercc
+    tuple path("dge_output_ercc/ERCCnorm_contrasts_GLbulkRNAseq.csv"),
+          path("dge_output_ercc/ERCCnorm_SampleTable_GLbulkRNAseq.csv"),
+          path("dge_output_ercc/ERCCnorm_differential_expression_GLbulkRNAseq.csv"),
+          path("dge_output_ercc/visualization_output_table_ERCCnorm_GLbulkRNAseq.csv"),
+          path("dge_output_ercc/visualization_PCA_table_ERCCnorm_GLbulkRNAseq.csv"), optional: true, emit: dge_ercc
 
     path("dge_output/summary.txt"), emit: summary
     path("dge_output_ercc/ERCCnorm_summary.txt"), optional: true, emit: summary_ercc
@@ -48,7 +48,7 @@ process DGE_BY_DESEQ2 {
         --dge_output_prefix "dge_output/" \\
         --annotation_file_path ${annotation_file} \\
         --extended_table_output_prefix "dge_output/"\\
-        --extended_table_output_suffix ".csv"
+        --extended_table_output_suffix "_GLbulkRNAseq.csv"
 
     if ${ meta.has_ercc ? 'true' : 'false'}
     then
@@ -62,7 +62,7 @@ process DGE_BY_DESEQ2 {
             --dge_output_prefix "dge_output_ercc/ERCCnorm_" \\
             --annotation_file_path ${annotation_file} \\
             --extended_table_output_prefix "dge_output_ercc/"\\
-            --extended_table_output_suffix "_ERCCnorm.csv"
+            --extended_table_output_suffix "_ERCCnorm_GLbulkRNAseq.csv"
     fi
     # bump
     """

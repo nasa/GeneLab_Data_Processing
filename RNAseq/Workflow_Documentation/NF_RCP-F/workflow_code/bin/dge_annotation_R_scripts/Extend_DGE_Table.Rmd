@@ -7,7 +7,7 @@ params:
     input_table_path: "" # MUST be a table with output from 'Perform_DGE.Rmd'
     table_sep: ","
     extended_table_output_prefix: "dge_output_ercc/"
-    extended_table_output_suffix: ".csv"
+    extended_table_output_suffix: "_GLbulkRNAseq.csv"
     output_base_fn: "visualization_output_table"
     work_dir: "." 
 ---

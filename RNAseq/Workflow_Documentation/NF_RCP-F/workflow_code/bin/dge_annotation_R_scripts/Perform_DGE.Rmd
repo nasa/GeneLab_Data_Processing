@@ -188,7 +188,7 @@ if ((length(ercc_rows_all) == 92) == FALSE) {
     stop(sprintf("Assert statement: '%s' was False: Expected 92 ERCC rows but found %d instead", deparse(quote(length(ercc_rows_all) == 92)) , length(ercc_rows_all))) }
 
 ## Print ERCC unfiltered raw counts table
-output_fn = file.path(getwd(), 'ERCC_rawCounts_unfiltered.csv')
+output_fn = file.path(getwd(), 'ERCC_rawCounts_unfiltered_GLbulkRNAseq.csv')
 ERCC_rawCounts_all = as.data.frame(counts(ercc_dds_all))
 write.csv(ERCC_rawCounts_all,file=output_fn)
 #DT::datatable(head(ERCC_rawCounts_all))
@@ -262,7 +262,7 @@ if (length(remove) == 0) {
 
 ## Print ERCC filtered raw counts table
 ## Note: These data are used internally at GeneLab for QC
-output_fn <- file.path(getwd(), 'ERCC_rawCounts_filtered.csv')
+output_fn <- file.path(getwd(), 'ERCC_rawCounts_filtered_GLbulkRNAseq.csv')
 ERCC_rawCounts = as.data.frame(counts(ercc_dds))
 write.csv(ERCC_rawCounts, file = output_fn)
 print(sprintf("DEBUG: %s: Output file written '%s' ", Sys.time(), output_fn))
@@ -301,11 +301,11 @@ normCounts <- as.data.frame(counts(dds_1, normalized = TRUE))
 dir.create(dirname(paste0(params$normalized_counts_output_prefix, "_")), recursive = TRUE)
 write.csv(
     txi.rsem$counts,
-    file = paste0(params$normalized_counts_output_prefix, "RSEM_Unnormalized_Counts.csv")
+    file = paste0(params$normalized_counts_output_prefix, "RSEM_Unnormalized_Counts_GLbulkRNAseq.csv")
     )
 write.csv(
     normCounts,
-    file =  paste0(params$normalized_counts_output_prefix, "Normalized_Counts.csv")
+    file =  paste0(params$normalized_counts_output_prefix, "Normalized_Counts_GLbulkRNAseq.csv")
     )
 ```
 
@@ -377,14 +377,14 @@ rm(group_stdev,group_means,tcounts)
 # note: the paste0 here is ensure no string file name prefixes still create their directories
 # e.g. dge_output/
 dir.create(dirname(paste0(params$dge_output_prefix,"_")), recursive = TRUE)
-write.csv(contrasts, paste0(params$dge_output_prefix, "contrasts.csv"))
+write.csv(contrasts, paste0(params$dge_output_prefix, "contrasts.csv_GLbulkRNAseq"))
 write.csv(output_table_1,
           row.names = FALSE,
-          paste0(params$dge_output_prefix, "differential_expression_no_annotations.csv")
+          paste0(params$dge_output_prefix, "differential_expression_no_annotations_GLbulkRNAseq.csv")
          )
 write.csv(
     sampleTable,
-    file =  paste0(params$dge_output_prefix, "SampleTable.csv")
+    file =  paste0(params$dge_output_prefix, "SampleTable_GLbulkRNAseq.csv")
 )
 
 # Create summary file based on output_table_1

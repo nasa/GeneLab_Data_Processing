@@ -1,5 +1,0 @@
-channels:
-  - bioconda
-  - defaults
-dependencies:
-  - samtools

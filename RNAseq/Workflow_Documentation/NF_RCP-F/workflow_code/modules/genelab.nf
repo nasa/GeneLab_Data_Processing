@@ -79,15 +79,17 @@ process GENERATE_MD5SUMS {
   input:
     path(data_dir)
     path(runsheet)
+    path("dp_tools__NF_RCP")
 
   output:
     path("*md5sum*")
-    path("Missing_md5sum_files.txt"), optional: true
+    path("Missing_md5sum_files_GLbulkRNAseq.txt"), optional: true
 
   script:
     """
     generate_md5sum_files.py  --root-path ${ data_dir } \\
-                              --runsheet-path ${ runsheet }
+                              --runsheet-path ${ runsheet } \\
+                              --plug-in-dir "dp_tools__NF_RCP"
     """
 }
 
@@ -107,7 +109,8 @@ process UPDATE_ISA_TABLES {
   script:
     """
     update_curation_table.py  --root-path ${ data_dir } \\
-                              --runsheet-path ${ runsheet }
+                              --runsheet-path ${ runsheet } \\
+                              --plug-in-dir "dp_tools__NF_RCP"
     """
 }
 
@@ -121,11 +124,12 @@ process SOFTWARE_VERSIONS {
     path("software_versions.txt")
 
   output:
-    path("software_versions.md")
+    path("software_versions_GLbulkRNAseq.md")
 
   script:
     """
     format_software_versions.py software_versions.txt
+    mv software_versions.md software_versions_GLbulkRNAseq.md
     """
 }
 

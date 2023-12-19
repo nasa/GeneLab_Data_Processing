@@ -1,6 +1,0 @@
-channels:
-  - bioconda
-  - defaults
-dependencies:
-  - star=2.7.8a # pinned due to a bug in 2.7.9a in outputting transcriptTome.bam, should update once the bug is fixed in a newer release
-  - python=3.8

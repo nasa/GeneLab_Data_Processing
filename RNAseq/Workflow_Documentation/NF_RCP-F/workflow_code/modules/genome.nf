@@ -176,7 +176,7 @@ process QUANTIFY_RSEM_GENES {
     path("03-RSEM_Counts/*")
 
   output:
-    tuple path("RSEM_Unnormalized_Counts.csv"), path("RSEM_NumNonZeroGenes.csv"), emit: publishables
+    tuple path("RSEM_Unnormalized_Counts_GLbulkRNAseq.csv"), path("RSEM_NumNonZeroGenes_GLbulkRNAseq.csv"), emit: publishables
 
   script:
     """
@@ -193,7 +193,7 @@ process QUANTIFY_STAR_GENES {
     val(strandedness)
 
   output:
-    tuple path("STAR_Unnormalized_Counts.csv"), path("STAR_NumNonZeroGenes.csv"), emit: publishables
+    tuple path("STAR_Unnormalized_Counts_GLbulkRNAseq.csv"), path("STAR_NumNonZeroGenes_GLbulkRNAseq.csv"), emit: publishables
 
   script:
     """

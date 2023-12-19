@@ -201,7 +201,7 @@ data assets:
     processed location: 
       - *rawDataDir
       - *FastQC_Reports
-      - "raw_multiqc_report"
+      - "raw_multiqc_GLbulkRNAseq_report"
 
     tags:
       - raw
@@ -212,7 +212,7 @@ data assets:
     processed location: 
       - *rawDataDir
       - *FastQC_Reports
-      - "raw_multiqc_report.zip"
+      - "raw_multiqc_GLbulkRNAseq_report.zip"
     
     tags:
       - raw
@@ -334,7 +334,7 @@ data assets:
     processed location: 
       - *trimDataDir
       - *FastQC_Reports
-      - "trimmed_multiqc_report"
+      - "trimmed_multiqc_GLbulkRNAseq_report"
 
     tags:
       - processed
@@ -345,7 +345,7 @@ data assets:
     processed location: 
       - *trimDataDir
       - *FastQC_Reports
-      - "trimmed_multiqc_report.zip"
+      - "trimmed_multiqc_GLbulkRNAseq_report.zip"
 
     tags:
       - processed
@@ -459,7 +459,7 @@ data assets:
     processed location: 
       - *trimDataDir
       - &trimmingReportsDir "Trimming_Reports"
-      - "trimming_multiqc_report"
+      - "trimming_multiqc_GLbulkRNAseq_report"
 
     tags:
       - processed
@@ -505,7 +505,7 @@ data assets:
   aligned MultiQC directory:
     processed location: 
       - *alignDataDir
-      - "align_multiqc_report"
+      - "align_multiqc_GLbulkRNAseq_report"
 
     resource categories: *neverPublished
 
@@ -515,7 +515,7 @@ data assets:
   aligned MultiQC directory ZIP:
     processed location: 
       - *alignDataDir
-      - "align_multiqc_report.zip"
+      - "align_multiqc_GLbulkRNAseq_report.zip"
 
     tags:
       - processed
@@ -629,7 +629,7 @@ data assets:
     processed location: 
       - *rseqcDataDir
       - "02_geneBody_coverage"
-      - "geneBody_cov_multiqc_report"
+      - "geneBody_cov_multiqc_GLbulkRNAseq_report"
 
     tags:
       - processed
@@ -640,7 +640,7 @@ data assets:
     processed location: 
       - *rseqcDataDir
       - "02_geneBody_coverage"
-      - "geneBody_cov_multiqc_report.zip"
+      - "geneBody_cov_multiqc_GLbulkRNAseq_report.zip"
 
     tags:
       - processed
@@ -656,7 +656,7 @@ data assets:
     processed location: 
       - *rseqcDataDir
       - "03_infer_experiment"
-      - "infer_exp_multiqc_report"
+      - "infer_exp_multiqc_GLbulkRNAseq_report"
 
     tags:
       - processed
@@ -667,7 +667,7 @@ data assets:
     processed location: 
       - *rseqcDataDir
       - "03_infer_experiment"
-      - "infer_exp_multiqc_report.zip"
+      - "infer_exp_multiqc_GLbulkRNAseq_report.zip"
 
     tags:
       - processed
@@ -678,7 +678,7 @@ data assets:
     processed location: 
       - *rseqcDataDir
       - "04_inner_distance"
-      - "inner_dist_multiqc_report"
+      - "inner_dist_multiqc_GLbulkRNAseq_report"
 
     tags:
       - processed
@@ -689,7 +689,7 @@ data assets:
     processed location: 
       - *rseqcDataDir
       - "04_inner_distance"
-      - "inner_dist_multiqc_report.zip"
+      - "inner_dist_multiqc_GLbulkRNAseq_report.zip"
 
     tags:
       - processed
@@ -700,7 +700,7 @@ data assets:
     processed location: 
       - *rseqcDataDir
       - "05_read_distribution"
-      - "read_dist_multiqc_report"
+      - "read_dist_multiqc_GLbulkRNAseq_report"
 
     tags:
       - processed
@@ -711,7 +711,7 @@ data assets:
     processed location: 
       - *rseqcDataDir
       - "05_read_distribution"
-      - "read_dist_multiqc_report.zip"
+      - "read_dist_multiqc_GLbulkRNAseq_report.zip"
 
     tags:
       - processed
@@ -772,7 +772,7 @@ data assets:
   RSEM counts MultiQC directory:
     processed location: 
       - *countsDataDir
-      - "RSEM_count_multiqc_report" # RENAMED from count_multiqc_report  as of 4/14/2022
+      - "RSEM_count_multiqc_GLbulkRNAseq_report" # RENAMED from count_multiqc_report  as of 4/14/2022
 
     tags:
       - processed
@@ -782,7 +782,7 @@ data assets:
   RSEM counts MultiQC directory ZIP:
     processed location: 
       - *countsDataDir
-      - "RSEM_count_multiqc_report.zip"
+      - "RSEM_count_multiqc_GLbulkRNAseq_report.zip"
 
     tags:
       - processed
@@ -797,7 +797,7 @@ data assets:
   star number non-zero count genes table:
     processed location: 
       - *alignDataDir
-      - "STAR_NumNonZeroGenes.csv"
+      - "STAR_NumNonZeroGenes_GLbulkRNAseq.csv"
 
     tags:
       - processed
@@ -807,7 +807,7 @@ data assets:
   star unnormalized counts table:
     processed location: 
       - *alignDataDir
-      - "STAR_Unnormalized_Counts.csv"
+      - "STAR_Unnormalized_Counts_GLbulkRNAseq.csv"
 
     tags:
       - processed
@@ -822,7 +822,7 @@ data assets:
   rsem number non-zero count genes table:
     processed location: 
       - *countsDataDir
-      - "RSEM_NumNonZeroGenes.csv"
+      - "RSEM_NumNonZeroGenes_GLbulkRNAseq.csv"
 
     tags:
       - processed
@@ -832,7 +832,7 @@ data assets:
   rsem unnormalized counts table:
     processed location: 
       - *countsDataDir
-      - "RSEM_Unnormalized_Counts.csv" # RENAMED from 'Unnormalized_Counts.csv'
+      - "RSEM_Unnormalized_Counts_GLbulkRNAseq.csv" # RENAMED from 'Unnormalized_Counts.csv'
 
     tags:
       - processed
@@ -891,7 +891,7 @@ data assets:
   DESeq2 normalized counts table:
     processed location: 
       - *normCountsDataDir
-      - "Normalized_Counts.csv"
+      - "Normalized_Counts_GLbulkRNAseq.csv"
 
     tags:
       - processed
@@ -906,7 +906,7 @@ data assets:
   ERCC normalized DESeq2 normalized counts table:
     processed location: 
       - *normCountsDataDir
-      - "ERCC_Normalized_Counts.csv"
+      - "ERCC_Normalized_Counts_GLbulkRNAseq.csv"
 
     tags:
       - processed
@@ -916,7 +916,7 @@ data assets:
   sample table:
     processed location: 
       - *DGEDataDir
-      - "SampleTable.csv"
+      - "SampleTable_GLbulkRNAseq.csv"
 
     tags:
       - processed
@@ -932,7 +932,7 @@ data assets:
     processed location: 
       - *DGEDataDir
       - &erccSubDir "ERCC_NormDGE"
-      - "ERCCnorm_SampleTable.csv"
+      - "ERCCnorm_SampleTable_GLbulkRNAseq.csv"
 
     tags:
       - processed
@@ -942,7 +942,7 @@ data assets:
   DESeq2 unnormalized counts table:
     processed location: 
       - *normCountsDataDir
-      - "RSEM_Unnormalized_Counts.csv" # RENAMED: from "Unnormalized_Counts.csv" for clarity
+      - "RSEM_Unnormalized_Counts_GLbulkRNAseq.csv" # RENAMED: from "Unnormalized_Counts.csv" for clarity
 
     tags:
       - processed
@@ -952,7 +952,7 @@ data assets:
   DESeq2 contrasts table:
     processed location: 
       - *DGEDataDir
-      - "contrasts.csv"
+      - "contrasts_GLbulkRNAseq.csv"
 
     tags:
       - processed
@@ -963,7 +963,7 @@ data assets:
     processed location: 
       - *DGEDataDir
       - *erccSubDir
-      - "ERCCnorm_contrasts.csv"
+      - "ERCCnorm_contrasts_GLbulkRNAseq.csv"
 
     tags:
       - processed
@@ -973,7 +973,7 @@ data assets:
   DESeq2 annotated DGE table:
     processed location: 
       - *DGEDataDir
-      - "differential_expression.csv"
+      - "differential_expression_GLbulkRNAseq.csv"
 
     tags:
       - processed
@@ -984,7 +984,7 @@ data assets:
     processed location: 
       - *DGEDataDir
       - *erccSubDir
-      - "ERCCnorm_differential_expression.csv"
+      - "ERCCnorm_differential_expression_GLbulkRNAseq.csv"
 
     tags:
       - processed
@@ -994,7 +994,7 @@ data assets:
   DESeq2 annotated DGE extended for viz table:
     processed location: 
       - *DGEDataDir
-      - "visualization_output_table.csv"
+      - "visualization_output_table_GLbulkRNAseq.csv"
 
     tags:
       - processed
@@ -1005,7 +1005,7 @@ data assets:
     processed location: 
       - *DGEDataDir
       - *erccSubDir
-      - "visualization_output_table_ERCCnorm.csv"
+      - "visualization_output_table_ERCCnorm_GLbulkRNAseq.csv"
 
     tags:
       - processed
@@ -1015,7 +1015,7 @@ data assets:
   DESeq2 viz PCA table:
     processed location: 
       - *DGEDataDir
-      - "visualization_PCA_table.csv"
+      - "visualization_PCA_table_GLbulkRNAseq.csv"
 
     tags:
       - processed
@@ -1026,7 +1026,7 @@ data assets:
     processed location: 
       - *DGEDataDir
       - *erccSubDir
-      - "visualization_PCA_table_ERCCnorm.csv"
+      - "visualization_PCA_table_ERCCnorm_GLbulkRNAseq.csv"
 
     tags:
       - processed
@@ -1037,7 +1037,7 @@ data assets:
   ERCC analysis HTML:
     processed location: 
       - *ERCCAnalysisDir
-      - "ERCC_analysis.html"
+      - "ERCC_analysis_GLbulkRNAseq.html"
 
     tags:
       - processed
@@ -1067,7 +1067,7 @@ Archived Data Assets:
     processed location: 
       - *trimDataDir
       - *trimmingReportsDir
-      - "trimming_multiqc_report.zip"
+      - "trimming_multiqc_GLbulkRNAseq_report.zip"
 
     tags:
       - processed

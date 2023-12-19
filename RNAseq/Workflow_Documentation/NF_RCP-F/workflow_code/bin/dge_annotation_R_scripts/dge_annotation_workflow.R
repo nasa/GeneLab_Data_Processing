@@ -84,7 +84,7 @@ if (!args$skip_gene_annotation) {
     rmarkdown::render(here("dge_annotation_R_scripts", "Add_Gene_Annotations.Rmd"),
         output_dir = args$work_dir,
         params = list(
-            input_table_path = paste0(args$dge_output_prefix, "differential_expression_no_annotations.csv"),
+            input_table_path = paste0(args$dge_output_prefix, "differential_expression_no_annotations_GLbulkRNAseq.csv"),
             work_dir = args$work_dir,
             annotation_file_path = args$annotation_file_path,
             primary_keytype = args$primary_keytype,
@@ -101,7 +101,7 @@ if (!args$skip_gene_annotation) {
     rmarkdown::render(here("dge_annotation_R_scripts", "Extend_DGE_Table.Rmd"),
         output_dir = args$work_dir,
         params = list(
-            input_table_path = paste0(args$dge_output_prefix, "differential_expression.csv"),
+            input_table_path = paste0(args$dge_output_prefix, "differential_expression_GLbulkRNAseq.csv"),
             work_dir = args$work_dir,
             extended_table_output_prefix = args$extended_table_output_prefix,
             extended_table_output_suffix = args$extended_table_output_suffix
@@ -117,7 +117,7 @@ if (!args$skip_gene_annotation) {
     rmarkdown::render(here("dge_annotation_R_scripts", "Generate_PCA_Table.Rmd"),
         output_dir = args$work_dir,
         params = list(
-            input_table_path = paste0(args$normalized_counts_output_prefix, "Normalized_Counts.csv"),
+            input_table_path = paste0(args$normalized_counts_output_prefix, "Normalized_Counts_GLbulkRNAseq.csv"),
             work_dir = args$work_dir,
             pca_table_output_prefix = args$extended_table_output_prefix,
             pca_table_output_suffix = args$extended_table_output_suffix
