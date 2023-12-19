@@ -377,7 +377,7 @@ rm(group_stdev,group_means,tcounts)
 # note: the paste0 here is ensure no string file name prefixes still create their directories
 # e.g. dge_output/
 dir.create(dirname(paste0(params$dge_output_prefix,"_")), recursive = TRUE)
-write.csv(contrasts, paste0(params$dge_output_prefix, "contrasts.csv_GLbulkRNAseq"))
+write.csv(contrasts, paste0(params$dge_output_prefix, "contrasts_GLbulkRNAseq.csv"))
 write.csv(output_table_1,
           row.names = FALSE,
           paste0(params$dge_output_prefix, "differential_expression_no_annotations_GLbulkRNAseq.csv")
