@@ -255,14 +255,14 @@ The outputs from the Analysis Staging and V&V Pipeline Subworkflows are describe
 **V&V Pipeline Subworkflow**
 
    - Output:
-     - VV_Logs/VV_log_final.tsv (table containing V&V flags for all checks performed)
-     - VV_Logs/VV_log_final_only_issues.tsv (table containing V&V flags ONLY for checks that produced a flag code >= 30)
-     - VV_Logs/VV_log_VV_RAW_READS.tsv (table containing V&V flags ONLY for raw reads checks)
-     - VV_Logs/VV_log_VV_TRIMMED_READS.tsv (table containing V&V flags for trimmed reads checks ONLY)
-     - VV_Logs/VV_log_VV_STAR_ALIGNMENTS.tsv (table containing V&V flags for alignment file checks ONLY)
-     - VV_Logs/VV_log_VV_RSEQC.tsv (table containing V&V flags for RSeQC file checks ONLY)
-     - VV_Logs/VV_log_VV_RSEM_COUNTS.tsv (table containing V&V flags for RSEM raw count file checks ONLY) 
-     - VV_Logs/VV_log_VV_DESEQ2_ANALYSIS.tsv (table containing V&V flags for DESeq2 Analysis output checks ONLY)
+     - VV_Logs/VV_log_final_GLbulkRNAseq.tsv (table containing V&V flags for all checks performed)
+     - VV_Logs/VV_log_final_only_issues_GLbulkRNAseq.tsv (table containing V&V flags ONLY for checks that produced a flag code >= 30)
+     - VV_Logs/VV_log_VV_RAW_READS_GLbulkRNAseq.tsv (table containing V&V flags ONLY for raw reads checks)
+     - VV_Logs/VV_log_VV_TRIMMED_READS_GLbulkRNAseq.tsv (table containing V&V flags for trimmed reads checks ONLY)
+     - VV_Logs/VV_log_VV_STAR_ALIGNMENTS_GLbulkRNAseq.tsv (table containing V&V flags for alignment file checks ONLY)
+     - VV_Logs/VV_log_VV_RSEQC_GLbulkRNAseq.tsv (table containing V&V flags for RSeQC file checks ONLY)
+     - VV_Logs/VV_log_VV_RSEM_COUNTS_GLbulkRNAseq.tsv (table containing V&V flags for RSEM raw count file checks ONLY) 
+     - VV_Logs/VV_log_VV_DESEQ2_ANALYSIS_GLbulkRNAseq.tsv (table containing V&V flags for DESeq2 Analysis output checks ONLY)
 
 <br>
 

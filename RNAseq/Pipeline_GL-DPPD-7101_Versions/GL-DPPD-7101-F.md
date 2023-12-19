@@ -49,43 +49,40 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
 
 # Table of contents  
 
-- [GeneLab bioinformatics processing pipeline for Illumina RNA-sequencing data](#genelab-bioinformatics-processing-pipeline-for-illumina-rna-sequencing-data)
-  - [Updates from previous version](#updates-from-previous-version)
-- [Table of contents](#table-of-contents)
-- [Software used](#software-used)
-- [General processing overview with example commands](#general-processing-overview-with-example-commands)
-  - [1. Raw Data QC](#1-raw-data-qc)
+- [**Software used**](#software-used)
+- [**General processing overview with example commands**](#general-processing-overview-with-example-commands)
+  - [**1. Raw Data QC**](#1-raw-data-qc)
     - [1a. Raw Data QC](#1a-raw-data-qc)
     - [1b. Compile Raw Data QC](#1b-compile-raw-data-qc)
-  - [2. Trim/Filter Raw Data and Trimmed Data QC](#2-trimfilter-raw-data-and-trimmed-data-qc)
+  - [**2. Trim/Filter Raw Data and Trimmed Data QC**](#2-trimfilter-raw-data-and-trimmed-data-qc)
     - [2a. Trim/Filter Raw Data](#2a-trimfilter-raw-data)
     - [2b. Trimmed Data QC](#2b-trimmed-data-qc)
     - [2c. Compile Trimmed Data QC](#2c-compile-trimmed-data-qc)
-  - [3. Build STAR Reference](#3-build-star-reference)
-  - [4. Align Reads to Reference Genome then Sort and Index](#4-align-reads-to-reference-genome-then-sort-and-index)
+  - [**3. Build STAR Reference**](#3-build-star-reference)
+  - [**4. Align Reads to Reference Genome then Sort and Index**](#4-align-reads-to-reference-genome-then-sort-and-index)
     - [4a. Align Reads to Reference Genome with STAR](#4a-align-reads-to-reference-genome-with-star)
     - [4b. Compile Alignment Logs](#4b-compile-alignment-logs)
     - [4c. Tablulate STAR Counts in R](#4c-tablulate-star-counts-in-r)
     - [4d. Sort Aligned Reads](#4d-sort-aligned-reads)
     - [4e. Index Sorted Aligned Reads](#4e-index-sorted-aligned-reads)
-  - [5. Create Reference BED File](#5-create-reference-bed-file)
+  - [**5. Create Reference BED File**](#5-create-reference-bed-file)
     - [5a. Convert GTF to genePred File](#5a-convert-gtf-to-genepred-file)
     - [5b. Convert genePred to BED File](#5b-convert-genepred-to-bed-file)
-  - [6. Assess Strandedness, GeneBody Coverage, Inner Distance, and Read Distribution with RSeQC](#6-assess-strandedness-genebody-coverage-inner-distance-and-read-distribution-with-rseqc)
+  - [**6. Assess Strandedness, GeneBody Coverage, Inner Distance, and Read Distribution with RSeQC**](#6-assess-strandedness-genebody-coverage-inner-distance-and-read-distribution-with-rseqc)
     - [6a. Determine Read Strandedness](#6a-determine-read-strandedness)
     - [6b. Compile Strandedness Reports](#6b-compile-strandedness-reports)
     - [6c. Evaluate GeneBody Coverage](#6c-evaluate-genebody-coverage)
     - [6d. Compile GeneBody Coverage Reports](#6d-compile-genebody-coverage-reports)
-    - [6e. Determine Inner Distance (For Paired End Datasets ONLY)](#6e-determine-inner-distance-for-paired-end-datasets-only)
+    - [6e. Determine Inner Distance (For Paired End Datasets)](#6e-determine-inner-distance-for-paired-end-datasets-only)
     - [6f. Compile Inner Distance Reports](#6f-compile-inner-distance-reports)
     - [6g. Assess Read Distribution](#6g-assess-read-distribution)
     - [6h. Compile Read Distribution Reports](#6h-compile-read-distribution-reports)
-  - [7. Build RSEM Reference](#7-build-rsem-reference)
-  - [8. Quantitate Aligned Reads](#8-quantitate-aligned-reads)
+  - [**7. Build RSEM Reference**](#7-build-rsem-reference)
+  - [**8. Quantitate Aligned Reads**](#8-quantitate-aligned-reads)
     - [8a. Count Aligned Reads with RSEM](#8a-count-aligned-reads-with-rsem)
     - [8b. Compile RSEM Count Logs](#8b-compile-rsem-count-logs)
     - [8c. Calculate Total Number of Genes Expressed Per Sample in R](#8c-calculate-total-number-of-genes-expressed-per-sample-in-r)
-  - [9. Normalize Read Counts, Perform Differential Gene Expression Analysis, and Add Gene Annotations in R](#9-normalize-read-counts-perform-differential-gene-expression-analysis-and-add-gene-annotations-in-r)
+  - [**9. Normalize Read Counts, Perform Differential Gene Expression Analysis, and Add Gene Annotations in R**](#9-normalize-read-counts-perform-differential-gene-expression-analysis-and-add-gene-annotations-in-r)
     - [9a. Create Sample RunSheet](#9a-create-sample-runsheet)
     - [9b. Environment Set Up](#9b-environment-set-up)
     - [9c. Configure Metadata, Sample Grouping, and Group Comparisons](#9c-configure-metadata-sample-grouping-and-group-comparisons)
@@ -96,7 +93,8 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
     - [9h. Perform DGE on Datasets Without ERCC Spike-In](#9h-perform-dge-on-datasets-without-ercc-spike-in)
     - [9i. Prepare GeneLab DGE Tables with Annotations on Datasets Without ERCC Spike-In](#9i-prepare-genelab-dge-tables-with-annotations-on-datasets-without-ercc-spike-in)
     - [9j. Export GeneLab DGE Tables with Annotations for Datasets Without ERCC Spike-In](#9j-export-genelab-dge-tables-with-annotations-for-datasets-without-ercc-spike-in)
-  - [10. Evaluate ERCC Spike-In Data](#10-evaluate-ercc-spike-in-data)
+
+  - [**10. Evaluate ERCC Spike-In Data**](#10-evaluate-ercc-spike-in-data)
     - [10a. Evaluate ERCC Count Data in Python](#10a-evaluate-ercc-count-data-in-python)
     - [10b. Perform DESeq2 Analysis of ERCC Counts in R](#10b-perform-deseq2-analysis-of-ercc-counts-in-r)
     - [10c. Analyze ERCC DESeq2 Results in Python](#10c-analyze-ercc-deseq2-results-in-python)
@@ -126,7 +124,7 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
 |tximport|1.27.1|[https://github.com/mikelove/tximport](https://github.com/mikelove/tximport)|
 |tidyverse|1.3.1|[https://www.tidyverse.org](https://www.tidyverse.org)|
 |stringr|1.4.1|[https://github.com/tidyverse/stringr](https://github.com/tidyverse/stringr)|
-|dp_tools|1.3.3|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
+|dp_tools|1.3.4|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |pandas|1.5.0|[https://github.com/pandas-dev/pandas](https://github.com/pandas-dev/pandas)|
 |seaborn|0.12.0|[https://seaborn.pydata.org/](https://seaborn.pydata.org/)|
 |matplotlib|3.6.0|[https://matplotlib.org/stable](https://matplotlib.org/stable)|
@@ -172,8 +170,8 @@ fastqc -o /path/to/raw_fastqc/output/directory *.fastq.gz
 ### 1b. Compile Raw Data QC  
 
 ```bash
-multiqc --interactive -n raw_multiqc -o /path/to/raw_multiqc/output/raw_multiqc_report /path/to/directory/containing/raw_fastqc/files
-zip -r raw_multiqc_report.zip /path/to/raw_multiqc/output/raw_multiqc_report
+multiqc --interactive -n raw_multiqc_GLbulkRNAseq -o /path/to/raw_multiqc/output/raw_multiqc_GLbulkRNAseq_report /path/to/directory/containing/raw_fastqc/files
+zip -r raw_multiqc_GLbulkRNAseq_report.zip /path/to/raw_multiqc/output/raw_multiqc_GLbulkRNAseq_report
 ```
 
 **Parameter Definitions:**
@@ -189,9 +187,9 @@ zip -r raw_multiqc_report.zip /path/to/raw_multiqc/output/raw_multiqc_report
 
 **Output Data:**
 
-* **raw_multiqc_report.zip** (zip containing the following)
-  * **raw_multiqc.html** (multiqc output html summary)
-  * **raw_multiqc_data** (directory containing multiqc output data)
+* **raw_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  * **raw_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  * **raw_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -261,8 +259,8 @@ fastqc -o /path/to/trimmed_fastqc/output/directory *.fastq.gz
 ### 2c. Compile Trimmed Data QC  
 
 ```bash
-multiqc --interactive -n trimmed_multiqc -o /path/to/trimmed_multiqc/output/trimmed_multiqc_report /path/to/directory/containing/trimmed_fastqc/files
-zip -r trimmed_multiqc_report.zip /path/to/trimmed_multiqc/output/trimmed_multiqc_report
+multiqc --interactive -n trimmed_multiqc_GLbulkRNAseq -o /path/to/trimmed_multiqc/output/trimmed_multiqc_GLbulkRNAseq_report /path/to/directory/containing/trimmed_fastqc/files
+zip -r trimmed_multiqc_GLbulkRNAseq_report.zip /path/to/trimmed_multiqc/output/trimmed_multiqc_GLbulkRNAseq_report
 ```
 
 **Parameter Definitions:**
@@ -278,9 +276,9 @@ zip -r trimmed_multiqc_report.zip /path/to/trimmed_multiqc/output/trimmed_multiq
 
 **Output Data:**
 
-* **trimmed_multiqc_report.zip** (zip containing the following)
-  * **trimmed_multiqc.html** (multiqc output html summary)
-  * **trimmed_multiqc_data** (directory containing multiqc output data)
+* **trimmed_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  * **trimmed_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  * **trimmed_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -426,8 +424,8 @@ STAR --twopassMode Basic \
 ### 4b. Compile Alignment Logs
 
 ```bash
-multiqc --interactive -n align_multiqc -o /path/to/align_multiqc/output/align_multiqc_report /path/to/*Log.final.out/files
-zip -r align_multiqc_report.zip /path/to/align_multiqc/output/align_multiqc_report
+multiqc --interactive -n align_multiqc_GLbulkRNAseq -o /path/to/align_multiqc/output/align_multiqc_GLbulkRNAseq_report /path/to/*Log.final.out/files
+zip -r align_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/align_multiqc_GLbulkRNAseq_report
 ```
 
 **Parameter Definitions:**
@@ -443,9 +441,9 @@ zip -r align_multiqc_report.zip /path/to/align_multiqc/output/align_multiqc_repo
 
 **Output Data:**
 
-* **align_multiqc_report.zip** (zip containing the following)
-  * **align_multiqc.html** (multiqc output html summary)
-  * **align_multiqc_data** (directory containing multiqc output data)
+* **align_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  * **align_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  * **align_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -482,7 +480,7 @@ row.names(counts) <- counts.files[[1]]$V1
 
 ##### Export unnormalized counts table
 setwd(file.path(align_dir))
-write.csv(counts,file='STAR_Unnormalized_Counts.csv')
+write.csv(counts,file='STAR_Unnormalized_Counts_GLbulkRNAseq.csv')
 
 
 ## print session info ##
@@ -498,7 +496,7 @@ sessionInfo()
 
 **Output Data:**
 
-- **STAR_Unnormalized_Counts.csv** (Table containing raw STAR counts for each sample)
+- **STAR_Unnormalized_Counts_GLbulkRNAseq.csv** (Table containing raw STAR counts for each sample)
 
 <br>
 
@@ -636,8 +634,8 @@ infer_experiment.py -r /path/to/annotation/BED/file \
 ### 6b. Compile Strandedness Reports
 
 ```bash
-multiqc --interactive -n infer_exp_multiqc -o /path/to/infer_exp_multiqc/output/infer_exp_multiqc /path/to/*infer_expt.out/files
-zip -r infer_exp_multiqc_report.zip /path/to/infer_exp_multiqc/output/infer_exp_multiqc_report
+multiqc --interactive -n infer_exp_multiqc_GLbulkRNAseq -o /path/to/infer_exp_multiqc/output/infer_exp_multiqc_GLbulkRNAseq_report /path/to/*infer_expt.out/files
+zip -r infer_exp_multiqc_GLbulkRNAseq_report.zip /path/to/infer_exp_multiqc/output/infer_exp_multiqc_GLbulkRNAseq_report
 ```
 
 **Parameter Definitions:**
@@ -653,9 +651,9 @@ zip -r infer_exp_multiqc_report.zip /path/to/infer_exp_multiqc/output/infer_exp_
 
 **Output Data:**
 
-* **infer_exp_multiqc_report.zip** (zip containing the following)
-  * **infer_exp_multiqc.html** (multiqc output html summary)
-  * **infer_exp_multiqc_data** (directory containing multiqc output data)
+* **infer_exp_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  * **infer_exp_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  * **infer_exp_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -691,8 +689,8 @@ geneBody_coverage.py -r /path/to/annotation/BED/file \
 ### 6d. Compile GeneBody Coverage Reports
 
 ```bash
-multiqc --interactive -n genebody_cov_multiqc -o /path/to/geneBody_cov_multiqc/output/geneBody_cov_multiqc_report /path/to/geneBody_coverage/output/files
-zip -r genebody_cov_multiqc_report.zip /path/to/genebody_cov_multiqc/output/genebody_cov_multiqc_report
+multiqc --interactive -n genebody_cov_multiqc_GLbulkRNAseq -o /path/to/geneBody_cov_multiqc/output/geneBody_cov_multiqc_GLbulkRNAseq_report /path/to/geneBody_coverage/output/files
+zip -r genebody_cov_multiqc_GLbulkRNAseq_report.zip /path/to/genebody_cov_multiqc/output/genebody_cov_multiqc_GLbulkRNAseq_report
 ```
 
 **Parameter Definitions:**
@@ -708,9 +706,9 @@ zip -r genebody_cov_multiqc_report.zip /path/to/genebody_cov_multiqc/output/gene
 
 **Output Data:**
 
-* **genebody_cov_multiqc_report.zip** (zip containing the following)
-  * **genebody_cov_multiqc.html** (multiqc output html summary)
-  * **genebody_cov_multiqc_data** (directory containing multiqc output data)
+* **genebody_cov_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  * **genebody_cov_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  * **genebody_cov_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -752,8 +750,8 @@ inner_distance.py -r /path/to/annotation/BED/file \
 ### 6f. Compile Inner Distance Reports
 
 ```bash
-multiqc --interactive -n inner_dist_multiqc /path/to/align_multiqc/output/inner_dist_multiqc_report /path/to/inner_dist/output/files
-zip -r inner_dist_multiqc_report.zip /path/to/align_multiqc/output/inner_dist_multiqc_report
+multiqc --interactive -n inner_dist_multiqc_GLbulkRNAseq /path/to/align_multiqc/output/inner_dist_multiqc_GLbulkRNAseq_report /path/to/inner_dist/output/files
+zip -r inner_dist_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/inner_dist_multiqc_GLbulkRNAseq_report
 ```
 
 **Parameter Definitions:**
@@ -769,9 +767,9 @@ zip -r inner_dist_multiqc_report.zip /path/to/align_multiqc/output/inner_dist_mu
 
 **Output Data:**
 
-* **inner_dist_multiqc_report.zip** (zip containing the following)
-  * **inner_dist_multiqc.html** (multiqc output html summary)
-  * **inner_dist_multiqc_data** (directory containing multiqc output data)
+* **inner_dist_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  * **inner_dist_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  * **inner_dist_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -804,8 +802,8 @@ read_distribution.py -r /path/to/annotation/BED/file \
 ### 6h. Compile Read Distribution Reports
 
 ```bash
-multiqc --interactive -n read_dist_multiqc -o /path/to/read_dist_multiqc/output/read_dist_multiqc_report /path/to/*read_dist.out/files
-zip -r read_dist_multiqc_report.zip /path/to/read_dist_multiqc/output/read_dist_multiqc_report
+multiqc --interactive -n read_dist_multiqc_GLbulkRNAseq -o /path/to/read_dist_multiqc/output/read_dist_multiqc_GLbulkRNAseq_report /path/to/*read_dist.out/files
+zip -r read_dist_multiqc_GLbulkRNAseq_report.zip /path/to/read_dist_multiqc/output/read_dist_multiqc_GLbulkRNAseq_report
 ```
 
 **Parameter Definitions:**
@@ -821,9 +819,9 @@ zip -r read_dist_multiqc_report.zip /path/to/read_dist_multiqc/output/read_dist_
 
 **Output Data:**
 
-* **read_dist_multiqc_report.zip** (zip containing the following)
-  * **read_dist_multiqc.html** (multiqc output html summary)
-  * **read_dist_multiqc_data** (directory containing multiqc output data)
+* **read_dist_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  * **read_dist_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  * **read_dist_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -919,8 +917,8 @@ rsem-calculate-expression --num-threads NumberOfThreads \
 ### 8b. Compile RSEM Count Logs
 
 ```bash
-multiqc --interactive -n RSEM_count_multiqc -o /path/to/RSEM_count_multiqc/output/RSEM_count_multiqc_report /path/to/*stat/files
-zip -r RSEM_count_multiqc_report.zip /path/to/raw_multiqc/output/RSEM_count_multiqc_report
+multiqc --interactive -n RSEM_count_multiqc_GLbulkRNAseq -o /path/to/RSEM_count_multiqc/output/RSEM_count_multiqc_GLbulkRNAseq_report /path/to/*stat/files
+zip -r RSEM_count_multiqc_GLbulkRNAseq_report.zip /path/to/raw_multiqc/output/RSEM_count_multiqc_GLbulkRNAseq_report
 ```
 
 **Parameter Definitions:**
@@ -939,9 +937,9 @@ zip -r RSEM_count_multiqc_report.zip /path/to/raw_multiqc/output/RSEM_count_mult
 
 **Output Data:**
 
-* **RSEM_count_multiqc_report.zip** (zip containing the following)
-  * **RSEM_count_multiqc.html** (multiqc output html summary)
-  * **RSEM_count_multiqc_data** (directory containing multiqc output data)
+* **RSEM_count_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  * **RSEM_count_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  * **RSEM_count_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -975,7 +973,7 @@ colnames(NumNonZeroGenes) <- c("Number of genes with non-zero counts")
 
 ##### Export the number of genes with non-zero counts for each sample
 setwd(file.path(counts_dir))
-write.csv(NumNonZeroGenes,file='NumNonZeroGenes.csv')
+write.csv(NumNonZeroGenes,file='NumNonZeroGenes_GLbulkRNAseq.csv')
 
 ## print session info ##
 print("Session Info below: ")
@@ -990,7 +988,7 @@ sessionInfo()
 
 **Output Data:**
 
-- NumNonZeroGenes.csv (A samplewise table of the number of genes expressed)
+- NumNonZeroGenes_GLbulkRNAseq.csv (A samplewise table of the number of genes expressed)
 
 <br>
 
@@ -1203,7 +1201,7 @@ ercc_dds_all <- dds[ercc_rows_all,]
 ### Print ERCC unfiltered raw counts table ###
 
 ERCC_rawCounts_all = as.data.frame(counts(ercc_dds_all))
-write.csv(ERCC_rawCounts_all,file='ERCC_rawCounts_unfiltered.csv')
+write.csv(ERCC_rawCounts_all,file='ERCC_rawCounts_unfiltered_GLbulkRNAseq.csv')
 
 
 #############################################################################
@@ -1228,7 +1226,7 @@ ercc_dds <- dds[ercc_rows,]
 ## Note: These data are used internally at GeneLab for QC
 
 ERCC_rawCounts = as.data.frame(counts(ercc_dds))
-write.csv(ERCC_rawCounts,file='ERCC_rawCounts_filtered.csv')
+write.csv(ERCC_rawCounts,file='ERCC_rawCounts_filtered_GLbulkRNAseq.csv')
 
 
 ### Create a list of rows containing ERCC group B genes to use for ERCC-normalization ###
@@ -1623,33 +1621,33 @@ reduced_output_table_2 <- reduced_output_table_2 %>%
 normCounts_exp <- as.data.frame(counts(dds_1, normalized=TRUE))
 ERCCnormCounts_exp <- as.data.frame(counts(dds_2, normalized=TRUE))
 
-write.csv(txi.rsem$counts,file.path(norm_output, "RSEM_Unnormalized_Counts.csv"))
-write.csv(normCounts_exp,file.path(norm_output, "Normalized_Counts.csv"))
-write.csv(ERCCnormCounts_exp,file.path(norm_output, "ERCC_Normalized_Counts.csv"))
+write.csv(txi.rsem$counts,file.path(norm_output, "RSEM_Unnormalized_Counts_GLbulkRNAseq.csv"))
+write.csv(normCounts_exp,file.path(norm_output, "Normalized_Counts_GLbulkRNAseq.csv"))
+write.csv(ERCCnormCounts_exp,file.path(norm_output, "ERCC_Normalized_Counts_GLbulkRNAseq.csv"))
 
 
 ### Export sample grouping and contrasts tables for (non-ERCC) normalized and ERCC-normalized data ###
 
-write.csv(sampleTable,file.path(DGE_output, "SampleTable.csv"))
-write.csv(sampleTable_sub,file.path(DGE_output_ERCC, "ERCCnorm_SampleTable.csv"))
+write.csv(sampleTable,file.path(DGE_output, "SampleTable_GLbulkRNAseq.csv"))
+write.csv(sampleTable_sub,file.path(DGE_output_ERCC, "ERCCnorm_SampleTable_GLbulkRNAseq.csv"))
 
-write.csv(contrasts,file.path(DGE_output, "contrasts.csv"))
-write.csv(contrasts_sub,file.path(DGE_output_ERCC, "ERCCnorm_contrasts.csv"))
+write.csv(contrasts,file.path(DGE_output, "contrasts_GLbulkRNAseq.csv"))
+write.csv(contrasts_sub,file.path(DGE_output_ERCC, "ERCCnorm_contrasts_GLbulkRNAseq.csv"))
 
 
 ### Export human-readable (non-ERCC) normalized and ERCC-normalized DGE tables ###
 
-write.csv(reduced_output_table_1,file.path(DGE_output, "differential_expression.csv"), row.names = FALSE)
-write.csv(reduced_output_table_2,file.path(DGE_output_ERCC, "ERCCnorm_differential_expression.csv"), row.names = FALSE)
+write.csv(reduced_output_table_1,file.path(DGE_output, "differential_expression_GLbulkRNAseq.csv"), row.names = FALSE)
+write.csv(reduced_output_table_2,file.path(DGE_output_ERCC, "ERCCnorm_differential_expression_GLbulkRNAseq.csv"), row.names = FALSE)
 
 
 ### Export computer-readable DGE and PCA tables used for GeneLab visualization ###
 
-write.csv(output_table_1,file.path(DGE_output, "visualization_output_table.csv"), row.names = FALSE)
-write.csv(output_table_2,file.path(DGE_output_ERCC, "visualization_output_table_ERCCnorm.csv"), row.names = FALSE)
+write.csv(output_table_1,file.path(DGE_output, "visualization_output_table_GLbulkRNAseq.csv"), row.names = FALSE)
+write.csv(output_table_2,file.path(DGE_output_ERCC, "visualization_output_table_ERCCnorm_GLbulkRNAseq.csv"), row.names = FALSE)
 
-write.csv(PCA_raw$x,file.path(DGE_output, "visualization_PCA_table.csv"), row.names = TRUE)
-write.csv(PCA_raw_ERCCnorm$x,file.path(DGE_output_ERCC, "visualization_PCA_table_ERCCnorm.csv"), row.names = TRUE)
+write.csv(PCA_raw$x,file.path(DGE_output, "visualization_PCA_table_GLbulkRNAseq.csv"), row.names = TRUE)
+write.csv(PCA_raw_ERCCnorm$x,file.path(DGE_output_ERCC, "visualization_PCA_table_ERCCnorm_GLbulkRNAseq.csv"), row.names = TRUE)
 
 
 ### print session info ###
@@ -1844,27 +1842,27 @@ reduced_output_table_1 <- reduced_output_table_1 %>%
 
 normCounts_exp <- as.data.frame(counts(dds_1, normalized=TRUE))
 
-write.csv(txi.rsem$counts,file.path(norm_output, "RSEM_Unnormalized_Counts.csv"))
-write.csv(normCounts_exp,file.path(norm_output, "Normalized_Counts.csv"))
+write.csv(txi.rsem$counts,file.path(norm_output, "RSEM_Unnormalized_Counts_GLbulkRNAseq.csv"))
+write.csv(normCounts_exp,file.path(norm_output, "Normalized_Counts_GLbulkRNAseq.csv"))
 
 
 ### Export sample grouping and contrasts tables ###
 
-write.csv(sampleTable,file.path(DGE_output, "SampleTable.csv"))
+write.csv(sampleTable,file.path(DGE_output, "SampleTable_GLbulkRNAseq.csv"))
 
-write.csv(contrasts,file.path(DGE_output, "contrasts.csv"))
+write.csv(contrasts,file.path(DGE_output, "contrasts_GLbulkRNAseq.csv"))
 
 
 ### Export human-readable DGE table ###
 
-write.csv(reduced_output_table_1,file.path(DGE_output, "differential_expression.csv"), row.names = FALSE)
+write.csv(reduced_output_table_1,file.path(DGE_output, "differential_expression_GLbulkRNAseq.csv"), row.names = FALSE)
 
 
 ### Export computer-readable DGE and PCA tables used for GeneLab visualization ###
 
-write.csv(output_table_1,file.path(DGE_output, "visualization_output_table.csv"), row.names = FALSE)
+write.csv(output_table_1,file.path(DGE_output, "visualization_output_table_GLbulkRNAseq.csv"), row.names = FALSE)
 
-write.csv(PCA_raw$x,file.path(DGE_output, "visualization_PCA_table.csv"), row.names = TRUE)
+write.csv(PCA_raw$x,file.path(DGE_output, "visualization_PCA_table_GLbulkRNAseq.csv"), row.names = TRUE)
 
 
 ### print session info ###
@@ -1886,36 +1884,36 @@ sessionInfo()
 
 Output data without considering ERCC spike-in genes:
 
-- **RSEM_Unnormalized_Counts.csv** (table containing raw RSEM gene counts for each sample)
-- **Normalized_Counts.csv** (table containing normalized gene counts for each sample)
-- **SampleTable.csv** (table containing samples and their respective groups)
-- visualization_output_table.csv (file used to generate GeneLab DGE visualizations)
-- visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
-- **differential_expression.csv** (table containing normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations) 
-- **contrasts.csv** (table containing all pairwise comparisons)
+- **RSEM_Unnormalized_Counts_GLbulkRNAseq.csv** (table containing raw RSEM gene counts for each sample)
+- **Normalized_Counts_GLbulkRNAseq.csv** (table containing normalized gene counts for each sample)
+- **SampleTable_GLbulkRNAseq.csv** (table containing samples and their respective groups)
+- visualization_output_table_GLbulkRNAseq.csv (file used to generate GeneLab DGE visualizations)
+- visualization_PCA_table_GLbulkRNAseq.csv (file used to generate GeneLab PCA plots)
+- **differential_expression_GLbulkRNAseq.csv** (table containing normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations) 
+- **contrasts_GLbulkRNAseq.csv** (table containing all pairwise comparisons)
 
 Output data with considering ERCC spike-in genes:
 *Note: ERCC-normalized data are only available upon request. GeneLab encourages users to use the normalized and DGE data without considering ERCC spike-in genes.*
 
-- ERCC_rawCounts_unfiltered.csv (table containing raw ERCC unfiltered counts)
-- ERCC_rawCounts_filtered.csv (ERCC counts table after removing ERCC genes with low counts)
-- ERCC_Normalized_Counts.csv (table containing ERCC-normalized gene counts for each sample)
-- ERCCnorm_SampleTable.csv (table containing samples with detectable ERCC group B genes and their respective groups)
-- visualization_output_table_ERCCnorm.csv (file used to generate GeneLab DGE visualizations for ERCC-normalized data)
-- visualization_PCA_table_ERCCnorm.csv (file used to generate GeneLab PCA plots for ERCC-normalized data)
-- ERCCnorm_differential_expression.csv (table containing ERCC-normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations)
-- ERCCnorm_contrasts.csv (table containing all pairwise comparisons for samples containing ERCC spike-in)
+- ERCC_rawCounts_unfiltered_GLbulkRNAseq.csv (table containing raw ERCC unfiltered counts)
+- ERCC_rawCounts_filtered_GLbulkRNAseq.csv (ERCC counts table after removing ERCC genes with low counts)
+- ERCC_Normalized_Counts_GLbulkRNAseq.csv (table containing ERCC-normalized gene counts for each sample)
+- ERCCnorm_SampleTable_GLbulkRNAseq.csv (table containing samples with detectable ERCC group B genes and their respective groups)
+- visualization_output_table_ERCCnorm_GLbulkRNAseq.csv (file used to generate GeneLab DGE visualizations for ERCC-normalized data)
+- visualization_PCA_table_ERCCnorm_GLbulkRNAseq.csv (file used to generate GeneLab PCA plots for ERCC-normalized data)
+- ERCCnorm_differential_expression_GLbulkRNAseq.csv (table containing ERCC-normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations)
+- ERCCnorm_contrasts_GLbulkRNAseq.csv (table containing all pairwise comparisons for samples containing ERCC spike-in)
 
 
 **Output Data for Datasets without ERCC Spike-In:**
 
-- **RSEM_Unnormalized_Counts.csv** (table containing raw RSEM gene counts for each sample)
-- **Normalized_Counts.csv** (table containing normalized gene counts for each sample)
-- **SampleTable.csv** (table containing samples and their respective groups)
-- visualization_output_table.csv (file used to generate GeneLab DGE visualizations)
-- visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
-- **differential_expression.csv** (table containing normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations) 
-- **contrasts.csv** (table containing all pairwise comparisons)
+- **RSEM_Unnormalized_Counts_GLbulkRNAseq.csv** (table containing raw RSEM gene counts for each sample)
+- **Normalized_Counts_GLbulkRNAseq.csv** (table containing normalized gene counts for each sample)
+- **SampleTable_GLbulkRNAseq.csv** (table containing samples and their respective groups)
+- visualization_output_table_GLbulkRNAseq.csv (file used to generate GeneLab DGE visualizations)
+- visualization_PCA_table_GLbulkRNAseq.csv (file used to generate GeneLab PCA plots)
+- **differential_expression_GLbulkRNAseq.csv** (table containing normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations) 
+- **contrasts_GLbulkRNAseq.csv** (table containing all pairwise comparisons)
 
 > Note: RNAseq processed data interactive tables and plots are found in the [GLDS visualization portal](https://visualization.genelab.nasa.gov/data/studies).
 
@@ -1953,7 +1951,7 @@ accession = 'GLDS-NNN' # Replace Ns with GLDS number
 isaPath = '/path/to/GLDS-NNN_metadata_GLDS-NNN-ISA.zip' # Replace with path to ISA archive file
 zip_file_object =  zipfile.ZipFile(isaPath, "r")
 list_of_ISA_files = zip_file_object.namelist()
-UnnormalizedCountsPath = '/path/to/GLDS-NNN_rna_seq_RSEM_Unnormalized_Counts.csv'
+UnnormalizedCountsPath = '/path/to/GLDS-NNN_rna_seq_RSEM_Unnormalized_Counts_GLbulkRNAseq.csv'
 
 # Print contents of ISA zip file to view file order
 list_of_ISA_files
@@ -2483,7 +2481,7 @@ print(ERCCmetadata)
 
 # Export ERCC sample metadata
 
-ERCCmetadata.to_csv('ERCC_analysis/ERCCmetadata.csv') 
+ERCCmetadata.to_csv('ERCC_analysis/ERCCmetadata_GLbulkRNAseq.csv') 
 
 # Export ERCC count data
 
@@ -2491,7 +2489,7 @@ ercc_counts.columns = ercc_counts.columns.str.replace('-','_')
 ERCCcounts = ercc_counts.loc[:,ERCCmetadata.index]
 ERCCcounts.head()
 
-ERCCcounts.to_csv('ERCC_analysis/ERCCcounts.csv') 
+ERCCcounts.to_csv('ERCC_analysis/ERCCcounts_GLbulkRNAseq.csv') 
 ```
 
 
@@ -2505,8 +2503,8 @@ ERCCcounts.to_csv('ERCC_analysis/ERCCcounts.csv')
 - ERCC_analysis/ERCC_stats_GLDS-*.csv (Samplewise counts statistics table containing 'Min', 'Max', 'Dynamic range', 'R')
 - ERCC_analysis/ERCC_dynrange_GLDS-*.csv (Samplewise counts statistics subset table containing 'Dynamic range')
 - ERCC_analysis/ERCC_rsq_GLDS-*.csv (Samplewise counts statistics subset table containing 'R')
-- ERCC_analysis/ERCCmetadata.csv (Samplewise metadata table inlcuding ERCC mix number)
-- ERCC_analysis/ERCCcounts.csv (Samplewise ERCC counts table)
+- ERCC_analysis/ERCCmetadata_GLbulkRNAseq.csv (Samplewise metadata table inlcuding ERCC mix number)
+- ERCC_analysis/ERCCcounts_GLbulkRNAseq.csv (Samplewise ERCC counts table)
 
 <br>
 
@@ -2527,8 +2525,8 @@ library("DESeq2")
 
 ## Import and format ERCC count data and metadata
 
-cts <- as.matrix(read.csv('ERCC_analysis/ERCCcounts.csv',sep=",",row.names="Gene_ID")) #INPUT
-coldata <- read.csv('ERCC_analysis/ERCCmetadata.csv', row.names=1) #INPUT
+cts <- as.matrix(read.csv('ERCC_analysis/ERCCcounts_GLbulkRNAseq.csv',sep=",",row.names="Gene_ID")) #INPUT
+coldata <- read.csv('ERCC_analysis/ERCCmetadata_GLbulkRNAseq.csv', row.names=1) #INPUT
 
 coldata$Mix <- factor(coldata$Mix)
 all(rownames(coldata) == colnames(cts))
@@ -2558,20 +2556,20 @@ res
 
 ## Export DESeq2 results table and normalized ERCC counts table
 
-write.csv(res, 'ERCC_analysis/ERCC_DESeq2.csv') #OUTPUT
+write.csv(res, 'ERCC_analysis/ERCC_DESeq2_GLbulkRNAseq.csv') #OUTPUT
 normcounts = counts(dds, normalized=TRUE)
-write.csv(normcounts, 'ERCC_analysis/ERCC_normcounts.csv') #OUTPUT
+write.csv(normcounts, 'ERCC_analysis/ERCC_normcounts_GLbulkRNAseq.csv') #OUTPUT
 ```
 
 **Input Data:**
 
-- ERCC_analysis/ERCCmetadata.csv (Samplewise metadata table inlcuding ERCC mix number, output from [Step 10a](#10a-evaluate-ercc-count-data-in-python))
-- ERCC_analysis/ERCCcounts.csv (Samplewise ERCC counts table, output from [Step 10a](#10a-evaluate-ercc-count-data-in-python))
+- ERCC_analysis/ERCCmetadata_GLbulkRNAseq.csv (Samplewise metadata table inlcuding ERCC mix number, output from [Step 10a](#10a-evaluate-ercc-count-data-in-python))
+- ERCC_analysis/ERCCcounts_GLbulkRNAseq.csv (Samplewise ERCC counts table, output from [Step 10a](#10a-evaluate-ercc-count-data-in-python))
 
 **Output Data:**
 
-- ERCC_analysis/ERCC_DESeq2.csv (DESeq2 results table)
-- ERCC_analysis/ERCC_normcounts.csv (Normalized ERCC Counts table)
+- ERCC_analysis/ERCC_DESeq2_GLbulkRNAseq.csv (DESeq2 results table)
+- ERCC_analysis/ERCC_normcounts_GLbulkRNAseq.csv (Normalized ERCC Counts table)
 
 <br>
 
@@ -2589,7 +2587,7 @@ import matplotlib.pyplot as plt
 
 # Import ERCC DESeq2 results
 
-deseq2out = pd.read_csv('ERCC_analysis/ERCC_DESeq2.csv', index_col=0) # INPUT
+deseq2out = pd.read_csv('ERCC_analysis/ERCC_DESeq2_GLbulkRNAseq.csv', index_col=0) # INPUT
 #deseq2out.index = deseq2out.index.str.replace('_','-')
 deseq2out.rename(columns ={'baseMean' : 'meanNormCounts'}, inplace = True)
 print(deseq2out.head())
@@ -2622,7 +2620,7 @@ print(combined.head())
 # Export the filtered combined ERCC DESeq2 results and ercc_table
 # Remember to change file name to GLDS# analyzing
 
-combined.filter(items = ['ERCC ID', 'meanNormCounts', 'cleaned_pvalue','cleaned_padj']).to_csv('ERCC_analysis/ERCC_lodr_GLDS-NNN_mqc.csv') 
+combined.filter(items = ['ERCC ID', 'meanNormCounts', 'cleaned_pvalue','cleaned_padj']).to_csv('ERCC_analysis/ERCC_lodr_GLDS-NNN_mqc_GLbulkRNAseq.csv') 
 
 
 # Plot p-value vs. mean normalized ERCC counts
@@ -2661,7 +2659,7 @@ ax.set_yscale("log");
 
 **Input Data:**
 
-- ERCC_analysis/ERCC_DESeq2.csv (ERCC DESeq2 results table, output from [Step 10b](#10b-perform-deseq2-analysis-of-ercc-counts-in-r))
+- ERCC_analysis/ERCC_DESeq2_GLbulkRNAseq.csv (ERCC DESeq2 results table, output from [Step 10b](#10b-perform-deseq2-analysis-of-ercc-counts-in-r))
 
 **Output Data:**
 
