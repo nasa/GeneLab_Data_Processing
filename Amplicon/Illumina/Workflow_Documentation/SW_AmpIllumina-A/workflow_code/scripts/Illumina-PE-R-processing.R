@@ -54,9 +54,9 @@ if ( ! concatenate_reads_only %in% c("TRUE", "FALSE") ) {
     # https://astrobiomike.github.io/amplicon/dada2_workflow_ex
 
     # loading libraries
-library(dada2); packageVersion("dada2") # 1.12.1
-library(DECIPHER); packageVersion("DECIPHER") # 2.12.0
-library(biomformat); packageVersion("biomformat") # 1.12.0
+library(dada2); packageVersion("dada2")
+library(DECIPHER); packageVersion("DECIPHER")
+library(biomformat); packageVersion("biomformat")
 
     ### general processing ###
     # reading in unique sample names into variable
@@ -238,9 +238,10 @@ tax_tab <- t(sapply(tax_info, function(x) {
 colnames(tax_tab) <- ranks
 row.names(tax_tab) <- NULL
 
-# need to add a column for domain if this is ITS (due to how the reference taxonomy object is structured)
+# need to add domain values if this is ITS (due to how the reference taxonomy object is structured, which doesn't have a domain entry)
 if ( target_region == "ITS" ) {
-    tax_tab <- data.frame("ASV_ID"=asv_ids, "domain"="Eukarya", tax_tab, check.names=FALSE)
+    tax_tab[,"domain"] <- "Eukarya"
+    tax_tab <- data.frame("ASV_ID"=asv_ids, tax_tab, check.names=FALSE)
 } else {
     tax_tab <- data.frame("ASV_ID"=asv_ids, tax_tab, check.names=FALSE)
 }
