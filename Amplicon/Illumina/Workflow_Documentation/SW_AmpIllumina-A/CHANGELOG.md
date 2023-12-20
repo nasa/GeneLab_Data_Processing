@@ -7,6 +7,7 @@
 - Added datasets that are cannot be autoprocessed to run_workflow.py
 - Set default for --anchor-primers to FALSE and set the default for --primers-linked to FALSE
 - Visualization script changes: added samplewise taxonomy plots, renamed and moved plots related to alpha or beta diversity
+- fix where some ITS datasets would fail to create biom object
   
 ## [1.2.0](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_AmpIllumina-A_1.2.0/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-A)
 - Added runsheet dependency, runsheet definition in [config.yaml](workflow_code/config.yaml)
