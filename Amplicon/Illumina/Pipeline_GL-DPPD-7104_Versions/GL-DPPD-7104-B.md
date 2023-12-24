@@ -33,9 +33,6 @@ Added software versions for all packages needed for new steps
 
 # Table of contents  
 
-- [Bioinformatics pipeline for amplicon Illumina sequencing data](#bioinformatics-pipeline-for-amplicon-illumina-sequencing-data)
-  - [Updates from previous version](#updates-from-previous-version)
-- [Table of contents](#table-of-contents)
 - [Software used](#software-used)
 - [Reference databases used](#reference-databases-used)
 - [General processing overview with example commands](#general-processing-overview-with-example-commands)
@@ -53,17 +50,20 @@ Added software versions for all packages needed for new steps
     - [5e. Removing putative chimeras](#5e-removing-putative-chimeras)
     - [5f. Assigning taxonomy](#5f-assigning-taxonomy)
     - [5g. Generating and writing standard outputs](#5g-generating-and-writing-standard-outputs)
-  - [6. Beta diversity](#6-beta-diversity)
-    - [6a. Hierarchical clustering](#6a-hierarchical-clustering)
-    - [6b. Ordination](#6b-ordination)
-  - [7. Alpha diversity](#7-alpha-diversity)
-    - [7a. Rarefaction curves](#7a-rarefaction-curves)
-    - [7b. Richness and diversity estimates](#7b-richness-and-diversity-estimates)
-  - [8. Taxonomic summaries](#8-taxonomic-summaries)
-  - [9. Differential abundance analysis](#9-differential-abundance-analysis)
-    - [9a. Betadisper and permutational ANOVA](#9a-betadisper-and-permutational-anova)
-    - [9b. Differential abundance analysis with DESeq2](#9b-differential-abundance-analysis-with-deseq2)
-    - [9c. Volcano plots](#9c-volcano-plots)
+  - [6. Amplicon seq data analysis set-up](#6-amplicon-seq-data-analysis-set-up)
+    - [6a. Create sample runsheet](#6a-create-sample-runsheet)
+    - [6b. Environment set up](#6b-environment-set-up)
+  - [7. Beta diversity](#7-beta-diversity)
+    - [7a. Hierarchical clustering](#7a-hierarchical-clustering)
+    - [7b. Ordination](#7b-ordination)
+  - [8. Alpha diversity](#8-alpha-diversity)
+    - [8a. Rarefaction curves](#8a-rarefaction-curves)
+    - [8b. Richness and diversity estimates](#8b-richness-and-diversity-estimates)
+  - [9. Taxonomic summaries](#9-taxonomic-summaries)
+  - [10. Differential abundance analysis](#10-differential-abundance-analysis)
+    - [10a. Betadisper and permutational ANOVA](#10a-betadisper-and-permutational-anova)
+    - [10b. Differential abundance analysis with DESeq2](#10b-differential-abundance-analysis-with-deseq2)
+    - [10c. Volcano plots](#10c-volcano-plots)
 
 ---
 
@@ -526,6 +526,7 @@ write.table(tax_and_count_tab, "Taxonomy_and_counts.tsv", sep="\t", quote=FALSE,
 
 **Output Data:**
 
+* `tax_tab` (variable containing the taxonomy table)
 * **ASVs.fasta** (inferred sequences)
 * **counts.tsv** (count table)
 * **taxonomy.tsv** (taxonomy table)
@@ -537,27 +538,70 @@ write.table(tax_and_count_tab, "Taxonomy_and_counts.tsv", sep="\t", quote=FALSE,
 
 ---
 
-## 6. Beta diversity
+## 6. Amplicon seq data analysis set-up
 
-> The following is run in an R environment.  
+> The remainder of this document is performed in R.  
+  
+<br>
 
-Beta diversity measures the variation in species composition between different samples or environments. A common practice in working with a new dataset is to generate some exploratory visualizations like ordinations and hierarchical clusterings. These give us a quick overview of how our samples relate to each other and can be a way to check for problems like batch effects.
+### 6a. Create sample runsheet
 
-Create a DESeq2 object from the counts and the runsheet and apply the Variance Stabilization Transformation (VST):
+> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/SW_AmpIllumina-A/examples/runsheet/README.md).
 
-```R
-count_tab_ <- read.table(file = "counts.tsv", 
-                        header = TRUE, row.names = 1, sep = "\t")
-deseq_counts <- DESeqDataSetFromMatrix(countData = count_tab, 
-                                       colData = runsheet, 
-                                       design = ~1)
-deseq_counts_vst <- varianceStabilizingTransformation(deseq_counts)
-vst_counts <- assay(deseq_counts_vst)
+```bash
+### Download the *ISA.zip file from the OSDR ###
+
+dpt-get-isa-archive \
+ --accession OSD-###
+
+### Parse the metadata from the *ISA.zip file to create a sample runsheet ###
+
+dpt-isa-to-runsheet --accession OSD-### \
+ --config-type AmpSeq \
+ --config-version Latest \
+ --isa-archive *ISA.zip
 ```
 
-Create a sample info table from the runsheet containing the group names and a column of unique colors for each group.
+**Parameter Definitions:**
+
+- `--accession OSD-###` - OSD accession ID (replace ### with the OSD number being processed), used to retrieve the urls for the ISA archive and raw reads hosted on the OSDR
+- `--config-type` - Instructs the script to extract the metadata required for Amplicon Sequencing data processing from the ISA archive
+- `--config-version` - Specifies the `dp-tools` configuration version to use, a value of `Latest` will specify the most recent version
+- `--isa-archive` - Specifies the *ISA.zip file for the respective OSD dataset, downloaded in the `dpt-get-isa-archive` command
+
+
+**Input Data:**
+
+- No input data required but the OSD accession ID needs to be indicated, which is used to download the respective ISA archive 
+
+**Output Data:**
+
+- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective OSD dataset, used to define sample groups - the *ISA.zip file is located in the [OSDR](https://osdr.nasa.gov/bio/repo/) under 'Files' -> 'Study Metadata Files')
+
+- **{OSD-Accession-ID}_AmpSeq_v{version}_runsheet.csv** (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
+
+<br>
+
+### 6b. Environment set-up
 
 ```R
+### Import libraries used for processing ###
+
+library(tidyverse)
+library(phyloseq)
+library(vegan)
+library(dendextend)
+library(DESeq2)
+
+
+### Read in the runsheet containing the metadata required for processing ###
+
+runsheet <- read.table(file = "*runsheet.csv", 
+                        header = TRUE, row.names = 1, sep = ",")
+
+
+### Create a sample info table from the runsheet containing the group names and a column of unique colors for each group ###
+
 num_colors <- length(unique(runsheet$groups))
 if (num_colors > 9) {
     custom_palette <- colorRampPalette(brewer.pal(9, "Set1"))(num_colors)
@@ -569,20 +613,51 @@ group_colors <- setNames(colors, unique(runsheet$groups))
 runsheet <- runsheet %>%
   mutate(!!color_colname := group_colors[.data$groups])
 sample_info_tab <- runsheet[, c($groups, $color)]
+
+
+### Read in the ASV count table, containing the counts of each ASV in each sample ###
+
+count_tab <- read.table(file = "counts.tsv", 
+                        header = TRUE, row.names = 1, sep = "\t")
 ```
 
 **Input Data:**
+* \*runsheet.csv (The runsheet containing sample metadata required for processing, output from [step 6a](#6a-create-sample-runsheet))  
 * counts.tsv (ASV counts table, output from [step 5g](#5g-generating-and-writing-standard-outputs))
-* runsheet.csv (The runsheet used to run the workflow)
   
 **Output Data:**
-* count_tab (table created from counts.tsv)
-* vst_counts (VST-normalized ASV counts)
-* sample_info_tab (subtable of the runsheet containing the 'groups' column and an additional 'color' column with a color for each unique group)
+* `count_tab` (variable containing the ASV counts table created from counts.tsv)
+* `runsheet` (variable containing sample metadata required for processing)
+* `sample_info_tab` (variable containing a subtable of the runsheet, including the 'groups' column and an additional 'color' column with a color for each unique group)
   
 <br>
 
-### 6a. Hierarchical clustering
+___
+
+## 7. Beta diversity
+
+Beta diversity measures the variation in species composition between different samples or environments. A common practice in working with a new dataset is to generate some exploratory visualizations like ordinations and hierarchical clusterings. These give us a quick overview of how our samples relate to each other and can be a way to check for problems like batch effects.
+
+Create a DESeq2 object from the counts and the runsheet and apply the Variance Stabilization Transformation (VST):
+
+```R
+deseq_counts <- DESeqDataSetFromMatrix(countData = count_tab, 
+                                       colData = runsheet, 
+                                       design = ~1)
+deseq_counts_vst <- varianceStabilizingTransformation(deseq_counts)
+vst_counts <- assay(deseq_counts_vst)
+```
+
+**Input Data:**
+* `count_tab` (variable containing the ASV counts table, output from [step 6b](#6b-environment-set-up))
+* `runsheet` (variable containing sample metadata required for processing, output from [step 6b](#6b-environment-set-up))
+  
+**Output Data:**
+* `vst_counts` (variable holding the VST-normalized ASV counts)
+  
+<br>
+
+### 7a. Hierarchical clustering
 
 Create a euclidean distance matrix and perform hierarchical clustering.
 
@@ -599,7 +674,7 @@ euc_clust <- hclust(d = euc_dist, method = "ward.D2")
 
 *	`d=` – specifying the the input dissimilarity or distance object
 
-*   `method=` - specifying the method of clustering to use. "Ward.D2" is one that is commonly used.
+* `method=` - specifying the method of clustering to use. "Ward.D2" is one that is commonly used
 
 Create a dendrogram object.
 
@@ -615,7 +690,7 @@ euc_dend <- as.dendrogram(euc_clust, hang = 0.1)
 
 *	`euc_clust` – an object that can be converted into a dendrogram
 
-*   `hang=` - numeric indicating how the leaves hight should be computed from the height of their parents
+* `hang=` - numeric indicating how the leaves hight should be computed from the height of their parents
   
 Color the sample branches by group and plot the dendrogram.
 
@@ -629,15 +704,16 @@ dev.off()
 
 **Input Data:**
 
-* vst_counts (VST-normalized counts, output from [step 6](#6-beta-diversity))
+* `vst_counts` (variable holding the VST-normalized ASV counts, output from [step 7](#7-beta-diversity))
   
 **Output Data:**
 
 * **dendrogram_by_group.png** (Dendrogram of euclidean distance - based hierarchical clustering of the samples, colored by experimental groups) 
-* euc_dist (Samplewise euclidean distance matrix based on VST-normalized counts)
+* `euc_dist` (variable containing the samplewise euclidean distance matrix based on VST-normalized counts)
+
 <br>
 
-### 6b. Ordination
+### 7b. Ordination
 
 Ordination techniques like PCoA help in reducing the dimensionality of the data, allowing us to visualize complex relationships between samples.
 
@@ -655,33 +731,33 @@ vst_pcoa <- ordinate(physeq = vst_physeq, method = "PCoA", distance = "euclidean
 
 *	`vst_pcoa <-` – specifying the variable that will hold the ordination of the VST-normalized counts
 
-*	`physeq=` – specifying the Phyloseq object that contains the variance stabilized counts and sample metadata.
+*	`physeq=` – specifying the Phyloseq object that contains the variance stabilized counts and sample metadata
 
 *	`method=` – specifying the ordination method to be used.
 
-*   `distance=` – specifying the distance metric used for the ordination.
+* `distance=` – specifying the distance metric used for the ordination
 
 **Input Data:**
 
-* vst_counts (VST-normalized ASV counts, output from [step 6](#6-beta-diversity))
-* sample_info_tab (Metadata table, output from [step 6b](#6b-ordination))
+* `vst_counts` (variable holding the VST-normalized ASV counts, output from [step 7](#7-beta-diversity))
+* `sample_info_tab` (variable containing a subtable of the runsheet, including the 'groups' and 'color' columns, output from [step 6b](#6b-environment-set-up))
 
 **Output Data:**
 
-* vst_physeq (Phyloseq object)
-* vst_pcoa (Object containing the coordinates and eigenvalues resulting from the PCoA of the VST-normalized counts)
+* `vst_physeq` (variable holding the Phyloseq object)
+* `vst_pcoa` (variable holding the object containing the coordinates and eigenvalues resulting from the PCoA of the VST-normalized counts)
   
 <br>
 
 ___
 
-## 7. Alpha diversity
-
-> The following is run in an R environment.  
+## 8. Alpha diversity
 
 Alpha diversity examines the variety and abundance of taxa within individual samples. Rarefaction curves are utilized to visually represent this diversity, plotting the number of unique sequences (ASVs) identified against the total number of sequences sampled, offering a perspective on the saturation and completeness of sampling. Metrics like Chao1 richness estimates and Shannon diversity indices are employed to quantify the richness (total number of unique sequences) and diversity (combination of richness and evenness) within these samples.
 
-### 7a. Rarefaction curves
+<br>
+
+### 8a. Rarefaction curves
 
 ```R
 rare_curve <- rarecurve(x = t(count_tab), step = 100, col = sample_info_tab$color, 
@@ -711,14 +787,16 @@ dev.off()
 
 **Input Data:**
 
-* count_tab (raw counts table, output from [step 6](#6-beta-diversity))
-* sample_info_tab (Metadata table, output from [step 6b](#6b-ordination))
+* `vst_counts` (variable holding the VST-normalized ASV counts, output from [step 7](#7-beta-diversity))
+* `sample_info_tab` (variable containing a subtable of the runsheet, including the 'groups' and 'color' columns, output from [step 6b](#6b-environment-set-up))
 
 **Output Data:**
 
 * **rarefaction_curves.png** (Rarefaction curves plot for all samples)
-  
-### 7b. Richness and diversity estimates
+
+<br>
+
+### 8b. Richness and diversity estimates
 
 ```R
 count_tab_phy <- otu_table(count_tab, taxa_are_rows = TRUE)
@@ -737,27 +815,27 @@ ggsave(paste0("richness_and_diversity_estimates_by_group", ".png"), plot = richn
 
 *	`x=` - An optional variable to map to the horizontal axis of the plot
 
-*   `color=` - Specifies a variable for determining the coloring scheme of the plot
+* `color=` - Specifies a variable for determining the coloring scheme of the plot
 
-*   `measures=` - Determines which of the available alpha-diversity measures to include in the plot
+* `measures=` - Determines which of the available alpha-diversity measures to include in the plot
 
 **Input Data:**
 
-* count_tab (Raw counts table, output from [step 6](#6-beta-diversity))
-* sample_info_tab (Metadata table, output from [step 6b](#6b-ordination))
-* tax_tab (Taxonomy table, created in [step 5g](#5g-generating-and-writing-standard-outputs))
+* `count_tab` (variable containing the ASV counts table, output from [step 6b](#6b-environment-set-up))
+* `sample_info_tab` (variable containing a subtable of the runsheet, including the 'groups' and 'color' columns, output from [step 6b](#6b-environment-set-up))  
+* `tax_tab` (variable containing the taxonomy table, created in [step 5g](#5g-generating-and-writing-standard-outputs))
 
 **Output Data:**
 
 * **richness_and_diversity_estimates_by_sample.png** (Richness and diversity estimates plot for all samples)
-* **richness_and_diversity_estimates_by_group.png** (Richness and diversity estimates plot for all groups)* ASV_physeq (Phyloseq object created using an OTU table based on the vst_counts)
-* ASV_physeq (Phyloseq object created using an OTU table based on the vst_counts)
+* **richness_and_diversity_estimates_by_group.png** (Richness and diversity estimates plot for all groups)  
+* `ASV_physeq` (variable contiaining the Phyloseq object created using an OTU table based on the vst_counts)
   
 <br>
 
 ___
 
-## 8. Taxonomic summaries
+## 9. Taxonomic summaries
 
 Taxonomic summaries provide insights into the composition of microbial communities at various taxonomic levels.
 
@@ -778,7 +856,7 @@ ggsave(filename = "samplewise_relative_classes", ".png", plot = samplewise_class
 
 **Input Data:**
 
-* ASV_physeq (Phyloseq object, output from [step 7b](#7b-richness-and-diversity-estimates))
+* `ASV_physeq` (variable contiaining the Phyloseq object, output from [step 8b](#8b-richness-and-diversity-estimates))
 
 **Output Data:**
 
@@ -792,11 +870,13 @@ ggsave(filename = "samplewise_relative_classes", ".png", plot = samplewise_class
 
 ___
 
-## 9. Differential abundance analysis
+## 10. Differential abundance analysis
 
 Using Betadisper, permutational ANOVA, and DESeq2, we aim to uncover specific taxa that exhibit notable variations across different conditions, complemented by visualizations like volcano plots to illustrate these disparities and their implications on ASV expression and overall microbial community dynamics.
 
-### 9a. Betadisper and permutational ANOVA
+<br>
+
+### 10a. Betadisper and permutational ANOVA
 
 Use betadisper to check whether variability of data points in each group is similar.
 
@@ -810,9 +890,9 @@ betadisper(d = euc_dist, group = sample_info_tab$groups) %>% anova()
 
 *	`d=` - Specifies the input distance object
 
-*   `group=` - Specifies the sample grouping information
+* `group=` - Specifies the sample grouping information
 
-*   `%>% anova()` - Sends the output object from betadisper() to the anova() function to perform the permutational ANOVA test
+* `%>% anova()` - Sends the output object from betadisper() to the anova() function to perform the permutational ANOVA test
 
 Use adonis2 to test whether the mean of data differs significantly between groups.
 
@@ -881,16 +961,18 @@ ggsave(filename=paste0(beta_diversity_out_dir, output_prefix, "PCoA_without_labe
 
 **Input Data:**
 
-* euc_dist (euclidean distance matrix of transposed VST-normalized counts, output from [step 6a](#6a-hierarchical-clustering))
-* sample_info_tab (Metadata table, output from [step 6b](#6b-ordination))
-* vst_physeq (physeq object, output from [step 6b](#6b-ordination))
+* `euc_dist` (variable containing the samplewise euclidean distance matrix of transposed VST-normalized counts, output from [step 7a](#7a-hierarchical-clustering))
+* `sample_info_tab` (variable containing a subtable of the runsheet, including the 'groups' and 'color' columns, output from [step 6b](#6b-environment-set-up))  
+* `vst_physeq` (variable holding the Phyloseq object, output from [step 7b](#7b-ordination))
 
 **Output Data:**
 
-**PCoA_w_labels.png** (Principle Coordinates Analysis plot of VST transformed ASV counts, with sample labels)
-**PCoA_without_labels.png** (Principle Coordinates Analysis plot of VST transformed ASV counts, without sample labels)
+*  **PCoA_w_labels.png** (Principle Coordinates Analysis plot of VST transformed ASV counts, with sample labels)
+*  **PCoA_without_labels.png** (Principle Coordinates Analysis plot of VST transformed ASV counts, without sample labels)
 
-### 9b. Differential abundance analysis with DESeq2
+<br>
+
+### 10b. Differential abundance analysis with DESeq2
 
 DESeq2 can be used to identify specific ASVs that have significantly different copy-number counts between sample groups.
 
@@ -919,13 +1001,15 @@ write.table(counts(deseq_modeled, normalized=TRUE), file = paste0("normalized_co
 
 **Input Data:**
 
-* ASV_physeq (Phyloseq object, output from [step 7b](#7b-richness-and-diversity-estimates))
+* `ASV_physeq` (variable contiaining the Phyloseq object, output from [step 8b](#8b-richness-and-diversity-estimates))
   
 **Output Data:**
-* **normalized_counts.tsv** (Size factor normalized ASV counts table)
-* deseq_modeled (Processed DESeq2 object based on ASV_physeq)
+* **normalized_counts.tsv** (size factor normalized ASV counts table)
+* `deseq_modeled` (variable holding the DESeq2 output data)
 
-### 9c. Volcano plots
+<br>
+
+### 10c. Volcano plots
 
 Define the function for creating the volcano plot and saving the normalized counts for a given contrast.
 
@@ -983,17 +1067,17 @@ apply(comparisons, 1, function(pair) plot_comparison(pair['group1'], pair['group
 
 *	`apply()` – the function we are calling, with the following parameters set within it
 
-*	`physeq=` - The data matrix or array on which the function is to be applied.
+*	`physeq=` - the data matrix or array on which the function is to be applied
 
-*   `1` – Indicates that the function should be applied to each row.
+* `1` – indicates that the function should be applied to each row
 
-*   `function(pair) plot_comparison(pair['group1'], pair['group2'])` – An anonymous function which takes a pair of values as input and executes the plot_comparison function on these values.
+* `function(pair) plot_comparison(pair['group1'], pair['group2'])` – an anonymous function which takes a pair of values as input and executes the plot_comparison function on these values
 
 **Input Data:**
 
-* deseq_modeled (Processed DESeq2 object based on ASV_physeq, output from [step 9b](#9b-differential-abundance-analysis-with-deseq2))
+* `deseq_modeled` (variable holding the DESeq2 output data, output from [step 10b](#910-differential-abundance-analysis-with-deseq2))
   
 **Output Data:**
 
-* **group1_vs_group2.csv** (Differential abundance tables for all pairwise contrasts of groups)
-* **volcano_group1_vs_group2.png** (Volcano plots for all pairwise contrasts of groups)
+* **group1_vs_group2.csv** (differential abundance tables for all pairwise contrasts of groups)
+* **volcano_group1_vs_group2.png** (volcano plots for all pairwise contrasts of groups)
