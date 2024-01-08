@@ -23,12 +23,12 @@ Anushree Sonic (Genelab Configuration Manager)
 ## Updates from previous version
 
 Inclusion of additional steps and outputs starting from ([step 6](#6-beta-diversity)):
-- Beta diversity with hierarchical clustering ([6a](#6a-hierarchical-clustering)) and ordination ([6b](#6b-ordination)).
-- Alpha diversity with rarefaction curves ([7a](#7a-rarefaction-curves)) and richness and diversity estimates ([7b](#7b-richness-and-diversity-estimates)).
-- Groupwise and samplewise taxonomic summary plots ([step 8](#8-taxonomic-summaries)).
-- Differential abundance analysis ([step 9](#9-differential-abundance-analysis)) including Betadisper, permutational ANOVA ([9a](#9a-betadisper-and-permutational-anova)), DESeq2 ([9b](#9b-differential-abundance-analysis-with-deseq2)) and volcano plots ([9c](#9c-volcano-plots)).
+- Beta Diversity with Hierarchical Clustering ([6a](#6a-hierarchical-clustering)) and Ordination ([6b](#6b-ordination)).
+- Alpha Diversity with Rarefaction Curves ([7a](#7a-rarefaction-curves)) and Richness and Diversity Estimates ([7b](#7b-richness-and-diversity-estimates)).
+- Groupwise and Samplewise Taxonomic Summary Plots ([step 8](#8-taxonomic-summaries)).
+- Differential Abundance Analysis ([step 9](#9-differential-abundance-analysis)) Including Betadisper, Permutational ANOVA ([9a](#9a-betadisper-and-permutational-anova)), DESeq2 ([9b](#9b-differential-abundance-analysis-with-deseq2)) and Volcano Plots ([9c](#9c-volcano-plots)).
 
-Added software versions for all packages needed for new steps
+Included R packages
 
 
 # Table of contents  
@@ -39,31 +39,31 @@ Added software versions for all packages needed for new steps
   - [1. Raw Data QC](#1-raw-data-qc)
     - [1a. Compile Raw Data QC](#1a-compile-raw-data-qc)
   - [2. Trim Primers](#2-trim-primers)
-  - [3. Quality filtering](#3-quality-filtering)
+  - [3. Quality Filtering](#3-quality-filtering)
   - [4. Filtered Data QC](#4-filtered-data-qc)
     - [4a. Compile Filtered Data QC](#4a-compile-filtered-data-qc)
-  - [5. Calculate error model, apply DADA2 algorithm, assign taxonomy, and create output tables](#5-calculate-error-model-apply-dada2-algorithm-assign-taxonomy-and-create-output-tables)
-    - [5a. Learning the error rates](#5a-learning-the-error-rates)
-    - [5b. Inferring sequences](#5b-inferring-sequences)
-    - [5c. Merging forward and reverse reads; not needed if data are single-end](#5c-merging-forward-and-reverse-reads-not-needed-if-data-are-single-end)
-    - [5d. Generating sequence table with counts per sample](#5d-generating-sequence-table-with-counts-per-sample)
-    - [5e. Removing putative chimeras](#5e-removing-putative-chimeras)
-    - [5f. Assigning taxonomy](#5f-assigning-taxonomy)
-    - [5g. Generating and writing standard outputs](#5g-generating-and-writing-standard-outputs)
-  - [6. Amplicon seq data analysis set-up](#6-amplicon-seq-data-analysis-set-up)
-    - [6a. Create sample runsheet](#6a-create-sample-runsheet)
-    - [6b. Environment set up](#6b-environment-set-up)
-  - [7. Beta diversity](#7-beta-diversity)
-    - [7a. Hierarchical clustering](#7a-hierarchical-clustering)
+  - [5. Calculate Error model, Apply DADA2 Algorithm, Assign Taxonomy, and Create Output Tables](#5-calculate-error-model-apply-dada2-algorithm-assign-taxonomy-and-create-output-tables)
+    - [5a. Learning the Error Rates](#5a-learning-the-error-rates)
+    - [5b. Inferring Sequences](#5b-inferring-sequences)
+    - [5c. Merging Forward and Reverse Reads; Not Needed if Data are Single-End](#5c-merging-forward-and-reverse-reads-not-needed-if-data-are-single-end)
+    - [5d. Generating Sequence Table with Counts per Sample](#5d-generating-sequence-table-with-counts-per-sample)
+    - [5e. Removing Putative Chimeras](#5e-removing-putative-chimeras)
+    - [5f. Assigning Taxonomy](#5f-assigning-taxonomy)
+    - [5g. Generating and Writing Standard Outputs](#5g-generating-and-writing-standard-outputs)
+  - [6. Amplicon Seq Data Analysis Set Up](#6-amplicon-seq-data-analysis-set-up)
+    - [6a. Create Sample Runsheet](#6a-create-sample-runsheet)
+    - [6b. Environment Set Up](#6b-environment-set-up)
+  - [7. Beta Diversity](#7-beta-diversity)
+    - [7a. Hierarchical Clustering](#7a-hierarchical-clustering)
     - [7b. Ordination](#7b-ordination)
-  - [8. Alpha diversity](#8-alpha-diversity)
-    - [8a. Rarefaction curves](#8a-rarefaction-curves)
-    - [8b. Richness and diversity estimates](#8b-richness-and-diversity-estimates)
-  - [9. Taxonomic summaries](#9-taxonomic-summaries)
-  - [10. Differential abundance analysis](#10-differential-abundance-analysis)
-    - [10a. Betadisper and permutational ANOVA](#10a-betadisper-and-permutational-anova)
-    - [10b. Differential abundance analysis with DESeq2](#10b-differential-abundance-analysis-with-deseq2)
-    - [10c. Volcano plots](#10c-volcano-plots)
+  - [8. Alpha Diversity](#8-alpha-diversity)
+    - [8a. Rarefaction Curves](#8a-rarefaction-curves)
+    - [8b. Richness and Diversity Estimates](#8b-richness-and-diversity-estimates)
+  - [9. Taxonomic Summaries](#9-taxonomic-summaries)
+  - [10. Differential Abundance Analysis](#10-differential-abundance-analysis)
+    - [10a. Betadisper and Permutational ANOVA](#10a-betadisper-and-permutational-anova)
+    - [10b. Differential Abundance Analysis with DESeq2](#10b-differential-abundance-analysis-with-deseq2)
+    - [10c. Volcano Plots](#10c-volcano-plots)
 
 ---
 
@@ -201,7 +201,7 @@ cutadapt -a ^GTGCCAGCMGCCGCGGTAA...ATTAGATACCCSBGTAGTCC -A ^GGACTACVSGGGTATCTAAT
 
 ---
 
-## 3. Quality filtering
+## 3. Quality Filtering
 > The following is run in an R environment.  
 
 Specific settings required will depend on the dataset being processing. These include parameters such as `truncLen`, which might depend on the target amplicon and its size, and `maxEE` which might depend on the quality of the sequencing run. For instance, when working with ITS data, it may be preferable to omit using the `truncLen` parameter if the target amplified region is expected to vary to lengths greater than the read size. More information on these parameters can be found at these sites:  
@@ -305,14 +305,14 @@ multiqc -o filtered_multiqc_output  filtered_fastqc_output
 
 ---
 
-## 5. Calculate error model, apply DADA2 algorithm, assign taxonomy, and create output tables
+## 5. Calculate Error Mdel, Apply DADA2 Algorithm, Assign Taxonomy, and Create Output Tables
 > The following is run in an R environment.  
 
 These example commands as written assumes paired-end data, with notes included on what would be different if working with single-end data. The taxonomy reference database used below is as an example only, suitable for the example 16S dataset ([GLDS-200](https://osdr.nasa.gov/bio/repo/data/studies/OSD-200)) used here. But others designed for DECIPHER can be found here: [http://www2.decipher.codes/Downloads.html](http://www2.decipher.codes/Downloads.html)  
 
 <br>
 
-### 5a. Learning the error rates
+### 5a. Learning the Error Rates
 ```R
 forward_errors <- learnErrors(fls=“Filtered-R1.fq.gz”, multithread=TRUE)
 ```
@@ -337,7 +337,7 @@ reverse_errors <- learnErrors(fls=“Filtered-R2.fq.gz”, multithread=TRUE)
 
 <br>
 
-### 5b. Inferring sequences
+### 5b. Inferring Sequences
 ```R
 forward_seqs <- dada(derep=“Filtered-R1.fq.gz”, err=forward_errors, pool=“pseudo”, multithread=TRUE)
 ```
@@ -368,7 +368,7 @@ reverse_seqs <- dada(derep=“Filtered-R2.fq.gz”, err=reverse_errors, pool=“
 
 <br>
 
-### 5c. Merging forward and reverse reads; not needed if data are single-end
+### 5c. Merging Forward and Reverse Reads; Not Needed if Data are Single-End
 ```R
 merged_contigs <- mergePairs(dadaF=forward_seqs, derepF=“Filtered-R1.fq.gz”, dadaR=reverse_seqs, derepR=“Filtered-R2.fq.gz”)
 ```
@@ -389,7 +389,7 @@ merged_contigs <- mergePairs(dadaF=forward_seqs, derepF=“Filtered-R1.fq.gz”,
 
 <br>
 
-### 5d. Generating sequence table with counts per sample
+### 5d. Generating Sequence Table with Counts per Sample
 ```R
 seqtab <- makeSequenceTable(merged_contigs)
 ```
@@ -419,7 +419,7 @@ seqtab.nochim <- removeBimeraDenovo(unqs=seqtab, method=“consensus”, multith
 
 <br>
 
-### 5f. Assigning taxonomy
+### 5f. Assigning Ttaxonomy
 
 Creating a DNAStringSet object from the ASVs:
 ```R
@@ -467,7 +467,7 @@ tax_info <- IdTaxa(test=dna, trainingSet=trainingSet, strand=“both”, process
 
 <br>
 
-### 5g. Generating and writing standard outputs
+### 5g. Generating and Writing Standard Outputs
 
 Giving sequences more manageable names (e.g. ASV_1, ASV_2, …,):
 ```R
@@ -538,13 +538,13 @@ write.table(tax_and_count_tab, "Taxonomy_and_counts.tsv", sep="\t", quote=FALSE,
 
 ---
 
-## 6. Amplicon seq data analysis set-up
+## 6. Amplicon Seq Data Analysis Set Up
 
 > The remainder of this document is performed in R.  
   
 <br>
 
-### 6a. Create sample runsheet
+### 6a. Create Sample Runsheet
 
 > Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/SW_AmpIllumina-A/examples/runsheet/README.md).
 
@@ -565,9 +565,9 @@ dpt-isa-to-runsheet --accession OSD-### \
 **Parameter Definitions:**
 
 - `--accession OSD-###` - OSD accession ID (replace ### with the OSD number being processed), used to retrieve the urls for the ISA archive and raw reads hosted on the OSDR
-- `--config-type` - Instructs the script to extract the metadata required for Amplicon Sequencing data processing from the ISA archive
-- `--config-version` - Specifies the `dp-tools` configuration version to use, a value of `Latest` will specify the most recent version
-- `--isa-archive` - Specifies the *ISA.zip file for the respective OSD dataset, downloaded in the `dpt-get-isa-archive` command
+- `--config-type` - instructs the script to extract the metadata required for Amplicon Sequencing data processing from the ISA archive
+- `--config-version` - specifies the `dp-tools` configuration version to use, a value of `Latest` will specify the most recent version
+- `--isa-archive` - specifies the *ISA.zip file for the respective OSD dataset, downloaded in the `dpt-get-isa-archive` command
 
 
 **Input Data:**
@@ -582,7 +582,7 @@ dpt-isa-to-runsheet --accession OSD-### \
 
 <br>
 
-### 6b. Environment set-up
+### 6b. Environment Set Up
 
 ```R
 ### Import libraries used for processing ###
@@ -622,7 +622,7 @@ count_tab <- read.table(file = "counts.tsv",
 ```
 
 **Input Data:**
-* \*runsheet.csv (The runsheet containing sample metadata required for processing, output from [step 6a](#6a-create-sample-runsheet))  
+* \*runsheet.csv (runsheet containing sample metadata required for processing, output from [step 6a](#6a-create-sample-runsheet))  
 * counts.tsv (ASV counts table, output from [step 5g](#5g-generating-and-writing-standard-outputs))
   
 **Output Data:**
@@ -634,7 +634,7 @@ count_tab <- read.table(file = "counts.tsv",
 
 ___
 
-## 7. Beta diversity
+## 7. Beta Diversity
 
 Beta diversity measures the variation in species composition between different samples or environments. A common practice in working with a new dataset is to generate some exploratory visualizations like ordinations and hierarchical clusterings. These give us a quick overview of how our samples relate to each other and can be a way to check for problems like batch effects.
 
@@ -657,7 +657,7 @@ vst_counts <- assay(deseq_counts_vst)
   
 <br>
 
-### 7a. Hierarchical clustering
+### 7a. Hierarchical Clustering
 
 Create a euclidean distance matrix and perform hierarchical clustering.
 
@@ -708,7 +708,7 @@ dev.off()
   
 **Output Data:**
 
-* **dendrogram_by_group.png** (Dendrogram of euclidean distance - based hierarchical clustering of the samples, colored by experimental groups) 
+* **dendrogram_by_group.png** (dendrogram of euclidean distance - based hierarchical clustering of the samples, colored by experimental groups) 
 * `euc_dist` (variable containing the samplewise euclidean distance matrix based on VST-normalized counts)
 
 <br>
@@ -733,7 +733,7 @@ vst_pcoa <- ordinate(physeq = vst_physeq, method = "PCoA", distance = "euclidean
 
 *	`physeq=` – specifying the Phyloseq object that contains the variance stabilized counts and sample metadata
 
-*	`method=` – specifying the ordination method to be used.
+*	`method=` – specifying the ordination method to be used
 
 * `distance=` – specifying the distance metric used for the ordination
 
@@ -751,13 +751,13 @@ vst_pcoa <- ordinate(physeq = vst_physeq, method = "PCoA", distance = "euclidean
 
 ___
 
-## 8. Alpha diversity
+## 8. Alpha Diversity
 
 Alpha diversity examines the variety and abundance of taxa within individual samples. Rarefaction curves are utilized to visually represent this diversity, plotting the number of unique sequences (ASVs) identified against the total number of sequences sampled, offering a perspective on the saturation and completeness of sampling. Metrics like Chao1 richness estimates and Shannon diversity indices are employed to quantify the richness (total number of unique sequences) and diversity (combination of richness and evenness) within these samples.
 
 <br>
 
-### 8a. Rarefaction curves
+### 8a. Rarefaction Curves
 
 ```R
 rare_curve <- rarecurve(x = t(count_tab), step = 100, col = sample_info_tab$color, 
@@ -773,17 +773,17 @@ dev.off()
 
 *	`rarecurve()` – the rarefy function we are calling, with the following parameters set within it
 
-*	`x=` - Specifies the input data for the rarefaction curve, which should be the transposed counts
+*	`x=` - specifies the input data for the rarefaction curve, which should be the transposed counts
 
-*   `step=` - Specifies the step size for sample sizes in rarefaction curves
+*   `step=` - specifies the step size for sample sizes in rarefaction curves
 
-*   `col=` - Assigns a color to each line on the rarefaction curve for visual differentiation of sample groups
+*   `col=` - assigns a color to each line on the rarefaction curve for visual differentiation of sample groups
 
-*   `lwd=` - Sets the line width for the curves in the plot
+*   `lwd=` - sets the line width for the curves in the plot
 
-*   `ylab=` - Defines the label for the y-axis of the plot
+*   `ylab=` - defines the label for the y-axis of the plot
 
-*   `label=` - Indicates whether the lines in the plot should be kept
+*   `label=` - indicates whether the lines in the plot should be kept
 
 **Input Data:**
 
@@ -796,7 +796,7 @@ dev.off()
 
 <br>
 
-### 8b. Richness and diversity estimates
+### 8b. Richness and Diversity Estimates
 
 ```R
 count_tab_phy <- otu_table(count_tab, taxa_are_rows = TRUE)
@@ -813,11 +813,11 @@ ggsave(paste0("richness_and_diversity_estimates_by_group", ".png"), plot = richn
 
 *	`plot_richness()` – the phyloseq function we are calling, with the following parameters set within it
 
-*	`x=` - An optional variable to map to the horizontal axis of the plot
+*	`x=` - an optional variable to map to the horizontal axis of the plot
 
-* `color=` - Specifies a variable for determining the coloring scheme of the plot
+* `color=` - specifies a variable for determining the coloring scheme of the plot
 
-* `measures=` - Determines which of the available alpha-diversity measures to include in the plot
+* `measures=` - determines which of the available alpha-diversity measures to include in the plot
 
 **Input Data:**
 
@@ -835,7 +835,7 @@ ggsave(paste0("richness_and_diversity_estimates_by_group", ".png"), plot = richn
 
 ___
 
-## 9. Taxonomic summaries
+## 9. Taxonomic Summaries
 
 Taxonomic summaries provide insights into the composition of microbial communities at various taxonomic levels.
 
@@ -860,23 +860,23 @@ ggsave(filename = "samplewise_relative_classes", ".png", plot = samplewise_class
 
 **Output Data:**
 
-* **relative_phyla.png** (Taxonomic summaries plot based on phyla, for all samples)
-* **relative_classes.png** (Taxonomic summaries plot based on class, for all samples)
+* **relative_phyla.png** (taxonomic summaries plot based on phyla, for all samples)
+* **relative_classes.png** (taxonomic summaries plot based on class, for all samples)
 
-* **samplewise_phyla.png** (Taxonomic summaries plot based on phyla, for all samples)
-* **samplewise_classes.png** (Taxonomic summaries plot based on class, for all samples)
+* **samplewise_phyla.png** (taxonomic summaries plot based on phyla, for all samples)
+* **samplewise_classes.png** (taxonomic summaries plot based on class, for all samples)
 
 <br>
 
 ___
 
-## 10. Differential abundance analysis
+## 10. Differential Abundance Analysis
 
 Using Betadisper, permutational ANOVA, and DESeq2, we aim to uncover specific taxa that exhibit notable variations across different conditions, complemented by visualizations like volcano plots to illustrate these disparities and their implications on ASV expression and overall microbial community dynamics.
 
 <br>
 
-### 10a. Betadisper and permutational ANOVA
+### 10a. Betadisper and Permutational ANOVA
 
 Use betadisper to check whether variability of data points in each group is similar.
 
@@ -888,9 +888,9 @@ betadisper(d = euc_dist, group = sample_info_tab$groups) %>% anova()
 
 *	`betadisper()` – the vegan function we are calling, with the following parameters set within it
 
-*	`d=` - Specifies the input distance object
+*	`d=` - specifies the input distance object
 
-* `group=` - Specifies the sample grouping information
+* `group=` - specifies the sample grouping information
 
 * `%>% anova()` - Sends the output object from betadisper() to the anova() function to perform the permutational ANOVA test
 
@@ -906,7 +906,7 @@ adonis_res <- adonis2(formula = euc_dist ~ sample_info_tab$groups)
 
 *	`adonis2()` – the vegan function we are calling, with the following parameters set within it
 
-*	`formula=` - Specifies the model formula or data matrix
+*	`formula=` - specifies the model formula or data matrix
 
 Statistics from Adonis2 testing can be incorporated into PCoA visualizations using vst_pcoa which was made earlier.
 
@@ -967,8 +967,8 @@ ggsave(filename=paste0(beta_diversity_out_dir, output_prefix, "PCoA_without_labe
 
 **Output Data:**
 
-*  **PCoA_w_labels.png** (Principle Coordinates Analysis plot of VST transformed ASV counts, with sample labels)
-*  **PCoA_without_labels.png** (Principle Coordinates Analysis plot of VST transformed ASV counts, without sample labels)
+*  **PCoA_w_labels.png** (principle Coordinates Analysis plot of VST transformed ASV counts, with sample labels)
+*  **PCoA_without_labels.png** (principle Coordinates Analysis plot of VST transformed ASV counts, without sample labels)
 
 <br>
 
@@ -986,9 +986,9 @@ deseq_obj <- phyloseq_to_deseq2(physeq = ASV_physeq, design = ~groups)
 
 *	`phyloseq_to_deseq2()` – the phyloseq function we are calling, with the following parameters set within it
 
-*	`physeq=` - Specifies the phyloseq-class object
+*	`physeq=` - specifies the phyloseq-class object
 
-*   `design=` - A formula specifying the design of the experiment
+*   `design=` - a formula specifying the design of the experiment
 
 Run the DESeq() function to normalize for sample read-depth and composition, transform the data, and test for differential abundance between the groups. Save the size-factor-normalized counts.
 
@@ -1009,7 +1009,7 @@ write.table(counts(deseq_modeled, normalized=TRUE), file = paste0("normalized_co
 
 <br>
 
-### 10c. Volcano plots
+### 10c. Volcano Plots
 
 Define the function for creating the volcano plot and saving the normalized counts for a given contrast.
 
