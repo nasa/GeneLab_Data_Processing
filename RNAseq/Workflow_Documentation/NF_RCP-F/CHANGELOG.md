@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.4]
+## [1.0.4](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-F_1.0.4/RNAseq/Workflow_Documentation/NF_RCP-F) - 2024-01-11
 
 ### Fixed
 
@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - TrimGalore! will now use autodetect for adaptor type
-- V&V migrated from dp_tools version 1.1.8 to 1.3.2 including:
+- V&V migrated from dp_tools version 1.1.8 to 1.3.3 including:
   - Migration of V&V protocol code to this codebase instead of dp_tools
   - Fix for sample wise checks reusing same sample
 - Added '_GLbulkRNAseq' to output file names
