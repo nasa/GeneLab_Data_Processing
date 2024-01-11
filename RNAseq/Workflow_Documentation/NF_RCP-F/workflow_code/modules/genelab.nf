@@ -73,6 +73,8 @@ process GENERATE_METASHEET {
 process GENERATE_MD5SUMS {
   // Generates tabular data indicating genelab standard publishing files, md5sum generation, and tool version table formatting
   tag "${ params.gldsAccession }"
+  label "big_mem"
+
   publishDir "${ params.outputDir }/${ params.gldsAccession }/GeneLab",
     mode: params.publish_dir_mode
 
@@ -102,6 +104,7 @@ process UPDATE_ISA_TABLES {
   input:
     path(data_dir)
     path(runsheet)
+    path("dp_tools__NF_RCP")
 
   output:
     path("updated_curation_tables") // directory containing extended ISA tables

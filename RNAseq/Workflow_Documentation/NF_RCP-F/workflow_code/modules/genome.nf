@@ -47,7 +47,7 @@ process BUILD_STAR {
 
     STAR --runThreadN ${task.cpus} \
     --runMode genomeGenerate \
-    --limitGenomeGenerateRAM ${ task.memory.toBytes() } \
+    --limitGenomeGenerateRAM ${ (task.memory.toBytes() * 0.8).round() } \
     --genomeSAindexNbases \$COMPUTED_GenomeSAindexNbases \
     --genomeDir ${ genomeFasta.baseName }_RL-${ max_read_length.toInteger() } \
     --genomeFastaFiles ${ genomeFasta } \
@@ -62,7 +62,7 @@ process ALIGN_STAR {
   // TODO: make '--alignMatesGapMax 1000000' conditional on PE
   tag "Sample: ${ meta.id }"
   label 'maxCPU'
-  label 'big_mem'
+  label 'align_mem'
 
   input:
     tuple val( meta ), path( reads ), path(STAR_INDEX_DIR)
@@ -78,7 +78,7 @@ process ALIGN_STAR {
   script:
     """
     STAR --twopassMode Basic \
-    --limitBAMsortRAM ${ task.memory.toBytes() } \
+    --limitBAMsortRAM ${ (task.memory.toBytes() * 0.8).round() } \
     --outFilterType BySJout \
     --outSAMunmapped Within \
     --genomeDir ${ STAR_INDEX_DIR } \
@@ -135,6 +135,7 @@ process BUILD_RSEM {
 process COUNT_ALIGNED {
   // Generates gene and isoform counts from alignments
   tag "Sample: ${ meta.id }, strandedness: ${ strandedness } "
+  label "big_mem"
 
   input:
     tuple val(meta), path("${meta.id}_Aligned.toTranscriptome.out.bam"), path(RSEM_REF)
