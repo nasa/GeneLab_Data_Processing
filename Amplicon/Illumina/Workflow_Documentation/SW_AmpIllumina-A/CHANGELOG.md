@@ -1,5 +1,12 @@
 # Workflow change log
 
+## [1.1.1](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_AmpIllumina-A_1.1.1/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-A)
+- assay-specific suffixes added for certain files as needed by OSDR system
+- resource parameters added to specific rules as needed for when cluster limits are being enforced
+- `scripts/slurm-status.py` added for when using slurm such that slurm jobs are tracked and reported through to snakemake output
+  - this is set by adding `--cluster-status scripts/slurm-status.py` to the snakemake call
+- small fix for where some ITS datasets would fail biome creation 
+
 ## [1.1.0](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_AmpIllumina-A_1.1.0/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-A)
 - 18S option added
   - will use the PR2 database for taxonomy provided by the DECIPHER developers here: http://www2.decipher.codes/Downloads.html
