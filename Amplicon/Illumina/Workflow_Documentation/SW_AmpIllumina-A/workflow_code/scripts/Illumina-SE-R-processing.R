@@ -3,15 +3,15 @@
 ## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                              ##
 ##################################################################################
 
-# as called from the associated Snakefile, this expects to be run as: Rscript full-R-processing.R <left_trunc> <left_maxEE> <TRUE/FALSE - GL trimmed primers or not> <unique-sample-IDs-file> <starting_reads_dir_for_R> <filtered_reads_dir> <input_file_R1_suffix> <filtered_filename_R1_suffix> <final_outputs_directory> <output_prefix> <target_region>
+# as called from the associated Snakefile, this expects to be run as: Rscript full-R-processing.R <left_trunc> <left_maxEE> <TRUE/FALSE - GL trimmed primers or not> <unique-sample-IDs-file> <starting_reads_dir_for_R> <filtered_reads_dir> <input_file_R1_suffix> <filtered_filename_R1_suffix> <final_outputs_directory> <output_prefix> <target_region> <assay_suffix>
     # where <left_trim> is the value to be passed to the truncLen parameter of dada2's filterAndTrim()
     # and <left_maxEE> is the value to be passed to the maxEE parameter of dada2's filterAndTrim()
 
 # checking arguments were provided, first 2 are integers, and setting variables used within R:
 args <- commandArgs(trailingOnly = TRUE)
 
-if (length(args) < 11) {
-    stop("At least 11 positional arguments are required, see top of this R script for more info.", call.=FALSE)
+if (length(args) < 12) {
+    stop("At least 12 positional arguments are required, see top of this R script for more info.", call.=FALSE)
 } else {
     suppressWarnings(left_trunc <- as.integer(args[1]))
     suppressWarnings(left_maxEE <- as.integer(args[2]))
@@ -25,6 +25,7 @@ if (length(args) < 11) {
     suppressWarnings(final_outputs_dir <- args[9])
     suppressWarnings(output_prefix <- args[10])
     suppressWarnings(target_region <- args[11])
+    suppressWarnings(assay_suffix <- args[12])
 
 }
 
@@ -43,9 +44,9 @@ if ( ! GL_trimmed_primers %in% c("TRUE", "FALSE") ) {
     # https://astrobiomike.github.io/amplicon/dada2_workflow_ex
 
     # loading libraries
-library(dada2); packageVersion("dada2") # 1.12.1
-library(DECIPHER); packageVersion("DECIPHER") # 2.12.0
-library(biomformat); packageVersion("biomformat") # 1.12.0
+library(dada2); packageVersion("dada2")
+library(DECIPHER); packageVersion("DECIPHER")
+library(biomformat); packageVersion("biomformat")
 
     ### general processing ###
     # reading in unique sample names into variable
@@ -62,7 +63,7 @@ names(forward_filtered_reads) <- sample.names
 
     # running filering step
     # reads are written to the files specified in the variables, the "filtered_out" object holds the summary results within R
-filtered_out <- filterAndTrim(fwd=forward_reads, forward_filtered_reads, truncLen=c(left_trunc), maxN=0, maxEE=c(left_maxEE), truncQ=2, rm.phix=TRUE, compress=TRUE, multithread=TRUE)
+filtered_out <- filterAndTrim(fwd=forward_reads, forward_filtered_reads, truncLen=c(left_trunc), maxN=0, maxEE=c(left_maxEE), truncQ=2, rm.phix=TRUE, compress=TRUE, multithread=10)
 
     # making and writing out summary table that includes counts of filtered reads
 if ( GL_trimmed_primers ) {
@@ -75,19 +76,19 @@ if ( GL_trimmed_primers ) {
 
 }
 
-write.table(filtered_count_summary_tab, paste0(filtered_reads_dir, output_prefix, "filtered-read-counts.tsv"), sep="\t", quote=F, row.names=F)
+write.table(filtered_count_summary_tab, paste0(filtered_reads_dir, output_prefix, "filtered-read-counts_", assay_suffix, ".tsv"), sep="\t", quote=F, row.names=F)
 
     # learning errors step
-forward_errors <- learnErrors(forward_filtered_reads, multithread=TRUE)
+forward_errors <- learnErrors(forward_filtered_reads, multithread=10)
 
     # inferring sequences
-forward_seqs <- dada(forward_filtered_reads, err=forward_errors, pool="pseudo", multithread=TRUE)
+forward_seqs <- dada(forward_filtered_reads, err=forward_errors, pool="pseudo", multithread=10)
 
     # generating a sequence table that holds the counts of each sequence per sample
 seqtab <- makeSequenceTable(forward_seqs)
 
     # removing putative chimeras
-seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
+seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=10, verbose=TRUE)
 
     # checking what percentage of sequences were retained after chimera removal
 sum(seqtab.nochim)/sum(seqtab) * 100
@@ -98,9 +99,9 @@ getN <- function(x) sum(getUniques(x))
 
 if ( GL_trimmed_primers ) {
     
-    raw_and_trimmed_read_counts <- read.table(paste0(input_reads_dir, output_prefix, "trimmed-read-counts.tsv"), header=T, sep="\t")
+    raw_and_trimmed_read_counts <- read.table(paste0(input_reads_dir, output_prefix, "trimmed-read-counts_", assay_suffix, ".tsv"), header=T, sep="\t")
     # reading in filtered read counts
-    filtered_read_counts <- read.table(paste0(filtered_reads_dir, output_prefix, "filtered-read-counts.tsv"), header=T, sep="\t")
+    filtered_read_counts <- read.table(paste0(filtered_reads_dir, output_prefix, "filtered-read-counts_", assay_suffix, ".tsv"), header=T, sep="\t")
 
     count_summary_tab <- data.frame(raw_and_trimmed_read_counts, dada2_filtered=filtered_read_counts[,3],
                                     dada2_denoised_F=sapply(forward_seqs, getN),
@@ -118,7 +119,7 @@ if ( GL_trimmed_primers ) {
 
 }
 
-write.table(count_summary_tab, paste0(final_outputs_dir, output_prefix, "read-count-tracking.tsv"), sep = "\t", quote=F, row.names=F)
+write.table(count_summary_tab, paste0(final_outputs_dir, output_prefix, "read-count-tracking_", assay_suffix, ".tsv"), sep = "\t", quote=F, row.names=F)
 
     ### assigning taxonomy ###
     # creating a DNAStringSet object from the ASVs
@@ -184,7 +185,7 @@ if ( output_prefix != "" ) {
 cat("\n\n  Making and writing outputs...\n\n")
     # making and writing out a fasta of our final ASV seqs:
 asv_fasta <- c(rbind(asv_headers, asv_seqs))
-write(asv_fasta, paste0(final_outputs_dir, output_prefix, "ASVs.fasta"))
+write(asv_fasta, paste0(final_outputs_dir, output_prefix, "ASVs_", assay_suffix, ".fasta"))
 
     # making and writing out a count table:
 asv_tab <- t(seqtab.nochim)
@@ -192,7 +193,7 @@ asv_ids <- sub(">", "", asv_headers)
 row.names(asv_tab) <- NULL
 asv_tab <- data.frame("ASV_ID"=asv_ids, asv_tab, check.names=FALSE)
 
-write.table(asv_tab, paste0(final_outputs_dir, output_prefix, "counts.tsv"), sep="\t", quote=F, row.names=FALSE)
+write.table(asv_tab, paste0(final_outputs_dir, output_prefix, "counts_", assay_suffix, ".tsv"), sep="\t", quote=F, row.names=FALSE)
 
     # making and writing out a taxonomy table:
     # vector of desired ranks was created above in ITS/16S target_region if statement
@@ -208,11 +209,18 @@ tax_tab <- t(sapply(tax_info, function(x) {
 colnames(tax_tab) <- ranks
 row.names(tax_tab) <- NULL
 
-# need to add a column for domain if this is ITS
-if (target_region == "ITS" ) {
-    tax_tab <- data.frame("ASV_ID"=asv_ids, "domain"="Eukarya", tax_tab, check.names=FALSE)
+# need to add domain values if this is ITS (due to how the reference taxonomy object is structured, which doesn't have a domain entry)
+if ( target_region == "ITS" ) {
+
+    # only want to add if at least a kingdom was identified (so we don't add Eukarya if nothing was found)
+    new_vec <- ifelse(!is.na(tax_tab[, "kingdom"]) & tax_tab[, "kingdom"] != "NA", "Eukarya", "NA")
+
+    tax_tab <- data.frame("ASV_ID"=asv_ids, "domain" = new_vec, tax_tab, check.names=FALSE)
+
 } else {
+
     tax_tab <- data.frame("ASV_ID"=asv_ids, tax_tab, check.names=FALSE)
+
 }
 
 # need to change "kingdom" to "domain" if this is 18S (due to how the reference taxonomy object is structured)
@@ -220,15 +228,15 @@ if ( target_region == "18S" ) {
     colnames(tax_tab)[colnames(tax_tab) == "kingdom"] <- "domain"
 }
 
-write.table(tax_tab, paste0(final_outputs_dir, output_prefix, "taxonomy.tsv"), sep = "\t", quote=F, row.names=FALSE)
+write.table(tax_tab, paste0(final_outputs_dir, output_prefix, "taxonomy_", assay_suffix, ".tsv"), sep = "\t", quote=F, row.names=FALSE)
 
     ### generating and writing out biom file format ###
 biom_object <- make_biom(data=asv_tab, observation_metadata=tax_tab)
-write_biom(biom_object, paste0(final_outputs_dir, output_prefix, "taxonomy-and-counts.biom"))
+write_biom(biom_object, paste0(final_outputs_dir, output_prefix, "taxonomy-and-counts_", assay_suffix, ".biom"))
 
     # making a tsv of combined tax and counts
 tax_and_count_tab <- merge(tax_tab, asv_tab)
-write.table(tax_and_count_tab, paste0(final_outputs_dir, output_prefix, "taxonomy-and-counts.tsv"), sep="\t", quote=FALSE, row.names=FALSE)
+write.table(tax_and_count_tab, paste0(final_outputs_dir, output_prefix, "taxonomy-and-counts_", assay_suffix, ".tsv"), sep="\t", quote=FALSE, row.names=FALSE)
 
 cat("\n\n  Session info:\n\n")
 sessionInfo()

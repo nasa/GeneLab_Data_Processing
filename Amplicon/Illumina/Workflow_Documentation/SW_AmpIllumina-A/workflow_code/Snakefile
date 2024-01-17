@@ -1,7 +1,7 @@
 ############################################################################################
 ## Snakefile for GeneLab's Illumina amplicon workflow                                     ##
 ## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##
-## Version 1.1.0                                                                          ##
+## Version 1.1.1                                                                          ##
 ############################################################################################
 
 import os
@@ -28,6 +28,12 @@ Variables that may need to be adjusted should be changed there, not here.
 # `-p` – specifies to print out each command being run to the screen
 
 # See `snakemake -h` for more options and details.
+
+########################################
+####### Assay-specific GL suffix #######
+########################################
+
+assay_suffix = "GLAmpSeq"
 
 
 ########################################
@@ -76,16 +82,16 @@ if config["data_type"] == "PE":
                 expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"], ID = sample_ID_list),
                 expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R1_suffix"], ID = sample_ID_list),
                 expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R2_suffix"], ID = sample_ID_list),
-                config["trimmed_reads_dir"] + config["output_prefix"] + "cutadapt.log",
-                config["trimmed_reads_dir"] + config["output_prefix"] + "trimmed-read-counts.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom.zip",
-                config["final_outputs_dir"] + config["output_prefix"] + "ASVs.fasta",
-                config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv",
-                config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_report.zip",
-                config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.zip"
+                config["trimmed_reads_dir"] + config["output_prefix"] + f"cutadapt_{assay_suffix}.log",
+                config["trimmed_reads_dir"] + config["output_prefix"] + f"trimmed-read-counts_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.biom.zip",
+                config["final_outputs_dir"] + config["output_prefix"] + f"ASVs_{assay_suffix}.fasta",
+                config["final_outputs_dir"] + config["output_prefix"] + f"read-count-tracking_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv",
+                config["fastqc_out_dir"] + config["output_prefix"] + f"raw_multiqc_{assay_suffix}_report.zip",
+                config["fastqc_out_dir"] + config["output_prefix"] + f"filtered_multiqc_{assay_suffix}_report.zip"
             shell:
                 """
                 bash scripts/combine-benchmarks.sh
@@ -98,14 +104,14 @@ if config["data_type"] == "PE":
             input:
                 expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
                 expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"], ID = sample_ID_list),
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom.zip",
-                config["final_outputs_dir"] + config["output_prefix"] + "ASVs.fasta",
-                config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv",
-                config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_report.zip",
-                config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.zip"
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.biom.zip",
+                config["final_outputs_dir"] + config["output_prefix"] + f"ASVs_{assay_suffix}.fasta",
+                config["final_outputs_dir"] + config["output_prefix"] + f"read-count-tracking_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv",
+                config["fastqc_out_dir"] + config["output_prefix"] + f"raw_multiqc_{assay_suffix}_report.zip",
+                config["fastqc_out_dir"] + config["output_prefix"] + f"filtered_multiqc_{assay_suffix}_report.zip"
             shell:
                 """
                 bash scripts/combine-benchmarks.sh
@@ -121,16 +127,16 @@ if config["data_type"] == "PE":
             input:
                 expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R1_suffix"], ID = sample_ID_list),
                 expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R2_suffix"], ID = sample_ID_list),
-                config["trimmed_reads_dir"] + config["output_prefix"] + "trimmed-read-counts.tsv"
+                config["trimmed_reads_dir"] + config["output_prefix"] + f"trimmed-read-counts_{assay_suffix}.tsv"
             output:
                 expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
                 expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"], ID = sample_ID_list),
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom",
-                config["final_outputs_dir"] + config["output_prefix"] + "ASVs.fasta",
-                config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv"
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.biom",
+                config["final_outputs_dir"] + config["output_prefix"] + f"ASVs_{assay_suffix}.fasta",
+                config["final_outputs_dir"] + config["output_prefix"] + f"read-count-tracking_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv"
             params:
                 left_trunc = config["left_trunc"],
                 right_trunc = config["right_trunc"],
@@ -146,14 +152,18 @@ if config["data_type"] == "PE":
                 final_outputs_dir = config["final_outputs_dir"],
                 target_region = config["target_region"],
                 output_prefix = config["output_prefix"],
-                concatenate_reads_only = config["concatenate_reads_only"]
+                concatenate_reads_only = config["concatenate_reads_only"],
+                assay_suffix = assay_suffix
+            resources:
+                mem_mb = 200000,
+                cpus = 10
             log:
                 "R-processing.log"
             benchmark:
                 "benchmarks/run_R-benchmarks.tsv"
             shell:
                 """
-                Rscript scripts/Illumina-PE-R-processing.R "{params.left_trunc}" "{params.right_trunc}" "{params.left_maxEE}" "{params.right_maxEE}" "{params.trim_primers}" "{sample_IDs_file}" "{params.trimmed_reads_dir}" "{params.filtered_reads_dir}" "{params.primer_trimmed_R1_suffix}" "{params.primer_trimmed_R2_suffix}" "{params.filtered_R1_suffix}" "{params.filtered_R2_suffix}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" "{params.concatenate_reads_only}" > {log} 2>&1
+                Rscript scripts/Illumina-PE-R-processing.R "{params.left_trunc}" "{params.right_trunc}" "{params.left_maxEE}" "{params.right_maxEE}" "{params.trim_primers}" "{sample_IDs_file}" "{params.trimmed_reads_dir}" "{params.filtered_reads_dir}" "{params.primer_trimmed_R1_suffix}" "{params.primer_trimmed_R2_suffix}" "{params.filtered_R1_suffix}" "{params.filtered_R2_suffix}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" "{params.concatenate_reads_only}" "{params.assay_suffix}" > {log} 2>&1
                 """
 
     # if we did not trim the primers
@@ -168,12 +178,12 @@ if config["data_type"] == "PE":
             output:
                 expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
                 expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"], ID = sample_ID_list),
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom",
-                config["final_outputs_dir"] + config["output_prefix"] + "ASVs.fasta",
-                config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv"
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.biom",
+                config["final_outputs_dir"] + config["output_prefix"] + f"ASVs_{assay_suffix}.fasta",
+                config["final_outputs_dir"] + config["output_prefix"] + f"read-count-tracking_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv"
             params:
                 left_trunc = config["left_trunc"],
                 right_trunc = config["right_trunc"],
@@ -189,14 +199,18 @@ if config["data_type"] == "PE":
                 final_outputs_dir = config["final_outputs_dir"],
                 target_region = config["target_region"],
                 output_prefix = config["output_prefix"],
-                concatenate_reads_only = config["concatenate_reads_only"]
+                concatenate_reads_only = config["concatenate_reads_only"],
+                assay_suffix = assay_suffix
+            resources:
+                mem_mb = 200000,
+                cpus = 10
             log:
                 "R-processing.log"
             benchmark:
                 "benchmarks/run_R-benchmarks.tsv"
             shell:
                 """
-                Rscript scripts/Illumina-PE-R-processing.R "{params.left_trunc}" "{params.right_trunc}" "{params.left_maxEE}" "{params.right_maxEE}" "{params.trim_primers}" "{sample_IDs_file}" "{params.raw_reads_dir}" "{params.filtered_reads_dir}" "{params.raw_R1_suffix}" "{params.raw_R2_suffix}" "{params.filtered_R1_suffix}" "{params.filtered_R2_suffix}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" "{params.concatenate_reads_only}" > {log} 2>&1
+                Rscript scripts/Illumina-PE-R-processing.R "{params.left_trunc}" "{params.right_trunc}" "{params.left_maxEE}" "{params.right_maxEE}" "{params.trim_primers}" "{sample_IDs_file}" "{params.raw_reads_dir}" "{params.filtered_reads_dir}" "{params.raw_R1_suffix}" "{params.raw_R2_suffix}" "{params.filtered_R1_suffix}" "{params.filtered_R2_suffix}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" "{params.concatenate_reads_only}" "{params.assay_suffix}" > {log} 2>&1
                 """
 
 
@@ -291,7 +305,7 @@ if config["data_type"] == "PE":
             r2_html_files = expand(config["raw_reads_dir"] + "{ID}" + config["raw_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list),
             config_file = "config/multiqc.config"
         output:
-            final_out_zip = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_report.zip"
+            final_out_zip = config["fastqc_out_dir"] + config["output_prefix"] + f"raw_multiqc_{assay_suffix}_report.zip"
         benchmark:
             "benchmarks/raw_multiqc-benchmarks.tsv"
         shell:
@@ -340,7 +354,7 @@ if config["data_type"] == "PE":
             r2_html_files = expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list),
             config_file = "config/multiqc.config"
         output:
-            final_out_zip = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.zip"
+            final_out_zip = config["fastqc_out_dir"] + config["output_prefix"] + f"filtered_multiqc_{assay_suffix}_report.zip"
         benchmark:
             "benchmarks/filtered_multiqc-benchmarks.tsv"
 
@@ -360,16 +374,16 @@ if config["data_type"] == "SE":
             input:
                 expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
                 expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R1_suffix"], ID = sample_ID_list),
-                config["trimmed_reads_dir"] + config["output_prefix"] + "cutadapt.log",
-                config["trimmed_reads_dir"] + config["output_prefix"] + "trimmed-read-counts.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom.zip",
-                config["final_outputs_dir"] + config["output_prefix"] + "ASVs.fasta",
-                config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv",
-                config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_report.zip",
-                config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.zip"
+                config["trimmed_reads_dir"] + config["output_prefix"] + f"cutadapt_{assay_suffix}.log",
+                config["trimmed_reads_dir"] + config["output_prefix"] + f"trimmed-read-counts_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.biom.zip",
+                config["final_outputs_dir"] + config["output_prefix"] + f"ASVs_{assay_suffix}.fasta",
+                config["final_outputs_dir"] + config["output_prefix"] + f"read-count-tracking_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv",
+                config["fastqc_out_dir"] + config["output_prefix"] + f"raw_multiqc_{assay_suffix}_report.zip",
+                config["fastqc_out_dir"] + config["output_prefix"] + f"filtered_multiqc_{assay_suffix}_report.zip"
             shell:
                 """
                 bash scripts/combine-benchmarks.sh
@@ -381,14 +395,14 @@ if config["data_type"] == "SE":
         rule all:
             input:
                 expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom.zip",
-                config["final_outputs_dir"] + config["output_prefix"] + "ASVs.fasta",
-                config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv",
-                config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_report.zip",
-                config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.zip"
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.biom.zip",
+                config["final_outputs_dir"] + config["output_prefix"] + f"ASVs_{assay_suffix}.fasta",
+                config["final_outputs_dir"] + config["output_prefix"] + f"read-count-tracking_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv",
+                config["fastqc_out_dir"] + config["output_prefix"] + f"raw_multiqc_{assay_suffix}_report.zip",
+                config["fastqc_out_dir"] + config["output_prefix"] + f"filtered_multiqc_{assay_suffix}_report.zip"
             shell:
                 """
                 bash scripts/combine-benchmarks.sh
@@ -403,15 +417,15 @@ if config["data_type"] == "SE":
                 "envs/R.yaml"
             input:
                 expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R1_suffix"], ID = sample_ID_list),
-                config["trimmed_reads_dir"] + config["output_prefix"] + "trimmed-read-counts.tsv"
+                config["trimmed_reads_dir"] + config["output_prefix"] + f"trimmed-read-counts_{assay_suffix}.tsv"
             output:
                 expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom",
-                config["final_outputs_dir"] + config["output_prefix"] + "ASVs.fasta",
-                config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv"
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.biom",
+                config["final_outputs_dir"] + config["output_prefix"] + f"ASVs_{assay_suffix}.fasta",
+                config["final_outputs_dir"] + config["output_prefix"] + f"read-count-tracking_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv"
             params:
                 left_trunc = config["left_trunc"],
                 left_maxEE = config["left_maxEE"],
@@ -422,14 +436,18 @@ if config["data_type"] == "SE":
                 filtered_R1_suffix = config["filtered_R1_suffix"],
                 final_outputs_dir = config["final_outputs_dir"],
                 target_region = config["target_region"],
-                output_prefix = config["output_prefix"]
+                output_prefix = config["output_prefix"],
+                assay_suffix = assay_suffix
+            resources:
+                mem_mb = 200000,
+                cpus = 10
             log:
                 "R-processing.log"
             benchmark:
                 "benchmarks/run_R-benchmarks.tsv"
             shell:
                 """
-                Rscript scripts/Illumina-SE-R-processing.R "{params.left_trunc}" "{params.left_maxEE}" "{params.trim_primers}" "{sample_IDs_file}" "{params.trimmed_reads_dir}" "{params.filtered_reads_dir}" "{params.primer_trimmed_R1_suffix}" "{params.filtered_R1_suffix}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" > {log} 2>&1
+                Rscript scripts/Illumina-SE-R-processing.R "{params.left_trunc}" "{params.left_maxEE}" "{params.trim_primers}" "{sample_IDs_file}" "{params.trimmed_reads_dir}" "{params.filtered_reads_dir}" "{params.primer_trimmed_R1_suffix}" "{params.filtered_R1_suffix}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" "{params.assay_suffix}" > {log} 2>&1
                 """
 
     # if we did not trim the primers
@@ -442,12 +460,12 @@ if config["data_type"] == "SE":
                 expand(config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"], ID = sample_ID_list)
             output:
                 expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom",
-                config["final_outputs_dir"] + config["output_prefix"] + "ASVs.fasta",
-                config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv"
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.biom",
+                config["final_outputs_dir"] + config["output_prefix"] + f"ASVs_{assay_suffix}.fasta",
+                config["final_outputs_dir"] + config["output_prefix"] + f"read-count-tracking_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
+                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv"
             params:
                 left_trunc = config["left_trunc"],
                 left_maxEE = config["left_maxEE"],
@@ -458,14 +476,18 @@ if config["data_type"] == "SE":
                 filtered_R1_suffix = config["filtered_R1_suffix"],
                 final_outputs_dir = config["final_outputs_dir"],
                 target_region = config["target_region"],
-                output_prefix = config["output_prefix"]
+                output_prefix = config["output_prefix"],
+                assay_suffix = assay_suffix
+            resources:
+                mem_mb = 200000,
+                cpus = 10
             log:
                 "R-processing.log"
             benchmark:
                 "benchmarks/run_R-benchmarks.tsv"
             shell:
                 """
-                Rscript scripts/Illumina-SE-R-processing.R "{params.left_trunc}" "{params.left_maxEE}" "{params.trim_primers}" "{sample_IDs_file}" "{params.raw_reads_dir}" "{params.filtered_reads_dir}" "{params.raw_R1_suffix}" "{params.filtered_R1_suffix}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" > {log} 2>&1
+                Rscript scripts/Illumina-SE-R-processing.R "{params.left_trunc}" "{params.left_maxEE}" "{params.trim_primers}" "{sample_IDs_file}" "{params.raw_reads_dir}" "{params.filtered_reads_dir}" "{params.raw_R1_suffix}" "{params.filtered_R1_suffix}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" "{params.assay_suffix}" > {log} 2>&1
                 """
 
 
@@ -554,7 +576,7 @@ if config["data_type"] == "SE":
             r1_html_files = expand(config["raw_reads_dir"] + "{ID}" + config["raw_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list),
             config_file = "config/multiqc.config"
         output:
-            final_out_zip = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_report.zip"
+            final_out_zip = config["fastqc_out_dir"] + config["output_prefix"] + f"raw_multiqc_{assay_suffix}_report.zip"
         benchmark:
             "benchmarks/raw_multiqc-benchmarks.tsv"
         shell:
@@ -599,7 +621,7 @@ if config["data_type"] == "SE":
             r1_html_files = expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"].rsplit(".", 2)[0] + "_fastqc.html", ID = sample_ID_list),
             config_file = "config/multiqc.config"
         output:
-            final_out_zip = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.zip"
+            final_out_zip = config["fastqc_out_dir"] + config["output_prefix"] + f"filtered_multiqc_{assay_suffix}_report.zip"
         benchmark:
             "benchmarks/filtered_multiqc-benchmarks.tsv"
 
@@ -611,9 +633,9 @@ if config["data_type"] == "SE":
 ##################################################################
 rule zip_biom:
     input:
-        config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom"
+        config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.biom"
     output:
-        config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom.zip"
+        config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.biom.zip"
     shell:
         """
         zip -j -q {output} {input} && rm {input}
@@ -626,8 +648,8 @@ rule combine_cutadapt_logs_and_summarize:
         counts = expand(config["trimmed_reads_dir"] + "{ID}-trimmed-counts.tsv", ID = sample_ID_list),
         logs = expand(config["trimmed_reads_dir"] + "{ID}-cutadapt.log", ID = sample_ID_list)
     output:
-        combined_log = config["trimmed_reads_dir"] + config["output_prefix"] + "cutadapt.log",
-        combined_counts = config["trimmed_reads_dir"] + config["output_prefix"] + "trimmed-read-counts.tsv"
+        combined_log = config["trimmed_reads_dir"] + config["output_prefix"] + f"cutadapt_{assay_suffix}.log",
+        combined_counts = config["trimmed_reads_dir"] + config["output_prefix"] + f"trimmed-read-counts_{assay_suffix}.tsv"
     benchmark:
         "benchmarks/combine_cutadapt_logs_and_summarize-benchmarks.tsv"
     shell:
