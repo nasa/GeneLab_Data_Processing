@@ -64,7 +64,7 @@ fastqc -o /path/to/raw_fastqc/output/directory *.fastq.gz
 **Parameter Definitions:**
 
 - `-o` – the output directory to store results
-- `*.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces inbetween them
+- `*.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces in between them
 
 **Input Data:**
 
@@ -203,13 +203,13 @@ STAR --runThreadN <NumberOfThreads> \
 - `--soloUMIfiltering` - cell barcode and UMI collapsing parameter, a value of `MultiGeneUMI_CR` is used to get the best agreement between STARsolo and CellRanger >= 3.0 
 - `--soloUMIdedup` - cell barcode and UMI collapsing parameter, a value of `1MM_CR` is used to get the best agreement between STARsolo and CellRanger >= 3.0
 - `--soloUMIlen` - barcode length, a value of `12` is used to work for 10X Chromium V3 data
-- `--soloCellFilter` - specifices the type of cell filtering to perform (ExpectedCells = number of expected cells), a value of `EmptyDrops_CR <ExpectedCells> 0.99 10 45000 90000 500 0.01 20000 0.01 10000` instructs STAR to use the CellRanger 3.0.0 advanced filtering based on the [EmptyDrop algorithm](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1662-y) 
+- `--soloCellFilter` - specifies the type of cell filtering to perform (ExpectedCells = number of expected cells), a value of `EmptyDrops_CR <ExpectedCells> 0.99 10 45000 90000 500 0.01 20000 0.01 10000` instructs STAR to use the CellRanger 3.0.0 advanced filtering based on the [EmptyDrop algorithm](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1662-y) 
 - `--soloMultiMappers` - specifies the algorithm used to handle multi-mapped reads, a value of `EM` instructs STAR to use the Maximum Likelihood Estimation (MLE) to distribute multi-gene UMIs among their genes, taking into account other UMIs (both unique- and multi-gene) from the same cell (i.e. with the same CB).
 - `--outSAMattributes` - list of desired sam attributes in the order desired for the output sam file; sam attribute descriptions can be found [here](https://samtools.github.io/hts-specs/SAMtags.pdf) 
 - `--outSAMtype` - specifies desired output format, the `BAM Unsorted` options specify that the output file will be not be sorted and be in the bam format (required to output BAM tags in the BAM file) 
-- `--soloFeatures` - specifies the genomic features collected for the UMI counts per Cell Barcode, the `Gene GeneFull SJ Velocyto` options indicate the folowing:
+- `--soloFeatures` - specifies the genomic features collected for the UMI counts per Cell Barcode, the `Gene GeneFull SJ Velocyto` options indicate the following:
     - `Gene` - output gene counts 
-    - `GeneFull` - ouput pre-mRNA counts (useful for single-nucleus RNA-seq), this option counts all reads that overlap gene loci, i.e. including both exonic and intronic reads
+    - `GeneFull` - output pre-mRNA counts (useful for single-nucleus RNA-seq), this option counts all reads that overlap gene loci, i.e. including both exonic and intronic reads
     - `SJ` - output counts for annotated and novel splice junctions
     - `Gene Velocyto` - output spliced, unspliced, and ambiguous counts per cell per gene, similar to the [velocyto.py](http://velocyto.org/) tool
 - `--readFilesCommand` - specifies command needed to interpret input files, the `zcat` option indicates input files are compressed with gzip and zcat will be used to uncompress the gzipped input files
@@ -236,7 +236,7 @@ of mapped reads etc.)
   - **/Gene** (sub-directory containing the following outputs using the `Gene` soloFeatures setting:)
     > Note: All files in the `/Gene` output directory are published in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) as a `Gene.zip` file for each respective GLDS dataset.
     - Features.stats (quantitated features statistics)
-    - Summary.csv (table contining summary statistics for filtered cells)
+    - Summary.csv (table containing summary statistics for filtered cells)
     - UMIperCellSorted.txt (list of the number of UMIs per cell sorted)
     - /raw (sub-directory containing output files for raw, unfiltered, expression data)
       - barcodes.tsv (table containing all barcodes processed)
@@ -250,7 +250,7 @@ of mapped reads etc.)
   - **/GeneFull** (sub-directory containing the following outputs using the `GeneFull` soloFeatures setting:)
      > Note: All files in the `/GeneFull` output directory are published in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) as a `GeneFull.zip` file for each respective GLDS dataset.
     - Features.stats (quantitated features statistics)
-    - Summary.csv (table contining summary statistics for filtered cells)
+    - Summary.csv (table containing summary statistics for filtered cells)
     - UMIperCellSorted.txt (list of the number of UMIs per cell sorted)
     - /raw (sub-directory containing output files for raw, unfiltered, expression data)
       - barcodes.tsv (table containing all barcodes processed)
@@ -264,7 +264,7 @@ of mapped reads etc.)
   - **/SJ** (sub-directory containing the following outputs using the `SJ` soloFeatures setting:)
      > Note: All files in the `/SJ` output directory are published in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) as a `SJ.zip` file for each respective GLDS dataset.
     - Features.stats (quantitated features statistics)
-    - Summary.csv (table contining summary statistics for filtered cells)
+    - Summary.csv (table containing summary statistics for filtered cells)
     - /raw (sub-directory containing output files for raw, unfiltered, expression data)
       - barcodes.tsv (table containing all barcodes processed)
       - features.tsv (table containing all gene IDs and symbols)
@@ -272,7 +272,7 @@ of mapped reads etc.)
   - **/Velocyto** (sub-directory containing the following:)
     > Note: All files in the `/Velocyto` output directory are published in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) as a `Velocyto.zip` file for each respective GLDS dataset.
     - Features.stats (quantitated features statistics)
-    - Summary.csv (table contining summary statistics for filtered cells)
+    - Summary.csv (table containing summary statistics for filtered cells)
     - /raw (sub-directory containing output files for raw, unfiltered, expression data)
       - barcodes.tsv (table containing all barcodes processed)
       - features.tsv (table containing all gene IDs and symbols)
