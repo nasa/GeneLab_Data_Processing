@@ -131,7 +131,7 @@ for all GeneLab scRNAseq processed datasets are provided in the [GLDS_Processing
       > **Note1:** If your system uses the [slurm](https://slurm.schedmd.com/overview.html) job scheduler, you will also have to customize the #SBATCH options to be consistent with your system's slurm settings (consult your system administrator 
 regarding the settings needed for your system).  
       >
-      > **Note2:** If you are not using the slurm job scheduler, you will have to remove the #SBATCH options from each slurm script and replace them with the equivalant options for the job scheduler your system uses.  
+      > **Note2:** If you are not using the slurm job scheduler, you will have to remove the #SBATCH options from each slurm script and replace them with the equivalent options for the job scheduler your system uses.  
    
    3. If you wish to start processing from the beginning of the pipeline using raw sequence data, download the raw fastq files from the [GeneLab Repository](https://genelab-data.ndc.nasa.gov/genelab/projects) for your select dataset by clicking on 
 'STUDY FILES' in the left panel then click the arrowhead next to 'GeneLab Processed RNA-Seq Files' then click on 'Merged sequence data' then select and download all the *raw.fastq.gz files into the `/GLDS-#/00-RawData/Fastq` directory you made in 
