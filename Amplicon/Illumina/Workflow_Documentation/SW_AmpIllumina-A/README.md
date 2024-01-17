@@ -38,7 +38,7 @@ conda activate genelab-utils
 All files required for utilizing the GeneLab workflow for processing Illumina amplicon sequencing data are in the [workflow_code](workflow_code) directory. To get a copy of the latest SW_AmpIllumina-A version on to your system, run the following command:
 
 ```bash
-GL-get-workflow Amplicon-Illumina --wanted-version 1.1.0
+GL-get-workflow Amplicon-Illumina --wanted-version 1.1.1
 ```
 
 This downloaded the workflow into a directory called `SW_AmpIllumina-*/`, with the workflow version number at the end.
