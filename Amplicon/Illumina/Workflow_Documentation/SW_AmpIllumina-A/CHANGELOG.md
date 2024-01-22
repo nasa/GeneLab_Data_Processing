@@ -8,7 +8,11 @@
 - Set default for --anchor-primers to FALSE and set the default for --primers-linked to FALSE
 - Visualization script changes: added samplewise taxonomy plots, renamed and moved plots related to alpha or beta diversity
 - Fix where some ITS datasets would fail to create biom object
-  
+- assay-specific suffixes added for certain files as needed by OSDR system
+- resource parameters added to specific rules as needed for when cluster limits are being enforced
+- `scripts/slurm-status.py` added for when using slurm such that slurm jobs are tracked and reported through to snakemake output
+  - this is set by adding `--cluster-status scripts/slurm-status.py` to the snakemake call 
+ 
 ## [1.2.0](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_AmpIllumina-A_1.2.0/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-A)
 - Added runsheet dependency, runsheet definition in [config.yaml](workflow_code/config.yaml)
 - Added [run_workflow.py](workflow_code/scripts/run_workflow.py)
