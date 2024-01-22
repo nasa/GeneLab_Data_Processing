@@ -22,14 +22,16 @@ Anushree Sonic (Genelab Configuration Manager)
 
 ## Updates from previous version
 
-Inclusion of additional steps and outputs starting from ([step 6](#6-beta-diversity)):
-- Beta Diversity with Hierarchical Clustering ([6a](#6a-hierarchical-clustering)) and Ordination ([6b](#6b-ordination)).
-- Alpha Diversity with Rarefaction Curves ([7a](#7a-rarefaction-curves)) and Richness and Diversity Estimates ([7b](#7b-richness-and-diversity-estimates)).
-- Groupwise and Samplewise Taxonomic Summary Plots ([step 8](#8-taxonomic-summaries)).
-- Differential Abundance Analysis ([step 9](#9-differential-abundance-analysis)) Including Betadisper, Permutational ANOVA ([9a](#9a-betadisper-and-permutational-anova)), DESeq2 ([9b](#9b-differential-abundance-analysis-with-deseq2)) and Volcano Plots ([9c](#9c-volcano-plots)).
+- Inclusion of additional steps and outputs starting from ([step 6](#6-beta-diversity)):
+  - Beta Diversity with Hierarchical Clustering ([6a](#6a-hierarchical-clustering)) and Ordination ([6b](#6b-ordination)).
+  - Alpha Diversity with Rarefaction Curves ([7a](#7a-rarefaction-curves)) and Richness and Diversity Estimates ([7b](#7b-richness-and-diversity-estimates)).
+  - Groupwise and Samplewise Taxonomic Summary Plots ([step 8](#8-taxonomic-summaries)).
+  - Differential Abundance Analysis ([step 9](#9-differential-abundance-analysis)) Including Betadisper, Permutational ANOVA ([9a](#9a-betadisper-and-permutational-anova)), DESeq2 ([9b](#9b-differential-abundance-analysis-with-deseq2)) and Volcano Plots ([9c](#9c-volcano-plots)).
 
-Included R packages
-
+<!-- Included R packages -->
+- assay-specific suffixes were added where needed for GeneLab repo ("GLAmpSeq")
+- the ITS UNITE reference database used was updated to "UNITE_v2023_July2023.RData", from http://www2.decipher.codes/Classification/TrainingSets/
+- several program versions were updated (all versions listed in [Software used](#software-used) below)
 
 # Table of contents  
 
@@ -71,13 +73,13 @@ Included R packages
 
 |Program|Version*|Relevant Links|
 |:------|:------:|:-------------|
-|FastQC|`fastqc -v`|[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
-|MultiQC|`multiqc -v`|[https://multiqc.info/](https://multiqc.info/)|
-|Cutadapt|`cutadapt --version`|[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
-|DADA2|`packageVersion("dada2")`|[https://www.bioconductor.org/packages/release/bioc/html/dada2.html](https://www.bioconductor.org/packages/release/bioc/html/dada2.html)|
-|DECIPHER|`packageVersion("DECIPHER")`|[https://bioconductor.org/packages/release/bioc/html/DECIPHER.html](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html)|
-|biomformat|`packageVersion("biomformat")`|[https://github.com/joey711/biomformat](https://github.com/joey711/biomformat)|
-|R-base|`4.3.0`|[https://www.r-project.org/](https://www.r-project.org/)|
+|FastQC|`0.12.1`|[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
+|MultiQC|`1.19`|[https://multiqc.info/](https://multiqc.info/)|
+|Cutadapt|`4.6`|[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
+|DADA2|`1.30.0`|[https://www.bioconductor.org/packages/release/bioc/html/dada2.html](https://www.bioconductor.org/packages/release/bioc/html/dada2.html)|
+|DECIPHER|`2.30.0`|[https://bioconductor.org/packages/release/bioc/html/DECIPHER.html](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html)|
+|biomformat|`1.30.0`|[https://github.com/joey711/biomformat](https://github.com/joey711/biomformat)|
+|R-base|`4.3.2`|[https://www.r-project.org/](https://www.r-project.org/)|
 |vegan|`2.6.4`|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
 |tidyverse|`2.0.0`|[https://CRAN.R-project.org/package=tidyverse](https://CRAN.R-project.org/package=tidyverse)|
 |dendextend|`1.17.1`|[https://CRAN.R-project.org/package=dendextend](https://CRAN.R-project.org/package=dendextend)|
@@ -87,14 +89,12 @@ Included R packages
 |DESeq2|`1.40.2`|[https://bioconductor.org/packages/release/bioc/html/DESeq2.html](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)|
 |phyloseq|`1.44.0`|[https://bioconductor.org/packages/release/bioc/html/phyloseq.html](https://bioconductor.org/packages/release/bioc/html/phyloseq.html)|
 
->**\*** Exact versions are available along with the processing commands for each specific dataset.
-
 # Reference databases used
 http://www2.decipher.codes/Classification/TrainingSets/PR2_v4_13_March2021.RData", "PR2_v4_13_March2021.RData
 |Program used| Database| Relevant Links|
 |:-----|:-----:|--------:|
 |DECIPHER| SILVA SSU r138 | [http://www2.decipher.codes/Classification/TrainingSets/SILVA_SSU_r138_2019.RData](http://www2.decipher.codes/Classification/TrainingSets/)|
-|DECIPHER| UNITE v2020 | [http://www2.decipher.codes/Classification/TrainingSets/UNITE_v2020_February2020.RData](http://www2.decipher.codes/Classification/TrainingSets/)|
+|DECIPHER| UNITE v2023 | [http://www2.decipher.codes/Classification/TrainingSets/UNITE_v2023_July2023.RData](http://www2.decipher.codes/Classification/TrainingSets/)|
 |DECIPHER| PR2 | [http://www2.decipher.codes/Classification/TrainingSets/PR2_v4_13_March2021.RData](http://www2.decipher.codes/Classification/TrainingSets/)|
 
 ---
@@ -134,6 +134,8 @@ fastqc -o raw_fastqc_output *.fastq.gz
 
 ```
 multiqc -o raw_multiqc_output raw_fastqc_output
+# this is how it's packaged with our workflow outputs
+zip -r raw_multiqc_GLAmpSeq_report.zip raw_multiqc_output
 ```
 
 **Parameter Definitions:**
@@ -147,8 +149,9 @@ multiqc -o raw_multiqc_output raw_fastqc_output
 
 **Output Data:**
 
-* **raw_multiqc_report.html** (multiqc output html summary)
-* **raw_multiqc_data** (directory containing multiqc output data)
+* **raw_multiqc_GLAmpSeq_report.zip** (zip containing the following)
+  * **raw_multiqc.html** (multiqc output html summary)
+  * **raw_multiqc_data** (directory containing multiqc output data)
 
 <br>  
 
@@ -194,8 +197,8 @@ cutadapt -a ^GTGCCAGCMGCCGCGGTAA...ATTAGATACCCSBGTAGTCC -A ^GGACTACVSGGGTATCTAAT
 **Output Data:**
 
 * **trimmed.fastq.gz**, compressed or uncompressed (trimmed reads)
-* **trimmed-read-counts.tsv** (per sample read counts before and after trimming)
-* **cutadapt.log** (log file of standard output and error from cutadapt)
+* **trimmed-read-counts_GLAmpSeq.tsv** (per sample read counts before and after trimming)
+* **cutadapt_GLAmpSeq.log** (log file of standard output and error from cutadapt)
 
 <br>
 
@@ -255,7 +258,7 @@ filtered_out <- filterAndTrim(fwd=“Primer-trimmed-R1.fq.gz”, filt=“Filtere
 **Output Data:**
 
 * **filtered.fastq.gz**, compressed or uncompressed (filtered reads)
-* **filtered-read-counts.tsv** (per sample read counts before and after filtering)
+* **filtered-read-counts_GLAmpSeq.tsv** (per sample read counts before and after filtering)
 
 <br>
 
@@ -285,6 +288,8 @@ fastqc -o filtered_fastqc_output/ filtered*.fastq.gz
 ### 4a. Compile Filtered Data QC
 ```
 multiqc -o filtered_multiqc_output  filtered_fastqc_output
+# this is how it's packaged with our workflow outputs
+zip -r filtered_multiqc_GLAmpSeq_report.zip filtered_multiqc_output
 ```
 
 **Parameter Definitions:**
@@ -298,8 +303,9 @@ multiqc -o filtered_multiqc_output  filtered_fastqc_output
 
 **Output Data:**
 
-* **filtered_multiqc_report.html** (multiqc output html summary)
-* **filtered_multiqc_data** (directory containing multiqc output data)
+* **filtered_multiqc_GLAmpSeq_report.zip** (zip containing the following)
+  * **filtered_multiqc_report.html** (multiqc output html summary)
+  * **filtered_multiqc_data** (directory containing multiqc output data)
 
 <br>
 
@@ -482,7 +488,7 @@ for (i in 1:dim(seqtab.nochim)[2]) {
 Making then writing a fasta of final ASV seqs:
 ```R
 asv_fasta <- c(rbind(asv_headers, asv_seqs))
-write(asv_fasta, "ASVs.fa")
+write(asv_fasta, "ASVs_GLAmpSeq.fasta")
 ```
 
 Making then writing a count table:
@@ -490,7 +496,7 @@ Making then writing a count table:
 asv_tab <- t(seqtab.nochim)
 row.names(asv_tab) <- sub(">", "", asv_headers)
 
-write.table(asv_tab, "ASVs_counts.tsv", sep="\t", quote=F, col.names=NA)
+write.table(asv_tab, "counts_GLAmpSeq.tsv", sep="\t", quote=F, col.names=NA)
 ```
 
 Creating table of taxonomy and setting any that are unclassified as "NA":
@@ -505,19 +511,19 @@ tax_tab <- t(sapply(tax_info, function(x) {
 colnames(tax_tab) <- ranks
 rownames(tax_tab) <- gsub(pattern=">", replacement="", x=asv_headers)
 
-write.table(tax_tab, "Taxonomy.tsv", sep = "\t", quote=F, col.names=NA)
+write.table(tax_tab, "taxonomy_GLAmpSeq.tsv", sep = "\t", quote=F, col.names=NA)
 ```
 
 Generating then writing biom file format:
 ```R
 biom_object <- make_biom(data=asv_tab, observation_metadata=tax_tab)
-write_biom(biom_object, "Taxonomy_and_counts.biom")
+write_biom(biom_object, "taxonomy-and-counts_GLAmpSeq.biom")
 ```
 
 Making a combined taxonomy and count table
 ```R
 tax_and_count_tab <- merge(tax_tab, asv_tab)
-write.table(tax_and_count_tab, "Taxonomy_and_counts.tsv", sep="\t", quote=FALSE, row.names=FALSE)
+write.table(tax_and_count_tab, "taxonomy-and-counts_GLAmpSeq.tsv", sep="\t", quote=FALSE, row.names=FALSE)
 ```
 
 **Input Data:**
@@ -527,12 +533,12 @@ write.table(tax_and_count_tab, "Taxonomy_and_counts.tsv", sep="\t", quote=FALSE,
 **Output Data:**
 
 * `tax_tab` (variable containing the taxonomy table)
-* **ASVs.fasta** (inferred sequences)
-* **counts.tsv** (count table)
-* **taxonomy.tsv** (taxonomy table)
-* **taxonomy-and-counts.tsv** (combined taxonomy and count table)
-* **taxonomy-and-counts.biom** (count and taxonomy table in biom format)
-* **read-count-tracking.tsv** (read counts at each processing step)
+* **ASVs_GLAmpSeq.fasta** (inferred sequences)
+* **counts_GLAmpSeq.tsv** (count table)
+* **taxonomy_GLAmpSeq.tsv** (taxonomy table)
+* **taxonomy-and-counts_GLAmpSeq.tsv** (combined taxonomy and count table)
+* **taxonomy-and-counts_GLAmpSeq.biom** (count and taxonomy table in biom format)
+* **read-count-tracking_GLAmpSeq.tsv** (read counts at each processing step)
 
 <br>
 
