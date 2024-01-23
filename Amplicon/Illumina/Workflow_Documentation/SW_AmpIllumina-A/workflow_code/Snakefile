@@ -646,8 +646,8 @@ rule r_visualizations:
     input:
         runsheet = config["runsheet"],
         sample_info = config["sample_info_file"],
-        counts = config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
-        taxonomy = config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv"
+        counts = config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
+        taxonomy = config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv"
     output:
         # Use completion flag file in place of plot outputs for variable plots
         legend = config["plots_dir"] + config["output_prefix"] + "color_legend.png"
