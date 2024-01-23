@@ -118,7 +118,7 @@ output_prefix:
     ""
 
 ## output directories (all relative to processing directory, they will be created if needed)
-metadata_out_dir:
+info_out_dir:
     "workflow_output/Metadata/"
 fastqc_out_dir:
     "workflow_output/FastQC_Outputs/"

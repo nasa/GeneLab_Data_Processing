@@ -3,4 +3,4 @@ channels:
     - bioconda
     - defaults
 dependencies:
-    - cutadapt=2.3
+    - cutadapt==4.6
