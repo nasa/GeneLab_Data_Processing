@@ -1,6 +1,7 @@
 # GeneLab bioinformatics processing pipeline for Affymetrix microarray data <!-- omit in toc -->
 
-> **This page holds an overview and instructions for how GeneLab processes Affymetrix microarray datasets. Exact processing commands and GL-DPPD-7114 version used for specific GeneLab datasets (GLDS) are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo).**  
+> **This page holds an overview and instructions for how GeneLab processes Affymetrix microarray datasets. Exact processing commands and GL-DPPD-7114 version used for specific GeneLab datasets (GLDS) are provided with their processed data in the [Open Science Data 
+Repository (OSDR)](https://osdr.nasa.gov/bio/repo).**  
 > 
 > \* The pipeline detailed below is currently used for animal and Arabidopsis Thaliana studies only, it will be updated soon for processing microbe microarray data and other plant data.
 
@@ -65,7 +66,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
 |biomaRt|2.50.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
 |matrixStats|0.63.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
 |statmod|1.5.0|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
-|dp_tools|1.3.2|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
+|dp_tools|1.3.4|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |singularity|3.9|[https://sylabs.io](https://sylabs.io)|
 |Quarto|1.1.251|[https://quarto.org](https://quarto.org)|
 
@@ -73,7 +74,9 @@ Lauren Sanders (acting GeneLab Project Scientist)
 
 # General processing overview with example commands  
 
-> Exact processing commands and output files listed in **bold** below are included with each Microarray processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
+> Exact processing commands for a specific GLDS that has been released are provided with the processed data in the [OSDR](https://osdr.nasa.gov/bio/repo).
+> 
+> All output files in **bold** are published with the Affymetrix microarray processed data in the [OSDR](https://osdr.nasa.gov/bio/repo). 
 
 ---
 
@@ -292,7 +295,7 @@ legend("topright", legend = colnames(raw_data@assayData$exprs),
         lty = c(1,2,3,4,5), # Seems like oligo::hist cycles through these first five line types
         col = oligo::darkColors(n = ncol(raw_data)), # Ensure legend color is in sync with plot
         ncol = number_of_sets, # Set number of columns by number of sets
-        cex = 1 + 0.2 - (number_of_sets*0.2) # Reduce scale by 20% for each column beyond 1
+        cex = max(0.35, 1 + 0.2 - (number_of_sets*0.2)) # Reduce scale by 20% for each column beyond 1 with minimum of 35%
       )
 
 # Reset par
@@ -475,7 +478,7 @@ legend("topright", legend = colnames(norm_data@assayData$exprs),
         lty = c(1,2,3,4,5), # Seems like oligo::hist cycles through these first five line types
         col = oligo::darkColors(n = ncol(norm_data)), # Ensure legend color is in sync with plot
         ncol = number_of_sets, # Set number of columns by number of sets
-        cex = 1 + 0.2 - (number_of_sets*0.2) # Reduce scale by 20% for each column beyond 1
+        cex = max(0.35, 1 + 0.2 - (number_of_sets*0.2)) # Reduce scale by 20% for each column beyond 1 with minimum of 35%
       )
 
 # Reset par
@@ -1218,5 +1221,3 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
 - **raw_intensities_probe.csv** (table containing the background corrected, unnormalized probe intensity values for each sample including gene annotations. The ProbeID is the unique index column.)
 - **normalized_intensities_probe.csv** (table containing the background corrected, normalized probe intensity values for each sample including gene annotations.  The ProbeID is the unique index column.)
-
-> All steps of the Microarray pipeline are performed using R markdown and the completed R markdown is rendered (via Quarto) as an html file (**NF_MAAffymetrix_\*.html**) and published in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/) for the respective dataset.
