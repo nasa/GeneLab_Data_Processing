@@ -2,7 +2,7 @@
 
 > **This page holds an overview and instructions for how GeneLab generates raw (bulk) RNA sequence data from libraries prepared [in-house](https://genelab.nasa.gov/genelab-sequencing-services/omics_data) using the [Qiagen UPX kit](https://www.qiagen.com/us/products/discovery-and-translational-research/next-generation-sequencing/rna-sequencing/three-rnaseq/qiaseq-upx-3-transcriptome-kits/). Raw data output files and processing protocol are provided for each GeneLab-generated GLDS dataset hosted in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 > The instructions below assume that the samples were prepared as follows:**
-> 1. Bulk RNA was was extracted from samples 
+> 1. Bulk RNA was extracted from samples 
 > 2. Each sample was prepared with a unique cell ID
 > 3. Samples were pooled together to create sample pools
 > 4. Each sample pool was prepared with a unique single index
