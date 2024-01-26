@@ -163,8 +163,8 @@ ___
 
 * `--output-prefix ""` - specifies the prefix to use on all output files to distinguish multiple primer sets, leave as an empty string if only one primer set is being processed (if used, be sure to include a connecting symbol, e.g. "ITS-"). Default: ""
 
-* `--specify-runsheet` - specifies the runsheet to use when multiple runsheets are generated.
-   > *Optional argument used in Approach 1 for datasets that have multiple assays for the same amplicon target (e.g. [OSD-249](https://osdr.nasa.gov/bio/repo/data/studies/OSD-249)).*
+* `--specify-runsheet` - specifies the runsheet to use when multiple runsheets are generated
+   > *Optional parameter used in Approach 1 for datasets that have multiple assays for the same amplicon target (e.g. [OSD-249](https://osdr.nasa.gov/bio/repo/data/studies/OSD-249)).*
 
 <br>
 
@@ -174,6 +174,8 @@ ___
 * `--conda-prefix` – indicates where the needed conda environments will be stored. Adding this option will also allow the same conda environments to be re-used when processing additional datasets, rather than making new environments each time you run the workflow. The value listed for this option, `${CONDA_PREFIX}/envs`, points to the default location for conda environments (note: the variable `${CONDA_PREFIX}` will be expanded to the appropriate location on whichever system it is run on).
 * `-j` – assigns the number of jobs Snakemake should run concurrently
 * `-p` – specifies to print out each command being run to the screen
+* `--cluster-status` – specifies a script for monitoring the status of jobs on a cluster, improving Snakemake's handling of job timeouts and exceeding memory limits
+   > This is an optional parameter that can be used on a SLURM cluster by adding `--cluster-status scripts/slurm-status.py` to the Snakemake command.
 
 See `snakemake -h` and [Snakemake's documentation](https://snakemake.readthedocs.io/en/stable/) for more options and details.
 
