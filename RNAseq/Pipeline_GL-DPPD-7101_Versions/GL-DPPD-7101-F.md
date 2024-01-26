@@ -168,7 +168,8 @@ fastqc -o /path/to/raw_fastqc/output/directory *.fastq.gz
 ### 1b. Compile Raw Data QC  
 
 ```bash
-multiqc --interactive -n raw_multiqc -o /path/to/raw_multiqc/output/directory /path/to/directory/containing/raw_fastqc/files
+multiqc --interactive -n raw_multiqc -o /path/to/raw_multiqc/output/raw_multiqc_report /path/to/directory/containing/raw_fastqc/files
+zip -r raw_multiqc_report.zip /path/to/raw_multiqc/output/raw_multiqc_report
 ```
 
 **Parameter Definitions:**
@@ -184,8 +185,9 @@ multiqc --interactive -n raw_multiqc -o /path/to/raw_multiqc/output/directory /p
 
 **Output Data:**
 
-- **raw_multiqc.html** (multiqc report)
-- **/raw_multiqc_data** (directory containing multiqc data)
+* **raw_multiqc_report.zip** (zip containing the following)
+  * **raw_multiqc.html** (multiqc output html summary)
+  * **raw_multiqc_data** (directory containing multiqc output data)
 
 <br>
 
@@ -257,7 +259,8 @@ fastqc -o /path/to/trimmed_fastqc/output/directory *.fastq.gz
 ### 2c. Compile Trimmed Data QC  
 
 ```bash
-multiqc --interactive -n trimmed_multiqc -o /path/to/trimmed_multiqc/output/directory /path/to/directory/containing/trimmed_fastqc/files
+multiqc --interactive -n trimmed_multiqc -o /path/to/trimmed_multiqc/output/trimmed_multiqc_report /path/to/directory/containing/trimmed_fastqc/files
+zip -r trimmed_multiqc_report.zip /path/to/trimmed_multiqc/output/trimmed_multiqc_report
 ```
 
 **Parameter Definitions:**
@@ -273,8 +276,9 @@ multiqc --interactive -n trimmed_multiqc -o /path/to/trimmed_multiqc/output/dire
 
 **Output Data:**
 
-- **trimmed_multiqc.html** (multiqc report)
-- **/trimmed_multiqc_data** (directory containing multiqc data)
+* **trimmed_multiqc_report.zip** (zip containing the following)
+  * **trimmed_multiqc.html** (multiqc output html summary)
+  * **trimmed_multiqc_data** (directory containing multiqc output data)
 
 <br>
 
@@ -420,7 +424,8 @@ STAR --twopassMode Basic \
 ### 4b. Compile Alignment Logs
 
 ```bash
-multiqc --interactive -n align_multiqc -o /path/to/aligned_multiqc/output/directory /path/to/*Log.final.out/files
+multiqc --interactive -n align_multiqc -o /path/to/align_multiqc/output/align_multiqc_report /path/to/*Log.final.out/files
+zip -r align_multiqc_report.zip /path/to/align_multiqc/output/align_multiqc_report
 ```
 
 **Parameter Definitions:**
@@ -436,8 +441,9 @@ multiqc --interactive -n align_multiqc -o /path/to/aligned_multiqc/output/direct
 
 **Output Data:**
 
-- **align_multiqc.html** (multiqc report)
-- **/align_multiqc_data** (directory containing multiqc data)
+* **align_multiqc_report.zip** (zip containing the following)
+  * **align_multiqc.html** (multiqc output html summary)
+  * **align_multiqc_data** (directory containing multiqc output data)
 
 <br>
 
@@ -628,7 +634,8 @@ infer_experiment.py -r /path/to/annotation/BED/file \
 ### 6b. Compile Strandedness Reports
 
 ```bash
-multiqc --interactive -n infer_exp_multiqc -o /path/to/infer_exp_multiqc/output/directory /path/to/*infer_expt.out/files
+multiqc --interactive -n infer_exp_multiqc -o /path/to/infer_exp_multiqc/output/infer_exp_multiqc /path/to/*infer_expt.out/files
+zip -r infer_exp_multiqc_report.zip /path/to/infer_exp_multiqc/output/infer_exp_multiqc_report
 ```
 
 **Parameter Definitions:**
@@ -644,8 +651,9 @@ multiqc --interactive -n infer_exp_multiqc -o /path/to/infer_exp_multiqc/output/
 
 **Output Data:**
 
-- **infer_exp_multiqc.html** (multiqc report)
-- **/infer_exp_multiqc_data** (directory containing multiqc data)
+* **infer_exp_multiqc_report.zip** (zip containing the following)
+  * **infer_exp_multiqc.html** (multiqc output html summary)
+  * **infer_exp_multiqc_data** (directory containing multiqc output data)
 
 <br>
 
@@ -681,7 +689,8 @@ geneBody_coverage.py -r /path/to/annotation/BED/file \
 ### 6d. Compile GeneBody Coverage Reports
 
 ```bash
-multiqc --interactive -n genebody_cov_multiqc -o /path/to/geneBody_coverage_multiqc/output/directory /path/to/geneBody_coverage/output/files
+multiqc --interactive -n genebody_cov_multiqc -o /path/to/geneBody_cov_multiqc/output/geneBody_cov_multiqc_report /path/to/geneBody_coverage/output/files
+zip -r genebody_cov_multiqc_report.zip /path/to/genebody_cov_multiqc/output/genebody_cov_multiqc_report
 ```
 
 **Parameter Definitions:**
@@ -697,8 +706,9 @@ multiqc --interactive -n genebody_cov_multiqc -o /path/to/geneBody_coverage_mult
 
 **Output Data:**
 
-- **geneBody_cov_multiqc.html** (multiqc report)
-- **/geneBody_cov_multiqc_data** (directory containing multiqc data)
+* **genebody_cov_multiqc_report.zip** (zip containing the following)
+  * **genebody_cov_multiqc.html** (multiqc output html summary)
+  * **genebody_cov_multiqc_data** (directory containing multiqc output data)
 
 <br>
 
@@ -740,7 +750,8 @@ inner_distance.py -r /path/to/annotation/BED/file \
 ### 6f. Compile Inner Distance Reports
 
 ```bash
-multiqc --interactive -n inner_dist_multiqc /path/to/inner_dist_multiqc/output/directory /path/to/inner_dist/output/files
+multiqc --interactive -n inner_dist_multiqc /path/to/align_multiqc/output/inner_dist_multiqc_report /path/to/inner_dist/output/files
+zip -r inner_dist_multiqc_report.zip /path/to/align_multiqc/output/inner_dist_multiqc_report
 ```
 
 **Parameter Definitions:**
@@ -756,8 +767,9 @@ multiqc --interactive -n inner_dist_multiqc /path/to/inner_dist_multiqc/output/d
 
 **Output Data:**
 
-- **inner_distance_multiqc.html** (multiqc report)
-- **/inner_distance_multiqc_data** (directory containing multiqc data)
+* **inner_dist_multiqc_report.zip** (zip containing the following)
+  * **inner_dist_multiqc.html** (multiqc output html summary)
+  * **inner_dist_multiqc_data** (directory containing multiqc output data)
 
 <br>
 
@@ -790,7 +802,8 @@ read_distribution.py -r /path/to/annotation/BED/file \
 ### 6h. Compile Read Distribution Reports
 
 ```bash
-multiqc --interactive -n read_dist_multiqc -o /path/to/read_dist_multiqc/output/directory /path/to/*read_dist.out/files
+multiqc --interactive -n read_dist_multiqc -o /path/to/read_dist_multiqc/output/read_dist_multiqc_report /path/to/*read_dist.out/files
+zip -r read_dist_multiqc_report.zip /path/to/read_dist_multiqc/output/read_dist_multiqc_report
 ```
 
 **Parameter Definitions:**
@@ -806,8 +819,9 @@ multiqc --interactive -n read_dist_multiqc -o /path/to/read_dist_multiqc/output/
 
 **Output Data:**
 
-- **read_dist_multiqc.html** (multiqc report)
-- **/read_dist_multiqc_data** (directory containing multiqc data)
+* **read_dist_multiqc_report.zip** (zip containing the following)
+  * **read_dist_multiqc.html** (multiqc output html summary)
+  * **read_dist_multiqc_data** (directory containing multiqc output data)
 
 <br>
 
@@ -819,7 +833,6 @@ multiqc --interactive -n read_dist_multiqc -o /path/to/read_dist_multiqc/output/
 rsem-prepare-reference --gtf /path/to/annotation/gtf/file \
  /path/to/genome/fasta/file \
  /path/to/RSEM/genome/directory/RSEM_ref_prefix
-
 ```
 
 **Parameter Definitions:**
@@ -904,7 +917,8 @@ rsem-calculate-expression --num-threads NumberOfThreads \
 ### 8b. Compile RSEM Count Logs
 
 ```bash
-multiqc --interactive -n RSEM_count_multiqc -o /path/to/RSEM_count_multiqc/output/directory /path/to/*stat/files
+multiqc --interactive -n RSEM_count_multiqc -o /path/to/RSEM_count_multiqc/output/RSEM_count_multiqc_report /path/to/*stat/files
+zip -r RSEM_count_multiqc_report.zip /path/to/raw_multiqc/output/RSEM_count_multiqc_report
 ```
 
 **Parameter Definitions:**
@@ -923,8 +937,9 @@ multiqc --interactive -n RSEM_count_multiqc -o /path/to/RSEM_count_multiqc/outpu
 
 **Output Data:**
 
-- **RSEM_count_multiqc.html** (multiqc report)
-- **/RSEM_count_multiqc_data** (directory containing multiqc data)
+* **RSEM_count_multiqc_report.zip** (zip containing the following)
+  * **RSEM_count_multiqc.html** (multiqc output html summary)
+  * **RSEM_count_multiqc_data** (directory containing multiqc output data)
 
 <br>
 
