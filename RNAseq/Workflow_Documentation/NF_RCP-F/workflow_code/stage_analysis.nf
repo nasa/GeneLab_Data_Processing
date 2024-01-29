@@ -15,10 +15,10 @@ def mutate_to_single_end(it) {
 }
 
 // Import process from separate module file
-include { GENERATE_METASHEET;
+include { RUNSHEET_FROM_GLDS as GENERATE_RUNSHEET;
+          GENERATE_METASHEET;
           STAGE_RAW_READS;
           get_runsheet_paths } from'./modules/genelab.nf'
-include { RUNSHEET_FROM_GLDS } from './modules/RUNSHEET_FROM_GLDS.nf'
 
 /**************************************************
 * ACTUAL WORKFLOW  ********************************
@@ -32,14 +32,14 @@ workflow staging{
 
     if (!params.runsheetPath) {
 
-      RUNSHEET_FROM_GLDS(
+      GENERATE_RUNSHEET(
         ch_glds_accession,
         "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
 
         )
-      RUNSHEET_FROM_GLDS.out.runsheet | set{ ch_runsheet }
-      GENERATE_METASHEET( RUNSHEET_FROM_GLDS.out.isaArchive,
-      RUNSHEET_FROM_GLDS.out.runsheet )
+      GENERATE_RUNSHEET.out.runsheet | set{ ch_runsheet }
+      GENERATE_METASHEET( GENERATE_RUNSHEET.out.isaArchive,
+      GENERATE_RUNSHEET.out.runsheet )
     } else {
       ch_runsheet = channel.fromPath(params.runsheetPath)
     }
@@ -92,7 +92,7 @@ workflow staging{
 
     emit:
       raw_reads = stageLocal ? STAGE_RAW_READS.out : null
-      isa = params.runsheetPath ? null : RUNSHEET_FROM_GLDS.out.isaArchive
+      isa = params.runsheetPath ? null : GENERATE_RUNSHEET.out.isazip
       runsheet = ch_runsheet
       metasheet = params.runsheetPath ? null : GENERATE_METASHEET.out.metasheet
 }

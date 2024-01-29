@@ -5,6 +5,11 @@ c_bright_green = "\u001b[32;1m";
 c_blue = "\033[0;34m";
 c_reset = "\033[0m";
 
+
+include { staging as STAGING } from './stage_analysis.nf'
+include { references as REFERENCES } from './references.nf'
+include { strandedness as STRANDEDNESS } from './strandedness.nf'
+
 include { FASTQC as RAW_FASTQC } from './modules/quality.nf'
 include { FASTQC as TRIMMED_FASTQC } from './modules/quality.nf'
 include { MULTIQC as RAW_MULTIQC } from './modules/quality.nf' addParams(MQCLabel:"raw")
@@ -127,9 +132,6 @@ if ( params.stageLocal && params.truncateTo ) {
   println("${c_bright_green}No Staging of raw reads.  Only getting Metadata for ${params.gldsAccession}${c_reset}")
 }
 
-include { staging as STAGING } from './stage_analysis.nf'
-include { references as REFERENCES } from './references.nf'
-include { strandedness as STRANDEDNESS } from './strandedness.nf'
 
 workflow {
 	main:
