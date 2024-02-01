@@ -56,21 +56,6 @@ yaml::write_yaml(params, "last_params.yml")
 
 ### 2. Load Study Metadata
 ```{r runsheet-to-compare_df}
-#' Calculate the square of a number
-#'
-#' This function takes a numeric input and returns its square.
-#'
-#' @param x Numeric value to be squared.
-#'
-#' @return The square of the input value.
-#'
-#' @examples
-#' square(2)
-#' # Output: 4
-#'
-#' square(-3)
-#' # Output: 9
-#'
 compare_csv_from_runsheet <- function(runsheet_path) {
     df = read.csv(runsheet_path)
     # get only Factor Value columns
