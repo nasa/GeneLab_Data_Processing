@@ -1960,15 +1960,15 @@ GENE_ID_PREFIX = "ENSMU" # change according to a common prefix for all Gene IDs 
 list_of_ISA_files
 
 # There are datasets that have multiple assays (including microarray), so the RNAseq ISA files from the above output must be selected. 
-# Txt files outputted above are indexed as 0, 1, 2, etc. Fill in the indexed number corresponding to the sample (s_\\*txt) and assay files for RNAseq (a_\\*_(RNA-Seq).txt) in the code block below.
+# Txt files outputted above are indexed as 0, 1, 2, etc. Fill in the indexed number corresponding to the sample (s_*txt) and assay files for RNAseq (a_*_(RNA-Seq).txt) in the code block below.
 
-# Extract metadata from the sample file (s_\\*txt)
-sample_file = list_of_ISA_files[1] # replace [1] with index corresponding to the (s_\\*txt) file
+# Extract metadata from the sample file (s_*txt)
+sample_file = list_of_ISA_files[1] # replace [1] with index corresponding to the (s_*txt) file
 file = zip_file_object.open(sample_file)
 sample_table = pd.read_csv(zip_file_object.open(sample_file), sep='\t')
 
-# Extract metadata from the assay (a_\\*_(RNA-Seq).txt) file
-assay_file = list_of_ISA_files[0] # replace [0] with index corresponding to the (a_\\*_(RNA-Seq).txt) file
+# Extract metadata from the assay (a_*_(RNA-Seq).txt) file
+assay_file = list_of_ISA_files[0] # replace [0] with index corresponding to the (a_*_(RNA-Seq).txt) file
 file = zip_file_object.open(assay_file)
 assay_table = pd.read_csv(zip_file_object.open(assay_file), sep='\t')
 
