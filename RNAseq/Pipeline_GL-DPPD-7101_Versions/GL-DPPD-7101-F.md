@@ -2511,6 +2511,14 @@ dds
 
 ## Run DESeq2 analysis and calculate results
 
+## Try first to use the default type="median", but if there is an error (usually due to zeros in genes), use type="poscounts"
+## From DESeq2 manual: "The "poscounts" estimator deals with a gene with some zeros, by calculating a modified geometric mean by taking the n-th root of the product of the non-zero counts."
+dds <- tryCatch(
+      expr = { estimateSizeFactors(dds) },
+      error = function(e) { estimateSizeFactors(dds, type="poscounts")}
+)
+
+
 dds <- DESeq(dds)
 res <- results(dds, contrast=c("Mix","Mix 1","Mix 2")) # remove space before mix number if needed
 res
