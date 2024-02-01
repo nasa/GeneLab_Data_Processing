@@ -1987,7 +1987,7 @@ raw_counts_table = pd.read_csv(UnnormalizedCountsPath, index_col=0)
 raw_counts_table.index.rename('Gene_ID', inplace=True)
 print(raw_counts_table.head(n=3))
 
-raw_counts_transcripts = raw_counts_table[raw_counts_table.index.str.contains(f"^{GENE_ID_PREFIX}")] # Change according to organism of interest'
+raw_counts_transcripts = raw_counts_table[raw_counts_table.index.str.contains(f"^{GENE_ID_PREFIX}")]
 assert len(raw_counts_transcripts) != 0, f"Looks like {GENE_ID_PREFIX} matched no genes, probably the wrong prefix"
 raw_counts_transcripts = raw_counts_transcripts.sort_values(by=list(raw_counts_transcripts), ascending=False)
 print(raw_counts_transcripts)
