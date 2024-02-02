@@ -425,7 +425,7 @@ seqtab.nochim <- removeBimeraDenovo(unqs=seqtab, method=“consensus”, multith
 
 <br>
 
-### 5f. Assigning Ttaxonomy
+### 5f. Assigning Taxonomy
 
 Creating a DNAStringSet object from the ASVs:
 ```R
