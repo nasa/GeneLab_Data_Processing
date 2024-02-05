@@ -1,6 +1,7 @@
 # Workflow change log
 
-## [1.2.1](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_AmpIllumina-A_1.2.1/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-A)
+## [1.2.1](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_AmpIllumina-B_1.2.1/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B)
+- Moved SW_AmpIllumina-A_1.2.1 to SW_AmpIllumina-B_1.2.1
 - Workflow runs the [GL-DPPD-7104-B version](../../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md) of the GeneLab standard pipeline, which includes data visualization outputs
 - Removed wget SW_AmpIllumina-A_1.2.0.zip instructions and added GL-get-workflow instructions to SW_AmpIllumina usage instructions
 - Removed dp-tools installation from SW_AmpIllumina usage instructions since it is now included in the genelab-utils installation
