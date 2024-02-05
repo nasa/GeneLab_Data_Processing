@@ -14,7 +14,7 @@ Alexis Torres and Michael D. Lee (GeneLab Data Processing Team)
 **Approved by [Pending Approval]:**  
 Sylvain Costes (GeneLab Project Manager)  
 Samrawit Gebre (GeneLab Deputy Project Manager and Acting Genelab Configuration Manager)  
-Lauren Sanders (OSDR Project Scientist)
+Lauren Sanders (OSDR Project Scientist)  
 Amanda Saravia-Butler (GeneLab Data Processing Lead)  
 
 ---
