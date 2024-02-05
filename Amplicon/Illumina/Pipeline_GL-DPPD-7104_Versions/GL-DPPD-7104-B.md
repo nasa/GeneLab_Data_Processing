@@ -9,14 +9,13 @@
 **Document Number:** GL-DPPD-7104-B  
 
 **Submitted by:**  
-Michael D. Lee (GeneLab Data Processing Team)
+Alexis Torres and Michael D. Lee (GeneLab Data Processing Team)
 
-**Approved by:**  
+**Approved by [Pending Approval]:**  
 Sylvain Costes (GeneLab Project Manager)  
-Samrawit Gebre (GeneLab Deputy Project Manager)  
-Homer Fogle (GeneLab Data Processing Representative)  
-Jonathan Galazka (GeneLab Project Scientist)  
-Anushree Sonic (Genelab Configuration Manager)  
+Samrawit Gebre (GeneLab Deputy Project Manager and Acting Genelab Configuration Manager)  
+Lauren Sanders (OSDR Project Scientist)
+Amanda Saravia-Butler (GeneLab Data Processing Lead)  
 
 ---
 
