@@ -28,9 +28,9 @@ Amanda Saravia-Butler (GeneLab Data Processing Lead)
   - Differential Abundance Analysis ([step 9](#9-differential-abundance-analysis)) Including Betadisper, Permutational ANOVA ([9a](#9a-betadisper-and-permutational-anova)), DESeq2 ([9b](#9b-differential-abundance-analysis-with-deseq2)) and Volcano Plots ([9c](#9c-volcano-plots)).
 
 <!-- Included R packages -->
-- assay-specific suffixes were added where needed for GeneLab repo ("GLAmpSeq")
-- the ITS UNITE reference database used was updated to "UNITE_v2023_July2023.RData", from http://www2.decipher.codes/Classification/TrainingSets/
-- several program versions were updated (all versions listed in [Software used](#software-used) below)
+- Assay-specific suffixes were added where needed for GeneLab repo ("GLAmpSeq")
+- The ITS UNITE reference database used was updated to "UNITE_v2023_July2023.RData", from http://www2.decipher.codes/Classification/TrainingSets/
+- Several program versions were updated (all versions listed in [Software used](#software-used) below)
 
 # Table of contents  
 
