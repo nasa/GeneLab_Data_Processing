@@ -42,6 +42,46 @@ def process_osd_argument(osd_arg):
         print("Invalid format for --OSD argument. Use 'numeric', 'OSD-numeric', or 'GLDS-numeric'.")
         sys.exit(1)
 
+# Check provided OSD/GLDS is not on the list of those that can't be autoprocessed
+def check_provided_osd_or_glds(osd_arg):
+    # dictionaries of OSD/GLDS accessions and reason for not running, key = ID: value = reason
+    # there are 3 because ID can be provided prefixed with "OSD-", "GLDS-", or nothing - not the most efficient here, but ¯\_(ツ)_/¯
+    not_autoprocessable_OSD_dict = {
+        "OSD-65": "This dataset has multiple different primers mixed in different orientations in each individual sample, and the workflow is unable to handle it in an automated fashion.",
+        "OSD-66": "This dataset is not a standard amplicon dataset. It is comprised of hundreds of different primers targeting different regions of specific organisms, and the workflow is unable to handle it.",
+        "OSD-82": "This dataset is still multiplexed, and we don't yet have the mapping information to split the samples apart appropriately."
+    }
+
+    not_autoprocessable_GLDS_dict = {
+        "GLDS-65": "This dataset has multiple different primers mixed in different orientations in each individual sample, and the workflow is unable to handle it in an automated fashion.",
+        "GLDS-66": "This dataset is not a standard amplicon dataset. It is comprised of hundreds of different primers targeting different regions of specific organisms, and the workflow is unable to handle it.",
+        "GLDS-82": "This dataset is still multiplexed, and we don't yet have the mapping information to split the samples apart appropriately."
+    }
+
+    not_autoprocessable_dict = {
+        "65": "This dataset has multiple different primers mixed in different orientations in each individual sample, and the workflow is unable to handle it in an automated fashion.",
+        "66": "This dataset is not a standard amplicon dataset. It is comprised of hundreds of different primers targeting different regions of specific organisms, and the workflow is unable to handle it.",
+        "82": "This dataset is still multiplexed, and we don't yet have the mapping information to split the samples apart appropriately."
+    }
+
+    # checking based on OSD IDs
+    if osd_arg in not_autoprocessable_OSD_dict:
+        print(f"\nThe specified dataset {osd_arg} is unable to be processed with this workflow.")
+        print(f"    Reason: {not_autoprocessable_OSD_dict[osd_arg]}\n")
+        sys.exit(1)
+
+    # checking based on GLDS IDs
+    if osd_arg in not_autoprocessable_GLDS_dict:
+        print(f"\n The specified dataset {osd_arg} is unable to be processed with this workflow.")
+        print(f"    Reason: {not_autoprocessable_GLDS_dict[osd_arg]}\n")
+        sys.exit(1)
+
+    # checking based on plain IDs
+    if osd_arg in not_autoprocessable_dict:
+        print(f"\n The specified dataset {osd_arg} is unable to be processed with this workflow.")
+        print(f"    Reason: {not_autoprocessable_dict[osd_arg]}\n")
+        sys.exit(1)
+
 # Run dpt-get-isa-archive in a temp folder, move it back to cd, return the filename
 def download_isa_archive(accession_number):
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -107,6 +147,12 @@ def convert_isa_to_runsheet(accession_number, isa_zip):
 
 def handle_runsheet_selection(runsheet_files, target=None, specified_runsheet=None):
     selected_runsheet = None
+
+    # Change specified_runsheet to a basename in case a path is used as an arg for run_workflow.py
+    if specified_runsheet:
+        specified_runsheet_basename = os.path.basename(specified_runsheet)
+    else:
+        specified_runsheet_basename = None
 
     # Use the specified runsheet if provided
     if specified_runsheet and specified_runsheet in runsheet_files:
@@ -499,14 +545,14 @@ def main():
     
     parser.add_argument('--primers-linked',
                         choices=['TRUE', 'FALSE'],
-                        default='TRUE',
-                        help='If set to TRUE, instructs cutadapt to treat the primers as linked. Default: TRUE',
+                        default='FALSE',
+                        help='If set to TRUE, instructs cutadapt to treat the primers as linked. Default: FALSE',
                         type=str)
 
     parser.add_argument('--anchor-primers',
                         choices=['TRUE', 'FALSE'],
-                        default='TRUE',
-                        help='Indicates if primers should be anchored (TRUE) or not (FALSE). Default: TRUE',
+                        default='FALSE',
+                        help='Indicates if primers should be anchored (TRUE) or not (FALSE). Default: FALSE',
                         type=str)
 
     parser.add_argument('--discard-untrimmed',
@@ -570,6 +616,10 @@ def main():
     # If OSD is used, pull ISA metadata for the study, create and select the runsheet
     if args.OSD:
         accession_number = process_osd_argument(args.OSD)
+
+        # checking OSD/GLDS ID is not on the list of those the workflow definitely can't handle
+        check_provided_osd_or_glds(args.OSD)
+
         isa_zip = download_isa_archive(accession_number)
         if isa_zip:
             runsheet_files = convert_isa_to_runsheet(accession_number, isa_zip)

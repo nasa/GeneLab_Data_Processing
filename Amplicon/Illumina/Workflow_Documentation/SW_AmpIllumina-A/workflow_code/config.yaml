@@ -1,7 +1,9 @@
 ############################################################################################
 ## Configuration file for GeneLab Illumina amplicon processing workflow                   ##
-## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##
+## Initially developed by Michael D. Lee (Mike.Lee@nasa.gov)                              ##
+## Developed and maintained by Michael D. Lee and Alexis Torres (alexis.torres@nasa.gov)  ##
 ############################################################################################
+
 
 ############################################################
 ##################### VARIABLES TO SET #####################
@@ -116,7 +118,7 @@ output_prefix:
     ""
 
 ## output directories (all relative to processing directory, they will be created if needed)
-metadata_out_dir:
+info_out_dir:
     "workflow_output/Metadata/"
 fastqc_out_dir:
     "workflow_output/FastQC_Outputs/"

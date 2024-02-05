@@ -92,18 +92,16 @@ g_legend <- function(a.gplot){
 ###########################################
 
 # Assign the directory paths to variables
-dendrogram_out_dir <- paste0(final_outputs_dir, "dendrogram", .Platform$file.sep)
-pcoa_out_dir <- paste0(final_outputs_dir, "PCoA", .Platform$file.sep)
-rarefaction_out_dir <- paste0(final_outputs_dir, "rarefaction", .Platform$file.sep)
-richness_out_dir <- paste0(final_outputs_dir, "richness", .Platform$file.sep)
+beta_diversity_out_dir <- paste0(final_outputs_dir, "beta_diversity", .Platform$file.sep)
+alpha_diversity_out_dir <- paste0(final_outputs_dir, "alpha_diversity", .Platform$file.sep)
 taxonomy_out_dir <- paste0(final_outputs_dir, "taxonomy", .Platform$file.sep)
-de_out_dir <- paste0(final_outputs_dir, "de", .Platform$file.sep)
+de_out_dir <- paste0(final_outputs_dir, "da", .Platform$file.sep)
 
 abundance_out_dir <- paste0(de_out_dir, "differential_abundance", .Platform$file.sep)
 volcano_out_dir <- paste0(de_out_dir, "volcano", .Platform$file.sep)
 
 # List of all directory variables
-out_dirs <- list(final_outputs_dir, dendrogram_out_dir, pcoa_out_dir, rarefaction_out_dir, richness_out_dir, taxonomy_out_dir, de_out_dir, abundance_out_dir, volcano_out_dir)
+out_dirs <- list(final_outputs_dir, beta_diversity_out_dir, alpha_diversity_out_dir, taxonomy_out_dir, de_out_dir, abundance_out_dir, volcano_out_dir)
 
 # Loop through each directory path to check and create if necessary
 for (dir_path in out_dirs) {
@@ -138,8 +136,10 @@ if (uses_links) {
     runsheet$basename <- mapply(remove_suffix, runsheet[[read1_path_colname]], runsheet[[raw_R1_suffix_colname]])
 }
 
-# Make the basenames DESeq2 compatible
+# Make the basenames DESeq2 compatible, add temporary s_ prefix to fix bugs caused by basenames starting w/ number
+runsheet$basename <- paste0("s_", runsheet$basename)
 runsheet$basename <- make.names(runsheet$basename, unique = TRUE)
+runsheet$basename <- sub("^s_", "", runsheet$basename)
 
 # Subset runsheet and count tab to only include samples in sample_info
 runsheet <- runsheet[runsheet$basename %in% deseq2_sample_names, ]
@@ -153,24 +153,6 @@ count_tab <- count_tab[, runsheet$basename]
 
 # Rename runsheet row names
 rownames(runsheet) <- runsheet$basename
-
-
-# # Identify the longest common prefix in the row names
-# common_prefix <- longest_common_prefix(rownames(runsheet))
-
-# # Remove the longest common prefix from the row names
-# if (nchar(common_prefix) > 0) {
-#   shortened_names <- sapply(rownames(runsheet), function(name) {
-#     sub(paste0("^", common_prefix), "", name)
-#   })
-# } else {
-#   # If there is no common prefix, use the original row names
-#   shortened_names <- rownames(runsheet)
-# }
-
-# # Update the row names in the runsheet and column names in count_tab
-# rownames(runsheet) <- shortened_names
-# colnames(count_tab) <- shortened_names
 
 if (!identical(rownames(runsheet), colnames(count_tab))) {
   stop("The read file names in the runsheet do not match the colnames of count_tab.")
@@ -199,7 +181,19 @@ vst_trans_count_tab <- assay(deseq_counts_vst)
 
 # Add colors to runsheet
 num_colors <- length(unique(runsheet[[groups_colname]]))
-colors <- brewer.pal(num_colors, "Set1")
+
+# Check if number of colors exceeds the limit of the "Set1" palette (9)
+if (num_colors > 9) {
+    # Create a custom palette with more colors
+    custom_palette <- colorRampPalette(brewer.pal(9, "Set1"))(num_colors)
+    colors <- custom_palette
+} else {
+    # Use the standard "Set1" palette
+    colors <- brewer.pal(num_colors, "Set1")
+}
+
+
+
 group_colors <- setNames(colors, unique(runsheet[[groups_colname]]))
 runsheet <- runsheet %>%
   mutate(!!color_colname := group_colors[.data[[groups_colname]]])
@@ -247,7 +241,7 @@ default_cex <- adjust_cex(length(rownames(sample_info_tab)))
 
 
 # Set for 11x8 plot margins, else try ggdendrogram
-space_available <- height_in_inches/5.3
+space_available <- height_in_inches/5.4
 
 calculate_max_cex <- function(n, space_avail) {
   base_char_width_inch <- 0.1  # average width of a character in inches at cex = 1
@@ -269,7 +263,7 @@ legend_colors <- unique(sample_info_tab$color)
 num_unique_groups <- length(legend_groups)
 legend_cex <- ifelse(num_unique_groups > 5, 1 / (num_unique_groups / 5), 1)
 
-png(file.path(dendrogram_out_dir, paste0(output_prefix, "dendrogram_by_group", ".png")),
+png(file.path(beta_diversity_out_dir, paste0(output_prefix, "dendrogram_by_group", ".png")),
     width = width_in_pixels,
     height = height_in_pixels,
     res = dpi)
@@ -325,7 +319,7 @@ ordination_plot_u <- plot_ordination(vst_physeq, vst_pcoa, color = "groups") +
                      legend.title.align = 0.5) +
   annotate("text", x = Inf, y = -Inf, label = paste("R2:", toString(round(r2_value, 3))), hjust = 1.1, vjust = -2, size = 4)+
   annotate("text", x = Inf, y = -Inf, label = paste("Pr(>F)", toString(round(prf_value,4))), hjust = 1.1, vjust = -0.5, size = 4)+ ggtitle("PCoA")
-ggsave(filename=paste0(pcoa_out_dir, output_prefix, "PCoA_without_labels", ".png"), plot=ordination_plot_u, width = 11.1, height = 8.33, dpi = 300)
+ggsave(filename=paste0(beta_diversity_out_dir, output_prefix, "PCoA_without_labels", ".png"), plot=ordination_plot_u, width = 11.1, height = 8.33, dpi = 300)
 # Save labeled PCoA plot
 ordination_plot <- plot_ordination(vst_physeq, vst_pcoa, color = "groups") + 
   geom_point(size = 1) + 
@@ -345,7 +339,7 @@ ordination_plot <- plot_ordination(vst_physeq, vst_pcoa, color = "groups") +
                      legend.title.align = 0.5) +
   annotate("text", x = Inf, y = -Inf, label = paste("R2:", toString(round(r2_value, 3))), hjust = 1.1, vjust = -2, size = 4)+
   annotate("text", x = Inf, y = -Inf, label = paste("Pr(>F)", toString(round(prf_value,4))), hjust = 1.1, vjust = -0.5, size = 4)+ ggtitle("PCoA")
-ggsave(filename=paste0(pcoa_out_dir, output_prefix, "PCoA_w_labels", ".png"), plot=ordination_plot, width = 11.1, height = 8.33, dpi = 300)
+ggsave(filename=paste0(beta_diversity_out_dir, output_prefix, "PCoA_w_labels", ".png"), plot=ordination_plot, width = 11.1, height = 8.33, dpi = 300)
 ########################
 
 #4. Alpha diversity
@@ -362,8 +356,9 @@ p <- p %>%
 rareplot <- ggplot(p, aes(x = Sample, y = Species, group = Site, color = groups)) + 
   geom_line() + 
   scale_color_manual(values = unique(sample_info_tab[[color_colname]][order(sample_info_tab[[groups_colname]])]),
-                     labels = unique(sample_info_tab$short_group_labels[order(sample_info_tab[[groups_colname]])])) +
-  labs(x = "Number of Samples", y = "Number of ASVs", col = "Groups") + 
+                   labels = unique(sample_info_tab$short_group_labels[order(sample_info_tab[[groups_colname]])]),
+                   breaks = unique(sample_info_tab[[groups_colname]])) +
+  labs(x = "Number of Sequences", y = "Number of ASVs", col = "Groups") + 
   theme_bw() +
   theme(legend.position = "bottom",
         text = element_text(size = 15),
@@ -375,7 +370,7 @@ rareplot <- ggplot(p, aes(x = Sample, y = Species, group = Site, color = groups)
         panel.grid.minor = element_blank(),
         plot.margin = margin(t = 10, r = 20, b = 10, l = 10, unit = "pt")) +
   guides(color = guide_legend(title = "Groups"))
-ggsave(filename = paste0(rarefaction_out_dir, output_prefix, "rarefaction.png"), plot=rareplot, width = 8.33, height = 8.33, dpi = 300)
+ggsave(filename = paste0(alpha_diversity_out_dir, output_prefix, "rarefaction_curves.png"), plot=rareplot, width = 8.33, height = 8.33, dpi = 300)
 
 # 4b. Richness and diversity estimates
 
@@ -386,9 +381,8 @@ ASV_physeq <- phyloseq(count_tab_phy, tax_tab_phy, sample_info_tab_phy)
 
 
 calculate_text_size <- function(num_samples, start_samples = 25, min_size = 3) {
-  max_size = 12  # Maximum size for up to start_samples
-  # Hardcoded slope value; adjust this as needed for the desired rate of decrease
-  slope = -0.14
+  max_size = 11  # Maximum size for up to start_samples
+  slope = -0.15
 
   if (num_samples <= start_samples) {
     return(max_size)
@@ -420,7 +414,7 @@ richness_plot <- plot_richness(ASV_physeq, color = "groups", measures = c("Chao1
                                vjust = 0.5,  # Vertically center the text
                                hjust = 1)
   )
-ggsave(paste0(richness_out_dir, output_prefix, "richness_by_sample", ".png"), plot=richness_plot, width = 11.1, height = 8.33, dpi = 300)
+ggsave(paste0(alpha_diversity_out_dir, output_prefix, "richness_and_diversity_estimates_by_sample", ".png"), plot=richness_plot, width = 11.1, height = 8.33, dpi = 300)
 
 richness_by_group <- plot_richness(ASV_physeq, x = "groups", color = "groups", measures = c("Chao1", "Shannon")) +
   scale_color_manual(values = unique(sample_info_tab[[color_colname]][order(sample_info_tab[[groups_colname]])]),
@@ -437,7 +431,7 @@ richness_by_group <- plot_richness(ASV_physeq, x = "groups", color = "groups", m
     legend.title.align = 0.5,
     legend.title = element_blank()
   ) 
-ggsave(filename = paste0(richness_out_dir, output_prefix, "richness_by_group", ".png"), plot=richness_by_group, width = 11.1, height = 8.33, dpi = 300)
+ggsave(filename = paste0(alpha_diversity_out_dir, output_prefix, "richness_and_diversity_estimates_by_group", ".png"), plot=richness_by_group, width = 11.1, height = 8.33, dpi = 300)
 
 # Extract legend from unlabeled pca plot, also save it as its own plot
 legend <- g_legend(ordination_plot)
@@ -500,13 +494,51 @@ grid_image <- grid.grab()
 ggsave(filename = paste0(taxonomy_out_dir, output_prefix, "relative_classes", ".png"), plot=grid_image, width = height_in_inches, height = taxonomy_plots_height, dpi = 500)
 
 
+#samplewise taxonomy
+
+proportions_physeq <- transform_sample_counts(ASV_physeq, function(ASV) ASV / sum(ASV))
+# Calculate the number of samples from the count_tab
+num_samples <- ncol(count_tab)
+# Scaling function: starts at 1x width for 25 samples
+scaling_factor <- (num_samples - 40) / (200 - 40) * (5 - 1) + 1
+scaling_factor <- max(1, min(scaling_factor, 5))
+
+# samplewise phyla
+samplewise_phylum <- plot_bar(proportions_physeq, fill = "phylum") +
+  theme_bw() +
+  theme(text = element_text(size = 16),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0.5, size = 6)) # Rotate and resize x-axis labels
+
+ggsave(filename = paste0(taxonomy_out_dir, output_prefix, "samplewise_relative_phyla", ".png"), 
+       plot = samplewise_phylum, 
+       width = height_in_inches * scaling_factor,
+       height = taxonomy_plots_height)
+
+samplewise_classes <- plot_bar(proportions_physeq, fill = "class") +
+  theme_bw() +
+  theme(text = element_text(size = 16),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0.5, size = 6)) # Rotate and resize x-axis labels
+
+ggsave(filename = paste0(taxonomy_out_dir, output_prefix, "samplewise_relative_classes", ".png"), 
+       plot = samplewise_classes, 
+       width = height_in_inches * scaling_factor,
+       height = taxonomy_plots_height)
+
 # 6 Statistically testing for differences
 
 #### pairwise comparisons
 unique_groups <- unique(runsheet$groups)
 deseq_obj <- phyloseq_to_deseq2(physeq = ASV_physeq, design = ~groups)
 
-
+# add pseudocount if any 0 count samples are present
+if (sum(colSums(counts(deseq_obj)) == 0) > 0) {
+  count_data <- counts(deseq_obj) + 1 
+  
+  count_data <- as.matrix(apply(count_data, 2, as.integer))
+  rownames(count_data) <- rownames(counts(deseq_obj))
+  colnames(count_data) <- colnames(counts(deseq_obj))
+  counts(deseq_obj) <- count_data
+}
 # https://rdrr.io/bioc/phyloseq/src/inst/doc/phyloseq-mixture-models.R 
 deseq_modeled <- tryCatch({
   # Attempt to run DESeq
@@ -545,7 +577,7 @@ plot_comparison <- function(group1, group2) {
   # ASVs promoted in space on right, reduced on left
   p <- ggplot(volcano_data, aes(x=log2FoldChange, y=-log10(padj), color=significant)) +
     geom_point(alpha=0.7, size=2) +
-    scale_color_manual(values=c("black", "red"), labels=c(paste0("padj > ", p_val), paste0("padj ≤ ", p_val))) +
+    scale_color_manual(values=c("black", "red"), labels=c(paste0("padj > ", p_val), paste0("padj \u2264 ", p_val))) +
     theme_bw() +
     labs(title="Volcano Plot",
          x=paste("Log2 Fold Change\n(",group1," vs ",group2,")"),
