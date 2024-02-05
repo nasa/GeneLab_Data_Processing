@@ -138,11 +138,11 @@ if ( target_region == "16S" ) {
 
 } else if (target_region == "ITS" ) {
 
-    download.file("http://www2.decipher.codes/Classification/TrainingSets/UNITE_v2023_July2023.RData", "UNITE_v2023_July2023.RData")    
+    download.file("http://www2.decipher.codes/Classification/TrainingSets/UNITE_v2020_February2020.RData", "UNITE_v2020_February2020.RData")    
     # loading reference taxonomy object
-    load("UNITE_v2023_July2023.RData")
+    load("UNITE_v2020_February2020.RData")
     # removing downloaded file
-    file.remove("UNITE_v2023_July2023.RData")
+    file.remove("UNITE_v2020_February2020.RData")
 
     ranks <- c("kingdom", "phylum", "class", "order", "family", "genus", "species")
 

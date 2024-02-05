@@ -1,7 +1,9 @@
 ############################################################################################
 ## Configuration file for GeneLab Illumina amplicon processing workflow                   ##
-## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##
+## Initially developed by Michael D. Lee (Mike.Lee@nasa.gov)                              ##
+## Developed and maintained by Michael D. Lee and Alexis Torres (alexis.torres@nasa.gov)  ##
 ############################################################################################
+
 
 ############################################################
 ##################### VARIABLES TO SET #####################
@@ -11,7 +13,15 @@
 ##### These need to match what is specific to our system and our data #####
 ###########################################################################
 
-## Set to "PE" for paired-end, "SE" for single-end. (if single-end, enter appropriate info below for the "_R1_" variables and ignore the "_R2_" ones)
+## Path to ISA archive, only needed for saving a copy as metadata:
+isa_archive:
+   ""
+
+## Path to runsheet:
+runsheet:
+    "OSD-num_amplicon_v1_runsheet.csv"
+
+## Set to "PE" for paired-end, "SE" for single-end.
 data_type:
     "PE"
 
@@ -19,13 +29,13 @@ data_type:
 sample_info_file:
     "unique-sample-IDs.txt"
 
-## input reads directory (can be relative to workflow directory, or needs to be full path)
+## input reads directory (can be relative to workflow directory, or needs to be full path):
 raw_reads_dir:
-    "../Raw_Sequence_Data/"
+    "raw_reads/"
 
-## raw read suffixes (region following the unique part of the sample names)
-  # e.g. for paired-end data, "Sample-1_R1_raw.fastq.gz" would be "_R1_raw.fastq.gz" for 'raw_R1_suffix' below
-  # e.g. if single-end, "Sample-1.fastq.gz" would be ".fastq.gz" for 'raw_R1_suffix' below, and 'raw_R2_suffix' won't be used
+## raw read suffixes:
+  # e.g. for paired-end data, Sample-1_R1_raw.fastq.gz would be _R1_raw.fastq.gz for 'raw_R1_suffix' below
+  # e.g. if single-end, Sample-1.fastq.gz would be .fastq.gz for 'raw_R1_suffix' below, and 'raw_R2_suffix' won't be used
 raw_R1_suffix:
     "_R1_raw.fastq.gz"
 raw_R2_suffix:
@@ -45,7 +55,7 @@ R_primer:
 primers_linked:
     "TRUE"
 
-## if primers are linked, we need to provide them as below, where the second half, following three periods, is the other primer reverse-complemented (see https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads)
+## if primers are linked, we need to provide them as below, where the second half, following three periods, is the other primer reverse-complemented
   # (can reverse complement while retaining ambiguous bases at this site: http://arep.med.harvard.edu/labgc/adnan/projects/Utilities/revcomp.html)
   # include anchoring symbols, e.g. '^', as needed, see: https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types
 F_linked_primer:
@@ -70,6 +80,7 @@ target_region:
   # this is typically used with primers like 515-926, that captured 18S fragments that are typically too long to merge
   # note that 16S and 18S should have been separated already prior to running this workflow
   # this should likely be left as FALSE for any option other than "18S" above
+
 concatenate_reads_only:
     "FALSE"
 
@@ -85,8 +96,7 @@ right_maxEE:
 
 ## minimum length threshold for cutadapt
 min_cutadapt_len:
-    150
-
+    130
 
 ######################################################################
 ##### The rest only need to be altered if we want to change them #####
@@ -103,21 +113,23 @@ filtered_R1_suffix:
 filtered_R2_suffix:
     "_R2_filtered.fastq.gz"
 
-
 ## output prefix (if needed to distinguish from multiple primer sets, leave as empty string if not, include connecting symbol if adding, e.g. "ITS-")
 output_prefix:
     ""
 
 ## output directories (all relative to processing directory, they will be created if needed)
+info_out_dir:
+    "workflow_output/Metadata/"
 fastqc_out_dir:
-    "../FastQC_Outputs/"
+    "workflow_output/FastQC_Outputs/"
 trimmed_reads_dir:
-    "../Trimmed_Sequence_Data/"
+    "workflow_output/Trimmed_Sequence_Data/"
 filtered_reads_dir:
-    "../Filtered_Sequence_Data/"
+    "workflow_output/Filtered_Sequence_Data/"
 final_outputs_dir:
-    "../Final_Outputs/"
-
+    "workflow_output/Final_Outputs/"
+plots_dir:
+    "workflow_output/Final_Outputs/Plots/"
 
 ############################################################
 ###################### GENERAL INFO ########################
@@ -128,8 +140,8 @@ final_outputs_dir:
 # snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p
 
 # `--use-conda` – this specifies to use the conda environments included in the workflow
-# `--conda-prefix` – this allows us to point to where the needed conda environments should be stored. Including this means if we use the workflow on a different dataset somewhere else in the future, it will re-use the same conda environments rather than make new ones. The value listed here, `${CONDA_PREFIX}/envs`, is the default location for conda environments (the variable `${CONDA_PREFIX}` will be expanded to the appropriate location on whichever system it is run on).
-# `-j` – this lets us set how many jobs Snakemake should run concurrently (keep in mind that many of the thread and cpu parameters set in the config.yaml file will be multiplied by this)
+# `--conda-prefix` – this allows us to point to where the needed conda environments should be stored...
+# `-j` – this lets us set how many jobs Snakemake should run concurrently...
 # `-p` – specifies to print out each command being run to the screen
 
 # See `snakemake -h` for more options and details.
