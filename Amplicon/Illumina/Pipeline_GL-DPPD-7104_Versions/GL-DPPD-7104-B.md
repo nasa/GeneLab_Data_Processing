@@ -11,7 +11,7 @@
 **Submitted by:**  
 Alexis Torres and Michael D. Lee (GeneLab Data Processing Team)
 
-**Approved by [Pending Approval]:**  
+**Approved by:**  
 Sylvain Costes (GeneLab Project Manager)  
 Samrawit Gebre (GeneLab Deputy Project Manager and Acting Genelab Configuration Manager)  
 Lauren Sanders (OSDR Project Scientist)  
