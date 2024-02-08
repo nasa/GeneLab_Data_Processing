@@ -21,6 +21,15 @@ Amanda Saravia-Butler (GeneLab Data Processing Lead)
 
 ## Updates from previous version
 
+
+- Additional software (R packages) used in [SW_AmpIllumina-B](../Workflow_Documentation/SW_AmpIllumina-B/):
+  - vegan
+  - tidyverse
+  - dendextend
+  - ggrepel
+  - dplyr
+  - RColorBrewer
+  - phyloseq
 - Inclusion of additional steps and outputs starting from ([step 6](#6-beta-diversity)):
   - Beta Diversity with Hierarchical Clustering ([6a](#6a-hierarchical-clustering)) and Ordination ([6b](#6b-ordination)).
   - Alpha Diversity with Rarefaction Curves ([7a](#7a-rarefaction-curves)) and Richness and Diversity Estimates ([7b](#7b-richness-and-diversity-estimates)).
@@ -89,12 +98,11 @@ Amanda Saravia-Butler (GeneLab Data Processing Lead)
 |phyloseq|`1.44.0`|[https://bioconductor.org/packages/release/bioc/html/phyloseq.html](https://bioconductor.org/packages/release/bioc/html/phyloseq.html)|
 
 # Reference databases used
-http://www2.decipher.codes/Classification/TrainingSets/PR2_v4_13_March2021.RData", "PR2_v4_13_March2021.RData
+
 |Program used| Database| Relevant Links|
 |:-----|:-----:|--------:|
 |DECIPHER| SILVA SSU r138 | [http://www2.decipher.codes/Classification/TrainingSets/SILVA_SSU_r138_2019.RData](http://www2.decipher.codes/Classification/TrainingSets/)|
-|DECIPHER| UNITE v2023 | [http://www2.decipher.codes/Classification/TrainingSets/UNITE_v2023_July2023.RData](http://www2.decipher.codes/Classification/TrainingSets/)|
-|DECIPHER| PR2 | [http://www2.decipher.codes/Classification/TrainingSets/PR2_v4_13_March2021.RData](http://www2.decipher.codes/Classification/TrainingSets/)|
+|DECIPHER| UNITE v2020 | [http://www2.decipher.codes/Classification/TrainingSets/UNITE_v2020_February2020.RData](http://www2.decipher.codes/Classification/TrainingSets/)|
 
 ---
 
