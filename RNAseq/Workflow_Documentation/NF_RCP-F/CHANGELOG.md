@@ -5,14 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.4](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-F_1.0.4/RNAseq/Workflow_Documentation/NF_RCP-F) - 2024-01-31
+## [1.0.4](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-F_1.0.4/RNAseq/Workflow_Documentation/NF_RCP-F) - 2024-02-08
 
 ### Fixed
 
 - Workflow usage files will all follow output directory set by workflow user
 - ERCC Notebook:
-  - move gene prefix to start of notebook; raise error if bad prefix is used
-  - add fallback for scenarios where every gene has zeros
+  - Moved gene prefix definition to start of notebook
+  - Added fallback for scenarios where every gene has zeros: use "poscounts" estimator to calculate a modified geometric mean
   
 ### Changed
 
