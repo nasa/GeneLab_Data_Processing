@@ -664,7 +664,7 @@ rule r_visualizations:
         "benchmarks/r-visualizations-benchmarks.tsv"
     shell:
         """
-        Rscript scripts/Illumina-R-visualizations.R "{input.runsheet}" "{input.sample_info}" "{input.counts}" "{input.taxonomy}" "{params.plots_dir}" "{params.output_prefix}"  > {log} 2>&1
+        Rscript scripts/Illumina-R-visualizations.R "{input.runsheet}" "{input.sample_info}" "{input.counts}" "{input.taxonomy}" "{params.assay_suffix}" "{params.plots_dir}" "{params.output_prefix}"  > {log} 2>&1
         """
 
 
