@@ -647,12 +647,12 @@ rule r_visualizations:
         runsheet = config["runsheet"],
         sample_info = config["sample_info_file"],
         counts = config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
-        taxonomy = config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv",
-        assay_suffix = assay_suffix
+        taxonomy = config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv"
     output:
         # Use completion flag file in place of plot outputs for variable plots
         legend = config["plots_dir"] + config["output_prefix"] + f"color_legend_{assay_suffix}.png"
     params:
+        assay_suffix = assay_suffix,
         plots_dir = config["plots_dir"],
         output_prefix = config["output_prefix"]
     resources:
