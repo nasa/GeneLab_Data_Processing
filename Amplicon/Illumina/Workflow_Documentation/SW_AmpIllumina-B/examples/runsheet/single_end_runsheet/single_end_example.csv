@@ -1,0 +1,13 @@
+Sample Name,Parameter Value[Library Selection],paired_end,F_Primer,read1_path,raw_R1_suffix,Factor Value[Spaceflight],Factor Value[Dosage],groups
+Mmus_GC_Low_Rep1,16S,FALSE,GTGCCAGCMGCCGCGGTAA,/my/data/groupA_rep1_R1_raw.fastq.gz,_R1_raw.fastq.gz,Ground Control,Low,Ground Control & Low
+Mmus_GC_Low_Rep2,16S,FALSE,GTGCCAGCMGCCGCGGTAA,/my/data/groupA_rep2_R1_raw.fastq.gz,_R1_raw.fastq.gz,Ground Control,Low,Ground Control & Low
+Mmus_GC_Low_Rep3,16S,FALSE,GTGCCAGCMGCCGCGGTAA,/my/data/groupA_rep3_R1_raw.fastq.gz,_R1_raw.fastq.gz,Ground Control,Low,Ground Control & Low
+Mmus_GC_High_Rep1,16S,FALSE,GTGCCAGCMGCCGCGGTAA,/my/data/groupB_rep1_R1_raw.fastq.gz,_R1_raw.fastq.gz,Ground Control,High,Ground Control & High
+Mmus_GC_High_Rep2,16S,FALSE,GTGCCAGCMGCCGCGGTAA,/my/data/groupB_rep2_R1_raw.fastq.gz,_R1_raw.fastq.gz,Ground Control,High,Ground Control & High
+Mmus_GC_High_Rep3,16S,FALSE,GTGCCAGCMGCCGCGGTAA,/my/data/groupB_rep3_R1_raw.fastq.gz,_R1_raw.fastq.gz,Ground Control,High,Ground Control & High
+Mmus_SF_Low_Rep1,16S,FALSE,GTGCCAGCMGCCGCGGTAA,/my/data/groupC_rep1_R1_raw.fastq.gz,_R1_raw.fastq.gz,Space Flight,Low,Space Flight & Low
+Mmus_SF_Low_Rep2,16S,FALSE,GTGCCAGCMGCCGCGGTAA,/my/data/groupC_rep2_R1_raw.fastq.gz,_R1_raw.fastq.gz,Space Flight,Low,Space Flight & Low
+Mmus_SF_Low_Rep3,16S,FALSE,GTGCCAGCMGCCGCGGTAA,/my/data/groupC_rep3_R1_raw.fastq.gz,_R1_raw.fastq.gz,Space Flight,Low,Space Flight & Low
+Mmus_SF_High_Rep1,16S,FALSE,GTGCCAGCMGCCGCGGTAA,/my/data/groupD_rep1_R1_raw.fastq.gz,_R1_raw.fastq.gz,Space Flight,High,Space Flight & High
+Mmus_SF_High_Rep2,16S,FALSE,GTGCCAGCMGCCGCGGTAA,/my/data/groupD_rep2_R1_raw.fastq.gz,_R1_raw.fastq.gz,Space Flight,High,Space Flight & High
+Mmus_SF_High_Rep3,16S,FALSE,GTGCCAGCMGCCGCGGTAA,/my/data/groupD_rep3_R1_raw.fastq.gz,_R1_raw.fastq.gz,Space Flight,High,Space Flight & High
