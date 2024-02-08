@@ -173,7 +173,6 @@ fastqc -o /path/to/raw_fastqc/output/directory *.fastq.gz
 ```bash
 multiqc --interactive -n raw_multiqc_GLbulkRNAseq -o /path/to/raw_multiqc/output/raw_multiqc_GLbulkRNAseq_report /path/to/directory/containing/raw_fastqc/files
 zip -r raw_multiqc_GLbulkRNAseq_report.zip raw_multiqc_GLbulkRNAseq_report
-zip -r raw_multiqc_GLbulkRNAseq_report.zip /path/to/raw_multiqc/output/raw_multiqc_GLbulkRNAseq_report
 ```
 
 **Parameter Definitions:**
