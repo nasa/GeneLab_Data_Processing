@@ -92,7 +92,7 @@ if config["data_type"] == "PE":
                 config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv",
                 config["fastqc_out_dir"] + config["output_prefix"] + f"raw_multiqc_{assay_suffix}_report.zip",
                 config["fastqc_out_dir"] + config["output_prefix"] + f"filtered_multiqc_{assay_suffix}_report.zip",
-                config["plots_dir"] + config["output_prefix"] + "color_legend.png"
+                config["plots_dir"] + config["output_prefix"] + f"color_legend_{assay_suffix}.png"
             shell:
                 """
                 bash scripts/combine-benchmarks.sh
@@ -114,7 +114,7 @@ if config["data_type"] == "PE":
                 config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv",
                 config["fastqc_out_dir"] + config["output_prefix"] + f"raw_multiqc_{assay_suffix}_report.zip",
                 config["fastqc_out_dir"] + config["output_prefix"] + f"filtered_multiqc_{assay_suffix}_report.zip",
-                config["plots_dir"] + config["output_prefix"] + "color_legend.png"
+                config["plots_dir"] + config["output_prefix"] + f"color_legend_{assay_suffix}.png"
             shell:
                 """
                 bash scripts/combine-benchmarks.sh
@@ -388,7 +388,7 @@ if config["data_type"] == "SE":
                 config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv",
                 config["fastqc_out_dir"] + config["output_prefix"] + f"raw_multiqc_{assay_suffix}_report.zip",
                 config["fastqc_out_dir"] + config["output_prefix"] + f"filtered_multiqc_{assay_suffix}_report.zip",
-                config["plots_dir"] + config["output_prefix"] + "color_legend.png"
+                config["plots_dir"] + config["output_prefix"] + f"color_legend_{assay_suffix}.png"
             shell:
                 """
                 bash scripts/combine-benchmarks.sh
@@ -409,7 +409,7 @@ if config["data_type"] == "SE":
                 config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv",
                 config["fastqc_out_dir"] + config["output_prefix"] + f"raw_multiqc_{assay_suffix}_report.zip",
                 config["fastqc_out_dir"] + config["output_prefix"] + f"filtered_multiqc_{assay_suffix}_report.zip",
-                config["plots_dir"] + config["output_prefix"] + "color_legend.png"
+                config["plots_dir"] + config["output_prefix"] + f"color_legend_{assay_suffix}.png"
             shell:
                 """
                 bash scripts/combine-benchmarks.sh
@@ -647,13 +647,17 @@ rule r_visualizations:
         runsheet = config["runsheet"],
         sample_info = config["sample_info_file"],
         counts = config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
-        taxonomy = config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv"
+        taxonomy = config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv",
+        assay_suffix = assay_suffix
     output:
         # Use completion flag file in place of plot outputs for variable plots
-        legend = config["plots_dir"] + config["output_prefix"] + "color_legend.png"
+        legend = config["plots_dir"] + config["output_prefix"] + f"color_legend_{assay_suffix}.png"
     params:
         plots_dir = config["plots_dir"],
         output_prefix = config["output_prefix"]
+    resources:
+        mem_mb = 200000,
+        cpus = 10
     log:
         "R-visualizations.log"
     benchmark:
