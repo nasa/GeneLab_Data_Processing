@@ -630,13 +630,13 @@ sample_info_tab <- runsheet[, c($groups, $color)]
 
 ### Read in the ASV count table, containing the counts of each ASV in each sample ###
 
-count_tab <- read.table(file = "counts.tsv", 
+count_tab <- read.table(file = "counts_GLAmpSeq.tsv", 
                         header = TRUE, row.names = 1, sep = "\t")
 ```
 
 **Input Data:**
 * \*runsheet.csv (runsheet containing sample metadata required for processing, output from [step 6a](#6a-create-sample-runsheet))  
-* counts.tsv (ASV counts table, output from [step 5g](#5g-generating-and-writing-standard-outputs))
+* counts_GLAmpSeq.tsv (ASV counts table, output from [step 5g](#5g-generating-and-writing-standard-outputs))
   
 **Output Data:**
 * `count_tab` (variable containing the ASV counts table created from counts.tsv)
@@ -710,7 +710,7 @@ Color the sample branches by group and plot the dendrogram.
 ```R
 dend_cols <- sample_info_tab$color[order.dendrogram(euc_dend)]
 labels_colors(euc_dend) <- dend_cols
-png("dendrogram_by_group.png")
+png("dendrogram_by_group_GLAmpSeq.png")
 euc_dend %>% set("labels_cex", max_cex) %>% plot(ylab = "VST Euc. dist.")
 dev.off()
 ```
@@ -721,7 +721,7 @@ dev.off()
   
 **Output Data:**
 
-* **dendrogram_by_group.png** (dendrogram of euclidean distance - based hierarchical clustering of the samples, colored by experimental groups) 
+* **dendrogram_by_group_GLAmpSeq.png** (dendrogram of euclidean distance - based hierarchical clustering of the samples, colored by experimental groups) 
 * `euc_dist` (variable containing the samplewise euclidean distance matrix based on VST-normalized counts)
 
 <br>
@@ -775,7 +775,7 @@ Alpha diversity examines the variety and abundance of taxa within individual sam
 ```R
 rare_curve <- rarecurve(x = t(count_tab), step = 100, col = sample_info_tab$color, 
           lwd = 2, ylab = "ASVs", label = FALSE)
-png("rarefaction_curves.png")
+png("rarefaction_curves_GLAmpSeq.png")
 plot(rare_curve)
 dev.off()
 ```
@@ -805,7 +805,7 @@ dev.off()
 
 **Output Data:**
 
-* **rarefaction_curves.png** (Rarefaction curves plot for all samples)
+* **rarefaction_curves_GLAmpSeq.png** (Rarefaction curves plot for all samples)
 
 <br>
 
@@ -818,8 +818,8 @@ ASV_physeq <- phyloseq(count_tab_phy, tax_tab_phy, sample_info_tab_phy)
 richness_and_diversity_estimates_by_sample <- plot_richness(ASV_physeq, color = "groups", measures = c("Chao1", "Shannon"))
 richness_and_diversity_estimates_by_group <- plot_richness(ASV_physeq, x = "groups", color = "groups", measures = c("Chao1", "Shannon"))
 
-ggsave(paste0("richness_and_diversity_estimates_by_sample", ".png"), plot = richness_and_diversity_estimates_by_sample)
-ggsave(paste0("richness_and_diversity_estimates_by_group", ".png"), plot = richness_and_diversity_estimates_by_group)
+ggsave(paste0("richness_and_diversity_estimates_by_sample_GLAmpSeq", ".png"), plot = richness_and_diversity_estimates_by_sample)
+ggsave(paste0("richness_and_diversity_estimates_by_group_GLAmpSeq", ".png"), plot = richness_and_diversity_estimates_by_group)
 ```
 
 **Parameter Definitions:**  
@@ -840,8 +840,8 @@ ggsave(paste0("richness_and_diversity_estimates_by_group", ".png"), plot = richn
 
 **Output Data:**
 
-* **richness_and_diversity_estimates_by_sample.png** (Richness and diversity estimates plot for all samples)
-* **richness_and_diversity_estimates_by_group.png** (Richness and diversity estimates plot for all groups)  
+* **richness_and_diversity_estimates_by_sample_GLAmpSeq.png** (Richness and diversity estimates plot for all samples)
+* **richness_and_diversity_estimates_by_group_GLAmpSeq.png** (Richness and diversity estimates plot for all groups)  
 * `ASV_physeq` (variable contiaining the Phyloseq object created using an OTU table based on the vst_counts)
   
 <br>
@@ -861,10 +861,10 @@ relative_classes <- plot_bar(proportions_physeq, x = "groups", fill = "class")
 samplewise_phyla <- plot_bar(proportions_physeq, fill = "phylum")
 samplewise_classes <- plot_bar(proportions_physeq, fill = "class")
 
-ggsave(filename = "relative_phyla", ".png", plot = relative_phyla)
-ggsave(filename = "relative_classes", ".png", plot = relative_classes)
-ggsave(filename = "samplewise_relative_phyla", ".png", plot = samplewise_phyla)
-ggsave(filename = "samplewise_relative_classes", ".png", plot = samplewise_classes)
+ggsave(filename = "relative_phyla_GLAmpSeq", ".png", plot = relative_phyla)
+ggsave(filename = "relative_classes_GLAmpSeq", ".png", plot = relative_classes)
+ggsave(filename = "samplewise_relative_phyla_GLAmpSeq", ".png", plot = samplewise_phyla)
+ggsave(filename = "samplewise_relative_classes_GLAmpSeq", ".png", plot = samplewise_classes)
 ```
 
 **Input Data:**
@@ -873,11 +873,11 @@ ggsave(filename = "samplewise_relative_classes", ".png", plot = samplewise_class
 
 **Output Data:**
 
-* **relative_phyla.png** (taxonomic summaries plot based on phyla, for all samples)
-* **relative_classes.png** (taxonomic summaries plot based on class, for all samples)
+* **relative_phyla_GLAmpSeq.png** (taxonomic summaries plot based on phyla, for all samples)
+* **relative_classes_GLAmpSeq.png** (taxonomic summaries plot based on class, for all samples)
 
-* **samplewise_phyla.png** (taxonomic summaries plot based on phyla, for all samples)
-* **samplewise_classes.png** (taxonomic summaries plot based on class, for all samples)
+* **samplewise_phyla_GLAmpSeq.png** (taxonomic summaries plot based on phyla, for all samples)
+* **samplewise_classes_GLAmpSeq.png** (taxonomic summaries plot based on class, for all samples)
 
 <br>
 
@@ -967,8 +967,8 @@ ordination_plot_u <- plot_ordination(vst_physeq, vst_pcoa, color = "groups") +
   annotate("text", x = Inf, y = -Inf, label = paste("R2:", toString(round(r2_value, 3))), hjust = 1.1, vjust = -2, size = 4)+
   annotate("text", x = Inf, y = -Inf, label = paste("Pr(>F)", toString(round(prf_value,4))), hjust = 1.1, vjust = -0.5, size = 4)+ ggtitle("PCoA")
 
-ggsave(filename=paste0(beta_diversity_out_dir, output_prefix, "PCoA_w_labels", ".png"), plot=ordination_plot)
-ggsave(filename=paste0(beta_diversity_out_dir, output_prefix, "PCoA_without_labels", ".png"), plot=ordination_plot_u)
+ggsave(filename=paste0(beta_diversity_out_dir, output_prefix, "PCoA_w_labels_GLAmpSeq", ".png"), plot=ordination_plot)
+ggsave(filename=paste0(beta_diversity_out_dir, output_prefix, "PCoA_without_labels_GLAmpSeq", ".png"), plot=ordination_plot_u)
 
 ```
 
@@ -980,8 +980,8 @@ ggsave(filename=paste0(beta_diversity_out_dir, output_prefix, "PCoA_without_labe
 
 **Output Data:**
 
-*  **PCoA_w_labels.png** (principle Coordinates Analysis plot of VST transformed ASV counts, with sample labels)
-*  **PCoA_without_labels.png** (principle Coordinates Analysis plot of VST transformed ASV counts, without sample labels)
+*  **PCoA_w_labels_GLAmpSeq.png** (principle Coordinates Analysis plot of VST transformed ASV counts, with sample labels)
+*  **PCoA_without_labels_GLAmpSeq.png** (principle Coordinates Analysis plot of VST transformed ASV counts, without sample labels)
 
 <br>
 
@@ -1009,7 +1009,7 @@ Run the DESeq() function to normalize for sample read-depth and composition, tra
 ```R
 deseq_modeled <- DESeq(deseq_obj)
 
-write.table(counts(deseq_modeled, normalized=TRUE), file = paste0("normalized_counts.tsv"), sep="\t", row.names=TRUE, quote=FALSE)
+write.table(counts(deseq_modeled, normalized=TRUE), file = paste0("normalized_counts_GLAmpSeq.tsv"), sep="\t", row.names=TRUE, quote=FALSE)
 ```
 
 **Input Data:**
@@ -1017,7 +1017,7 @@ write.table(counts(deseq_modeled, normalized=TRUE), file = paste0("normalized_co
 * `ASV_physeq` (variable contiaining the Phyloseq object, output from [step 8b](#8b-richness-and-diversity-estimates))
   
 **Output Data:**
-* **normalized_counts.tsv** (size factor normalized ASV counts table)
+* **normalized_counts_GLAmpSeq.tsv** (size factor normalized ASV counts table)
 * `deseq_modeled` (variable holding the DESeq2 output data)
 
 <br>
