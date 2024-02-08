@@ -15,7 +15,7 @@
 
 * [**Pipeline_GL-DPPD-7104_Versions**](Pipeline_GL-DPPD-7104_Versions)
 
-  - Contains the current and previous GeneLab Illumina amplicon sequencing data processing pipeline (AmpIllumina) versions documentation
+  - Contains documentation for current and previous versions of the GeneLab Illumina Amplicon Sequencing Data Processing Pipeline (AmpIllumina)
 
 * [**Workflow_Documentation**](Workflow_Documentation)
 
