@@ -22,7 +22,7 @@ Amanda Saravia-Butler (GeneLab Data Processing Lead)
 ## Updates from previous version
 
 
-- Additional software (R packages) used in [SW_AmpIllumina-B](../Workflow_Documentation/SW_AmpIllumina-B/):
+- Additional software (R packages) used:
   - vegan
   - tidyverse
   - dendextend
