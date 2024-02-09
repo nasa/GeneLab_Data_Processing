@@ -1,6 +1,6 @@
 # GeneLab bioinformatics processing pipeline for Illumina amplicon sequencing data
 
-> **The document [`GL-DPPD-7104-A.md`](Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-A.md) holds an overview and example commands for how GeneLab processes Illumina amplicon sequencing datasets. See the [Repository Links](#repository-links) descriptions below for more information. Processed data output files and processing code are provided for each GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
+> **The document [`GL-DPPD-7104-B.md`](Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md) holds an overview and example commands for how GeneLab processes Illumina amplicon sequencing datasets. See the [Repository Links](#repository-links) descriptions below for more information. Processed data output files and processing code are provided for each GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 > 
 > Note: The exact processing commands and AmpIllumina version used for specific GLDS datasets can be found in the *_processing_info.zip file under "Files" for each respective GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/). 
 
@@ -15,7 +15,7 @@
 
 * [**Pipeline_GL-DPPD-7104_Versions**](Pipeline_GL-DPPD-7104_Versions)
 
-  - Contains the current and previous GeneLab Illumina amplicon sequencing data processing pipeline (AmpIllumina) versions documentation
+  - Contains documentation for current and previous versions of the GeneLab Illumina Amplicon Sequencing Data Processing Pipeline (AmpIllumina)
 
 * [**Workflow_Documentation**](Workflow_Documentation)
 
@@ -27,5 +27,9 @@
     > Note: Exact processing commands and AmpIllumina version used for datasets not available in this sub-directory can be found in the *_processing_info.zip file under "Files" for each respective GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 
 ---
-**Developed and maintained by:**  
-Michael D. Lee (Mike.Lee@nasa.gov)
+**Developed by:**  
+Michael D. Lee (Mike.Lee@nasa.gov)  
+**Maintained by:**  
+Michael D. Lee (Mike.Lee@nasa.gov)  
+Alexis Torres (alexis.torres@nasa.gov)  
+Amanda Saravia-Butler (amanda.m.saravia-butler@nasa.gov)  
