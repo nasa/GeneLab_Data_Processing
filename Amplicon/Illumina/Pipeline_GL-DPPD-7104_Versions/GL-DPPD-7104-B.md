@@ -559,7 +559,7 @@ write.table(tax_and_count_tab, "taxonomy-and-counts_GLAmpSeq.tsv", sep="\t", quo
 
 ### 6a. Create Sample Runsheet
 
-> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/SW_AmpIllumina-A/examples/runsheet/README.md).
+> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/SW_AmpIllumina-B/examples/runsheet/README.md).
 
 ```bash
 ### Download the *ISA.zip file from the OSDR ###
