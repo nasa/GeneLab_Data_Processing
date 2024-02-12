@@ -489,6 +489,46 @@ def create_config_yaml(isa_zip,
 # Example usage
 # create_config_yaml(runsheet_df, uses_urls)
 
+def validate_primer_sequences(runsheet_df):
+    errors = []
+
+    # Check if the primer looks like a filename or URL
+    def looks_like_filename_or_url(primer):
+        filename_or_url_pattern = re.compile(r'\.txt|\.csv|http')
+        return filename_or_url_pattern.search(primer)
+
+    # Check for invalid characters in primer sequences
+    def has_invalid_characters(primer):
+        invalid_pattern = re.compile(r'[-_\.0-9]')
+        return invalid_pattern.search(primer)
+
+    # Extract the first (and should be only) entry from each primer column
+    f_primer = runsheet_df['F_Primer'].iloc[0]
+    r_primer = runsheet_df['R_Primer'].iloc[0]
+
+    if has_invalid_characters(f_primer):
+        errors.append(f"Invalid primer detected in F_Primer column: '{f_primer}'")
+
+    if has_invalid_characters(r_primer):
+        errors.append(f"Invalid primer detected in R_Primer column: '{r_primer}'")
+
+    if looks_like_filename_or_url(f_primer) or looks_like_filename_or_url(r_primer):
+        detected_file = f_primer if looks_like_filename_or_url(f_primer) else r_primer
+        print(f"Filename or URL detected in primer columns: '{detected_file}'")
+        print("This workflow does not support multiple primer sets.")
+        print(f"Refer to the {detected_file} file on the dataset's page on the OSDR to identify the relevant primers.")
+        print("Manually clip the primers and rerun the workflow from the runsheet with primer clipping turned off using the --runsheetPath and --trim-primers arguments.")
+        sys.exit(1)
+
+    if errors:
+        print("Error: Invalid primer sequence(s) detected.")
+        for error in errors:
+            print(f"  - {error}")
+        print("Correct the primer sequences in the runsheet.")
+        print("Rerun the workflow using --runsheetPath {runsheet_path}.")
+        sys.exit(1)
+
+
 
 def main():
     # Argument parser setup with short argument names and an automatic help option
@@ -652,6 +692,9 @@ def main():
                     handle_url_downloads(runsheet_df, output_file='unique-sample-IDs.txt')
                 else:
                     sample_IDs_from_local(runsheet_df, output_file='unique-sample-IDs.txt')
+
+                # Check for primer file / invalid primers
+                validate_primer_sequences(runsheet_df)
 
                 # Create the config.yaml file
                 create_config_yaml(isa_zip=isa_zip,  
