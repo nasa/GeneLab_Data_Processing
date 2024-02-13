@@ -162,7 +162,8 @@ def handle_runsheet_selection(runsheet_files, target=None, specified_runsheet=No
 
     if len(runsheet_files) == 1:
         # Automatically use the single runsheet file
-        selected_runsheet = runsheet_files[0]
+        if target_region == runsheet_df['Parameter Value[Library Selection]'].unique()[0]:
+            selected_runsheet = runsheet_files[0]
         print(f"Using runsheet: {selected_runsheet}")
 
     elif len(runsheet_files) > 1:
@@ -172,7 +173,7 @@ def handle_runsheet_selection(runsheet_files, target=None, specified_runsheet=No
                 try:
                     runsheet_df = pd.read_csv(runsheet)
                     target_region = runsheet_df['Parameter Value[Library Selection]'].unique()[0]
-                    if target.lower() in target_region.lower():
+                    if target.lower() == target_region.lower():
                         matching_runsheets.append(runsheet)
                 except Exception as e:
                     print(f"Error reading {runsheet}: {e}")
@@ -492,40 +493,27 @@ def create_config_yaml(isa_zip,
 def validate_primer_sequences(runsheet_df):
     errors = []
 
-    # Check if the primer looks like a filename or URL
-    def looks_like_filename_or_url(primer):
-        filename_or_url_pattern = re.compile(r'\.txt|\.csv|http')
-        return filename_or_url_pattern.search(primer)
-
-    # Check for invalid characters in primer sequences
-    def has_invalid_characters(primer):
-        invalid_pattern = re.compile(r'[-_\.0-9]')
-        return invalid_pattern.search(primer)
+    # Check for non-letter characters in primer sequences
+    def has_non_letter_characters(primer):
+        # Pattern to find any character that is not a letter
+        non_letter_pattern = re.compile(r'[^A-Za-z]')
+        return non_letter_pattern.search(primer)
 
     # Extract the first (and should be only) entry from each primer column
     f_primer = runsheet_df['F_Primer'].iloc[0]
     r_primer = runsheet_df['R_Primer'].iloc[0]
 
-    if has_invalid_characters(f_primer):
-        errors.append(f"Invalid primer detected in F_Primer column: '{f_primer}'")
+    if has_non_letter_characters(f_primer):
+        errors.append(f"Non-letter characters detected in F_Primer column: '{f_primer}'")
 
-    if has_invalid_characters(r_primer):
-        errors.append(f"Invalid primer detected in R_Primer column: '{r_primer}'")
-
-    if looks_like_filename_or_url(f_primer) or looks_like_filename_or_url(r_primer):
-        detected_file = f_primer if looks_like_filename_or_url(f_primer) else r_primer
-        print(f"Filename or URL detected in primer columns: '{detected_file}'")
-        print("This workflow does not support multiple primer sets.")
-        print(f"Refer to the {detected_file} file on the dataset's page on the OSDR to identify the relevant primers.")
-        print("Manually clip the primers and rerun the workflow from the runsheet with primer clipping turned off using the --runsheetPath and --trim-primers arguments.")
-        sys.exit(1)
+    if has_non_letter_characters(r_primer):
+        errors.append(f"Non-letter characters detected in R_Primer column: '{r_primer}'")
 
     if errors:
         print("Error: Invalid primer sequence(s) detected.")
         for error in errors:
             print(f"  - {error}")
-        print("Correct the primer sequences in the runsheet.")
-        print("Rerun the workflow using --runsheetPath {runsheet_path}.")
+        print("Correct the primer sequences in the runsheet and rerun the workflow from the runsheet using the --runsheetPath argument.")
         sys.exit(1)
 
 

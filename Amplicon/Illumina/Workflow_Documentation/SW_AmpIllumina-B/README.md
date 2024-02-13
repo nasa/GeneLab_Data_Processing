@@ -124,6 +124,7 @@ ___
    > *Used for Approach 1 only.*
 
 * `--target` - specifies the genomic target for the assay. Options: 16S, 18S, ITS. This determines which reference database is used for taxonomic classification, and it is used to select the appropriate dataset from an OSD study when multiple options are available.
+   > *Note: Swift Amplicon 16S+ITS datasets, which use multiple primer sets, are not suitable for processing with this workflow. OSD datasets of this type are processed using alternative methods.*
 
 * `--runsheetPath` - specifies the path to a local runsheet containing the metadata and raw reads location (as a link or local path), used for processing a non-OSD dataset through the SW_AmpIllumina workflow 
    > *Optionally used for Approach 2 only, the form can be used instead of providing a runsheet on the NASA EDGE platform.*
