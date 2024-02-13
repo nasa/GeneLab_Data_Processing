@@ -490,8 +490,17 @@ def create_config_yaml(isa_zip,
 # Example usage
 # create_config_yaml(runsheet_df, uses_urls)
 
+# Check for single primer set, also check for invalid characters in primers used, exit if either
 def validate_primer_sequences(runsheet_df):
     errors = []
+
+    # Check that there is only 1 entry in each primer column
+    if len(runsheet_df['F_Primer'].unique()) > 1:
+        errors.append(f"Multiple primer sequences present in F_Primer: {runsheet_df['F_Primer'].unique()}.")
+
+    if len(runsheet_df['R_Primer'].unique()) > 1:
+         errors.append(f"Multiple primer sequences present in R_primer: {runsheet_df['R_Primer'].unique()}.")
+    
 
     # Check for non-letter characters in primer sequences
     def has_non_letter_characters(primer):
@@ -499,23 +508,21 @@ def validate_primer_sequences(runsheet_df):
         non_letter_pattern = re.compile(r'[^A-Za-z]')
         return non_letter_pattern.search(primer)
 
-    # Extract the first (and should be only) entry from each primer column
-    f_primer = runsheet_df['F_Primer'].iloc[0]
-    r_primer = runsheet_df['R_Primer'].iloc[0]
+    # Check each unique primer in the F_Primer and R_Primer columns
+    for f_primer in runsheet_df['F_Primer'].unique():
+        if has_non_letter_characters(f_primer):
+            errors.append(f"Non-letter characters detected in F_Primer: '{f_primer}'")
 
-    if has_non_letter_characters(f_primer):
-        errors.append(f"Non-letter characters detected in F_Primer column: '{f_primer}'")
-
-    if has_non_letter_characters(r_primer):
-        errors.append(f"Non-letter characters detected in R_Primer column: '{r_primer}'")
+    for r_primer in runsheet_df['R_Primer'].unique():
+        if has_non_letter_characters(r_primer):
+            errors.append(f"Non-letter characters detected in R_Primer: '{r_primer}'")
 
     if errors:
-        print("Error: Invalid primer sequence(s) detected.")
+        print("Error: Invalid primer sequence(s) detected in the runsheet.")
         for error in errors:
             print(f"  - {error}")
         print("Correct the primer sequences in the runsheet and rerun the workflow from the runsheet using the --runsheetPath argument.")
         sys.exit(1)
-
 
 
 def main():
@@ -675,14 +682,14 @@ def main():
             if runsheet_df is not None:
                 uses_urls = check_runsheet_read_paths(runsheet_df)
 
+                # Check for primer file / invalid primers
+                validate_primer_sequences(runsheet_df)
+
                 # Create the 'unique-sample-IDs.txt' file and download read files if necessary
                 if uses_urls:
                     handle_url_downloads(runsheet_df, output_file='unique-sample-IDs.txt')
                 else:
                     sample_IDs_from_local(runsheet_df, output_file='unique-sample-IDs.txt')
-
-                # Check for primer file / invalid primers
-                validate_primer_sequences(runsheet_df)
 
                 # Create the config.yaml file
                 create_config_yaml(isa_zip=isa_zip,  
