@@ -7,7 +7,7 @@ process GENERATE_MD5SUMS {
   input:
     path(data_dir)
     path(runsheet)
-    path("dp_tools__agilent_1_channel")
+    path(dp_tools__agilent_1_channel)
 
   output:
     path("*md5sum*")

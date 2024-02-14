@@ -1,9 +1,9 @@
 process VV_AGILE1CH {
   // Log publishing
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
-    pattern:  "VV_report.tsv.MANUAL_CHECKS_PENDING" ,
+    pattern:  "VV_report_GLmicroarray.tsv.MANUAL_CHECKS_PENDING" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }.tsv.MANUAL_CHECKS_PENDING" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }_GLmicroarray.tsv.MANUAL_CHECKS_PENDING" }
   // V&V'ed data publishing
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
     pattern: '00-RawData',
@@ -34,7 +34,7 @@ process VV_AGILE1CH {
     tuple path("02-limma_DGE"),
           path("01-limma_NormExp"),
           path("00-RawData"), emit: VVed_de_data
-    path("VV_report.tsv.MANUAL_CHECKS_PENDING"), optional: params.skipVV, emit: log
+    path("VV_report_GLmicroarray.tsv.MANUAL_CHECKS_PENDING"), optional: params.skipVV, emit: log
     path("versions.yml"), emit: versions
 
   script:

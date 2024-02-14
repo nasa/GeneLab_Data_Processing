@@ -820,8 +820,8 @@ design_data <- runsheetToDesignMatrix(runsheet)
 design <- design_data$matrix
 
 # Write SampleTable.csv and contrasts.csv file
-write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable.csv"), row.names = FALSE)
-write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts.csv"))
+write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable_GLmicroarray.csv"), row.names = FALSE)
+write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts_GLmicroarray.csv"))
 ```
 
 **Input Data:**
@@ -831,8 +831,8 @@ write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts.csv"))
 **Output Data:**
 
 - `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to)
-- **SampleTable.csv** (table containing samples and their respective groups)
-- **contrasts.csv** (table containing all pairwise comparisons)
+- **SampleTable_GLmicroarray.csv** (table containing samples and their respective groups)
+- **contrasts_GLmicroarray.csv** (table containing all pairwise comparisons)
 
 <br>
 
@@ -1096,7 +1096,7 @@ if (!setequal(FINAL_COLUMN_ORDER, colnames(df_interim))) {
 df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 # Save to file
-write.csv(df_interim, file.path(DIR_DGE, "differential_expression.csv"), row.names = FALSE)
+write.csv(df_interim, file.path(DIR_DGE, "differential_expression_GLmicroarray.csv"), row.names = FALSE)
 
 ### Generate and export PCA table for GeneLab visualization plots
 ## Only use positive expression values, negative values can make up a small portion ( < 0.5% ) of normalized expression values and cannot be log transformed
@@ -1104,7 +1104,7 @@ exp_raw <- log2(norm_data$E) # negatives get converted to NA
 exp_raw <- na.omit(norm_data$E)
 PCA_raw <- prcomp(t(exp_raw), scale = FALSE)
 write.csv(PCA_raw$x,
-          file.path(DIR_DGE, "visualization_PCA_table.csv")
+          file.path(DIR_DGE, "visualization_PCA_table_GLmicroarray.csv")
           )
 
 ## Generate raw intensity matrix that includes annotations
@@ -1134,7 +1134,7 @@ FINAL_COLUMN_ORDER <- c(
 raw_data_matrix_annotated <- raw_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(raw_data_matrix_annotated, file.path(DIR_RAW_DATA, "raw_intensities.csv"), row.names = FALSE)
+write.csv(raw_data_matrix_annotated, file.path(DIR_RAW_DATA, "raw_intensities_GLmicroarray.csv"), row.names = FALSE)
 
 
 ## Generate normalized expression matrix that includes annotations
@@ -1157,7 +1157,7 @@ norm_data_matrix_annotated <- merge(
 norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression.csv"), row.names = FALSE)
+write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_GLmicroarray.csv"), row.names = FALSE)
 ```
 
 **Input Data:**
@@ -1170,7 +1170,7 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 
 **Output Data:**
 
-- **differential_expression.csv** (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
+- **differential_expression_GLmicroarray.csv** (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
 - visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
-- **raw_intensities.csv** (table containing the background corrected unnormalized intensity values for each sample including gene annotations)
-- **normalized_expression.csv** (table containing the background corrected, normalized intensity values for each sample including gene annotations)
+- **raw_intensities_GLmicroarray.csv** (table containing the background corrected unnormalized intensity values for each sample including gene annotations)
+- **normalized_expression_GLmicroarray.csv** (table containing the background corrected, normalized intensity values for each sample including gene annotations)
