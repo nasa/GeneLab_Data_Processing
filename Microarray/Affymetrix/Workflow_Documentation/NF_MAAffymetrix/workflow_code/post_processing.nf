@@ -36,17 +36,17 @@ workflow {
   main:
     ch_processed_directory = Channel.fromPath("${ params.resultsDir }", checkIfExists: true)
     ch_runsheet = Channel.fromPath("${ params.resultsDir }/Metadata/*_runsheet.csv", checkIfExists: true)
-    ch_software_versions = Channel.fromPath("${params.resultsDir}/GeneLab/software_versions.md", checkIfExists: true)
+    ch_software_versions = Channel.fromPath("${params.resultsDir}/GeneLab/software_versions_GLmicroarray.md", checkIfExists: true)
     ch_processing_meta = Channel.fromPath("${params.resultsDir}/GeneLab/meta.sh", checkIfExists: true)
     GENERATE_MD5SUMS(      
       ch_processed_directory, 
       ch_runsheet,       
-      "${ projectDir }/bin/dp_tools__affymetrix_channel" // dp_tools plugin
+      "${ projectDir }/bin/dp_tools__affymetrix" // dp_tools plugin
     )
     UPDATE_ISA_TABLES(
       ch_processed_directory, 
       ch_runsheet,       
-      "${ projectDir }/bin/dp_tools__affymetrix_channel" // dp_tools plugin
+      "${ projectDir }/bin/dp_tools__affymetrix" // dp_tools plugin
     )
     GENERATE_PROTOCOL(
       ch_software_versions,

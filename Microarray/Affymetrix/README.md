@@ -21,5 +21,7 @@
   - Contains instructions for installing and running the GeneLab NF_MAAffymetrix workflow
 
 ---
-**Developed and maintained by:**  
+**Developed by:**  
 Jonathan Oribello
+**Maintained by:**
+Alexis Torres (alexis.torres@nasa.gov)

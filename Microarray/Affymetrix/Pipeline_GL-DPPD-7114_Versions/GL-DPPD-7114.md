@@ -856,8 +856,8 @@ design_data <- runsheetToDesignMatrix(runsheet)
 design <- design_data$matrix
 
 # Write SampleTable.csv and contrasts.csv file
-write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable.csv"), row.names = FALSE)
-write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts.csv"))
+write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable_GLmicroarray.csv"), row.names = FALSE)
+write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts_GLmicroarray.csv"))
 ```
 
 **Input Data:**
@@ -867,8 +867,8 @@ write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts.csv"))
 **Output Data:**
 
 - `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to)
-- **SampleTable.csv** (table containing samples and their respective groups)
-- **contrasts.csv** (table containing all pairwise comparisons)
+- **SampleTable_GLmicroarray.csv** (table containing samples and their respective groups)
+- **contrasts_GLmicroarray.csv** (table containing all pairwise comparisons)
 
 <br>
 
@@ -1119,7 +1119,7 @@ if (!setequal(FINAL_COLUMN_ORDER, colnames(df_interim))) {
 df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 # Save to file
-write.csv(df_interim, file.path(DIR_DGE, "differential_expression.csv"), row.names = FALSE)
+write.csv(df_interim, file.path(DIR_DGE, "differential_expression_GLmicroarray.csv"), row.names = FALSE)
 
 ## Output column subset file with just normalized probeset level expression values
 write.csv(
@@ -1128,12 +1128,12 @@ write.csv(
   "ProbesetID",
   "count_ENSEMBL_mappings",
   all_samples)
-  ], file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_probeset.csv"), row.names = FALSE)
+  ], file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_probeset_GLmicroarray.csv"), row.names = FALSE)
 
 ### Generate and export PCA table for GeneLab visualization plots
 PCA_raw <- prcomp(t(exprs(probeset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
 write.csv(PCA_raw$x,
-          file.path(DIR_DGE, "visualization_PCA_table.csv")
+          file.path(DIR_DGE, "visualization_PCA_table_GLmicroarray.csv")
           )
 
 ## Generate raw intensity matrix that includes annotations
@@ -1182,7 +1182,7 @@ background_corrected_data_annotated <- oligo::exprs(background_corrected_data) %
 background_corrected_data_annotated <- background_corrected_data_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(background_corrected_data_annotated, file.path(DIR_RAW_DATA, "raw_intensities_probe.csv"), row.names = FALSE)
+write.csv(background_corrected_data_annotated, file.path(DIR_RAW_DATA, "raw_intensities_probe_GLmicroarray.csv"), row.names = FALSE)
 
 ## Generate normalized expression matrix that includes annotations
 norm_data_matrix_annotated <- oligo::exprs(norm_data) %>% 
@@ -1202,7 +1202,7 @@ norm_data_matrix_annotated <- oligo::exprs(norm_data) %>%
 norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe.csv"), row.names = FALSE)
+write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe_GLmicroarray.csv"), row.names = FALSE)
 
 ```
 
@@ -1216,8 +1216,8 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 
 **Output Data:**
 
-- **differential_expression.csv** (table containing normalized probeset expression values for each sample, group statistics, Limma probeset DE results for each pairwise comparison, and gene annotations. The ProbesetID is the unique index column.)
-- **normalized_expression_probeset.csv** (table containing the background corrected, normalized probeset expression values for each sample. The ProbesetID is the unique index column.)
-- visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
-- **raw_intensities_probe.csv** (table containing the background corrected, unnormalized probe intensity values for each sample including gene annotations. The ProbeID is the unique index column.)
-- **normalized_intensities_probe.csv** (table containing the background corrected, normalized probe intensity values for each sample including gene annotations.  The ProbeID is the unique index column.)
+- **differential_expression_GLmicroarray.csv** (table containing normalized probeset expression values for each sample, group statistics, Limma probeset DE results for each pairwise comparison, and gene annotations. The ProbesetID is the unique index column.)
+- **normalized_expression_probeset_GLmicroarray.csv** (table containing the background corrected, normalized probeset expression values for each sample. The ProbesetID is the unique index column.)
+- visualization_PCA_table_GLmicroarray.csv (file used to generate GeneLab PCA plots)
+- **raw_intensities_probe_GLmicroarray.csv** (table containing the background corrected, unnormalized probe intensity values for each sample including gene annotations. The ProbeID is the unique index column.)
+- **normalized_intensities_probe_GLmicroarray.csv** (table containing the background corrected, normalized probe intensity values for each sample including gene annotations.  The ProbeID is the unique index column.)
