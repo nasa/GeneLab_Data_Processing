@@ -2419,7 +2419,7 @@ os.makedirs(name="ERCC_analysis", exist_ok=True)
 
 stats = pd.DataFrame(list(zip(samples, mins, maxs, dyranges, rs)))
 stats.columns = ['Samples', 'Min', 'Max', 'Dynamic range', 'R']
-stats.to_csv('ERCC_analysis/ERCC_stats_GLDS-NNN.csv', index = False)
+stats.to_csv('ERCC_analysis/ERCC_stats_GLDS-NNN_GLbulkRNAseq.csv', index = False)
 stats.filter(items = ['Samples', 'Dynamic range']).to_csv('ERCC_analysis/ERCC_dynrange_GLDS-NNN_mqc_GLbulkRNAseq.csv', index = False)
 stats.filter(items = ['Samples', 'R']).to_csv('ERCC_analysis/ERCC_rsq_GLDS-NNN_mqc_GLbulkRNAseq.csv', index = False)
 
@@ -2464,9 +2464,9 @@ ERCCcounts.to_csv('ERCC_analysis/ERCCcounts_GLbulkRNAseq.csv')
 
 **Output Data:**
 
-- ERCC_analysis/ERCC_stats_GLDS-*.csv (Samplewise counts statistics table containing 'Min', 'Max', 'Dynamic range', 'R')
-- ERCC_analysis/ERCC_dynrange_GLDS-*.csv (Samplewise counts statistics subset table containing 'Dynamic range')
-- ERCC_analysis/ERCC_rsq_GLDS-*.csv (Samplewise counts statistics subset table containing 'R')
+- ERCC_analysis/ERCC_stats_GLDS-*_GLbulkRNAseq.csv (Samplewise counts statistics table containing 'Min', 'Max', 'Dynamic range', 'R')
+- ERCC_analysis/ERCC_dynrange_GLDS-*_GLbulkRNAseq.csv (Samplewise counts statistics subset table containing 'Dynamic range')
+- ERCC_analysis/ERCC_rsq_GLDS-*_GLbulkRNAseq.csv (Samplewise counts statistics subset table containing 'R')
 - ERCC_analysis/ERCCmetadata_GLbulkRNAseq.csv (Samplewise metadata table inlcuding ERCC mix number)
 - ERCC_analysis/ERCCcounts_GLbulkRNAseq.csv (Samplewise ERCC counts table)
 
@@ -2627,6 +2627,6 @@ ax.set_yscale("log");
 
 **Output Data:**
 
-- ERCC_analysis/ERCC_lodr_*.csv (ERCC Gene Table including mean counts, adjusted p-value and p-value, and filtered to genes with both adj. p-value and p-value < 0.001)
+- ERCC_analysis/ERCC_lodr_*_GLbulkRNAseq.csv (ERCC Gene Table including mean counts, adjusted p-value and p-value, and filtered to genes with both adj. p-value and p-value < 0.001)
 
 > All steps of the ERCC Spike-In Data Analysis are performed in a Jupyter Notebook (JN) and the completed JN is exported as an html file (**ERCC_analysis_GLbulkRNAseq.html**) and published in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/) for the respective dataset.
