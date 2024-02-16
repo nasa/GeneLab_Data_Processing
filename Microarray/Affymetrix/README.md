@@ -22,6 +22,6 @@
 
 ---
 **Developed by:**  
-Jonathan Oribello
-**Maintained by:**
+Jonathan Oribello  
+**Maintained by:**  
 Alexis Torres (alexis.torres@nasa.gov)
