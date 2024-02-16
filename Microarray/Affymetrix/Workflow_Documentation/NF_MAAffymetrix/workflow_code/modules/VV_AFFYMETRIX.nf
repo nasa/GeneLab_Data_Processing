@@ -43,6 +43,7 @@ process VV_AFFYMETRIX {
     # Run V&V unless user requests to skip V&V
     if ${ !skipVV} ; then
       dpt validation run dp_tools__affymetrix . Metadata/*_runsheet.csv --max-flag-code ${ params.max_flag_code }
+      mv VV_report.tsv.MANUAL_CHECKS_PENDING VV_report_GLmicroarray.tsv.MANUAL_CHECKS_PENDING
     fi
 
     # Export versions

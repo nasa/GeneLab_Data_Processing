@@ -46,6 +46,7 @@ process VV_AGILE1CH {
     # Run V&V unless user requests to skip V&V
     if ${ !skipVV} ; then
       dpt validation run dp_tools__agilent_1_channel . Metadata/*_runsheet.csv
+      mv VV_report.tsv.MANUAL_CHECKS_PENDING VV_report_GLmicroarray.tsv.MANUAL_CHECKS_PENDING
     fi
 
     # Export versions
