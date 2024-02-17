@@ -47,26 +47,24 @@ Jonathan Galazka (GeneLab Project Scientist)
 
 # Software used
 
-|Program|Version*|Relevant Links|
+|Program|Version|Relevant Links|
 |:------|:-----:|------:|
-|FastQC|`fastqc -v`|[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
-|MultiQC|`multiqc -v`|[https://multiqc.info/](https://multiqc.info/)|
-|bbduk|`bbduk.sh --version`|[https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/)|
-|megahit|`megahit -v`|[https://github.com/voutcn/megahit#megahit](https://github.com/voutcn/megahit#megahit)|
-|bit|`bit-version`|[https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit](https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit)|
-|bowtie2|`bowtie2 --version`|[https://github.com/BenLangmead/bowtie2#overview](https://github.com/BenLangmead/bowtie2#overview)|
-|samtools|`samtools --version`|[https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)|
-|prodigal|`prodigal -v`|[https://github.com/hyattpd/Prodigal#prodigal](https://github.com/hyattpd/Prodigal#prodigal)|
-|KOFamScan|`exec_annotation -v`|[https://github.com/takaram/kofam_scan#kofamscan](https://github.com/takaram/kofam_scan#kofamscan)|
-|CAT|`CAT -v`|[https://github.com/dutilh/CAT#cat-and-bat](https://github.com/dutilh/CAT#cat-and-bat)|
-|Metabat2|`metabat2 -h`|[https://bitbucket.org/berkeleylab/metabat/src/master/](https://bitbucket.org/berkeleylab/metabat/src/master/)|
-|checkm|`checkm -h`|[https://github.com/Ecogenomics/CheckM](https://github.com/Ecogenomics/CheckM)|
-|gtdbtk|`gtdbtk -v`|[https://github.com/Ecogenomics/GTDBTk](https://github.com/Ecogenomics/GTDBTk)|
-|KEGGDecoder|`pip show keggdecoder`|[https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder](https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder)
-|HUMAnN3|`humann --version`|[https://huttenhower.sph.harvard.edu/humann3/](https://huttenhower.sph.harvard.edu/humann3/)|
-|MetaPhlAn3|`metaphlan --version`|[https://github.com/biobakery/MetaPhlAn/tree/3.0](https://github.com/biobakery/MetaPhlAn/tree/3.0)|
-
->**\*** Exact versions utilized for a given dataset are available along with the processing commands for each specific dataset (this is due to how the system may need to be updated regularly).
+|FastQC| 0.11.9 |[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
+|MultiQC| 1.11 |[https://multiqc.info/](https://multiqc.info/)|
+|bbduk| 38.86 |[https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/)|
+|megahit| 1.2.9 |[https://github.com/voutcn/megahit#megahit](https://github.com/voutcn/megahit#megahit)|
+|bit| 1.8.53 |[https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit](https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit)|
+|bowtie2| 2.3.5.1 |[https://github.com/BenLangmead/bowtie2#overview](https://github.com/BenLangmead/bowtie2#overview)|
+|samtools| 1.9 |[https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)|
+|prodigal| 2.6.3 |[https://github.com/hyattpd/Prodigal#prodigal](https://github.com/hyattpd/Prodigal#prodigal)|
+|KOFamScan| 1.3.0 |[https://github.com/takaram/kofam_scan#kofamscan](https://github.com/takaram/kofam_scan#kofamscan)|
+|CAT| 5.2.2 |[https://github.com/dutilh/CAT#cat-and-bat](https://github.com/dutilh/CAT#cat-and-bat)|
+|Metabat2| 2.15 |[https://bitbucket.org/berkeleylab/metabat/src/master/](https://bitbucket.org/berkeleylab/metabat/src/master/)|
+|checkm| 1.1.3 |[https://github.com/Ecogenomics/CheckM](https://github.com/Ecogenomics/CheckM)|
+|gtdbtk| 1.5.0 |[https://github.com/Ecogenomics/GTDBTk](https://github.com/Ecogenomics/GTDBTk)|
+|KEGGDecoder| 1.2.2 |[https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder](https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder)
+|HUMAnN3| 3.6 |[https://huttenhower.sph.harvard.edu/humann3/](https://huttenhower.sph.harvard.edu/humann3/)|
+|MetaPhlAn3| 4.0.1 |[https://github.com/biobakery/MetaPhlAn/tree/3.0](https://github.com/biobakery/MetaPhlAn/tree/3.0)|
 
 ---
 
@@ -100,6 +98,8 @@ fastqc -o raw_fastqc_output *raw.fastq.gz
 
 ```
 multiqc -o raw_multiqc_output -n raw_multiqc -z raw_fastqc_output/
+# this is how it's packaged with our workflow outputs
+zip -r raw_multiqc_GLmetagenomics_report.zip raw_multiqc_output
 ```
 
 **Parameter Definitions:**
@@ -115,8 +115,9 @@ multiqc -o raw_multiqc_output -n raw_multiqc -z raw_fastqc_output/
 
 **Output data:**
 
-* **raw_multiqc_output/raw_multiqc_report.html** (multiqc output html summary)
-* **raw_multiqc_output/raw_multiqc_data.zip** (zipped directory containing multiqc output data)
+* **raw_multiqc_GLmetagenomics_report.zip** (zip containing the following)
+  * **raw_multiqc.html** (multiqc output html summary)
+  * **raw_multiqc_data** (directory containing multiqc output data)
 
 <br>  
 
@@ -169,7 +170,7 @@ bbduk.sh in=sample-1-R1-raw.fastq.gz in2=sample-1-R2-raw.fastq.gz out1=sample-1_
 **Output data:**
 
 * **\*_filtered.fastq.gz** (filtered/trimmed reads)
-* bbduk.log (log file of standard output and error from bbduk run)
+* **\*-bbduk.log** (log file of standard output and error from bbduk run)
 
 <br>
 
@@ -198,6 +199,8 @@ fastqc -o filtered_fastqc_output/ *filtered.fastq.gz
 #### 3a. Compile Filtered/Trimmed Data QC
 ```
 multiqc -o filtered_multiqc_output -n filtered_multiqc -z filtered_fastqc_output/
+# this is how it's packaged with our workflow outputs
+zip -r filtered_multiqc_GLmetagenomics_report.zip filtered_multiqc_output
 ```
 
 **Parameter Definitions:**
@@ -213,8 +216,9 @@ multiqc -o filtered_multiqc_output -n filtered_multiqc -z filtered_fastqc_output
 
 **Output data:**
 
-* **filtered_multiqc_output/filtered_multiqc_report.html** (multiqc output html summary)
-* **filtered_multiqc_output/filtered_multiqc_data.zip** (zipped directory containing multiqc output data)
+* **filtered_multiqc_GLmetagenomics_report.zip** (zip containing the following)
+  * **filtered_multiqc.html** (multiqc output html summary)
+  * **filtered_multiqc_data** (directory containing multiqc output data)
 
 <br>
 
@@ -247,7 +251,7 @@ megahit -1 sample-1_R1_filtered.fastq.gz -2 sample-1_R2_filtered.fastq.gz \
 **Output data:**
 
 * sample-1-assembly/final.contigs.fa (assembly file)
-* sample-1-assembly.log (log file)
+* **sample-1-assembly.log** (log file)
 
 <br>
 
@@ -297,7 +301,7 @@ bit-summarize-assembly -o assembly-summaries.tsv *assembly.fasta
 
 **Output files:**
 
-* **assembly-summaries.tsv** (table of assembly summary statistics)
+* **assembly-summaries_GLmetagenomics.tsv** (table of assembly summary statistics)
 
 <br>
 
@@ -735,17 +739,17 @@ rm sample-1*tmp sample-1-contig-coverages.tsv sample-1-contig-tax-out.tsv
 ### 13. Generating normalized, gene-level-coverage summary tables of KO-annotations and taxonomy across samples
 > **Notes**  
 > * To combine across samples to generate these summary tables, we need the same "units". This is done for annotations based on the assigned KO terms, and all non-annotated functions are included together as "Not annotated". It is done for taxonomic classifications based on taxids (full lineages included in the table), and any not classified are included together as "Not classified". 
-> * The values we are working with are coverage per gene (so they are number of bps recruited to the gene normalized by the length of the gene). These have been normalized by making the total coverage of a sample 1,000,000 and setting each individual gene-level coverage its proportion of that 1,000,000 total. So basically percent, but out of 1,000,000 instead of 100 to make the numbers more friendly. 
+> * The values we are working with are coverage per gene (so they are number of bases recruited to the gene normalized by the length of the gene). These have been normalized by making the total coverage of a sample 1,000,000 and setting each individual gene-level coverage its proportion of that 1,000,000 total. So basically percent, but out of 1,000,000 instead of 100 to make the numbers more friendly. 
 
 ```
-bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o GLDS-286
+bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o Combined
 ```
 
 **Parameter Definitions:**  
 
 *	takes positional arguments specifying the input tsv files, can be provided as a space-delimited list of files, or with wildcards like above
 
--	`-o` – specifies the output prefix (e.g. as above, will generate “GLDS-286-KO-function-coverages.tsv” and “GLDS-286-taxonomy-coverages.tsv”
+-	`-o` – specifies the output prefix
 
 
 **Input data:**
@@ -754,8 +758,8 @@ bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o GLDS-
 
 **Output data:**
 
-* **GLDS-\*-KO-function-coverages-CPM.tsv** (table with all samples combined based on KO annotations; normalized to coverage per million genes covered)
-* **GLDS-\*-taxonomy-coverages-CPM.tsv** (table with all samples combined based on gene-level taxonomic classifications; normalized to coverage per million genes covered)
+* **Combined-gene-level-KO-function-coverages-CPM_GLmetagenomics.tsv** (table with all samples combined based on KO annotations; normalized to coverage per million genes covered)
+* **Combined-gene-level-taxonomy-coverages-CPM_GLmetagenomics.tsv** (table with all samples combined based on gene-level taxonomic classifications; normalized to coverage per million genes covered)
 
 <br>
 
@@ -798,7 +802,7 @@ metabat2  --inFile sample-1-assembly.fasta --outFile sample-1 --abdFile sample-1
 Utilizes the default `checkm` database available [here](https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz), `checkm_data_2015_01_16.tar.gz`.
 
 ```
-checkm lineage_wf -f checkm_bins-overview.tsv --tab_table -x fa ./ checkm-output-dir
+checkm lineage_wf -f bins-overview_GLmetagenomics.tsv --tab_table -x fa ./ checkm-output-dir
 ```
 
 **Parameter Definitions:**  
@@ -816,18 +820,18 @@ checkm lineage_wf -f checkm_bins-overview.tsv --tab_table -x fa ./ checkm-output
 
 **Output data:**
 
-* **checkm_bins-overview.tsv** (tab-delimited file with quality estimates per bin)
+* **bins-overview_GLmetagenomics.tsv** (tab-delimited file with quality estimates per bin)
 * checkm-output-dir (directory holding detailed checkm outputs)
 
 #### 14c. Filtering MAGs
 
 ```
-cat <( head -n 1 checkm_bins-overview.tsv ) \
-    <( awk -F $'\t' ' $12 >= 90 && $13 <= 10 && $14 == 0 ' checkm_bins-overview.tsv | sed 's/bin./MAG-/' ) \
+cat <( head -n 1 bins-overview_GLmetagenomics.tsv ) \
+    <( awk -F $'\t' ' $12 >= 90 && $13 <= 10 && $14 == 0 ' bins-overview_GLmetagenomics.tsv | sed 's/bin./MAG-/' ) \
     > checkm-MAGs-overview.tsv
     
 # copying bins into a MAGs directory in order to run tax classification
-awk -F $'\t' ' $12 >= 90 && $13 <= 10 && $14 == 0 ' checkm_bins-overview.tsv | cut -f 1 > MAG-bin-IDs.tmp
+awk -F $'\t' ' $12 >= 90 && $13 <= 10 && $14 == 0 ' bins-overview_GLmetagenomics.tsv | cut -f 1 > MAG-bin-IDs.tmp
 
 mkdir MAGs
 for ID in MAG-bin-IDs.tmp
@@ -839,11 +843,11 @@ done
 
 **Input data:**
 
-* checkm_bins-overview.tsv (tab-delimited file with quality estimates per bin)
+* bins-overview_GLmetagenomics.tsv (tab-delimited file with quality estimates per bin)
 
 **Output data:**
 
-* **checkm-MAGs-overview.tsv** (tab-delimited file with quality estimates per MAG)
+* checkm-MAGs-overview.tsv (tab-delimited file with quality estimates per MAG)
 * **MAGs/\*.fasta** (directory holding high-quality MAGs)
 
 
@@ -890,7 +894,7 @@ do
 
     python parse-MAG-annots.py -i annotations-and-taxonomy/${sample_ID}-gene-coverage-annotation-and-tax.tsv \
                                -w ${MAG_ID}-contigs.tmp -M ${MAG_ID} \
-                               -o MAG-level-KO-annotations.tsv
+                               -o MAG-level-KO-annotations_GLmetagenomics.tsv
 
     rm ${MAG_ID}-contigs.tmp
 
@@ -913,32 +917,32 @@ done
 
 **Output data:**
 
-* **MAG-level-KO-annotations.tsv** (tab-delimited table holding MAGs and their KO annotations)
+* **MAG-level-KO-annotations_GLmetagenomics.tsv** (tab-delimited table holding MAGs and their KO annotations)
 
 
 #### 15b. Summarizing KO annotations with KEGG-Decoder
 
 ```bash
-KEGG-decoder -v interactive -i MAG-level-KO-annotations.tsv -o MAG-KEGG-Decoder-out.tsv
+KEGG-decoder -v interactive -i MAG-level-KO-annotations_GLmetagenomics.tsv -o MAG-KEGG-Decoder-out_GLmetagenomics.tsv
 ```
 
 **Parameter Definitions:**  
 
 *  `-v interactive` – specifies to create an interactive html output
  
-*	`-i` – specifies the input MAG-level-KO-annotations.tsv file generated in step 15a above
+*	`-i` – specifies the input MAG-level-KO-annotations_GLmetagenomics.tsv file generated in step 15a above
 
 *	`-o` – specifies the output table
 
 **Input data:**
 
-* MAG-level-KO-annotations.tsv (tab-delimited table holding MAGs and their KO annotations, generated in step 15a above)
+* MAG-level-KO-annotations_GLmetagenomics.tsv (tab-delimited table holding MAGs and their KO annotations, generated in step 15a above)
 
 **Output data:**
 
-* **MAG-KEGG-Decoder-out.tsv** (tab-delimited table holding MAGs and their proportions of genes held known to be required for specific pathways/metabolisms)
+* **MAG-KEGG-Decoder-out_GLmetagenomics.tsv** (tab-delimited table holding MAGs and their proportions of genes held known to be required for specific pathways/metabolisms)
 
-* **MAG-KEGG-Decoder-out.html** (interactive heatmap html file of the above output table)
+* **MAG-KEGG-Decoder-out_GLmetagenomics.html** (interactive heatmap html file of the above output table)
 
 <br>
 
@@ -986,7 +990,7 @@ humann --input sample-1-combined.fastq.gz --output sample-1-humann3-out-dir --th
   # they need to be in their own directories
 mkdir genefamily-results/ pathabundance-results/ pathcoverage-results/
 
-  # copying results from previous running humann3 step (14a) to get them all together in their own directories
+  # copying results from previous running humann3 step (14a) to get them all together in their own directories (as is needed)
 cp *-humann3-out-dir/*genefamilies.tsv genefamily-results/
 cp *-humann3-out-dir/*abundance.tsv pathabundance-results/
 cp *-humann3-out-dir/*coverage.tsv pathcoverage-results/
@@ -1008,16 +1012,16 @@ The read-based functional annotation tables have taxonomic info and non-taxonomi
 
 ```bash
 humann_split_stratified_table -i gene-families.tsv -o ./
-mv gene-families_stratified.tsv gene-families-grouped-by-taxa.tsv
-mv gene-families_unstratified.tsv gene-families.tsv
+mv gene-families_stratified.tsv Gene-families-grouped-by-taxa_GLmetagenomics.tsv
+mv gene-families_unstratified.tsv Gene-families_GLmetagenomics.tsv
 
 humann_split_stratified_table -i path-abundances.tsv -o ./
-mv path-abundances_stratified.tsv path-abundances-grouped-by-taxa.tsv
-mv path-abundances_unstratified.tsv path-abundances.tsv
+mv path-abundances_stratified.tsv Path-abundances-grouped-by-taxa_GLmetagenomics.tsv
+mv path-abundances_unstratified.tsv Path-abundances_GLmetagenomics.tsv
 
 humann2_split_stratified_table -i path-coverages.tsv -o ./
-mv path-coverages_stratified.tsv path-coverages-grouped-by-taxa.tsv
-mv path-coverages_unstratified.tsv path-coverages.tsv
+mv path-coverages_stratified.tsv Path-coverages-grouped-by-taxa_GLmetagenomics.tsv
+mv path-coverages_unstratified.tsv Path-coverages_GLmetagenomics.tsv
 ```
 
 **Parameter Definitions:**  
@@ -1031,8 +1035,8 @@ mv path-coverages_unstratified.tsv path-coverages.tsv
 This generates some normalized tables of the read-based functional outputs from humann that are more readily suitable for across sample comparisons.
 
 ```bash
-humann_renorm_table -i gene-families.tsv -o gene-families-cpm.tsv --update-snames
-humann_renorm_table -i path-abundances.tsv -o path-abundances-cpm.tsv --update-snames
+humann_renorm_table -i Gene-families_GLmetagenomics.tsv -o Gene-families-cpm_GLmetagenomics.tsv --update-snames
+humann_renorm_table -i Path-abundances_GLmetagenomics.tsv -o Path-abundances-cpm_GLmetagenomics.tsv --update-snames
 ```
 
 **Parameter Definitions:**  
@@ -1047,8 +1051,8 @@ humann_renorm_table -i path-abundances.tsv -o path-abundances-cpm.tsv --update-s
 #### 16e. Generating a normalized gene-family table that is grouped by Kegg Orthologs (KOs)
 
 ```bash
-humann_regroup_table -i gene-families.tsv -g uniref90_ko | humann_rename_table -n kegg-orthology | \
-                     humann_renorm_table -o gene-families-KO-cpm.tsv --update-snames
+humann_regroup_table -i Gene-families_GLmetagenomics.tsv -g uniref90_ko | humann_rename_table -n kegg-orthology | \
+                     humann_renorm_table -o Gene-families-KO-cpm_GLmetagenomics.tsv --update-snames
 ```
 
 **Parameter Definitions:**  
@@ -1070,7 +1074,7 @@ humann_regroup_table -i gene-families.tsv -g uniref90_ko | humann_rename_table -
 #### 16f. Combining taxonomy tables
 
 ```bash
-merge_metaphlan_tables.py *-humann3-out-dir/*_humann_temp/*_metaphlan_bugs_list.tsv > metaphlan-taxonomy.tsv
+merge_metaphlan_tables.py *-humann3-out-dir/*_humann_temp/*_metaphlan_bugs_list.tsv > Metaphlan-taxonomy_GLmetagenomics.tsv
 ```
 
 **Parameter Definitions:**  
@@ -1086,15 +1090,15 @@ merge_metaphlan_tables.py *-humann3-out-dir/*_humann_temp/*_metaphlan_bugs_list.
 
 **Output data:**
 
-* **gene-families.tsv** (gene-family abundances) 
-* **gene-families-grouped-by-taxa.tsv** (gene-family abundances grouped by taxa)
-* **gene-families-cpm.tsv** (gene-family abundances normalized to copies-per-million)
-* **gene-families-KO-cpm.tsv** (KO term abundances normalized to copies-per-million)
-* **pathway-abundances.tsv** (pathway abundances)
-* **pathway-abundances-grouped-by-taxa.tsv** (pathway abundances grouped by taxa)
-* **pathway-abundances-cpm.tsv** (pathway abundances normalized to copies-per-million)
-* **pathway-coverages.tsv** (pathway coverages)
-* **pathway-coverages-grouped-by-taxa.tsv** (pathway coverages grouped by taxa)
-* **metaphlan-taxonomy.tsv** (metaphlan estimated taxonomic relative abundances)
+* **Gene-families_GLmetagenomics.tsv** (gene-family abundances) 
+* **Gene-families-grouped-by-taxa_GLmetagenomics.tsv** (gene-family abundances grouped by taxa)
+* **Gene-families-cpm_GLmetagenomics.tsv** (gene-family abundances normalized to copies-per-million)
+* **Gene-families-KO-cpm_GLmetagenomics.tsv** (KO term abundances normalized to copies-per-million)
+* **Pathway-abundances_GLmetagenomics.tsv** (pathway abundances)
+* **Pathway-abundances-grouped-by-taxa_GLmetagenomics.tsv** (pathway abundances grouped by taxa)
+* **Pathway-abundances-cpm_GLmetagenomics.tsv** (pathway abundances normalized to copies-per-million)
+* **Pathway-coverages_GLmetagenomics.tsv** (pathway coverages)
+* **Pathway-coverages-grouped-by-taxa_GLmetagenomics.tsv** (pathway coverages grouped by taxa)
+* **Metaphlan-taxonomy_GLmetagenomics.tsv** (metaphlan estimated taxonomic relative abundances)
 
 ---
