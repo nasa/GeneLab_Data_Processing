@@ -78,8 +78,13 @@ gtdb_tk_scratch_location:
 ## maximum memory allowed passed to megahit assembler
     # can be set either by proportion of available on system, e.g. 0.5
     # or by absolute value in bytes, e.g. 100e9 would be 100 GB
-max_mem:
-    0.5
+max_mem_megahit:
+    100e9
+
+    # related, this is passed to the resources section of the megahit rule (only relevant if using a job scheduler)
+    # this is passed as "mem_mb", so 100000 would be equal to the default 100e9 set above
+megahit_memory_resources:
+    100000
 
 ## Block size variable for CAT/diamond, lower value means less RAM usage; see https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#memory--performance-options
 block_size:
