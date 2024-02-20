@@ -1,7 +1,6 @@
 # GeneLab bioinformatics processing pipeline for Agilent 1-channel microarray data <!-- omit in toc -->
 
-> **This page holds an overview and instructions for how GeneLab processes Agilent 1-channel microarray datasets\*. Exact processing commands and GL-DPPD-7112 version used for specific datasets are provided with their processed data in the [GeneLab Data Systems 
-(GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).**  
+> **This page holds an overview and instructions for how GeneLab processes Agilent 1-channel microarray datasets\*. Exact processing commands and GL-DPPD-7112 version used for specific datasets are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 >
 > \* The pipeline detailed below is currently used for animal studies only, it will be updated soon for processing plants and microbe microarray data.
 ---
@@ -72,9 +71,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
 
 # General processing overview with example commands  
 
-> Exact processing commands for specific datasets that have been released are provided with their processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects).
-> 
-> All output files in **bold** are published with the Agilent 1-channel microarray processed data in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects). 
+> Exact processing commands and output files listed in **bold** below are included with each Microarray processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 
 ---
 
@@ -1170,7 +1167,9 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 
 **Output Data:**
 
-- **differential_expression_GLmicroarray.csv** (table containing normalized counts for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
-- visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
+- **differential_expression_GLmicroarray.csv** (table containing normalized expression for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
+- visualization_PCA_table_GLmicroarray.csv (file used to generate GeneLab PCA plots)
 - **raw_intensities_GLmicroarray.csv** (table containing the background corrected unnormalized intensity values for each sample including gene annotations)
 - **normalized_expression_GLmicroarray.csv** (table containing the background corrected, normalized intensity values for each sample including gene annotations)
+
+> All steps of the Microarray pipeline are performed using R markdown and the completed R markdown is rendered (via Quarto) as an html file (**NF_MAAgilent1ch_v\*_GLmicroarray.html**) and published in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/) for the respective dataset.
