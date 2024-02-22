@@ -78,8 +78,8 @@ gtdb_tk_scratch_location:
 ## maximum memory allowed passed to megahit assembler
     # can be set either by proportion of available on system, e.g. 0.5
     # or by absolute value in bytes, e.g. 100e9 would be 100 GB
-max_mem:
-    0.5
+max_mem_megahit:
+    100e9
 
 ## Block size variable for CAT/diamond, lower value means less RAM usage; see https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#memory--performance-options
 block_size:
@@ -153,11 +153,51 @@ swift_1S:
 # 5g should be sufficient for most assemblies, but if that rule is failing, this may need to be increased
 pileup_mem:
     "5g"
-    # that way is needed for telling the program, but to tell snakemake how much memory will be used, we need to provide it in megabytes
-    # e.g., 5g above, for 5 gigabytes, would be 5000 megabytes, so we need to set this variable to 5000
-    # this needs to be changed to match what is in the 'pileup_mem' variable above, if 20g, then 20000, if 20m, then 20
-snakemake_pileup_mem:
+
+################################################################################################################
+##### Resource specifications that may need to be changed (mostly only necessary if using a job scheduler) #####
+####### Could leave these as-is to start, but they are here to be increased if a job fails due to memory #######
+################################################################################################################
+
+### these are all passed in the "resources" directive of their respective rules in the Snakefile, going to
+    # the "mem_mb" argument (so should be provided in terms of megabytes)
+
+# passed to megahit in the assembly_PE and assembly_SE rules
+    # this should match what is passed to "max_mem_megahit" above, though it needs to be written differently
+    # this is passed as "mem_mb", so 100000 would be equal to the default 100e9 set above for "max_mem_megahit"
+megahit_memory_resources:
+    100000
+
+# passed to pileup.sh within the get_cov_and_det rule
+    # should match what is passed to "pileup_mem" above, though needs to be written differently
+    # this is passed as "mem_mb", e.g., 5g above, for 5 gigabytes, would be 5000 megabytes, so we need to set this variable to 5000
+pileup_memory_resources:
     5000
+
+# passed to mapping_SE and mapping_PE rules, passed as "mem_mb", so 25000 here means 25 gigabytes of memory will be allocated by the scheduler
+mapping_memory_resources:
+    25000
+
+# passed to rule gtdbtk_on_MAGs
+gtdbtk_memory_resources:
+    500000
+
+# passed to rule checkm_on_bins:
+checkm_memory_resources:
+    250000
+
+# passed to humann3 on rules humann3_PE and humann3_SE:
+humann3_memory_resources:
+    100000
+
+# passed to CAT in tax_classification rule:
+CAT_memory_resources:
+    40000
+
+# passed to KOFamScan in rule KO_annotation
+KOFamScan_memory_resources:
+    5000
+
 
 #######################################################
 ################# REFERENCE DATABASES #################
