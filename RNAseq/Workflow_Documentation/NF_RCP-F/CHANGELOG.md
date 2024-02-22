@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ERCC Notebook:
   - Moved gene prefix definition to start of notebook
   - Added fallback for scenarios where every gene has zeros: use "poscounts" estimator to calculate a modified geometric mean
+  - Reordered box-whisker plots from descending to ascending reference concentration order, ordered bar plots similarly
   
 ### Changed
 
