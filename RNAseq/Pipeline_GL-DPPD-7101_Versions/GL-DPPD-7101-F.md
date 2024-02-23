@@ -1951,10 +1951,10 @@ import matplotlib.pyplot as plt
 accession = 'GLDS-NNN' # Replace Ns with GLDS number
 isaPath = '/path/to/GLDS-NNN_metadata_GLDS-NNN-ISA.zip' # Replace with path to ISA archive file
 zip_file_object =  zipfile.ZipFile(isaPath, "r")
-list_of_ISA_files = zip_file_object.namelist()
+list_of_ISA_files = zip_file_object.namelist() # Print contents of zip file. Pick relevant one from list
 UnnormalizedCountsPath = '/path/to/GLDS-NNN_rna_seq_RSEM_Unnormalized_Counts_GLbulkRNAseq.csv'
 
-GENE_ID_PREFIX = "ENSMU" # change according to a common prefix for all Gene IDs associated with the subject organsim
+GENE_ID_PREFIX = "ENSMU" # change according to a common prefix for all Gene IDs associated with the subject organism
 
 # Print contents of ISA zip file to view file order
 list_of_ISA_files
@@ -1963,7 +1963,7 @@ list_of_ISA_files
 # Txt files outputted above are indexed as 0, 1, 2, etc. Fill in the indexed number corresponding to the sample (s_*txt) and assay files for RNAseq (a_*_(RNA-Seq).txt) in the code block below.
 
 # Extract metadata from the sample file (s_*txt)
-sample_file = list_of_ISA_files[1] # replace [1] with index corresponding to the (s_*txt) file
+sample_file = list_of_ISA_files[2] # replace [2] with index corresponding to the (s_*txt) file
 file = zip_file_object.open(sample_file)
 sample_table = pd.read_csv(zip_file_object.open(sample_file), sep='\t')
 
@@ -1981,7 +1981,6 @@ pd.set_option('display.max_columns', None)
 assay_table.head(n=3)
 
 ### Get raw counts table
-raw_counts_transcripts = raw_counts_table[raw_counts_table.index.str.contains(f"^{GENE_ID_PREFIX}")]
 
 raw_counts_table = pd.read_csv(UnnormalizedCountsPath, index_col=0) 
 raw_counts_table.index.rename('Gene_ID', inplace=True)
@@ -2003,7 +2002,7 @@ print(ercc_counts.head())
 ### Get files containing ERCC gene concentrations and metadata
 
 ercc_url = 'https://assets.thermofisher.com/TFS-Assets/LSG/manuals/cms_095046.txt'
-ercc_table = pd.read_csv(ercc_url, '\t')
+ercc_table = pd.read_csv(ercc_url, sep = '\t')
 print(ercc_table.head(n=3))
 
 ## Calculate the number of ERCC genes detected in each of the 4 (A, B, C and D) groups for each sample
@@ -2119,61 +2118,65 @@ ddf['Avg Mix1 CPM/ Avg Mix2 CPM'] = (ddf['Avg Mix1 CPM'] / ddf['Avg Mix2 CPM'])
 ## Multi-sample ERCC analyses
 ### Create box and whisker plots of the log(2) CPM for each ERCC detected in group A in Mix 1 and Mix 2 spiked samples
 
-a = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupA, hue="Mix",data=merged_ercc[merged_ercc['ERCC ID'].isin(groupA)], kind="box", col="ERCC group", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']))
+a = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupA[::-1], hue="Mix",data=merged_ercc[merged_ercc['ERCC ID'].isin(groupA)], kind="box", col="ERCC group", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']))
 a.set_xticklabels(rotation=90)
 plt.text(23,2.5,"Mix1/ Mix2 = 4")
 
 ### Create bar plot of the average Mix1 CPM / average Mix 2 CPM for group A ERCC genes (for group A we expect Mix 1 CPM / Mix 2 CPM = 4)
 
-a1 = sns.catplot(x="ERCC ID", y="Avg Mix1 CPM/ Avg Mix2 CPM", palette="rocket_r", data=adf, kind="bar", height=5, aspect=1, linewidth=0.5)
+a1 = sns.catplot(x="ERCC ID", y="Avg Mix1 CPM/ Avg Mix2 CPM", order=groupA[::-1], palette="rocket_r", data=adf, kind="bar", height=5, aspect=1, linewidth=0.5)
 a1.set_xticklabels(rotation=90)
 plt.title("ERCC Group A")
-a1.set(ylim=(0, 5))
+a1.set(ylim=(0, 6))
+a1.set_axis_labels("ERCC genes ordered by concentration: low \u2192 high")
 print('Number of ERCC detected in group A (out of 23) =', adf['Avg Mix1 CPM/ Avg Mix2 CPM'].count())
 
 ### Create box and whisker plots of the log(2) CPM for each ERCC detected in group B in Mix 1 and Mix 2 spiked samples
 
-b = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupB, hue="Mix", data=merged_ercc[merged_ercc['ERCC ID'].isin(groupB)], kind="box", col="ERCC group", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']))
+b = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupB[::-1], hue="Mix", data=merged_ercc[merged_ercc['ERCC ID'].isin(groupB)], kind="box", col="ERCC group", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']))
 b.set_xticklabels(rotation=90)
 plt.text(23,2.5,"Mix1/ Mix2 = 1")
 
 ### Create bar plot of the average Mix1 CPM / average Mix 2 CPM for group B ERCC genes (for group B we expect Mix 1 CPM / Mix 2 CPM = 1)
 
-b = sns.catplot(x="ERCC ID", y="Avg Mix1 CPM/ Avg Mix2 CPM", palette="rocket_r", data=bdf, kind="bar", 
+b = sns.catplot(x="ERCC ID", y="Avg Mix1 CPM/ Avg Mix2 CPM", order=groupB[::-1], palette="rocket_r", data=bdf, kind="bar", 
                height=5, aspect=1, linewidth=0.5)
 b.set_xticklabels(rotation=90)
 plt.title("ERCC Group B")
 b.set(ylim=(0, 2))
+b.set_axis_labels("ERCC genes ordered by concentration: low \u2192 high")
 print('Number of ERCC detected in group B (out of 23) =', bdf['Avg Mix1 CPM/ Avg Mix2 CPM'].count())
 
 ### Create box and whisker plots of the log(2) CPM for each ERCC detected in group C in Mix 1 and Mix 2 spiked samples
 
-c = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupC, hue="Mix", data=merged_ercc[merged_ercc['ERCC ID'].isin(groupC)], kind="box", col="ERCC group", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']))
+c = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupC[::-1], hue="Mix", data=merged_ercc[merged_ercc['ERCC ID'].isin(groupC)], kind="box", col="ERCC group", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']))
 c.set_xticklabels(rotation=90)
 plt.text(23,2.5,"Mix1/ Mix2 = 0.67")
 
 ### Create bar plot of the average Mix1 CPM / average Mix 2 CPM for group C ERCC genes (for group C we expect Mix 1 CPM / Mix 2 CPM = 0.67)
 
-c = sns.catplot(x="ERCC ID", y="Avg Mix1 CPM/ Avg Mix2 CPM", palette="rocket_r", data=cdf, kind="bar", 
+c = sns.catplot(x="ERCC ID", y="Avg Mix1 CPM/ Avg Mix2 CPM", order=groupC[::-1], palette="rocket_r", data=cdf, kind="bar", 
                height=5, aspect=1, linewidth=0.5)
 c.set_xticklabels(rotation=90)
 plt.title("ERCC Group C")
 c.set(ylim=(0, 2))
+c.set_axis_labels("ERCC genes ordered by concentration: low \u2192 high")
 print('Number of ERCC detected in group C (out of 23) =', cdf['Avg Mix1 CPM/ Avg Mix2 CPM'].count())
 
 ### Create box and whisker plots of the log(2) CPM for each ERCC detected in group D in Mix 1 and Mix 2 spiked samples
 
-d = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupD, hue="Mix", data=merged_ercc[merged_ercc['ERCC ID'].isin(groupD)], col="ERCC group", kind="box", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']))
+d = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupD[::-1], hue="Mix", data=merged_ercc[merged_ercc['ERCC ID'].isin(groupD)], col="ERCC group", kind="box", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']))
 d.set_xticklabels(rotation=90)
 plt.text(23,2.5,"Mix1/ Mix2 = 0.5")
 
 ### Create bar plot of the average Mix1 CPM / average Mix 2 CPM for group D ERCC genes (for group D we expect Mix 1 CPM / Mix 2 CPM = 0.5)
 
-d = sns.catplot(x="ERCC ID", y="Avg Mix1 CPM/ Avg Mix2 CPM", palette="rocket_r", data=ddf, kind="bar", 
+d = sns.catplot(x="ERCC ID", y="Avg Mix1 CPM/ Avg Mix2 CPM", order=groupD[::-1], palette="rocket_r", data=ddf, kind="bar", 
                height=5, aspect=1, linewidth=0.5)
 d.set_xticklabels(rotation=90)
 plt.title("ERCC Group D")
-d.set(ylim=(0, 2))
+d.set(ylim=(0, 1))
+d.set_axis_labels("ERCC genes ordered by concentration: low \u2192 high")
 print('Number of ERCC detected in group D (out of 23) =', ddf['Avg Mix1 CPM/ Avg Mix2 CPM'].count())
 
 ## Individual sample ERCC analyses
@@ -2225,27 +2228,28 @@ side_size = np.int32(np.ceil(np.sqrt(total_columns)))# calculate grid side size.
 fig, axs = plt.subplots(side_size, side_size, figsize=(22,26), sharex='all', sharey='all'); #change figsize x,y labels if needed.
 fig.tight_layout(pad=1, w_pad=2.5, h_pad=3.5)
 
-counter = 0
-for ax in axs.flat:
-    
-    if(counter < len(columns_mix_1)):
-      ax.scatter(x=np.log2(ercc_counts_mix_1['ERCC conc (attomoles/ul)']), y=np.log2(ercc_counts_mix_1[all_columns[counter]]+1), s=7);
-      ax.set_title(all_columns[counter][-45:], fontsize=9);
-      ax.set_xlabel('log2 ERCC conc (attomoles/ ul)', fontsize=9);
-      ax.set_ylabel('log2 Counts per million', fontsize=9);
-      ax.tick_params(direction='in', axis='both', labelsize=8, labelleft=True, labelbottom=True);
-      
-    elif(counter >= len(columns_mix_1) and counter < total_columns):
-      ax.scatter(x=np.log2(ercc_counts_mix_2['ERCC conc (attomoles/ul)']), y=np.log2(ercc_counts_mix_2[all_columns[counter]]+1), s=7);
-      ax.set_title(all_columns[counter][-45:], fontsize=9);
-      ax.set_xlabel('log2 ERCC conc (attomoles/ ul)', fontsize=9);
-      ax.set_ylabel('log2 Counts per million', fontsize=9);
-      ax.tick_params(direction='in', axis='both', labelsize=8, labelleft=True, labelbottom=True);
-       
-    else:
-      pass
+# Iterate over subplot positions, if subplot does not have data, hide the subplot with ax.set_visible(False)
 
-    counter = counter + 1
+for i in range(side_size):
+    for j in range(side_size):
+        ax = axs[i, j]
+        index = i * side_size + j
+
+        if index < total_columns:
+            if index < len(columns_mix_1):
+                ax.scatter(x=np.log2(ercc_counts_mix_1['ERCC conc (attomoles/ul)']), y=np.log2(ercc_counts_mix_1[all_columns[index]]+1), s=7)
+                ax.set_title(all_columns[index][-45:], fontsize=9)
+            else:
+                ax.scatter(x=np.log2(ercc_counts_mix_2['ERCC conc (attomoles/ul)']), y=np.log2(ercc_counts_mix_2[all_columns[index]]+1), s=7)
+                ax.set_title(all_columns[index][-45:], fontsize=9)
+
+            ax.set_xlabel('log2 ERCC conc (attomoles/ ul)', fontsize=9)
+            ax.set_ylabel('log2 Counts per million', fontsize=9)
+            ax.tick_params(direction='in', axis='both', labelsize=9, labelleft=True, labelbottom=True)
+        else:
+            ax.set_visible(False)  # Hide the subplot if it's not needed
+
+plt.show()
 
 ## Calculate and plot linear regression of log(2) ERCC counts versus log(2) ERCC concentration for each sample
 
@@ -2273,6 +2277,7 @@ for i in range(0, len(ercc_counts_mix_2.columns)-1):
   nonzero_counts_sorted = nonzero_counts.sort_values('Conc')
   nonzero_counts_list_2.append(nonzero_counts_sorted)
 
+
 # Plot each sample using linear regression of scatter plot with x = log2 Conc and y = log2 Counts.
 # Return min, max, R^2 and dynamic range (max / min) values.
 
@@ -2287,127 +2292,76 @@ fig.tight_layout(pad=1, w_pad=2.5, h_pad=3.5)
 
 counter = 0
 list2counter = 0
-for ax in axs.flat:
-    
-    if(counter < len(columns_mix_1)):
+for i in range(side_size):
+    for j in range(side_size):
+        ax = axs[i, j]
+        index = i * side_size + j
 
-      nonzero_counts = nonzero_counts_list_1[counter]
-      xvalues = nonzero_counts['Conc']
-      yvalues = nonzero_counts['Counts']
+        if index < len(columns_mix_1):
+            nonzero_counts = nonzero_counts_list_1[index]
+            xvalues = nonzero_counts['Conc']
+            yvalues = nonzero_counts['Counts']
 
-      sns.regplot(x=np.log2(xvalues), y=np.log2(yvalues), ax=ax);
-      ax.set_title(all_columns[counter][-47:], fontsize=9);
-      ax.set_xlabel('log2 Conc (attomoles/ul)', fontsize=9);
-      ax.set_ylabel('log2 Counts per million', fontsize=9);
-      ax.tick_params(direction='in', axis='both', labelsize=8, labelleft=True, labelbottom=True)
-      samples.append(all_columns[counter])
+            if len(xvalues) > 0:
+                sns.regplot(x=np.log2(xvalues), y=np.log2(yvalues), ax=ax)
+                ax.set_title(all_columns[index][-47:], fontsize=9)
+                ax.set_xlabel('log2 Conc (attomoles/ul)', fontsize=9)
+                ax.set_ylabel('log2 Counts per million', fontsize=9)
+                ax.tick_params(direction='in', axis='both', labelsize=9, labelleft=True, labelbottom=True)
+                samples.append(all_columns[index])
 
-      if(len(xvalues) == 0):
-        mins.append('NaN')
-        maxs.append('NaN')
-        dyranges.append('NaN')
-        rs.append('NaN')
+                min_val = xvalues.min()
+                max_val = xvalues.max()
+                dynamic_range = max_val / min_val
+                slope, intercept, r_value, p_value, std_err = linregress(np.log2(xvalues), np.log2(yvalues))
 
-    
-      else:
-        min = xvalues[0];
-        mins.append(min)
-        minimum = f'Min:{min:.1f}';
-        max = xvalues[-1];
-        maxs.append(max)
-        maximum = f'Max:{max:.1f}';
-        dynamic_range = max / min;
-        dyranges.append(dynamic_range)
-        dyn_str = f'Dyn:{dynamic_range:.1f}';
+                ax.text(0.02, 0.98, f'Min:{min_val:.1f}', verticalalignment='top', horizontalalignment='left', transform=ax.transAxes, color='black', fontsize=10)
+                ax.text(0.02, 0.88, f'Max:{max_val:.1f}', verticalalignment='top', horizontalalignment='left', transform=ax.transAxes, color='black', fontsize=10)
+                ax.text(0.02, 0.78, f'Dyn:{dynamic_range:.1f}', verticalalignment='top', horizontalalignment='left', transform=ax.transAxes, color='black', fontsize=10)
+                ax.text(0.02, 0.68, f'R:{r_value:.2f}', verticalalignment='top', horizontalalignment='left', transform=ax.transAxes, color='black', fontsize=10)
 
-        ax.text(0.02, 0.98, minimum,
-        verticalalignment='top', horizontalalignment='left',
-        transform=ax.transAxes,
-        color='black', fontsize=10);
-      
-        ax.text(0.02, 0.88, maximum,
-        verticalalignment='top', horizontalalignment='left',
-        transform=ax.transAxes,
-        color='black', fontsize=10);
-      
-        ax.text(0.02, 0.78, dyn_str,verticalalignment='top',
-                horizontalalignment='left',transform=ax.transAxes,
-                color='black', fontsize=10);
-      
-        if(len(xvalues) == 1):
-          rs.append('NaN')
+                mins.append(min_val)
+                maxs.append(max_val)
+                dyranges.append(dynamic_range)
+                rs.append(r_value)
+            else:
+                ax.set_visible(False)
 
+        elif index < total_columns:
+            nonzero_counts = nonzero_counts_list_2[list2counter]
+            xvalues = nonzero_counts['Conc']
+            yvalues = nonzero_counts['Counts']
+
+            if len(xvalues) > 0:
+                sns.regplot(x=np.log2(xvalues), y=np.log2(yvalues), ax=ax)
+                ax.set_title(all_columns[index][-47:], fontsize=9)
+                ax.set_xlabel('log2 Conc (attomoles/ul)', fontsize=9)
+                ax.set_ylabel('log2 Counts per million', fontsize=9)
+                ax.tick_params(direction='in', axis='both', labelsize=9, labelleft=True, labelbottom=True)
+                samples.append(all_columns[index])
+
+                min_val = xvalues.min()
+                max_val = xvalues.max()
+                dynamic_range = max_val / min_val
+                slope, intercept, r_value, p_value, std_err = linregress(np.log2(xvalues), np.log2(yvalues))
+
+                ax.text(0.02, 0.98, f'Min:{min_val:.1f}', verticalalignment='top', horizontalalignment='left', transform=ax.transAxes, color='black', fontsize=10)
+                ax.text(0.02, 0.88, f'Max:{max_val:.1f}', verticalalignment='top', horizontalalignment='left', transform=ax.transAxes, color='black', fontsize=10)
+                ax.text(0.02, 0.78, f'Dyn:{dynamic_range:.1f}', verticalalignment='top', horizontalalignment='left', transform=ax.transAxes, color='black', fontsize=10)
+                ax.text(0.02, 0.68, f'R:{r_value:.2f}', verticalalignment='top', horizontalalignment='left', transform=ax.transAxes, color='black', fontsize=10)
+
+                mins.append(min_val)
+                maxs.append(max_val)
+                dyranges.append(dynamic_range)
+                rs.append(r_value)
+            else:
+                ax.set_visible(False)
+
+            list2counter += 1
         else:
-          slope, intercept, r, p, se = linregress(np.log2(xvalues), y=np.log2(yvalues))
-          r_str = f'R:{r:.2f}'
-          rs.append(r)
+            ax.set_visible(False)
 
-          ax.text(0.02, 0.68, r_str, verticalalignment='top',
-                  horizontalalignment='left',transform=ax.transAxes,
-                  color='black', fontsize=10);
-    
-    elif(counter >= len(columns_mix_1) and counter < total_columns):
-      
-      nonzero_counts = nonzero_counts_list_2[list2counter]
-      xvalues = nonzero_counts['Conc']
-      yvalues = nonzero_counts['Counts']
-
-      sns.regplot(x=np.log2(xvalues), y=np.log2(yvalues), ax=ax);
-      ax.set_title(all_columns[counter][-47:], fontsize=9);
-      ax.set_xlabel('log2 Conc (attomoles/ul)', fontsize=9);
-      ax.set_ylabel('log2 Counts per million', fontsize=9);
-      ax.tick_params(direction='in', axis='both', labelsize=8, labelleft=True, labelbottom=True);
-      samples.append(all_columns[counter])
-
-      if(len(xvalues) == 0):
-        mins.append('NaN')
-        maxs.append('NaN')
-        dyranges.append('NaN')
-        rs.append('NaN')
-    
-      else:
-        min = xvalues[0];
-        mins.append(min)
-        minimum = f'Min:{min:.1f}';
-        max = xvalues[-1];
-        maxs.append(max)
-        maximum = f'Max:{max:.1f}';
-        dynamic_range = max / min;
-        dyranges.append(dynamic_range)
-        dyn_str = f'Dyn:{dynamic_range:.1f}';
-
-        ax.text(0.02, 0.98, minimum,
-        verticalalignment='top', horizontalalignment='left',
-        transform=ax.transAxes,
-        color='black', fontsize=10);
-      
-        ax.text(0.02, 0.88, maximum,
-        verticalalignment='top', horizontalalignment='left',
-        transform=ax.transAxes,
-        color='black', fontsize=10);
-      
-        ax.text(0.02, 0.78, dyn_str,verticalalignment='top',
-                horizontalalignment='left',transform=ax.transAxes,
-                color='black', fontsize=10);
-      
-        if(len(xvalues) == 1):
-          rs.append('NaN')
-          
-        else:
-          slope, intercept, r, p, se = linregress(np.log2(xvalues), y=np.log2(yvalues));
-          r_str = f'R:{r:.2f}';
-          rs.append(r)
-
-          ax.text(0.02, 0.68, r_str, verticalalignment='top',
-                  horizontalalignment='left',transform=ax.transAxes,
-                  color='black', fontsize=10);
-
-      list2counter = list2counter + 1
-    
-    else:
-      pass
-
-    counter = counter + 1
+plt.show()
 
 # Create directory for saved files
 
@@ -2419,9 +2373,9 @@ os.makedirs(name="ERCC_analysis", exist_ok=True)
 
 stats = pd.DataFrame(list(zip(samples, mins, maxs, dyranges, rs)))
 stats.columns = ['Samples', 'Min', 'Max', 'Dynamic range', 'R']
-stats.to_csv('ERCC_analysis/ERCC_stats_GLDS-NNN_GLbulkRNAseq.csv', index = False)
-stats.filter(items = ['Samples', 'Dynamic range']).to_csv('ERCC_analysis/ERCC_dynrange_GLDS-NNN_mqc_GLbulkRNAseq.csv', index = False)
-stats.filter(items = ['Samples', 'R']).to_csv('ERCC_analysis/ERCC_rsq_GLDS-NNN_mqc_GLbulkRNAseq.csv', index = False)
+stats.to_csv(f'ERCC_analysis/ERCC_stats_{accession}_GLbulkRNAseq.csv', index = False)
+stats.filter(items = ['Samples', 'Dynamic range']).to_csv(f'ERCC_analysis/ERCC_dynrange_{accession}_mqc_GLbulkRNAseq.csv', index = False)
+stats.filter(items = ['Samples', 'R']).to_csv(f'ERCC_analysis/ERCC_rsq_{accession}_mqc_GLbulkRNAseq.csv', index = False)
 
 ## Generate data and metadata files needed for ERCC DESeq2 analysis
 
@@ -2555,6 +2509,8 @@ from urllib.request import urlopen, quote, urlretrieve
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+accession = 'GLDS-NNN' # Replace Ns with GLDS number
+
 ## Import ERCC DESeq2 results
 
 deseq2out = pd.read_csv('ERCC_analysis/ERCC_DESeq2_GLbulkRNAseq.csv', index_col=0) # INPUT
@@ -2565,7 +2521,7 @@ print(deseq2out.head())
 ## Get files containing ERCC gene concentrations and metadata
 
 ercc_url = 'https://assets.thermofisher.com/TFS-Assets/LSG/manuals/cms_095046.txt'
-ercc_table = pd.read_csv(ercc_url, '\t', index_col='ERCC ID')
+ercc_table = pd.read_csv(ercc_url, sep='\t', index_col='ERCC ID')
 print(ercc_table.head(n=3))
 
 ## Combine ERCC DESeq2 results and ercc_table
@@ -2586,7 +2542,7 @@ print(combined.head())
 ## Export the filtered combined ERCC DESeq2 results and ercc_table
 ### Remember to change file name to GLDS# analyzing
 
-combined.filter(items = ['ERCC ID', 'meanNormCounts', 'cleaned_pvalue','cleaned_padj']).to_csv('ERCC_analysis/ERCC_lodr_GLDS-NNN_mqc_GLbulkRNAseq.csv') 
+combined.filter(items = ['ERCC ID', 'meanNormCounts', 'cleaned_pvalue','cleaned_padj']).to_csv(f'ERCC_analysis/ERCC_lodr_{accession}_mqc_GLbulkRNAseq.csv') 
 
 ## Plot p-value vs. mean normalized ERCC counts
 
