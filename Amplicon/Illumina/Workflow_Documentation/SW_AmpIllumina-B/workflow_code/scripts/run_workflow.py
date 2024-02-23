@@ -162,7 +162,8 @@ def handle_runsheet_selection(runsheet_files, target=None, specified_runsheet=No
 
     if len(runsheet_files) == 1:
         # Automatically use the single runsheet file
-        selected_runsheet = runsheet_files[0]
+        if target_region == runsheet_df['Parameter Value[Library Selection]'].unique()[0]:
+            selected_runsheet = runsheet_files[0]
         print(f"Using runsheet: {selected_runsheet}")
 
     elif len(runsheet_files) > 1:
@@ -172,7 +173,7 @@ def handle_runsheet_selection(runsheet_files, target=None, specified_runsheet=No
                 try:
                     runsheet_df = pd.read_csv(runsheet)
                     target_region = runsheet_df['Parameter Value[Library Selection]'].unique()[0]
-                    if target.lower() in target_region.lower():
+                    if target.lower() == target_region.lower():
                         matching_runsheets.append(runsheet)
                 except Exception as e:
                     print(f"Error reading {runsheet}: {e}")
@@ -489,6 +490,40 @@ def create_config_yaml(isa_zip,
 # Example usage
 # create_config_yaml(runsheet_df, uses_urls)
 
+# Check for single primer set, also check for invalid characters in primers used, exit if either
+def validate_primer_sequences(runsheet_df):
+    errors = []
+
+    # Check that there is only 1 entry in each primer column
+    if len(runsheet_df['F_Primer'].unique()) > 1:
+        errors.append(f"Multiple primer sequences present in F_Primer: {runsheet_df['F_Primer'].unique()}.")
+
+    if len(runsheet_df['R_Primer'].unique()) > 1:
+         errors.append(f"Multiple primer sequences present in R_primer: {runsheet_df['R_Primer'].unique()}.")
+    
+
+    # Check for non-letter characters in primer sequences
+    def has_non_letter_characters(primer):
+        # Pattern to find any character that is not a letter
+        non_letter_pattern = re.compile(r'[^A-Za-z]')
+        return non_letter_pattern.search(primer)
+
+    # Check each unique primer in the F_Primer and R_Primer columns
+    for f_primer in runsheet_df['F_Primer'].unique():
+        if has_non_letter_characters(f_primer):
+            errors.append(f"Non-letter characters detected in F_Primer: '{f_primer}'")
+
+    for r_primer in runsheet_df['R_Primer'].unique():
+        if has_non_letter_characters(r_primer):
+            errors.append(f"Non-letter characters detected in R_Primer: '{r_primer}'")
+
+    if errors:
+        print("Error: Invalid primer sequence(s) detected in the runsheet.")
+        for error in errors:
+            print(f"  - {error}")
+        print("Correct the primer sequences in the runsheet and rerun the workflow from the runsheet using the --runsheetPath argument.")
+        sys.exit(1)
+
 
 def main():
     # Argument parser setup with short argument names and an automatic help option
@@ -646,6 +681,9 @@ def main():
             runsheet_df = pd.read_csv(runsheet_file)
             if runsheet_df is not None:
                 uses_urls = check_runsheet_read_paths(runsheet_df)
+
+                # Check for primer file / invalid primers
+                validate_primer_sequences(runsheet_df)
 
                 # Create the 'unique-sample-IDs.txt' file and download read files if necessary
                 if uses_urls:
