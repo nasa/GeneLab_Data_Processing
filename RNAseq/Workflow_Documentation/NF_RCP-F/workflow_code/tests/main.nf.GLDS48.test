@@ -2,6 +2,7 @@ nextflow_pipeline {
 
     name "Test Workflow main.nf"
     script "main.nf"
+    tag "core"
 
     test("GLDS-48:Mouse,SingleEnd,NonERCC: Should run without failures") {
 

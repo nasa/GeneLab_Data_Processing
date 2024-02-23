@@ -4,10 +4,6 @@ library("here")
 library("cli")
 
 parser <- OptionParser()
-parser <- add_option(parser, c("-v", "--verbose"),
-    action = "store_true",
-    default = FALSE, help = "Print extra output [default]"
-)
 parser <- add_option(parser, c("--skip_perform_dge"),
     action = "store_true", default = FALSE,
     help = "Skips running the DGE, this can be used when the output from the DGE already exist",
@@ -43,9 +39,6 @@ parser <- add_option(parser, c("--DEBUG_MODE_ADD_DUMMY_COUNTS"),
     default = FALSE, action = "store_true",
     help = "Replaces all gene counts with random values from 0 to 5000",
 )
-parser <- add_option(parser, c("--isa_path"),
-    help = "ISA Archive path, one of two allowed metadata inputs, exactly one metadata input must be supplied",
-)
 parser <- add_option(parser, c("--runsheet_path"),
     help = "runsheet csv path, one of two allowed metadata inputs, exactly one metadata input must be supplied",
 )
@@ -69,14 +62,11 @@ if (!args$skip_perform_dge) {
     cli_alert_warning("Running Perform_DGE.Rmd")
     rmarkdown::render(here("dge_annotation_R_scripts", "Perform_DGE.Rmd"),
         output_dir = args$work_dir,
-        quiet = !args$verbose,
         params = list(
             work_dir = args$work_dir,
-            verbose = args$verbose,
             input_gene_results_dir = args$input_gene_results_dir,
             primary_keytype = args$primary_keytype,
             runsheet_path = args$runsheet_path,
-            isa_path = args$isa_path,
             normalization = args$normalization,
             dge_output_prefix = args$dge_output_prefix,
             normalized_counts_output_prefix = args$normalized_counts_output_prefix,
@@ -93,7 +83,6 @@ if (!args$skip_gene_annotation) {
     cli_alert_warning("Running Add_Gene_Annotations.Rmd")
     rmarkdown::render(here("dge_annotation_R_scripts", "Add_Gene_Annotations.Rmd"),
         output_dir = args$work_dir,
-        quiet = !args$verbose,
         params = list(
             input_table_path = paste0(args$dge_output_prefix, "differential_expression_no_annotations.csv"),
             work_dir = args$work_dir,
@@ -111,7 +100,6 @@ if (!args$skip_gene_annotation) {
     cli_alert_warning("Running Extend_DGE_Table.Rmd")
     rmarkdown::render(here("dge_annotation_R_scripts", "Extend_DGE_Table.Rmd"),
         output_dir = args$work_dir,
-        quiet = !args$verbose,
         params = list(
             input_table_path = paste0(args$dge_output_prefix, "differential_expression.csv"),
             work_dir = args$work_dir,
@@ -128,7 +116,6 @@ if (!args$skip_gene_annotation) {
     cli_alert_warning("Running Generate_PCA_Table.Rmd")
     rmarkdown::render(here("dge_annotation_R_scripts", "Generate_PCA_Table.Rmd"),
         output_dir = args$work_dir,
-        quiet = !args$verbose,
         params = list(
             input_table_path = paste0(args$normalized_counts_output_prefix, "Normalized_Counts.csv"),
             work_dir = args$work_dir,

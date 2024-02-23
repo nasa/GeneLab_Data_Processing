@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Github action support for CI testing (a83006ba91b1209e1857fefd96e9ff950ebb0cdc)
+
+### Fixed
+- Workflow usage files will all follow output directory set by workflow user (3e69f06432f62b7924d2e043ef4768c5d09bf614)
+### Changed 
+- TrimGalore! will now use autodetect for adaptor type (3b7e0bab4017e90481359c48f9cf7c8837ed54d2)
+- V&V migrated from dp_tools version 1.1.8 to 1.3.2 including:
+  - Migration of V&V protocol code to this codebase instead of dp_tools (b3684a4c1db5df06eab20916ef7e130c410c147c)
+  - Fix for sample wise checks reusing same samples (dca4fdad7518ac9ead3ee2e4c5f57ac0fe25c715)
+
 ## [1.0.3](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-F_1.0.3/RNAseq/Workflow_Documentation/NF_RCP-F) - 2023-01-25
 
 ### Added

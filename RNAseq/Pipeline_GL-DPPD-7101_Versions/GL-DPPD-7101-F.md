@@ -43,6 +43,7 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
 
 - Fixed rare edge case where groupwise mean and standard deviations could become misassociated to incorrect groups. This had affected [step 9f](#9f-prepare-genelab-dge-tables-with-annotations-on-datasets-with-ercc-spike-in) and [step 9i](#9i-prepare-genelab-dge-tables-with-annotations-on-datasets-without-ercc-spike-in).
 
+- [Step 2a](#2a-trimfilter-raw-data) adapter type argument removed in favor of using the built in TrimGalore! adapter [autodetection](https://github.com/FelixKrueger/TrimGalore/blob/0.6.7/Docs/Trim_Galore_User_Guide.md#adapter-auto-detection).
 ---
 
 # Table of contents  
@@ -122,7 +123,7 @@ The DESeq2 Normalization and DGE step, [step 9](#9-normalize-read-counts-perform
 |tximport|1.27.1|[https://github.com/mikelove/tximport](https://github.com/mikelove/tximport)|
 |tidyverse|1.3.1|[https://www.tidyverse.org](https://www.tidyverse.org)|
 |stringr|1.4.1|[https://github.com/tidyverse/stringr](https://github.com/tidyverse/stringr)|
-|dp_tools|1.1.8|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
+|dp_tools|1.3.3|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |pandas|1.5.0|[https://github.com/pandas-dev/pandas](https://github.com/pandas-dev/pandas)|
 |seaborn|0.12.0|[https://seaborn.pydata.org/](https://seaborn.pydata.org/)|
 |matplotlib|3.6.0|[https://matplotlib.org/stable](https://matplotlib.org/stable)|
@@ -204,7 +205,6 @@ trim_galore --gzip \
   --path_to_cutadapt /path/to/cutadapt \
   --cores NumberOfThreads \
   --phred33 \
-  --illumina \ # if adapters are not illumina, replace with adapters used
   --output_dir /path/to/TrimGalore/output/directory \
   --paired \ # only for PE studies, remove this parameter if raw data are SE
   sample1_R1_raw.fastq.gz sample1_R2_raw.fastq.gz sample2_R1_raw.fastq.gz sample2_R2_raw.fastq.gz
@@ -218,7 +218,6 @@ trim_galore --gzip \
 - `--path_to_cutadapt` - specify path to cutadapt software if it is not in your `$PATH`
 - `--cores` - specify the number of threads available on the server node to perform trimming
 - `--phred33` - instructs cutadapt to use ASCII+33 quality scores as Phred scores for quality trimming
-- `--illumina` - defines the adapter sequence to be trimmed as the first 13bp of the Illumina universal adapter `AGATCGGAAGAGC`
 - `--output_dir` - the output directory to store results
 - `--paired` - indicates paired-end reads - both reads, forward (R1) and reverse (R2) must pass length threshold or else both reads are removed
 - `sample1_R1_raw.fastq.gz sample1_R2_raw.fastq.gz sample2_R1_raw.fastq.gz sample2_R2_raw.fastq.gz` – the input reads are specified as a positional argument, paired-end read files are listed pairwise such that the forward reads (*R1_raw.fastq.gz) are immediately followed by the respective reverse reads (*R2_raw.fastq.gz) for each sample

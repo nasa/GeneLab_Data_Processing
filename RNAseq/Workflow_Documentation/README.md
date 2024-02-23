@@ -8,7 +8,7 @@ GeneLab has wrapped each step of the pipeline into a workflow with validation an
 
 |Pipeline Version|Current Workflow Version (for respective pipeline version)|Nextflow Version|
 |:---------------|:---------------------------------------------------------|:---------------|
-|*[GL-DPPD-7101-F.md](../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md)|[NF_RCP-F_1.0.3](NF_RCP-F)|22.10.1|
+|*[GL-DPPD-7101-F.md](../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md)|[NF_RCP-F_1.0.4](NF_RCP-F)|22.10.1|
 
 *Current GeneLab Pipeline/Workflow Implementation
 

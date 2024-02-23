@@ -1,7 +1,8 @@
 name: Check Markdown links
 
-on: push
-
+on:
+  create: # runs when a reference (branch or tag) is created
+      
 jobs:
   markdown-link-check:
     runs-on: ubuntu-latest
