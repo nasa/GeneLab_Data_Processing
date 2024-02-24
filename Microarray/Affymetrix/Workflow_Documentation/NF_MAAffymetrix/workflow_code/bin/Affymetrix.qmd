@@ -1,6 +1,6 @@
 ---
 title: "Affymetrix Processing"
-subtitle: "Workflow Version: NF_MAAffymetrix_1.0.2"
+subtitle: "Workflow Version: NF_MAAffymetrix_1.0.3"
 date: now
 title-block-banner: true
 format:
