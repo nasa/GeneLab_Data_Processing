@@ -71,6 +71,36 @@ options(preferRaster=TRUE) # use Raster when possible to avoid antialiasing arti
 #| message: false
 print("Loading Runsheet...") # NON_DPPD
 
+# Utility function to improve robustness of function calls
+# Used to remedy intermittent internet issues during runtime 
+retry_with_delay <- function(func, ...) {
+  max_attempts = 5
+  initial_delay = 10
+  delay_increase = 30
+  attempt <- 1
+  current_delay <- initial_delay
+  while (attempt <= max_attempts) {
+    result <- tryCatch(
+      expr = func(...),
+      error = function(e) e
+    )
+    
+    if (!inherits(result, "error")) {
+      return(result)
+    } else {
+      if (attempt < max_attempts) {
+        message(paste("Retry attempt", attempt, "failed for function with name <", deparse(substitute(func)) ,">. Retrying in", current_delay, "second(s)..."))
+        Sys.sleep(current_delay)
+        current_delay <- current_delay + delay_increase
+      } else {
+        stop(paste("Max retry attempts reached. Last error:", result$message))
+      }
+    }
+    
+    attempt <- attempt + 1
+  }
+}
+
 df_rs <- read.csv(runsheet, check.names = FALSE) %>% 
           dplyr::mutate_all(function(x) iconv(x, "latin1", "ASCII", sub="")) # Convert all characters to ascii, when not possible, remove the character
 
@@ -93,7 +123,7 @@ fetch_organism_specific_annotation_file_path <- function(organism) {
 
   return(annotation_file_path)
 }
-annotation_file_path <- fetch_organism_specific_annotation_file_path(unique(df_rs$organism))
+annotation_file_path <- retry_with_delay(fetch_organism_specific_annotation_file_path, unique(df_rs$organism))
 
 # NON_DPPD:START
 print("Here is the embedded runsheet")
@@ -134,7 +164,7 @@ downloadFilesFromRunsheet <- function(df_runsheet) {
 
 if ( runsheetPathsAreURIs(df_rs) ) {
   print("Determined Raw Data Locations are URIS")
-  local_paths <- downloadFilesFromRunsheet(df_rs)
+  local_paths <- retry_with_delay(downloadFilesFromRunsheet, df_rs)
 } else {
   print("Or Determined Raw Data Locations are local paths")
   local_paths <- df_rs$`Array Data File Path`
@@ -164,9 +194,12 @@ DT::datatable(df_local_paths)
 
 
 # Load raw data into R object
-raw_data <- oligo::read.celfiles(df_local_paths$`Local Paths`,
-                                 sampleNames = df_local_paths$`Sample Name`# Map column names as Sample Names (instead of default filenames)
-                                 )
+# Retry with delay here to accomodate oligo's automatic loading of annotation packages and occasional internet related failures to load
+raw_data <- retry_with_delay(
+              oligo::read.celfiles,
+                df_local_paths$`Local Paths`,
+                sampleNames = df_local_paths$`Sample Name`# Map column names as Sample Names (instead of default filenames)
+              )
 
 print(str(raw_data))
 
@@ -539,11 +572,12 @@ if (organism %in% c("athaliana")) {
   ensembl_genomes_portal = "plants"
   print(glue::glue("Using ensembl genomes ftp to get specific version of probeset id mapping table. Ensembl genomes portal: {ensembl_genomes_portal}, version: {ensembl_genomes_version}"))
   expected_attribute_name <- getBioMartAttribute(df_rs)
-  df_mapping <- get_ensembl_genomes_mappings_from_ftp(
-    organism = organism,
-    ensembl_genomes_portal = ensembl_genomes_portal,
-    ensembl_genomes_version = ensembl_genomes_version,
-    biomart_attribute = expected_attribute_name
+  df_mapping <- retry_with_delay(
+    get_ensembl_genomes_mappings_from_ftp,
+      organism = organism,
+      ensembl_genomes_portal = ensembl_genomes_portal,
+      ensembl_genomes_version = ensembl_genomes_version,
+      biomart_attribute = expected_attribute_name
     )
 
   # TAIR from the mapping tables tend to be in the format 'AT1G01010.1' but the raw data has 'AT1G01010'
