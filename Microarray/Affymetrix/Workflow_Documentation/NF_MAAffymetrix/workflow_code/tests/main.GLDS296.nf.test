@@ -2,6 +2,7 @@ nextflow_pipeline {
 
     name "Test Workflow main.nf"
     script "main.nf"
+    tag "core"
 
     test("GLDS-296: Should run without failures.") {
 
