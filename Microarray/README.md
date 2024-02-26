@@ -69,5 +69,5 @@ The “GeneLab Microarray Processing Pipelines and Workflows” software also ma
 **Developed by:**  
 Jonathan Oribello 
 
-**Maintained by:**
+**Maintained by:**  
 Alexis Torres
