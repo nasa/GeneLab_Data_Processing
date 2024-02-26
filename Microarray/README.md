@@ -21,25 +21,25 @@
 
 The software for the Microarray pipelines and workflows program as a whole are distributed under the [GNU General Public License version 3.0](../Licenses/Microarray_GPL-3.0_with_Additional_Requirements_License.pdf) and calls other open source software components. The following is a list of these components:
 
-•	R, "GNU GENERAL PUBLIC LICENSE Version 2, June 1991, and Version 3, 29 June 2007", https://www.r-project.org/Licenses/
-•	DT, "GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007", https://github.com/rstudio/DT/blob/main/LICENSE
-•	dplyr, MIT License Copyright (c) 2022 dplyr authors, https://github.com/tidyverse/dplyr/blob/main/LICENSE.md
-•	stringr, MIT License Copyright (c) 2020 stringr authors, https://github.com/tidyverse/stringr/blob/main/LICENSE.md
-•	R.utils, "GNU LESSER GENERAL PUBLIC LICENSE Version 2.1, February 1999", https://github.com/HenrikBengtsson/R.utils/blob/2.12.2/DESCRIPTION
-•	oligo, "GNU LESSER GENERAL PUBLIC LICENSE Version 2.1, February 1999", https://www.bioconductor.org/packages/3.14/bioc/html/oligo.html
-•	limma, "GNU GENERAL PUBLIC LICENSE Version 2, June 1991", https://bioconductor.org/packages/3.14/bioc/html/limma.html
-•	glue, MIT License Copyright (c) 2021 glue authors, https://github.com/tidyverse/glue/blob/v1.6.2/LICENSE.md
-•	biomaRt, The Artistic License 2.0, https://bioconductor.org/packages/3.14/bioc/manuals/biomaRt/man/biomaRt.pdf
-•	matrixStats, The Artistic License 2.0, https://github.com/HenrikBengtsson/matrixStats/blob/develop/DESCRIPTION
-•	statmod, "GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007", https://github.com/cran/statmod/blob/1.5.0/DESCRIPTION
-•	Singularity, "The BSD 3-clause License (MIT) Copyright (c) 2015-2017, Gregory M. Kurtzer. Copyright (c) 2016-2017, The Regents of the University of California. Copyright (c) 2017, SingularityWare, LLC. Copyright (c) 2018-2022, Sylabs, Inc.", https://docs.sylabs.io/guides/3.9/user-guide/license.html
-•	dp_tools, The MIT License (MIT) Copyright (c) 2022 Jonathan Oribello, https://github.com/J-81/dp_tools/blob/main/LICENSE
-•	Quarto, "GNU GENERAL PUBLIC LICENSE Version 2, June 1991", https://quarto.org/license.html
-•	tibble, MIT License Copyright (c) 2019 RStudio and others, https://tibble.tidyverse.org/LICENSE.html
-•	Nextflow, "Apache License Version 2.0, January 2004", https://github.com/nextflow-io/nextflow/blob/master/COPYING
-•	python, The PSF LICENSE AGREEMENT Copyright (c) 2001-2022 Python Software Foundation, https://docs.python.org/3/license.html#psf-license-agreement-for-python-release
-•	pandas, The BSD 3-clause License, https://github.com/pandas-dev/pandas/blob/main/LICENSE
-•	ggplot2, MIT License Copyright (c) 2020 ggplot2 authors, https://ggplot2.tidyverse.org/LICENSE.html
+* R, "GNU GENERAL PUBLIC LICENSE Version 2, June 1991, and Version 3, 29 June 2007", https://www.r-project.org/Licenses/  
+* DT, "GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007", https://github.com/rstudio/DT/blob/main/LICENSE  
+* dplyr, MIT License Copyright (c) 2022 dplyr authors, https://github.com/tidyverse/dplyr/blob/main/LICENSE.md  
+* stringr, MIT License Copyright (c) 2020 stringr authors, https://github.com/tidyverse/stringr/blob/main/LICENSE.md  
+* R.utils, "GNU LESSER GENERAL PUBLIC LICENSE Version 2.1, February 1999", https://github.com/HenrikBengtsson/R.utils/blob/2.12.2/DESCRIPTION  
+* oligo, "GNU LESSER GENERAL PUBLIC LICENSE Version 2.1, February 1999", https://www.bioconductor.org/packages/3.14/bioc/html/oligo.html  
+* limma, "GNU GENERAL PUBLIC LICENSE Version 2, June 1991", https://bioconductor.org/packages/3.14/bioc/html/limma.html  
+* glue, MIT License Copyright (c) 2021 glue authors, https://github.com/tidyverse/glue/blob/v1.6.2/LICENSE.md  
+* biomaRt, The Artistic License 2.0, https://bioconductor.org/packages/3.14/bioc/manuals/biomaRt/man/biomaRt.pdf  
+* matrixStats, The Artistic License 2.0, https://github.com/HenrikBengtsson/matrixStats/blob/develop/DESCRIPTION  
+* statmod, "GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007", https://github.com/cran/statmod/blob/1.5.0/DESCRIPTION  
+* Singularity, "The BSD 3-clause License (MIT) Copyright (c) 2015-2017, Gregory M. Kurtzer. Copyright (c) 2016-2017, The Regents of the University of California. Copyright (c) 2017, SingularityWare, LLC. Copyright (c) 2018-2022, Sylabs, Inc.", https://docs.sylabs.io/guides/3.9/user-guide/license.html  
+* dp_tools, The MIT License (MIT) Copyright (c) 2022 Jonathan Oribello, https://github.com/J-81/dp_tools/blob/main/LICENSE  
+* Quarto, "GNU GENERAL PUBLIC LICENSE Version 2, June 1991", https://quarto.org/license.html  
+* tibble, MIT License Copyright (c) 2019 RStudio and others, https://tibble.tidyverse.org/LICENSE.html  
+* Nextflow, "Apache License Version 2.0, January 2004", https://github.com/nextflow-io/nextflow/blob/master/COPYING  
+* python, The PSF LICENSE AGREEMENT Copyright (c) 2001-2022 Python Software Foundation, https://docs.python.org/3/license.html#psf-license-agreement-for-python-release  
+* pandas, The BSD 3-clause License, https://github.com/pandas-dev/pandas/blob/main/LICENSE  
+* ggplot2, MIT License Copyright (c) 2020 ggplot2 authors, https://ggplot2.tidyverse.org/LICENSE.html  
 
 
 ### 3rd Party Software Licenses
