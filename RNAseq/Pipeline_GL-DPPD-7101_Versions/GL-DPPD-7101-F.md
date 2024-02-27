@@ -2118,7 +2118,7 @@ ddf['Avg Mix1 CPM/ Avg Mix2 CPM'] = (ddf['Avg Mix1 CPM'] / ddf['Avg Mix2 CPM'])
 ## Multi-sample ERCC analyses
 ### Create box and whisker plots of the log(2) CPM for each ERCC detected in group A in Mix 1 and Mix 2 spiked samples
 
-a = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupA[::-1], hue="Mix",data=merged_ercc[merged_ercc['ERCC ID'].isin(groupA)], kind="box", col="ERCC group", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']))
+a = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupA[::-1], hue="Mix",data=merged_ercc[merged_ercc['ERCC ID'].isin(groupA)], kind="box", col="ERCC group", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']), showfliers=False)
 a.set_xticklabels(rotation=90)
 plt.text(23,2.5,"Mix1/ Mix2 = 4")
 
@@ -2133,7 +2133,7 @@ print('Number of ERCC detected in group A (out of 23) =', adf['Avg Mix1 CPM/ Avg
 
 ### Create box and whisker plots of the log(2) CPM for each ERCC detected in group B in Mix 1 and Mix 2 spiked samples
 
-b = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupB[::-1], hue="Mix", data=merged_ercc[merged_ercc['ERCC ID'].isin(groupB)], kind="box", col="ERCC group", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']))
+b = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupB[::-1], hue="Mix", data=merged_ercc[merged_ercc['ERCC ID'].isin(groupB)], kind="box", col="ERCC group", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']), showfliers=False)
 b.set_xticklabels(rotation=90)
 plt.text(23,2.5,"Mix1/ Mix2 = 1")
 
@@ -2149,7 +2149,7 @@ print('Number of ERCC detected in group B (out of 23) =', bdf['Avg Mix1 CPM/ Avg
 
 ### Create box and whisker plots of the log(2) CPM for each ERCC detected in group C in Mix 1 and Mix 2 spiked samples
 
-c = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupC[::-1], hue="Mix", data=merged_ercc[merged_ercc['ERCC ID'].isin(groupC)], kind="box", col="ERCC group", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']))
+c = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupC[::-1], hue="Mix", data=merged_ercc[merged_ercc['ERCC ID'].isin(groupC)], kind="box", col="ERCC group", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']), showfliers=False)
 c.set_xticklabels(rotation=90)
 plt.text(23,2.5,"Mix1/ Mix2 = 0.67")
 
@@ -2165,7 +2165,7 @@ print('Number of ERCC detected in group C (out of 23) =', cdf['Avg Mix1 CPM/ Avg
 
 ### Create box and whisker plots of the log(2) CPM for each ERCC detected in group D in Mix 1 and Mix 2 spiked samples
 
-d = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupD[::-1], hue="Mix", data=merged_ercc[merged_ercc['ERCC ID'].isin(groupD)], col="ERCC group", kind="box", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']))
+d = sns.catplot(x="ERCC ID", y="log2 Count per million", order=groupD[::-1], hue="Mix", data=merged_ercc[merged_ercc['ERCC ID'].isin(groupD)], col="ERCC group", kind="box", height=5, aspect=1, palette=sns.color_palette(['blue', 'orange']), showfliers=False)
 d.set_xticklabels(rotation=90)
 plt.text(23,2.5,"Mix1/ Mix2 = 0.5")
 
