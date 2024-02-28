@@ -5,7 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.2](https://github.com/asaravia-butler/GeneLab_Data_Processing/tree/NF_MAAffymetrix_1.0.2/Microarray/Affymetrix/Workflow_Documentation/NF_MAAffymetrix)
+## [1.0.3](https://github.com/asaravia-butler/GeneLab_Data_Processing/tree/NF_MAAffymetrix_1.0.3/Microarray/Affymetrix/Workflow_Documentation/NF_MAAffymetrix) - 2024-02-26
+
+### Added
+
+- Retry wrapper for functions that utilize internet resources.  This is aimed to reduce failures due solely due to intermittent network issues. (ceb6d9a3)
+
+### Fixed
+
+- Missing Raw Data MA Plots when handling designs that loaded as `ExpressionFeatureSet` objects. (7af7192e)
+  - Additionally, future unhandled raw data classes will raise an exception rather than fail to plot silently.
+
+## [1.0.2](https://github.com/asaravia-butler/GeneLab_Data_Processing/tree/NF_MAAffymetrix_1.0.2/Microarray/Affymetrix/Workflow_Documentation/NF_MAAffymetrix) - 2023-05-24
 
 ### Added
 

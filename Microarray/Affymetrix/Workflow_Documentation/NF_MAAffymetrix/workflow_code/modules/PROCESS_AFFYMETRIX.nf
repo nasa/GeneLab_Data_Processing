@@ -1,6 +1,6 @@
 process PROCESS_AFFYMETRIX {
   publishDir "${ params.resultsDir }/GeneLab",
-    pattern: "NF_MAAffymetrix_v${workflow.manifest.version}.html",
+    pattern: "NF_MAAffymetrix_v${workflow.manifest.version}_GLmicroarray.html",
     mode: params.publish_dir_mode
   stageInMode 'copy'
 
@@ -12,7 +12,7 @@ process PROCESS_AFFYMETRIX {
     val(limit_biomart_query) // DEBUG option, limits biomart queries to the number specified if not set to false
 
   output:
-    path("NF_MAAffymetrix_v${workflow.manifest.version}.html"), emit: report
+    path("NF_MAAffymetrix_v${workflow.manifest.version}_GLmicroarray.html"), emit: report
 
     tuple path("02-limma_DGE"),
           path("01-oligo_NormExp"),
@@ -30,7 +30,7 @@ process PROCESS_AFFYMETRIX {
             ${limit_biomart_query_parameter}
 
         # Rename report
-        mv Affymetrix.html NF_MAAffymetrix_v${workflow.manifest.version}.html
+        mv Affymetrix.html NF_MAAffymetrix_v${workflow.manifest.version}_GLmicroarray.html
 
         cat >> versions.yml <<END_OF_VERSIONS
         - name: quarto

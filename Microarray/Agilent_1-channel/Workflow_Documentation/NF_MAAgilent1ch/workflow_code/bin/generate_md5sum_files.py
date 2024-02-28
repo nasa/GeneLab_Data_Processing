@@ -44,13 +44,13 @@ def main(root_dir: Path, runsheet_path: Path, plug_in_dir: Path):
         df_subset = df.loc[df["tags"].apply(lambda l: tag in l)].drop(
             "tags", axis="columns"
         )
-        df_subset.to_csv(f"{tag}_md5sum.tsv", sep="\t", index=False)
+        df_subset.to_csv(f"{tag}_md5sum_GLmicroarray.tsv", sep="\t", index=False)
 
     # Log missing files
     print(df.columns)
     missing_files = df.loc[df['md5sum'] == "USER MUST ADD MANUALLY!"]["filename"].to_list()
     if missing_files:
-        with open("Missing_md5sum_files.txt", "w") as f:
+        with open("Missing_md5sum_files_GLmicroarray.txt", "w") as f:
             for missing in missing_files:
                 f.write(missing+"\n")
 

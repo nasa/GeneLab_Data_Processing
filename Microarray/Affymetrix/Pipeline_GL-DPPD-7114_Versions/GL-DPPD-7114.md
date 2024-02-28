@@ -1,7 +1,6 @@
 # GeneLab bioinformatics processing pipeline for Affymetrix microarray data <!-- omit in toc -->
 
-> **This page holds an overview and instructions for how GeneLab processes Affymetrix microarray datasets. Exact processing commands and GL-DPPD-7114 version used for specific GeneLab datasets (GLDS) are provided with their processed data in the [Open Science Data 
-Repository (OSDR)](https://osdr.nasa.gov/bio/repo).**  
+> **This page holds an overview and instructions for how GeneLab processes Affymetrix microarray datasets. Exact processing commands and GL-DPPD-7114 version used for specific GeneLab datasets (GLDS) are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo).**  
 > 
 > \* The pipeline detailed below is currently used for animal and Arabidopsis Thaliana studies only, it will be updated soon for processing microbe microarray data and other plant data.
 
@@ -74,9 +73,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
 
 # General processing overview with example commands  
 
-> Exact processing commands for a specific GLDS that has been released are provided with the processed data in the [OSDR](https://osdr.nasa.gov/bio/repo).
-> 
-> All output files in **bold** are published with the Affymetrix microarray processed data in the [OSDR](https://osdr.nasa.gov/bio/repo). 
+> Exact processing commands and output files listed in **bold** below are included with each Microarray processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 
 ---
 
@@ -167,6 +164,36 @@ dir.create(DIR_DGE)
 original_par <- par()
 options(preferRaster=TRUE) # use Raster when possible to avoid antialiasing artifacts in images
 
+# Utility function to improve robustness of function calls
+# Used to remedy intermittent internet issues during runtime 
+retry_with_delay <- function(func, ...) {
+  max_attempts = 5
+  initial_delay = 10
+  delay_increase = 30
+  attempt <- 1
+  current_delay <- initial_delay
+  while (attempt <= max_attempts) {
+    result <- tryCatch(
+      expr = func(...),
+      error = function(e) e
+    )
+
+    if (!inherits(result, "error")) {
+      return(result)
+    } else {
+      if (attempt < max_attempts) {
+        message(paste("Retry attempt", attempt, "failed for function with name <", deparse(substitute(func)) ,">. Retrying in", current_delay, "second(s)..."))
+        Sys.sleep(current_delay)
+        current_delay <- current_delay + delay_increase
+      } else {
+        stop(paste("Max retry attempts reached. Last error:", result$message))
+      }
+    }
+
+    attempt <- attempt + 1
+  }
+}
+
 df_rs <- read.csv(runsheet, check.names = FALSE) %>% 
           dplyr::mutate_all(function(x) iconv(x, "latin1", "ASCII", sub="")) # Convert all characters to ascii, when not possible, remove the character
 ## Determines the organism specific annotation file to use based on the organism in the runsheet
@@ -187,7 +214,7 @@ fetch_organism_specific_annotation_file_path <- function(organism) {
 
   return(annotation_file_path)
 }
-annotation_file_path <- fetch_organism_specific_annotation_file_path(unique(df_rs$organism))
+annotation_file_path <- retry_with_delay(fetch_organism_specific_annotation_file_path, unique(df_rs$organism))
 
 allTrue <- function(i_vector) {
   if ( length(i_vector) == 0 ) {
@@ -221,7 +248,7 @@ downloadFilesFromRunsheet <- function(df_runsheet) {
 
 if ( runsheetPathsAreURIs(df_rs) ) {
   print("Determined Raw Data Locations are URIS")
-  local_paths <- downloadFilesFromRunsheet(df_rs)
+  local_paths <- retry_with_delay(downloadFilesFromRunsheet, df_rs)
 } else {
   print("Or Determined Raw Data Locations are local paths")
   local_paths <- df_rs$`Array Data File Path`
@@ -247,9 +274,12 @@ df_local_paths <- data.frame(`Sample Name` = df_rs$`Sample Name`, `Local Paths` 
 
 
 # Load raw data into R object
-raw_data <- oligo::read.celfiles(df_local_paths$`Local Paths`,
-                                 sampleNames = df_local_paths$`Sample Name`# Map column names as Sample Names (instead of default filenames)
-                                 )
+# Retry with delay here to accomodate oligo's automatic loading of annotation packages and occasional internet related failures to load
+raw_data <- retry_with_delay(
+              oligo::read.celfiles,
+                df_local_paths$`Local Paths`,
+                sampleNames = df_local_paths$`Sample Name`# Map column names as Sample Names (instead of default filenames)
+              )
 
 
 # Summarize raw data
@@ -355,6 +385,14 @@ if (inherits(raw_data, "GeneFeatureSet")) {
     ylim=c(-2, 4),
     main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
   )
+} else if (inherits(raw_data, "ExpressionFeatureSet")) { 
+  MA_plot <- oligo::MAplot(
+    raw_data,
+    ylim=c(-2, 4),
+    main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
+  )
+} else {
+  stop(glue::glue("No strategy for MA plots for {raw_data}"))
 }
 ```
 
@@ -677,11 +715,12 @@ if (organism %in% c("athaliana")) {
   ensembl_genomes_portal = "plants"
   print(glue::glue("Using ensembl genomes ftp to get specific version of probeset id mapping table. Ensembl genomes portal: {ensembl_genomes_portal}, version: {ensembl_genomes_version}"))
   expected_attribute_name <- getBioMartAttribute(df_rs)
-  df_mapping <- get_ensembl_genomes_mappings_from_ftp(
-    organism = organism,
-    ensembl_genomes_portal = ensembl_genomes_portal,
-    ensembl_genomes_version = ensembl_genomes_version,
-    biomart_attribute = expected_attribute_name
+  df_mapping <- retry_with_delay(
+    get_ensembl_genomes_mappings_from_ftp,
+      organism = organism,
+      ensembl_genomes_portal = ensembl_genomes_portal,
+      ensembl_genomes_version = ensembl_genomes_version,
+      biomart_attribute = expected_attribute_name
     )
 
   # TAIR from the mapping tables tend to be in the format 'AT1G01010.1' but the raw data has 'AT1G01010'
@@ -856,8 +895,8 @@ design_data <- runsheetToDesignMatrix(runsheet)
 design <- design_data$matrix
 
 # Write SampleTable.csv and contrasts.csv file
-write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable.csv"), row.names = FALSE)
-write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts.csv"))
+write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable_GLmicroarray.csv"), row.names = FALSE)
+write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts_GLmicroarray.csv"))
 ```
 
 **Input Data:**
@@ -867,8 +906,8 @@ write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts.csv"))
 **Output Data:**
 
 - `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to)
-- **SampleTable.csv** (table containing samples and their respective groups)
-- **contrasts.csv** (table containing all pairwise comparisons)
+- **SampleTable_GLmicroarray.csv** (table containing samples and their respective groups)
+- **contrasts_GLmicroarray.csv** (table containing all pairwise comparisons)
 
 <br>
 
@@ -1119,7 +1158,7 @@ if (!setequal(FINAL_COLUMN_ORDER, colnames(df_interim))) {
 df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 # Save to file
-write.csv(df_interim, file.path(DIR_DGE, "differential_expression.csv"), row.names = FALSE)
+write.csv(df_interim, file.path(DIR_DGE, "differential_expression_GLmicroarray.csv"), row.names = FALSE)
 
 ## Output column subset file with just normalized probeset level expression values
 write.csv(
@@ -1128,12 +1167,12 @@ write.csv(
   "ProbesetID",
   "count_ENSEMBL_mappings",
   all_samples)
-  ], file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_probeset.csv"), row.names = FALSE)
+  ], file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_probeset_GLmicroarray.csv"), row.names = FALSE)
 
 ### Generate and export PCA table for GeneLab visualization plots
 PCA_raw <- prcomp(t(exprs(probeset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
 write.csv(PCA_raw$x,
-          file.path(DIR_DGE, "visualization_PCA_table.csv")
+          file.path(DIR_DGE, "visualization_PCA_table_GLmicroarray.csv")
           )
 
 ## Generate raw intensity matrix that includes annotations
@@ -1182,7 +1221,7 @@ background_corrected_data_annotated <- oligo::exprs(background_corrected_data) %
 background_corrected_data_annotated <- background_corrected_data_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(background_corrected_data_annotated, file.path(DIR_RAW_DATA, "raw_intensities_probe.csv"), row.names = FALSE)
+write.csv(background_corrected_data_annotated, file.path(DIR_RAW_DATA, "raw_intensities_probe_GLmicroarray.csv"), row.names = FALSE)
 
 ## Generate normalized expression matrix that includes annotations
 norm_data_matrix_annotated <- oligo::exprs(norm_data) %>% 
@@ -1202,7 +1241,7 @@ norm_data_matrix_annotated <- oligo::exprs(norm_data) %>%
 norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe.csv"), row.names = FALSE)
+write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe_GLmicroarray.csv"), row.names = FALSE)
 
 ```
 
@@ -1216,8 +1255,10 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 
 **Output Data:**
 
-- **differential_expression.csv** (table containing normalized probeset expression values for each sample, group statistics, Limma probeset DE results for each pairwise comparison, and gene annotations. The ProbesetID is the unique index column.)
-- **normalized_expression_probeset.csv** (table containing the background corrected, normalized probeset expression values for each sample. The ProbesetID is the unique index column.)
-- visualization_PCA_table.csv (file used to generate GeneLab PCA plots)
-- **raw_intensities_probe.csv** (table containing the background corrected, unnormalized probe intensity values for each sample including gene annotations. The ProbeID is the unique index column.)
-- **normalized_intensities_probe.csv** (table containing the background corrected, normalized probe intensity values for each sample including gene annotations.  The ProbeID is the unique index column.)
+- **differential_expression_GLmicroarray.csv** (table containing normalized probeset expression values for each sample, group statistics, Limma probeset DE results for each pairwise comparison, and gene annotations. The ProbesetID is the unique index column.)
+- **normalized_expression_probeset_GLmicroarray.csv** (table containing the background corrected, normalized probeset expression values for each sample. The ProbesetID is the unique index column.)
+- visualization_PCA_table_GLmicroarray.csv (file used to generate GeneLab PCA plots)
+- **raw_intensities_probe_GLmicroarray.csv** (table containing the background corrected, unnormalized probe intensity values for each sample including gene annotations. The ProbeID is the unique index column.)
+- **normalized_intensities_probe_GLmicroarray.csv** (table containing the background corrected, normalized probe intensity values for each sample including gene annotations.  The ProbeID is the unique index column.)
+
+> All steps of the Microarray pipeline are performed using R markdown and the completed R markdown is rendered (via Quarto) as an html file (**NF_MAAffymetrix_v\*_GLmicroarray.html**) and published in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/) for the respective dataset.

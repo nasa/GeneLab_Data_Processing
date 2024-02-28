@@ -195,7 +195,7 @@ data assets:
   sample table:
     processed location: 
       - *DGEDataDir
-      - "SampleTable.csv"
+      - "SampleTable_GLmicroarray.csv"
 
     tags:
       - processed
@@ -210,7 +210,7 @@ data assets:
   DE contrasts table:
     processed location: 
       - *DGEDataDir
-      - "contrasts.csv"
+      - "contrasts_GLmicroarray.csv"
 
     tags:
       - processed
@@ -220,7 +220,7 @@ data assets:
   raw intensities table:
     processed location: 
       - *RawDataDir
-      - "raw_intensities.csv"
+      - "raw_intensities_GLmicroarray.csv"
 
     tags:
       - processed
@@ -235,7 +235,7 @@ data assets:
   normalized expression table:
     processed location: 
       - *NormExpDir
-      - "normalized_expression.csv"
+      - "normalized_expression_GLmicroarray.csv"
 
     tags:
       - processed
@@ -250,7 +250,7 @@ data assets:
   DE annotated table:
     processed location: 
       - *DGEDataDir
-      - "differential_expression.csv"
+      - "differential_expression_GLmicroarray.csv"
 
     tags:
       - processed
@@ -260,7 +260,7 @@ data assets:
   viz PCA table:
     processed location: 
       - *DGEDataDir
-      - "visualization_PCA_table.csv"
+      - "visualization_PCA_table_GLmicroarray.csv"
 
     tags:
       - processed

@@ -2,16 +2,16 @@ nextflow_pipeline {
 
     name "Test Workflow main.nf"
     script "main.nf"
-    tag "core"
 
-    test("GLDS-296: Should run without failures.") {
+    test("GLDS-205: Should run without failures") {
 
         when {
             params {
                 // define parameters here. Example: 
-                osdAccession = "OSD-296"
-                gldsAccession = "GLDS-296"
+                osdAccession = "OSD-205"
+                gldsAccession = "GLDS-205"
                 biomart_attribute = "AFFY ATH1 121501"
+                limit_biomart_query = 300
             }
         }
 
@@ -22,7 +22,6 @@ nextflow_pipeline {
                             path("${ params.outputDir }/00-RawData").list(),
                             path("${ params.outputDir }/01-oligo_NormExp").list(),
                             path("${ params.outputDir }/02-limma_DGE").list(),
-                            [ 'Affymetrix.html exists' : path("${ params.outputDir }/GeneLab/Affymetrix.html").exists()],
                             ).match()
         }
 

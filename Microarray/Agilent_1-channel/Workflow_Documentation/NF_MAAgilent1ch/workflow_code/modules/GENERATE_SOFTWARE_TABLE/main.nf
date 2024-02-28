@@ -1,13 +1,13 @@
 process GENERATE_SOFTWARE_TABLE {
   publishDir "${ params.outputDir }/${ params.gldsAccession }/GeneLab",
-    pattern: "software_versions.md",
+    pattern: "software_versions_GLmicroarray.md",
     mode: params.publish_dir_mode
 
   input:
     path("software_versions.yaml")
   
   output:
-    path("software_versions.md")
+    path("software_versions_GLmicroarray.md")
   
   script:
     """

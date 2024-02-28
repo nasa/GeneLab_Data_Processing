@@ -7,16 +7,16 @@ process GENERATE_MD5SUMS {
   input:
     path(data_dir)
     path(runsheet)
-    path("dp_tools__affymetrix")
+    path(dp_tools__affymetrix)
 
   output:
     path("*md5sum*")
-    path("Missing_md5sum_files.txt"), optional: true
+    path("Missing_md5sum_files_GLmicroarray.txt"), optional: true
 
   script:
     """
     generate_md5sum_files.py  --root-path ${ data_dir } \\
                               --runsheet-path ${ runsheet } \\
-                              --plug-in-dir "dp_tools__affymetrix"
+                              --plug-in-dir ${ dp_tools__affymetrix }
     """
 }

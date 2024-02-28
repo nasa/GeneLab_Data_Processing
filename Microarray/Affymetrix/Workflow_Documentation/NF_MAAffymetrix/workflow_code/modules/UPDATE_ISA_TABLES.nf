@@ -7,7 +7,7 @@ process UPDATE_ISA_TABLES {
   input:
     path(data_dir)
     path(runsheet)
-    path("dp_tools__affymetrix")
+    path(dp_tools__affymetrix)
 
   output:
     path("updated_curation_tables") // directory containing extended ISA tables
@@ -16,7 +16,7 @@ process UPDATE_ISA_TABLES {
     """
     update_curation_table.py  --root-path ${ data_dir } \\
                               --runsheet-path ${ runsheet } \\
-                              --plug-in-dir "dp_tools__affymetrix" \\
+                              --plug-in-dir ${ dp_tools__affymetrix } \\
                               --isa-path ${ data_dir }/Metadata/*ISA*.zip
 
     # Update assay table with gldsAccession

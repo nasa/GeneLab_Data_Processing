@@ -1,6 +1,6 @@
 process AGILE1CH {
   publishDir "${ params.outputDir }/${ params.gldsAccession }/GeneLab",
-    pattern: "NF_MAAgilent1ch_v${workflow.manifest.version}.html",
+    pattern: "NF_MAAgilent1ch_v${workflow.manifest.version}_GLmicroarray.html",
     mode: params.publish_dir_mode
   stageInMode 'copy'
 
@@ -12,14 +12,14 @@ process AGILE1CH {
     val(limit_biomart_query) // DEBUG option, limits biomart queries to the number specified if not set to false
 
   output:
-    path("NF_MAAgilent1ch_v${workflow.manifest.version}.html"), emit: report
+    path("NF_MAAgilent1ch_v${workflow.manifest.version}_GLmicroarray.html"), emit: report
 
-    tuple path("02-limma_DGE/contrasts.csv"),
-          path("02-limma_DGE/SampleTable.csv"),
-          path("02-limma_DGE/differential_expression.csv"),
-          path("02-limma_DGE/visualization_PCA_table.csv"),
-          path("01-limma_NormExp/normalized_expression.csv"),
-          path("00-RawData/raw_intensities.csv"), emit: de_all_files
+    tuple path("02-limma_DGE/contrasts_GLmicroarray.csv"),
+          path("02-limma_DGE/SampleTable_GLmicroarray.csv"),
+          path("02-limma_DGE/differential_expression_GLmicroarray.csv"),
+          path("02-limma_DGE/visualization_PCA_table_GLmicroarray.csv"),
+          path("01-limma_NormExp/normalized_expression_GLmicroarray.csv"),
+          path("00-RawData/raw_intensities_GLmicroarray.csv"), emit: de_all_files
 
     tuple path("02-limma_DGE"),
           path("01-limma_NormExp"),
@@ -37,7 +37,7 @@ process AGILE1CH {
             ${limit_biomart_query_parameter}
 
         # Rename report
-        mv Agile1CMP.html NF_MAAgilent1ch_v${workflow.manifest.version}.html
+        mv Agile1CMP.html NF_MAAgilent1ch_v${workflow.manifest.version}_GLmicroarray.html
 
         cat >> versions.yml <<END_OF_VERSIONS
         - name: quarto

@@ -4,11 +4,11 @@ process GENERATE_PROTOCOL {
     mode: params.publish_dir_mode
 
   input:
-    path("software_versions.md")
+    path("software_versions_GLmicroarray.md")
     path("meta.sh")
   
   output:
-    path("PROTOCOL.txt")
+    path("PROTOCOL_GLmicroarray.txt")
   
   script:
   """

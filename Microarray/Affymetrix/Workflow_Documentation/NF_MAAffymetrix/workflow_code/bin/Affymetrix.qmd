@@ -1,6 +1,6 @@
 ---
 title: "Affymetrix Processing"
-subtitle: "Workflow Version: NF_MAAffymetrix_1.0.2"
+subtitle: "Workflow Version: NF_MAAffymetrix_1.0.3"
 date: now
 title-block-banner: true
 format:
@@ -71,6 +71,36 @@ options(preferRaster=TRUE) # use Raster when possible to avoid antialiasing arti
 #| message: false
 print("Loading Runsheet...") # NON_DPPD
 
+# Utility function to improve robustness of function calls
+# Used to remedy intermittent internet issues during runtime 
+retry_with_delay <- function(func, ...) {
+  max_attempts = 5
+  initial_delay = 10
+  delay_increase = 30
+  attempt <- 1
+  current_delay <- initial_delay
+  while (attempt <= max_attempts) {
+    result <- tryCatch(
+      expr = func(...),
+      error = function(e) e
+    )
+    
+    if (!inherits(result, "error")) {
+      return(result)
+    } else {
+      if (attempt < max_attempts) {
+        message(paste("Retry attempt", attempt, "failed for function with name <", deparse(substitute(func)) ,">. Retrying in", current_delay, "second(s)..."))
+        Sys.sleep(current_delay)
+        current_delay <- current_delay + delay_increase
+      } else {
+        stop(paste("Max retry attempts reached. Last error:", result$message))
+      }
+    }
+    
+    attempt <- attempt + 1
+  }
+}
+
 df_rs <- read.csv(runsheet, check.names = FALSE) %>% 
           dplyr::mutate_all(function(x) iconv(x, "latin1", "ASCII", sub="")) # Convert all characters to ascii, when not possible, remove the character
 
@@ -93,7 +123,7 @@ fetch_organism_specific_annotation_file_path <- function(organism) {
 
   return(annotation_file_path)
 }
-annotation_file_path <- fetch_organism_specific_annotation_file_path(unique(df_rs$organism))
+annotation_file_path <- retry_with_delay(fetch_organism_specific_annotation_file_path, unique(df_rs$organism))
 
 # NON_DPPD:START
 print("Here is the embedded runsheet")
@@ -134,7 +164,7 @@ downloadFilesFromRunsheet <- function(df_runsheet) {
 
 if ( runsheetPathsAreURIs(df_rs) ) {
   print("Determined Raw Data Locations are URIS")
-  local_paths <- downloadFilesFromRunsheet(df_rs)
+  local_paths <- retry_with_delay(downloadFilesFromRunsheet, df_rs)
 } else {
   print("Or Determined Raw Data Locations are local paths")
   local_paths <- df_rs$`Array Data File Path`
@@ -164,9 +194,12 @@ DT::datatable(df_local_paths)
 
 
 # Load raw data into R object
-raw_data <- oligo::read.celfiles(df_local_paths$`Local Paths`,
-                                 sampleNames = df_local_paths$`Sample Name`# Map column names as Sample Names (instead of default filenames)
-                                 )
+# Retry with delay here to accomodate oligo's automatic loading of annotation packages and occasional internet related failures to load
+raw_data <- retry_with_delay(
+              oligo::read.celfiles,
+                df_local_paths$`Local Paths`,
+                sampleNames = df_local_paths$`Sample Name`# Map column names as Sample Names (instead of default filenames)
+              )
 
 print(str(raw_data))
 
@@ -244,6 +277,8 @@ if (inherits(raw_data, "GeneFeatureSet")) {
   print("Raw data is a GeneFeatureSet, using exprs() to access expression values and adding 0.0001 to avoid log(0)")
 } else if (inherits(raw_data, "ExpressionSet")) { 
   print("Raw data is an ExpressionSet. Using default approach for this class for MA Plot")
+} else if (inherits(raw_data, "ExpressionFeatureSet")) { 
+  print("Raw data is an ExpressionFeatureSet. Using default approach for this class for MA Plot")
 }
 ```
 
@@ -268,6 +303,14 @@ if (inherits(raw_data, "GeneFeatureSet")) {
     ylim=c(-2, 4),
     main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
   )
+} else if (inherits(raw_data, "ExpressionFeatureSet")) { 
+  MA_plot <- oligo::MAplot(
+    raw_data,
+    ylim=c(-2, 4),
+    main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
+  )
+} else {
+  stop(glue::glue("No strategy for MA plots for {raw_data}"))
 }
 ```
 
@@ -539,11 +582,12 @@ if (organism %in% c("athaliana")) {
   ensembl_genomes_portal = "plants"
   print(glue::glue("Using ensembl genomes ftp to get specific version of probeset id mapping table. Ensembl genomes portal: {ensembl_genomes_portal}, version: {ensembl_genomes_version}"))
   expected_attribute_name <- getBioMartAttribute(df_rs)
-  df_mapping <- get_ensembl_genomes_mappings_from_ftp(
-    organism = organism,
-    ensembl_genomes_portal = ensembl_genomes_portal,
-    ensembl_genomes_version = ensembl_genomes_version,
-    biomart_attribute = expected_attribute_name
+  df_mapping <- retry_with_delay(
+    get_ensembl_genomes_mappings_from_ftp,
+      organism = organism,
+      ensembl_genomes_portal = ensembl_genomes_portal,
+      ensembl_genomes_version = ensembl_genomes_version,
+      biomart_attribute = expected_attribute_name
     )
 
   # TAIR from the mapping tables tend to be in the format 'AT1G01010.1' but the raw data has 'AT1G01010'
@@ -711,8 +755,8 @@ design_data <- runsheetToDesignMatrix(runsheet)
 design <- design_data$matrix
 
 # Write SampleTable.csv and contrasts.csv file
-write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable.csv"), row.names = FALSE)
-write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts.csv"))
+write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable_GLmicroarray.csv"), row.names = FALSE)
+write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts_GLmicroarray.csv"))
 ```
 
 ### Perform Individual Probeset Level DE
@@ -968,7 +1012,7 @@ if (!setequal(FINAL_COLUMN_ORDER, colnames(df_interim))) {
 df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 # Save to file
-write.csv(df_interim, file.path(DIR_DGE, "differential_expression.csv"), row.names = FALSE)
+write.csv(df_interim, file.path(DIR_DGE, "differential_expression_GLmicroarray.csv"), row.names = FALSE)
 
 ## Output column subset file with just normalized probeset level expression values
 write.csv(
@@ -977,12 +1021,12 @@ write.csv(
   "ProbesetID",
   "count_ENSEMBL_mappings",
   all_samples)
-  ], file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_probeset.csv"), row.names = FALSE)
+  ], file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_probeset_GLmicroarray.csv"), row.names = FALSE)
 
 ### Generate and export PCA table for GeneLab visualization plots
 PCA_raw <- prcomp(t(exprs(probeset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
 write.csv(PCA_raw$x,
-          file.path(DIR_DGE, "visualization_PCA_table.csv")
+          file.path(DIR_DGE, "visualization_PCA_table_GLmicroarray.csv")
           )
 
 ## Determine column order for probe level tables
@@ -1017,7 +1061,7 @@ background_corrected_data_annotated <- oligo::exprs(background_corrected_data) %
 background_corrected_data_annotated <- background_corrected_data_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(background_corrected_data_annotated, file.path(DIR_RAW_DATA, "raw_intensities_probe.csv"), row.names = FALSE)
+write.csv(background_corrected_data_annotated, file.path(DIR_RAW_DATA, "raw_intensities_probe_GLmicroarray.csv"), row.names = FALSE)
 
 ## Generate normalized expression matrix that includes annotations
 norm_data_matrix_annotated <- oligo::exprs(norm_data) %>% 
@@ -1037,7 +1081,7 @@ norm_data_matrix_annotated <- oligo::exprs(norm_data) %>%
 norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
   dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
-write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe.csv"), row.names = FALSE)
+write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe_GLmicroarray.csv"), row.names = FALSE)
 ```
 
 ## Version Reporting <!-- non DPPD -->
