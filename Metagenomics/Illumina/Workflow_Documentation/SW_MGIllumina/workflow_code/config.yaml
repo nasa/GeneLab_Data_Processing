@@ -86,7 +86,7 @@ block_size:
     4
 
 ## reduced_tree option for checkm, limits the RAM usage to 16GB; https://github.com/Ecogenomics/CheckM/wiki/Genome-Quality-Commands#tree
-    # "TRUE" for yes, anything will be considered "FALSE" and the default full tree will be used
+    # "TRUE" for yes, anything else will be considered "FALSE" and the default full tree will be used
 reduced_tree:
     ""
 
