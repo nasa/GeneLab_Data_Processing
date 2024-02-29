@@ -93,7 +93,7 @@ We recommend installing Singularity on a system wide level as per the associated
 All files required for utilizing the NF_MAAgilent1ch GeneLab workflow for processing Agilent 1 Channel Microarray data are in the [workflow_code](workflow_code) directory. To get a copy of latest NF_MAAgilent1ch version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
 
 ```bash
-wget https://github.com/asaravia-butler/GeneLab_Data_Processing/releases/download/NF_MAAgilent1ch_1.0.2/NF_MAAgilent1ch_1.0.2.zip
+wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/NF_MAAgilent1ch_1.0.2/NF_MAAgilent1ch_1.0.2.zip
 
 unzip NF_MAAgilent1ch_1.0.2.zip
 ```
