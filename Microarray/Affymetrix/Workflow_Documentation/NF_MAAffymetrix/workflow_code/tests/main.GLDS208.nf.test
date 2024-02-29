@@ -1,0 +1,30 @@
+nextflow_pipeline {
+
+    name "Test Workflow main.nf"
+    script "main.nf"
+
+    test("GLDS-208: Should run without failures. ") {
+
+        when {
+            params {
+                // define parameters here. Example: 
+                osdAccession = "OSD-208"
+                gldsAccession = "GLDS-208"
+                biomart_attribute = "AFFY ATH1 121501"
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert snapshot(
+                            path("${ params.outputDir }/Metadata").list(),
+                            path("${ params.outputDir }/00-RawData").list(),
+                            path("${ params.outputDir }/01-oligo_NormExp").list(),
+                            path("${ params.outputDir }/02-limma_DGE").list(),
+                            [ 'Affymetrix.html exists' : path("${ params.outputDir }/GeneLab/Affymetrix.html").exists()],
+                            ).match()
+        }
+
+    }
+
+}

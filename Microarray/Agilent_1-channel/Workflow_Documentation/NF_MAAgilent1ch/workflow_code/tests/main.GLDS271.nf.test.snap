@@ -1,0 +1,24 @@
+{
+    "GLDS-271: Should run without failures": {
+        "content": [
+            [
+                "OSD-271_metadata_OSD-271-ISA.zip:md5,bedecdb2ce1d3dcef6704aede8178270",
+                "OSD-271_microarray_v0_runsheet.csv:md5,57e7f040e691bf181b3adeffdf196f6f"
+            ],
+            [
+                "raw_intensities.csv:md5,94e1ae2bea50b698ab48b7388745cf3b"
+            ],
+            [
+                "normalized_expression.csv:md5,b569714c6caafe8c52397496dfa319f9"
+            ],
+            [
+                "SampleTable.csv:md5,d18946983951cdf916aaf1e49cc47a29",
+                "contrasts.csv:md5,35ce1c9a57b76d6a281198636e9d4d16",
+                "differential_expression.csv:md5,43b3bd3e169a3c0fb9fc8f7a70a2f7db",
+                "visualization_PCA_table.csv:md5,8185f12496c8467aa2affcfd0d982e62"
+            ],
+            "software_versions.md:md5,50a6ee7b99f0bb484286d08c1f7136e0"
+        ],
+        "timestamp": "2023-04-28T21:02:43+0000"
+    }
+}

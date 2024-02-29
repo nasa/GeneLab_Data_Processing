@@ -1,0 +1,32 @@
+nextflow_pipeline {
+
+    name "Test Workflow main.nf"
+    script "main.nf"
+    tag "core"
+
+    test("GLDS-271: Should run without failures") {
+
+        when {
+            params {
+                // define parameters here. Example: 
+                osdAccession = "OSD-271"
+                gldsAccession = "GLDS-271"
+                limit_biomart_query = 300
+                biomart_attribute = "AGILENT SurePrint G3 GE 8x60k"
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert snapshot(
+                            path("${params.outputDir}/${params.gldsAccession}/Metadata").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/00-RawData").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/01-limma_NormExp").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/02-limma_DGE").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/GeneLab/software_versions.md")
+                            ).match()
+        }
+
+    }
+
+}

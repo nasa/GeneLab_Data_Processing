@@ -1,0 +1,30 @@
+nextflow_pipeline {
+
+    name "Test Workflow main.nf"
+    script "main.nf"
+    tag "core"
+
+    test("GLDS-22: Should run without failures. First Test Case for Arabidopsis") {
+
+        when {
+            params {
+                // define parameters here. Example: 
+                osdAccession = "OSD-22"
+                gldsAccession = "GLDS-22"
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert snapshot(
+                            path("${params.outputDir}/${params.gldsAccession}/Metadata").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/00-RawData").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/01-limma_NormExp").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/02-limma_DGE").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/GeneLab/software_versions.md")
+                            ).match()
+        }
+
+    }
+
+}

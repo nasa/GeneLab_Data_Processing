@@ -19,7 +19,9 @@
 * [**Workflow_Documentation**](Workflow_Documentation)
 
   - Contains instructions for installing and running the GeneLab MAAgilent1ch workflow
-    > Note: The MAAgilent1ch workflow is currently in development and not yet available
+
 ---
-**Developed and maintained by:**  
-Jonathan Oribello
+**Developed by:**  
+Jonathan Oribello  
+**Maintained by:**  
+Alexis Torres (alexis.torres@nasa.gov)
