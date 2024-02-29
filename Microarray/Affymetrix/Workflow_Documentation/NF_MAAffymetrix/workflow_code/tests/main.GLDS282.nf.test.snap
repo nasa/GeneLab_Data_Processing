@@ -1,0 +1,27 @@
+{
+    "GLDS-282: Should run without failures. ": {
+        "content": [
+            [
+                "OSD-282_metadata_OSD-282-ISA.zip:md5,ac36e255473e1b256a9cc8f1221c0581",
+                "OSD-282_microarray_v0_runsheet.csv:md5,3bdfc97fd0253bd37f907e5faed78336"
+            ],
+            [
+                "raw_intensities_probe.csv:md5,4d793a4fb35e081219d8807c2596cf40"
+            ],
+            [
+                "normalized_expression_probeset.csv:md5,127000d13dcb7018d1279cf8564ae3b6",
+                "normalized_intensities_probe.csv:md5,471374797d8f843784e02600248ef01f"
+            ],
+            [
+                "SampleTable.csv:md5,0443a814178b0b8e7d3a601c897c74ef",
+                "contrasts.csv:md5,747d6af86b07b9b0ee785a0e29681bf8",
+                "differential_expression.csv:md5,04a7213f3efa2bed7096f93e34c232f5",
+                "visualization_PCA_table.csv:md5,31b1552ae6936d1bd0082386c4ed32c4"
+            ],
+            {
+                "Affymetrix.html exists": false
+            }
+        ],
+        "timestamp": "2023-05-18T16:48:22+0000"
+    }
+}

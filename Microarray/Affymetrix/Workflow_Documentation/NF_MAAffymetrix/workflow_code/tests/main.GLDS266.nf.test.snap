@@ -1,0 +1,24 @@
+{
+    "GLDS-266: Should run without failures": {
+        "content": [
+            [
+                "GLDS-266_metadata_GLDS-266-ISA.zip:md5,0ad945af82c091b89af4d5fe83c390e3",
+                "OSD-266_microarray_v0_runsheet.csv:md5,2eb12f6b3ed2e2462a7181bcf129a7aa"
+            ],
+            [
+                "raw_intensities_probe.csv:md5,36d94ef3076dfe8f5fda1d6dc0c5cbcf"
+            ],
+            [
+                "normalized_expression_probeset.csv:md5,428bcd06838d037ab4f3eeba69251b10",
+                "normalized_intensities_probe.csv:md5,a8cf4a61e248b4aea79b3e32f8e7a9f5"
+            ],
+            [
+                "SampleTable.csv:md5,146814ee8f5207d870bcdd1696cabb26",
+                "contrasts.csv:md5,72122612b7a36eed785979e2b95c5706",
+                "differential_expression.csv:md5,5e66cfea992ac5e84a77d457b33f42b0",
+                "visualization_PCA_table.csv:md5,b814788fea249b2548a9cc70ae1796b7"
+            ]
+        ],
+        "timestamp": "2023-05-18T16:44:12+0000"
+    }
+}

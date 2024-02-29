@@ -1,0 +1,24 @@
+{
+    "GLDS-205: Should run without failures": {
+        "content": [
+            [
+                "GLDS-205_metadata_GSE95388-ISA.zip:md5,d6b5dd590bcf3d6930581a419124c9e3",
+                "OSD-205_microarray_v0_runsheet.csv:md5,c453cdbdfb93a2a99567b409477db302"
+            ],
+            [
+                "raw_intensities_probe.csv:md5,9aef93a330160b4c7f6d87ea2315ccd7"
+            ],
+            [
+                "normalized_expression_probeset.csv:md5,bf6ac705082742807dda479d69843507",
+                "normalized_intensities_probe.csv:md5,e3130eaabe9cba2b0c99e442d955029c"
+            ],
+            [
+                "SampleTable.csv:md5,16447f56ccdf5722640496640b53608e",
+                "contrasts.csv:md5,d5e21359c412e7c04ed73e9ac1ef2571",
+                "differential_expression.csv:md5,9285ff90870f67ee7cb33ce41235c39b",
+                "visualization_PCA_table.csv:md5,811829d2a5521a831b8df0e97a6d2fb8"
+            ]
+        ],
+        "timestamp": "2023-06-09T16:24:25+0000"
+    }
+}
