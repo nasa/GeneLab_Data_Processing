@@ -337,7 +337,8 @@ def create_config_yaml(isa_zip,
                        left_maxEE,
                        right_maxEE,
                        concatenate_reads_only,
-                       output_prefix):
+                       output_prefix,
+                       enable_visualizations):
     
     # Extract necessary variables from runsheet_df
     data_type = "PE" if runsheet_df['paired_end'].eq(True).all() else "SE"
@@ -472,6 +473,8 @@ def create_config_yaml(isa_zip,
         file.write(f"filtered_reads_dir:\n    \"{filtered_reads_dir}\"\n")
         file.write(f"final_outputs_dir:\n    \"{final_outputs_dir}\"\n")
         file.write(f"plots_dir:\n    \"{plots_dir}\"\n\n")
+
+        file.write(f"enable_visualizations:\n    \"{enable_visualizations}\"\n\n")
 
         # For general info and example usage command
         file.write("############################################################\n")
@@ -632,6 +635,10 @@ def main():
                         metavar='prefix',
                         type=str)
     
+    parser.add_argument('--visualizations',
+                    action='store_true',
+                    help='Enables visualization of workflow results. If not set, visualizations will be skipped.')
+    
     # Check if no arguments were provided
     if len(sys.argv) == 1:
         parser.print_help()
@@ -707,7 +714,8 @@ def main():
                                     left_maxEE=args.left_maxEE,
                                     right_maxEE=args.right_maxEE,
                                     concatenate_reads_only=args.concatenate_reads_only,
-                                    output_prefix=args.output_prefix
+                                    output_prefix=args.output_prefix,
+                                    enable_visualizations=args.visualizations
                 )
                 
                 print("Snakemake workflow setup is complete.")
