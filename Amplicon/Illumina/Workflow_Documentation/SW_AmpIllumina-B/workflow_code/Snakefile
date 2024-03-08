@@ -75,7 +75,7 @@ else:
     ]
 
 # Conditionally add plots_dir if enable_visualizations is True
-if enable_visualizations:
+if enable_visualizations  == "TRUE":
     needed_dirs.append(config["plots_dir"])
 
 # Try to create the directories

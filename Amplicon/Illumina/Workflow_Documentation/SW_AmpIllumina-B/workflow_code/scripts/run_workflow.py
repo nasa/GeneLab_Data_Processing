@@ -636,8 +636,9 @@ def main():
                         type=str)
     
     parser.add_argument('--visualizations',
-                    action='store_true',
-                    help='Enables visualization of workflow results. If not set, visualizations will be skipped.')
+                        choices=['TRUE', 'FALSE'],
+                        default='FALSE',
+                    help='If set to TRUE, enables visualization of workflow results. Default: FALSE')
     
     # Check if no arguments were provided
     if len(sys.argv) == 1:
