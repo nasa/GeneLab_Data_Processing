@@ -11,4 +11,4 @@
 
 *Current GeneLab Pipeline/Workflow Implementation
 
-> See the [workflow change log](SW_AmpIllumina-A/CHANGELOG.md) to access previous workflow versions and view all changes associated with each version update.
+> See the [workflow change log](SW_AmpIllumina-B/CHANGELOG.md) to access previous workflow versions and view all changes associated with each version update.
