@@ -161,10 +161,16 @@ def handle_runsheet_selection(runsheet_files, target=None, specified_runsheet=No
         return selected_runsheet
 
     if len(runsheet_files) == 1:
-        # Automatically use the single runsheet file
-        if target_region == runsheet_df['Parameter Value[Library Selection]'].unique()[0]:
-            selected_runsheet = runsheet_files[0]
-        print(f"Using runsheet: {selected_runsheet}")
+        if target:
+            runsheet = runsheet_files[0]
+            try:
+                runsheet_df = pd.read_csv(runsheet)
+                target_region = runsheet_df['Parameter Value[Library Selection]'].unique()[0]
+                if target.lower() == target_region.lower():
+                    selected_runsheet = runsheet
+            except Exception as e:
+                print(f"Error reading {runsheet}: {e}")
+            print(f"Using runsheet: {selected_runsheet}")
 
     elif len(runsheet_files) > 1:
         if target:
