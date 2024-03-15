@@ -9,6 +9,7 @@ import os
 
 configfile: "config.yaml"
 
+enable_visualizations = config["enable_visualizations"]
 
 ########################################
 ############# General Info #############
@@ -54,17 +55,85 @@ if len(set(sample_ID_list)) != len(sample_ID_list):
 ######## Setting up directories ########
 ########################################
 
+# Initialize the list of needed directories without plots_dir
 if config["trim_primers"] == "TRUE":
-    needed_dirs = [config["info_out_dir"], config["fastqc_out_dir"], config["trimmed_reads_dir"], config["filtered_reads_dir"], config["final_outputs_dir"], config["plots_dir"], "benchmarks"]
+    needed_dirs = [
+        config["info_out_dir"],
+        config["fastqc_out_dir"],
+        config["trimmed_reads_dir"],
+        config["filtered_reads_dir"],
+        config["final_outputs_dir"],
+        "benchmarks"
+    ]
 else:
-    needed_dirs = [config["info_out_dir"], config["fastqc_out_dir"], config["filtered_reads_dir"], config["final_outputs_dir"], config["plots_dir"], "benchmarks"]
+    needed_dirs = [
+        config["info_out_dir"],
+        config["fastqc_out_dir"],
+        config["filtered_reads_dir"],
+        config["final_outputs_dir"],
+        "benchmarks"
+    ]
 
+# Conditionally add plots_dir if enable_visualizations is True
+if enable_visualizations  == "TRUE":
+    needed_dirs.append(config["plots_dir"])
+
+# Try to create the directories
 for dir in needed_dirs:
     try:
-        os.mkdir(dir)
-    except:
-        pass
+        os.makedirs(dir, exist_ok=True)
+    except Exception as e:
+        print(f"Could not create directory {dir}: {e}")
 
+########################################
+########## Setting up outputs ##########
+########################################
+        
+# Base rule all inputs (final outs) for PE, with or without trimming
+base_PE_inputs = [
+    expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
+    expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"], ID = sample_ID_list),
+    config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv",
+    config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.biom.zip",
+    config["final_outputs_dir"] + config["output_prefix"] + f"ASVs_{assay_suffix}.fasta",
+    config["final_outputs_dir"] + config["output_prefix"] + f"read-count-tracking_{assay_suffix}.tsv",
+    config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
+    config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv",
+    config["fastqc_out_dir"] + config["output_prefix"] + f"raw_multiqc_{assay_suffix}_report.zip",
+    config["fastqc_out_dir"] + config["output_prefix"] + f"filtered_multiqc_{assay_suffix}_report.zip"
+]
+
+# Base rule all inputs (final outs) for SE, with or without trimming
+base_SE_inputs = [
+    expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
+    config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv",
+    config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.biom.zip",
+    config["final_outputs_dir"] + config["output_prefix"] + f"ASVs_{assay_suffix}.fasta",
+    config["final_outputs_dir"] + config["output_prefix"] + f"read-count-tracking_{assay_suffix}.tsv",
+    config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
+    config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv",
+    config["fastqc_out_dir"] + config["output_prefix"] + f"raw_multiqc_{assay_suffix}_report.zip",
+    config["fastqc_out_dir"] + config["output_prefix"] + f"filtered_multiqc_{assay_suffix}_report.zip"
+]
+
+# Add additional inputs for trimming
+if config["trim_primers"] == "TRUE":
+    if config["data_type"] == "PE":
+        base_PE_inputs += [
+            expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R1_suffix"], ID = sample_ID_list),
+            expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R2_suffix"], ID = sample_ID_list),
+            config["trimmed_reads_dir"] + config["output_prefix"] + f"cutadapt_{assay_suffix}.log",
+            config["trimmed_reads_dir"] + config["output_prefix"] + f"trimmed-read-counts_{assay_suffix}.tsv",
+        ]
+    else: # SE with primer trimming
+        base_SE_inputs += [
+            expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R1_suffix"], ID = sample_ID_list),
+            config["trimmed_reads_dir"] + config["output_prefix"] + f"cutadapt_{assay_suffix}.log",
+            config["trimmed_reads_dir"] + config["output_prefix"] + f"trimmed-read-counts_{assay_suffix}.tsv",
+        ]
+
+# Conditional addition of visualization outputs (color legend only to keep it simple)
+visualization_outputs = [config["plots_dir"] + config["output_prefix"] + f"color_legend_{assay_suffix}.png"] if enable_visualizations == "TRUE" else []
 
 ########################################
 ############# Rules start ##############
@@ -73,53 +142,13 @@ for dir in needed_dirs:
 #### rules if paired-end data ####
 if config["data_type"] == "PE":
 
-    # "all" starting rule for paired-end data
-    if config["trim_primers"] == "TRUE":
-
-        rule all:
-            input:
-                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
-                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"], ID = sample_ID_list),
-                expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R1_suffix"], ID = sample_ID_list),
-                expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R2_suffix"], ID = sample_ID_list),
-                config["trimmed_reads_dir"] + config["output_prefix"] + f"cutadapt_{assay_suffix}.log",
-                config["trimmed_reads_dir"] + config["output_prefix"] + f"trimmed-read-counts_{assay_suffix}.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.biom.zip",
-                config["final_outputs_dir"] + config["output_prefix"] + f"ASVs_{assay_suffix}.fasta",
-                config["final_outputs_dir"] + config["output_prefix"] + f"read-count-tracking_{assay_suffix}.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv",
-                config["fastqc_out_dir"] + config["output_prefix"] + f"raw_multiqc_{assay_suffix}_report.zip",
-                config["fastqc_out_dir"] + config["output_prefix"] + f"filtered_multiqc_{assay_suffix}_report.zip",
-                config["plots_dir"] + config["output_prefix"] + f"color_legend_{assay_suffix}.png"
-            shell:
-                """
-                bash scripts/combine-benchmarks.sh
-                python scripts/copy_info.py 
-                """
-
-    # if we are not trimming the primers
-    else:
-
-        rule all:
-            input:
-                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
-                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R2_suffix"], ID = sample_ID_list),
-                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.biom.zip",
-                config["final_outputs_dir"] + config["output_prefix"] + f"ASVs_{assay_suffix}.fasta",
-                config["final_outputs_dir"] + config["output_prefix"] + f"read-count-tracking_{assay_suffix}.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv",
-                config["fastqc_out_dir"] + config["output_prefix"] + f"raw_multiqc_{assay_suffix}_report.zip",
-                config["fastqc_out_dir"] + config["output_prefix"] + f"filtered_multiqc_{assay_suffix}_report.zip",
-                config["plots_dir"] + config["output_prefix"] + f"color_legend_{assay_suffix}.png"
-            shell:
-                """
-                bash scripts/combine-benchmarks.sh
-                python scripts/copy_info.py 
-                """
+    rule all:
+        input: base_PE_inputs + visualization_outputs
+        shell:
+            """
+            bash scripts/combine-benchmarks.sh
+            python scripts/copy_info.py 
+            """
 
 
     # R processing rule for paired-end data
@@ -371,50 +400,14 @@ if config["data_type"] == "PE":
 ##################################
 if config["data_type"] == "SE":
 
-    # "all" starting rule for single-end data
-    if config["trim_primers"] == "TRUE":
+    rule all:
+        input: base_SE_inputs + visualization_outputs
+        shell:
+            """
+            bash scripts/combine-benchmarks.sh
+            python scripts/copy_info.py 
+            """
 
-        rule all:
-            input:
-                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
-                expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_R1_suffix"], ID = sample_ID_list),
-                config["trimmed_reads_dir"] + config["output_prefix"] + f"cutadapt_{assay_suffix}.log",
-                config["trimmed_reads_dir"] + config["output_prefix"] + f"trimmed-read-counts_{assay_suffix}.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.biom.zip",
-                config["final_outputs_dir"] + config["output_prefix"] + f"ASVs_{assay_suffix}.fasta",
-                config["final_outputs_dir"] + config["output_prefix"] + f"read-count-tracking_{assay_suffix}.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv",
-                config["fastqc_out_dir"] + config["output_prefix"] + f"raw_multiqc_{assay_suffix}_report.zip",
-                config["fastqc_out_dir"] + config["output_prefix"] + f"filtered_multiqc_{assay_suffix}_report.zip",
-                config["plots_dir"] + config["output_prefix"] + f"color_legend_{assay_suffix}.png"
-            shell:
-                """
-                bash scripts/combine-benchmarks.sh
-                python scripts/copy_info.py 
-                """
-
-    # if we are not trimming the primers
-    else:
-
-        rule all:
-            input:
-                expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_R1_suffix"], ID = sample_ID_list),
-                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy_{assay_suffix}.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.biom.zip",
-                config["final_outputs_dir"] + config["output_prefix"] + f"ASVs_{assay_suffix}.fasta",
-                config["final_outputs_dir"] + config["output_prefix"] + f"read-count-tracking_{assay_suffix}.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + f"counts_{assay_suffix}.tsv",
-                config["final_outputs_dir"] + config["output_prefix"] + f"taxonomy-and-counts_{assay_suffix}.tsv",
-                config["fastqc_out_dir"] + config["output_prefix"] + f"raw_multiqc_{assay_suffix}_report.zip",
-                config["fastqc_out_dir"] + config["output_prefix"] + f"filtered_multiqc_{assay_suffix}_report.zip",
-                config["plots_dir"] + config["output_prefix"] + f"color_legend_{assay_suffix}.png"
-            shell:
-                """
-                bash scripts/combine-benchmarks.sh
-                python scripts/copy_info.py 
-                """
 
 
     # R processing rule for single-end data
@@ -664,7 +657,7 @@ rule r_visualizations:
         "benchmarks/r-visualizations-benchmarks.tsv"
     shell:
         """
-        Rscript scripts/Illumina-R-visualizations.R "{input.runsheet}" "{input.sample_info}" "{input.counts}" "{input.taxonomy}" "{params.assay_suffix}" "{params.plots_dir}" "{params.output_prefix}"  > {log} 2>&1
+        Rscript visualizations/Illumina-R-visualizations.R "{input.runsheet}" "{input.sample_info}" "{input.counts}" "{input.taxonomy}" "{params.assay_suffix}" "{params.plots_dir}" "{params.output_prefix}"  > {log} 2>&1
         """
 
 

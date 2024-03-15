@@ -26,10 +26,14 @@ def main(config, sample_IDs_file):
         (sample_IDs_file, os.path.join(info_out_dir, os.path.basename(sample_IDs_file))),
         (config["runsheet"], os.path.join(info_out_dir, os.path.basename(config["runsheet"]))),
         ("R-processing.log", os.path.join(info_out_dir, "R-processing.log")),
-        ("R-visualizations.log", os.path.join(info_out_dir, "R-visualizations.log")),
         ("all-benchmarks.tsv", os.path.join(info_out_dir,"all-benchmarks.tsv")),
         ("Snakefile", os.path.join(info_out_dir, "Snakefile"))
     ]
+
+    # Check and add "R-visualizations.log" if it exists (visualizations are optional)
+    r_visualizations_log_path = "R-visualizations.log"
+    if os.path.isfile(r_visualizations_log_path):
+        files_to_copy.append((r_visualizations_log_path, os.path.join(info_out_dir, "R-visualizations.log")))
 
     # Optional ISA archive
     if config.get("isa_archive") and os.path.isfile(config["isa_archive"]):
