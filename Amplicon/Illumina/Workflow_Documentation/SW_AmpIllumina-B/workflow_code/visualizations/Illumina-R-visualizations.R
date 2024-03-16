@@ -244,20 +244,37 @@ default_cex <- adjust_cex(length(rownames(sample_info_tab)))
 # Set for 11x8 plot margins, else try ggdendrogram
 space_available <- height_in_inches/5.4
 
-calculate_max_cex <- function(n, space_avail) {
-  base_char_width_inch <- 0.1  # average width of a character in inches at cex = 1
+longest_name <- rownames(sample_info_tab)[which.max(nchar(rownames(sample_info_tab)))]
+
+calculate_max_cex <- function(longest_name, space_avail) {
+  # Define weights for lower case letters, periods, else
+  lower_case_weight <- 0.10
+  other_char_weight <- 0.15
+  dot_weight <- 0.02  # Weight for the period character
   
-  # Calculate the maximum cex that fits the space
-  max_cex <- space_avail / (n * base_char_width_inch)
+  # Calculate weights in longest sample name
+  char_weights <- sapply(strsplit(longest_name, "")[[1]], function(char) {
+    if (char == ".") {
+      return(dot_weight)
+    } else if (grepl("[a-z]", char)) {
+      return(lower_case_weight)
+    } else {
+      return(other_char_weight)
+    }
+  })
+  
+  average_weight <- mean(char_weights)
+  
+  # Calculate the maximum cex that fits the space using the average weight
+  n = nchar(longest_name)
+  max_cex <- space_avail / (n * average_weight)
   
   return(max_cex)
 }
 
+max_cex <- calculate_max_cex(longest_name, space_available)
+dendro_cex <- min(max_cex, default_cex)
 
-# Lower cex based on max sample names to prevent clipping of sample names on plot
-max_length <- max(nchar(rownames(sample_info_tab)))
-max_cex <- calculate_max_cex(max_length, space_available)
-max_cex <- min(max_cex, default_cex)
 
 legend_groups <- unique(sample_info_tab$groups)
 legend_colors <- unique(sample_info_tab$color)
@@ -269,7 +286,7 @@ png(file.path(beta_diversity_out_dir, paste0(output_prefix, "dendrogram_by_group
     height = height_in_pixels,
     res = dpi)
 par(mar = c(10.5, 4.1, 0.6 , 2.1))
-euc_dend %>% set("labels_cex", max_cex) %>% plot(ylab = "VST Euc. dist.") 
+euc_dend %>% set("labels_cex", dendro_cex) %>% plot(ylab = "VST Euc. dist.") 
 par(xpd=TRUE)
 legend("bottom", inset = c(0, -.34), legend = legend_groups, fill = legend_colors, bty = 'n', cex = legend_cex)
 dev.off()
