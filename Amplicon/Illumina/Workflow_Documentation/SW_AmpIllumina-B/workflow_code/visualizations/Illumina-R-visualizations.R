@@ -582,6 +582,8 @@ deseq_modeled <- tryCatch({
 write.table(counts(deseq_modeled, normalized=TRUE), file = paste0(de_out_dir, output_prefix, "normalized_counts_", assay_suffix, ".tsv"), sep="\t", row.names=TRUE, quote=FALSE)
 # make the volcanoplot
 plot_comparison <- function(group1, group2) {
+  plot_width_inches = 11.1
+  plot_height_inches = 8.33
   
   deseq_res <- results(deseq_modeled, contrast = c("groups", group1, group2))
   norm_tab <- counts(deseq_modeled, normalized = TRUE) %>% data.frame()
@@ -592,13 +594,24 @@ plot_comparison <- function(group1, group2) {
   volcano_data <- volcano_data[!is.na(volcano_data$padj), ]
   volcano_data$significant <- volcano_data$padj <= p_val #also logfc cutoff?
   
+  ######Long x-axis label adjustments##########
+  x_label <- paste("Log2 Fold Change\n(",group1," vs ",group2,")")
+  label_length <- nchar(x_label)
+  max_allowed_label_length = plot_width_inches * 10
+  
+  # Construct x-axis label with new line breaks if was too long
+  if (label_length > max_allowed_label_length){
+    x_label <- paste("Log2 Fold Change\n\n(", group1, "\n vs \n", group2, ")", sep="")
+  }
+  #######################################
+
   # ASVs promoted in space on right, reduced on left
   p <- ggplot(volcano_data, aes(x=log2FoldChange, y=-log10(padj), color=significant)) +
     geom_point(alpha=0.7, size=2) +
     scale_color_manual(values=c("black", "red"), labels=c(paste0("padj > ", p_val), paste0("padj \u2264 ", p_val))) +
     theme_bw() +
     labs(title="Volcano Plot",
-         x=paste("Log2 Fold Change\n(",group1," vs ",group2,")"),
+         x=x_label,
          y="-Log10 P-value",
          color=paste0("")) +
     theme(legend.position="top")
@@ -615,7 +628,7 @@ plot_comparison <- function(group1, group2) {
                          "_vs_",
                          gsub(" ", "_", group2), ".png"),
          plot=volcano_plot,
-         width = 11.1, height = 8.33, dpi = 300)
+         width = plot_width_inches, height = plot_height_inches, dpi = 300)
   
   write.csv(deseq_res, file = paste0(abundance_out_dir,
                         output_prefix, gsub(" ", "_", group1),
