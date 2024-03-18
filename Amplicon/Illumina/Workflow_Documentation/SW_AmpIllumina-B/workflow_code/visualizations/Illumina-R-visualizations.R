@@ -17,15 +17,16 @@ library(grid)
 
 ####### Manual Configuration ########
 # To run the script manually:
-# 1. Uncomment and populate lines 23-29
-# 2. Comment out the Snakemake configuration section (lines 34-41).
+# 1. Uncomment and populate lines 23-30
+# 2. Comment out the Snakemake configuration section (lines 35-42).
 
-# runsheet_file <- "/path/to/workflow_code/runsheet.csv"
-# sample_info <- "/path/to/workflow_code/unique-sample-IDs.txt"
-# counts <- "/path/to/workflow_code/workflow_output/Final_Outputs/counts_GLAmpSeq.tsv"
-# taxonomy <- "/path/to/workflow_code/workflow_output/Final_Outputs/taxonomy_GLAmpSeq.tsv"
+# runsheet_file <- "/path/to/SW_AmpIllumina-B/runsheet.csv"
+# sample_info <- "/path/to/SW_AmpIllumina-B/unique-sample-IDs.txt"
+# counts <- "/path/to/SW_AmpIllumina-B/workflow_output/Final_Outputs/counts_GLAmpSeq.tsv"
+# taxonomy <- "/path/to/SW_AmpIllumina-B/workflow_output/Final_Outputs/taxonomy_GLAmpSeq.tsv"
+# final_outputs_dir <- "/path/to/SW_AmpIllumina-B/workflow_output/Final_Outputs/" # Where visualization script outputs will be saved to
+
 # assay_suffix <- "_GLAmpSeq" # Suffix appended to the end of output file names (Default: "_GLAmpSeq")
-# final_outputs_dir <- "/path/to/workflow_code/workflow_output/Final_Outputs/" # Where visualization script outputs will be saved to
 # output_prefix <- "" # Prefix appended to the start of output file names (Default: "")
 #####################################
 
@@ -40,6 +41,8 @@ assay_suffix <- paste(args[5])
 final_outputs_dir <- paste0(args[6])
 output_prefix <- paste0(args[7])
 #####################################
+
+RColorBrewer_Palette <- "Set1"
 
 # Runsheet read1 path/filename column name
 read1_path_colname <- 'read1_path'
@@ -193,14 +196,17 @@ vst_trans_count_tab <- assay(deseq_counts_vst)
 # Add colors to runsheet
 num_colors <- length(unique(runsheet[[groups_colname]]))
 
-# Check if number of colors exceeds the limit of the "Set1" palette (9)
-if (num_colors > 9) {
-    # Create a custom palette with more colors
-    custom_palette <- colorRampPalette(brewer.pal(9, "Set1"))(num_colors)
+# List of RColorBrewer Palette lengths
+RColorBrewer_Palette_lengths <- c(Accent=8, Dark2=8, Paired=12, Pastel1=9, Pastel2=8, Set1=9, Set2=8, Set3=12)
+
+# Check if number of colors exceeds the limit of the selected RColorBrewer_Palette palette
+if (num_colors > RColorBrewer_Palette_lengths[RColorBrewer_Palette]) {
+    # If so, reate a custom palette with more colors
+    custom_palette <- colorRampPalette(brewer.pal(RColorBrewer_Palette_lengths[RColorBrewer_Palette], RColorBrewer_Palette))(num_colors)
     colors <- custom_palette
 } else {
-    # Use the standard "Set1" palette
-    colors <- brewer.pal(num_colors, "Set1")
+    # Else just use the standard RColorBrewer_Palette palette
+    colors <- brewer.pal(num_colors, RColorBrewer_Palette)
 }
 
 

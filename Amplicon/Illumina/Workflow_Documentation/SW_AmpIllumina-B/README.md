@@ -15,8 +15,8 @@ The current GeneLab Illumina amplicon sequencing data processing pipeline (AmpIl
 - [3. Run the workflow using `run_workflow.py`](#3-run-the-workflow-using-run_workflowpy)
   - [3a. Approach 1: Run the workflow on a GeneLab Amplicon (Illumina) sequencing dataset with automatic retrieval of raw read files and metadata](#3a-approach-1-run-the-workflow-on-a-genelab-amplicon-illumina-sequencing-dataset-with-automatic-retrieval-of-raw-read-files-and-metadata)
   - [3b. Approach 2: Run the workflow on a non-OSD dataset using a user-created runsheet](#3b-approach-2-run-the-workflow-on-a-non-osd-dataset-using-a-user-created-runsheet)
-- [4. Parameter Definitions](#4-parameter-definitions)
-- [5. Additional Output Files](#5-additional-output-files)
+- [4. Parameter definitions](#4-parameter-definitions)
+- [5. Additional output files](#5-additional-output-files)
 
 <br>
 
@@ -114,11 +114,11 @@ python ./scripts/run_workflow.py --runsheetPath </path/to/runsheet> --run "snake
 
 ___
 
-### 4. Parameter Definitions
+### 4. Parameter definitions
 
 <br>
 
-**Parameter Definitions for `run_workflow.py`:** 
+**Parameter definitions for `run_workflow.py`:** 
 
 * `--OSD OSD-###` - specifies the OSD dataset to process through the SW_AmpIllumina workflow (replace ### with the OSD number)
    > *Used for Approach 1 only.*
@@ -172,7 +172,7 @@ ___
 
 <br>
 
-**Parameter Definitions for `snakemake`**
+**Parameter definitions for `snakemake`**
 
 * `--use-conda` – specifies to use the conda environments included in the workflow (these are specified in the [envs](workflow_code/envs) directory)
 * `--conda-prefix` – indicates where the needed conda environments will be stored. Adding this option will also allow the same conda environments to be re-used when processing additional datasets, rather than making new environments each time you run the workflow. The value listed for this option, `${CONDA_PREFIX}/envs`, points to the default location for conda environments (note: the variable `${CONDA_PREFIX}` will be expanded to the appropriate location on whichever system it is run on).
@@ -187,7 +187,7 @@ See `snakemake -h` and [Snakemake's documentation](https://snakemake.readthedocs
 
 ___
 
-### 5. Additional Output Files
+### 5. Additional output files
 
 The outputs from the `run_workflow.py` and differential abundance analysis (DAA) / visualizations scripts are described below:
 > Note: Outputs from the Amplicon Seq - Illumina pipeline are documented in the [GL-DPPD-7104-B.md](../../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md) processing protocol.
