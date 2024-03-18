@@ -11,7 +11,7 @@ The documentation for this script and its outputs can be found in [sections 6-10
 ## Utilizing the script <!-- omit in toc -->
 
 
-- [1. Setting up the execution environment](#1-run-the-workflow-using-run_workflowpy)  
+- [1. Set up the execution environment](#1-run-the-workflow-using-run_workflowpy)  
 - [2. Run the visualization script manually](#2-run-the-visualization-script-manually)  
 - [3. Parameter definitions](#3-parameter-definitions)
 
@@ -19,7 +19,7 @@ The documentation for this script and its outputs can be found in [sections 6-10
 
 ___
 
-### 1. Setting up the execution environment
+### 1. Set up the execution environment
 
 To ensure that manual execution outputs that are consistent with those of the Snakemake workflow, the script should be executed from a Conda environment created using the [R_visualizations.yaml](/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/workflow_code/envs/R_visualizations.yaml/) environment file.
 
