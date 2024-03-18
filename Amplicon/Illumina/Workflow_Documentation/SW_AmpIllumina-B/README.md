@@ -168,6 +168,7 @@ ___
    > *Optional parameter used in Approach 1 for datasets that have multiple assays for the same amplicon target (e.g. [OSD-249](https://osdr.nasa.gov/bio/repo/data/studies/OSD-249)).*
 
 * `--visualizations TRUE/FALSE` - if set to TRUE, the [visualizations script](workflow_code/visualizations/Illumina-R-visualizations.R) will be run. Default: FALSE
+   > *Note: For instructions on manually executing the visualizations script, refer to the [stand-alone execution documentation](./workflow_code/visualizations/README.md).*
 
 <br>
 
