@@ -12,16 +12,25 @@ library(grid)
 ##################################################################################
 ## R visualization script for Illumina paired-end amplicon data                 ##
 ##################################################################################
+# This script is automatically executed as part of the Snakemake workflow when the run_workflow.py --visualizations TRUE argument is used.
+# This script can also be manually executed using processed data from the workflow by using the 'Manual Configuration' section below.
 
-# For local testing:
-# runsheet_file <- ""
-# sample_info <- ""
-# counts <- ""
-# taxonomy <- ""
-# final_outputs_dir <- ""
+####### Manual Configuration ########
+# To run the script manually:
+# 1. Uncomment and populate lines 23-29
+# 2. Comment out the Snakemake configuration section (lines 34-41).
 
-# For Snakemake:
-# Assign arguments to variables based on snakemake shell line
+# runsheet_file <- "/path/to/workflow_code/runsheet.csv"
+# sample_info <- "/path/to/workflow_code/unique-sample-IDs.txt"
+# counts <- "/path/to/workflow_code/workflow_output/Final_Outputs/counts_GLAmpSeq.tsv"
+# taxonomy <- "/path/to/workflow_code/workflow_output/Final_Outputs/taxonomy_GLAmpSeq.tsv"
+# assay_suffix <- "_GLAmpSeq" # Suffix appended to the end of output file names (Default: "_GLAmpSeq")
+# final_outputs_dir <- "/path/to/workflow_code/workflow_output/Final_Outputs/" # Where visualization script outputs will be saved to
+# output_prefix <- "" # Prefix appended to the start of output file names (Default: "")
+#####################################
+
+###### Snakemake Configuration ######
+# Assigns arguments to variables based on the snakemake run command 
 args <- commandArgs(trailingOnly = TRUE)
 runsheet_file <- paste0(args[1])
 sample_info <- paste0(args[2])
@@ -30,6 +39,7 @@ taxonomy <- paste0(args[4])
 assay_suffix <- paste(args[5])
 final_outputs_dir <- paste0(args[6])
 output_prefix <- paste0(args[7])
+#####################################
 
 # Runsheet read1 path/filename column name
 read1_path_colname <- 'read1_path'
