@@ -62,6 +62,8 @@ RColorBrewer_Palette <- "Set1"
 ```
 <br>
 
+___
+
 ### 3. Parameter definitions 
 
 **Parameter Definitions for Illumina-R-visualizations.R:**
