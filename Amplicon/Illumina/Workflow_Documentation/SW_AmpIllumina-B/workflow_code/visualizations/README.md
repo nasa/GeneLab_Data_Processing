@@ -23,6 +23,10 @@ ___
 
 To ensure that manual execution outputs that are consistent with those of the Snakemake workflow, the script should be executed from a Conda environment created using the [R_visualizations.yaml](/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/workflow_code/envs/R_visualizations.yaml/) environment file.
 
+<br>
+
+___
+
 ### 2. Run the visualization script manually  
 
 To manually execute the script, the following variables: `runsheet_file`, `sample_info`, `counts`, `taxonomy`, `final_outputs_dir`, `assay_suffix`, and `output_prefix`, must be explicitly assigned with appropriate values. For manual execution, the lines within the Snakemake Configuration section should be commented out or removed. These lines are used for capturing variables during execution as part of the Snakemake workflow.
