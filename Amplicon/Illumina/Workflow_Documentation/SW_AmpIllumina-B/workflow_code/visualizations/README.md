@@ -51,29 +51,22 @@ ___
 
 ### 2. Run the visualization script manually  
 
-To run the script, the variables `runsheet_file`, `sample_info`, `counts`, `taxonomy`, `assay_suffix`, `plots_dir`, and `output_prefix` must be specified. The [Illumina-R-visualizations.R](Illumina-R-visualizations.R) script can be executed from the command line by providing these variables as positional arguments.
+The [Illumina-R-visualizations.R](./Illumina-R-visualizations.R) script can be executed from the command line by providing `runsheet_file`, `sample_info`, `counts`, `taxonomy`, `assay_suffix`, `plots_dir`, and `output_prefix` as positional arguments, in their respecive order.
+
+The example command below shows how to execute the script with the following parameters:
+ * runsheet_file: /path/to/runsheet.csv  
+ * sample_info: /path/to/unique-sample-IDs.txt
+ * counts: /path/to/counts_GLAmpSeq.tsv
+ * taxonomy: /path/to/taxonomy_GLAmpSeq.tsv
+ * assay_suffix: _GL_Ampseq
+ * plots_dir: /path/to/Plots/
+ * output_prefix: my_prefix_
+
+```bash
+Rscript /path/to/visualizations/Illumina-R-visualizations.R "/path/to/runsheet.csv" "/path/to/unique-sample-IDs.txt" "/path/to/counts_GLAmpSeq.tsv" "/path/to/taxonomy_GLAmpSeq.tsv" "_GL_Ampseq" "/path/to/Plots/" "my_prefix_"
+```
 
 Additionally, the `RColorBrewer_Palette` variable can be modified in the script.  This variable determines the color palette from the RColorBrewer package that is applied to the plots.
-
-```R
-# Store command line args as variables #
-args <- commandArgs(trailingOnly = TRUE)
-runsheet_file <- paste0(args[1])
-sample_info <- paste0(args[2])
-counts <- paste0(args[3])
-taxonomy <- paste0(args[4])
-assay_suffix <- paste(args[5])
-plots_dir <- paste0(args[6])
-output_prefix <- paste0(args[7])
-########################################
-
-RColorBrewer_Palette <- "Set1"
-```
-
-Example run command: 
-```bash
-Rscript /path/to/visualizations/Illumina-R-visualizations.R "{runsheet_file}" "{sample_info}" "{counts}" "{taxonomy}" "{assay_suffix}" "{plots_dir}" "{output_prefix}"
-```
 
 <br>
 
@@ -81,11 +74,11 @@ ___
 
 ### 3. Parameter definitions 
 
-**Parameter Definitions for Illumina-R-visualizations.R:**
-* `runsheet_file` – specifies the runsheet containing sample metadata required for processing (output from [GL-DPPD-7104-B step 6a](/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#6a-create-sample-runsheet))
+**Parameter definitions for Illumina-R-visualizations.R:**
+* `runsheet_file` – specifies the runsheet containing sample metadata required for processing (output from [GL-DPPD-7104-B step 6a](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#6a-create-sample-runsheet))
 * `sample_info` – specifies the text file containing the IDs of each sample used, required for running the SW_AmpIllumina workflow (output from [run_workflow.py](/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/README.md#5-additional-output-files))
-* `counts` – specifies the ASV counts table (output from [GL-DPPD-7104-B step 5g](/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#5g-generating-and-writing-standard-outputs))
-* `taxonomy` – specifies the taxonomy table (output from [GL-DPPD-7104-B step 5g](/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#5g-generating-and-writing-standard-outputs))
+* `counts` – specifies the ASV counts table (output from [GL-DPPD-7104-B step 5g](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#5g-generating-and-writing-standard-outputs))
+* `taxonomy` – specifies the taxonomy table (output from [GL-DPPD-7104-B step 5g](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#5g-generating-and-writing-standard-outputs))
 * `assay_suffix` – specifies a string that is prepended to the start of the output file names. Default: ""
 * `plots_dir` – specifies the path where output files will be saved
 * `output_prefix` – specifies a string that is appended to the end of the output file names. Default: "_GLAmpSeq"
