@@ -65,7 +65,7 @@ ___
 * `sample_info` – specifies the text file containing the IDs of each sample used, required for running the SW_AmpIllumina workflow (output from [run_workflow.py](/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/README.md#5-additional-output-files))
 * `counts` – specifies the ASV counts table (output from [GL-DPPD-7104-B step 5g](/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#5g-generating-and-writing-standard-outputs))
 * `taxonomy` – specifies the taxonomy table (output from [GL-DPPD-7104-B step 5g](/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#5g-generating-and-writing-standard-outputs))
-* `plots_dir` – specifies the path where output files will be saved
 * `assay_suffix` – specifies a string that is prepended to the start of the output file names. Default: ""
+* `plots_dir` – specifies the path where output files will be saved
 * `output_prefix` – specifies a string that is appended to the end of the output file names. Default: "_GLAmpSeq"
 * `RColorBrewer_Palette` – specifies the RColorBrewer palette that will be used for coloring in the plots. Options include "Set1", "Accent", "Dark2", "Paired", "Pastel1", "Pastel2", "Set2", and "Set3". Default: "Set1"
