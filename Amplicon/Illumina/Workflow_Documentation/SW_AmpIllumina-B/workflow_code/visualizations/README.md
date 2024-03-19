@@ -13,7 +13,6 @@ The documentation for this script and its outputs can be found in steps 6-10 of 
 
 - [1. Set up the execution environment](#1-set-up-the-execution-environment)  
 - [2. Run the visualization script manually](#2-run-the-visualization-script-manually)  
-- [3. Parameter definitions](#3-parameter-definitions)
 
 <br>
 
@@ -68,18 +67,33 @@ Rscript /path/to/visualizations/Illumina-R-visualizations.R "/path/to/runsheet.c
 
 Additionally, the `RColorBrewer_Palette` variable can be modified in the script.  This variable determines the color palette from the RColorBrewer package that is applied to the plots.
 
-<br>
-
-___
-
-### 3. Parameter definitions 
-
-**Parameter definitions for Illumina-R-visualizations.R:**
-* `runsheet_file` – specifies the runsheet containing sample metadata required for processing (output from [GL-DPPD-7104-B step 6a](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#6a-create-sample-runsheet))
-* `sample_info` – specifies the text file containing the IDs of each sample used, required for running the SW_AmpIllumina workflow (output from [run_workflow.py](/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/README.md#5-additional-output-files))
-* `counts` – specifies the ASV counts table (output from [GL-DPPD-7104-B step 5g](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#5g-generating-and-writing-standard-outputs))
-* `taxonomy` – specifies the taxonomy table (output from [GL-DPPD-7104-B step 5g](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#5g-generating-and-writing-standard-outputs))
-* `assay_suffix` – specifies a string that is prepended to the start of the output file names. Default: ""
+**Parameter Definitions:**
+* `runsheet_file` – specifies the table containing sample metadata required for processing 
+* `sample_info` – specifies the text file containing the IDs of each sample used, required for running the SW_AmpIllumina workflow 
+* `counts` – specifies the ASV counts table 
+* `taxonomy` – specifies the taxonomy table 
+* `assay_suffix` – specifies a string that is appended to the end of the output file names. Default: "_GLAmpSeq"
 * `plots_dir` – specifies the path where output files will be saved
-* `output_prefix` – specifies a string that is appended to the end of the output file names. Default: "_GLAmpSeq"
+* `output_prefix` – specifies a string that is prepended to the start of the output file names. Default: ""
 * `RColorBrewer_Palette` – specifies the RColorBrewer palette that will be used for coloring in the plots. Options include "Set1", "Accent", "Dark2", "Paired", "Pastel1", "Pastel2", "Set2", and "Set3". Default: "Set1"
+
+**Input Data:**
+* *runsheet.csv (output from [GL-DPPD-7104-B step 6a](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#6a-create-sample-runsheet))
+* unique-sample-IDs.txt (output from [run_workflow.py](/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/README.md#5-additional-output-files))
+* counts_GLAmpSeq.tsv (output from [GL-DPPD-7104-B step 5g](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#5g-generating-and-writing-standard-outputs))
+* taxonomy_GLAmpSeq.tsv (output from [GL-DPPD-7104-B step 5g](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#5g-generating-and-writing-standard-outputs))
+
+**Output Data:**
+* **dendrogram_by_group{assay_suffix}.png** (dendrogram of euclidean distance - based hierarchical clustering of the samples, colored by experimental groups)
+* **rarefaction_curves{assay_suffix}.png** (Rarefaction curves plot for all samples)
+* **richness_and_diversity_estimates_by_sample{assay_suffix}.png** (Richness and diversity estimates plot for all samples)
+* **richness_and_diversity_estimates_by_group{assay_suffix}.png** (Richness and diversity estimates plot for all groups)
+* **relative_phyla{assay_suffix}.png** (taxonomic summaries plot based on phyla, for all samples)
+* **relative_classes{assay_suffix}.png** (taxonomic summaries plot based on class, for all samples)
+* **samplewise_phyla{assay_suffix}.png** (taxonomic summaries plot based on phyla, for all samples)
+* **samplewise_classes{assay_suffix}.png** (taxonomic summaries plot based on class, for all samples)
+* **PCoA_w_labels{assay_suffix}.png** (principle Coordinates Analysis plot of VST transformed ASV counts, with sample labels)
+* **PCoA_without_labels{assay_suffix}.png** (principle Coordinates Analysis plot of VST transformed ASV counts, without sample labels)
+* **normalized_counts{assay_suffix}.tsv** (size factor normalized ASV counts table)
+* **group1_vs_group2.csv** (differential abundance tables for all pairwise contrasts of groups)
+* **volcano_group1_vs_group2.png** (volcano plots for all pairwise contrasts of groups)
