@@ -2,7 +2,7 @@
 
 
 ## General  info <!-- omit in toc -->
-The documentation for this script and its outputs can be found in [sections 6-10 of the GL-DPPD-7104-B.md processing protocol](/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#6-amplicon-seq-data-analysis-set-up). This script is automatically executed as an optional step of the SW_AmpIllumina-B Snakemake workflow when the `run_workflow.py` argument `--visualizations TRUE` is used. Alternatively, the script can be executed manually as detailed below.
+The documentation for this script and its outputs can be found in steps 6-10 of the [GL-DPPD-7104-B.md](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md) pipeline document. This script is automatically executed as an optional step of the [SW_AmpIllumina-B](../../) Snakemake workflow when the `run_workflow.py` argument, `--visualizations TRUE`, is used. Alternatively, the script can be executed independently as detailed below.
 
 <br>
 
@@ -11,7 +11,7 @@ The documentation for this script and its outputs can be found in [sections 6-10
 ## Utilizing the script <!-- omit in toc -->
 
 
-- [1. Set up the execution environment](#1-run-the-workflow-using-run_workflowpy)  
+- [1. Set up the execution environment](#1-set-up-the-execution-environment)  
 - [2. Run the visualization script manually](#2-run-the-visualization-script-manually)  
 - [3. Parameter definitions](#3-parameter-definitions)
 
@@ -21,7 +21,29 @@ ___
 
 ### 1. Set up the execution environment
 
-The script should be executed from a Conda environment created using the [R_visualizations.yaml](/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/workflow_code/visualizations/R_visualizations.yaml) environment file.
+The script should be executed from a [conda](https://docs.conda.io/en/latest/) environment created using the [R_visualizations.yaml](R_visualizations.yaml) environment file.
+> If you do not have conda installed, an introduction to conda with installation help and links to other resources can be found [here at Happy Belly Bioinformatics](https://astrobiomike.github.io/unix/conda-intro).
+
+Download the [R_visualizations.yaml](R_visualizations.yaml) environment file and the [Illumina-R-visualizations.R](Illumina-R-visualizations.R) script by running the following commands:
+
+```
+curl -LO https://github.com/nasa/GeneLab_Data_Processing/blob/dev2-amplicon-add-runsheet-visualizations/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/workflow_code/visualizations/R_visualizations.yaml
+
+curl -LO https://github.com/nasa/GeneLab_Data_Processing/blob/dev2-amplicon-add-runsheet-visualizations/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/workflow_code/visualizations/Illumina-R-visualizations.R
+```
+
+Next, create the AmpSeqVisualizations environment by running the following command:
+
+```
+conda env create -f R_visualizations.yaml -n AmpSeqVisualizations
+```
+
+Then activate the environment as follows:
+
+```
+conda activate AmpSeqVisualizations
+```
+
 
 <br>
 
@@ -29,7 +51,7 @@ ___
 
 ### 2. Run the visualization script manually  
 
-To run the script, the variables `runsheet_file`, `sample_info`, `counts`, `taxonomy`, `assay_suffix`, `plots_dir`, and `output_prefix` must be specified. The script can be manually executed via the command line by providing  positional arguments.
+To run the script, the variables `runsheet_file`, `sample_info`, `counts`, `taxonomy`, `assay_suffix`, `plots_dir`, and `output_prefix` must be specified. The [Illumina-R-visualizations.R](Illumina-R-visualizations.R) script can be executed from the command line by providing these variables as positional arguments.
 
 Additionally, the `RColorBrewer_Palette` variable can be modified in the script.  This variable determines the color palette from the RColorBrewer package that is applied to the plots.
 
@@ -46,7 +68,6 @@ output_prefix <- paste0(args[7])
 ########################################
 
 RColorBrewer_Palette <- "Set1"
-
 ```
 
 Example run command: 
