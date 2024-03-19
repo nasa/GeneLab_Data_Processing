@@ -635,7 +635,7 @@ if config["data_type"] == "SE":
 rule r_visualizations:
     """ This rule generates R visualizations using trimmed read data and grouping info from the runsheet"""
     conda:
-        "envs/R_visualizations.yaml"
+        "visualizations/R_visualizations.yaml"
     input:
         runsheet = config["runsheet"],
         sample_info = config["sample_info_file"],

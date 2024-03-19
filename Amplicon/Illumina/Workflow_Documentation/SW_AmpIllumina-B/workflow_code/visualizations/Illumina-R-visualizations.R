@@ -13,34 +13,18 @@ library(grid)
 ## R visualization script for Illumina paired-end amplicon data                 ##
 ##################################################################################
 # This script is automatically executed as part of the Snakemake workflow when the run_workflow.py --visualizations TRUE argument is used.
-# This script can also be manually executed using processed data from the workflow by using the 'Manual Configuration' section below.
+# This script can also be manually executed using processed data from the workflow 
 
-####### Manual Configuration ########
-# To run the script manually:
-# 1. Uncomment and populate lines 23-30
-# 2. Comment out the Snakemake configuration section (lines 35-42).
-
-# runsheet_file <- "/path/to/SW_AmpIllumina-B/runsheet.csv"
-# sample_info <- "/path/to/SW_AmpIllumina-B/unique-sample-IDs.txt"
-# counts <- "/path/to/SW_AmpIllumina-B/workflow_output/Final_Outputs/counts_GLAmpSeq.tsv"
-# taxonomy <- "/path/to/SW_AmpIllumina-B/workflow_output/Final_Outputs/taxonomy_GLAmpSeq.tsv"
-# final_outputs_dir <- "/path/to/SW_AmpIllumina-B/workflow_output/Final_Outputs/" # Where visualization script outputs will be saved to
-
-# assay_suffix <- "_GLAmpSeq" # Suffix appended to the end of output file names (Default: "_GLAmpSeq")
-# output_prefix <- "" # Prefix appended to the start of output file names (Default: "")
-#####################################
-
-###### Snakemake Configuration ######
-# Assigns arguments to variables based on the snakemake run command 
+# Store command line args as variables #
 args <- commandArgs(trailingOnly = TRUE)
 runsheet_file <- paste0(args[1])
 sample_info <- paste0(args[2])
 counts <- paste0(args[3])
 taxonomy <- paste0(args[4])
 assay_suffix <- paste(args[5])
-final_outputs_dir <- paste0(args[6])
+plots_dir <- paste0(args[6])
 output_prefix <- paste0(args[7])
-#####################################
+########################################
 
 RColorBrewer_Palette <- "Set1"
 
@@ -106,16 +90,16 @@ g_legend <- function(a.gplot){
 ###########################################
 
 # Assign the directory paths to variables
-beta_diversity_out_dir <- paste0(final_outputs_dir, "beta_diversity", .Platform$file.sep)
-alpha_diversity_out_dir <- paste0(final_outputs_dir, "alpha_diversity", .Platform$file.sep)
-taxonomy_out_dir <- paste0(final_outputs_dir, "taxonomy", .Platform$file.sep)
-de_out_dir <- paste0(final_outputs_dir, "da", .Platform$file.sep)
+beta_diversity_out_dir <- paste0(plots_dir, "beta_diversity", .Platform$file.sep)
+alpha_diversity_out_dir <- paste0(plots_dir, "alpha_diversity", .Platform$file.sep)
+taxonomy_out_dir <- paste0(plots_dir, "taxonomy", .Platform$file.sep)
+de_out_dir <- paste0(plots_dir, "da", .Platform$file.sep)
 
 abundance_out_dir <- paste0(de_out_dir, "differential_abundance", .Platform$file.sep)
 volcano_out_dir <- paste0(de_out_dir, "volcano", .Platform$file.sep)
 
 # List of all directory variables
-out_dirs <- list(final_outputs_dir, beta_diversity_out_dir, alpha_diversity_out_dir, taxonomy_out_dir, de_out_dir, abundance_out_dir, volcano_out_dir)
+out_dirs <- list(plots_dir, beta_diversity_out_dir, alpha_diversity_out_dir, taxonomy_out_dir, de_out_dir, abundance_out_dir, volcano_out_dir)
 
 # Loop through each directory path to check and create if necessary
 for (dir_path in out_dirs) {
@@ -471,7 +455,7 @@ ggsave(filename = paste0(alpha_diversity_out_dir, output_prefix, "richness_and_d
 legend <- g_legend(ordination_plot)
 grid.newpage()
 grid.draw(legend)
-legend_filename <- paste0(final_outputs_dir, output_prefix, "color_legend_", assay_suffix, ".png")
+legend_filename <- paste0(plots_dir, output_prefix, "color_legend_", assay_suffix, ".png")
 increment <- ifelse(length(unique(sample_info_tab$groups)) > 9, ceiling((length(unique(sample_info_tab$groups)) - 9) / 3), 0)
 legend_height <- 3 + increment
 ggsave(legend_filename, plot = legend, device = "png", width = 11.1, height = legend_height, dpi = 300)
