@@ -97,3 +97,4 @@ Additionally, the `RColorBrewer_Palette` variable can be modified in the script.
 * **{output_prefix}normalized_counts{assay_suffix}.tsv** (size factor normalized ASV counts table)
 * **{output_prefix}group1_vs_group2.csv** (differential abundance tables for all pairwise contrasts of groups)
 * **{output_prefix}volcano_group1_vs_group2.png** (volcano plots for all pairwise contrasts of groups)
+* {output_prefix}color_legend_{assay_suffix}.png (color legend for all groups)
