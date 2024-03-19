@@ -131,6 +131,9 @@ final_outputs_dir:
 plots_dir:
     "workflow_output/Final_Outputs/Plots/"
 
+enable_visualizations:
+    "FALSE"
+
 ############################################################
 ###################### GENERAL INFO ########################
 ############################################################

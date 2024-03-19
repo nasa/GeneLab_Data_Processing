@@ -12,24 +12,21 @@ library(grid)
 ##################################################################################
 ## R visualization script for Illumina paired-end amplicon data                 ##
 ##################################################################################
+# This script is automatically executed as part of the Snakemake workflow when the run_workflow.py --visualizations TRUE argument is used.
+# This script can also be manually executed using processed data from the workflow 
 
-# For local testing:
-# runsheet_file <- ""
-# sample_info <- ""
-# counts <- ""
-# taxonomy <- ""
-# final_outputs_dir <- ""
-
-# For Snakemake:
-# Assign arguments to variables based on snakemake shell line
+# Store command line args as variables #
 args <- commandArgs(trailingOnly = TRUE)
 runsheet_file <- paste0(args[1])
 sample_info <- paste0(args[2])
 counts <- paste0(args[3])
 taxonomy <- paste0(args[4])
 assay_suffix <- paste(args[5])
-final_outputs_dir <- paste0(args[6])
+plots_dir <- paste0(args[6])
 output_prefix <- paste0(args[7])
+########################################
+
+RColorBrewer_Palette <- "Set1"
 
 # Runsheet read1 path/filename column name
 read1_path_colname <- 'read1_path'
@@ -93,16 +90,16 @@ g_legend <- function(a.gplot){
 ###########################################
 
 # Assign the directory paths to variables
-beta_diversity_out_dir <- paste0(final_outputs_dir, "beta_diversity", .Platform$file.sep)
-alpha_diversity_out_dir <- paste0(final_outputs_dir, "alpha_diversity", .Platform$file.sep)
-taxonomy_out_dir <- paste0(final_outputs_dir, "taxonomy", .Platform$file.sep)
-de_out_dir <- paste0(final_outputs_dir, "da", .Platform$file.sep)
+beta_diversity_out_dir <- paste0(plots_dir, "beta_diversity", .Platform$file.sep)
+alpha_diversity_out_dir <- paste0(plots_dir, "alpha_diversity", .Platform$file.sep)
+taxonomy_out_dir <- paste0(plots_dir, "taxonomy", .Platform$file.sep)
+de_out_dir <- paste0(plots_dir, "da", .Platform$file.sep)
 
 abundance_out_dir <- paste0(de_out_dir, "differential_abundance", .Platform$file.sep)
 volcano_out_dir <- paste0(de_out_dir, "volcano", .Platform$file.sep)
 
 # List of all directory variables
-out_dirs <- list(final_outputs_dir, beta_diversity_out_dir, alpha_diversity_out_dir, taxonomy_out_dir, de_out_dir, abundance_out_dir, volcano_out_dir)
+out_dirs <- list(plots_dir, beta_diversity_out_dir, alpha_diversity_out_dir, taxonomy_out_dir, de_out_dir, abundance_out_dir, volcano_out_dir)
 
 # Loop through each directory path to check and create if necessary
 for (dir_path in out_dirs) {
@@ -183,14 +180,17 @@ vst_trans_count_tab <- assay(deseq_counts_vst)
 # Add colors to runsheet
 num_colors <- length(unique(runsheet[[groups_colname]]))
 
-# Check if number of colors exceeds the limit of the "Set1" palette (9)
-if (num_colors > 9) {
-    # Create a custom palette with more colors
-    custom_palette <- colorRampPalette(brewer.pal(9, "Set1"))(num_colors)
+# List of RColorBrewer Palette lengths
+RColorBrewer_Palette_lengths <- c(Accent=8, Dark2=8, Paired=12, Pastel1=9, Pastel2=8, Set1=9, Set2=8, Set3=12)
+
+# Check if number of colors exceeds the limit of the selected RColorBrewer_Palette palette
+if (num_colors > RColorBrewer_Palette_lengths[RColorBrewer_Palette]) {
+    # If so, reate a custom palette with more colors
+    custom_palette <- colorRampPalette(brewer.pal(RColorBrewer_Palette_lengths[RColorBrewer_Palette], RColorBrewer_Palette))(num_colors)
     colors <- custom_palette
 } else {
-    # Use the standard "Set1" palette
-    colors <- brewer.pal(num_colors, "Set1")
+    # Else just use the standard RColorBrewer_Palette palette
+    colors <- brewer.pal(num_colors, RColorBrewer_Palette)
 }
 
 
@@ -244,20 +244,37 @@ default_cex <- adjust_cex(length(rownames(sample_info_tab)))
 # Set for 11x8 plot margins, else try ggdendrogram
 space_available <- height_in_inches/5.4
 
-calculate_max_cex <- function(n, space_avail) {
-  base_char_width_inch <- 0.1  # average width of a character in inches at cex = 1
+longest_name <- rownames(sample_info_tab)[which.max(nchar(rownames(sample_info_tab)))]
+
+calculate_max_cex <- function(longest_name, space_avail) {
+  # Define weights for lower case letters, periods, else
+  lower_case_weight <- 0.10
+  other_char_weight <- 0.15
+  dot_weight <- 0.02  # Weight for the period character
   
-  # Calculate the maximum cex that fits the space
-  max_cex <- space_avail / (n * base_char_width_inch)
+  # Calculate weights in longest sample name
+  char_weights <- sapply(strsplit(longest_name, "")[[1]], function(char) {
+    if (char == ".") {
+      return(dot_weight)
+    } else if (grepl("[a-z]", char)) {
+      return(lower_case_weight)
+    } else {
+      return(other_char_weight)
+    }
+  })
+  
+  average_weight <- mean(char_weights)
+  
+  # Calculate the maximum cex that fits the space using the average weight
+  n = nchar(longest_name)
+  max_cex <- space_avail / (n * average_weight)
   
   return(max_cex)
 }
 
+max_cex <- calculate_max_cex(longest_name, space_available)
+dendro_cex <- min(max_cex, default_cex)
 
-# Lower cex based on max sample names to prevent clipping of sample names on plot
-max_length <- max(nchar(rownames(sample_info_tab)))
-max_cex <- calculate_max_cex(max_length, space_available)
-max_cex <- min(max_cex, default_cex)
 
 legend_groups <- unique(sample_info_tab$groups)
 legend_colors <- unique(sample_info_tab$color)
@@ -269,7 +286,7 @@ png(file.path(beta_diversity_out_dir, paste0(output_prefix, "dendrogram_by_group
     height = height_in_pixels,
     res = dpi)
 par(mar = c(10.5, 4.1, 0.6 , 2.1))
-euc_dend %>% set("labels_cex", max_cex) %>% plot(ylab = "VST Euc. dist.") 
+euc_dend %>% set("labels_cex", dendro_cex) %>% plot(ylab = "VST Euc. dist.") 
 par(xpd=TRUE)
 legend("bottom", inset = c(0, -.34), legend = legend_groups, fill = legend_colors, bty = 'n', cex = legend_cex)
 dev.off()
@@ -438,7 +455,7 @@ ggsave(filename = paste0(alpha_diversity_out_dir, output_prefix, "richness_and_d
 legend <- g_legend(ordination_plot)
 grid.newpage()
 grid.draw(legend)
-legend_filename <- paste0(final_outputs_dir, output_prefix, "color_legend_", assay_suffix, ".png")
+legend_filename <- paste0(plots_dir, output_prefix, "color_legend_", assay_suffix, ".png")
 increment <- ifelse(length(unique(sample_info_tab$groups)) > 9, ceiling((length(unique(sample_info_tab$groups)) - 9) / 3), 0)
 legend_height <- 3 + increment
 ggsave(legend_filename, plot = legend, device = "png", width = 11.1, height = legend_height, dpi = 300)
@@ -565,6 +582,8 @@ deseq_modeled <- tryCatch({
 write.table(counts(deseq_modeled, normalized=TRUE), file = paste0(de_out_dir, output_prefix, "normalized_counts_", assay_suffix, ".tsv"), sep="\t", row.names=TRUE, quote=FALSE)
 # make the volcanoplot
 plot_comparison <- function(group1, group2) {
+  plot_width_inches = 11.1
+  plot_height_inches = 8.33
   
   deseq_res <- results(deseq_modeled, contrast = c("groups", group1, group2))
   norm_tab <- counts(deseq_modeled, normalized = TRUE) %>% data.frame()
@@ -575,13 +594,24 @@ plot_comparison <- function(group1, group2) {
   volcano_data <- volcano_data[!is.na(volcano_data$padj), ]
   volcano_data$significant <- volcano_data$padj <= p_val #also logfc cutoff?
   
+  ######Long x-axis label adjustments##########
+  x_label <- paste("Log2 Fold Change\n(",group1," vs ",group2,")")
+  label_length <- nchar(x_label)
+  max_allowed_label_length = plot_width_inches * 10
+  
+  # Construct x-axis label with new line breaks if was too long
+  if (label_length > max_allowed_label_length){
+    x_label <- paste("Log2 Fold Change\n\n(", group1, "\n vs \n", group2, ")", sep="")
+  }
+  #######################################
+
   # ASVs promoted in space on right, reduced on left
   p <- ggplot(volcano_data, aes(x=log2FoldChange, y=-log10(padj), color=significant)) +
     geom_point(alpha=0.7, size=2) +
     scale_color_manual(values=c("black", "red"), labels=c(paste0("padj > ", p_val), paste0("padj \u2264 ", p_val))) +
     theme_bw() +
     labs(title="Volcano Plot",
-         x=paste("Log2 Fold Change\n(",group1," vs ",group2,")"),
+         x=x_label,
          y="-Log10 P-value",
          color=paste0("")) +
     theme(legend.position="top")
@@ -598,7 +628,7 @@ plot_comparison <- function(group1, group2) {
                          "_vs_",
                          gsub(" ", "_", group2), ".png"),
          plot=volcano_plot,
-         width = 11.1, height = 8.33, dpi = 300)
+         width = plot_width_inches, height = plot_height_inches, dpi = 300)
   
   write.csv(deseq_res, file = paste0(abundance_out_dir,
                         output_prefix, gsub(" ", "_", group1),
