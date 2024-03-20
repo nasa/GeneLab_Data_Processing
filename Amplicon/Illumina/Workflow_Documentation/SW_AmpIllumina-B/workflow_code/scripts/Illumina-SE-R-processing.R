@@ -76,7 +76,7 @@ if ( GL_trimmed_primers ) {
 
 }
 
-write.table(filtered_count_summary_tab, paste0(filtered_reads_dir, output_prefix, "filtered-read-counts_", assay_suffix, ".tsv"), sep="\t", quote=F, row.names=F)
+write.table(filtered_count_summary_tab, paste0(filtered_reads_dir, output_prefix, "filtered-read-counts", assay_suffix, ".tsv"), sep="\t", quote=F, row.names=F)
 
     # learning errors step
 forward_errors <- learnErrors(forward_filtered_reads, multithread=10)
@@ -99,9 +99,9 @@ getN <- function(x) sum(getUniques(x))
 
 if ( GL_trimmed_primers ) {
     
-    raw_and_trimmed_read_counts <- read.table(paste0(input_reads_dir, output_prefix, "trimmed-read-counts_", assay_suffix, ".tsv"), header=T, sep="\t")
+    raw_and_trimmed_read_counts <- read.table(paste0(input_reads_dir, output_prefix, "trimmed-read-counts", assay_suffix, ".tsv"), header=T, sep="\t")
     # reading in filtered read counts
-    filtered_read_counts <- read.table(paste0(filtered_reads_dir, output_prefix, "filtered-read-counts_", assay_suffix, ".tsv"), header=T, sep="\t")
+    filtered_read_counts <- read.table(paste0(filtered_reads_dir, output_prefix, "filtered-read-counts", assay_suffix, ".tsv"), header=T, sep="\t")
 
     count_summary_tab <- data.frame(raw_and_trimmed_read_counts, dada2_filtered=filtered_read_counts[,3],
                                     dada2_denoised_F=sapply(forward_seqs, getN),
@@ -119,7 +119,7 @@ if ( GL_trimmed_primers ) {
 
 }
 
-write.table(count_summary_tab, paste0(final_outputs_dir, output_prefix, "read-count-tracking_", assay_suffix, ".tsv"), sep = "\t", quote=F, row.names=F)
+write.table(count_summary_tab, paste0(final_outputs_dir, output_prefix, "read-count-tracking", assay_suffix, ".tsv"), sep = "\t", quote=F, row.names=F)
 
     ### assigning taxonomy ###
     # creating a DNAStringSet object from the ASVs
@@ -185,7 +185,7 @@ if ( output_prefix != "" ) {
 cat("\n\n  Making and writing outputs...\n\n")
     # making and writing out a fasta of our final ASV seqs:
 asv_fasta <- c(rbind(asv_headers, asv_seqs))
-write(asv_fasta, paste0(final_outputs_dir, output_prefix, "ASVs_", assay_suffix, ".fasta"))
+write(asv_fasta, paste0(final_outputs_dir, output_prefix, "ASVs", assay_suffix, ".fasta"))
 
     # making and writing out a count table:
 asv_tab <- t(seqtab.nochim)
@@ -193,7 +193,7 @@ asv_ids <- sub(">", "", asv_headers)
 row.names(asv_tab) <- NULL
 asv_tab <- data.frame("ASV_ID"=asv_ids, asv_tab, check.names=FALSE)
 
-write.table(asv_tab, paste0(final_outputs_dir, output_prefix, "counts_", assay_suffix, ".tsv"), sep="\t", quote=F, row.names=FALSE)
+write.table(asv_tab, paste0(final_outputs_dir, output_prefix, "counts", assay_suffix, ".tsv"), sep="\t", quote=F, row.names=FALSE)
 
     # making and writing out a taxonomy table:
     # vector of desired ranks was created above in ITS/16S target_region if statement
@@ -228,15 +228,15 @@ if ( target_region == "18S" ) {
     colnames(tax_tab)[colnames(tax_tab) == "kingdom"] <- "domain"
 }
 
-write.table(tax_tab, paste0(final_outputs_dir, output_prefix, "taxonomy_", assay_suffix, ".tsv"), sep = "\t", quote=F, row.names=FALSE)
+write.table(tax_tab, paste0(final_outputs_dir, output_prefix, "taxonomy", assay_suffix, ".tsv"), sep = "\t", quote=F, row.names=FALSE)
 
     ### generating and writing out biom file format ###
 biom_object <- make_biom(data=asv_tab, observation_metadata=tax_tab)
-write_biom(biom_object, paste0(final_outputs_dir, output_prefix, "taxonomy-and-counts_", assay_suffix, ".biom"))
+write_biom(biom_object, paste0(final_outputs_dir, output_prefix, "taxonomy-and-counts", assay_suffix, ".biom"))
 
     # making a tsv of combined tax and counts
 tax_and_count_tab <- merge(tax_tab, asv_tab)
-write.table(tax_and_count_tab, paste0(final_outputs_dir, output_prefix, "taxonomy-and-counts_", assay_suffix, ".tsv"), sep="\t", quote=FALSE, row.names=FALSE)
+write.table(tax_and_count_tab, paste0(final_outputs_dir, output_prefix, "taxonomy-and-counts", assay_suffix, ".tsv"), sep="\t", quote=FALSE, row.names=FALSE)
 
 cat("\n\n  Session info:\n\n")
 sessionInfo()

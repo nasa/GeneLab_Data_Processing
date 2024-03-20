@@ -1,7 +1,7 @@
 # SW_AmpIllumina-B Visualization Script Information and Usage Instructions<!-- omit in toc -->
 
 
-## General  info <!-- omit in toc -->
+## General info <!-- omit in toc -->
 The documentation for this script and its outputs can be found in steps 6-10 of the [GL-DPPD-7104-B.md](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md) pipeline document. This script is automatically executed as an optional step of the [SW_AmpIllumina-B](../../) Snakemake workflow when the `run_workflow.py` argument, `--visualizations TRUE`, is used. Alternatively, the script can be executed independently as detailed below.
 
 <br>
@@ -18,7 +18,7 @@ The documentation for this script and its outputs can be found in steps 6-10 of 
 
 ___
 
-### 1. Set up the execution environment
+### 1. Set up the execution environment  
 
 The script should be executed from a [conda](https://docs.conda.io/en/latest/) environment created using the [R_visualizations.yaml](R_visualizations.yaml) environment file.
 > If you do not have conda installed, an introduction to conda with installation help and links to other resources can be found [here at Happy Belly Bioinformatics](https://astrobiomike.github.io/unix/conda-intro).
@@ -50,31 +50,31 @@ ___
 
 ### 2. Run the visualization script manually  
 
-The [Illumina-R-visualizations.R](./Illumina-R-visualizations.R) script can be executed from the command line by providing `runsheet_file`, `sample_info`, `counts`, `taxonomy`, `assay_suffix`, `plots_dir`, and `output_prefix` as positional arguments, in their respecive order.
+The [Illumina-R-visualizations.R](./Illumina-R-visualizations.R) script can be executed from the command line by providing `runsheet_file`, `sample_info`, `counts`, `taxonomy`, `plots_dir`, `output_prefix`, and `assay_suffix` as positional arguments, in their respecive order.
 
 The example command below shows how to execute the script with the following parameters:
  * runsheet_file: /path/to/runsheet.csv  
  * sample_info: /path/to/unique-sample-IDs.txt
  * counts: /path/to/counts_GLAmpSeq.tsv
  * taxonomy: /path/to/taxonomy_GLAmpSeq.tsv
- * assay_suffix: _GL_Ampseq
  * plots_dir: /path/to/Plots/
  * output_prefix: my_prefix_
+ * assay_suffix: _GL_Ampseq
 
 ```bash
-Rscript /path/to/visualizations/Illumina-R-visualizations.R "/path/to/runsheet.csv" "/path/to/unique-sample-IDs.txt" "/path/to/counts_GLAmpSeq.tsv" "/path/to/taxonomy_GLAmpSeq.tsv" "_GL_Ampseq" "/path/to/Plots/" "my_prefix_"
+Rscript /path/to/visualizations/Illumina-R-visualizations.R /path/to/runsheet.csv /path/to/unique-sample-IDs.txt /path/to/counts_GLAmpSeq.tsv /path/to/taxonomy_GLAmpSeq.tsv /path/to/Plots/ "my_prefix_" "_GL_Ampseq"
 ```
 
-Additionally, the `RColorBrewer_Palette` variable can be modified in the script.  This variable determines the color palette from the RColorBrewer package that is applied to the plots.
+Additionally, the `RColorBrewer_Palette` variable can be modified in the script. This variable determines the color palette from the RColorBrewer package that is applied to the plots.
 
 **Parameter Definitions:**
 * `runsheet_file` – specifies the table containing sample metadata required for processing 
 * `sample_info` – specifies the text file containing the IDs of each sample used, required for running the SW_AmpIllumina workflow 
 * `counts` – specifies the ASV counts table 
 * `taxonomy` – specifies the taxonomy table 
-* `assay_suffix` – specifies a string that is appended to the end of the output file names. Default: "_GLAmpSeq"
 * `plots_dir` – specifies the path where output files will be saved
 * `output_prefix` – specifies a string that is prepended to the start of the output file names. Default: ""
+* `assay_suffix` – specifies a string that is appended to the end of the output file names. Default: "_GLAmpSeq"
 * `RColorBrewer_Palette` – specifies the RColorBrewer palette that will be used for coloring in the plots. Options include "Set1", "Accent", "Dark2", "Paired", "Pastel1", "Pastel2", "Set2", and "Set3". Default: "Set1"
 
 **Input Data:**
@@ -97,4 +97,4 @@ Additionally, the `RColorBrewer_Palette` variable can be modified in the script.
 * **{output_prefix}normalized_counts{assay_suffix}.tsv** (size factor normalized ASV counts table)
 * **{output_prefix}group1_vs_group2.csv** (differential abundance tables for all pairwise contrasts of groups)
 * **{output_prefix}volcano_group1_vs_group2.png** (volcano plots for all pairwise contrasts of groups)
-* {output_prefix}color_legend_{assay_suffix}.png (color legend for all groups)
+* {output_prefix}color_legend{assay_suffix}.png (color legend for all groups)
