@@ -26,9 +26,9 @@ The script should be executed from a [conda](https://docs.conda.io/en/latest/) e
 Download the [R_visualizations.yaml](R_visualizations.yaml) environment file and the [Illumina-R-visualizations.R](Illumina-R-visualizations.R) script by running the following commands:
 
 ```
-curl -LO https://github.com/nasa/GeneLab_Data_Processing/blob/dev2-amplicon-add-runsheet-visualizations/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/workflow_code/visualizations/R_visualizations.yaml
+curl -LO https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/dev2-amplicon-add-runsheet-visualizations/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/workflow_code/visualizations/R_visualizations.yaml
 
-curl -LO https://github.com/nasa/GeneLab_Data_Processing/blob/dev2-amplicon-add-runsheet-visualizations/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/workflow_code/visualizations/Illumina-R-visualizations.R
+curl -LO https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/dev2-amplicon-add-runsheet-visualizations/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/workflow_code/visualizations/Illumina-R-visualizations.R
 ```
 
 Next, create the AmpSeqVisualizations environment by running the following command:
