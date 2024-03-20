@@ -818,8 +818,8 @@ ASV_physeq <- phyloseq(count_tab_phy, tax_tab_phy, sample_info_tab_phy)
 richness_and_diversity_estimates_by_sample <- plot_richness(ASV_physeq, color = "groups", measures = c("Chao1", "Shannon"))
 richness_and_diversity_estimates_by_group <- plot_richness(ASV_physeq, x = "groups", color = "groups", measures = c("Chao1", "Shannon"))
 
-ggsave(paste0("richness_and_diversity_estimates_by_sample_GLAmpSeq", ".png"), plot = richness_and_diversity_estimates_by_sample)
-ggsave(paste0("richness_and_diversity_estimates_by_group_GLAmpSeq", ".png"), plot = richness_and_diversity_estimates_by_group)
+ggsave(filename = "richness_and_diversity_estimates_by_sample_GLAmpSeq.png", plot = richness_and_diversity_estimates_by_sample)
+ggsave(filename = "richness_and_diversity_estimates_by_group_GLAmpSeq.png", plot = richness_and_diversity_estimates_by_group)
 ```
 
 **Parameter Definitions:**  
@@ -861,10 +861,10 @@ relative_classes <- plot_bar(proportions_physeq, x = "groups", fill = "class")
 samplewise_phyla <- plot_bar(proportions_physeq, fill = "phylum")
 samplewise_classes <- plot_bar(proportions_physeq, fill = "class")
 
-ggsave(filename = "relative_phyla_GLAmpSeq", ".png", plot = relative_phyla)
-ggsave(filename = "relative_classes_GLAmpSeq", ".png", plot = relative_classes)
-ggsave(filename = "samplewise_relative_phyla_GLAmpSeq", ".png", plot = samplewise_phyla)
-ggsave(filename = "samplewise_relative_classes_GLAmpSeq", ".png", plot = samplewise_classes)
+ggsave(filename = "relative_phyla_GLAmpSeq.png", plot = relative_phyla)
+ggsave(filename = "relative_classes_GLAmpSeq.png", plot = relative_classes)
+ggsave(filename = "samplewise_relative_phyla_GLAmpSeq.png", plot = samplewise_phyla)
+ggsave(filename = "samplewise_relative_classes_GLAmpSeq.png", plot = samplewise_classes)
 ```
 
 **Input Data:**
@@ -967,8 +967,8 @@ ordination_plot_u <- plot_ordination(vst_physeq, vst_pcoa, color = "groups") +
   annotate("text", x = Inf, y = -Inf, label = paste("R2:", toString(round(r2_value, 3))), hjust = 1.1, vjust = -2, size = 4)+
   annotate("text", x = Inf, y = -Inf, label = paste("Pr(>F)", toString(round(prf_value,4))), hjust = 1.1, vjust = -0.5, size = 4)+ ggtitle("PCoA")
 
-ggsave(filename=paste0(beta_diversity_out_dir, output_prefix, "PCoA_w_labels_GLAmpSeq", ".png"), plot=ordination_plot)
-ggsave(filename=paste0(beta_diversity_out_dir, output_prefix, "PCoA_without_labels_GLAmpSeq", ".png"), plot=ordination_plot_u)
+ggsave(filename="PCoA_w_labels_GLAmpSeq.png", plot=ordination_plot)
+ggsave(filename="PCoA_without_labels_GLAmpSeq.png", plot=ordination_plot_u)
 
 ```
 
@@ -1009,7 +1009,7 @@ Run the DESeq() function to normalize for sample read-depth and composition, tra
 ```R
 deseq_modeled <- DESeq(deseq_obj)
 
-write.table(counts(deseq_modeled, normalized=TRUE), file = paste0("normalized_counts_GLAmpSeq.tsv"), sep="\t", row.names=TRUE, quote=FALSE)
+write.table(counts(deseq_modeled, normalized=TRUE), file = "normalized_counts_GLAmpSeq.tsv", sep="\t", row.names=TRUE, quote=FALSE)
 ```
 
 **Input Data:**
