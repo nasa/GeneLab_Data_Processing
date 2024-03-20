@@ -21,9 +21,9 @@ runsheet_file <- paste0(args[1])
 sample_info <- paste0(args[2])
 counts <- paste0(args[3])
 taxonomy <- paste0(args[4])
-assay_suffix <- paste(args[5])
-plots_dir <- paste0(args[6])
-output_prefix <- paste0(args[7])
+plots_dir <- paste0(args[5])
+output_prefix <- paste0(args[6])
+assay_suffix <- paste(args[7])
 ########################################
 
 RColorBrewer_Palette <- "Set1"
@@ -90,13 +90,13 @@ g_legend <- function(a.gplot){
 ###########################################
 
 # Assign the directory paths to variables
-beta_diversity_out_dir <- paste0(plots_dir, "beta_diversity", .Platform$file.sep)
-alpha_diversity_out_dir <- paste0(plots_dir, "alpha_diversity", .Platform$file.sep)
-taxonomy_out_dir <- paste0(plots_dir, "taxonomy", .Platform$file.sep)
-de_out_dir <- paste0(plots_dir, "da", .Platform$file.sep)
+beta_diversity_out_dir <- file.path(plots_dir, "beta_diversity")
+alpha_diversity_out_dir <- file.path(plots_dir, "alpha_diversity")
+taxonomy_out_dir <- file.path(plots_dir, "taxonomy")
+de_out_dir <- file.path(plots_dir, "da")
 
-abundance_out_dir <- paste0(de_out_dir, "differential_abundance", .Platform$file.sep)
-volcano_out_dir <- paste0(de_out_dir, "volcano", .Platform$file.sep)
+abundance_out_dir <- file.path(de_out_dir, "differential_abundance")
+volcano_out_dir <- file.path(de_out_dir, "volcano")
 
 # List of all directory variables
 out_dirs <- list(plots_dir, beta_diversity_out_dir, alpha_diversity_out_dir, taxonomy_out_dir, de_out_dir, abundance_out_dir, volcano_out_dir)
@@ -281,7 +281,7 @@ legend_colors <- unique(sample_info_tab$color)
 num_unique_groups <- length(legend_groups)
 legend_cex <- ifelse(num_unique_groups > 5, 1 / (num_unique_groups / 5), 1)
 
-png(file.path(beta_diversity_out_dir, paste0(output_prefix, "dendrogram_by_group_", assay_suffix, ".png")),
+png(file.path(beta_diversity_out_dir, paste0(output_prefix, "dendrogram_by_group", assay_suffix, ".png")),
     width = width_in_pixels,
     height = height_in_pixels,
     res = dpi)
@@ -337,7 +337,7 @@ ordination_plot_u <- plot_ordination(vst_physeq, vst_pcoa, color = "groups") +
                      legend.title.align = 0.5) +
   annotate("text", x = Inf, y = -Inf, label = paste("R2:", toString(round(r2_value, 3))), hjust = 1.1, vjust = -2, size = 4)+
   annotate("text", x = Inf, y = -Inf, label = paste("Pr(>F)", toString(round(prf_value,4))), hjust = 1.1, vjust = -0.5, size = 4)+ ggtitle("PCoA")
-ggsave(filename=paste0(beta_diversity_out_dir, output_prefix, "PCoA_without_labels_", assay_suffix, ".png"), plot=ordination_plot_u, width = 11.1, height = 8.33, dpi = 300)
+ggsave(filename=file.path(beta_diversity_out_dir, paste0(output_prefix, "PCoA_without_labels", assay_suffix, ".png")), plot=ordination_plot_u, width = 11.1, height = 8.33, dpi = 300)
 # Save labeled PCoA plot
 ordination_plot <- plot_ordination(vst_physeq, vst_pcoa, color = "groups") + 
   geom_point(size = 1) + 
@@ -357,7 +357,7 @@ ordination_plot <- plot_ordination(vst_physeq, vst_pcoa, color = "groups") +
                      legend.title.align = 0.5) +
   annotate("text", x = Inf, y = -Inf, label = paste("R2:", toString(round(r2_value, 3))), hjust = 1.1, vjust = -2, size = 4)+
   annotate("text", x = Inf, y = -Inf, label = paste("Pr(>F)", toString(round(prf_value,4))), hjust = 1.1, vjust = -0.5, size = 4)+ ggtitle("PCoA")
-ggsave(filename=paste0(beta_diversity_out_dir, output_prefix, "PCoA_w_labels_", assay_suffix, ".png"), plot=ordination_plot, width = 11.1, height = 8.33, dpi = 300)
+ggsave(filename=file.path(beta_diversity_out_dir, paste0(output_prefix, "PCoA_w_labels", assay_suffix, ".png")), plot=ordination_plot, width = 11.1, height = 8.33, dpi = 300)
 ########################
 
 #4. Alpha diversity
@@ -388,7 +388,7 @@ rareplot <- ggplot(p, aes(x = Sample, y = Species, group = Site, color = groups)
         panel.grid.minor = element_blank(),
         plot.margin = margin(t = 10, r = 20, b = 10, l = 10, unit = "pt")) +
   guides(color = guide_legend(title = "Groups"))
-ggsave(filename = paste0(alpha_diversity_out_dir, output_prefix, "rarefaction_curves_", assay_suffix, ".png"), plot=rareplot, width = 8.33, height = 8.33, dpi = 300)
+ggsave(filename = file.path(alpha_diversity_out_dir, paste0(output_prefix, "rarefaction_curves", assay_suffix, ".png")), plot=rareplot, width = 8.33, height = 8.33, dpi = 300)
 
 # 4b. Richness and diversity estimates
 
@@ -432,7 +432,7 @@ richness_plot <- plot_richness(ASV_physeq, color = "groups", measures = c("Chao1
                                vjust = 0.5,  # Vertically center the text
                                hjust = 1)
   )
-ggsave(paste0(alpha_diversity_out_dir, output_prefix, "richness_and_diversity_estimates_by_sample_", assay_suffix, ".png"), plot=richness_plot, width = 11.1, height = 8.33, dpi = 300)
+ggsave(filename = file.path(alpha_diversity_out_dir, paste0(output_prefix, "richness_and_diversity_estimates_by_sample", assay_suffix, ".png")), plot=richness_plot, width = 11.1, height = 8.33, dpi = 300)
 
 richness_by_group <- plot_richness(ASV_physeq, x = "groups", color = "groups", measures = c("Chao1", "Shannon")) +
   scale_color_manual(values = unique(sample_info_tab[[color_colname]][order(sample_info_tab[[groups_colname]])]),
@@ -449,13 +449,13 @@ richness_by_group <- plot_richness(ASV_physeq, x = "groups", color = "groups", m
     legend.title.align = 0.5,
     legend.title = element_blank()
   ) 
-ggsave(filename = paste0(alpha_diversity_out_dir, output_prefix, "richness_and_diversity_estimates_by_group_", assay_suffix, ".png"), plot=richness_by_group, width = 11.1, height = 8.33, dpi = 300)
+ggsave(filename = file.path(alpha_diversity_out_dir, paste0(output_prefix, "richness_and_diversity_estimates_by_group", assay_suffix, ".png")), plot=richness_by_group, width = 11.1, height = 8.33, dpi = 300)
 
 # Extract legend from unlabeled pca plot, also save it as its own plot
 legend <- g_legend(ordination_plot)
 grid.newpage()
 grid.draw(legend)
-legend_filename <- paste0(plots_dir, output_prefix, "color_legend_", assay_suffix, ".png")
+legend_filename <- file.path(plots_dir, paste0(output_prefix, "color_legend", assay_suffix, ".png"))
 increment <- ifelse(length(unique(sample_info_tab$groups)) > 9, ceiling((length(unique(sample_info_tab$groups)) - 9) / 3), 0)
 legend_height <- 3 + increment
 ggsave(legend_filename, plot = legend, device = "png", width = 11.1, height = legend_height, dpi = 300)
@@ -497,7 +497,7 @@ pushViewport(viewport(layout.pos.row = 2))
 grid.draw(legend)
 upViewport(0)
 grid_image <- grid.grab()
-ggsave(filename = paste0(taxonomy_out_dir, output_prefix, "relative_phyla_", assay_suffix, ".png"), grid_image, width = height_in_inches, height = taxonomy_plots_height, dpi = 500)
+ggsave(filename = file.path(taxonomy_out_dir, paste0(output_prefix, "relative_phyla", assay_suffix, ".png")), grid_image, width = height_in_inches, height = taxonomy_plots_height, dpi = 500)
 
 relative_classes <- plot_bar(proportions_physeq, x = "short_groups", fill = "class") + 
   theme_bw() + theme(text = element_text(size = 9)) + labs(x = "Groups")
@@ -509,7 +509,7 @@ pushViewport(viewport(layout.pos.row = 2))
 grid.draw(legend)
 upViewport(0)
 grid_image <- grid.grab()
-ggsave(filename = paste0(taxonomy_out_dir, output_prefix, "relative_classes_", assay_suffix, ".png"), plot=grid_image, width = height_in_inches, height = taxonomy_plots_height, dpi = 500)
+ggsave(filename = file.path(taxonomy_out_dir, paste0(output_prefix, "relative_classes", assay_suffix, ".png")), plot=grid_image, width = height_in_inches, height = taxonomy_plots_height, dpi = 500)
 
 
 #samplewise taxonomy
@@ -527,7 +527,7 @@ samplewise_phylum <- plot_bar(proportions_physeq, fill = "phylum") +
   theme(text = element_text(size = 16),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0.5, size = 6)) # Rotate and resize x-axis labels
 
-ggsave(filename = paste0(taxonomy_out_dir, output_prefix, "samplewise_relative_phyla_", assay_suffix, ".png"), 
+ggsave(filename = file.path(taxonomy_out_dir, paste0(output_prefix, "samplewise_relative_phyla", assay_suffix, ".png")), 
        plot = samplewise_phylum, 
        width = height_in_inches * scaling_factor,
        height = taxonomy_plots_height)
@@ -537,7 +537,7 @@ samplewise_classes <- plot_bar(proportions_physeq, fill = "class") +
   theme(text = element_text(size = 16),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0.5, size = 6)) # Rotate and resize x-axis labels
 
-ggsave(filename = paste0(taxonomy_out_dir, output_prefix, "samplewise_relative_classes_", assay_suffix, ".png"), 
+ggsave(filename = file.path(taxonomy_out_dir, paste0(output_prefix, "samplewise_relative_classes", assay_suffix, ".png")), 
        plot = samplewise_classes, 
        width = height_in_inches * scaling_factor,
        height = taxonomy_plots_height)
@@ -579,7 +579,7 @@ deseq_modeled <- tryCatch({
 
 # save final differential abundance counts, individual group comparison results
 
-write.table(counts(deseq_modeled, normalized=TRUE), file = paste0(de_out_dir, output_prefix, "normalized_counts_", assay_suffix, ".tsv"), sep="\t", row.names=TRUE, quote=FALSE)
+write.table(counts(deseq_modeled, normalized=TRUE), file = file.path(de_out_dir, paste0(output_prefix, "normalized_counts", assay_suffix, ".tsv")), sep="\t", row.names=TRUE, quote=FALSE)
 # make the volcanoplot
 plot_comparison <- function(group1, group2) {
   plot_width_inches = 11.1
@@ -623,17 +623,11 @@ plot_comparison <- function(group1, group2) {
     head(10)
   
   volcano_plot <- p + geom_text_repel(data=top_points, aes(label=row.names(top_points)), size=3)
-  ggsave(filename=paste0(volcano_out_dir, output_prefix, "volcano_",
-                         gsub(" ", "_", group1),
-                         "_vs_",
-                         gsub(" ", "_", group2), ".png"),
+  ggsave(filename=file.path(volcano_out_dir, paste0(output_prefix, "volcano_", gsub(" ", "_", group1), "_vs_", gsub(" ", "_", group2), ".png")),
          plot=volcano_plot,
          width = plot_width_inches, height = plot_height_inches, dpi = 300)
   
-  write.csv(deseq_res, file = paste0(abundance_out_dir,
-                        output_prefix, gsub(" ", "_", group1),
-                        "_vs_",
-                        gsub(" ", "_", group2), ".csv"))
+  write.csv(deseq_res, file = file.path(abundance_out_dir, paste0(output_prefix, gsub(" ", "_", group1), "_vs_", gsub(" ", "_", group2), ".csv")))
 }
 
 
