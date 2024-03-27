@@ -67,7 +67,7 @@ Lauren Sanders (acting GeneLab Project Scientist)
 |statmod|1.5.0|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
 |dp_tools|1.3.4|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |singularity|3.9|[https://sylabs.io](https://sylabs.io)|
-|Quarto|1.1.251|[https://quarto.org](https://quarto.org)|
+|Quarto|1.2.313|[https://quarto.org](https://quarto.org)|
 
 ---
 
