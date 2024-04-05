@@ -768,6 +768,10 @@ bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o GLDS-
 jgi_summarize_bam_contig_depths --outputDepth sample-1-metabat-assembly-depth.tsv --percentIdentity 97 --minContigLength 1000 --minContigDepth 1.0  --referenceFasta sample-1-assembly.fasta sample-1.bam
 
 metabat2  --inFile sample-1-assembly.fasta --outFile sample-1 --abdFile sample-1-metabat-assembly-depth.tsv -t 4
+
+mkdir sample-1-bins
+mv sample-1*bin*.fasta sample-1-bins
+zip -r sample-1-bins.zip sample-1-bins
 ```
 
 **Parameter Definitions:**  
@@ -792,7 +796,8 @@ metabat2  --inFile sample-1-assembly.fasta --outFile sample-1 --abdFile sample-1
 **Output data:**
 
 * **sample-1-metabat-assembly-depth.tsv** (tab-delimited summary of coverages)
-* **sample-1-bin\*.fasta** (fasta files of recovered bins)
+* sample-1-bins/sample-1-bin\*.fasta (directory containing fasta files of recovered bins)
+* **sample-1-bins.zip** (zip file containing fasta files of recovered bins)
 
 #### 14b. Bin quality assessment
 Utilizes the default `checkm` database available [here](https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz), `checkm_data_2015_01_16.tar.gz`.
@@ -835,6 +840,13 @@ do
     MAG_ID=$(echo $ID | sed 's/bin./MAG-/')
     cp ${ID}.fasta MAGs/${MAG_ID}.fasta
 done
+
+for SAMPLE in $(cat MAG-bin-IDs.tmp | sed 's/-bin.*//' | sort -u); 
+do
+  mkdir ${SAMPLE}-MAGs
+  mv ${SAMPLE}-*MAG*.fasta ${SAMPLE}-MAGs
+  zip -r ${SAMPLE}-MAGs.zip ${SAMPLE}-MAGs
+done
 ```
 
 **Input data:**
@@ -844,8 +856,8 @@ done
 **Output data:**
 
 * **checkm-MAGs-overview.tsv** (tab-delimited file with quality estimates per MAG)
-* **MAGs/\*.fasta** (directory holding high-quality MAGs)
-
+* \*-MAGS/\*-MAGs/\*.fasta (directories holding high-quality MAGs)
+* **\*-MAGs.zip** (zip files containing directories of high-quality MAGs)
 
 
 #### 14d. MAG taxonomic classification
