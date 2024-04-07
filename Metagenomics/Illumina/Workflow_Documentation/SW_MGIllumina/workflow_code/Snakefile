@@ -905,7 +905,7 @@ else:
             humann_config --update database_folders nucleotide {params.humann_nucleotide_db_path} > /dev/null 2>&1
             humann_config --update database_folders protein {params.humann_protein_db_path} > /dev/null 2>&1
 
-            humann --input {input.R1} --output {params.output_dir} --threads {resources.cpus} --output-basename {wildcards.ID} --metaphlan-options "--bowtie2db {params.metaphlan_dir} --unclassified_estimation --add_viruses --sample_id {wildcards.ID}" --bowtie-options "--sensitive --mm" > {log} 2>&1
+            humann --input {input.R1} --output {params.output_dir} --threads {resources.cpus} --output-basename {wildcards.ID} --metaphlan-options "--index mpa_vJan21_CHOCOPhlAnSGB_202103 --bowtie2db {params.metaphlan_dir} --unclassified_estimation --add_viruses --sample_id {wildcards.ID}" --bowtie-options "--sensitive --mm" > {log} 2>&1
             mv {params.tmp_metaphlan} {output[3]}
             rm -rf {params.tmp_dir}
             """
