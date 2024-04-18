@@ -36,7 +36,7 @@ conda install -n base -c conda-forge mamba
 Once mamba is installed, you can install the genelab-utils conda package in a new environment with the following command:
 
 ```bash
-mamba create -n genelab-utils -c conda-forge -c bioconda -c defaults -c astrobiomike 'genelab-utils==1.3.22=py312_1'
+mamba create -n genelab-utils -c conda-forge -c bioconda -c defaults -c astrobiomike 'genelab-utils==1.3.35'
 ```
 
 The environment then needs to be activated by running the following command:
