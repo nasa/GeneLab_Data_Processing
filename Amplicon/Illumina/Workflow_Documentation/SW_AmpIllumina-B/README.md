@@ -95,7 +95,7 @@ ___
 > This approach processes data hosted on the [NASA Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/). Upon execution, the command downloads then parses the OSD ISA.zip file to create a runsheet containing link(s) to the raw reads and the metadata required for processing. The runsheet is then used to prepare the necessary configuration files before executing the workflow using the specified Snakemake run command.
 
 ```bash
-python ./scripts/run_workflow.py --OSD OSD-487 --run "snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p"
+python ./scripts/run_workflow.py --OSD OSD-487 --target 16S --run "snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p"
 ```
 
 <br>
@@ -123,7 +123,7 @@ ___
 * `--OSD OSD-###` - specifies the OSD dataset to process through the SW_AmpIllumina workflow (replace ### with the OSD number)
    > *Used for Approach 1 only.*
 
-* `--target` - specifies the genomic target for the assay. Options: 16S, 18S, ITS. This determines which reference database is used for taxonomic classification, and it is used to select the appropriate dataset from an OSD study when multiple options are available.
+* `--target` - this is a required parameter that specifies the genomic target for the assay. Options: 16S, 18S, ITS. This determines which reference database is used for taxonomic classification, and it is used to select the appropriate dataset from an OSD study when multiple options are available.
    > *Note: Swift Amplicon 16S+ITS datasets, which use multiple primer sets, are not suitable for processing with this workflow. OSD datasets of this type are processed using alternative methods.*
 
 * `--runsheetPath` - specifies the path to a local runsheet containing the metadata and raw reads location (as a link or local path), used for processing a non-OSD dataset through the SW_AmpIllumina workflow 
