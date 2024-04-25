@@ -1,6 +1,6 @@
 # GeneLab pipeline for generating reference annotation tables  
 
-> **The document [`GL-DPPD-7110.md`](Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110.md) holds an overview and example commands for how GeneLab generates reference annotation tables. See the [Repository Links](#repository-links) descriptions below for more information.** 
+> **The document [`GL-DPPD-7110-A.md`](Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A.md) holds an overview and example commands for how GeneLab generates reference annotation tables. See the [Repository Links](#repository-links) descriptions below for more information.** 
 
 ---
 ## Repository Links
@@ -17,6 +17,9 @@
 
 ---
 
-**Developed and maintained by:**  
+**Developed by:**  
 Mike Lee
 
+**Maintained by:**
+Alexis Torres
+Crystal Han
