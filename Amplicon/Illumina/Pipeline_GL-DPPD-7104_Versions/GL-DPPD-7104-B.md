@@ -41,6 +41,8 @@ Amanda Saravia-Butler (GeneLab Data Processing Lead)
 - The ITS UNITE reference database used was updated to "UNITE_v2023_July2023.RData", from http://www2.decipher.codes/Classification/TrainingSets/
 - Several program versions were updated (all versions listed in [Software used](#software-used) below)
 
+---
+
 # Table of contents  
 
 - [Software used](#software-used)
