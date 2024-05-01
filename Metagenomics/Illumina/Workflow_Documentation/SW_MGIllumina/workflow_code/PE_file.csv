@@ -1,0 +1,3 @@
+sample_id,forward,reverse,paired
+Sample-1,/global/data/Data_Processing/Metagenomics_Datasets/GLDS_Datasets/test/example-metagenomic-reads/Sample-1_R1_raw.fastq.gz,/global/data/Data_Processing/Metagenomics_Datasets/GLDS_Datasets/test/example-metagenomic-reads/Sample-1_R2_raw.fastq.gz,true
+Sample-2,/global/data/Data_Processing/Metagenomics_Datasets/GLDS_Datasets/test/example-metagenomic-reads/Sample-2_R1_raw.fastq.gz,/global/data/Data_Processing/Metagenomics_Datasets/GLDS_Datasets/test/example-metagenomic-reads/Sample-2_R2_raw.fastq.gz,true

@@ -1,3 +1,4 @@
+name: CAT
 channels:
     - conda-forge
     - bioconda
