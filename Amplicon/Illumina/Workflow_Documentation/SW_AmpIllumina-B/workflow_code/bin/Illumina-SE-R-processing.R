@@ -1,51 +1,42 @@
+#!/usr/bin/env Rscript
+
 ##################################################################################
-## R processing script for Illumina paired-end amplicon data                    ##
+## R processing script for Illumina single-end amplicon data                    ##
 ## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                              ##
 ##################################################################################
 
-# as called from the associated Snakefile, this expects to be run as: Rscript full-R-processing.R <left_trunc> <right_trunc> <left_maxEE> <right_maxEE> <TRUE/FALSE - GL trimmed primers or not> <unique-sample-IDs-file> <starting_reads_dir_for_R> <filtered_reads_dir> <input_file_R1_suffix> <input_file_R2_suffix> <filtered_filename_R1_suffix> <filtered_filename_R2_suffix> <final_outputs_directory> <output_prefix> <target_region> <concatenate_reads_only> <assay_suffix>
-    # where <left_trim> and <right_trim> are the values to be passed to the truncLen parameter of dada2's filterAndTrim()
-    # and <left_maxEE> and <right_maxEE> are the values to be passed to the maxEE parameter of dada2's filterAndTrim()
+# as called from the associated Snakefile, this expects to be run as: Rscript full-R-processing.R <left_trunc> <left_maxEE> <TRUE/FALSE - GL trimmed primers or not> <unique-sample-IDs-file> <starting_reads_dir_for_R> <filtered_reads_dir> <input_file_R1_suffix> <filtered_filename_R1_suffix> <final_outputs_directory> <output_prefix> <target_region> <assay_suffix>
+    # where <left_trim> is the value to be passed to the truncLen parameter of dada2's filterAndTrim()
+    # and <left_maxEE> is the value to be passed to the maxEE parameter of dada2's filterAndTrim()
 
-# checking at least 8 arguments provided, first 4 are integers, and setting variables used within R:
+# checking arguments were provided, first 2 are integers, and setting variables used within R:
 args <- commandArgs(trailingOnly = TRUE)
 
-if (length(args) < 17) {
-    stop("At least 17 positional arguments are required, see top of this R script for more info.", call.=FALSE)
+if (length(args) < 12) {
+    stop("At least 12 positional arguments are required, see top of this R script for more info.", call.=FALSE)
 } else {
     suppressWarnings(left_trunc <- as.integer(args[1]))
-    suppressWarnings(right_trunc <- as.integer(args[2]))
-    suppressWarnings(left_maxEE <- as.integer(args[3]))
-    suppressWarnings(right_maxEE <- as.integer(args[4]))
+    suppressWarnings(left_maxEE <- as.integer(args[2]))
 
-    suppressWarnings(GL_trimmed_primers <- args[5])
-    suppressWarnings(sample_IDs_file <- args[6])
-    suppressWarnings(input_reads_dir <- args[7])
-    suppressWarnings(filtered_reads_dir <- args[8])
-    suppressWarnings(input_file_R1_suffix <- args[9])
-    suppressWarnings(input_file_R2_suffix <- args[10])
-    suppressWarnings(filtered_filename_R1_suffix <- args[11])
-    suppressWarnings(filtered_filename_R2_suffix <- args[12])
-    suppressWarnings(final_outputs_dir <- args[13])
-    suppressWarnings(output_prefix <- args[14])
-    suppressWarnings(target_region <- args[15])
-    suppressWarnings(concatenate_reads_only <- args[16])
-    suppressWarnings(assay_suffix <- args[17])
+    suppressWarnings(GL_trimmed_primers <- args[3])
+    suppressWarnings(sample_IDs_file <- args[4])
+    suppressWarnings(input_reads_dir <- args[5])
+    suppressWarnings(filtered_reads_dir <- args[6])
+    suppressWarnings(input_file_R1_suffix <- args[7])
+    suppressWarnings(filtered_filename_R1_suffix <- args[8])
+    suppressWarnings(final_outputs_dir <- args[9])
+    suppressWarnings(output_prefix <- args[10])
+    suppressWarnings(target_region <- args[11])
+    suppressWarnings(assay_suffix <- args[12])
 
 }
 
-if ( is.na(left_trunc) || is.na(right_trunc) || is.na(left_maxEE) || is.na(right_maxEE) ) {
-    stop("All 4 first arguments must be integers, see top of R script for more info.", call.=FALSE)
+if ( is.na(left_trunc) || is.na(left_maxEE) ) {
+    stop("The 2 first arguments must be integers, see top of R script for more info.", call.=FALSE)
 }
 
 if ( ! GL_trimmed_primers %in% c("TRUE", "FALSE") ) {
-    stop("The fifth positional argument needs to be 'TRUE' or 'FALSE' for whether or not GL trimmed primers on this dataset, see top of R script and config.yaml for more info.", call.=FALSE)    
-} else {
-    GL_trimmed_primers <- as.logical(GL_trimmed_primers)
-}
-
-if ( ! concatenate_reads_only %in% c("TRUE", "FALSE") ) {
-    stop("The sixteenth positional argument needs to be 'TRUE' or 'FALSE' for whether or not the mergePairs function of dada2 should just concatenate the reads on this dataset, see top of R script and config.yaml for more info.", call.=FALSE)    
+    stop("The third positional argument needs to be 'TRUE' or 'FALSE' for whether or not GL trimmed primers on this dataset, see top of R script for more info.", call.=FALSE)    
 } else {
     GL_trimmed_primers <- as.logical(GL_trimmed_primers)
 }
@@ -63,21 +54,18 @@ library(biomformat); packageVersion("biomformat")
     # reading in unique sample names into variable
 sample.names <- scan(sample_IDs_file, what="character")
 
-    # setting variables holding the paths to the forward and reverse primer-trimmed reads (or "raw" if primers were trimmed prior to submission to GeneLab)
+    # setting variables holding the paths to the forward primer-trimmed reads (or "raw" if primers were trimmed prior to submission to GeneLab)
 forward_reads <- paste0(input_reads_dir, sample.names, input_file_R1_suffix)
-reverse_reads <- paste0(input_reads_dir, sample.names, input_file_R2_suffix)
 
-    # setting variables holding what will be the output paths of all forward and reverse filtered reads
+    # setting variables holding what will be the output paths of all forward filtered reads
 forward_filtered_reads <- paste0(filtered_reads_dir, sample.names, filtered_filename_R1_suffix)
-reverse_filtered_reads <- paste0(filtered_reads_dir, sample.names, filtered_filename_R2_suffix)
 
     # adding sample names to the vectors holding the filtered-reads' paths
 names(forward_filtered_reads) <- sample.names
-names(reverse_filtered_reads) <- sample.names
 
     # running filering step
     # reads are written to the files specified in the variables, the "filtered_out" object holds the summary results within R
-filtered_out <- filterAndTrim(fwd=forward_reads, forward_filtered_reads, reverse_reads, reverse_filtered_reads, truncLen=c(left_trunc,right_trunc), maxN=0, maxEE=c(left_maxEE,right_maxEE), truncQ=2, rm.phix=TRUE, compress=TRUE, multithread=10)
+filtered_out <- filterAndTrim(fwd=forward_reads, forward_filtered_reads, truncLen=c(left_trunc), maxN=0, maxEE=c(left_maxEE), truncQ=2, rm.phix=TRUE, compress=TRUE, multithread=10)
 
     # making and writing out summary table that includes counts of filtered reads
 if ( GL_trimmed_primers ) {
@@ -94,26 +82,12 @@ write.table(filtered_count_summary_tab, paste0(filtered_reads_dir, output_prefix
 
     # learning errors step
 forward_errors <- learnErrors(forward_filtered_reads, multithread=10)
-reverse_errors <- learnErrors(reverse_filtered_reads, multithread=10)
 
     # inferring sequences
 forward_seqs <- dada(forward_filtered_reads, err=forward_errors, pool="pseudo", multithread=10)
-reverse_seqs <- dada(reverse_filtered_reads, err=reverse_errors, pool="pseudo", multithread=10)
-
-    # merging forward and reverse reads (just concatenating if that was specified)
-if ( concatenate_reads_only ) {
-
-    merged_contigs <- mergePairs(forward_seqs, forward_filtered_reads, reverse_seqs, reverse_filtered_reads, verbose=TRUE, justConcatenate=TRUE)
-
-} else {
-
-    merged_contigs <- mergePairs(forward_seqs, forward_filtered_reads, reverse_seqs, reverse_filtered_reads, verbose=TRUE)
-
-}
-
 
     # generating a sequence table that holds the counts of each sequence per sample
-seqtab <- makeSequenceTable(merged_contigs)
+seqtab <- makeSequenceTable(forward_seqs)
 
     # removing putative chimeras
 seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=10, verbose=TRUE)
@@ -133,8 +107,6 @@ if ( GL_trimmed_primers ) {
 
     count_summary_tab <- data.frame(raw_and_trimmed_read_counts, dada2_filtered=filtered_read_counts[,3],
                                     dada2_denoised_F=sapply(forward_seqs, getN),
-                                    dada2_denoised_R=sapply(reverse_seqs, getN),
-                                    dada2_merged=rowSums(seqtab),
                                     dada2_chimera_removed=rowSums(seqtab.nochim),
                                     final_perc_reads_retained=round(rowSums(seqtab.nochim)/raw_and_trimmed_read_counts$raw_reads * 100, 1),
                                     row.names=NULL)
@@ -143,8 +115,6 @@ if ( GL_trimmed_primers ) {
 
     count_summary_tab <- data.frame(filtered_count_summary_tab,
                                 dada2_denoised_F=sapply(forward_seqs, getN),
-                                dada2_denoised_R=sapply(reverse_seqs, getN),
-                                dada2_merged=rowSums(seqtab),
                                 dada2_chimera_removed=rowSums(seqtab.nochim),
                                 final_perc_reads_retained=round(rowSums(seqtab.nochim)/filtered_count_summary_tab$starting_reads * 100, 1),
                                 row.names=NULL)
@@ -160,12 +130,12 @@ dna <- DNAStringSet(getSequences(seqtab.nochim))
     # downloading reference R taxonomy object (at some point this will be stored somewhere on GeneLab's server and we won't download it, but should leave the code here, just commented out)
 cat("\n\n  Downloading reference database...\n\n")
 if ( target_region == "16S" ) { 
-    download.file("http://www2.decipher.codes/Classification/TrainingSets/SILVA_SSU_r138_2019.RData", "SILVA_SSU_r138_2019.RData")
+    #download.file("http://www2.decipher.codes/Classification/TrainingSets/SILVA_SSU_r138_2019.RData", "SILVA_SSU_r138_2019.RData")
+    download.file("https://figshare.com/ndownloader/files/23739737", "SILVA_SSU_r138_2019.RData")
     # loading reference taxonomy object
     load("SILVA_SSU_r138_2019.RData")
     # removing downloaded file
-    file.remove("SILVA_SSU_r138_2019.RData")
-
+    #file.remove("SILVA_SSU_r138_2019.RData")
     ranks <- c("domain", "phylum", "class", "order", "family", "genus", "species")
 
 } else if (target_region == "ITS" ) {
@@ -188,7 +158,8 @@ if ( target_region == "16S" ) {
 
     ranks <- c("kingdom", "division", "phylum", "class", "order", "family", "genus", "species")
 
-} else {
+} else { 
+
     cat("\n\n  The requested target_region of ", target_region, " is not accepted.\n\n")
     quit(status = 1)
 }
@@ -227,7 +198,7 @@ asv_tab <- data.frame("ASV_ID"=asv_ids, asv_tab, check.names=FALSE)
 write.table(asv_tab, paste0(final_outputs_dir, output_prefix, "counts", assay_suffix, ".tsv"), sep="\t", quote=F, row.names=FALSE)
 
     # making and writing out a taxonomy table:
-    # vector of desired ranks was created above in ITS/16S/18S target_region if statement
+    # vector of desired ranks was created above in ITS/16S target_region if statement
 
     # creating table of taxonomy and setting any that are unclassified as "NA"
 tax_tab <- t(sapply(tax_info, function(x) {

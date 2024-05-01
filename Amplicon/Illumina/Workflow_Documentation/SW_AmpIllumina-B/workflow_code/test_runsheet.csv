@@ -1,0 +1,3 @@
+﻿Sample Name,read1_path,raw_R1_suffix,groups
+Sample-1,raw_reads/Sample-1_R1_raw.fastq.gz,_R1_raw.fastq.gz,A
+Sample-2,raw_reads/Sample-2_R1_raw.fastq.gz,_R1_raw.fastq.gz,B

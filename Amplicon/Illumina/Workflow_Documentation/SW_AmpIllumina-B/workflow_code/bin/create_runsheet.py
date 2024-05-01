@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import argparse
 import subprocess
 import os
@@ -6,9 +8,9 @@ import tempfile
 import re 
 import shutil
 import pandas as pd
-#import pandera as pa
 import requests 
-import yaml
+
+
 ####################
 ## 1.  For OSD ARG #
 ####################
@@ -27,8 +29,7 @@ import yaml
 ##########################
 # 1. Validate schema of runsheet
 # 2. Check if read_paths are URLs, prompt for download
-# 3. Create config.yaml and unique-sample-IDs.txt
-# 4. If --run is used: run the workflow
+
 
 # Process OSD arg: if numeric, append OSD-, if OSD-# or GLDS-#, leave it
 def process_osd_argument(osd_arg):
@@ -64,7 +65,7 @@ def check_provided_osd_or_glds(osd_arg):
         "82": "This dataset is still multiplexed, and we don't yet have the mapping information to split the samples apart appropriately."
     }
 
-    # checking based on OSD IDs
+    # Checking based on OSD IDs
     if osd_arg in not_autoprocessable_OSD_dict:
         print(f"\nThe specified dataset {osd_arg} is unable to be processed with this workflow.")
         print(f"    Reason: {not_autoprocessable_OSD_dict[osd_arg]}\n")
@@ -147,12 +148,6 @@ def convert_isa_to_runsheet(accession_number, isa_zip):
 
 def handle_runsheet_selection(runsheet_files, target=None, specified_runsheet=None):
     selected_runsheet = None
-
-    # Change specified_runsheet to a basename in case a path is used as an arg for run_workflow.py
-    if specified_runsheet:
-        specified_runsheet_basename = os.path.basename(specified_runsheet)
-    else:
-        specified_runsheet_basename = None
 
     # Use the specified runsheet if provided
     if specified_runsheet and specified_runsheet in runsheet_files:
@@ -321,30 +316,7 @@ def download_url_to_file(url, file_path, max_retries=3, timeout_seconds=120):
         print("Failed to download the read files.")
 
 
-def reverse_complement(seq):
-    complement = {'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G', 
-                  'R': 'Y', 'Y': 'R', 'S': 'S', 'W': 'W', 
-                  'K': 'M', 'M': 'K', 'B': 'V', 'V': 'B', 
-                  'D': 'H', 'H': 'D', 'N': 'N'}
-    return ''.join(complement.get(base, base) for base in reversed(seq))
-
-def create_config_yaml(isa_zip,
-                       runsheet_file,
-                       runsheet_df,
-                       uses_urls,
-                       output_dir,
-                       min_trimmed_length,
-                       trim_primers,
-                       primers_linked,
-                       anchor_primers,
-                       discard_untrimmed,
-                       left_trunc,
-                       right_trunc,
-                       left_maxEE,
-                       right_maxEE,
-                       concatenate_reads_only,
-                       output_prefix,
-                       enable_visualizations):
+def write_params(runsheet_df, uses_urls):
     
     # Extract necessary variables from runsheet_df
     data_type = "PE" if runsheet_df['paired_end'].eq(True).all() else "SE"
@@ -361,143 +333,45 @@ def create_config_yaml(isa_zip,
         read1_path_dir = os.path.dirname(runsheet_df['read1_path'].iloc[0])
         raw_reads_directory = os.path.abspath(read1_path_dir) + '/' if read1_path_dir else "./"
 
+    with open("GLparams_file.csv", "w") as f:
+        f.write("raw_reads_directory,raw_R1_suffix,raw_R2_suffix,f_primer,r_primer,target_region,data_type\n")
+        if data_type == "PE":
+            f.write(f"{raw_reads_directory},{raw_R1_suffix},{raw_R2_suffix},{f_primer},{r_primer},{target_region},{data_type}\n")
+        else:
+            f.write(f"{raw_reads_directory},{raw_R1_suffix},{f_primer},{r_primer},{target_region},{data_type}\n")
 
-    # Other default values
-    output_dir = os.path.abspath(output_dir) + '/'
-    primer_anchor = "^" if anchor_primers is True else ""
+ 
 
-    f_linked_primer = f"{primer_anchor}{f_primer}...{reverse_complement(r_primer)}"
-    r_linked_primer = f"{primer_anchor}{r_primer}...{reverse_complement(f_primer)}"
+def write_input_file(runsheet_df):
+    """ Write input file for the workflow..."""
 
-    # Make output_dir if it doesn't exist 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    print("writing out GLfile.csv...")
+    # Check if the DataFrame is paired-end
+    paired_end = runsheet_df['paired_end'].eq(True).all()
 
-    info_out_dir = os.path.join(output_dir, output_prefix + "Processing_Info") + os.sep
-    fastqc_out_dir = os.path.join(output_dir, "FastQC_Outputs") + os.sep
-    trimmed_reads_dir = os.path.join(output_dir, "Trimmed_Sequence_Data") + os.sep
-    filtered_reads_dir = os.path.join(output_dir, "Filtered_Sequence_Data") + os.sep
-    final_outputs_dir = os.path.join(output_dir, "Final_Outputs") + os.sep
-    plots_dir = final_outputs_dir + "Plots" + os.sep
+    # Create ./raw_reads/ directory if it does not exist
+    raw_reads_dir = os.path.abspath('./raw_reads/')
+    if not os.path.exists(raw_reads_dir):
+        os.makedirs(raw_reads_dir)
 
-    # Write to config.yaml
-    with open('config.yaml', 'w') as file:
-        file.write("############################################################################################\n")
-        file.write("## Configuration file for GeneLab Illumina amplicon processing workflow                   ##\n")
-        file.write("## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##\n")
-        file.write("############################################################################################\n\n")
+    # Create input file
+    with open("GLfile.csv", 'w') as file:
+        
+        if paired_end:
+            file.write(f"sample_id,forward,reverse,paired\n")
+            # Iterate over each row and download files if they don't exist
+            for _, row in runsheet_df.iterrows():
+                sample_id = row['Sample Name']
+                read1_path = os.path.join(raw_reads_dir, sample_id + row['raw_R1_suffix'])
+                read2_path = os.path.join(raw_reads_dir, sample_id + row['raw_R2_suffix'])
+                file.write(f"{sample_id},{read1_path},{read2_path},true\n")
+        else:
+            file.write(f"sample_id,forward,paired\n")
+            for _, row in runsheet_df.iterrows():
+                sample_id = row['Sample Name']
+                read1_path = os.path.join(raw_reads_dir, sample_id + row['raw_R1_suffix'])
+                file.write(f"{sample_id},{read1_path},false\n")
 
-        file.write("############################################################\n")
-        file.write("##################### VARIABLES TO SET #####################\n")
-        file.write("############################################################\n\n")
-
-        file.write("###########################################################################\n")
-        file.write("##### These need to match what is specific to our system and our data #####\n")
-        file.write("###########################################################################\n\n")
-
-        file.write("## Path to ISA archive, only needed for saving a copy as metadata:\n")
-        file.write(f"isa_archive:\n   \"{isa_zip}\"\n\n")
-
-        file.write("## Path to runsheet:\n")
-        file.write(f"runsheet:\n    \"{os.path.abspath(runsheet_file)}\"\n\n")
-
-        file.write("## Set to \"PE\" for paired-end, \"SE\" for single-end.\n")
-        file.write(f"data_type:\n    \"{data_type}\"\n\n")
-
-        file.write("## single-column file with unique sample identifiers:\n")
-        file.write("sample_info_file:\n    \"unique-sample-IDs.txt\"\n\n")
-
-        file.write("## input reads directory (can be relative to workflow directory, or needs to be full path):\n")
-        file.write(f"raw_reads_dir:\n    \"{raw_reads_directory}\"\n\n")
-
-        file.write("## raw read suffixes:\n")
-        file.write("  # e.g. for paired-end data, Sample-1_R1_raw.fastq.gz would be _R1_raw.fastq.gz for 'raw_R1_suffix' below\n")
-        file.write("  # e.g. if single-end, Sample-1.fastq.gz would be .fastq.gz for 'raw_R1_suffix' below, and 'raw_R2_suffix' won't be used\n")
-        file.write(f"raw_R1_suffix:\n    \"{raw_R1_suffix}\"\n")
-        file.write(f"raw_R2_suffix:\n    \"{raw_R2_suffix}\"\n\n")
-
-        file.write("## if we are trimming primers or not (\"TRUE\", or \"FALSE\")\n")
-        file.write(f"trim_primers:\n    \"{trim_primers}\"\n\n")
-
-        file.write("## primer sequences if we are trimming them (include anchoring symbols, e.g. '^', as needed, see: https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types)\n")
-        file.write(f"F_primer:\n    \"{primer_anchor}{f_primer}\"\n")
-        file.write(f"R_primer:\n    \"{primer_anchor}{r_primer}\"\n\n")
-
-        # For linked primers
-        file.write("## should cutadapt treat these as linked primers? (https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads)\n")
-        file.write(f"primers_linked:\n    \"{primers_linked}\"\n\n")
-        file.write("## if primers are linked, we need to provide them as below, where the second half, following three periods, is the other primer reverse-complemented\n")
-        file.write(f"  # (can reverse complement while retaining ambiguous bases at this site: http://arep.med.harvard.edu/labgc/adnan/projects/Utilities/revcomp.html)\n")
-        file.write(f"  # include anchoring symbols, e.g. '^', as needed, see: https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types\n")
-        file.write(f"F_linked_primer:\n    \"{f_linked_primer}\"\n")
-        file.write(f"R_linked_primer:\n    \"{r_linked_primer}\"\n\n")
-
-        file.write("## discard untrimmed, sets the \"--discard-untrimmed\" option if TRUE\n")
-        file.write(f"discard_untrimmed:\n    \"{discard_untrimmed}\"\n\n")
-
-        file.write("## target region (16S, 18S, or ITS is acceptable)\n")
-        file.write("  # this determines which reference database is used for taxonomic classification\n")
-        file.write("  # all are pulled from the pre-packaged DECIPHER downloads page here: http://www2.decipher.codes/Downloads.html\n")
-        file.write("  # 16S uses SILVA\n")
-        file.write("  # ITS uses UNITE\n")
-        file.write("  # 18S uses PR2\n")
-        file.write(f"target_region:\n    \"{target_region}\"\n\n")
-
-        file.write("## concatenate only with dada2 instead of merging paired reads if TRUE\n")
-        file.write("  # this is typically used with primers like 515-926, that captured 18S fragments that are typically too long to merge\n")
-        file.write("  # note that 16S and 18S should have been separated already prior to running this workflow\n")
-        file.write("  # this should likely be left as FALSE for any option other than \"18S\" above\n\n")
-
-        file.write(f"concatenate_reads_only:\n    \"{concatenate_reads_only}\"\n\n")
-        file.write(f"## values to be passed to dada2's filterAndTrim() function:\n")
-        file.write(f"left_trunc:\n    {left_trunc}\n")
-        file.write(f"right_trunc:\n    {right_trunc}\n")
-        file.write(f"left_maxEE:\n    {left_maxEE}\n")
-        file.write(f"right_maxEE:\n    {right_maxEE}\n\n")
-
-        file.write("## minimum length threshold for cutadapt\n")
-        file.write(f"min_cutadapt_len:\n    {min_trimmed_length}\n\n")
-
-        file.write("######################################################################\n")
-        file.write("##### The rest only need to be altered if we want to change them #####\n")
-        file.write("######################################################################\n\n")
-
-        file.write("## filename suffixes\n")
-        file.write("primer_trimmed_R1_suffix:\n    \"_R1_trimmed.fastq.gz\"\n")
-        file.write("primer_trimmed_R2_suffix:\n    \"_R2_trimmed.fastq.gz\"\n\n")
-
-        file.write("filtered_R1_suffix:\n    \"_R1_filtered.fastq.gz\"\n")
-        file.write("filtered_R2_suffix:\n    \"_R2_filtered.fastq.gz\"\n\n")
-
-        file.write("## output prefix (if needed to distinguish from multiple primer sets, leave as empty string if not, include connecting symbol if adding, e.g. \"ITS-\")\n")
-        file.write(f"output_prefix:\n    \"{output_prefix}\"\n\n")
-
-        file.write("## output directories (all relative to processing directory, they will be created if needed)\n")
-        file.write(f"info_out_dir:\n    \"{info_out_dir}\"\n")
-        file.write(f"fastqc_out_dir:\n    \"{fastqc_out_dir}\"\n")
-        file.write(f"trimmed_reads_dir:\n    \"{trimmed_reads_dir}\"\n")
-        file.write(f"filtered_reads_dir:\n    \"{filtered_reads_dir}\"\n")
-        file.write(f"final_outputs_dir:\n    \"{final_outputs_dir}\"\n")
-        file.write(f"plots_dir:\n    \"{plots_dir}\"\n\n")
-
-        file.write(f"enable_visualizations:\n    \"{enable_visualizations}\"\n\n")
-
-        # For general info and example usage command
-        file.write("############################################################\n")
-        file.write("###################### GENERAL INFO ########################\n")
-        file.write("############################################################\n")
-        file.write("# Workflow is currently equipped to work with paired-end data only, and reads are expected to be gzipped\n\n")
-        file.write("## example usage command ##\n")
-        file.write("# snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p\n\n")
-        file.write("# `--use-conda` – this specifies to use the conda environments included in the workflow\n")
-        file.write("# `--conda-prefix` – this allows us to point to where the needed conda environments should be stored...\n")
-        file.write("# `-j` – this lets us set how many jobs Snakemake should run concurrently...\n")
-        file.write("# `-p` – specifies to print out each command being run to the screen\n\n")
-        file.write("# See `snakemake -h` for more options and details.\n")
-    print("config.yaml was successfully created.")
-
-# Example usage
-# create_config_yaml(runsheet_df, uses_urls)
 
 # Check for single primer set, also check for invalid characters in primers used, exit if either
 def validate_primer_sequences(runsheet_df):
@@ -537,19 +411,19 @@ def validate_primer_sequences(runsheet_df):
 def main():
     # Argument parser setup with short argument names and an automatic help option
     parser = argparse.ArgumentParser(
-        description='Run workflow for GeneLab data processing.',
+        description='Create Runsheet from Genelab ID.',
         add_help=True,
         usage='%(prog)s [options]'  # Custom usage message
     )
     
     parser.add_argument('-o', '--OSD',
                         metavar='osd_number',
-                        help='Set up the Snakemake workflow for a GeneLab OSD dataset and pull necessary read files and metadata. Acceptable formats: ###, OSD-###, GLDS-###',
+                        help='A GeneLab OSD dataset accession number to pull its read files and associated metadata. Acceptable formats: ###, OSD-###, GLDS-###',
                         type=str)
     
     parser.add_argument('-t', '--target',
                         choices=['16S', '18S', 'ITS'],
-                        help='Specify the genomic target for the assay. Options: 16S, 18S, ITS. This is used to select the appropriate dataset from an OSD study when multiple options are available.',
+                        help='Specify the amplicon target for the assay. Options: 16S, 18S, ITS. This is used to select the appropriate dataset from an OSD study when multiple options are available.',
                         type=str)
     
     parser.add_argument('-r', '--runsheetPath',
@@ -557,95 +431,13 @@ def main():
                         help='Set up the Snakemake workflow using a specified runsheet file.',
                         type=str)
 
-    parser.add_argument('-x', '--run',
-                        metavar='command',
-                        nargs='?',
-                        const="snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p",
-                        type=str,
-                        help='Specifies the command used to execute the snakemake workflow; Default: "snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p"')
-
-    parser.add_argument('-d', '--outputDir',
-                        metavar='/path/to/outputDir/',
-                        default='./workflow_output/',  # Default value
-                        help='Specifies the output directory for the output files generated by the workflow. Default: ./workflow_output/',
-                        type=str)
     
     parser.add_argument('--specify-runsheet',
                         help='Specifies the runsheet for an OSD dataset by name. Only used if there are multiple datasets with the same target in the study.',
                         metavar='runsheet_name',
                         type=str)
     
-    parser.add_argument('--trim-primers',
-                        choices=['TRUE', 'FALSE'],
-                        default='TRUE',
-                        help='Specifies to trim primers (TRUE) or not (FALSE). Default: TRUE',
-                        type=str)
-
-    parser.add_argument('-m', '--min_trimmed_length',
-                        metavar='length',
-                        default=130,  # Default value
-                        help='Specifies the MINIMUM length of trimmed reads. For paired-end data: if one read gets filtered, both reads are discarded. Default: 130',
-                        type=int)
-    
-    parser.add_argument('--primers-linked',
-                        choices=['TRUE', 'FALSE'],
-                        default='FALSE',
-                        help='If set to TRUE, instructs cutadapt to treat the primers as linked. Default: FALSE',
-                        type=str)
-
-    parser.add_argument('--anchor-primers',
-                        choices=['TRUE', 'FALSE'],
-                        default='FALSE',
-                        help='Indicates if primers should be anchored (TRUE) or not (FALSE). Default: FALSE',
-                        type=str)
-
-    parser.add_argument('--discard-untrimmed',
-                        choices=['TRUE', 'FALSE'],
-                        default='TRUE',
-                        help='If set to TRUE, instructs cutadapt to remove reads if the primers were not found in the expected location; if FALSE, these reads are kept. Default: TRUE',
-                        type=str)
-
-    parser.add_argument('--left-trunc',
-                        default=0,
-                        help='Specifies the length of the forwards reads, bases beyond this length will be truncated and reads shorter than this length are discarded. Default: 0 (no truncation)',
-                        metavar='length',
-                        type=int)
-
-    parser.add_argument('--right-trunc',
-                        default=0,
-                        help='Specifies the length of the reverse reads, bases beyond this length will be truncated and reads shorter than this length are discarded. Default: 0 (no truncation)',
-                        metavar='length',
-                        type=int)
-
-    parser.add_argument('--left-maxEE',
-                        default=1,
-                        help='Specifies the maximum expected error (maxEE) allowed for each forward read, reads with higher than maxEE will be discarded. Default: 1',
-                        metavar='max_error',
-                        type=int)
-
-    parser.add_argument('--right-maxEE',
-                        default=1,
-                        help='Specifies the maximum expected error (maxEE) allowed for each forward read, reads with higher than maxEE will be discarded. Default: 1',
-                        metavar='max_error',
-                        type=int)
-
-    parser.add_argument('--concatenate_reads_only',
-                        choices=['TRUE', 'FALSE'],
-                        default='FALSE',
-                        help='If set to TRUE, specifies to concatenate forward and reverse reads only with dada2 instead of merging paired reads. Default: FALSE',
-                        type=str)
-
-    parser.add_argument('--output-prefix',
-                        default='',
-                        help='Specifies the prefix to use on all output files to distinguish multiple primer sets, leave as an empty string if only one primer set is being processed. Default: ""',
-                        metavar='prefix',
-                        type=str)
-    
-    parser.add_argument('--visualizations',
-                        choices=['TRUE', 'FALSE'],
-                        default='FALSE',
-                    help='If set to TRUE, enables visualization of workflow results. Default: FALSE')
-    
+      
     # Check if no arguments were provided
     if len(sys.argv) == 1:
         parser.print_help()
@@ -656,9 +448,7 @@ def main():
     except SystemExit:
         parser.print_help()
         sys.exit(1)
-    
-    output_dir = args.outputDir
-    min_trimmed_length = args.min_trimmed_length
+
     target = args.target
     isa_zip = ""
 
@@ -706,26 +496,9 @@ def main():
                     sample_IDs_from_local(runsheet_df, output_file='unique-sample-IDs.txt')
 
                 # Create the config.yaml file
-                create_config_yaml(isa_zip=isa_zip,  
-                                    runsheet_file=runsheet_file, 
-                                    runsheet_df=runsheet_df, 
-                                    uses_urls=uses_urls,
-                                    output_dir=output_dir,
-                                    min_trimmed_length=args.min_trimmed_length,
-                                    trim_primers=args.trim_primers,
-                                    primers_linked=args.primers_linked,
-                                    anchor_primers=args.anchor_primers,
-                                    discard_untrimmed=args.discard_untrimmed,
-                                    left_trunc=args.left_trunc,
-                                    right_trunc=args.right_trunc,
-                                    left_maxEE=args.left_maxEE,
-                                    right_maxEE=args.right_maxEE,
-                                    concatenate_reads_only=args.concatenate_reads_only,
-                                    output_prefix=args.output_prefix,
-                                    enable_visualizations=args.visualizations
-                )
-                
-                print("Snakemake workflow setup is complete.")
+                write_params(runsheet_df=runsheet_df, uses_urls=uses_urls)
+                # Create input file required by the workflow
+                write_input_file(runsheet_df=runsheet_df)
             else:
                 print("Failed to validate the runsheet file.", file=sys.stderr)
                 sys.exit(1)
@@ -733,34 +506,6 @@ def main():
             print("No runsheet file specified.", file=sys.stderr)
             sys.exit(1)
     
-    # Run the snakemake workflow if --run is used
-    if args.run:
-        snakemake_command = args.run if args.run is not None else "snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p"
-        print(f"Running Snakemake command: {snakemake_command}")
-        subprocess.run(snakemake_command, shell=True, check=True)
-    
-        # # Remove sample ID file
-        # with open('config.yaml', 'r') as file:
-        #     config_data = yaml.safe_load(file)
-        #     sample_info_file = config_data.get('sample_info_file', '')  # Default to empty string if not found
-
-        # if sample_info_file and os.path.exists(sample_info_file):
-        #     os.remove(sample_info_file)
-        
-        # if isa_zip:
-        #     try:
-        #         os.remove(isa_zip)
-        #     except FileNotFoundError:
-        #         pass  # Ignore file not found error silently
-        #     except Exception:
-        #         pass 
-        # # Remove all files if OSD run
-        # if args.OSD:
-        #     os.remove(runsheet_file)  # Assuming runsheet_file is a variable holding the file name
-        #     os.remove("config.yaml")  # Ensure this is the correct file name
-
-        # if args.runsheetPath:
-        #     os.remove("config.yaml")  # Ensure this is the correct file name
 
 
 
