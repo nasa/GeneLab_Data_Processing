@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 ##################################################################################
 ## R processing script for 454/Ion Torrent amplicon data                        ##
 ## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                              ##
@@ -14,6 +15,7 @@ suppressWarnings(filtered_dir <- args[3])
 suppressWarnings(final_outputs_dir <- args[4])
 suppressWarnings(output_prefix <- args[5])
 suppressWarnings(target_region <- args[6])
+suppressWarnings(assay_suffix <- args[7])
 
     # loading libraries
 library(DECIPHER)
@@ -21,16 +23,18 @@ library(biomformat)
 
     ### assigning taxonomy ###
   # reading OTUs into a DNAStringSet object
-dna <- readDNAStringSet(paste0(final_outputs_dir, output_prefix, "OTUs.fasta"))
+dna <- readDNAStringSet(paste0(final_outputs_dir, output_prefix, "OTUs", assay_suffix, ".fasta"))
 
 
   # downloading reference R taxonomy object
 cat("\n\n  Downloading reference database...\n\n")
 
 if ( target_region == "16S" ) {
-    download.file("http://www2.decipher.codes/Classification/TrainingSets/SILVA_SSU_r138_2019.RData", "SILVA_SSU_r138_2019.RData")
-    load("SILVA_SSU_r138_2019.RData")
-    file.remove("SILVA_SSU_r138_2019.RData")
+#    download.file("http://www2.decipher.codes/Classification/TrainingSets/SILVA_SSU_r138_2019.RData", "SILVA_SSU_r138_2019.RData")
+#    load("SILVA_SSU_r138_2019.RData")
+#    file.remove("SILVA_SSU_r138_2019.RData")
+    data("TrainingSet_16S")
+    trainingSet <- TrainingSet_16S
 } else if ( target_region == "ITS" ) {
     download.file("http://www2.decipher.codes/Classification/TrainingSets/UNITE_v2020_February2020.RData", "UNITE_v2020_February2020.RData")
     load("UNITE_v2020_February2020.RData")
@@ -62,24 +66,24 @@ row.names(tax_tab) <- NULL
 otu_ids <- names(tax_info)
 tax_tab <- data.frame("OTU_ID"=otu_ids, tax_tab, check.names=FALSE)
 
-write.table(tax_tab, paste0(final_outputs_dir, output_prefix, "taxonomy.tsv"), sep = "\t", quote=F, row.names=FALSE)
+write.table(tax_tab, paste0(final_outputs_dir, output_prefix,"taxonomy", assay_suffix, ".tsv"), sep = "\t", quote=F, row.names=FALSE)
 
     # reading in counts table to generate other outputs
-otu_tab <- read.table(paste0(final_outputs_dir, output_prefix, "counts.tsv"), sep="\t", header=TRUE, check.names=FALSE)
+otu_tab <- read.table(paste0(final_outputs_dir, output_prefix, "counts", assay_suffix, ".tsv"), sep="\t", header=TRUE, check.names=FALSE)
 
     # generating and writing out biom file format
 biom_object <- make_biom(data=otu_tab, observation_metadata=tax_tab)
-write_biom(biom_object, paste0(final_outputs_dir, output_prefix, "taxonomy-and-counts.biom"))
+write_biom(biom_object, paste0(final_outputs_dir, output_prefix, "taxonomy-and-counts", assay_suffix, ".biom"))
 
     # making a tsv of combined tax and counts
 tax_and_count_tab <- merge(tax_tab, otu_tab)
-write.table(tax_and_count_tab, paste0(final_outputs_dir, output_prefix, "taxonomy-and-counts.tsv"), sep="\t", quote=FALSE, row.names=FALSE)
+write.table(tax_and_count_tab, paste0(final_outputs_dir, output_prefix, "taxonomy-and-counts", assay_suffix, ".tsv"), sep="\t", quote=FALSE, row.names=FALSE)
 
 # making final count summary table
-cutadapt_tab <- read.table(paste0(trimmed_dir, output_prefix, "trimmed-read-counts.tsv"), sep="\t", header=TRUE)
-bbduk_tab <- read.table(paste0(filtered_dir, output_prefix, "filtered-read-counts.tsv"), sep="\t", header=TRUE)[,c(1,3)]
+cutadapt_tab <- read.table(paste0(trimmed_dir, output_prefix, "trimmed-read-counts", assay_suffix, ".tsv"), sep="\t", header=TRUE)
+bbduk_tab <- read.table(paste0(filtered_dir, output_prefix, "filtered-read-counts", assay_suffix, ".tsv"), sep="\t", header=TRUE)[,c(1,3)]
     # re-reading in counts table to this time set first col as rownames (rather than doing it another way)
-otu_tab <- read.table(paste0(final_outputs_dir, output_prefix, "counts.tsv"), sep="\t", header=TRUE, check.names=FALSE, row.names = 1)
+otu_tab <- read.table(paste0(final_outputs_dir, output_prefix, "counts", assay_suffix, ".tsv"), sep="\t", header=TRUE, check.names=FALSE, row.names = 1)
 mapped_sums <- colSums(otu_tab)
 mapped_tab <- data.frame(sample=names(mapped_sums), mapped_to_OTUs=mapped_sums, row.names=NULL)
 
@@ -87,7 +91,7 @@ t1 <- merge(cutadapt_tab, bbduk_tab)
 count_summary_tab <- merge(t1, mapped_tab)
 count_summary_tab$final_perc_reads_retained <- round(count_summary_tab$mapped_to_OTUs / count_summary_tab$raw_reads * 100, 2)
 
-write.table(count_summary_tab, paste0(final_outputs_dir, output_prefix, "read-count-tracking.tsv"), sep="\t", quote=FALSE, row.names=FALSE)
+write.table(count_summary_tab, paste0(final_outputs_dir, output_prefix, "read-count-tracking", assay_suffix, ".tsv"), sep="\t", quote=FALSE, row.names=FALSE)
 
 cat("\n\n  Session info:\n\n")
 sessionInfo()
