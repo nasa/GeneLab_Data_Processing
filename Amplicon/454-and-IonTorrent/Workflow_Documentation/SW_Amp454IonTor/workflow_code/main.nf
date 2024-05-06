@@ -7,6 +7,59 @@ c_bright_green = "\u001b[32;1m";
 c_blue = "\033[0;34m";
 c_reset = "\033[0m";
 
+/**************************************************
+* HELP MENU  **************************************
+**************************************************/
+if (params.help) {
+  println()
+  println("Nextflow Amp454IonTor Consensus Pipeline: $workflow.manifest.version")
+  println("USAGE:")
+  println("Example 1: Submit and run jobs with slurm in singularity containers.")
+  println("   > nextflow run main.nf -resume -profile slurm_sing --csv_file file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --min_bbduk_len 50 --min_bbduk_avg_quality 15")
+  println()
+  println("Example 2: : Submit and run jobs with slurm in conda environments.")
+  println("   > nextflow run main.nf -resume -profile slurm_conda --csv_file file.csv --target_region 1TS --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --min_bbduk_len 50 --min_bbduk_avg_quality 15")
+  println()
+  println("Example 3: Run jobs locally in conda environments and specify the path to an existing conda environment")
+  println("   > nextflow run main.nf -resume -profile conda --csv_file file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --min_bbduk_len 50 --min_bbduk_avg_quality 15 --conda.qc <path/to/existing/conda/environment>")
+  println()
+  println("Required arguments:")
+  println("""-profile [STRING] What profile should be used be use to run the workflow. Options are [singularity, docker, conda, slurm_sing, slurm_conda].
+	         singularity, docker and conda will run the pipelne locally using singularity, docker, and conda, respectively.
+             slurm_sing and slurm_conda will submit and run jobs using slurm in singularity containers and conda environments, respectively. """)			 
+  println("--csv_file  [PATH]  A 2-column input file with these headers [sample_id, read] e.g. file.csv. The sample_id column should contain unique sample ids while the read column should contain the absolute or relative path to the sample's reads.")
+  println("--target_region [STRING] What the amplicon target region to be aanalyzed. options are one of [16S, 18S, ITS]. Default: 16S")
+  println("Cutadapt (trimming) parameters:")
+  println("	    --F_primer [STRING] Forward primer sequence e.g. AGAGTTTGATCCTGGCTCAG")
+  println("	    --R_primer [STRING] Reverse primer sequence e.g. CTGCCTCCCGTAGGAGT")
+  println("BBDUK (filtering) parameters:")
+  println("	    --min_bbduk_len [INT] Minimum read length threshold for bbduk. Default: 50") 
+  println("	    --min_bbduk_avg_quality [INT] BBduk minimum average quality. Default: 15")  
+	
+  println("Optional arguments:")  
+  println("  --help  Print this help message and exit")
+  println("  --publishDir_mode [STRING]  How should nextflow handle file outputs. Options can be found here https://www.nextflow.io/docs/latest/process.html#publishdir Default: link.")
+  println("File Suffixes:")
+  println("      --primer_trimmed_suffix [STRING] Suffix to use for naming your primer trimmed reads. Default: _trimmed.fastq.gz")
+  println("      --filtered_suffix [STRING]  Suffix to use for naming your quality filtered reads. Default: _filtered.fastq.gz")
+  println("Output directories:")
+  println("      --raw_reads_dir [PATH] Where should your processed raw reads be stored. Default: Raw_Sequence_Data/")
+  println("      --fastqc_out_dir [PATH] Where should fastqc and multiqc outputs be stored. Default: FastQC_Outputs/")
+  println("      --trimmed_reads_dir [PATH] Where should your cutadapt trimmed reads be stored. Default: Trimmed_Sequence_Data/")
+  println("      --filtered_reads_dir [PATH] Where should your BBDUK filtered reads be stored.  Default: Filtered_Sequence_Data/")
+  println("Genelab specific arguements:")
+  println("      --assay_suffix [STRING]  Genelabs assay suffix. Default: GLAmpSeq.")
+  println("      --output_prefix [STRING] Unique name to tag on to output files. Default: ''")
+  println("Paths to existing conda environments to use otherwise a new one will be created using the yaml file in envs/.")
+  println("      --conda.qc [PATH] Path to a conda environment containing fastqc, multiqc, zip and python. Default: false.")
+  println("      --conda.R [PATH] Path to a conda environment containing R along with the packages decipher and biomformat installed. Default: false.")
+  println("      --conda.bbmap [PATH] Path to a conda environment containing bbmap. Default: false.")
+  println("      --conda.cutadapt [PATH] Path to a conda environment containing cutadapt. Default: false.")
+  println("      --conda.vsearch [PATH] Path to a conda environment containing vsearch and bit. Default: false.")
+  print("Advanced users can edit the nextflow.config file for more control over default settings such container choice, number cpus, memory per task etc.")
+  exit 0
+  }
+
 
 // Read quality check and filtering
 include { FASTQC as RAW_FASTQC ; MULTIQC as RAW_MULTIQC  } from './modules/quality_assessment.nf'
