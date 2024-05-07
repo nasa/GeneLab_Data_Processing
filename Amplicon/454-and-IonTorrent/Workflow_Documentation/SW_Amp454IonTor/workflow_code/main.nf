@@ -69,13 +69,13 @@ log.info """
          Reverse Primer: ${params.R_primer}
          Minimum read length: ${params.min_bbduk_len}bp
          Minimum read quality: ${params.min_bbduk_avg_quality}
-         Directory publishing mode: ${publishDir_mode}
+         Directory publishing mode: ${params.publishDir_mode}
          Raw reads Directory: ${params.raw_reads_dir}
          FastQC Directory: ${params.fastqc_out_dir}
          Trimmed Reads Directory: ${params.trimmed_reads_dir}
-         Filtered Reads Directory: ${params.}
-         Genelab Assay Suffix: ${params.}
-         Output prefix: ${params.}
+         Filtered Reads Directory: ${params.filtered_reads_dir}
+         Genelab Assay Suffix: ${params.assay_suffix}
+         Output prefix: ${params.output_prefix}
          Conda environments:
          qc: ${params.conda.qc}
          R: ${params.conda.R}
