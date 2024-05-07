@@ -51,15 +51,38 @@ if (params.help) {
   println("      --assay_suffix [STRING]  Genelabs assay suffix. Default: GLAmpSeq.")
   println("      --output_prefix [STRING] Unique name to tag on to output files. Default: ''")
   println("Paths to existing conda environments to use otherwise a new one will be created using the yaml file in envs/.")
-  println("      --conda.qc [PATH] Path to a conda environment containing fastqc, multiqc, zip and python. Default: false.")
-  println("      --conda.R [PATH] Path to a conda environment containing R along with the packages decipher and biomformat installed. Default: false.")
-  println("      --conda.bbmap [PATH] Path to a conda environment containing bbmap. Default: false.")
-  println("      --conda.cutadapt [PATH] Path to a conda environment containing cutadapt. Default: false.")
-  println("      --conda.vsearch [PATH] Path to a conda environment containing vsearch and bit. Default: false.")
+  println("      --conda.qc [PATH] Path to a conda environment containing fastqc, multiqc, zip and python. Default: null.")
+  println("      --conda.R [PATH] Path to a conda environment containing R along with the packages decipher and biomformat installed. Default: null.")
+  println("      --conda.bbmap [PATH] Path to a conda environment containing bbmap. Default: null.")
+  println("      --conda.cutadapt [PATH] Path to a conda environment containing cutadapt. Default: null.")
+  println("      --conda.vsearch [PATH] Path to a conda environment containing vsearch and bit. Default: null.")
   print("Advanced users can edit the nextflow.config file for more control over default settings such container choice, number cpus, memory per task etc.")
   exit 0
   }
 
+log.info """
+         Nextflow Amp454IonTor Consensus Pipeline: $workflow.manifest.version
+         You have set the following parameters:
+         Input csv file : ${params.csv_file}
+         Amplicon target region : ${params.target_region}
+         Foward Primer: ${params.F_primer}
+         Reverse Primer: ${params.R_primer}
+         Minimum read length: ${params.min_bbduk_len}bp
+         Minimum read quality: ${params.min_bbduk_avg_quality}
+         Directory publishing mode: ${publishDir_mode}
+         Raw reads Directory: ${params.raw_reads_dir}
+         FastQC Directory: ${params.fastqc_out_dir}
+         Trimmed Reads Directory: ${params.trimmed_reads_dir}
+         Filtered Reads Directory: ${params.}
+         Genelab Assay Suffix: ${params.}
+         Output prefix: ${params.}
+         Conda environments:
+         qc: ${params.conda.qc}
+         R: ${params.conda.R}
+         bbmap: ${params.conda.bbmap}
+         cutadapt: ${params.conda.cutadapt}
+         vsearch: ${params.conda.vsearch}
+         """.stripIndent()
 
 // Read quality check and filtering
 include { FASTQC as RAW_FASTQC ; MULTIQC as RAW_MULTIQC  } from './modules/quality_assessment.nf'
