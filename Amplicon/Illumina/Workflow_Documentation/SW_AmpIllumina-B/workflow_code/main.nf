@@ -12,7 +12,7 @@ c_reset = "\033[0m";
 **************************************************/
 if (params.help) {
   println()
-  println("Nextflow Amp454IonTor Consensus Pipeline: $workflow.manifest.version")
+  println("Nextflow AmpIllumina Consensus Pipeline: $workflow.manifest.version")
   println("USAGE:")
   println("Example 1: Submit and run jobs with slurm in singularity containers.")
   println("   > nextflow run main.nf -resume -profile slurm_sing --csv_file PE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT")
@@ -90,7 +90,7 @@ if (params.help) {
   }
 
 log.info """
-         Nextflow Amp454IonTor Consensus Pipeline: $workflow.manifest.version
+         Nextflow AmpIllumina Consensus Pipeline: $workflow.manifest.version
          
          You have set the following parameters:
          Input csv file : ${params.csv_file}
