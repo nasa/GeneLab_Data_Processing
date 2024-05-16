@@ -40,7 +40,7 @@ echo ""
 
 ## The command(s) that you want to run in this slurm job ##
 export NXF_SINGULARITY_CACHEDIR=singularity/
-nextflow run main.nf -profile singularity -resume --csv_file SE_file.csv ## Replace command with the command(s) you want to run ##
+nextflow run main.nf -profile slurm_sing -resume --csv_file PE_file.csv ## Replace command with the command(s) you want to run ##
 
 
 ## Add a time-stamp at the end of the job then calculate how long the job took to run in seconds, minutes, and hours ##
