@@ -4,7 +4,7 @@
 ## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                              ##
 ##################################################################################
 
-# as called from the associated Snakefile, this expects to be run as: Rscript full-R-processing.R <left_trunc> <right_trunc> <left_maxEE> <right_maxEE> <TRUE/FALSE - GL trimmed primers or not> <unique-sample-IDs-file> <starting_reads_dir_for_R> <filtered_reads_dir> <input_file_R1_suffix> <input_file_R2_suffix> <filtered_filename_R1_suffix> <filtered_filename_R2_suffix> <final_outputs_directory> <output_prefix> <target_region> <concatenate_reads_only> <assay_suffix>
+# as called from the associated process, this expects to be run as: Rscript full-R-processing.R <left_trunc> <right_trunc> <left_maxEE> <right_maxEE> <TRUE/FALSE - GL trimmed primers or not> <unique-sample-IDs-file> <starting_reads_dir_for_R> <filtered_reads_dir> <input_file_R1_suffix> <input_file_R2_suffix> <filtered_filename_R1_suffix> <filtered_filename_R2_suffix> <final_outputs_directory> <output_prefix> <target_region> <concatenate_reads_only> <assay_suffix>
     # where <left_trim> and <right_trim> are the values to be passed to the truncLen parameter of dada2's filterAndTrim()
     # and <left_maxEE> and <right_maxEE> are the values to be passed to the maxEE parameter of dada2's filterAndTrim()
 
@@ -161,8 +161,7 @@ dna <- DNAStringSet(getSequences(seqtab.nochim))
     # downloading reference R taxonomy object (at some point this will be stored somewhere on GeneLab's server and we won't download it, but should leave the code here, just commented out)
 cat("\n\n  Downloading reference database...\n\n")
 if ( target_region == "16S" ) { 
-    #download.file("http://www2.decipher.codes/Classification/TrainingSets/SILVA_SSU_r138_2019.RData", "SILVA_SSU_r138_2019.RData")
-    download.file("https://figshare.com/ndownloader/files/23739737", "SILVA_SSU_r138_2019.RData")
+    download.file("https://figshare.com/ndownloader/files/46245217", "SILVA_SSU_r138_2019.RData")
     # loading reference taxonomy object
     load("SILVA_SSU_r138_2019.RData")
     # removing downloaded file
@@ -171,22 +170,22 @@ if ( target_region == "16S" ) {
 
 } else if (target_region == "ITS" ) {
 
-    download.file("http://www2.decipher.codes/Classification/TrainingSets/UNITE_v2023_July2023.RData", "UNITE_v2023_July2023.RData")    
+    download.file("https://figshare.com/ndownloader/files/46245586", "UNITE_v2020_February2020.RData")    
     # loading reference taxonomy object
-    load("UNITE_v2023_July2023.RData")
+    load("UNITE_v2020_February2020.RData")
     # removing downloaded file
-    file.remove("UNITE_v2023_July2023.RData")
+    #file.remove("UNITE_v2020_February2020.RData")
 
     ranks <- c("kingdom", "phylum", "class", "order", "family", "genus", "species")
 
 } else if (target_region == "18S" ) {
 
-    download.file("http://www2.decipher.codes/Classification/TrainingSets/PR2_v4_13_March2021.RData", "PR2_v4_13_March2021.RData")   
+    download.file("https://figshare.com/ndownloader/files/46241917", "PR2_v4_13_March2021.RData")   
     # https://github.com/pr2database/pr2database/releases/download/v4.14.0/pr2_version_4.14.0_SSU.decipher.trained.rds 
     # loading reference taxonomy object
     load("PR2_v4_13_March2021.RData")
     # removing downloaded file
-    file.remove("PR2_v4_13_March2021.RData")
+    #file.remove("PR2_v4_13_March2021.RData")
 
     ranks <- c("kingdom", "division", "phylum", "class", "order", "family", "genus", "species")
 
