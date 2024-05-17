@@ -33,7 +33,7 @@ if (params.help) {
   println("   The sample_id column should contain unique sample ids.")
   println("   The forward and reverse columns should contain the absolute or relative path to the sample's forward and reverse reads.")
   println("   The paired column should be true for paired-end or anything else for single-end reads.")
-
+  println()
   println("Optional arguments:")  
   println("  --help  Print this help message and exit")
   println("  --workflow [STRING] Which workflow should be run. Options are one of [read-based, assembly-based, both]. Default: both.")
@@ -50,7 +50,7 @@ if (params.help) {
   println("    see https://ecogenomics.github.io/GTDBTk/faq.html#gtdb-tk-reaches-the-memory-limit-pplacer-crashes")
   println("    leave empty if wanting to use memory, the default, put in quotes the path to a directory that")
   println("    already exists if wanting to use disk space. Default: false.")
-
+  println()
   println("MAG parameters: MAG filtering cutoffs based on checkm quality assessments (in percent); see https://github.com/Ecogenomics/CheckM/wiki/Reported-Statistics.")
   println("	 --min_est_comp [INT] Minimum estimated completion. Default: 90.") 
   println("	 --max_est_redund [INT] Minimum estimated redundancy. Default: 10.") 
@@ -59,16 +59,17 @@ if (params.help) {
   println("    'True' for yes, anything else will be considered 'False' and the default full tree will be used. Default: 'True'. ")
   println("	 --max_mem [INT] Maximum memory allowed passed to megahit assembler. Can be set either by proportion of available on system, e.g. 0.5")
   println("    or by absolute value in bytes, e.g. 100e9 would be 100 GB. Default: 100e9.")
-  
+  println()  
   println("	 --pileup_mem [STRING] pileup.sh paramater for calculating contig coverage and depth. Memory used by bbmap's pileup.sh (within the GET_COV_AND_DET process). ")
   println("	   passed as the -Xmx parameter, 20g means 20 gigs of RAM, 20m means 20 megabytes.")
   println("	   5g should be sufficient for most assemblies, but if that rule is failing, this may need to be increased.Default: '5g' .")
   println("	 --block_size [int] Block size variable for CAT/diamond, lower value means less RAM usage; see https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options#memory--performance-options. Default: 4.")
-
+  println()
   println("File Suffixes:")
   println("      --filtered_suffix [STRING]  Suffix to use for naming your quality filtered reads. Only applicable when input reads are single-end. Default: _filtered.fastq.gz.")  
   println("      --filtered_R1_suffix [STRING]  Suffix to use for naming your quality filtered forward reads. Default: _R1_filtered.fastq.gz.")
   println("      --filtered_R2_suffix [STRING]  Suffix to use for naming your quality filtered reverse reads. Default: _R2_filtered.fastq.gz.")
+  println()
   println("Output directories:")
   println("      --raw_reads_dir [PATH] Where should the fastqc report of the raw reads be stored. Default: Raw_Sequence_Data/.")
   println("      --fastqc_out_dir [PATH] Where should multiqc outputs be stored. Default: FastQC_Outputs/.")
@@ -82,13 +83,13 @@ if (params.help) {
   println("      --bins_dir [PATH] Assembly bins directory.  Default: Assembly-based_Processing/bins/.")
   println("      --MAGs_dir [PATH] Meta assembled genomes (MAGs) directory.  Default: Assembly-based_Processing/MAGs/.")
   println("      --read_based_dir [PATH] Read-based analysis outputs directory.  Default: Read-based_Processing/.")
-
+  println()
   println("Genelab specific arguements:")
   println("      --GLDS_accession [STRING]  A Genelab accession number if the --csv_file parameter is not set. If this parameter is set, it will ignore the --csv_file parameter.")
   println("      --assay_suffix [STRING]  Genelabs assay suffix. Default: _GLmetagenomics.")
   println("      --additional_filename_prefix [STRING] additional prefix to add to output files that describe more than one sample (to make them unique compared to other datasets).")
   println("      include separator at end if adding one, e.g. Swift1S_ if wanted. Default: '' .")
-
+  println()
   println("Paths to existing databases and database links.")
   println("CAT database directory strings:")
   println("The strings below will be added to the end of the --database.cat_db path arguement provided below.")
@@ -102,7 +103,7 @@ if (params.help) {
   println("      --database.uniref_dir [PATH] Path to Humann's Uniref protein database. Example, /path/to/Reference_DBs/humann3-db/uniref/. Default: null.")
   println("      --database.utilities_dir [PATH] Path to Humann's untilities database. Example, /path/to/Reference_DBs/humann3-db/utility_mapping/.  Default: null.")
   println("      --database.gtdbtk_db_dir  [PATH] Path to GTDBTK database. Example, /path/Reference_DBs/GTDB-tk-ref-db/. Default: null.")
- 
+  println()
   println("Paths to existing conda environments to use otherwise a new one will be created using the yaml file in envs/.")
   println("      --conda.qc [PATH] Path to a conda environment containing fastqc, multiqc, zip and python. Default: null.")
   println("      --conda.humann3 [PATH] Path to a conda environment with humann3 installed. Default: null.")
