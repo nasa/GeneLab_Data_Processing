@@ -16,3 +16,4 @@ YEAST,Saccharomyces cerevisiae,S288C,107,ensembl,http://ftp.ensembl.org/pub/rele
 STAA8,Staphylococcus aureus,UAMS-1,54,ensembl_bacteria,coming soon,coming soon,,,,
 ,Streptococcus mutans,UA159,54,ensembl_bacteria,coming soon,coming soon,,,,
 BRADI,Brachypodium distachyon,,54,ensembl_plants,https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-54/fasta/brachypodium_distachyon/dna/Brachypodium_distachyon.Brachypodium_distachyon_v3.0.dna.toplevel.fa.gz,https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-54/gtf/brachypodium_distachyon/Brachypodium_distachyon.Brachypodium_distachyon_v3.0.54.gtf.gz,15368,,,
+ORYSJ,Oryza sativa,Japonica,54,ensembl_plants,https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-54/fasta/oryza_sativa/dna/Oryza_sativa.IRGSP-1.0.dna.toplevel.fa.gz,https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-54/gtf/oryza_sativa/Oryza_sativa.IRGSP-1.0.54.gtf.gz,4530,BSgenome.Osativa.MSU.MSU7,,

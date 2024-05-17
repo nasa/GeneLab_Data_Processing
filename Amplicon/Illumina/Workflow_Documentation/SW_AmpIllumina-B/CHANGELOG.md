@@ -1,5 +1,13 @@
 # Workflow change log
 
+## [1.2.2](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_AmpIllumina-B_1.2.2/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B)
+- Visualizations are now optional with the default being off.
+  - Enable with optional `run_workflow.py` argument `--visualizations TRUE` or setting `config.yaml` `enable_visualizations` to "TRUE"
+- Added new directory `workflow_code/visualizations/`
+  - Moved visualization script and conda environment config file to `workflow_code/visualizations/`
+  - Added `workflow_code/visualizations/README.md` for instructions on running the visualization script manually
+- Refactored Snakefile outputs
+
 ## [1.2.1](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_AmpIllumina-B_1.2.1/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B)
 - Moved SW_AmpIllumina-A_1.2.1 to SW_AmpIllumina-B_1.2.1
 - Workflow runs the [GL-DPPD-7104-B version](../../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md) of the GeneLab standard pipeline, which includes data visualization outputs
