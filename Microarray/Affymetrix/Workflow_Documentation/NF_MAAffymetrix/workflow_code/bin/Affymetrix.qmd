@@ -62,6 +62,8 @@ dir.create(DIR_DGE)
 
 original_par <- par()
 options(preferRaster=TRUE) # use Raster when possible to avoid antialiasing artifacts in images
+
+options(timeout=1000)
 ```
 
 ## Load Metadata and Raw Data
