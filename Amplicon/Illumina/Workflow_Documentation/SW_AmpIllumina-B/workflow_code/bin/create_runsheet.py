@@ -291,7 +291,7 @@ def handle_url_downloads(runsheet_df, output_file='unique-sample-IDs.txt'):
     if skipped_downloads_count > 0:
         print(f"{skipped_downloads_count} read file(s) were already present and were not downloaded.")
 
-def download_url_to_file(url, file_path, max_retries=6, timeout_seconds=120):
+def download_url_to_file(url, file_path, max_retries=3, timeout_seconds=120):
     retries = 0
     success = False
 
@@ -302,11 +302,6 @@ def download_url_to_file(url, file_path, max_retries=6, timeout_seconds=120):
 
             with open(file_path, 'wb') as file:
                 shutil.copyfileobj(response.raw, file)
-                # Check if gzip file downloaded successfully
-                # If not, jump out of the loop and retry downloading
-                retcode = subprocess.call(["gzip", "-t", f"{file_path}"])
-                if retcode != 0:
-                    continue
             success = True
 
         except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
@@ -369,10 +364,7 @@ def write_input_file(runsheet_df):
                 sample_id = row['Sample Name']
                 read1_path = os.path.join(raw_reads_dir, sample_id + row['raw_R1_suffix'])
                 read2_path = os.path.join(raw_reads_dir, sample_id + row['raw_R2_suffix'])
-                if os.path.exists(read1_path) and os.path.exists(read2_path):
-                    file.write(f"{sample_id},{read1_path},{read2_path},true\n")
-                else:
-                    print(f"Paired-end data does not exist for {sample_id}. Therefore this analysis will not include {sample_id}...")
+                file.write(f"{sample_id},{read1_path},{read2_path},true\n")
         else:
             file.write(f"sample_id,forward,paired\n")
             for _, row in runsheet_df.iterrows():
