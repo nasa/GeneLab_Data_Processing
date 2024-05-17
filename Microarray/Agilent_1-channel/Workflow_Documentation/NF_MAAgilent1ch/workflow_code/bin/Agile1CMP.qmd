@@ -1,6 +1,6 @@
 ---
 title: "Agilent 1 Channel Processing"
-subtitle: "Workflow Version: NF_MAAgilent1ch_1.0.2"
+subtitle: "Workflow Version: NF_MAAgilent1ch_1.0.3"
 date: now
 title-block-banner: true
 format:
