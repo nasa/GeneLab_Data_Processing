@@ -122,7 +122,7 @@ if (params.help) {
   }
 
 log.info """
-         Nextflow Metagenomics Illumina Consensus Pipeline: $workflow.manifest.version
+         Nextflow MGIllumina Consensus Pipeline: $workflow.manifest.version
          
          You have set the following parameters:
          Profile: ${workflow.profile} 
