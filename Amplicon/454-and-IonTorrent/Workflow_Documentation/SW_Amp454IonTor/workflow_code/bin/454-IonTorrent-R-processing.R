@@ -30,15 +30,15 @@ dna <- readDNAStringSet(paste0(final_outputs_dir, output_prefix, "OTUs", assay_s
 cat("\n\n  Downloading reference database...\n\n")
 
 if ( target_region == "16S" ) {
-#    download.file("http://www2.decipher.codes/Classification/TrainingSets/SILVA_SSU_r138_2019.RData", "SILVA_SSU_r138_2019.RData")
-#    load("SILVA_SSU_r138_2019.RData")
-#    file.remove("SILVA_SSU_r138_2019.RData")
-    data("TrainingSet_16S")
-    trainingSet <- TrainingSet_16S
+
+    download.file("https://figshare.com/ndownloader/files/46245217", "SILVA_SSU_r138_2019.RData")
+    load("SILVA_SSU_r138_2019.RData")
+    #file.remove("SILVA_SSU_r138_2019.RData")
+
 } else if ( target_region == "ITS" ) {
-    download.file("http://www2.decipher.codes/Classification/TrainingSets/UNITE_v2020_February2020.RData", "UNITE_v2020_February2020.RData")
+    download.file("https://figshare.com/ndownloader/files/46245586", "UNITE_v2020_February2020.RData")
     load("UNITE_v2020_February2020.RData")
-    file.remove("UNITE_v2020_February2020.RData")
+    #file.remove("UNITE_v2020_February2020.RData")
 }
 
 

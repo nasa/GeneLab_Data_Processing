@@ -23,40 +23,50 @@ if (params.help) {
   println("Example 3: Run jobs locally in conda environments and specify the path to an existing conda environment")
   println("   > nextflow run main.nf -resume -profile conda --csv_file file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --min_bbduk_len 50 --min_bbduk_avg_quality 15 --conda.qc <path/to/existing/conda/environment>")
   println()
+  println()
   println("Required arguments:")
-  println("""-profile [STRING] What profile should be used be use to run the workflow. Options are [singularity, docker, conda, slurm_sing, slurm_conda].
-	         singularity, docker and conda will run the pipelne locally using singularity, docker, and conda, respectively.
+  println()  
+  println("""-profile [STRING] Which profile should be used to run the workflow. Options are [singularity, docker, conda, slurm_sing, slurm_conda].
+	           singularity, docker and conda will run the pipeline locally using singularity, docker, and conda, respectively.
              slurm_sing and slurm_conda will submit and run jobs using slurm in singularity containers and conda environments, respectively. """)			 
   println("--csv_file  [PATH]  A 2-column input file with these headers [sample_id, read] e.g. file.csv. The sample_id column should contain unique sample ids while the read column should contain the absolute or relative path to the sample's reads.")
-  println("--target_region [STRING] What the amplicon target region to be aanalyzed. options are one of [16S, 18S, ITS]. Default: 16S")
+  println("--target_region [STRING] What the amplicon target region to be aanalyzed. options are one of [16S, ITS]. Default: 16S")
+  println()
   println("Cutadapt (trimming) parameters:")
   println("	    --F_primer [STRING] Forward primer sequence e.g. AGAGTTTGATCCTGGCTCAG")
   println("	    --R_primer [STRING] Reverse primer sequence e.g. CTGCCTCCCGTAGGAGT")
+  println()
   println("BBDUK (filtering) parameters:")
   println("	    --min_bbduk_len [INT] Minimum read length threshold for bbduk. Default: 50") 
   println("	    --min_bbduk_avg_quality [INT] BBduk minimum average quality. Default: 15")  
-	
+  println()
+  println()	
   println("Optional arguments:")  
+  println()
   println("  --help  Print this help message and exit")
   println("  --publishDir_mode [STRING]  How should nextflow handle file outputs. Options can be found here https://www.nextflow.io/docs/latest/process.html#publishdir Default: link.")
+  println()
   println("File Suffixes:")
   println("      --primer_trimmed_suffix [STRING] Suffix to use for naming your primer trimmed reads. Default: _trimmed.fastq.gz")
   println("      --filtered_suffix [STRING]  Suffix to use for naming your quality filtered reads. Default: _filtered.fastq.gz")
+  println()  
   println("Output directories:")
   println("      --raw_reads_dir [PATH] Where should your processed raw reads be stored. Default: Raw_Sequence_Data/")
   println("      --fastqc_out_dir [PATH] Where should fastqc and multiqc outputs be stored. Default: FastQC_Outputs/")
   println("      --trimmed_reads_dir [PATH] Where should your cutadapt trimmed reads be stored. Default: Trimmed_Sequence_Data/")
   println("      --filtered_reads_dir [PATH] Where should your BBDUK filtered reads be stored.  Default: Filtered_Sequence_Data/")
+  println()
   println("Genelab specific arguements:")
   println("      --assay_suffix [STRING]  Genelabs assay suffix. Default: GLAmpSeq.")
   println("      --output_prefix [STRING] Unique name to tag on to output files. Default: ''")
+  println()
   println("Paths to existing conda environments to use otherwise a new one will be created using the yaml file in envs/.")
   println("      --conda.qc [PATH] Path to a conda environment containing fastqc, multiqc, zip and python. Default: null.")
   println("      --conda.R [PATH] Path to a conda environment containing R along with the packages decipher and biomformat installed. Default: null.")
   println("      --conda.bbmap [PATH] Path to a conda environment containing bbmap. Default: null.")
   println("      --conda.cutadapt [PATH] Path to a conda environment containing cutadapt. Default: null.")
   println("      --conda.vsearch [PATH] Path to a conda environment containing vsearch and bit. Default: null.")
-  print("Advanced users can edit the nextflow.config file for more control over default settings such container choice, number cpus, memory per task etc.")
+  print("Advanced users can edit the nextflow.config file for more control over default settings such as container choice, number of cpus, memory per task etc.")
   exit 0
   }
 
@@ -70,12 +80,21 @@ log.info """
          Minimum read length: ${params.min_bbduk_len}bp
          Minimum read quality: ${params.min_bbduk_avg_quality}
          Directory publishing mode: ${params.publishDir_mode}
-         Raw reads Directory: ${params.raw_reads_dir}
-         FastQC Directory: ${params.fastqc_out_dir}
-         Trimmed Reads Directory: ${params.trimmed_reads_dir}
-         Filtered Reads Directory: ${params.filtered_reads_dir}
+
+         File Suffixes:
+         Primers Trimmed Reads Suffix: ${params.primer_trimmed_suffix}
+         Filtered Reads Suffix: ${params.filtered_suffix} 
+
+         Output directories:
+         Raw reads: ${params.raw_reads_dir}
+         FastQC: ${params.fastqc_out_dir}
+         Trimmed Reads: ${params.trimmed_reads_dir}
+         Filtered Reads: ${params.filtered_reads_dir}
+
+         Genelab parameters:
          Genelab Assay Suffix: ${params.assay_suffix}
          Output prefix: ${params.output_prefix}
+
          Conda environments:
          qc: ${params.conda.qc}
          R: ${params.conda.R}
