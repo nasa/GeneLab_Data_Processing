@@ -97,6 +97,7 @@ log.info """
          Nextflow AmpIllumina Consensus Pipeline: $workflow.manifest.version
          
          You have set the following parameters:
+         Profile: ${workflow.profile}
          Input csv file : ${params.csv_file}
          GLDS_accession : ${params.GLDS_accession}
          Amplicon target region : ${params.target_region}
