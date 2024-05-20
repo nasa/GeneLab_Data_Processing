@@ -1,6 +1,6 @@
 ---
 title: "Affymetrix Processing"
-subtitle: "Workflow Version: NF_MAAffymetrix_1.0.3"
+subtitle: "Workflow Version: NF_MAAffymetrix_1.0.4"
 date: now
 title-block-banner: true
 format:
@@ -62,6 +62,8 @@ dir.create(DIR_DGE)
 
 original_par <- par()
 options(preferRaster=TRUE) # use Raster when possible to avoid antialiasing artifacts in images
+
+options(timeout=1000)
 ```
 
 ## Load Metadata and Raw Data

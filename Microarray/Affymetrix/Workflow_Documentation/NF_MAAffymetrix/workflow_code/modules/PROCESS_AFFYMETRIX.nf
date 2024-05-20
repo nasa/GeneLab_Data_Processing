@@ -23,6 +23,8 @@ process PROCESS_AFFYMETRIX {
   script:
     def limit_biomart_query_parameter = limit_biomart_query ? "-P DEBUG_limit_biomart_query:${limit_biomart_query}" : ''
     """
+        export HOME=\$PWD;
+
         quarto render \$PWD/${qmd} \
             -P 'runsheet:${runsheet_csv}' \
             -P 'annotation_file_path:${annotation_file_path}' \
