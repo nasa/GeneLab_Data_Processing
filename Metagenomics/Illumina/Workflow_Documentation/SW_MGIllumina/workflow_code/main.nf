@@ -7,13 +7,13 @@ c_bright_green = "\u001b[32;1m";
 c_blue = "\033[0;34m";
 c_reset = "\033[0m";
 
-
+params.help = false
 /**************************************************
 * HELP MENU  **************************************
 **************************************************/
 if (params.help) {
   println()
-  println("Nextflow Metagenomics Illumina Consensus Pipeline: $workflow.manifest.version")
+  println("Nextflow MGIllumina Consensus Pipeline: $workflow.manifest.version")
   println("USAGE:")
   println("Example 1: Submit and run jobs with slurm in singularity containers.")
   println("   > nextflow run main.nf -resume -profile slurm_sing --csv_file PE_file.csv")

@@ -6,7 +6,7 @@
 #SBATCH --partition=normal ## Specifies the job queue to use, for urgent jobs change normal to priority ##
 #SBATCH --mem=2G ## Memory required to run the job in MB, this example is showing 10,000 MB or 10GB, change this number based on how much RAM you need ##
 #SBATCH --cpus-per-task=1 ## Number of CPUs to run the job, this example is showing 5 CPUs, change this number based on how many CPUs you need ##
-#SBATCH --mail-user=olabiyi.a.obayomi@nasa.gov ## Specifies the e-mail address to e-mail when the job is complete, replace this e-mail address with your NASA e-mail address ##
+#SBATCH --mail-user=email@domain.com ## Specifies the e-mail address to e-mail when the job is complete, replace this e-mail address with your NASA e-mail address ##
 #SBATCH --mail-type=END ## Tells slurm to e-mail the address above when the job has completed ##
 
 . ~/.profile
@@ -28,7 +28,7 @@ echo $HOSTNAME
 ## You can see a list of all available environments by running the command: conda env list ##
 ## If you need a conda envrionment installed request it using JIRA ##
 
-source activate /global/smf/miniconda38_admin/envs/genelab-utils ## Replace conda_env_name with the name of the environment ##
+source activate /path/to/envs/nextflow ## Replace conda_env_name with the name of the environment ##
 
 
 ## Print the version of the tool you are using to ensure the tool version is recorded ##
