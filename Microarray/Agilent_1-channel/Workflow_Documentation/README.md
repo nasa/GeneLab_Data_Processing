@@ -4,9 +4,9 @@
 
 ## MAAgilent1ch Version and Corresponding Workflow
 
-|Pipeline Version|Current Workflow Version (for respective pipeline version)|
-|:---------------|:---------------------------------------------------------|
-|*[GL-DPPD-7112.md](../Pipeline_GL-DPPD-7112_Versions/GL-DPPD-7112.md)|[NF_MAAgilent1ch_1.0.2](NF_MAAgilent1ch)|
+|Pipeline Version|Current Workflow Version (for respective pipeline version)|Nextflow Version|
+|:---------------|:---------------------------------------------------------|:---------------|
+|*[GL-DPPD-7112.md](../Pipeline_GL-DPPD-7112_Versions/GL-DPPD-7112.md)|[NF_MAAgilent1ch_1.0.3](NF_MAAgilent1ch)|23.10.1|
 
 *Current GeneLab Pipeline/Workflow Implementation
 
