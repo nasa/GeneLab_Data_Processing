@@ -74,6 +74,7 @@ if (params.help) {
 log.info """
          Nextflow Amp454IonTor Consensus Pipeline: $workflow.manifest.version
          You have set the following parameters:
+         Profile: ${workflow.profile}
          Input csv file : ${params.csv_file}
          Amplicon target region : ${params.target_region}
          Foward Primer: ${params.F_primer}
