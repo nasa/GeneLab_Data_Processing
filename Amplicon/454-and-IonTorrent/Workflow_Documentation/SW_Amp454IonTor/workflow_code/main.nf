@@ -45,6 +45,7 @@ if (params.help) {
   println()
   println("  --help  Print this help message and exit")
   println("  --publishDir_mode [STRING]  How should nextflow handle file outputs. Options can be found here https://www.nextflow.io/docs/latest/process.html#publishdir Default: link.")
+  println("  --errorStrategy [STRING] How should nextflow handle errors. Options can be found here https://www.nextflow.io/docs/latest/process.html#errorstrategy. Default: terminate")
   println()
   println("File Suffixes:")
   println("      --primer_trimmed_suffix [STRING] Suffix to use for naming your primer trimmed reads. Default: _trimmed.fastq.gz")
@@ -80,6 +81,7 @@ log.info """
          Minimum read length: ${params.min_bbduk_len}bp
          Minimum read quality: ${params.min_bbduk_avg_quality}
          Directory publishing mode: ${params.publishDir_mode}
+         Nextflow Error strategy: ${params.errorStrategy}
 
          File Suffixes:
          Primers Trimmed Reads Suffix: ${params.primer_trimmed_suffix}
