@@ -138,6 +138,8 @@ process  SUMMARIZE_MAG_ASSEMBLIES {
         # Only running if any MAGs were recovered
         if [ `find -L ${MAGs_dir} -name '*.fasta' | wc -l | sed 's/^ *//'` -gt 0 ]; then
 
+            # Remove fasta index if it exists
+            rm -rf ${MAGs_dir}/*.fxi
             bit-summarize-assembly ${MAGs_dir}/*.fasta -o MAG-summaries.tmp -t
 
             # Slimming down the output
