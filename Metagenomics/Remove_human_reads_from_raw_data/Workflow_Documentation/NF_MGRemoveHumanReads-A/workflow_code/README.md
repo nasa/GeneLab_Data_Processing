@@ -1,4 +1,4 @@
-# NF_MGRemoveHumanReads-B Workflow Information and Usage Instructions
+# NF_MGRemoveHumanReads-A Workflow Information and Usage Instructions
 
 
 ## General workflow info
@@ -11,7 +11,7 @@ The current pipeline for how GeneLab identifies and removes human DNA in Illumin
 3. [Modify the variables in the Remove_Human_Reads.config file](#3-modify-the-variables-in-the-config-file)  
 4. [Run the workflow](#4-run-the-workflow)  
 
-### 1. Install conda, mamba, and `genelab-utils` package
+### 1. Install NextFlow and Docker
 You can install NextFlow into your specified directory using the following code:
 
 ```bash
