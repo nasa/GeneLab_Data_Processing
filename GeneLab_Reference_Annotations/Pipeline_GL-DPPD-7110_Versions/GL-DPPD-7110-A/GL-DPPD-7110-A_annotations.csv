@@ -11,7 +11,7 @@ HUMAN,Homo sapiens,,111,ensembl,https://ftp.ensembl.org/pub/release-111/fasta/ho
 MOUSE,Mus musculus,,111,ensembl,https://ftp.ensembl.org/pub/release-111/fasta/mus_musculus/dna/Mus_musculus.GRCm39.dna.primary_assembly.fa.gz,https://ftp.ensembl.org/pub/release-111/gtf/mus_musculus/Mus_musculus.GRCm39.111.gtf.gz,10090,org.Mm.eg.db,,
 ,Mycobacterium marinum,LHM4,58,ensembl_bacteria,,,,,,
 ORYLA,Oryzias latipes,,111,ensembl,,,,,,
-RAT,Rattus norvegicus,,111,ensembl,,,10116,org.Rn.eg.db,,
+RAT,Rattus norvegicus,,112,ensembl,http://ftp.ensembl.org/pub/release-112/fasta/rattus_norvegicus/dna/Rattus_norvegicus.mRatBN7.2.dna.toplevel.fa.gz,http://ftp.ensembl.org/pub/release-112/gtf/rattus_norvegicus/Rattus_norvegicus.mRatBN7.2.112.gtf.gz,10116,org.Rn.eg.db,https://figshare.com/ndownloader/files/46537834,https://figshare.com/ndownloader/files/46537867
 YEAST,Saccharomyces cerevisiae,S288C,111,ensembl,,,559292,org.Sc.sgd.db,,
 STAA8,Staphylococcus aureus,UAMS-1,58,ensembl_bacteria,,,,,,
 ,Streptococcus mutans,UA159,58,ensembl_bacteria,,,,,,
