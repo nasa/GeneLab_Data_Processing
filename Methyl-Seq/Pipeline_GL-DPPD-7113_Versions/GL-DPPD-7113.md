@@ -43,6 +43,8 @@ Jonathan Galazka (GeneLab Project Scientist)
     - [4c. Sort Alignment Files](#4c-sort-alignment-files)
   - [5. Alignment QC](#5-alignment-qc)
   - [6. Deduplicate (skip if data are RRBS)](#6-deduplicate-skip-if-data-are-rrbs)
+    - [6a. Deduplicate](#6a-deduplicate)
+    - [6b. Sort Deduplicated Alignment Files](#6b-sort-deduplicated-alignment-files)
   - [7. Extract methylation calls](#7-extract-methylation-calls)
   - [8. Generate individual sample report](#8-generate-individual-sample-report)
   - [9. Generate combined summary report](#9-generate-combined-summary-report)
@@ -559,9 +561,13 @@ qualimap bamqc -bam sample-1_bismark_bt2_sorted.bam \
 
 ---
 
-## 6a. Deduplicate (skip if data are RRBS)
+## 6. Deduplicate (skip if data are RRBS)
 > **NOTE**  
 > This step should **not** be done if the data are RRBS (reduced representation bisulfite sequencing; see e.g., [bismark documentation](https://felixkrueger.github.io/Bismark/bismark/deduplication/)). 
+
+<br>
+
+### 6a. Deduplicate 
 
 ```bash
 deduplicate_bismark sample-1_bismark_bt2.bam
@@ -664,7 +670,7 @@ bismark_methylation_extractor --parallel 4 \
 
 **Input data:**
 
-* sample-1_bismark_bt2_sorted*.bam (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, output from [Step 4c](#4c-sort-alignment-files) above if data are RRBS, or deduplicated bam file from [step 6](#6b-sort-deduplicated-alignment-files) if data are not RRBS and the bam file was deduplicated (e.g., sample-1_bismark_bt2_sorted.deduplicated.bam from above))
+* sample-1_bismark_bt2_sorted*.bam (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, output from [Step 4c](#4c-sort-alignment-files) above if data are RRBS, or deduplicated bam file from [step 6b](#6b-sort-deduplicated-alignment-files) if data are not RRBS and the bam file was deduplicated (e.g., sample-1_bismark_bt2_sorted.deduplicated.bam from above))
 * a directory holding the reference genome in fasta format (this pipeline version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file))
 
 
