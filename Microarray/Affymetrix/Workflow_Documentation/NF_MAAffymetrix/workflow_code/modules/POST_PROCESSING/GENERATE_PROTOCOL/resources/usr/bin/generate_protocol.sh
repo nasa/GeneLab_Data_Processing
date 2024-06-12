@@ -29,7 +29,7 @@ env | grep "_VERSION"
 source meta.sh
 
 # List of organisms
-organism_list=("Mus musculus" "Homo sapiens" "Rattus norvegicus" "Drosophila melanogaster" "Danio rerio")
+organism_list=("Homo sapiens" "Mus musculus" "Rattus norvegicus" "Drosophila melanogaster" "Caenorhabditis elegans" "Danio rerio" "Saccharomyces cerevisiae")
 
 # Check the value of 'organism' variable and set 'GENE_MAPPING_STEP' accordingly
 if [[ $organism == "Arabidopsis thaliana" ]]; then
@@ -53,6 +53,10 @@ elif [[ $organism == "Drosophila melanogaster" ]]; then
     GENE_ANNOTATION_DB="org.Dm.eg.db"
 elif [[ $organism == "Caenorhabditis elegans" ]]; then
     GENE_ANNOTATION_DB="org.Ce.eg.db"
+elif [[ $organism == "Danio rerio" ]]; then
+    GENE_ANNOTATION_DB="org.Dr.eg.db"
+elif [[ $organism == "Saccharomyces cerevisiae" ]]; then
+    GENE_ANNOTATION_DB="org.Sc.sgd.db"
 else
     GENE_ANNOTATION_DB="TBD"
 fi
