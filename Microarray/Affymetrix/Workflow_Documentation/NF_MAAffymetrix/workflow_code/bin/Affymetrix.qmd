@@ -841,7 +841,7 @@ reformat_names <- function(colname, group_name_mapping) {
   return(new_colname)
 }
 
-df_interim <- df_interim %>% dplyr::rename_with( reformat_names, group_name_mapping = design_data$mapping )
+df_interim <- df_interim %>% dplyr::rename_with(reformat_names, .cols = matches('\\.condition'), group_name_mapping = design_data$mapping)
 
 
 ## Add Group Wise Statistics ##
