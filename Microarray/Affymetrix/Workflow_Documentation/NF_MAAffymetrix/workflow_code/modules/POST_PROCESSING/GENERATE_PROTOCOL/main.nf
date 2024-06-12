@@ -12,6 +12,6 @@ process GENERATE_PROTOCOL {
   
   script:
   """
-  generate_protocol.sh
+  generate_protocol.sh $workflow.manifest.version
   """
 }
