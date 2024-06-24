@@ -93,8 +93,8 @@ process SETUP_GTDBTK_DB {
         path("GTDB-tk-ref-db/"), emit: gtdbtk_db_dir
         path("GTDB-tk-ref-db/SETUP_GTDBTK_DB_SETUP"), emit: completion_indicator
         path("versions.txt"), emit: version
-    shell:
-        '''
+    script:
+        """
         [ -d GTDB-tk-ref-db/ ] || mkdir -p GTDB-tk-ref-db/
 
         # But still needs to be set for this particular session that is downloading and setting up the db
@@ -103,7 +103,7 @@ process SETUP_GTDBTK_DB {
         download-GTDBTK-db.sh ${GTDBTK_URL} && touch GTDB-tk-ref-db/SETUP_GTDBTK_DB_SETUP
         gtdbtk -h |grep "GTDB-Tk" | sed -E 's/.+\\s+(GTDB-Tk v.+)\\s+.+/\\1/' > versions.txt
         printf "### Set up completed successfully ###\\n\\n"
-        '''
+        """
 }
 
 // The processes below download the databases required by humann3.

@@ -8,7 +8,7 @@ echo "Downloading the GTDB-Tk database to ${GTDBTK_DATA_PATH}..."
 
 
 DB_URL=$1
-TAR_FILE=$(basename ${db_url})
+TAR_FILE=$(basename ${DB_URL})
 
 
 downloadFile=true
