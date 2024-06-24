@@ -19,12 +19,15 @@ process FASTQC {
   input:
     tuple val(sample_id), path(reads), val(isPaired)
   output:
-    tuple path("*.html"), path("*.zip")
+    tuple path("*.html"), path("*.zip"), emit: html
+    path("versions.txt"), emit: version
   script:
     """
     fastqc -o . \\
      -t ${task.cpus} \\
       ${reads}
+
+    fastqc --version > versions.txt
     """
 }
 
@@ -37,7 +40,8 @@ process MULTIQC {
     path(multiqc_config)
     path(files)
   output:
-    path("${params.additional_filename_prefix}${prefix}_multiqc${params.assay_suffix}_report.zip")
+    path("${params.additional_filename_prefix}${prefix}_multiqc${params.assay_suffix}_report.zip"), emit: report
+    path("versions.txt"), emit: version
   script:
     """
       multiqc -q --filename ${params.additional_filename_prefix}${prefix}_multiqc \\
@@ -51,6 +55,7 @@ process MULTIQC {
            ${params.additional_filename_prefix}${prefix}_multiqc${params.assay_suffix}_report.zip \\
            ${params.additional_filename_prefix}${prefix}_multiqc_report
 
+      multiqc --version > versions.txt
     """
   }
 
@@ -66,7 +71,9 @@ process BBDUK {
         tuple val(sample_id), path(reads), val(isPaired)
         path(adapters)
     output:
-        tuple val(sample_id), path("*${params.filtered_suffix}"), val(isPaired)
+        tuple val(sample_id), path("*${params.filtered_suffix}"), val(isPaired), emit: reads
+        path("${sample_id}-bbduk.log"), emit: log
+        path("versions.txt"), emit: version
     script:
     def isSwift = params.swift_1S ? 't' : 'f'
     """
@@ -77,15 +84,18 @@ process BBDUK {
                  out2=${sample_id}${params.filtered_R2_suffix} \\
                  ref=${adapters} \\
                  ktrim=l k=17 ftm=5 qtrim=rl \\
-                 trimq=10 mlf=0.5 maxns=0 swift=${isSwift} 
+                 trimq=10 mlf=0.5 maxns=0 swift=${isSwift} > ${sample_id}-bbduk.log 2>&1
     else
-  
+
         bbduk.sh in=${reads[0]} out1=${sample_id}${params.filtered_suffix} \\
                   ref=${adapters} \\
 				  ktrim=l k=17 ftm=5 qtrim=rl \\
-                  trimq=10 mlf=0.5 maxns=0 swift=${isSwift}
+                  trimq=10 mlf=0.5 maxns=0 swift=${isSwift} > ${sample_id}-bbduk.log 2>&1
 
     fi    
+
+    VERSION=`bbversion.sh`
+    echo "bbtools \${VERSION}" > versions.txt
     """
 }
 
@@ -93,24 +103,32 @@ process BBDUK {
 workflow quality_check {
 
     take:
-    prefix_ch
-    multiqc_config
-    reads_ch
+        prefix_ch
+        multiqc_config
+        reads_ch
     
 
     main:
-    fastqc_ch = FASTQC(reads_ch).flatten().collect()
-    MULTIQC(prefix_ch, multiqc_config, fastqc_ch)
+        FASTQC(reads_ch)
+        fastqc_ch = FASTQC.out.html.flatten().collect()
+        MULTIQC(prefix_ch, multiqc_config, fastqc_ch)
+
+        software_versions_ch = Channel.empty()
+        FASTQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
+        MULTIQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
+
+    emit:
+        versions = software_versions_ch
 }
 
 workflow {
 
         Channel.fromPath(params.csv_file)
                .splitCsv()
-               .map{ row -> row.paired ? tuple( "${row.sample_id}", [file("${row.forward}"), file("${row.reverse}")], row.paired) : 
-                                         tuple( "${row.sample_id}", [file("${row.forward}")], row.paired)}
+               .map{ row -> row.paired == 'true' ? tuple( "${row.sample_id}", [file("${row.forward}", checkIfExists: true), file("${row.reverse}", checkIfExists: true)], row.paired) : 
+                                                   tuple( "${row.sample_id}", [file("${row.forward}", checkIfExists: true)], row.paired)}
                .set{reads_ch}   
 
     res_ch = quality_check(Channel.of(params.prefix), params.multiqc_config, reads_ch)
-    BBDUK(reads_ch)
+    BBDUK(reads_ch, params.adapters)
 }

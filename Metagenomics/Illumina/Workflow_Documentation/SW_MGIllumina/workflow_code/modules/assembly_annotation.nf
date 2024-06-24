@@ -17,7 +17,8 @@ process CALL_GENES {
         tuple val(sample_id), path(assembly) 
     output:
         // Amino acids, nucleotides and gff
-        tuple val(sample_id), path("${sample_id}-genes.faa"), path("${sample_id}-genes.fasta"), path("${sample_id}-genes.gff")
+        tuple val(sample_id), path("${sample_id}-genes.faa"), path("${sample_id}-genes.fasta"), path("${sample_id}-genes.gff"), emit: genes
+        path("versions.txt"), emit: version
     script:
         """
         # Only running if assembly produced any contigs
@@ -33,6 +34,7 @@ process CALL_GENES {
             printf "Gene-calling not performed because the assembly didn't produce anything.\\n"
 
         fi
+        prodigal -v 2>&1 | grep Prodigal > versions.txt
         """
 }        
 
@@ -47,8 +49,8 @@ process REMOVE_LINEWRAPS {
         tuple val(sample_id), path(aa), path(nt), path(gff)
    
     output:
-        tuple val(sample_id), path("${sample_id}-genes.faa"), path("${sample_id}-genes.fasta"), path(gff)
-  
+        tuple val(sample_id), path("${sample_id}-genes.faa"), path("${sample_id}-genes.fasta"), emit: genes
+        path("versions.txt"), emit: version
     script:
         """
          if [ -s ${aa} ] && [ -s ${nt} ]; then
@@ -63,6 +65,7 @@ process REMOVE_LINEWRAPS {
             touch ${sample_id}-genes.faa ${sample_id}-genes.fasta
             printf "Line wrapping not performed because gene-calling wasn't performed on ${sample_id}.\\n"
         fi 
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
         """
 }
 
@@ -75,11 +78,11 @@ process KO_ANNOTATION {
     //label "contig_annotation"
     
     input:
-       tuple val(sample_id), path(assembly), path(aa), path(nt), path(gff)
+       tuple val(sample_id), path(assembly), path(aa), path(nt)
        path(ko_db_dir)
     output:
-        tuple val(sample_id), path("${sample_id}-KO-tab.tmp")
-
+        tuple val(sample_id), path("${sample_id}-KO-tab.tmp"), emit: temp_table
+        path("versions.txt"), emit: version
     script:
         """
         # only running if assembly produced any contigs and genes were identified (they are required for this)
@@ -97,6 +100,7 @@ process KO_ANNOTATION {
             printf "Functional annotations not performed because the assembly didn't produce anything and/or no genes were identified.\\n"
 
         fi
+        exec_annotation -v > versions.txt
         """
 }
 
@@ -110,8 +114,8 @@ process FILTER_KFAMSCAN {
     input:
        tuple val(sample_id), path(KO_tab_tmp)   
     output:
-        tuple val(sample_id), path("${sample_id}-annotations.tsv")
-
+        tuple val(sample_id), path("${sample_id}-annotations.tsv"), emit: ko_annotation
+        path("versions.txt"), emit: version
     script:
         """
         if [ -s ${KO_tab_tmp} ]; then
@@ -124,6 +128,7 @@ process FILTER_KFAMSCAN {
             printf "Nothing to filter since functional annotation was not performed.\\n"
 
         fi
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
         """
 
 }
@@ -135,11 +140,12 @@ process TAX_CLASSIFICATION {
     label "contig_annotation"
 
     input:
-       tuple val(sample_id), path(assembly), path(aa), path(nt), path(gff)
+       tuple val(sample_id), path(assembly), path(aa), path(nt)
        path(cat_db)
     output:
         // Gene and contig taxonomy
-        tuple val(sample_id), path("${sample_id}-gene-tax.tsv"), path("${sample_id}-contig-tax.tsv")
+        tuple val(sample_id), path("${sample_id}-gene-tax.tsv"), path("${sample_id}-contig-tax.tsv"), emit: taxonomy
+        path("versions.txt"), emit: version
     script:
         """
         # Only running if assembly produced any contigs and 
@@ -177,6 +183,7 @@ process TAX_CLASSIFICATION {
             printf "Assembly-based taxonomic classification not performed because the assembly didn't produce anything and/or no genes were identified.\\n" 
 
         fi
+        CAT --version | sed -E 's/(CAT v.+)\\s\\(.+/\\1/'  > versions.txt
         """
 }
 
@@ -187,9 +194,10 @@ workflow annotate_assembly {
         cat_db
  
     main:
-    genes_ch = CALL_GENES(assembly_ch) | REMOVE_LINEWRAPS
-
-    KO_ANNOTATION(assembly_ch.join(genes_ch) ko_db_dir) | FILTER_KFAMSCAN
-    TAX_CLASSIFICATION(assembly_ch, genes_ch, cat_db)
+        CALL_GENES(assembly_ch)
+        genes_ch = CALL_GENES.out.genes | REMOVE_LINEWRAPS.out.genes
+        KO_ANNOTATION(assembly_ch.join(genes_ch) ko_db_dir)
+        KO_ANNOTATION.out.temp_table | FILTER_KFAMSCAN.out.ko_annotation
+        TAX_CLASSIFICATION(assembly_ch, genes_ch, cat_db)
 
 }

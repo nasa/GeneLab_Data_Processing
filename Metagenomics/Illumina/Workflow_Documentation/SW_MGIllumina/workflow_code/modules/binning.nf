@@ -15,8 +15,9 @@ process METABAT_BINNING {
     input:
         tuple val(sample_id), path(assembly), path(bam) 
     output:
-        tuple val(sample_id), path("${sample_id}-metabat-assembly-depth.tsv"), path("${sample_id}-bin*")
-
+        tuple val(sample_id), path("${sample_id}-metabat-assembly-depth.tsv"), emit: depth
+        tuple val(sample_id), path("${sample_id}-bin*"), emit: bins, optional: true
+        path("versions.txt"), emit: version
     script:
         """
         # Only running if the assembly produced anything
@@ -62,6 +63,7 @@ process METABAT_BINNING {
             touch ${sample_id}-metabat-assembly-depth.tsv
             printf "Binning not performed because the assembly didn't produce anything.\\n" 
         fi
+        echo metabat2 \$(metabat2 --help 2>&1 | head -n 2 | tail -n 1| sed 's/.*\\:\\([0-9]*\\.[0-9]*\\).*/\\1/') > versions.txt
         """
 }
 
@@ -79,7 +81,7 @@ workflow binning {
 
 
     emit:
-    binning_results = binning_ch
+    binning_results = binning_ch.out.bins
 
 }
 

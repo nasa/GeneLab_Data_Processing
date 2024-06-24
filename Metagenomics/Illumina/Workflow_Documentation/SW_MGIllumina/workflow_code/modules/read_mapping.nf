@@ -14,7 +14,8 @@ process MAPPING {
     input:
         tuple val(sample_id), path(assembly), path(reads), val(isPaired)
     output:
-        tuple val(sample_id), path("${sample_id}.sam")
+        tuple val(sample_id), path("${sample_id}.sam"), path("${sample_id}-mapping-info.txt"), emit: sam
+        path("versions.txt"), emit: version
     script:
         """
         if [ ${isPaired}  == 'true' ]; then
@@ -52,6 +53,7 @@ process MAPPING {
             fi
 
         fi
+        bowtie2 --version  | head -n 1 | sed -E 's/.*(bowtie2-align-s version.+)/\\1/' > versions.txt
         """
 }
 
@@ -64,9 +66,10 @@ process SAM_TO_BAM {
     label "mapping"
 
     input:
-        tuple val(sample_id), path(sam)
+        tuple val(sample_id), path(sam), path(mapping_info)
     output:
-        tuple val(sample_id), path("${sample_id}.bam")
+        tuple val(sample_id), path("${sample_id}.bam"), emit: bam
+        path("versions.txt"), emit: version
     script:
         """
         # Only running if the assembly produced anything
@@ -80,5 +83,6 @@ process SAM_TO_BAM {
             printf "Sorting and converting not performed for ${sample_id} because read mapping didn't produce anything.\\n"
 
         fi
+        samtools --version | head -n1 > versions.txt
         """
 }

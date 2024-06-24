@@ -4,7 +4,7 @@ nextflow.enable.dsl = 2
 /**************************************************************************************** 
 *********************  Summarize Meta assembled genomes (MAGs) **************************
 ****************************************************************************************/
-
+include { ZIP_FASTA as ZIP_MAGS } from "./zip_fasta.nf"
 
 params.min_est_comp = 90
 params.max_est_redund = 10
@@ -19,7 +19,7 @@ already exists if wanting to use disk space
 
 params.gtdb_tk_scratch_location = ""
 
-/* 
+/*  Retrieve MAGS.
     Filters checkm results based on estimate completion, redundancy, and 
     strain heterogeneity. Defaults are conservatively 90, 10, and 50  
 */
@@ -27,7 +27,6 @@ params.gtdb_tk_scratch_location = ""
 process FILTER_CHECKM_RESULTS_AND_COPY_MAGS {
 
     tag "Filtering checkm-s results..."
-    label "mags"
     label "bit"
 
     input:
@@ -62,14 +61,11 @@ process FILTER_CHECKM_RESULTS_AND_COPY_MAGS {
         """
 }
 
-
-
 // Assign taxonomy to MAGs with gtdb-tk
 
 process  GTDBTK_ON_MAGS {
    
-    tag "Assigning taxonomy to your MAGs with gtdb-tk..."  
-    label "mags"
+    tag "Assigning taxonomy to your MAGs with gtdb-tk..." 
 
     input:
         path(MAGs_checkm_out)
@@ -79,7 +75,8 @@ process  GTDBTK_ON_MAGS {
         env(GTDBTK_DATA_PATH)
            
     output:
-        path("gtdbtk-out/")
+        path("gtdbtk-out/"), emit: gtdbtk_out
+        path("versions.txt"), emit: version
     script:
         """
         # Only running if any MAGs were recovered
@@ -117,6 +114,7 @@ process  GTDBTK_ON_MAGS {
             printf "\\n\\nThere were no MAGs recovered, so GTDB-tk was not run.\\n\\n"
 
         fi
+        gtdbtk -h |grep "GTDB-Tk" | sed -E 's/.+\\s+(GTDB-Tk v.+)\\s+.+/\\1/' > versions.txt
         """
 }
 
@@ -126,19 +124,19 @@ process  GTDBTK_ON_MAGS {
 process  SUMMARIZE_MAG_ASSEMBLIES {
 
     tag "Summarizing MAG assemblies..."
-    label "mags"
     label "bit"
 
     input:
         path(MAGs_dir)
     output:
-        path("${params.additional_filename_prefix}MAG-assembly-summaries.tsv")
+        path("${params.additional_filename_prefix}MAG-assembly-summaries.tsv"), emit: summary
+        path("versions.txt"), emit: version
     script:
         """
         # Only running if any MAGs were recovered
         if [ `find -L ${MAGs_dir} -name '*.fasta' | wc -l | sed 's/^ *//'` -gt 0 ]; then
-
-            # Remove fasta index if it exists
+            
+            # Remove fasta index if already exists
             rm -rf ${MAGs_dir}/*.fxi
             bit-summarize-assembly ${MAGs_dir}/*.fasta -o MAG-summaries.tmp -t
 
@@ -152,6 +150,7 @@ process  SUMMARIZE_MAG_ASSEMBLIES {
                > ${params.additional_filename_prefix}MAG-assembly-summaries.tsv
 
         fi
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
         """
 }
 
@@ -220,8 +219,8 @@ process SUMMARIZE_MAG_LEVEL_KO_ANNOTATIONS {
         path(gene_coverage_annotation_and_tax_files)
         path(MAGs_dir)
     output:
-        path("${params.additional_filename_prefix}MAG-level-KO-annotations${params.assay_suffix}.tsv")
-
+        path("${params.additional_filename_prefix}MAG-level-KO-annotations${params.assay_suffix}.tsv"), emit: summary
+        path("versions.txt"), emit: version 
     script:
         """
         # Only running if any MAGs were recovered
@@ -247,6 +246,7 @@ process SUMMARIZE_MAG_LEVEL_KO_ANNOTATIONS {
                > ${params.additional_filename_prefix}MAG-level-KO-annotations${params.assay_suffix}.tsv
 
         fi
+        python --version > versions.txt
         """
 }
 
@@ -261,8 +261,8 @@ process SUMMARIZE_MAG_KO_ANNOTS_WITH_KEGG_DECODER {
         path(MAG_level_KO_annotations)
         path(MAGs_dir)
     output:
-        path("${params.additional_filename_prefix}MAG-KEGG-Decoder-out${params.assay_suffix}.tsv")
-
+        path("${params.additional_filename_prefix}MAG-KEGG-Decoder-out${params.assay_suffix}.*"), emit: summary
+        path("versions.txt"), emit: version
     script:
         """
         # Getting number of MAGs recovered
@@ -288,6 +288,11 @@ process SUMMARIZE_MAG_KO_ANNOTS_WITH_KEGG_DECODER {
             # can only create html output if there are more than 1
             if [ \$num_mags_recovered -gt 1 ]; then
                 KEGG-decoder -v interactive -i mod-MAG-level-KO-annotations.tmp -o MAG-KEGG-Decoder-out.tmp
+                
+                ## adding additional prefix to html output if there is one
+               [ -f MAG-KEGG-Decoder-out.html ] && \\
+               mv MAG-KEGG-Decoder-out.html  ${params.additional_filename_prefix}MAG-KEGG-Decoder-out${params.assay_suffix}.html
+                
             else
                 KEGG-decoder -i mod-MAG-level-KO-annotations.tmp -o MAG-KEGG-Decoder-out.tmp
             fi
@@ -304,6 +309,7 @@ process SUMMARIZE_MAG_KO_ANNOTS_WITH_KEGG_DECODER {
                >  ${params.additional_filename_prefix}MAG-KEGG-Decoder-out${params.assay_suffix}.tsv
 
         fi
+        python --version > versions.txt
         """
 }
 
@@ -322,24 +328,37 @@ workflow summarize_mags {
         FILTER_CHECKM_RESULTS_AND_COPY_MAGS(bins_checkm_results_ch, bins_ch) 
         MAGs_checkm_out_ch = FILTER_CHECKM_RESULTS_AND_COPY_MAGS.out.MAGs_checkm_out
         MAGs_dir_ch = FILTER_CHECKM_RESULTS_AND_COPY_MAGS.out.MAGs_dir
+        ZIP_MAGS(Channel.of("MAG"), MAGs_dir_ch)
 
-        gtdbtk_out_ch = GTDBTK_ON_MAGS(MAGs_checkm_out_ch, MAGs_dir_ch, gtdbtk_db_dir, use_gtdbtk_scratch_location, gtdbtk_db_dir)
+        GTDBTK_ON_MAGS(MAGs_checkm_out_ch, MAGs_dir_ch, gtdbtk_db_dir, use_gtdbtk_scratch_location, gtdbtk_db_dir)
+        gtdbtk_out_ch = GTDBTK_ON_MAGS.out.gtdbtk_out
 
-        MAG_assembly_summaries_ch = SUMMARIZE_MAG_ASSEMBLIES(MAGs_dir_ch)
+        SUMMARIZE_MAG_ASSEMBLIES(MAGs_dir_ch)
+        MAG_assembly_summaries_ch = SUMMARIZE_MAG_ASSEMBLIES.out.summary
 
         MAGs_overview_ch = GENERATE_MAGS_OVERVIEW_TABLE(MAG_assembly_summaries_ch,
                                                         MAGs_checkm_out_ch,
                                                         gtdbtk_out_ch,
                                                         MAGs_dir_ch)
 
-        MAG_level_KO_annotations_ch = SUMMARIZE_MAG_LEVEL_KO_ANNOTATIONS(MAGs_overview_ch, 
+        SUMMARIZE_MAG_LEVEL_KO_ANNOTATIONS(MAGs_overview_ch, 
                                            gene_coverage_annotation_and_tax_files_ch, 
                                            MAGs_dir_ch)
+        MAG_level_KO_annotations_ch = SUMMARIZE_MAG_LEVEL_KO_ANNOTATIONS.out.summary
 
         SUMMARIZE_MAG_KO_ANNOTS_WITH_KEGG_DECODER(MAG_level_KO_annotations_ch, MAGs_dir_ch)
+
+        // Capture software versions
+        software_versions_ch = Channel.empty()
+        ZIP_MAGS.out.version | mix(software_versions_ch) | set{software_versions_ch}
+        GTDBTK_ON_MAGS.out.version | mix(software_versions_ch) | set{software_versions_ch}
+        SUMMARIZE_MAG_ASSEMBLIES.out.version | mix(software_versions_ch) | set{software_versions_ch}
+        SUMMARIZE_MAG_LEVEL_KO_ANNOTATIONS.out.version | mix(software_versions_ch) | set{software_versions_ch}
+        SUMMARIZE_MAG_KO_ANNOTS_WITH_KEGG_DECODER.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
     emit:
         MAGs_overview = MAGs_overview_ch
         MAGs_dir = MAGs_dir_ch
+        versions = software_versions_ch
     
 }

@@ -15,7 +15,9 @@ process ASSEMBLE {
     input:
         tuple val(sample_id), path(reads), val(isPaired)
     output:
-        tuple val(sample_id), path("${sample_id}_final.contigs.fa")
+        tuple val(sample_id), path("${sample_id}_final.contigs.fa"), emit: contigs
+        path("${sample_id}-assembly.log"), emit: log
+        path("versions.txt"), emit: version
     script:
         """
         # Removing output directory if exists already but process still needs to be 
@@ -32,17 +34,18 @@ process ASSEMBLE {
 
             megahit -1 \${BASENAME_FORWARD} -2 \${BASENAME_REVERSE} \\
                -m ${params.max_mem} -t ${task.cpus} \\
-               --min-contig-len 500 -o ${sample_id}-megahit-out
-        
+               --min-contig-len 500 -o ${sample_id}-megahit-out > ${sample_id}-assembly.log 2>&1
+         
         else
 
             BASENAME=`basename -s '.gz' ${reads[0]}`
             zcat ${reads[0]} > \${BASENAME}
             megahit -r \${BASENAME} -m ${params.max_mem} -t  ${task.cpus} \\
-                --min-contig-len 500 -o ${sample_id}-megahit-out
+                --min-contig-len 500 -o ${sample_id}-megahit-out > ${sample_id}-assembly.log 2>&1
         fi
         
         mv ${sample_id}-megahit-out/final.contigs.fa ${sample_id}_final.contigs.fa
+        megahit -v > versions.txt
         """
 }
 
@@ -56,7 +59,8 @@ process RENAME_HEADERS {
     input:
         tuple val(sample_id), path(assembly)
     output:
-        tuple val(sample_id), path("${sample_id}-assembly.fasta")
+        tuple val(sample_id), path("${sample_id}-assembly.fasta"), emit: contigs
+        path("versions.txt"), emit: version
     script:
         """
         bit-rename-fasta-headers -i ${assembly} \\
@@ -68,6 +72,7 @@ process RENAME_HEADERS {
         if [ ! -s ${sample_id}-assembly.fasta ]; then
             printf "${sample_id}\\tNo contigs assembled\\n" > Failed-assemblies.tsv
         fi
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
         """
 }
 
@@ -82,11 +87,13 @@ process SUMMARIZE_ASSEMBLIES {
     input:
         path(assemblies)      
     output:
-        path("${params.additional_filename_prefix}assembly-summaries${params.assay_suffix}.tsv")
+        path("${params.additional_filename_prefix}assembly-summaries${params.assay_suffix}.tsv"), emit: summary
+        path("versions.txt"), emit: version
     script:
         """
         bit-summarize-assembly \\
                  -o ${params.additional_filename_prefix}assembly-summaries${params.assay_suffix}.tsv \\
                  ${assemblies}
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
         """
 }

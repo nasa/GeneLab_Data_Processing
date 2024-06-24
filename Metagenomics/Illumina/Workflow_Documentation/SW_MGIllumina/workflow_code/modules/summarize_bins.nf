@@ -1,11 +1,13 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-params.reduced_tree = "True"
-
 /**************************************************************************************** 
 *********************  Bin check and summary ********************************************
 ****************************************************************************************/
+
+include { ZIP_FASTA as ZIP_BINS } from "./zip_fasta.nf"
+
+params.reduced_tree = "True"
 
 // Summarize bin assemblies
 process SUMMARIZE_BIN_ASSEMBLIES {
@@ -17,8 +19,8 @@ process SUMMARIZE_BIN_ASSEMBLIES {
     input:
         path(bins)
     output:
-        path("${params.additional_filename_prefix}bin-assembly-summaries.tsv")
-
+        path("${params.additional_filename_prefix}bin-assembly-summaries.tsv"), emit: summary
+        path("versions.txt"), emit: version
     script:
         """
         # Only running if any bins were recovered
@@ -36,6 +38,7 @@ process SUMMARIZE_BIN_ASSEMBLIES {
               > ${params.additional_filename_prefix}bin-assembly-summaries.tsv
 
         fi
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
         """
 }
 
@@ -49,11 +52,11 @@ process CHECKM_ON_BINS {
     input:
         path(bins) 
     output:
-        path("${params.additional_filename_prefix}bins-checkm-out.tsv")
-
+        path("${params.additional_filename_prefix}bins-checkm-out.tsv"), emit: checkm_output
+        path("versions.txt"), emit: version
     script:
         """
-        # only running if there were bins recovered
+        # Only running if there were bins recovered
         if [ `find -L . -name '*fasta' | wc -l | sed 's/^ *//'` -gt 0 ]; then
 
             mkdir -p checkm-working-tmp/
@@ -87,6 +90,7 @@ process CHECKM_ON_BINS {
               > ${params.additional_filename_prefix}bins-checkm-out.tsv
 
         fi
+        checkm | grep CheckM | head -n 1 | sed -E 's/.+(CheckM\\sv.+)\\s.+/\\1/' > versions.txt
         """
 }
 
@@ -144,12 +148,23 @@ workflow summarize_bins {
         binning_ch
 
     main:
-        bins = binning_ch.map{ sample_id, depth, bins -> bins instanceof List ? bins.each{it}: bins }.flatten().collect()
-        bin_assembly_summaries_ch = SUMMARIZE_BIN_ASSEMBLIES(bins)
-        bins_checkm_results_ch  = CHECKM_ON_BINS(bins)
+        bins = binning_ch.map{ sample_id, bins -> bins instanceof List ? bins.each{it}: bins }.flatten().collect()
+        ZIP_BINS(Channel.of("bin"), bins)
+        SUMMARIZE_BIN_ASSEMBLIES(bins)
+        bin_assembly_summaries_ch = SUMMARIZE_BIN_ASSEMBLIES.out.summary
+
+        CHECKM_ON_BINS(bins)
+        bins_checkm_results_ch = CHECKM_ON_BINS.out.checkm_output    
+
         table = GENERATE_BINS_OVERVIEW_TABLE(bin_assembly_summaries_ch, bins_checkm_results_ch, bins)
-    
+   
+        software_versions_ch = Channel.empty()
+        ZIP_BINS.out.version | mix(software_versions_ch) | set{software_versions_ch}
+        SUMMARIZE_BIN_ASSEMBLIES.out.version | mix(software_versions_ch) | set{software_versions_ch}
+        CHECKM_ON_BINS.out.version | mix(software_versions_ch) | set{software_versions_ch}
+
     emit:
         bins_checkm_results = bins_checkm_results_ch
         overview_table = table
+        versions = software_versions_ch
 }

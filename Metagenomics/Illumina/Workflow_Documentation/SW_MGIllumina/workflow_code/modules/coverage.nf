@@ -12,10 +12,11 @@ process GET_COV_AND_DET {
     tag "Calculating gene and contig coverage for ${sample_id}..."
 
     input:
-        tuple val(sample_id), path(bam), path(assembly), path(aa), path(nt), path(gff)
+        tuple val(sample_id), path(bam), path(assembly), path(aa), path(nt)
     output:
         // Gene_covs and contig_covs
-        tuple val(sample_id), path("${sample_id}-gene-coverages.tsv"), path("${sample_id}-contig-coverages.tsv") 
+        tuple val(sample_id), path("${sample_id}-gene-coverages.tsv"), path("${sample_id}-contig-coverages.tsv"), emit: coverages
+        path("versions.txt"), emit: version 
     script:
         """
         # get-cov-and-depth.sh ${sample_id} ${assembly} ${nt} ${bam} ${params.pileup_mem}
@@ -76,5 +77,7 @@ process GET_COV_AND_DET {
             printf "Coverage info not recovered because the assembly didn't produce anything.\\n"
 
         fi
+        VERSION=`bbversion.sh`
+        echo "bbtools \${VERSION}" > versions.txt
         """
 }

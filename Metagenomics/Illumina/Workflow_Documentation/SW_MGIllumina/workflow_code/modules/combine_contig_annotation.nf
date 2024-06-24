@@ -20,7 +20,7 @@ process COMBINE_GENE_ANNOTS_TAX_AND_COVERAGE {
     input:
         tuple val(sample_id), path(gene_coverages), path(contig_coverages),
                path(annotations), path(gene_tax), path(contig_tax),
-               path(aa), path(nt), path(gff), path(assembly)
+               path(aa), path(nt), path(assembly)
     output:
         tuple val(sample_id), path("${sample_id}-gene-coverage-annotation-and-tax.tsv")
     script:
@@ -65,10 +65,11 @@ process MAKE_COMBINED_GENE_LEVEL_TABLES {
     input:
         path(gene_coverage_annotation_and_tax_files)
     output:
-        path("${params.additional_filename_prefix}Combined-gene-level-KO-function-coverages${params.assay_suffix}.tsv")
-        path("${params.additional_filename_prefix}Combined-gene-level-KO-function-coverages-CPM${params.assay_suffix}.tsv")
-        path("${params.additional_filename_prefix}Combined-gene-level-taxonomy-coverages${params.assay_suffix}.tsv")
-        path("${params.additional_filename_prefix}Combined-gene-level-taxonomy-coverages-CPM${params.assay_suffix}.tsv")
+        path("${params.additional_filename_prefix}Combined-gene-level-KO-function-coverages${params.assay_suffix}.tsv"), emit: raw_function_coverages
+        path("${params.additional_filename_prefix}Combined-gene-level-KO-function-coverages-CPM${params.assay_suffix}.tsv"), emit: norm_function_coverages
+        path("${params.additional_filename_prefix}Combined-gene-level-taxonomy-coverages${params.assay_suffix}.tsv"), emit: raw_taxonomy_coverages
+        path("${params.additional_filename_prefix}Combined-gene-level-taxonomy-coverages-CPM${params.assay_suffix}.tsv"), emit: norm_taxonomy_coverages
+        path("versions.txt"), emit: version
     script:
         """
         bit-GL-combine-KO-and-tax-tables ${gene_coverage_annotation_and_tax_files} -o ${params.additional_filename_prefix}Combined
@@ -85,6 +86,7 @@ process MAKE_COMBINED_GENE_LEVEL_TABLES {
 
         mv "${params.additional_filename_prefix}Combined-gene-level-taxonomy-coverages-CPM.tsv" \\
            "${params.additional_filename_prefix}Combined-gene-level-taxonomy-coverages-CPM${params.assay_suffix}.tsv"
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
         """
 }
 
@@ -99,7 +101,7 @@ process COMBINE_CONTIG_TAX_AND_COVERAGE {
     input:
         tuple val(sample_id), path(gene_coverages), path(contig_coverages),
                path(gene_tax), path(contig_tax),
-               path(aa), path(nt), path(gff), path(assembly)        
+               path(aa), path(nt), path(assembly)        
     output:
         tuple val(sample_id), path("${sample_id}-contig-coverage-and-tax.tsv")
     script:
@@ -157,8 +159,9 @@ process MAKE_COMBINED_CONTIG_TAX_TABLES {
     input:
         path(contig_coverage_and_tax_files)
     output:
-        path("${params.additional_filename_prefix}Combined-contig-level-taxonomy-coverages${params.assay_suffix}.tsv")
-        path("${params.additional_filename_prefix}Combined-contig-level-taxonomy-coverages-CPM${params.assay_suffix}.tsv")
+        path("${params.additional_filename_prefix}Combined-contig-level-taxonomy-coverages${params.assay_suffix}.tsv"), emit: raw_taxonomy
+        path("${params.additional_filename_prefix}Combined-contig-level-taxonomy-coverages-CPM${params.assay_suffix}.tsv"), emit: norm_taxonomy
+        path("versions.txt"), emit: version
     script:
         """
         bit-GL-combine-contig-tax-tables ${contig_coverage_and_tax_files} -o ${params.additional_filename_prefix}Combined
@@ -169,6 +172,7 @@ process MAKE_COMBINED_CONTIG_TAX_TABLES {
 
         mv "${params.additional_filename_prefix}Combined-contig-level-taxonomy-coverages-CPM.tsv" \\
            "${params.additional_filename_prefix}Combined-contig-level-taxonomy-coverages-CPM${params.assay_suffix}.tsv"
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
         """
 }
 

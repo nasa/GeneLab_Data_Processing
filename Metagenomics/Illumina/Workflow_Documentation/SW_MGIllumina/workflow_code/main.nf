@@ -8,26 +8,27 @@ c_blue = "\033[0;34m";
 c_reset = "\033[0m";
 
 params.help = false
+params.debug = false
 /**************************************************
 * HELP MENU  **************************************
 **************************************************/
 if (params.help) {
   println()
-  println("Nextflow MGIllumina Consensus Pipeline: $workflow.manifest.version")
+  println("Nextflow Metagenomics Illumina Consensus Pipeline: $workflow.manifest.version")
   println("USAGE:")
   println("Example 1: Submit and run jobs with slurm in singularity containers.")
-  println("   > nextflow run main.nf -resume -profile slurm_sing --csv_file PE_file.csv")
+  println("   > nextflow run main.nf -resume -profile slurm,singularity --csv_file PE_file.csv")
   println()
   println("Example 2: : Submit and run jobs with slurm in conda environments.")
-  println("   > nextflow run main.nf -resume -profile slurm_conda --csv_file SE_file.csv")
+  println("   > nextflow run main.nf -resume -profile slurm,conda --csv_file SE_file.csv")
   println()
   println("Example 3: Run jobs locally in conda environments, supply a GLDS accession, and specify the path to an existing conda environment.")
-  println("   > nextflow run main.nf -resume -profile conda --GLDS_accession OSD-456 --conda.qc <path/to/existing/conda/environment>")
+  println("   > nextflow run main.nf -resume -profile conda --GLDS_accession OSD-574 --conda.qc <path/to/existing/conda/environment>")
   println()
   println("Required arguments:")
-  println("""-profile [STRING] What profile should be used to run the workflow. Options are [singularity, docker, conda, slurm_sing, slurm_conda].
+  println("""-profile [STRING] What profile should be used to run the workflow. Options are [slurm, singularity, docker, and  conda].
 	         singularity, docker and conda will run the pipeline locally using singularity, docker, and conda, respectively.
-             slurm_sing and slurm_conda will submit and run jobs using slurm in singularity containers and conda environments, respectively. """)			 
+                 To combine profiles, separate them comma. For example for to combine slurm and singularity profiels, pass 'slurm,singularity' as arguement. """)			 
   println("--csv_file  [PATH] A 3-column (single-end) or 4-column (paired-end) input file (sample_id, forward, [reverse,] paired). Mandatory if a GLDS accession is not provided.")
   println("   Please see the files: SE_file.csv and PE_file.csv for single-end and paired-end examples, respectively.")
   println("   The sample_id column should contain unique sample ids.")
@@ -59,7 +60,7 @@ if (params.help) {
   println("    'True' for yes, anything else will be considered 'False' and the default full tree will be used. Default: 'True'. ")
   println("	 --max_mem [INT] Maximum memory allowed passed to megahit assembler. Can be set either by proportion of available on system, e.g. 0.5")
   println("    or by absolute value in bytes, e.g. 100e9 would be 100 GB. Default: 100e9.")
-  println()  
+  
   println("	 --pileup_mem [STRING] pileup.sh paramater for calculating contig coverage and depth. Memory used by bbmap's pileup.sh (within the GET_COV_AND_DET process). ")
   println("	   passed as the -Xmx parameter, 20g means 20 gigs of RAM, 20m means 20 megabytes.")
   println("	   5g should be sufficient for most assemblies, but if that rule is failing, this may need to be increased.Default: '5g' .")
@@ -86,7 +87,11 @@ if (params.help) {
   println()
   println("Genelab specific arguements:")
   println("      --GLDS_accession [STRING]  A Genelab accession number if the --csv_file parameter is not set. If this parameter is set, it will ignore the --csv_file parameter.")
-  println("      --assay_suffix [STRING]  Genelabs assay suffix. Default: _GLmetagenomics.")
+  println("      --RawFilePattern [STRING]  If we do not want to download all files (which we often won't), we can specify a pattern here to subset the total files.")
+  println("                                 For example, if we know we want to download just the fastq.gz files, we can say 'fastq.gz'. We can also provide multiple patterns")
+  println("                                 as a comma-separated list. For example, If we want to download the fastq.gz files that also have 'NxtaFlex', 'metagenomics', and 'raw' in") 
+  println("                                 their filenames, we can provide '-p fastq.gz,NxtaFlex,metagenomics,raw'. Default: null.")
+  println("      --assay_suffix [STRING]  Genelab's assay suffix. Default: _GLmetagenomics.")
   println("      --additional_filename_prefix [STRING] additional prefix to add to output files that describe more than one sample (to make them unique compared to other datasets).")
   println("      include separator at end if adding one, e.g. Swift1S_ if wanted. Default: '' .")
   println()
@@ -95,13 +100,14 @@ if (params.help) {
   println("The strings below will be added to the end of the --database.cat_db path arguement provided below.")
   println("      --cat_taxonomy_dir [PATH] CAT taxonomy database directory. Default: 2021-01-07_taxonomy/.")
   println("      --cat_db_sub_dir [PATH] CAT database sub directory. Default: 2021-01-07_CAT_database/.")
-  println("      --CAT_DB_LINK [URL] CAT database online download link. Default: https://tbb.bio.uu.nl/bastiaan/CAT_prepare/CAT_prepare_20210107.tar.gz.")
+  println("      --database.CAT_DB_LINK [URL] CAT database online download link. Default: https://tbb.bio.uu.nl/bastiaan/CAT_prepare/CAT_prepare_20210107.tar.gz.")
   println("      --database.cat_db [PATH] Path to CAT database. Example, /path/to/Reference_DBs/CAT_prepare_20210107/. Default: null.")
   println("      --database.ko_db_dir  [PATH] Path to kofam scan database. Example, /path/to/Reference_DBs/kofamscan_db/. Default: null.")
   println("      --database.metaphlan_db_dir [PATH] Path to metaphlan database. Example, /path/to/Reference_DBs/metaphlan4-db/. Default: null.")
   println("      --database.chocophlan_dir [PATH] Path to Humann's chocophlan nucleotide database. Example, /path/to/Reference_DBs/humann3-db/chocophlan/. Default: null.")
   println("      --database.uniref_dir [PATH] Path to Humann's Uniref protein database. Example, /path/to/Reference_DBs/humann3-db/uniref/. Default: null.")
   println("      --database.utilities_dir [PATH] Path to Humann's untilities database. Example, /path/to/Reference_DBs/humann3-db/utility_mapping/.  Default: null.")
+  println("      --database.GTDBTK_LINK [URL] GTDBTK database online download link. Default: https://data.gtdb.ecogenomic.org/releases/release220/220.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r220_data.tar.gz.")
   println("      --database.gtdbtk_db_dir  [PATH] Path to GTDBTK database. Example, /path/Reference_DBs/GTDB-tk-ref-db/. Default: null.")
   println()
   println("Paths to existing conda environments to use otherwise a new one will be created using the yaml file in envs/.")
@@ -121,13 +127,19 @@ if (params.help) {
   exit 0
   }
 
+/************************************************
+*********** Show pipeline parameters ************
+*************************************************/
+
+if (params.debug) {
 log.info """
-         Nextflow MGIllumina Consensus Pipeline: $workflow.manifest.version
+         Nextflow Metagenomics Illumina Consensus Pipeline: $workflow.manifest.version
          
          You have set the following parameters:
          Profile: ${workflow.profile} 
          Input csv file : ${params.csv_file}
          GLDS Accession : ${params.GLDS_accession}
+         GLDS Raw File Pattern: ${params.RawFilePattern}         
          Workflow : ${params.workflow}
          Nextflow Directory publishing mode: ${params.publishDir_mode}
          Swift 1S Libraries: ${params.swift_1S}
@@ -191,13 +203,20 @@ log.info """
          Chocophlan: ${params.database.chocophlan_dir}
          Uniref: ${params.database.uniref_dir}
          Utilities: ${params.database.utilities_dir}
-         GTDBTK: ${params.database.gtdbtk_db_dir}
+         GTDBTK URL: ${params.database.GTDBTK_LINK}
+         GTDBTK DB: ${params.database.gtdbtk_db_dir}
          """.stripIndent()
+}
+
+// Create GLDS runsheet
+include { GET_RUNSHEET } from "./modules/create_runsheet.nf"
 
 // Processes to create the required database(s) if not provided
+/*
 include { SETUP_CAT_DB; SETUP_KOFAMSCAN_DB; SETUP_GTDBTK_DB; 
           SETUP_CHOCOPHLAN; SETUP_UNIREF; SETUP_UTILITY_MAPPING;
           SETUP_METAPHLAN } from "./modules/database_creation.nf"
+*/
 include { make_humann_db } from "./modules/database_creation.nf"
 
 // Read quality check and filtering
@@ -235,6 +254,11 @@ workflow run_read_based_analysis {
                     make_humann_db.out.uniref_dir,
                     make_humann_db.out.metaphlan_db_dir,
                     make_humann_db.out.utilities_dir)
+
+         software_versions_ch = Channel.empty()
+         make_humann_db.out.versions | mix(software_versions_ch) | set{software_versions_ch}
+         read_based.out.versions | mix(software_versions_ch) | set{software_versions_ch}
+
        }else{
 
          read_based(filtered_ch, 
@@ -242,7 +266,12 @@ workflow run_read_based_analysis {
                     params.database.uniref_dir,
                     params.database.metaphlan_db_dir,
                     params.database.utilities_dir)
+
+         software_versions_ch =  read_based.out.versions
       }
+
+    emit:
+        versions =  software_versions_ch
 
 }
 
@@ -255,28 +284,22 @@ workflow run_assembly_based_analysis {
 
 
     main:
+        software_versions_ch = Channel.empty()
+
         kofam_db = params.database.ko_db_dir
-         if(params.database.ko_db_dir == null) {
-             SETUP_KOFAMSCAN_DB()
-             kofam_db = SETUP_KOFAMSCAN_DB.out.ko_db_dir
-         }
-
-         cat_db = params.database.cat_db
-         if(params.database.cat_db == null){
-
-            SETUP_CAT_DB(params.dataase.CAT_DB_LINK)
-            cat_db = SETUP_CAT_DB.out.cat_db
-         }
-
-         gtdbtk_db_dir = params.database.gtdbtk_db_dir
-         if(params.database.gtdbtk_db_dir == null){
-              SETUP_GTDBTK_DB()
-              gtdbtk_db_dir = SETUP_GTDBTK_DB.out.gtdbtk_db_dir
-         }
+        cat_db = params.database.cat_db
+        gtdbtk_db_dir = params.database.gtdbtk_db_dir
 
         // Run assembly based workflow 
         assembly_based(file_ch, filtered_ch, kofam_db, 
                         cat_db, gtdbtk_db_dir, params.use_gtdbtk_scratch_location)
+
+
+        assembly_based.out.versions | mix(software_versions_ch) | set{software_versions_ch}
+
+
+    emit:
+        versions =  software_versions_ch
 
 }
 
@@ -293,14 +316,10 @@ workflow {
       // Parse file input
        if(params.GLDS_accession){
 
-       GET_RUNSHEET()
+       GET_RUNSHEET(params.GLDS_accession)
        GET_RUNSHEET.out.input_file
            .splitCsv(header:true)
            .set{file_ch}
-
-       GET_RUNSHEET.out.params_file
-                     .splitCsv(header:true)
-                     .set{params_ch} 
 
       }else{
  
@@ -311,25 +330,58 @@ workflow {
 
 
     file_ch.map{
-                     row -> deleteWS(row.paired) == 'true'  ? tuple( "${row.sample_id}", [file("${row.forward}"), file("${row.reverse}")], deleteWS(row.paired)) : 
-                                         tuple( "${row.sample_id}", [file("${row.forward}")], deleteWS(row.paired))
+                row -> deleteWS(row.paired) == 'true'  ? tuple( "${row.sample_id}", [file("${row.forward}", checkIfExists: true), file("${row.reverse}", checkIfExists: true)], deleteWS(row.paired)) : 
+                                                         tuple( "${row.sample_id}", [file("${row.forward}", checkIfExists: true)], deleteWS(row.paired))
                 }.set{reads_ch}
 
-    // Qality check and trim the input reads
+
+    // Software Version Capturing - runsheet
+    software_versions_ch = Channel.empty()
+    GET_RUNSHEET.out.version | mix(software_versions_ch) | set{software_versions_ch}
+
+    // Quality check and trim the input reads
     raw_qc(Channel.of("raw"), params.multiqc_config,reads_ch)
-    filtered_ch = BBDUK(reads_ch, params.adapters)
+    BBDUK(reads_ch, params.adapters)
+    filtered_ch = BBDUK.out.reads
     filtered_qc(Channel.of("filtered"), params.multiqc_config, filtered_ch)
 
-   // Run the analysis based on selection i.e, read-based, assembly-based or both
+    // Quality check software capturing
+    raw_qc.out.versions | mix(software_versions_ch) | set{software_versions_ch}
+    BBDUK.out.version | mix(software_versions_ch) | set{software_versions_ch}
+    filtered_qc.out.versions | mix(software_versions_ch) | set{software_versions_ch}
+
+    // Run the analysis based on selection i.e, read-based, assembly-based or both
     // it will run both by default
     if(params.workflow == 'read-based'){
+
           run_read_based_analysis(filtered_ch)
+          run_read_based_analysis.out.versions | mix(software_versions_ch) | set{software_versions_ch}
+          
     }else if(params.workflow == 'assembly-based') {
+
           run_assembly_based_analysis(file_ch,filtered_ch)
+          run_assembly_based_analysis.out.versions | mix(software_versions_ch) | set{software_versions_ch}
+
     }else{
+
           run_read_based_analysis(filtered_ch)
           run_assembly_based_analysis(file_ch, filtered_ch)
+
+          run_read_based_analysis.out.versions | mix(software_versions_ch) | set{software_versions_ch}
+          run_assembly_based_analysis.out.versions | mix(software_versions_ch) | set{software_versions_ch}
     }
+
+
+     // Software Version Capturing - combining all captured sofware versions
+     nf_version = "Nextflow Version:".concat("${nextflow.version}\n<><><>\n")
+     nextflow_version_ch = Channel.value(nf_version)
+
+     //  Write software versions to file
+     software_versions_ch | map { it.text + "\n<><><>\n"}
+                          | unique
+                          | mix(nextflow_version_ch)
+                          | collectFile(name: "${params.metadata_dir}/software_versions.txt", newLine: true, cache: false)
+                          | set{final_software_versions_ch}
 
 }
 
