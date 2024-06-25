@@ -313,7 +313,9 @@ def deleteWS(string){
 // Main workflow
 workflow {
         
-      // Parse file input
+     // Software Version Capturing - runsheet
+     software_versions_ch = Channel.empty()
+     // Parse file input
        if(params.GLDS_accession){
 
        GET_RUNSHEET(params.GLDS_accession)
@@ -321,6 +323,7 @@ workflow {
            .splitCsv(header:true)
            .set{file_ch}
 
+       GET_RUNSHEET.out.version | mix(software_versions_ch) | set{software_versions_ch}
       }else{
  
        Channel.fromPath(params.csv_file, checkIfExists: true)
@@ -335,9 +338,6 @@ workflow {
                 }.set{reads_ch}
 
 
-    // Software Version Capturing - runsheet
-    software_versions_ch = Channel.empty()
-    GET_RUNSHEET.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
     // Quality check and trim the input reads
     raw_qc(Channel.of("raw"), params.multiqc_config,reads_ch)
