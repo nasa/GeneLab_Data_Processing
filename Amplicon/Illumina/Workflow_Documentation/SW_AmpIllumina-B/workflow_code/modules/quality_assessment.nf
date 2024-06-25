@@ -20,12 +20,15 @@ process FASTQC {
     input:
         tuple val(sample_id), path(reads), val(isPaired)
     output:
-        tuple path("*.html"), path("*.zip")
+        tuple path("*.html"), path("*.zip"), emit: html
+        path("versions.txt"), emit: version
     script:
         """
         fastqc -o . \\
         -t ${task.cpus} \\
         ${reads}
+
+        fastqc --version > versions.txt
         """
 }
 
@@ -39,7 +42,8 @@ process MULTIQC {
         path(multiqc_config)
         path(files)
     output:
-        path("${prefix}_multiqc${params.assay_suffix}_report.zip")
+        path("${prefix}_multiqc${params.assay_suffix}_report.zip"), emit: report
+        path("versions.txt"), emit: version
     script:
         """
         multiqc -q --filename ${prefix}_multiqc \\
@@ -50,6 +54,7 @@ process MULTIQC {
         # Zipping
         zip -q -r ${prefix}_multiqc${params.assay_suffix}_report.zip ${prefix}_multiqc_report
 
+        multiqc --version > versions.txt
         """
   }
 
@@ -69,6 +74,7 @@ process CUTADAPT {
         tuple val(sample_id), path("*${params.primer_trimmed_R1_suffix[-5..-1]}"), val(isPaired), emit: reads
         tuple val(sample_id),  path("${sample_id}-cutadapt.log"), emit: logs
         tuple val(sample_id),  path("${sample_id}-trimmed-counts.tsv"), emit: trim_counts
+        path("versions.txt"), emit: version
     script:
     """
     R_primer_comp=`echo ${R_primer} |tr ATGCRYSWKMBVDHN  TACGYRSWMKVBHDN |rev`
@@ -175,6 +181,9 @@ process CUTADAPT {
                   <( grep "Reads written" ${sample_id}-cutadapt.log | tr -s " " "\\t" | cut -f 5 | tr -d "," ) \\
                   > ${sample_id}-trimmed-counts.tsv
     fi
+    
+    VERSION=`cutadapt --version`
+    echo "cutadapt \${VERSION}" > versions.txt
     """
 }
 
@@ -213,7 +222,8 @@ workflow quality_check {
     
 
     main:
-    fastqc_ch = FASTQC(reads_ch).flatten().collect()
+        FASTQC(reads_ch)
+    fastqc_ch = FASTQC.out.html.flatten().collect()
     MULTIQC(prefix_ch, multiqc_config, fastqc_ch)
 }
 

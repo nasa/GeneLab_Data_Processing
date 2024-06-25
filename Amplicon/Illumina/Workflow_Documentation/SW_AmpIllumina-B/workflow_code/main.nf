@@ -7,7 +7,6 @@ c_bright_green = "\u001b[32;1m";
 c_blue = "\033[0;34m";
 c_reset = "\033[0m";
 
-params.help = false
 /**************************************************
 * HELP MENU  **************************************
 **************************************************/
@@ -16,18 +15,18 @@ if (params.help) {
   println("Nextflow AmpIllumina Consensus Pipeline: $workflow.manifest.version")
   println("USAGE:")
   println("Example 1: Submit and run jobs with slurm in singularity containers.")
-  println("   > nextflow run main.nf -resume -profile slurm_sing --csv_file PE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT")
+  println("   > nextflow run main.nf -resume -profile slurm,singularity --csv_file PE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT")
   println()
   println("Example 2: : Submit and run jobs with slurm in conda environments.")
-  println("   > nextflow run main.nf -resume -profile slurm_conda --csv_file SE_file.csv --target_region 1TS --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT")
+  println("   > nextflow run main.nf -resume -profile slurm,conda --csv_file SE_file.csv --target_region 1TS --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT")
   println()
   println("Example 3: Run jobs locally in conda environments, supplying a GLDS accession, and specifying the path to an existing conda environment")
   println("   > nextflow run main.nf -resume -profile conda --GLDS_accession GLDS-487 --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --conda.qc <path/to/existing/conda/environment>")
   println()
   println("Required arguments:")
-  println("""-profile [STRING] What profile should be used to run the workflow. Options are [singularity, docker, conda, slurm_sing, slurm_conda].
+  println("""-profile [STRING] What profile should be used to run the workflow. Options are [singularity, docker, conda, slurm].
 	         singularity, docker and conda will run the pipelne locally using singularity, docker, and conda, respectively.
-             slurm_sing and slurm_conda will submit and run jobs using slurm in singularity containers and conda environments, respectively. """)			 
+                 To combine profiles, pass them together separated by comma. For example, to run jobs using slurm in singularity containers use 'slurm,singularity' . """)			 
   println("--csv_file  [PATH] A 3-column (single-end) or 4-column (paired-end) input file (sample_id, forward, [reverse,] paired). Mandatory if a GLDS accession is not provided.")
   println(" Please see the files: SE_file.csv and PE_file.csv for single-end and paired-end examples, respectively.")
   println(" The sample_id column should contain unique sample ids.")
@@ -38,14 +37,14 @@ if (params.help) {
   println("PLEASE NOTE: This workflow assumes that all your raw reads end with the same suffix. If they don't please modify your filenames to have the same suffix as shown below.")
   println("--raw_R1_suffix [STRING] Raw forward reads suffix (region following the unique part of the sample names). e.g. _R1_raw.fastq.gz.") 
   println("--raw_R2_suffix [STRING] Raw reverse reads suffix (region following the unique part of the sample names). e.g. _R2_raw.fastq.gz.") 
-  println()
+
   println("Cutadapt (trimming) parameters:")
   println("	    --F_primer [STRING] Forward primer sequence e.g. AGAGTTTGATCCTGGCTCAG. Default: emptry string.")
   println("	    --R_primer [STRING] Reverse primer sequence e.g. CTGCCTCCCGTAGGAGT. Default: emptry string.")
   println("	    --min_cutadapt_len [INTEGER] What should be the minimum read length after quality trimming with cutadapt. Default: 130.")
   println("	    --primers_linked [STRING] Are the primers linked?. https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads. Default: TRUE. ")
   println("	    --discard_untrimmed [STRING] Should untrimmed reads be discarded? Any supplied string except TRUE will not discard them. Default: TRUE.")
-  println()	
+	
   println("Optional arguments:")  
   println("  --help  Print this help message and exit.")
   println("  --publishDir_mode [STRING]  How should nextflow publish file outputs. Options can be found here https://www.nextflow.io/docs/latest/process.html#publishdir. Default: link.")
@@ -53,7 +52,7 @@ if (params.help) {
   println("  --enable_visualizations [BOOLEAN] Should ASV plots be made? true or false. if true supply a path to the ruhnsheet for plotting to the --runsheet option. Default: false.")
   println("  --runsheet [PATH] A 4-column file with these exact headers [Sample Name, read1_path, raw_R1_suffix, groups] for plotting. Only relevant if --enable_visualizations is true. Default: null.") 
   println("  --multiqc_config [PATH] Path to a custome multiqc config file. Default: config/multiqc.config.")
-  println()
+
   println("Dada2 parameters passed to filterAndTrim() function:")
   println("	    --left_trunc [INTEGER] truncate the sequences to the left by this number of bases. Default: 0.") 
   println("	    --right_trunc [INTEGER] truncate the sequences to the right by this number of bases. Default: 0.") 
@@ -63,13 +62,12 @@ if (params.help) {
   println("      This is typically used with primers like 515-926, that captured 18S fragments that are typically too long to merge.")
   println("      Note that 16S and 18S should have been separated already prior to running this workflow. This should likely be left as FALSE for any option other than 18S above.") 	    
   println("	     Values are TRUE or FALSE Default: FALSE.")
-  println()
+
   println("File Suffixes:")
   println("      --primer_trimmed_R1_suffix [STRING] Suffix to use for naming your primer trimmed forward reads. Default: _R1_trimmed.fastq.gz.")
   println("      --primer_trimmed_R2_suffix [STRING] Suffix to use for naming your primer trimmed reverse reads. Default: _R2_trimmed.fastq.gz.")  
   println("      --filtered_R1_suffix [STRING]  Suffix to use for naming your quality filtered forward reads. Default: _R1_filtered.fastq.gz.")
   println("      --filtered_R2_suffix [STRING]  Suffix to use for naming your quality filtered reverse reads. Default: _R2_filtered.fastq.gz.")
-  println()
   println("Output directories:")
   println("      --raw_reads_dir [PATH] Where should the fastqc report of the raw reads be stored. Default: Raw_Sequence_Data/.")
   println("      --fastqc_out_dir [PATH] Where should multiqc outputs be stored. Default: workflow_output/FastQC_Outputs/.")
@@ -78,12 +76,10 @@ if (params.help) {
   println("      --info_out_dir [PATH] Where should output metadata be stored. Default: workflow_output/Metadata/.")
   println("      --plots_dir [PATH] Where should your plots be stored if visualization is enabled. Default: workflow_output/Final_Outputs/Plots/.")
   println("      --final_outputs_dir [PATH] Where should most outputs and summary reports be stored.  Default: workflow_output/Final_Outputs/.")
-  println()
   println("Genelab specific arguements:")
   println("      --GLDS_accession [STRING]  A Genelab accession number if the --csv_file parameter is not set. If this parameter is set, it will ignore the --csv_file parameter.")
   println("      --assay_suffix [STRING]  Genelabs assay suffix. Default: GLAmpSeq.")
   println("      --output_prefix [STRING] Unique name to tag onto output files. Default: empty string.")
-  println()
   println("Paths to existing conda environments to use otherwise a new one will be created using the yaml file in envs/.")
   println("      --conda.qc [PATH] Path to a conda environment containing fastqc, multiqc, zip and python. Default: null.")
   println("      --conda.R [PATH] Path to a conda environment containing R along with the packages decipher and biomformat installed. Default: null.")
@@ -94,11 +90,12 @@ if (params.help) {
   exit 0
   }
 
+
+if(params.debug){
 log.info """
          Nextflow AmpIllumina Consensus Pipeline: $workflow.manifest.version
          
          You have set the following parameters:
-         Profile: ${workflow.profile}
          Input csv file : ${params.csv_file}
          GLDS_accession : ${params.GLDS_accession}
          Amplicon target region : ${params.target_region}
@@ -151,7 +148,7 @@ log.info """
          cutadapt: ${params.conda.cutadapt}
          R_visualizations: ${params.conda.R_visualizations}
          """.stripIndent()
-
+}
 
 // Create GLDS runsheet
 include { GET_RUNSHEET } from "./modules/create_runsheet.nf"
@@ -178,6 +175,9 @@ def deleteWS(string){
 
 
 workflow {
+    
+    // Capture software versions
+    software_versions_ch = Channel.empty()
 
    if(params.GLDS_accession){
 
@@ -198,6 +198,7 @@ workflow {
                            row -> "${row.data_type}" == "PE" ? ["${row.raw_R1_suffix}", "${row.raw_R2_suffix}"] : ["${row.raw_R1_suffix}"] 
                            }.first() 
 
+      GET_RUNSHEET.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
    }else{
 
@@ -207,8 +208,8 @@ workflow {
    }
 
     file_ch.map{
-                     row -> deleteWS(row.paired)  == 'true' ? tuple( "${row.sample_id}", [file("${row.forward}"), file("${row.reverse}")], deleteWS(row.paired)) : 
-                                         tuple( "${row.sample_id}", [file("${row.forward}")], deleteWS(row.paired))
+                     row -> deleteWS(row.paired)  == 'true' ? tuple( "${row.sample_id}", [file("${row.forward}", checkIfExists: true), file("${row.reverse}", checkIfExists: true)], deleteWS(row.paired)) : 
+                                         tuple( "${row.sample_id}", [file("${row.forward}", checkIfExists: true)], deleteWS(row.paired))
                 }.set{reads_ch} 
 
     // Generating a file with sample ids on a new line
@@ -217,8 +218,13 @@ workflow {
               .set{sample_ids_ch}
 
     // Read quality check and trimming
-    raw_fastqc_files = RAW_FASTQC(reads_ch).flatten().collect()
+    RAW_FASTQC(reads_ch)
+    raw_fastqc_files = RAW_FASTQC.out.html.flatten().collect()
+
     RAW_MULTIQC("raw", params.multiqc_config,raw_fastqc_files)
+
+    RAW_FASTQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
+    RAW_MULTIQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
     if(params.trim_primers){
 
@@ -231,7 +237,8 @@ workflow {
                                               }.flatten().collect()
 
         COMBINE_CUTADAPT_LOGS_AND_SUMMARIZE(counts, logs)
-        trimmed_fastqc_files = TRIMMED_FASTQC(CUTADAPT.out.reads).flatten().collect()
+        TRIMMED_FASTQC(CUTADAPT.out.reads)
+        trimmed_fastqc_files = TRIMMED_FASTQC.out.html.flatten().collect()
         TRIMMED_MULTIQC("filtered", params.multiqc_config, trimmed_fastqc_files)
 
         isPaired_ch = CUTADAPT.out.reads.map{ 
@@ -247,6 +254,11 @@ workflow {
         dada_counts = RUN_R_TRIM.out.counts
         dada_taxonomy = RUN_R_TRIM.out.taxonomy
         dada_biom = RUN_R_TRIM.out.biom
+
+        CUTADAPT.out.version | mix(software_versions_ch) | set{software_versions_ch}
+        TRIMMED_FASTQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
+        TRIMMED_MULTIQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
+        RUN_R_TRIM.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
     }else{
 
@@ -270,18 +282,35 @@ workflow {
         dada_taxonomy = RUN_R_NOTRIM.out.taxonomy
         dada_biom = RUN_R_NOTRIM.out.biom
 
+        RUN_R_NOTRIM.out.version | mix(software_versions_ch) | set{software_versions_ch}
+
     }
 
 
     // Zip biom file
     ZIP_BIOM(dada_biom)
 
+    ZIP_BIOM.out.version | mix(software_versions_ch) | set{software_versions_ch}
+
     if(params.enable_visualizations){
         // Visualize
         runsheet = params.GLDS_accession ? GET_RUNSHEET.out.runsheet : params.runsheet
         R_VISUALIZATION(runsheet, sample_ids_ch, dada_counts, dada_taxonomy)
+        R_VISUALIZATION.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
     }
+
+        // Software Version Capturing - combining all captured sofware versions
+     nf_version = "Nextflow Version:".concat("${nextflow.version}\n<><><>\n")
+     nextflow_version_ch = Channel.value(nf_version)
+
+     //  Write software versions to file
+     software_versions_ch | map { it.text + "\n<><><>\n"}
+                          | unique
+                          | mix(nextflow_version_ch)
+                          | collectFile(name: "${params.metadata_dir}/software_versions.txt", newLine: true, cache: false)
+                          | set{final_software_versions_ch}
+
 
 }
 

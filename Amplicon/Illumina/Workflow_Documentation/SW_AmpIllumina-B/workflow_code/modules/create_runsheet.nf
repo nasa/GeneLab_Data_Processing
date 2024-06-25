@@ -13,10 +13,14 @@ process GET_RUNSHEET {
         path("*.zip"), emit: zip
         path("GLparams_file.csv"), emit: params_file
         path("GLfile.csv"), emit: input_file
+        path("versions.txt"), emit: version
 
     script:
         """
         create_runsheet.py --OSD ${params.GLDS_accession} --target ${params.target_region}
+        GL-version | grep "GeneLab utils"| sed -E 's/^\\s+//' > versions.txt
+        echo "dptools v1.3.4" >> versions.txt
+        python --version >> versions.txt 
         """
 }
 

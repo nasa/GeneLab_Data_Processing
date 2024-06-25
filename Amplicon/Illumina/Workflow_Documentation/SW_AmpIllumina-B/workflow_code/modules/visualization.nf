@@ -17,17 +17,21 @@ process R_VISUALIZATION {
         path(counts)
         path(taxonomy)
     output:
-        path("plots/*")
+        path("plots/*"), emit: plots
+        path("versions.txt"), emit: version
     script:
         """
         [ -d plots/ ] || mkdir plots/
-        Illumina-R-visualizations.R \\
-                      "${runsheet}" \\
-                      "${sample_IDs_file}" \\
-                      "${counts}" \\
-                      "${taxonomy}" \\
-                      "plots/" \\
-                      "${params.output_prefix}" \\
+        Illumina-R-visualizations.R \
+                      "${runsheet}" \
+                      "${sample_IDs_file}" \
+                      "${counts}" \
+                      "${taxonomy}" \
+                      "plots/" \
+                      "${params.output_prefix}" \
                       "${params.assay_suffix}"
+
+        R --vanilla --version |grep "R version" > versions.txt
+        get_Rvisualization_package_version.R
         """
 }
