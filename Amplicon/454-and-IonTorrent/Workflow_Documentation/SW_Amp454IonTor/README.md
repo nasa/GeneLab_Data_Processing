@@ -15,10 +15,10 @@ The current GeneLab 454 and IonTorrent amplicon sequencing data processing pipel
 2. [Download the workflow files](#2-download-the-workflow-files)  
 
 3. [Run the workflow](#4-run-the-workflow)  
-   3a. [Approach 1: Run slurm jobs in singularity containers with OSD accession as input](#4a-approach-1-run-slurm-jobs-in-singularity-containers-with-osd-accession-as-input)  
+   3a. [Approach 1: Run slurm jobs in singularity containers with OSD accession as input](#3a-approach-1-run-slurm-jobs-in-singularity-containers-with-osd-accession-as-input)  
    3b. [Approach 2: Run slurm jobs in singularity containers with a csv file as input](#3b-approach-2-run-slurm-jobs-in-singularity-containers-with-a csv-file-as-input)
    3c. [Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environment(s)](#3c-run-jobs-locally-in-conda-environments-and-specify-the-path-to-one-or-more-existing-conda-environment)
-   3d. [Modify parameters and cpu resources in the nextflow config file](3d-modify-parameters-and-cpu-resources-in-the-nextflow-config-file)
+   3d. [Modify parameters and cpu resources in the nextflow config file](#3d-modify-parameters-and-cpu-resources-in-the-nextflow-config-file)
 
 4. [ Workflow outputs](#4-workflow-outputs)
    4a. [Main outputs](#4a-main-outputs)
@@ -176,8 +176,6 @@ Standard nextflow resource usage logs are also produced as follows:
   - Resource_Usage/execution_trace_{timestamp}.txt (an execution tracing file that contains information about each process executed in the workflow, including: submission time, start time, completion time, cpu and memory used, machine-readable output)
 
 > Further details about these logs can also found within [this Nextflow documentation page](https://www.nextflow.io/docs/latest/tracing.html#execution-report).
-
-
 
 
 
