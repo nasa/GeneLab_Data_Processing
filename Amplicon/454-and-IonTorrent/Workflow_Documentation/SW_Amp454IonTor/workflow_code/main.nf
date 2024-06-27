@@ -19,7 +19,7 @@ if (params.help) {
   println("   > nextflow run main.nf -resume -profile slurm,singularity --GLDS_accession OSD-72 --target_region 16S --min_bbduk_len 50 --min_bbduk_avg_quality 15")
   println()
   println("Example 2: : Submit and run jobs with slurm in conda environments.")
-  println("   > nextflow run main.nf -resume -profile slurm,singularity --csv_file file.csv --target_region 1TS --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --min_bbduk_len 50 --min_bbduk_avg_quality 15")
+  println("   > nextflow run main.nf -resume -profile slurm,singularity --csv_file file.csv --target_region ITS --F_primer TCCGTAGGTGAACCTGCGG --R_primer GCTGCGTTCTTCATCGATGC --min_bbduk_len 50 --min_bbduk_avg_quality 15")
   println()
   println("Example 3: Run jobs locally in conda environments and specify the path to an existing conda environment")
   println("   > nextflow run main.nf -resume -profile conda --csv_file file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --min_bbduk_len 50 --min_bbduk_avg_quality 15 --conda.qc <path/to/existing/conda/environment>")
