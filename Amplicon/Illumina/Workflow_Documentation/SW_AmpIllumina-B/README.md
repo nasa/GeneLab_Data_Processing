@@ -141,7 +141,7 @@ nextflow run main.nf -resume -profile conda --csv_file SE_file.csv --target_regi
 
 *Required only if --GLDS_accession is not passed as an argument*
 
-* `--csv_file` –  A 2-column input file with these headers [sample_id, read]. Please see the sample `file.csv` in this repository for an example on how to format this file.
+* `--csv_file` –  A 3-column (single-end) or 4-column (paired-end) input csv file (sample_id, forward, [reverse,] paired). Please see the sample `SE_file.csv` and `PE_file.csv` in this repository for examples on how to format this file.
 
 * `--F_primer` – Forward primer sequence.
 
@@ -161,7 +161,7 @@ Once you've downloaded the workflow template, you can modify the parameters in t
 
 #### 4a. Main outputs
 
-The outputs from this pipeline are documented in the [GL-DPPD-7106](../../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md) processing protocol.
+The outputs from this pipeline are documented in the [GL-DPPD-7104-B](../../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md) processing protocol.
 
 #### 4b. Resource logs
 
