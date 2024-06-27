@@ -41,8 +41,8 @@ echo ""
 ## The command(s) that you want to run in this slurm job ##
 export NXF_SINGULARITY_CACHEDIR=singularity/
 ## Replace command with the command(s) you want to run ##
-nextflow run main.nf -profile slurm_sing -resume --csv_file file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --min_bbduk_len 50 --min_bbduk_avg_quality 15 
-
+#nextflow run main.nf -profile slurm,singularity -resume --csv_file file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --min_bbduk_len 50 --min_bbduk_avg_quality 15 
+nextflow run main.nf -profile slurm,singularity -resume --GLDS_accession OSD-72  --target_region 16S --min_bbduk_len 50 --min_bbduk_avg_quality 15
 
 ## Add a time-stamp at the end of the job then calculate how long the job took to run in seconds, minutes, and hours ##
 echo ""

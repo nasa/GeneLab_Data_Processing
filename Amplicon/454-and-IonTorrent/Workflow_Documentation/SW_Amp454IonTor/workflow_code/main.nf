@@ -15,11 +15,11 @@ if (params.help) {
   println()
   println("Nextflow Amp454IonTor Consensus Pipeline: $workflow.manifest.version")
   println("USAGE:")
-  println("Example 1: Submit and run jobs with slurm in singularity containers.")
-  println("   > nextflow run main.nf -resume -profile slurm_sing --csv_file file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --min_bbduk_len 50 --min_bbduk_avg_quality 15")
+  println("Example 1: Submit and run jobs with slurm in singularity containers with OSD accession as input.")
+  println("   > nextflow run main.nf -resume -profile slurm,singularity --GLDS_accession OSD-72 --target_region 16S --min_bbduk_len 50 --min_bbduk_avg_quality 15")
   println()
   println("Example 2: : Submit and run jobs with slurm in conda environments.")
-  println("   > nextflow run main.nf -resume -profile slurm_conda --csv_file file.csv --target_region 1TS --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --min_bbduk_len 50 --min_bbduk_avg_quality 15")
+  println("   > nextflow run main.nf -resume -profile slurm,singularity --csv_file file.csv --target_region 1TS --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --min_bbduk_len 50 --min_bbduk_avg_quality 15")
   println()
   println("Example 3: Run jobs locally in conda environments and specify the path to an existing conda environment")
   println("   > nextflow run main.nf -resume -profile conda --csv_file file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --min_bbduk_len 50 --min_bbduk_avg_quality 15 --conda.qc <path/to/existing/conda/environment>")
@@ -27,9 +27,9 @@ if (params.help) {
   println()
   println("Required arguments:")
   println()  
-  println("""-profile [STRING] Which profile should be used to run the workflow. Options are [singularity, docker, conda, slurm_sing, slurm_conda].
+  println("""-profile [STRING] Which profile should be used to run the workflow. Options are [singularity, docker, conda, slurm].
 	           singularity, docker and conda will run the pipeline locally using singularity, docker, and conda, respectively.
-             slurm_sing and slurm_conda will submit and run jobs using slurm in singularity containers and conda environments, respectively. """)			 
+                   You can combine profiles by separating them with comma. For example, to submit and run jobs using slurm in singularity containers pass 'slurm,singularity' as arguement. """)			 
   println("--csv_file  [PATH]  A 2-column input file with these headers [sample_id, read] e.g. file.csv. The sample_id column should contain unique sample ids while the read column should contain the absolute or relative path to the sample's reads.")
   println("--target_region [STRING] What the amplicon target region to be aanalyzed. options are one of [16S, ITS]. Default: 16S")
   println()
@@ -72,6 +72,9 @@ if (params.help) {
   exit 0
   }
 
+
+if(params.debug){
+
 log.info """
          Nextflow Amp454IonTor Consensus Pipeline: $workflow.manifest.version
          You have set the following parameters:
@@ -106,6 +109,11 @@ log.info """
          cutadapt: ${params.conda.cutadapt}
          vsearch: ${params.conda.vsearch}
          """.stripIndent()
+}
+
+
+// Create GLDS runsheet
+include { GET_RUNSHEET } from "./modules/create_runsheet.nf"
 
 // Read quality check and filtering
 include { FASTQC as RAW_FASTQC ; MULTIQC as RAW_MULTIQC  } from './modules/quality_assessment.nf'
@@ -119,17 +127,47 @@ include { ZIP_BIOM } from './modules/zip_biom.nf'
 
 workflow {
 
-    Channel.fromPath(params.csv_file, checkIfExists: true)
+    // Capture software versions
+    software_versions_ch = Channel.empty()
+
+    if(params.GLDS_accession){
+
+       GET_RUNSHEET(params.GLDS_accession, params.target_region)
+       GET_RUNSHEET.out.input_file
            .splitCsv(header:true)
-           .map{row -> tuple( "${row.sample_id}", [file("${row.read}")] )}
-          .set{reads_ch} 
+           .set{file_ch}
+
+       GET_RUNSHEET.out.params_file
+                     .splitCsv(header:true)
+                     .set{params_ch}
+
+       target_region = params_ch.map{row -> "${row.target_region}"}.first()
+       primers_ch =  params_ch.map{
+                           row -> ["${row.f_primer}", "${row.r_primer}"] 
+                           }.first()                 
+
+       GET_RUNSHEET.out.version | mix(software_versions_ch) | set{software_versions_ch}
+
+   }else{
+
+       Channel.fromPath(params.csv_file, checkIfExists: true)
+           .splitCsv(header:true)
+           .set{file_ch} 
+
+   }
+
+
+    file_ch.map{row -> tuple( "${row.sample_id}", [file("${row.read}", checkIfExists: true)] )}
+          .set{reads_ch}
 
     // Read quality check and trimming
-    raw_fastqc_files = RAW_FASTQC(reads_ch).flatten().collect()
+    RAW_FASTQC(reads_ch)
+    raw_fastqc_files = RAW_FASTQC.out.html.flatten().collect()
     RAW_MULTIQC("raw", raw_fastqc_files)
     
     // Trim reads
-    CUTADAPT(reads_ch)
+    if(!params.GLDS_accession) primers_ch = Channel.value([params.F_primer, params.R_primer])
+    CUTADAPT(reads_ch, primers_ch)
     trim_counts = CUTADAPT.out.trim_counts.map{ sample_id, count -> file("${count}")}.collect()
     trim_logs = CUTADAPT.out.logs.map{ sample_id, log -> file("${log}")}.collect()
     COMBINE_CUTADAPT_LOGS_AND_SUMMARIZE(trim_counts, trim_logs)
@@ -140,7 +178,8 @@ workflow {
     filter_logs = BBDUK.out.logs.map{ sample_id, log -> file("${log}")}.collect()
     COMBINE_BBDUK_LOGS_AND_SUMMARIZE(filter_counts, filter_logs)
 
-    filtered_fastqc_files = FILTERED_FASTQC(BBDUK.out.reads).flatten().collect()
+    FILTERED_FASTQC(BBDUK.out.reads)
+    filtered_fastqc_files = FILTERED_FASTQC.out.html.flatten().collect()
     FILTERED_MULTIQC("filtered", filtered_fastqc_files)
   
     // Pick outs with vsearch
@@ -154,6 +193,28 @@ workflow {
     // Zip biom file
     ZIP_BIOM(RUN_R.out.biom)
 
+
+
+    // Software Version Capturing - combining all captured sofware versions
+    RAW_FASTQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
+    RAW_MULTIQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
+    CUTADAPT.out.version | mix(software_versions_ch) | set{software_versions_ch}
+    BBDUK.out.version | mix(software_versions_ch) | set{software_versions_ch}
+    FILTERED_FASTQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
+    FILTERED_MULTIQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
+    pick_otus.out.versions | mix(software_versions_ch) | set{software_versions_ch}
+    RUN_R.out.version | mix(software_versions_ch) | set{software_versions_ch}
+
+
+    nf_version = "Nextflow Version: ".concat("${nextflow.version}\n<><><>\n")
+    nextflow_version_ch = Channel.value(nf_version)
+
+     //  Write software versions to file
+     software_versions_ch | map { it.text + "\n<><><>\n"}
+                          | unique
+                          | mix(nextflow_version_ch)
+                          | collectFile(name: "${params.metadata_dir}/software_versions.txt", newLine: true, cache: false)
+                          | set{final_software_versions_ch}
 }
 
 workflow.onComplete {

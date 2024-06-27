@@ -13,10 +13,13 @@ process ZIP_BIOM {
     input:
        path(taxonomy_and_counts_biom)  // path("taxonomy-and-counts${params.assay_suffix}.biom")
     output:
-        path("${params.output_prefix}taxonomy-and-counts${params.assay_suffix}.biom.zip")
+        path("${params.output_prefix}taxonomy-and-counts${params.assay_suffix}.biom.zip"), emit: biom
+        path("versions.txt"), emit: version
     script:
         """
         zip -q ${params.output_prefix}taxonomy-and-counts${params.assay_suffix}.biom.zip \\
                 ${taxonomy_and_counts_biom}
+
+        zip -h | grep "Zip" | sed -E 's/(Zip.+\\)).+/\\1/' > versions.txt
         """
 }

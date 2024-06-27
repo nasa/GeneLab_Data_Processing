@@ -19,12 +19,15 @@ process FASTQC {
     input:
         tuple val(sample_id), path(reads)
     output:
-        tuple path("*.html"), path("*.zip")
+        tuple path("*.html"), path("*.zip"), emit: html
+        path("versions.txt"), emit: version
     script:
         """
         fastqc -o . \\
         -t ${task.cpus} -q \\
         ${reads}
+
+        fastqc --version > versions.txt
         """
 }
 
@@ -40,6 +43,7 @@ process MULTIQC {
     output:
         path("${params.output_prefix}${prefix}_multiqc${params.assay_suffix}_data.zip"), emit: data
         path("${params.output_prefix}${prefix}_multiqc${params.assay_suffix}_report.html"), emit: html
+        path("versions.txt"), emit: version
     script:
         """
         multiqc -z -q -o . \\
@@ -50,6 +54,8 @@ process MULTIQC {
         # Renaming html file
         mv ${params.output_prefix}${prefix}_multiqc${params.assay_suffix}.html  \\
            ${params.output_prefix}${prefix}_multiqc${params.assay_suffix}_report.html
+
+        multiqc --version > versions.txt
         """
   }
 
@@ -64,14 +70,16 @@ process CUTADAPT {
 
     input:
         tuple val(sample_id), path(reads)
+        tuple val(F_primer), val(R_primer)
     output:
         tuple val(sample_id), path("${sample_id}${params.primer_trimmed_suffix}"), emit: reads
         tuple val(sample_id),  path("${sample_id}-cutadapt.log"), emit: logs
         tuple val(sample_id),  path("${sample_id}-trimmed-counts.tsv"), emit: trim_counts
+        path("versions.txt"), emit: version
     script:
         """
-        cutadapt -g ${params.F_primer}  \\
-                 -a ${params.R_primer} \\
+        cutadapt -g ${F_primer}  \\
+                 -a ${R_primer} \\
                  -o ${sample_id}${params.primer_trimmed_suffix} \\
                  ${reads[0]} > ${sample_id}-cutadapt.log 2>&1
 
@@ -79,6 +87,9 @@ process CUTADAPT {
               <( grep "Total reads processed:" ${sample_id}-cutadapt.log | tr -s " " "\\t" | cut -f 4 | tr -d "," ) \\
               <( grep "Reads written (passing filters):" ${sample_id}-cutadapt.log | tr -s " " "\\t" | cut -f 5 | tr -d "," ) \\
               > ${sample_id}-trimmed-counts.tsv
+
+        VERSION=`cutadapt --version`
+        echo "cutadapt \${VERSION}" > versions.txt
         """
 }
 
@@ -120,6 +131,7 @@ process BBDUK {
         tuple val(sample_id), path("${sample_id}${params.filtered_suffix}"), emit: reads
         tuple val(sample_id),  path("${sample_id}-bbduk.log"), emit: logs
         tuple val(sample_id),  path("${sample_id}-filtered-counts.tsv"), emit: filter_counts
+        path("versions.txt"), emit: version
     script:
       """
       bbduk.sh in=${reads[0]} out1=${sample_id}${params.filtered_suffix} \\
@@ -131,6 +143,9 @@ process BBDUK {
       paste <( printf "${sample_id}" ) <( grep "Input:"  ${sample_id}-bbduk.log | \\
       tr -s " " "\\t" | cut -f 2 ) <( grep "Result:"  ${sample_id}-bbduk.log | \\
       tr -s " " "\\t" | cut -f 2 ) > ${sample_id}-filtered-counts.tsv
+
+      VERSION=`bbversion.sh`
+      echo "bbtools \${VERSION}" > versions.txt
       """
 }
 
@@ -170,18 +185,26 @@ workflow quality_check {
     
 
     main:
-    fastqc_ch = FASTQC(reads_ch).flatten().collect()
-    MULTIQC(prefix_ch, multiqc_config, fastqc_ch)
+        FASTQC(reads_ch)
+        fastqc_ch = FASTQC.out.html.flatten().collect()
+        MULTIQC(prefix_ch, multiqc_config, fastqc_ch)
+
+        software_versions_ch = Channel.empty()
+        FASTQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
+        MULTIQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
+
+    emit:
+        versions = software_versions_ch
 }
 
 workflow {
 
     Channel.fromPath(params.csv_file)
-               .splitCsv()
-               .map{row -> tuple( "${row[0]}", [file("${row[1]}")] )}
+               .splitCsv(header:true)
+               .map{row -> tuple( "${row.sample_id}", [file("${row.read}", checkIfExists: true)] )}
                .set{reads_ch}   
 
 
-    res_ch = quality_check(Channel.of(params.prefix), params.multiqc_config, reads_ch)
+    quality_check(Channel.of(params.prefix), params.multiqc_config, reads_ch)
     CUTADAPT(reads_ch)
 }

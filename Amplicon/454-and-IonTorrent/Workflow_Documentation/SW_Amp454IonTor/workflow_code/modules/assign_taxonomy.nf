@@ -6,15 +6,16 @@ process RUN_R {
     tag "Assigning taxonomy to OTUs using decipher..."
    
     input:
-        path(otus) // config["final_outputs_dir"] + config["output_prefix"] + "OTUs.fasta",
-        path(counts) // config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv"
-        path(trimmed_read_counts) //config["trimmed_reads_dir"] + config["output_prefix"] + "trimmed-read-counts.tsv"
-        path(filtered_read_counts)  // config["filtered_reads_dir"] + config["output_prefix"] +  filtered-read-counts.tsv
+        path(otus)
+        path(counts)
+        path(trimmed_read_counts)
+        path(filtered_read_counts)
     output:
         path("Final_Outputs/${params.output_prefix}taxonomy${params.assay_suffix}.tsv"), emit: taxonomy
         path("Final_Outputs/${params.output_prefix}taxonomy-and-counts${params.assay_suffix}.biom"), emit: biom
         path("Final_Outputs/${params.output_prefix}taxonomy-and-counts${params.assay_suffix}.tsv"), emit: tsv
         path("Final_Outputs/${params.output_prefix}read-count-tracking${params.assay_suffix}.tsv"), emit: read_count
+        path("versions.txt"), emit: version
     script:
         """
         mkdir Trimmed_Sequence_Data/ && mv ${trimmed_read_counts}  Trimmed_Sequence_Data/
@@ -37,5 +38,7 @@ process RUN_R {
             awk 'NR>1{print}' "Final_Outputs/${params.output_prefix}taxonomy-and-counts${params.assay_suffix}.tsv" | sort -V -k1) \\
             > temp_tax_cont.tsv && mv temp_tax_cont.tsv "Final_Outputs/${params.output_prefix}taxonomy-and-counts${params.assay_suffix}.tsv"
 
+        R --vanilla --version  |grep "R version" > versions.txt
+        get_R_package_version.R
         """
 }

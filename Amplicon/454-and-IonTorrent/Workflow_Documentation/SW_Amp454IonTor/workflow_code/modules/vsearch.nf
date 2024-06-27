@@ -9,7 +9,8 @@ process VSEARCH_DEREP_SAMPLE {
     input:
         tuple val(sample_id), path(reads)
     output:
-        path("${sample_id}-derep.fa.tmp")
+        path("${sample_id}-derep.fa.tmp"), emit: derep_temp
+        path("versions.txt"), emit: version
     script:
         """
         vsearch --derep_fulllength ${reads} \\
@@ -17,6 +18,8 @@ process VSEARCH_DEREP_SAMPLE {
                 --output "${sample_id}-derep.fa.tmp" \\
                 --sizeout \\
                 --relabel "sample=${sample_id};seq_" > /dev/null
+
+        vsearch --version 2>&1 |grep "vsearch" |head -n1 | sed -E 's/(vsearch v.+?)_linux.+/\\1/' > versions.txt
         """
 }
 
@@ -46,6 +49,7 @@ process VSEARCH_COMBINE_DEREPD_SAMPLES {
     output:
         path("${params.output_prefix}OTUs.fasta"), emit: fasta
         path("${params.output_prefix}counts${params.assay_suffix}.tsv"), emit: counts
+        path("versions.txt"), emit: version
     script:
         """
         # Dereplicate all
@@ -82,6 +86,8 @@ process VSEARCH_COMBINE_DEREPD_SAMPLES {
                 
         sed 's/^#OTU ID/OTU_ID/' counts.tmp \\
             > ${params.output_prefix}counts${params.assay_suffix}.tsv
+       
+        vsearch --version 2>&1 |grep "vsearch" |head -n1 | sed -E 's/(vsearch v.+?)_linux.+/\\1/' > versions.txt
         """
  }
 
@@ -94,13 +100,16 @@ process REMOVE_LINE_WRAPS {
         path(temp_fasta)
     output:
         path("${params.output_prefix}OTUs${params.assay_suffix}.fasta"), emit: fasta
+        path("versions.txt"), emit: version
     script:
         """
         # Removing line wraps from fasta file
         bit-remove-wraps ${temp_fasta} \\
             > ${params.output_prefix}OTUs${params.assay_suffix}.fasta.tmp && \\
         mv ${params.output_prefix}OTUs${params.assay_suffix}.fasta.tmp \\
-           ${params.output_prefix}OTUs${params.assay_suffix}.fasta      
+           ${params.output_prefix}OTUs${params.assay_suffix}.fasta
+
+        bit-version 2>&1 |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt      
         """
 }
 
@@ -111,14 +120,20 @@ workflow pick_otus {
         reads_ch
 
     main:
-        VSEARCH_DEREP_SAMPLE(reads_ch).collect() |
-            VSEARCH_COMBINE_DEREPD_SAMPLES |
-            VSEARCH_PROCESS_ALL
-
+        VSEARCH_DEREP_SAMPLE(reads_ch)
+        derep_temp_ch = VSEARCH_DEREP_SAMPLE.out.derep_temp.collect()
+        VSEARCH_COMBINE_DEREPD_SAMPLES(derep_temp_ch) | VSEARCH_PROCESS_ALL
         REMOVE_LINE_WRAPS(VSEARCH_PROCESS_ALL.out.fasta)
+
+        // capture software versions
+        software_versions_ch = Channel.empty()
+        VSEARCH_DEREP_SAMPLE.out.version | mix(software_versions_ch) | set{software_versions_ch}
+        VSEARCH_PROCESS_ALL.out.version | mix(software_versions_ch) | set{software_versions_ch}
+        REMOVE_LINE_WRAPS.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
     emit:
         otus = REMOVE_LINE_WRAPS.out.fasta
         counts = VSEARCH_PROCESS_ALL.out.counts
+        versions = software_versions_ch
 
 }
