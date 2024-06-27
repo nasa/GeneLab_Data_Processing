@@ -16,11 +16,11 @@ The current GeneLab 454 and IonTorrent amplicon sequencing data processing pipel
 
 3. [Run the workflow](#3-run-the-workflow)  
    3a. [Approach 1: Run slurm jobs in singularity containers with OSD accession as input](#3a-approach-1-run-slurm-jobs-in-singularity-containers-with-osd-accession-as-input)  
-   3b. [Approach 2: Run slurm jobs in singularity containers with a csv file as input](#3b-approach-2-run-slurm-jobs-in-singularity-containers-with-a csv-file-as-input)
+   3b. [Approach 2: Run slurm jobs in singularity containers with a csv file as input](#3b-approach-2-run-slurm-jobs-in-singularity-containers-with-a-csv-file-as-input) 
    3c. [Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environments](#3c-approach-run-jobs-locally-in-conda-environments-and-specify-the-path-to-one-or-more-existing-conda-environments)
    3d. [Modify parameters and cpu resources in the nextflow config file](#3d-modify-parameters-and-cpu-resources-in-the-nextflow-config-file)
 
-4. [ Workflow outputs](#4-workflow-outputs)
+4. [Workflow outputs](#4-workflow-outputs)
    4a. [Main outputs](#4a-main-outputs)
    4b. [Resource logs](#4b-resource-logs)
 
