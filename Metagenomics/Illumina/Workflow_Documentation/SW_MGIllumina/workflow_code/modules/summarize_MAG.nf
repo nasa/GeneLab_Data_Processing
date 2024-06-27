@@ -92,7 +92,7 @@ process  GTDBTK_ON_MAGS {
                         -x fasta \\
                         --out_dir gtdbtk-out/ \\
                         --cpus ${task.cpus} \\
-                        --pplacer_cpus 1
+                        --skip_ani_screen 
 
             else
 
@@ -101,7 +101,7 @@ process  GTDBTK_ON_MAGS {
                        -x fasta \\
                        --out_dir gtdbtk-out/ \\
                        --cpus ${task.cpus} \\
-                       --pplacer_cpus 1
+                       --skip_ani_screen
 
             fi
 
