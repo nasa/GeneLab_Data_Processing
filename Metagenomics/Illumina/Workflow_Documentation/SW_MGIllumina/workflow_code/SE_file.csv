@@ -1,4 +1,4 @@
-sample_id,forward,reverse,paired
+sample_id,forward,paired
 RR23_FCS_FLT_F1,/path/to/Raw_Sequence_Data/RR23_FCS_FLT_F1_R1_HRremoved_raw.fastq.gz,false
 RR23_FCS_FLT_F2,/path/to/Raw_Sequence_Data/RR23_FCS_FLT_F2_R1_HRremoved_raw.fastq.gz,false
 RR23_FCS_FLT_F3,/path/to/Raw_Sequence_Data/RR23_FCS_FLT_F3_R1_HRremoved_raw.fastq.gz,false
