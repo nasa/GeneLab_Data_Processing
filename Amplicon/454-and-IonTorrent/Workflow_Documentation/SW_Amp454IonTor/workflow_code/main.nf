@@ -60,12 +60,12 @@ if (params.help) {
   println("      --filtered_reads_dir [PATH] Specifies where BBDUK filtered reads will be published.  Default: ../Filtered_Sequence_Data/")
   println()
   println("Genelab specific arguements:")
-  println("      --GLDS_accession [STRING]  A Genelab / OSD accession number if the --csv_file parameter is not set. If this parameter is set, it will ignore the --csv_file parameter.")
+  println("      --GLDS_accession [STRING]  A Genelab GLDS or OSD accession number if the --csv_file parameter is not set. If this parameter is set, it will ignore the --csv_file parameter.")
   println("      --RawFilePattern [STRING]  If we do not want to download all files (which we often won't), we can specify a pattern here to subset the total files.")
   println("                                 For example, if we know we want to download just the fastq.gz files, we can say 'fastq.gz'. We can also provide multiple patterns")
   println("                                 as a comma-separated list. For example, If we want to download the fastq.gz files that also have 'Amplicon', and 'raw' in") 
   println("                                 their filenames, we can provide '-p fastq.gz,Amplicon,raw'. Default: null.")
-  println("      --assay_suffix [STRING]  Genelabs assay suffix. Default: GLAmpSeq.")
+  println("      --assay_suffix [STRING]  Genelabs assay suffix. Default: _GLAmpSeq.")
   println("      --output_prefix [STRING] Unique name to tag on to output files. Default: ''")
   println()
   println("Paths to existing conda environments to use otherwise a new one will be created using the yaml file in envs/.")
@@ -74,6 +74,7 @@ if (params.help) {
   println("      --conda.bbmap [PATH] Path to a conda environment containing bbmap. Default: null.")
   println("      --conda.cutadapt [PATH] Path to a conda environment containing cutadapt. Default: null.")
   println("      --conda.vsearch [PATH] Path to a conda environment containing vsearch and bit. Default: null.")
+  println()
   print("Advanced users can edit the nextflow.config file for more control over default settings such as container choice, number of cpus, memory per task etc.")
   exit 0
   }
