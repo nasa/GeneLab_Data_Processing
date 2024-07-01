@@ -97,7 +97,7 @@ if (params.help) {
   println()
   println("Paths to existing databases and database links.")
   println("        --DB_ROOT [PATH]   FULL PATH to root directory where the databases will be downloaded if they don't exist.") 
-  println("                  Relative paths such as '~/' and '../' will fail, please don't use them. Default: ./Reference_DBs/ ")
+  println("                  Relative paths such as '~/' and '../' will fail, please don't use them. Default: ../Reference_DBs/ ")
   println("CAT database directory strings:")
   println("    The strings below will be added to the end of the --database.cat_db path arguement provided below.")
   println("         --cat_taxonomy_dir [PATH] CAT taxonomy database directory. Default: 2021-01-07_taxonomy/.")
