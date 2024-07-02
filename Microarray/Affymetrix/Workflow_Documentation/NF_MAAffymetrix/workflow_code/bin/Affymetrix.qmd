@@ -831,7 +831,7 @@ reformat_names <- function(colname, group_name_mapping) {
                   stringr::str_replace(pattern = ".condition", replacement = "v")
   
   # remap to group names before make.names was applied
-  unique_group_name_mapping <- unique(group_name_mapping)
+  unique_group_name_mapping <- unique(group_name_mapping) %>% arrange(-nchar(safe_name))
   for ( i in seq(nrow(unique_group_name_mapping)) ) {
     safe_name <- unique_group_name_mapping[i,]$safe_name
     original_name <- unique_group_name_mapping[i,]$original_name
