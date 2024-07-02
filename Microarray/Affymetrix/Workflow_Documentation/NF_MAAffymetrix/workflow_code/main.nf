@@ -111,7 +111,7 @@ workflow {
 
     GENERATE_SOFTWARE_TABLE(
       ch_software_versions | unique | collectFile(newLine: true, sort: true, cache: false),
-      ch_runsheet | splitCsv(header: true) | first | map{ row -> row['Array Data File Name'] }
+      ch_runsheet | splitCsv(header: true, quote: '"') | first | map{ row -> row['Array Data File Name'] }
     )
 
     // export meta for post processing usage
