@@ -21,6 +21,10 @@ suppressWarnings(assay_suffix <- args[7])
 library(DECIPHER)
 library(biomformat)
 
+# Set default internet timeout to 1 hour
+options(timeout=3600)
+
+
     ### assigning taxonomy ###
   # reading OTUs into a DNAStringSet object
 dna <- readDNAStringSet(paste0(final_outputs_dir, output_prefix, "OTUs", assay_suffix, ".fasta"))

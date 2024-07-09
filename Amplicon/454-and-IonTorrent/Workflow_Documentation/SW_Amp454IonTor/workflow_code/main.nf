@@ -8,9 +8,12 @@ c_blue = "\033[0;34m";
 c_reset = "\033[0m";
 
 params.help = false
+params.debug = false
+
 /**************************************************
 * HELP MENU  **************************************
 **************************************************/
+
 if (params.help) {
   println()
   println("Nextflow Amp454IonTor Consensus Pipeline: $workflow.manifest.version")
@@ -79,6 +82,10 @@ if (params.help) {
   exit 0
   }
 
+
+/************************************************
+*********** Show pipeline parameters ************
+*************************************************/
 
 if(params.debug){
 
