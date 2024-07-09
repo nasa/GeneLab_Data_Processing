@@ -60,6 +60,9 @@ library(dada2); packageVersion("dada2")
 library(DECIPHER); packageVersion("DECIPHER")
 library(biomformat); packageVersion("biomformat")
 
+# Set default internet timeout to 1 hour
+options(timeout=3600)
+
     ### general processing ###
     # reading in unique sample names into variable
 sample.names <- scan(sample_IDs_file, what="character")
