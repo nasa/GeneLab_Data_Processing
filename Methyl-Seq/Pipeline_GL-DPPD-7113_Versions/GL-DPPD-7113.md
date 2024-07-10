@@ -120,7 +120,11 @@ fastqc -o raw_fastqc_output/ *raw.fastq.gz
 ### 1b. Compile Raw Data QC
 
 ```bash
-multiqc --interactive -o raw_multiqc_GLmethylSeq_data/ -n raw_multiqc_GLmethylSeq -z raw_fastqc_output/
+multiqc --interactive \
+  -o raw_multiqc_GLmethylSeq_data/ \
+  -n raw_multiqc_GLmethylSeq \
+  -z \
+  raw_fastqc_output/
 ```
 
 **Parameter Definitions:**
@@ -348,7 +352,11 @@ fastqc -o trimmed_fastqc_output/ *trimmed.fastq.gz
 ### 3b. Compile Trimmed Data QC
 
 ```bash
-multiqc --interactive -o trimmed_multiqc_GLmethylSeq_data/ -n trimmed_multiqc_GLmethylSeq -z trimmed_fastqc_output/ trimgalore_output/
+multiqc --interactive \
+  -o trimmed_multiqc_GLmethylSeq_data/ \
+  -n trimmed_multiqc_GLmethylSeq \
+  -z \
+  trimmed_fastqc_output/ trimgalore_output/
 ```
 
 **Parameter Definitions:**
@@ -358,7 +366,7 @@ multiqc --interactive -o trimmed_multiqc_GLmethylSeq_data/ -n trimmed_multiqc_GL
 *	`-n` – the filename prefix for output files
 *	`-z` – specifies to zip the output data directory
 *	`trimmed_fastqc_output/` – the directory holding the output data from the fastqc run, provided as a positional argument
-* `trimgalore_output/` - the directory holding the trimgalore trimming reports.
+* `trimgalore_output/` - the directory holding the trimgalore trimming reports, provided as a positional argument
 
 **Input data:**
 
@@ -389,7 +397,8 @@ bismark_genome_preparation --bowtie2 \
   --parallel NumberOfThreads \
   bismark_reference_genome/
 
-bam2nuc --genome_folder bismark_reference_genome/ --genomic_composition_only
+bam2nuc --genomic_composition_only \
+  --genome_folder bismark_reference_genome/
 ```
 
 **Parameter Definitions:**
@@ -400,8 +409,10 @@ bam2nuc --genome_folder bismark_reference_genome/ --genomic_composition_only
 *  positional argument specifing the directory holding the reference genome (should end in ".fa" or ".fasta", can be gzipped and including ".gz")
 
 *bam2nuc*
-* --genome_folder - species the directory holding the reference genome (should end in ".fa" or ".fasta", can be gzipped and including ".gz")
-* --genomic_composition_only - species creation of the genomic_nucleotide_frequencies.txt report, which is genome rathe than sample specific.
+* --genomic_composition_only - specifies creation of the (genome-specific) genomic_nucleotide_frequencies.txt report  
+* --genome_folder - specifies the directory holding the reference genome (should end in ".fa" or ".fasta", can be gzipped and including ".gz")
+
+ 
 **Input data:**
 
 * a directory holding the reference genome in fasta format (this pipeline version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file))
@@ -427,7 +438,7 @@ bam2nuc --genome_folder bismark_reference_genome/ --genomic_composition_only
     * BS_GA.rev.2.bt2
     * genome_mfa.GA_conversion.fa
   * \*.txt (captured standard output from the command)
-* bismark_reference_genome/genomic_nucleotide_frequencies.txt
+* bismark_reference_genome/genomic_nucleotide_frequencies.txt (tab-delimited table of mono- and di-nucleotide frequencies in reference genome)
 
 
 
@@ -501,7 +512,7 @@ mv sample-1_R1_trimmed_bismark_bt2_pe.bam sample-1_bismark_bt2_pe.bam
 
 * sample-1_bismark_{bt2,bt2_pe,hisat2,hisat2_pe}.bam (mapping file) 
 * **\*_[SP]E_report.txt** (bismark mapping report file)
-* **\*.nucleotide_stats.txt** (tab-delimited table with sample-specific mono- and di-nucleotide sequence compositions and coverage values compared to genomic compositions
+* **\*.nucleotide_stats.txt** (tab-delimited table with sample-specific mono- and di-nucleotide sequence compositions and coverage values compared to genomic compositions)
 
 
 > **NOTE**  
@@ -598,7 +609,7 @@ deduplicate_bismark sample-1_bismark_{bt2,bt2_pe}.bam
 
 **Output data:**
 
-* \*.deduplicated.bam (unsorted bismark bowtie2 alignment bam file, with duplicates removed)
+* **\*.deduplicated.bam** (unsorted bismark bowtie2 alignment bam file, with duplicates removed)
 * **\*.deduplication_report.txt** (report file containing deduplication information) 
 
 
@@ -608,7 +619,7 @@ deduplicate_bismark sample-1_bismark_{bt2,bt2_pe}.bam
 
 ```bash
 samtools sort -@ NumberOfThreads \
-  -o sample-1_bismark_bt2_sorted.deduplicated.bam \
+  -o sample-1_bismark_{bt2,bt2_pe}_sorted.deduplicated.bam \
   sample-1_bismark_{bt2,bt2_pe}.deduplicated.bam
 ```
 
@@ -627,7 +638,7 @@ samtools sort -@ NumberOfThreads \
 
 **Output data:**
 
-* **sample-1_bismark_bt2_sorted.deduplicated.bam** (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, with duplicated removed)
+* **sample-1_bismark_{bt2,bt2_pe}_sorted.deduplicated.bam** (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, with duplicates removed)
 
 <br>
 
@@ -649,7 +660,7 @@ bismark_methylation_extractor --parallel NumberOfThreads \
   sample-1_bismark_bt2.bam
     # note, if *not working with RRBS data, input should be the deduplicated 
     # version (sample-1_bismark_bt2*.deduplicated.bam) produced in 
-    # step 6 above 
+    # step 6a above 
 ```
 
 **Paired-end example**  
@@ -667,7 +678,7 @@ bismark_methylation_extractor --parallel NumberOfThreads \
   sample-1_bismark_bt2_pe.bam
     # note, if *not working with RRBS data, input should be the deduplicated
     # version (sample-1_bismark_bt2*.deduplicated.bam) produced in 
-    # step 6 above
+    # [Step 6a.](#6a-deduplicate) above
 ```
 
 
@@ -733,7 +744,7 @@ bismark2report --dir sample-1_bismark_report_out_dir/ \
 > If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
 
 > **NOTE**  
-> If data are **not** RRBS, the deduplication report from [step 6](#6-deduplicate-skip-if-data-are-rrbs) above should also be provided to the above command to the `--dedup_report` parameter
+> If data are **not** RRBS, the deduplication report from [Step 6a.](#6a-deduplicate) above should also be provided to the above command to the `--dedup_report` parameter
 
 **Output data:**
 
@@ -758,7 +769,7 @@ bismark2summary sample-1_bismark_{bt2,bt2_pe}.bam
   * the autodetected files cannot be explicitly provided, but it looks for those named like these listed here and includes them if they exist for each individual starting bam file it is given or finds
     * sample-1_bismark_bt2_[SP]E_report.txt generated from [Step 4b.](#4b-align) above
     * sample-1_bismark_{bt2,bt2_pe}_splitting_report.txt from [Step 7](#7-extract-methylation-calls) above
-    * sample-1_bismark_{bt2,bt2_pe}.deduplication_report.txt if deduplication was performed in [Step 6](#6-deduplicate-skip-if-data-are-rrbs)
+    * sample-1_bismark_{bt2,bt2_pe}.deduplication_report.txt if deduplication was performed in [Step 6a.](#6a-deduplicate)
 > **NOTE**  
 > If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
 
@@ -774,7 +785,7 @@ bismark2summary sample-1_bismark_{bt2,bt2_pe}.bam
 ### 9b. Compile Alignment and Bismark QC
 
 ```bash
-multiqc --interactive -o align_multiqc_data/ -n align_multiqc -z \
+multiqc --interactive -o align_and_bismark_multiqc_data/ -n align_and_bismark_multiqc -z \
   qualimap_out_dir/ mapping_files_out_dir/ methylation_calls_out_dir/ deduplication_out_dir/
 ```
 
@@ -786,7 +797,7 @@ multiqc --interactive -o align_multiqc_data/ -n align_multiqc -z \
 *	`-z` – specifies to zip the output data directory
 *	`qualimap_out_dir/` – the directory holding the output data from the qualimap run, provided as a positional argument
 *	`methylation_calls_out_dir/` – the directory holding the output data from the methylation extraction run, provided as a positional argument
-*	`mapping_files_out_dir/` – the directory holding the output data from the fastqc run, provided as a positional argument
+*	`mapping_files_out_dir/` – the directory holding the output data from the alignment run, provided as a positional argument
 *	`deduplication_out_dir/` – the directory holding the output data from the deduplication run, provided as a positional argument (omitted if RRBS data)
 
 **Input data:**
@@ -800,8 +811,8 @@ multiqc --interactive -o align_multiqc_data/ -n align_multiqc -z \
 
 **Output data:**
 
-* **align_multiqc_GLmethylSeq.html** (multiqc output html summary)
-* **align_multiqc_GLmethylSeq_data** (directory containing multiqc output data)
+* **align_and_bismark_multiqc_GLmethylSeq.html** (multiqc output html summary)
+* **align_and_bismark_multiqc_GLmethylSeq_data** (directory containing multiqc output data)
 
 <br>
 
