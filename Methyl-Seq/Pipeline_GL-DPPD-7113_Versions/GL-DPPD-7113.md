@@ -43,9 +43,13 @@ Jonathan Galazka (GeneLab Project Scientist)
     - [4c. Sort Alignment Files](#4c-sort-alignment-files)
   - [5. Alignment QC](#5-alignment-qc)
   - [6. Deduplicate (skip if data are RRBS)](#6-deduplicate-skip-if-data-are-rrbs)
+    - [6a. Deduplicate](#6a-deduplicate)
+    - [6b. Sort Deduplicated Alignment Files](#6b-sort-deduplicated-alignment-files)
   - [7. Extract methylation calls](#7-extract-methylation-calls)
   - [8. Generate individual sample report](#8-generate-individual-sample-report)
-  - [9. Generate combined summary report](#9-generate-combined-summary-report)
+  - [9. Generate combined summary reports](#9-generate-combined-summary-reports)
+    - [9a. Bismark summary report](#9a-bismark-summary-report)
+    - [9b. Compile Alignment and Bismark QC](#9b-compile-alignment-and-bismark-qc)
   - [10. Generate reference genome annotation information](#10-generate-reference-genome-annotation-information)
     - [10a. GTF to BED conversion](#10a-gtf-to-bed-conversion)
     - [10b. Making a mapping file of genes to transcripts](#10b-making-a-mapping-file-of-genes-to-transcripts)
@@ -63,19 +67,21 @@ Jonathan Galazka (GeneLab Project Scientist)
 # Software used
 
 |Program|Version|Relevant Links|
-|:------|:-----:|------:|
-|FastQC| 0.11.9 |[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
-|MultiQC| 1.12 |[https://multiqc.info/](https://multiqc.info/)|
-|Cutadapt| 3.7 |[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
-|TrimGalore!| 0.6.7 |[https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/)|
-|Bismark| 0.23.1 |[https://github.com/FelixKrueger/Bismark](https://github.com/FelixKrueger/Bismark)|
-|bowtie2| 2.4.4 |[https://github.com/BenLangmead/bowtie2#overview](https://github.com/BenLangmead/bowtie2#overview)|
-|hisat2| 2.2.1 | [https://github.com/DaehwanKimLab/hisat2](https://github.com/DaehwanKimLab/hisat2)|
-|samtools| 1.16.1 |[https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)|
-|qualimap| 2.2.2d |[http://qualimap.conesalab.org/](http://qualimap.conesalab.org/)|
-|methylKit| 1.20.0 |[https://bioconductor.org/packages/release/bioc/html/methylKit.html](https://bioconductor.org/packages/release/bioc/html/methylKit.html)|
-|tidyverse| 1.3.2 |[https://tidyverse.tidyverse.org/](https://tidyverse.tidyverse.org/)|
-|genomation| 1.26.0 |[https://bioconductor.org/packages/release/bioc/html/genomation.html](https://bioconductor.org/packages/release/bioc/html/genomation.html)|
+|:-----------|:------:|------:|
+|FastQC      | 0.12.0 |[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
+|MultiQC     | 1.22.1 |[https://multiqc.info/](https://multiqc.info/)|
+|Cutadapt    | 4.8    |[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
+|TrimGalore! | 0.6.7  |[https://github.com/FelixKrueger/TrimGalore](https://github.com/FelixKrueger/TrimGalore)|
+|Bismark     | 0.24.2 |[https://github.com/FelixKrueger/Bismark](https://github.com/FelixKrueger/Bismark)|
+|bowtie2     | 2.5.4  |[https://github.com/BenLangmead/bowtie2#overview](https://github.com/BenLangmead/bowtie2#overview)|
+|hisat2      | 2.2.1  |[https://github.com/DaehwanKimLab/hisat2](https://github.com/DaehwanKimLab/hisat2)|
+|samtools    | 1.20   |[https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)|
+|qualimap    | 2.3    |[http://qualimap.conesalab.org/](http://qualimap.conesalab.org/)|
+|R           | 4.4.0  |[https://www.r-project.org](https://www.r-project.org)|
+|tidyverse   | 2.0.0  |[https://tidyverse.tidyverse.org/](https://tidyverse.tidyverse.org/)|
+|Bioconductor| 3.19  |[https://bioconductor.org](https://bioconductor.org)
+|methylKit   | 1.30.0 |[https://bioconductor.org/packages/release/bioc/html/methylKit.html](https://bioconductor.org/packages/release/bioc/html/methylKit.html)|
+|genomation  | 1.36.0 |[https://bioconductor.org/packages/release/bioc/html/genomation.html](https://bioconductor.org/packages/release/bioc/html/genomation.html)|
 
 ---
 
@@ -114,7 +120,7 @@ fastqc -o raw_fastqc_output/ *raw.fastq.gz
 ### 1b. Compile Raw Data QC
 
 ```bash
-multiqc --interactive -o raw_multiqc_data/ -n raw_multiqc -z raw_fastqc_output/
+multiqc --interactive -o raw_multiqc_GLmethylSeq_data/ -n raw_multiqc_GLmethylSeq -z raw_fastqc_output/
 ```
 
 **Parameter Definitions:**
@@ -131,26 +137,26 @@ multiqc --interactive -o raw_multiqc_data/ -n raw_multiqc -z raw_fastqc_output/
 
 **Output data:**
 
-* **raw_multiqc.html** (multiqc output html summary)
-* **raw_multiqc_data.zip** (zipped directory containing multiqc output data)
+* **raw_multiqc_GLMethylSeq.html** (multiqc output html summary)
+* **raw_multiqc_GLMethylSeq_data.zip** (zipped directory containing multiqc output data)
 
 <br>  
 
 ---
 
 ## 2. Adapter trimming/quality filtering
-See `trim_galore --help` [menu](https://github.com/FelixKrueger/TrimGalore/blob/072ecf9a1f80f9eb41c8116c32284492f481cbbb/trim_galore#L3035) for more info on any of the below.
+See `trim_galore --help` or [TrimGalore User Guide](https://github.com/FelixKrueger/TrimGalore/blob/0.6.10/Docs/Trim_Galore_User_Guide.md) for more info on any of the below.
 
 <br>
 
 ### If not RRBS or if RRBS using MseI digestion
-Note that the `--rrbs` option is **not** appropriate when RRBS (reduced representation bisulfite sequencing) libraries were prepared with MseI digestion (see `trim_galore --help` menu [(starting at this line)](https://github.com/FelixKrueger/TrimGalore/blob/072ecf9a1f80f9eb41c8116c32284492f481cbbb/trim_galore#L3337).
+Note that the `--rrbs` option is **not** appropriate when RRBS (reduced representation bisulfite sequencing) libraries were prepared with MseI digestion (see the TrimGalore User Guide [Note for RRBS using MseI](https://github.com/FelixKrueger/TrimGalore/blob/0.6.10/Docs/Trim_Galore_User_Guide.md#rrbs-specific-options-mspi-digested-material).
 
 **Single-end example**  
 
 ```bash
 trim_galore --gzip \
-  --cores 4 \
+  --cores NumberOfThreads \
   --phred33 \
   --output_dir trimmed_reads_out_dir/ \
   sample-1_raw.fastq.gz
@@ -163,7 +169,7 @@ mv sample-1_raw_trimmed.fq.gz sample-1_trimmed.fastq.gz
 
 ```bash
 trim_galore --gzip \
-  --cores 4 \
+  --cores NumberOfThreads \
   --phred33 \
   --output_dir trimmed_reads_out_dir/ \
   --paired \
@@ -177,13 +183,13 @@ mv sample-1_R2_raw_val_2.fq.gz sample-1_R2_trimmed.fastq.gz
 <br>
 
 ### If RRBS with MspI digestion
-Note that if the library preparation was non-directional, the `--non_directional` flag needs to be added to this command (whether single-end or paired-end; see `trim_galore --help` menu [e.g., here](https://github.com/FelixKrueger/TrimGalore/blob/072ecf9a1f80f9eb41c8116c32284492f481cbbb/trim_galore#L3315)). 
+Note that if the library preparation was non-directional, the `--non_directional` flag needs to be added to this command (whether single-end or paired-end; see [TrimGalore User Guide](https://github.com/FelixKrueger/TrimGalore/blob/0.6.10/Docs/Trim_Galore_User_Guide.md#rrbs-specific-options-mspi-digested-material)). 
 
 **Single-end example**  
 
 ```bash
 trim_galore --gzip \
-  --cores 4 \
+  --cores NumberOfThreads \
   --phred33 \
   --rrbs \
   --output_dir trimmed_reads_out_dir/ \
@@ -197,7 +203,7 @@ mv sample-1_raw_trimmed.fq.gz sample-1_trimmed.fastq.gz
 
 ```bash
 trim_galore --gzip \
-  --cores 4 \
+  --cores NumberOfThreads \
   --phred33 \
   --rrbs \
   --output_dir trimmed_reads_out_dir/ \
@@ -214,7 +220,7 @@ mv sample-1_R2_raw_val_2.fq.gz sample-1_R2_trimmed.fastq.gz
 ### If RRBS with NuGEN ovation kit
 Libraries prepared with the NuGEN ovation kit need to be procesed with an additional script provided by the company's [github](https://github.com/nugentechnologies/NuMetRRBS#analysis-guide-for-nugen-ovation-rrbs-methyl-seq). 
 
-Following their instructions, we first run an adapter-trimming/quality-filtering step with trimgalore. Note that the `--rrbs` option is not appropriate to pass to trimgalore when this kit is used (see `trim_galore --help` menu [(starting at this line)](https://github.com/FelixKrueger/TrimGalore/blob/072ecf9a1f80f9eb41c8116c32284492f481cbbb/trim_galore#L3329). Then we utilize the company's script to remove the random diversity sequences added by the kit. 
+Following their instructions, we first run an adapter-trimming/quality-filtering step with trimgalore. Note that the `--rrbs` option is not appropriate to pass to trimgalore when this kit is used (see Bismark documentation for [RRBS NuGEN Ovation Methyl-Seq System](http://felixkrueger.github.io/Bismark/bismark/library_types/#rrbs-nugen-ovation-methyl-seq-system). Then we utilize the company's script to remove the random diversity sequences added by the kit. 
 
 #### First adapter-trimming/quality-filtering with trimgalore
 
@@ -222,7 +228,7 @@ Following their instructions, we first run an adapter-trimming/quality-filtering
 
 ```bash
 trim_galore --gzip \
-  --cores 4 \
+  --cores NumberOfThreads \
   --phred33 \
   -a AGATCGGAAGAGC \
   --output_dir trimmed_reads_out_dir/ \
@@ -236,7 +242,7 @@ mv sample-1_raw_trimmed.fq.gz sample-1_trimmed.fastq.gz
 
 ```bash
 trim_galore --gzip \
-  --cores 4 \
+  --cores NumberOfThreads \
   --phred33 \
   --paired \
   -a AGATCGGAAGAGC \
@@ -342,7 +348,7 @@ fastqc -o trimmed_fastqc_output/ *trimmed.fastq.gz
 ### 3b. Compile Trimmed Data QC
 
 ```bash
-multiqc --interactive -o trimmed_multiqc_data/ -n trimmed_multiqc -z trimmed_fastqc_output/
+multiqc --interactive -o trimmed_multiqc_GLmethylSeq_data/ -n trimmed_multiqc_GLmethylSeq -z trimmed_fastqc_output/ trimgalore_output/
 ```
 
 **Parameter Definitions:**
@@ -352,6 +358,7 @@ multiqc --interactive -o trimmed_multiqc_data/ -n trimmed_multiqc -z trimmed_fas
 *	`-n` – the filename prefix for output files
 *	`-z` – specifies to zip the output data directory
 *	`trimmed_fastqc_output/` – the directory holding the output data from the fastqc run, provided as a positional argument
+* `trimgalore_output/` - the directory holding the trimgalore trimming reports.
 
 **Input data:**
 
@@ -359,8 +366,8 @@ multiqc --interactive -o trimmed_multiqc_data/ -n trimmed_multiqc -z trimmed_fas
 
 **Output data:**
 
-* **trimmed_multiqc.html** (multiqc output html summary)
-* **trimmed_multiqc_data** (directory containing multiqc output data)
+* **trimmed_multiqc_GLMethylSeq.html** (multiqc output html summary)
+* **trimmed_multiqc_GLMethylSeq_data.zip** (directory containing multiqc output data)
 
 <br>
 
@@ -379,16 +386,22 @@ mkdir bismark_reference_genome
 mv ref-genome.fasta bismark_reference_genome/
 
 bismark_genome_preparation --bowtie2 \
-  --parallel 4 \
+  --parallel NumberOfThreads \
   bismark_reference_genome/
+
+bam2nuc --genome_folder bismark_reference_genome/ --genomic_composition_only
 ```
 
 **Parameter Definitions:**
 
+*bismark_genome_preparation*
 *	`--bowtie2` - specify bismark to create bisulfite indexes for use with Bowtie2
 *	`--parallel` – specifies how many threads to use (note these will be doubled as it operates on both strands simultaneously)
 *  positional argument specifing the directory holding the reference genome (should end in ".fa" or ".fasta", can be gzipped and including ".gz")
 
+*bam2nuc*
+* --genome_folder - species the directory holding the reference genome (should end in ".fa" or ".fasta", can be gzipped and including ".gz")
+* --genomic_composition_only - species creation of the genomic_nucleotide_frequencies.txt report, which is genome rathe than sample specific.
 **Input data:**
 
 * a directory holding the reference genome in fasta format (this pipeline version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file))
@@ -414,6 +427,7 @@ bismark_genome_preparation --bowtie2 \
     * BS_GA.rev.2.bt2
     * genome_mfa.GA_conversion.fa
   * \*.txt (captured standard output from the command)
+* bismark_reference_genome/genomic_nucleotide_frequencies.txt
 
 
 
@@ -424,22 +438,22 @@ bismark_genome_preparation --bowtie2 \
 
 ### 4b. Align
 
-Note that if the library preparation was non-directional, the `--non_directional` flag needs to be added to this command (whether single-end or paired-end). 
+Note that if the library preparation was non-directional, the `--non_directional` flag needs to be added to this command (whether single-end or paired-end). For a full list of alignment option recommendations library type and/or commercially available kit, please see the library page in the [Bismark documentation](http://felixkrueger.github.io/Bismark/bismark/library_types/) 
 
 **Single-end example**  
 
 ```bash
 bismark --bowtie2 \
   --bam \
-  --parallel 4 \
+  --parallel NumberOfThreads \
   --non_bs_mm \
   --nucleotide_coverage \
   --output_dir mapping_files_out_dir/ \
   --genome_folder bismark_reference_genome/ \
   sample-1_trimmed.fastq.gz
 
-# renaming output files so they are cleaner and will work with sorted bam file/auto-detection
-# of bismark2summary later
+# renaming output files so they are cleaner and will work with sorted bam 
+# file/auto-detection of bismark2summary later
 mv sample-1_trimmed_bismark_bt2_SE_report.txt sample-1_bismark_bt2_sorted_SE_report.txt
 mv sample-1_trimmed_bismark_bt2.nucleotide_stats.txt sample-1_bismark_bt2.nucleotide_stats.txt
 mv sample-1_trimmed_bismark_bt2.bam sample-1_bismark_bt2.bam
@@ -450,7 +464,7 @@ mv sample-1_trimmed_bismark_bt2.bam sample-1_bismark_bt2.bam
 ```bash
 bismark --bowtie2 \
   --bam \
-  --parallel 4 \
+  --parallel NumberOfThreads \
   --non_bs_mm \
   --nucleotide_coverage \
   --output_dir mapping_files_out_dir/ \
@@ -458,8 +472,8 @@ bismark --bowtie2 \
   -1 sample-1_R1_trimmed.fastq.gz \
   -2 sample-1_R2_trimmed.fastq.gz
 
-# renaming output files so they are cleaner and will work with sorted bam file/auto-detection
-# of bismark2summary later
+# renaming output files so they are cleaner and will work with sorted bam 
+# file/auto-detection of bismark2summary later
 mv sample-1_R1_trimmed_bismark_bt2_PE_report.txt sample-1_bismark_bt2_sorted_PE_report.txt
 mv sample-1_R1_trimmed_bismark_bt2.nucleotide_stats.txt sample-1_bismark_bt2.nucleotide_stats.txt
 mv sample-1_R1_trimmed_bismark_bt2_pe.bam sample-1_bismark_bt2_pe.bam
@@ -485,23 +499,22 @@ mv sample-1_R1_trimmed_bismark_bt2_pe.bam sample-1_bismark_bt2_pe.bam
 
 **Output data:**  
 
-* sample-1_bismark_bt2.bam (mapping file) 
-* **\*report.txt** (bismark mapping report file)
-* **genomic_nucleotide_frequencies.txt** (tab-delimited table of mono- and di-nucleotide frequencies in reference genome)
+* sample-1_bismark_{bt2,bt2_pe,hisat2,hisat2_pe}.bam (mapping file) 
+* **\*_[SP]E_report.txt** (bismark mapping report file)
 * **\*.nucleotide_stats.txt** (tab-delimited table with sample-specific mono- and di-nucleotide sequence compositions and coverage values compared to genomic compositions
 
 
 > **NOTE**  
-> If using RNA, need to add the `--hisat2` and `--path_to_hisat2` flags.
+> If using RNA, need to add the `--hisat2` and `--path_to_hisat2` flags. Output files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
 
 <br>
 
 ### 4c. Sort Alignment Files
 
 ```bash
-samtools sort -@ 4 \
+samtools sort -@ NumberOfThreads \
   -o sample-1_bismark_bt2_sorted.bam \
-  sample-1_bismark_bt2.bam
+  sample-1_bismark_{bt2,bt2_pe}.bam
 ```
 
 **Parameter Definitions:**
@@ -509,11 +522,13 @@ samtools sort -@ 4 \
 * `sort` - specifies to use the `sort` sub-program of `samtools`
 * `-@` - specifies the number of threads to use
 * `-o` - specifies the output file name
-* sample-1_bismark_bt2.bam - the input bam file, provided as a positional argument
+* sample-1_bismark_{bt2,bt2_pe}.bam - the input bam file, provided as a positional argument
 
 **Input data:**
 
-* sample-1_bismark_bt2.bam (bismark bowtie2 alignment bam file, output from [Step 4b.](#4b-align) above)
+* sample-1_bismark_bt2.bam (bismark alignment bam file, output from [Step 4b.](#4b-align) above)
+> **NOTE**  
+> If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
 
 **Output data:**
 
@@ -531,7 +546,7 @@ qualimap bamqc -bam sample-1_bismark_bt2_sorted.bam \
   -outdir sample-1_bismark_bt2_qualimap/ \
   --collect-overlap-pairs \
   --java-mem-size=6G \
-  -nt 4
+  -nt NumberOfThreads
 ```
 
 **Parameter Definitions:**
@@ -546,12 +561,14 @@ qualimap bamqc -bam sample-1_bismark_bt2_sorted.bam \
 
 **Input data:**
 
-* sample-1_bismark_bt2_sorted.bam (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, output from [Step 4c](#4c-sort-alignment-files) above)
+* sample-1_bismark_{bt2,hisat2}_sorted.bam (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, output from [Step 4c](#4c-sort-alignment-files) above)
 * a feature file contining regions of interest for the reference genome in gtf format (this pipeline version uses the Ensembl fasta file indicated in the `gtf` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file))
+> **NOTE**  
+> If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
 
 **Output data:** 
 
-* **\*sample-1_bismark_bt2_qualimap/** (subdirectory of many alignment QC output files and formatting files for presenting in an html file (see [qualimap documentation](http://qualimap.conesalab.org/doc_html/analysis.html#output))
+* **\*sample-1_bismark_{bt2,hisat2}_qualimap/** (subdirectory of many alignment QC output files and formatting files for presenting in an html file (see [qualimap documentation](http://qualimap.conesalab.org/doc_html/analysis.html#output))
 
 <br>
 
@@ -559,25 +576,58 @@ qualimap bamqc -bam sample-1_bismark_bt2_sorted.bam \
 
 ## 6. Deduplicate (skip if data are RRBS)
 > **NOTE**  
-> This step should **not** be done if the data are RRBS (reduced representation bisulfite sequencing; see e.g., [bismark documentation](https://github.com/FelixKrueger/Bismark/tree/master/Docs#iii-running-deduplicate_bismark)).
+> This step should **not** be done if the data are RRBS (reduced representation bisulfite sequencing; see e.g., [bismark documentation](https://felixkrueger.github.io/Bismark/bismark/deduplication/)). 
+
+<br>
+
+### 6a. Deduplicate 
 
 ```bash
-deduplicate_bismark sample-1_bismark_bt2_sorted.bam
+deduplicate_bismark sample-1_bismark_{bt2,bt2_pe}.bam
 ```
 
 **Parameter Definitions:**
 
-* sample-1_bismark_bt2_sorted.bam - the input bam file, provided as a positional argument
+* sample-1_bismark_{bt2,bt2_pe}.bam - the input bam file, provided as a positional argument
 
 **Input data:**
 
-* sample-1_bismark_bt2_sorted.bam (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, output from [Step 4c](#4c-sort-alignment-files) above)
+* sample-1_bismark_{bt2,bt2_pe}.bam (unsorted bismark bowtie2 alignment bam file, output from [Step 4b](#4b-align) above)
+> **NOTE**  
+> If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
 
 **Output data:**
 
-* **\*.deduplicated.bam** (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, with duplicates removed)
+* \*.deduplicated.bam (unsorted bismark bowtie2 alignment bam file, with duplicates removed)
 * **\*.deduplication_report.txt** (report file containing deduplication information) 
 
+
+<br>
+
+### 6b. Sort Deduplicated Alignment Files
+
+```bash
+samtools sort -@ NumberOfThreads \
+  -o sample-1_bismark_bt2_sorted.deduplicated.bam \
+  sample-1_bismark_{bt2,bt2_pe}.deduplicated.bam
+```
+
+**Parameter Definitions:**
+
+* `sort` - specifies to use the `sort` sub-program of `samtools`
+* `-@` - specifies the number of threads to use
+* `-o` - specifies the output file name
+* sample-1_bismark_bt2.deduplicated.bam - the input bam file, provided as a positional argument
+
+**Input data:**
+
+* sample-1_bismark_{bt2,bt2_pe}.deduplicated.bam (bismark bowtie2 alignment bam file, output from [Step 6a.](#6a-deduplicate-skip-if-data-are-rrbs) above)
+> **NOTE**  
+> If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
+
+**Output data:**
+
+* **sample-1_bismark_bt2_sorted.deduplicated.bam** (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, with duplicated removed)
 
 <br>
 
@@ -589,22 +639,23 @@ deduplicate_bismark sample-1_bismark_bt2_sorted.bam
 **Single-end example**  
 
 ```bash
-bismark_methylation_extractor --parallel 4 \
+bismark_methylation_extractor --parallel NumberOfThreads \
   --bedGraph \
   --gzip \
   --comprehensive \
   --output_dir methylation_calls_out_dir/ \
   --cytosine_report \
   --genome_folder bismark_reference_genome/ \
-  sample-1_bismark_bt2_sorted.bam
-    # note, if *not working with RRBS data, input should be the 
-    # deduplicated version (sample-1_bismark_bt2_sorted.deduplicated.bam) produced in step 6 above 
+  sample-1_bismark_bt2.bam
+    # note, if *not working with RRBS data, input should be the deduplicated 
+    # version (sample-1_bismark_bt2*.deduplicated.bam) produced in 
+    # step 6 above 
 ```
 
 **Paired-end example**  
 
 ```bash
-bismark_methylation_extractor --parallel 4 \
+bismark_methylation_extractor --parallel NumberOfThreads \
   --bedGraph \
   --gzip \
   --comprehensive \
@@ -613,38 +664,41 @@ bismark_methylation_extractor --parallel 4 \
   --genome_folder bismark_reference_genome/ \
   --ignore_r2 2 \
   --ignore_3prime_r2 2 \
-  sample-1_bismark_bt2_sorted.bam
-    # note, if *not working with RRBS data, input should be the 
-    # deduplicated version (sample-1_bismark_bt2_sorted.deduplicated.bam) produced in step 6 above
+  sample-1_bismark_bt2_pe.bam
+    # note, if *not working with RRBS data, input should be the deduplicated
+    # version (sample-1_bismark_bt2*.deduplicated.bam) produced in 
+    # step 6 above
 ```
 
 
 **Parameter Definitions:**
 
 * `--parallel` - specifies the number of cores to use for methylation extraction, note: the program will utilize ~3X the number specified 
-* `--bedGraph` - instructs the program to generate a sorted bedGraph file that reports the position of a given cytosine and its methlyation state (by default, only methylated CpGs are reported - see bismark docs [here](https://github.com/FelixKrueger/Bismark/tree/master/Docs#optional-bedgraph-output) for more info)
+* `--bedGraph` - instructs the program to generate a sorted bedGraph file that reports the position of a given cytosine and its methlyation state (by default, only methylated CpGs are reported - see bedgraph options in [bismark documentation](https://felixkrueger.github.io/Bismark/options/methylation_extraction/#bedgraph-specific-options) for more info)
 * `--gzip` - specifies to gzip-compress the methylation extractor output files
 * `--comprehensive` - specifies to merge all four possible strand-specific methylation info into context-dependent output files
 * `--output_dir` - the output directory to store results
 * `--cytosine_report` - instructions the program to produce a genome-wide methylation report for all cytosines in the genome
 * `--genome_folder` - a directory holding the reference genome in fasta format (this pipeline version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file))
-* `--ignore_r2` - specifies how many bases to ignore from the 5' end of the reverse reads (bismark docs recommend 2, see [here](https://github.com/FelixKrueger/Bismark/tree/master/Docs#appendix-iii-bismark-methylation-extractor))
+* `--ignore_r2` - specifies how many bases to ignore from the 5' end of the reverse reads (bismark docs recommend 2, see [bismark documentation](https://felixkrueger.github.io/Bismark/options/methylation_extraction/#options))
   > Note: The first couple of bases in the reverse read of bisulfite sequence experiments show a severe bias towards non-methylation as a result of end-reparing sonicated fragments with unmentulated cytosines, so it is recommened to remove the first couple basepairs
-* `--ignore_3prime_r2` - specifies how many bases to ignore from the 3' end of the reverse reads to remove unwanted biases from the end of reads (this is utilized in the [nf-core methylseq workflow](https://nf-co.re/methylseq), set at [this line](https://github.com/nf-core/methylseq/blob/03972a686bedeb2920803cd575f4d671e9135af0/main.nf#L643)) 
+* `--ignore_3prime_r2` - specifies how many bases to ignore from the 3' end of the reverse reads to remove unwanted biases from the end of reads (For specific recommnendations see Bismark documentation on [Library Types](https://felixkrueger.github.io/Bismark/bismark/library_types/)) 
 * sample-1_bismark_bt2_sorted.bam - the input bam file, provided as a positional argument
 
 **Input data:**
 
-* sample-1_bismark_bt2_sorted*.bam (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, output from [Step 4c](#4c-sort-alignment-files) above if data are RRBS, or deduplicated bam file from [step 6](#6-deduplicate-skip-if-data-are-rrbs) if data are not RRBS and the bam file was deduplicated (e.g., sample-1_bismark_bt2_sorted.deduplicated.bam from above))
+* sample-1_bismark_bt2*.bam (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, output from [Step 4b](#4b-align) above if data are RRBS, or deduplicated bam file from [step 6a](#6a-deduplicate) if data are not RRBS and the bam file was deduplicated (e.g., sample-1_bismark_bt2.deduplicated.bam from above))
 * a directory holding the reference genome in fasta format (this pipeline version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file))
+> **NOTE**  
+> If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
 
 
 **Output data:**
 
-* **\*\_context\_\*.txt.gz** (bismark methylation-call files for CpG, CHG, and CHH contexts that were detected; see [bismark documentation](https://github.com/FelixKrueger/Bismark/tree/master/Docs), namely [here](https://github.com/FelixKrueger/Bismark/tree/master/Docs#methylation-call) for symbols, and [here](https://github.com/FelixKrueger/Bismark/tree/master/Docs#iv-bismark-methylation-extractor) for file format)
-* **\*.bedGraph.gz** (gzip-compressed bedGraph-formatted file of methylation percentages of each CpG site; see bismark docs [here](https://github.com/FelixKrueger/Bismark/tree/master/Docs#optional-bedgraph-output))
-* **\*.bismark.cov.gz** (gzip-compressed bedGraph-formatted file like above "\*.bedGraph.gz", but also including 2 more columns of methylated and unmethylated counts at the specified position; see bismark docs [here](https://github.com/FelixKrueger/Bismark/tree/master/Docs#optional-bedgraph-output))
-* **\*.M-bias.txt** (text file with methylation information in the context of the position in reads, helpful for investigating bias as a function of base position in the read; see bismark documentation [here](https://github.com/FelixKrueger/Bismark/tree/master/Docs#m-bias-plot))
+* **\*\_context\_\*.txt.gz** (bismark methylation-call files for CpG, CHG, and CHH contexts that were detected; see [bismark documentation](https://felixkrueger.github.io/Bismark/), namely [methylation call](http://felixkrueger.github.io/Bismark/bismark/alignment/#methylation-call) for symbols, and [methylation extraction output](http://felixkrueger.github.io/Bismark/bismark/methylation_extraction/#the-methylation-extractor-output-looks-like-this-tab-separated) for file format)
+* **\*.bedGraph.gz** (gzip-compressed bedGraph-formatted file of methylation percentages of each CpG site; see [bismark documentation](https://github.com/FelixKrueger/Bismark/tree/master/Docs#optional-bedgraph-output))
+* **\*.bismark.cov.gz** (gzip-compressed bedGraph-formatted file like above "\*.bedGraph.gz", but also including 2 more columns of methylated and unmethylated counts at the specified position; see [bismark documentation](https://felixkrueger.github.io/Bismark/options/methylation_extraction/#bedgraph-specific-options))
+* **\*.M-bias.txt** (text file with methylation information in the context of the position in reads, helpful for investigating bias as a function of base position in the read; see [bismark documentation](http://felixkrueger.github.io/Bismark/bismark/methylation_extraction/#m-bias-plot))
 * **\*_splitting_report.txt** (text file containing general methylation detection information)
 * **\*.cytosine_context_summary.txt** (tsv file of detected cytosine-methylation information summed by nucleotide context)
 * **\*.CpG_report.txt.gz** (a genome-wide methylation report for all CpG cytosines)
@@ -658,9 +712,9 @@ bismark_methylation_extractor --parallel 4 \
 
 ```bash
 bismark2report --dir sample-1_bismark_report_out_dir/ \
-  --alignment_report sample-1_bismark_bt2_sorted_SE_report.txt \
-  --splitting_report sample-1_bismark_bt2_sorted_splitting_report.txt \
-  --mbias_report sample-1_bismark_bt2_sorted.M-bias.txt
+  --alignment_report sample-1_bismark_bt2_[SP]E_report.txt \
+  --splitting_report sample-1_bismark_{bt2,bt2_pe}_splitting_report.txt \
+  --mbias_report sample-1_bismark_{bt2,bt2_pe}.M-bias.txt
 ```
 
 **Parameter Definitions:**
@@ -672,9 +726,11 @@ bismark2report --dir sample-1_bismark_report_out_dir/ \
 
 **Input data:**
 
-* sample-1_bismark_bt2_sorted_SE_report.txt (bismark mapping report file, output from [Step 4b.](#4b-align))
-* sample-1_bismark_bt2_sorted_splitting_report.txt (splitting report file, output from [Step 7](#7-extract-methylation-calls) above)
-* sample-1_bismark_bt2_sorted.M-bias.txt (text file with methylation information in the context of the position in reads, output from [Step 7](#7-extract-methylation-calls) above)
+* sample-1_bismark_bt2_[SP]E_report.txt (bismark mapping report file, output from [Step 4b.](#4b-align))
+* sample-1_bismark_{bt2,bt2_pe}_splitting_report.txt (splitting report file, output from [Step 7](#7-extract-methylation-calls) above)
+* sample-1_bismark_{bt2,bt2_pe}.M-bias.txt (text file with methylation information in the context of the position in reads, output from [Step 7](#7-extract-methylation-calls) above)
+> **NOTE**  
+> If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
 
 > **NOTE**  
 > If data are **not** RRBS, the deduplication report from [step 6](#6-deduplicate-skip-if-data-are-rrbs) above should also be provided to the above command to the `--dedup_report` parameter
@@ -687,20 +743,24 @@ bismark2report --dir sample-1_bismark_report_out_dir/ \
 
 ---
 
-## 9. Generate combined summary report
+## 9. Generate combined summary reports
+
+### 9a. Bismark Summary Report
 
 ```bash
-bismark2summary sample-1_bismark_bt2_sorted.bam
+bismark2summary sample-1_bismark_{bt2,bt2_pe}.bam
 ```
 
 **Input data:**  
 
-* autodetects appropriate files based on the sorted bam files
+* autodetects appropriate files based on the input bam files
   * the positional argument(s) can either be explicitly naming the bam file(s) as done above or can be the top-level directory holding the initial bam files and relevant report files
   * the autodetected files cannot be explicitly provided, but it looks for those named like these listed here and includes them if they exist for each individual starting bam file it is given or finds
-    * sample-1_bismark_bt2_sorted_SE_report.txt generated from [Step 4b.](#4b-align) above
-    * sample-1_bismark_bt2_sorted_splitting_report.txt from [Step 7](#7-extract-methylation-calls) above
-    * and the deduplication report files if deduplication was performed in [Step 6](#6-deduplicate-skip-if-data-are-rrbs)
+    * sample-1_bismark_bt2_[SP]E_report.txt generated from [Step 4b.](#4b-align) above
+    * sample-1_bismark_{bt2,bt2_pe}_splitting_report.txt from [Step 7](#7-extract-methylation-calls) above
+    * sample-1_bismark_{bt2,bt2_pe}.deduplication_report.txt if deduplication was performed in [Step 6](#6-deduplicate-skip-if-data-are-rrbs)
+> **NOTE**  
+> If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
 
 **Output data:**  
 
@@ -708,6 +768,43 @@ bismark2summary sample-1_bismark_bt2_sorted.bam
 * **bismark_summary_report.html** (html summary of general information on all included samples)
 
 <br>
+
+---
+
+### 9b. Compile Alignment and Bismark QC
+
+```bash
+multiqc --interactive -o align_multiqc_data/ -n align_multiqc -z \
+  qualimap_out_dir/ mapping_files_out_dir/ methylation_calls_out_dir/ deduplication_out_dir/
+```
+
+**Parameter Definitions:**
+
+*	`--interactive` - force reports to use interactive plots
+*	`-o` – the output directory to store results
+*	`-n` – the filename prefix for output files
+*	`-z` – specifies to zip the output data directory
+*	`qualimap_out_dir/` – the directory holding the output data from the qualimap run, provided as a positional argument
+*	`methylation_calls_out_dir/` – the directory holding the output data from the methylation extraction run, provided as a positional argument
+*	`mapping_files_out_dir/` – the directory holding the output data from the fastqc run, provided as a positional argument
+*	`deduplication_out_dir/` – the directory holding the output data from the deduplication run, provided as a positional argument (omitted if RRBS data)
+
+**Input data:**
+
+* qualimap_out_dir/*.txt (qualimap output results from [Step 5](#5-alignment-qc))
+* mapping_files_out_dir/*_[SP]E_report.txt (Bismark alignment results from [Step 4b](#4b-align))
+* mapping_files_out_dir/*.nucleotide_stats.txt (Bismark nucleotide stats results from [Step 4b](#4b-align))
+* deduplication_out_dir/*.deduplication_report.txt (Bismark deduplication results from [Step 6a](#6a-deduplicate) if not RRBS)
+* methylation_calls_out_dir/*_splitting_report.txt (methylation extraction results from [Step 7](#7-extract-methylation-calls))
+* methylation_calls_out_dir/*M-bias.txt (methylation bias results from [Step 7](#7-extract-methylation-calls))
+
+**Output data:**
+
+* **align_multiqc_GLmethylSeq.html** (multiqc output html summary)
+* **align_multiqc_GLmethylSeq_data** (directory containing multiqc output data)
+
+<br>
+
 
 ---
 
@@ -749,7 +846,7 @@ awk ' $3 == "transcript" ' reference.gtf | cut -f 9 | tr -s ";" "\t" | \
 
 **Output data:**
 
-* **reference-gene-to-transcript-map.tsv** (a gene-to-transcript mapping file with gene IDs in the first column and transcript IDs in the second)
+* **reference-gene-to-transcript-map-GLmethylSeq.tsv** (a gene-to-transcript mapping file with gene IDs in the first column and transcript IDs in the second)
 
 <br>
 
@@ -776,12 +873,13 @@ The remainder of this document is performed in R.
 ### Install R packages if not already installed ###
 
 install.packages("remotes")
-remotes::install_version("tidyverse", version = "1.3.2")
+remotes::install_version("tidyverse", version = "2.0.0")
 
-if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")
-
-BiocManager::install("methylKit", version = "3.14")
-BiocManager::install("genomation", version = "3.14")
+if (!require("BiocManager", quietly = TRUE)) 
+    install.packages("BiocManager")
+BiocManager::install(version = "3.19")
+BiocManager::install("methylKit", version = "3.19")
+BiocManager::install("genomation", version = "3.19")
 
 
 ### Import libraries (###
