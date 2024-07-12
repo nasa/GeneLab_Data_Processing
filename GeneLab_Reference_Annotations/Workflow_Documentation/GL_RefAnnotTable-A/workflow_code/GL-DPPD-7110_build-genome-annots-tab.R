@@ -1,102 +1,104 @@
-# GeneLab pipeline for generating reference annotation tables
+#!/usr/bin/env Rscript
 
-> **This page holds an overview and instructions for how GeneLab generates reference annotation tables. The GeneLab reference annotation table used to add annotations to processed data files are indicated in the exact processing scripts provided for each GLDS dataset under the respective omics datatype subdirectory.**  
-
----
-
-**Date:** July 11, 2024  
-**Revision:** -A  
-**Document Number:** GL-DPPD-7110-A  
-
-**Submitted by:**  
-Alexis Torres and Crystal Han (GeneLab Data Processing Team)
-
-**Approved by:**  
-Sylvain Costes (OSDR Project Manager)  
-Samrawit Gebre (GeneLab Deputy Project Manager and Acting Genelab Configuration Manager)  
-Lauren Sanders (OSDR Project Scientist)  
-Amanda Saravia-Butler (GeneLab Science Lead)  
-Barbara Novak (GeneLab Data Processing Lead)
-
----
-
-## Updates from previous version
-
-
-- Updated R from version 4.13 to 4.4.0
-- Updated Bioconductor from 3.15.1 to 3.19.1
-- Added functionality to create an annotation database using AnnotationForge. This applies to organisms without a maintained annotation database package in Bioconductor (e.g. org.Hs.eg.db). This is currently in use for Bacillus subtilis, subsp. subtilis 168 (BACSU), Escherichia coli,str. K-12 substr. MG1655 (ECOLI), and Oryzias latipes (ORYLA).
-- Added support for BACSU, ECOLI, ORYLA
-
-
----
-
-# Table of contents  
-
-- [GeneLab pipeline for generating reference annotation tables](#genelab-pipeline-for-generating-reference-annotation-tables)
-- [Table of contents](#table-of-contents)
-- [Software used](#software-used)
-- [Annotation table build overview with example commands](#annotation-table-build-overview-with-example-commands)
-  - [0. Set Up Environment](#0-set-up-environment)
-  - [1. Define Variables and Output File Names](#1-define-variables-and-output-file-names)
-  - [2. Load Annotation Databases and Retrieve Unique Gene IDs](#2-load-annotation-databases-and-retrieve-unique-gene-ids)
-  - [3. Build Initial Annotation Table](#3-build-initial-annotation-table)
-  - [4. Add STRING IDs](#4-add-string-ids)
-  - [5. Add Gene Ontology (GO) slim IDs](#5-add-gene-ontology-go-slim-ids)
-  - [6. Export Annotation Table and Build Info](#6-export-annotation-table-and-build-info)
-
-
----
-
-# Software used  
-
-|Program|Version|Relevant Links|
-|:------|:------:|:-------------|
-|R|4.4.0|[https://www.r-project.org/](https://www.r-project.org/)|
-|Bioconductor|3.19.1|[https://bioconductor.org](https://bioconductor.org)|
-|tidyverse|2.0.0|[https://www.tidyverse.org](https://www.tidyverse.org)|
-|STRINGdb|2.16.0|[https://www.bioconductor.org/packages/release/bioc/html/STRINGdb.html](https://www.bioconductor.org/packages/release/bioc/html/STRINGdb.html)|
-|PANTHER.db|1.0.12|[https://bioconductor.org/packages/release/data/annotation/html/PANTHER.db.html](https://bioconductor.org/packages/release/data/annotation/html/PANTHER.db.html)|
-|rtracklayer|1.64.0|[https://bioconductor.org/packages/release/bioc/html/rtracklayer.html](https://bioconductor.org/packages/release/bioc/html/rtracklayer.html)
-|org.Hs.eg.db|3.19.1|[https://bioconductor.org/packages/release/data/annotation/html/org.Hs.eg.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.Hs.eg.db.html)|
-|org.Mm.eg.db|3.19.1|[https://bioconductor.org/packages/release/data/annotation/html/org.Mm.eg.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.Mm.eg.db.html)|
-|org.Rn.eg.db|3.19.1|[https://bioconductor.org/packages/release/data/annotation/html/org.Rn.eg.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.Rn.eg.db.html)
-|org.Dm.eg.db|3.19.1|[https://bioconductor.org/packages/release/data/annotation/html/org.Dm.eg.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.Dm.eg.db.html)|
-|org.Ce.eg.db|3.19.1|[https://bioconductor.org/packages/release/data/annotation/html/org.Ce.eg.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.Ce.eg.db.html)|
-|org.At.tair.db|3.19.1|[https://bioconductor.org/packages/release/data/annotation/html/org.At.tair.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.At.tair.db.html)|
-|org.Sc.sgd.db|3.19.1|[https://bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html)|
-
----
-
-# Annotation table build overview with example commands  
-
-> Current GeneLab annotation tables are available on [figshare](https://figshare.com/), exact links for each reference organism are provided in the [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) file.  
-> 
-> **[Ensembl Reference Files](https://www.ensembl.org/index.html) Used:**
-> - Animals: Ensembl release 112
-> - Plants: Ensembl plants release 59
-> - Bacteria: Ensembl bacteria release 59
-
-
----
-
-This example below is done for *Mus musculus*. All code is executed in R.
-
-## 0. Set Up Environment
-
-```R
-target_organism == "MOUSE"
+# Written by Mike Lee 
+# GeneLab script for generating organism ENSEMBL annotation tables
+# Example usage: Rscript GL-DPPD-7110_build-genome-annots-tab.R MOUSE
 
 GL_DPPD_ID <- "GL-DPPD-7110-A"
 
+#########################################################################
+############### Pull In and Check Command Line Arguments ################
+#########################################################################
+
+
+## Import command line arguments ##
+
+args <- commandArgs(trailingOnly = TRUE)
+
+## Define currently acceptable input organisms (matching names in ref organisms.csv table) ##
+
+currently_accepted_orgs <- c("ARABIDOPSIS",
+                             "FLY",
+                             "HUMAN",
+                             "MOUSE",
+                             "RAT",
+                             "WORM",
+                             "YEAST",
+                             "ZEBRAFISH",
+                             "BACSU",
+                             "ECOLI",
+                             "ORYLA")
+
+## Check that at least one positional command line argument was provided ##
+
+if ( length(args) < 1 ) {
+    cat("\n  One positional argument is required that specifies the target organism. Currently available include:\n")
+
+    for ( item in currently_accepted_orgs ) {
+
+        cat(paste0("\n        ", item))
+    }
+
+    cat("\n\n")
+
+    quit()
+
+} else {
+
+    suppressWarnings(target_organism <- toupper(args[1]))
+
+}
+
+
+## Check that the positional argument provided is acceptable ##
+
+if (!target_organism %in% currently_accepted_orgs) {
+
+    cat(paste0("\n  '", args[1], "' is not currently supported. \n"))
+    cat("  Creation of this annotation table will likely involve manual processing.\n\n")
+
+    quit()
+
+}
+
+
+## checking for required packages other than the org-specific db ##
+
+# helper function for pointing to GL setup page if missing a package
+report_package_needed <- function(package_name) {
+    cat(paste0("\n  The package '", package_name, "' is required. Please see:\n"))
+    cat("    https://github.com/nasa/GeneLab_Data_Processing/tree/master/GeneLab_Reference_Annotations/Workflow_Documentation/GL_RefAnnotTable/README.md\n\n")
+    quit()
+}
+
+# checking and reporting
+if (!requireNamespace("tidyverse", quietly = TRUE))
+    report_package_needed("tidyverse")
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    report_package_needed("BiocManager")
+
+if (!requireNamespace("STRINGdb", quietly = TRUE))
+    report_package_needed("STRINGdb")
+
+if (!requireNamespace("PANTHER.db", quietly = TRUE))
+    report_package_needed("PANTHER.db")
+
+if (!requireNamespace("rtracklayer", quietly = TRUE))
+    report_package_needed("rtracklayer")
+
+#########################################################################
+######################## Set Up Environment #############################
+#########################################################################
+
 ## Import libraries ##
+
 library(tidyverse)
 library(STRINGdb)
 library(PANTHER.db)
 library(rtracklayer)
 
-
-## Set the primary annotation keytype, TAIR for Arabidopsis, ENSEMBL for all other organisms ##
+# Set the primary key type based on the target organism
 if (target_organism == "ARABIDOPSIS") {
     primary_keytype <- "TAIR"
 } else {
@@ -104,28 +106,33 @@ if (target_organism == "ARABIDOPSIS") {
 }
 
 ## Define annotation keys to retrieve ##
+
 wanted_keys_vec <- c("SYMBOL", "GENENAME", "REFSEQ", "ENTREZID")
 
-## Check for ref table input in arg 2, otherwise load GL-DPPD-7110-A_annotations.csv
+## Define links to tables containing species-specific annotation info ##
+
 if (length(args) >= 2) {
     ref_tab_link <- args[2]
 } else {
     ref_tab_link <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
 }
 
-## Set timeout time to allow more time for annotation file downloads to complete ##
+
+#########################################################################
+############## Define Variables and Output File Names ###################
+#########################################################################
+
+
+## Set timeout time to ensure annotation file downloads will complete ##
+
 options(timeout = 600)
-```
 
----
-
-## 1. Define Variables and Output File Names
-
-```R
 ## Read in tables containing species-specific annotation info ##
+
 ref_table <- read.csv(ref_tab_link)
 
 ## Retrieve and define target organism taxid, annotation database name, and scientific name ##
+
 target_taxid <- ref_table %>%
     filter(name == target_organism) %>%
     pull(taxon)
@@ -139,38 +146,51 @@ target_species_designation <- ref_table %>%
     pull(species)
 
 ## Define link to Ensembl annotation gtf file for the target organism ##
+
 gtf_link <- ref_table %>%
     filter(species == target_species_designation) %>%
     pull(gtf)
 
-## Create output file names ##
+## Create output files names ##
+
 base_gtf_filename <- basename(gtf_link)
 base_output_name <- str_replace(base_gtf_filename, ".gtf.gz", "")
 
 out_table_filename <- paste0(base_output_name, "-GL-annotations.tsv")
 out_log_filename <- paste0(base_output_name, "-GL-build-info.txt")
-```
 
-<br>
+## Check if output file already exists and if it does, exit without overwriting ##
 
----
+if ( file.exists(out_table_filename) ) {
 
-## 2. Load Annotation Databases and Retrieve Unique Gene IDs
+    cat("\n-------------------------------------------------------------------------------------------------\n")
+    cat(paste0("\n  The file that would be created, '", out_table_filename, "', exists already.\n"))
+    cat(paste0("  We don't want to overwrite it accidentally. Move it and run this again if wanting to proceed.\n"))
+    cat("\n-------------------------------------------------------------------------------------------------\n")
 
-```R
+    quit()
+
+}
+
+
+#########################################################################
+######## Load Annotation Databases and Retrieve Unique Gene IDs #########
+#########################################################################
+
+
 ## Import Ensembl annotation gtf file for the target organism ##
+
 gtf_obj <- import(gtf_link)
 
 ## Define unique Ensembl IDs ##
-unique_IDs <- gtf_obj$gene_id %>% unique()
 
-## Remove gtf object to conserve RAM, since it is no longer needed ##
-rm(gtf_obj)
+unique_IDs <- gtf_obj$gene_id %>% unique()
 
 ## Define target organism annotation database ##
 ann.dbi <- target_org_db
 
-## If ann.dbi is not null, try to install the annotations database from bioconductor, otherwise create it with install-annot-dbi.R ""
+
+## If ann.dbi is not null, try to install the annotations database from bioconductor, else create with install-annot-dbi.R
 if (!is.na(ann.dbi) && ann.dbi != "") {
     BiocManager::install(ann.dbi, ask = FALSE)
     if (!requireNamespace(ann.dbi, quietly = TRUE)) {
@@ -186,16 +206,12 @@ if (!is.na(ann.dbi) && ann.dbi != "") {
 library(ann.dbi, character.only = TRUE)
 
 
-```
+#########################################################################
+######################## Build Annotation Table #########################
+#########################################################################
 
-<br>
-
----
-
-## 3. Build Initial Annotation Table
-
-```R
 ## Begin annotation table using unique IDs of the primary keytype ##
+
 if (target_organism == "BACSU") {
     gtf_df <- as.data.frame(gtf_obj)
     # Create a dataframe with unique gene_ids
@@ -208,14 +224,15 @@ if (target_organism == "BACSU") {
     colnames(annot) <- primary_keytype
 }
 
-## If organism is BACSU, remove underscores from gene_ids ##
+# If organism is BACSU, remove underscores from gene_ids that are present in the GTF
 if (target_organism == "BACSU") {
   # Create a mapping of original and modified gene IDs
   annot$original_IDs <- annot[[primary_keytype]]
   annot[[primary_keytype]] <- gsub("_", "", annot[[primary_keytype]])
 }
 
-## Retrieve and add additional annotation keys as table columns ##
+## Add additional annotation keys as table columns ##
+
 for ( key in wanted_keys_vec ) {
   
   if ( key %in% columns(eval(parse(text = ann.dbi), env = .GlobalEnv))) {
@@ -236,21 +253,35 @@ for ( key in wanted_keys_vec ) {
 }
 
 
-```
+#########################################################################
+########################### Add STRING IDs ##############################
+#########################################################################
 
-<br>
-
----
-
-## 4. Add STRING IDs
-
-```R
 ## Retrieve target organism STRING protein-protein interaction database and create STRING ID map to the primary keytype ##
+
+# for some organisms, the taxonid is not supported by STRING.
+taxid_map <- list(
+  YEAST = 4932
+)
+
+# Assign the tax ID based on the target organism
+if (target_organism %in% names(taxid_map)) {
+  target_taxid <- taxid_map[[target_organism]]
+}
+
+
+## Remove gtf object to conserve RAM, since it is no longer needed ##
+rm(gtf_obj)
+
 string_db <- STRINGdb$new(version = "12.0", species = target_taxid, score_threshold = 0)
 string_map <- string_db$map(annot, primary_keytype, removeUnmappedRows = FALSE, takeFirst = FALSE)
 
-## Create a table using the gene IDs of the primary keytype as row names and a column containing STRING IDs. ##
-## For genes containing multiple STRING IDs, combine all STRING IDs for each gene into one row and separate each ID with a '|' ##
+
+## Adding some blank lines just for spacing on print-out ##
+cat("\n\n")
+
+## Create a table using the gene IDs of the primary keytype as row names and a column containing STRING IDs. For genes containing multiple STRING IDs, combine all STRING IDs for each gene into one row and separate each ID with a '|' ##
+
 tab_with_multiple_STRINGids_combined <-
     data.frame(row.names = annot[[primary_keytype]])
 
@@ -265,6 +296,7 @@ for ( curr_gene_ID in row.names(tab_with_multiple_STRINGids_combined) ) {
 }
 
 ## Move the primary keytype gene IDs back to being a column in the STRING ID table (since they were switched to row names above) ##
+
 tab_with_multiple_STRINGids_combined <-
     tab_with_multiple_STRINGids_combined %>%
     rownames_to_column(primary_keytype)
@@ -285,22 +317,21 @@ if (target_organism == "ECOLI") {
     annot <- left_join(annot, tab_with_multiple_STRINGids_combined, by = primary_keytype)
 }
 
-```
 
-<br>
 
----
 
-## 5. Add Gene Ontology (GO) slim IDs
+#########################################################################
+################ Add Gene Ontology (GO) slim IDs ########################
+#########################################################################
 
-```R
+
 ## Retrieve target organism PANTHER GO slim annotations database ##
+
 pthOrganisms(PANTHER.db) <- target_organism
 
 ## Use ENTREZ IDs to map genes to respective PANTHER GO slim annotation(s) ##
-# Note: Since there can be none (indicated in the annotation table as "NA"), one, or 
-# multiple ENTREZ IDs for a gene, this section contains 3 distinct parts to handle
-# each of those scenarios and create a new column in the annotation table containing the GO slim IDs
+
+## Note: Since there can be none (indicated in the annotation table as "NA"), one, or multiple ENTREZ IDs for a gene, this section contains 3 distinct parts to handle each of those scenarios and create a new column in the annotation table containing the GO slim IDs ## 
 
 for ( curr_row in 1:dim(annot)[1] ) {
 
@@ -327,10 +358,7 @@ for ( curr_row in 1:dim(annot)[1] ) {
     } else {
 
         ## For genes with multiple ENTREZ ID ##
-        # Note: In this scenario, the ENTREZ IDs for each gene are first split with a '|' to
-        # separate the IDs, then the GO slim ID(s) for each ENTREZ ID are collected and
-        # combined, then duplicates are removed, and the final list of GO slim IDs for
-        # each gene are added in a single row, separated with a '|'
+        ## Note: In this scenario, the ENTREZ IDs for each gene are first split with a '|' to separate the IDs, then the GO slim ID(s) for each ENTREZ ID are collected and combined, then duplicates are removed, and the final list of GO slim IDs for each gene are added in a single row, separated with a '|' ## 
 
         ## Split the ENTREZ IDs ##
         curr_entry_vec <- strsplit(curr_entry, "|", fixed = TRUE)
@@ -363,15 +391,12 @@ for ( curr_row in 1:dim(annot)[1] ) {
     }
 
 }
-```
 
-<br>
 
----
+#########################################################################
+############# Export Annotation Table and Build Info ####################
+#########################################################################
 
-## 6. Export Annotation Table and Build Info
-
-```R
 ## BACSU-specific: revert gene IDs to originals with underscores ##
 if (target_organism == "BACSU") {
     annot[["ENSEMBL"]] <- annot$original_IDs
@@ -379,20 +404,24 @@ if (target_organism == "BACSU") {
 }
 
 ## Sort the annotation table based on primary keytype gene IDs ##
+
 annot <- annot %>% arrange(.[[1]])
 
 ## Replacing any blank cells with NA ##
 annot[annot == ""] <- NA
 
-## Export the annotation table using the file name defined in Step 1 ##
+## Export the annotation table ##
+
 write.table(annot, out_table_filename, sep = "\t", quote = FALSE, row.names = FALSE)
 
-## Define the date the annotation table was generated ## 
+## Define the date the annotation table was generated ##
+
 date_generated <- format(Sys.time(), "%d-%B-%Y")
 
-## Export annotation table build info using the file name defined in Step 1 ##
+## Export annotation table build info ##
+
 writeLines(paste(c("Based on:\n    ", GL_DPPD_ID), collapse = ""), out_log_filename)
-write(paste(c("Build done on:\n    ", date_generated), collapse = ""), out_log_filename, append = TRUE)
+write(paste(c("\nBuild done on:\n    ", date_generated), collapse = ""), out_log_filename, append = TRUE)
 write(paste(c("\nUsed gtf file:\n    ", gtf_link), collapse = ""), out_log_filename, append = TRUE)
 write(paste(c("\nUsed ", ann.dbi, " version:\n    ", packageVersion(ann.dbi) %>% as.character()), collapse = ""), out_log_filename, append = TRUE)
 write(paste(c("\nUsed STRINGdb version:\n    ", packageVersion("STRINGdb") %>% as.character()), collapse = ""), out_log_filename, append = TRUE)
@@ -400,17 +429,3 @@ write(paste(c("\nUsed PANTHER.db version:\n    ", packageVersion("PANTHER.db") %
 
 write("\n\nAll session info:\n", out_log_filename, append = TRUE)
 write(capture.output(sessionInfo()), out_log_filename, append = TRUE)
-```
-
-<br>
-
----
-
-**Pipeline Input data:**
-
-- No input files required, but a target organism must be specified as a positional command line argument
-
-**Pipeline Output data:**
-
-- *-GL-annotations.tsv (Tab delineated table of gene annotations, used to add gene annotations in other GeneLab processing pipelines)
-- *-GL-build-info.txt (Text file containing information used to create the annotation table, including tool and tool versions and date of creation)
