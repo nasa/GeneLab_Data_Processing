@@ -6,12 +6,13 @@ process GENERATE_PROTOCOL {
   input:
     path("software_versions_GLmicroarray.md")
     path("meta.sh")
+    val(skipDE)
   
   output:
     path("PROTOCOL_GLmicroarray.txt")
   
   script:
   """
-  generate_protocol.sh $workflow.manifest.version
+  generate_protocol.sh $workflow.manifest.version $skipDE
   """
 }

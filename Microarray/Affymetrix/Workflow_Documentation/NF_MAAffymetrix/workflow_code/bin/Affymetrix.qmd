@@ -20,6 +20,7 @@ params:
   annotation_file_path: NULL # str, Annotation file from 'genelab_annots_link' column of https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv
   organism: NULL # str, Used to determine primary keytype
   DEBUG_limit_biomart_query: NULL # int, If supplied, only the first n probeIDs are queried
+  run_DE: 'true'
 
 # execute: # DEBUG
 #   cache: true
@@ -767,6 +768,9 @@ write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts_GLmicroarray.csv"
 ### Perform Individual Probeset Level DE
 
 ``` {r perform-probeset-differential-expression}
+#| include: !expr params$run_DE
+#| eval: !expr params$run_DE
+
 lmFitPairwise <- function(norm_data, design) {
     #' Perform all pairwise comparisons
 
@@ -799,8 +803,124 @@ limma::write.fit(res, adjust = 'BH',
 
 ### Add Additional Columns and Format DE Table 
 
-``` {r add-additional-columns-and-format-de-table}
+```{r save-tables}
+## Concatenate annotations for genes (for uniquely mapped probes) ##
+### Read in annotation table for the appropriate organism ###
+annot <- read.table(
+            annotation_file_path,
+            sep = "\t",
+            header = TRUE,
+            quote = "",
+            comment.char = "",
+        )
+
+# Join annotation table and uniquely mapped data
+
+# Determine appropriate keytype as found in annotation tables
+map_primary_keytypes <- c(
+  'Caenorhabditis elegans' = 'ENSEMBL',
+  'Danio rerio' = 'ENSEMBL',
+  'Drosophila melanogaster' = 'ENSEMBL',
+  'Rattus norvegicus' = 'ENSEMBL',
+  'Saccharomyces cerevisiae' = 'ENSEMBL',
+  'Homo sapiens' = 'ENSEMBL',
+  'Mus musculus' = 'ENSEMBL',
+  'Arabidopsis thaliana' = 'TAIR'
+)
+
+## Reorder columns before saving to file
+ANNOTATIONS_COLUMN_ORDER = c(
+  map_primary_keytypes[[unique(df_rs$organism)]],
+  "SYMBOL",
+  "GENENAME",
+  "REFSEQ",
+  "ENTREZID",
+  "STRING_id",
+  "GOSLIM_IDS"
+)
+
+SAMPLE_COLUMN_ORDER <- design_data$group %>% dplyr::pull(sample)
+
+## Output column subset file with just normalized probeset level expression values
+write.csv(
+  merge(
+    annot,
+    probeset_expression_matrix.biomart_mapped,
+    by.x = map_primary_keytypes[[unique(df_rs$organism)]],
+    by.y = "ENSEMBL",
+    # ensure all original dge rows are kept.
+    # If unmatched in the annotation database, then fill missing with NAN
+    all.y = TRUE
+  )[c(
+  ANNOTATIONS_COLUMN_ORDER,
+  "ProbesetID",
+  "count_ENSEMBL_mappings",
+  SAMPLE_COLUMN_ORDER)
+  ], file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_probeset_GLmicroarray.csv"), row.names = FALSE)
+
+### Generate and export PCA table for GeneLab visualization plots
+PCA_raw <- prcomp(t(exprs(probeset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
+write.csv(PCA_raw$x,
+          file.path(DIR_DGE, "visualization_PCA_table_GLmicroarray.csv")
+          )
+
+## Determine column order for probe level tables
+
+PROBE_INFO_COLUMN_ORDER = c(
+  "ProbesetID",
+  "ProbeID",
+  "count_ENSEMBL_mappings"
+)
+
+FINAL_COLUMN_ORDER <- c(
+  ANNOTATIONS_COLUMN_ORDER, 
+  PROBE_INFO_COLUMN_ORDER, 
+  SAMPLE_COLUMN_ORDER
+  )
+
+## Generate raw intensity matrix that includes annotations
+
+background_corrected_data_annotated <- oligo::exprs(background_corrected_data) %>% 
+  as.data.frame() %>%
+  tibble::rownames_to_column(var = "fid") %>% # Ensure rownames (probeset IDs) can be used as join key
+  dplyr::mutate(dplyr::across(fid, as.integer)) %>% # Ensure fid is integer type, consistent with getProbeInfo typing
+  dplyr::right_join(oligo::getProbeInfo(background_corrected_data), by = "fid") %>% # Add 'man_fsetid' via mapping based on fid
+  dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
+  dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
+  dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>% # Join with biomaRt ENSEMBL mappings
+  dplyr::left_join(annot, by = c("ENSEMBL" = map_primary_keytypes[[unique(df_rs$organism)]])) %>% # Join with GeneLab Reference Annotation Table using key name expected in organism specific annotation table
+  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) %>% # Convert NA mapping to 0
+  dplyr::rename( !!map_primary_keytypes[[unique(df_rs$organism)]] := ENSEMBL ) 
+
+## Perform reordering
+background_corrected_data_annotated <- background_corrected_data_annotated %>% 
+  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
+
+write.csv(background_corrected_data_annotated, file.path(DIR_RAW_DATA, "raw_intensities_probe_GLmicroarray.csv"), row.names = FALSE)
+
+## Generate normalized expression matrix that includes annotations
+norm_data_matrix_annotated <- oligo::exprs(norm_data) %>% 
+  as.data.frame() %>%
+  tibble::rownames_to_column(var = "fid") %>% # Ensure rownames (probeset IDs) can be used as join key
+  dplyr::mutate(dplyr::across(fid, as.integer)) %>% # Ensure fid is integer type, consistent with getProbeInfo typing
+  dplyr::right_join(oligo::getProbeInfo(norm_data), by = "fid") %>% # Add 'man_fsetid' via mapping based on fid
+  dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
+  dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
+  dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>%
+  dplyr::left_join(annot, by = c("ENSEMBL" = map_primary_keytypes[[unique(df_rs$organism)]])) %>% # Join with GeneLab Reference Annotation Table using key name expected in organism specific annotation table
+  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) %>% # Convert NA mapping to 0
+  dplyr::rename( !!map_primary_keytypes[[unique(df_rs$organism)]] := ENSEMBL ) 
+
+norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
+  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
+
+write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe_GLmicroarray.csv"), row.names = FALSE)
+```
+
+``` {r save-de-table}
 #| message: false
+#| include: !expr params$run_DE
+#| eval: !expr params$run_DE
 ## Reformat Table for consistency across DE analyses tables within GeneLab ##
 
 # Read in DE table 
@@ -883,11 +1003,10 @@ for ( i in seq_along(unique_groups) ) {
 ## Compute all sample mean and standard deviation
 message(glue::glue("Computing mean and standard deviation for all samples"))
 # NON_DPPD:END
-all_samples <- design_data$group %>% dplyr::pull(sample)
 df_interim <- df_interim %>% 
   dplyr::mutate( 
-    "All.mean" := rowMeans(dplyr::select(., all_of(all_samples))),
-    "All.stdev" := matrixStats::rowSds(as.matrix(dplyr::select(., all_of(all_samples)))),
+    "All.mean" := rowMeans(dplyr::select(., all_of(SAMPLE_COLUMN_ORDER))),
+    "All.stdev" := matrixStats::rowSds(as.matrix(dplyr::select(., all_of(SAMPLE_COLUMN_ORDER)))),
     ) %>% 
   dplyr::ungroup() %>%
   as.data.frame()
@@ -901,30 +1020,6 @@ colnames_to_remove = c(
 
 df_interim <- df_interim %>% dplyr::select(-any_of(colnames_to_remove))
 
-## Concatenate annotations for genes (for uniquely mapped probes) ##
-### Read in annotation table for the appropriate organism ###
-annot <- read.table(
-            annotation_file_path,
-            sep = "\t",
-            header = TRUE,
-            quote = "",
-            comment.char = "",
-        )
-
-# Join annotation table and uniquely mapped data
-
-# Determine appropriate keytype as found in annotation tables
-map_primary_keytypes <- c(
-  'Caenorhabditis elegans' = 'ENSEMBL',
-  'Danio rerio' = 'ENSEMBL',
-  'Drosophila melanogaster' = 'ENSEMBL',
-  'Rattus norvegicus' = 'ENSEMBL',
-  'Saccharomyces cerevisiae' = 'ENSEMBL',
-  'Homo sapiens' = 'ENSEMBL',
-  'Mus musculus' = 'ENSEMBL',
-  'Arabidopsis thaliana' = 'TAIR'
-)
-
 df_interim <- merge(
                 annot,
                 df_interim,
@@ -935,22 +1030,11 @@ df_interim <- merge(
                 all.y = TRUE
             )
 
-## Reorder columns before saving to file
-ANNOTATIONS_COLUMN_ORDER = c(
-  map_primary_keytypes[[unique(df_rs$organism)]],
-  "SYMBOL",
-  "GENENAME",
-  "REFSEQ",
-  "ENTREZID",
-  "STRING_id",
-  "GOSLIM_IDS"
-)
-
 PROBE_INFO_COLUMN_ORDER = c(
   "ProbesetID",
   "count_ENSEMBL_mappings"
 )
-SAMPLE_COLUMN_ORDER <- all_samples
+
 generate_prefixed_column_order <- function(subjects, prefixes) {
   #' Return a vector of columns based on subject and given prefixes
   #'  Used for both contrasts and groups column name generation
@@ -1018,75 +1102,6 @@ df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 # Save to file
 write.csv(df_interim, file.path(DIR_DGE, "differential_expression_GLmicroarray.csv"), row.names = FALSE)
-
-## Output column subset file with just normalized probeset level expression values
-write.csv(
-  df_interim[c(
-  ANNOTATIONS_COLUMN_ORDER,
-  "ProbesetID",
-  "count_ENSEMBL_mappings",
-  all_samples)
-  ], file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_probeset_GLmicroarray.csv"), row.names = FALSE)
-
-### Generate and export PCA table for GeneLab visualization plots
-PCA_raw <- prcomp(t(exprs(probeset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
-write.csv(PCA_raw$x,
-          file.path(DIR_DGE, "visualization_PCA_table_GLmicroarray.csv")
-          )
-
-## Determine column order for probe level tables
-
-PROBE_INFO_COLUMN_ORDER = c(
-  "ProbesetID",
-  "ProbeID",
-  "count_ENSEMBL_mappings"
-)
-
-FINAL_COLUMN_ORDER <- c(
-  ANNOTATIONS_COLUMN_ORDER, 
-  PROBE_INFO_COLUMN_ORDER, 
-  SAMPLE_COLUMN_ORDER
-  )
-
-## Generate raw intensity matrix that includes annotations
-
-background_corrected_data_annotated <- oligo::exprs(background_corrected_data) %>% 
-  as.data.frame() %>%
-  tibble::rownames_to_column(var = "fid") %>% # Ensure rownames (probeset IDs) can be used as join key
-  dplyr::mutate(dplyr::across(fid, as.integer)) %>% # Ensure fid is integer type, consistent with getProbeInfo typing
-  dplyr::right_join(oligo::getProbeInfo(background_corrected_data), by = "fid") %>% # Add 'man_fsetid' via mapping based on fid
-  dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
-  dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
-  dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>% # Join with biomaRt ENSEMBL mappings
-  dplyr::left_join(annot, by = c("ENSEMBL" = map_primary_keytypes[[unique(df_rs$organism)]])) %>% # Join with GeneLab Reference Annotation Table using key name expected in organism specific annotation table
-  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) %>% # Convert NA mapping to 0
-  dplyr::rename( !!map_primary_keytypes[[unique(df_rs$organism)]] := ENSEMBL ) 
-
-## Perform reordering
-background_corrected_data_annotated <- background_corrected_data_annotated %>% 
-  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
-
-write.csv(background_corrected_data_annotated, file.path(DIR_RAW_DATA, "raw_intensities_probe_GLmicroarray.csv"), row.names = FALSE)
-
-## Generate normalized expression matrix that includes annotations
-norm_data_matrix_annotated <- oligo::exprs(norm_data) %>% 
-  as.data.frame() %>%
-  tibble::rownames_to_column(var = "fid") %>% # Ensure rownames (probeset IDs) can be used as join key
-  dplyr::mutate(dplyr::across(fid, as.integer)) %>% # Ensure fid is integer type, consistent with getProbeInfo typing
-  dplyr::right_join(oligo::getProbeInfo(norm_data), by = "fid") %>% # Add 'man_fsetid' via mapping based on fid
-  dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
-  dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
-  dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>%
-  dplyr::left_join(annot, by = c("ENSEMBL" = map_primary_keytypes[[unique(df_rs$organism)]])) %>% # Join with GeneLab Reference Annotation Table using key name expected in organism specific annotation table
-  dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) ) %>% # Convert NA mapping to 0
-  dplyr::rename( !!map_primary_keytypes[[unique(df_rs$organism)]] := ENSEMBL ) 
-
-
-
-norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
-  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
-
-write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe_GLmicroarray.csv"), row.names = FALSE)
 ```
 
 ## Version Reporting <!-- non DPPD -->
