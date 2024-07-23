@@ -760,9 +760,11 @@ runsheetToDesignMatrix <- function(runsheet_path) {
 design_data <- runsheetToDesignMatrix(runsheet)
 design <- design_data$matrix
 
-# Write SampleTable.csv and contrasts.csv file
-write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable_GLmicroarray.csv"), row.names = FALSE)
-write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts_GLmicroarray.csv"))
+if (params$run_DE) {
+    # Write SampleTable.csv and contrasts.csv file
+    write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable_GLmicroarray.csv"), row.names = FALSE)
+    write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts_GLmicroarray.csv"))
+}
 ```
 
 ### Perform Individual Probeset Level DE
@@ -858,11 +860,11 @@ write.csv(
   SAMPLE_COLUMN_ORDER)
   ], file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_probeset_GLmicroarray.csv"), row.names = FALSE)
 
-### Generate and export PCA table for GeneLab visualization plots
-PCA_raw <- prcomp(t(exprs(probeset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
-write.csv(PCA_raw$x,
-          file.path(DIR_DGE, "visualization_PCA_table_GLmicroarray.csv")
-          )
+if (params$run_DE) {
+    ### Generate and export PCA table for GeneLab visualization plots
+    PCA_raw <- prcomp(t(exprs(probeset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
+    write.csv(PCA_raw$x, file.path(DIR_DGE, "visualization_PCA_table_GLmicroarray.csv"))
+}
 
 ## Determine column order for probe level tables
 

@@ -30,7 +30,7 @@ process VV_AFFYMETRIX {
     path("Metadata/*_runsheet.csv"), emit: VVed_runsheet
     path("00-RawData/*"), emit: VVed_rawData
     path("01-oligo_NormExp/*"), emit: VVed_NormExp
-    path("02-limma_DGE/*"), emit: VVed_DGE
+    path("02-limma_DGE/*"), emit: VVed_DGE, optional: true
     path("VV_report_GLmicroarray.tsv.MANUAL_CHECKS_PENDING"), optional: params.skipVV, emit: log
     path("versions.yml"), emit: versions
 
