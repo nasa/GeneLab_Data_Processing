@@ -278,10 +278,8 @@ for ( i in seq_along(1:ncol(raw_data))) {
 
 if (inherits(raw_data, "GeneFeatureSet")) {
   print("Raw data is a GeneFeatureSet, using exprs() to access expression values and adding 0.0001 to avoid log(0)")
-} else if (inherits(raw_data, "ExpressionSet")) { 
-  print("Raw data is an ExpressionSet. Using default approach for this class for MA Plot")
-} else if (inherits(raw_data, "ExpressionFeatureSet")) { 
-  print("Raw data is an ExpressionFeatureSet. Using default approach for this class for MA Plot")
+} else if (inherits(raw_data, "ExpressionSet") || inherits(raw_data, "ExpressionFeatureSet") || inherits(raw_data, "HTAFeatureSet")) { 
+  print(paste0("Raw data is ", class(raw_data), ". Using default approach for this class for MA Plot"))
 }
 ```
 
@@ -300,20 +298,14 @@ if (inherits(raw_data, "GeneFeatureSet")) {
     ylim=c(-2, 4),
     main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
   )
-} else if (inherits(raw_data, "ExpressionSet")) { 
-  MA_plot <- oligo::MAplot(
-    raw_data,
-    ylim=c(-2, 4),
-    main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
-  )
-} else if (inherits(raw_data, "ExpressionFeatureSet")) { 
+} else if (inherits(raw_data, "ExpressionSet") || inherits(raw_data, "ExpressionFeatureSet") || inherits(raw_data, "HTAFeatureSet")) { 
   MA_plot <- oligo::MAplot(
     raw_data,
     ylim=c(-2, 4),
     main="" # This function uses 'main' as a suffix to the sample name. Here we want just the sample name, thus here main is an empty string
   )
 } else {
-  stop(glue::glue("No strategy for MA plots for {raw_data}"))
+  stop(glue::glue("No strategy for MA plots for {class(raw_data)}"))
 }
 ```
 
