@@ -236,6 +236,11 @@ par(
 )
 
 number_of_sets = ceiling(dim(raw_data)[2] / 30) # Set of 30 samples, used to scale plot
+scale_factor = 0.2 # Default scale factor
+
+if (max(nchar(colnames(raw_data@assayData$exprs))) > 35 & number_of_sets > 1) { # Scale more if sample names are long
+  scale_factor = if_else(number_of_sets == 2, 0.4, 0.25)
+}
 
 oligo::hist(raw_data, 
             transfo=log2, # Log2 transform raw intensity values
@@ -246,7 +251,7 @@ legend("topright", legend = colnames(raw_data@assayData$exprs),
         lty = c(1,2,3,4,5), # Seems like oligo::hist cycles through these first five line types
         col = oligo::darkColors(n = ncol(raw_data)), # Ensure legend color is in sync with plot
         ncol = number_of_sets, # Set number of columns by number of sets
-        cex = max(0.35, 1 + 0.2 - (number_of_sets*0.2)) # Reduce scale by 20% for each column beyond 1 with minimum of 35%
+        cex = max(0.35, 1 + scale_factor - (number_of_sets*scale_factor)) # Reduce for each column beyond 1 with minimum of 35%
       )
 
 # Reset par
@@ -398,7 +403,7 @@ legend("topright", legend = colnames(norm_data@assayData$exprs),
         lty = c(1,2,3,4,5), # Seems like oligo::hist cycles through these first five line types
         col = oligo::darkColors(n = ncol(norm_data)), # Ensure legend color is in sync with plot
         ncol = number_of_sets, # Set number of columns by number of sets
-        cex = max(0.35, 1 + 0.2 - (number_of_sets*0.2)) # Reduce scale by 20% for each column beyond 1
+        cex = max(0.35, 1 + scale_factor - (number_of_sets*scale_factor)) # Reduce for each column beyond 1 with minimum of 35%
       )
 
 # Reset par
