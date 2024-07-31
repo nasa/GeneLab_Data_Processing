@@ -611,6 +611,11 @@ if (organism %in% c("athaliana")) {
   print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
   message(paste0("Expected attribute name: '", expected_attribute_name, "'")) # NON_DPPD
 
+  # Some probe_ids for affy_hta_2_0 may end in .hg.1 instead of .hg (how it is in biomaRt), leading to 0 results returned
+  if (expected_attribute_name == 'affy_hta_2_0') {
+    rownames(probeset_level_data) <- stringr::str_replace(rownames(probeset_level_data), '\\.hg\\.1$', '.hg')
+  }
+
   probe_ids <- rownames(probeset_level_data)
 
   # DEBUG:START
