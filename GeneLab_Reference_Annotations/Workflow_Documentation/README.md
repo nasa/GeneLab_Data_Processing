@@ -7,7 +7,7 @@
 |Pipeline Version|Current Workflow Version (for respective pipeline version)|
 |:---------------|:---------------------------------------------------------|
 |*[GL-DPPD-7110-A.md](../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A.md)|[1.1.0](GL_RefAnnotTable-A)|
-|*[GL-DPPD-7110.md](../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110.md)|[1.0.0](GL_RefAnnotTable)|
+|[GL-DPPD-7110.md](../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110.md)|[1.0.0](GL_RefAnnotTable)|
 
 *Current GeneLab Pipeline/Workflow Implementation
 

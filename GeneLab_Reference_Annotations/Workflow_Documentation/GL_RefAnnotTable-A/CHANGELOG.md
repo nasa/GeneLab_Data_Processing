@@ -9,9 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added  
 
-- Added AnnotationForge helper script to create local annotations databases if not available on Bioconductor
-
-- Added support for BACSU, ECOLI, and ORYLA via install-annot-dbi.R
+- Added support for:
+    - Bacillus subtilis, subsp. subtilis 168  
+    - Brachypodium distachyon  
+    - Escherichia coli,str. K-12 substr. MG1655  
+    - Oryzias latipes  
+    - Lactobacillus acidophilus NCFM  
+    - Mycobacterium marinum M  
+    - Oryza sativa Japonica  
+    - Pseudomonas aeruginosa UCBPP-PA14  
+    - Salmonella enterica subsp. enterica serovar Typhimurium str. LT2  
+    - Serratia liquefaciens ATCC 27592  
+    - Staphylococcus aureus MRSA252  
+    - Streptococcus mutans UA159  
+    - Vibrio fischeri ES114  
+- Added AnnotationForge helper script install-annot-dbi.R to create organism-specific annotation packages (org.*.eg.db) in R if not available on Bioconductor. Used for:  
+    - Bacillus subtilis, subsp. subtilis 168  
+    - Salmonella enterica subsp. enterica serovar Typhimurium str. LT2  
+    - Escherichia coli,str. K-12 substr. MG1655  
+    - Oryzias latipes  
+- Added NCBI as a source for GASTA and GTF files
 
 ### Fixed  
 
@@ -23,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Animals: Ensembl release 112
     - Plants: Ensembl plants release 59
     - Bacteria: Ensembl bacteria release 59
-- Removed org.EcK12.eg.db and replaced with local annotations database creation since it is no longer on Bioconductor
+- Removed org.EcK12.eg.db and replaced it with a locally created annotations database, as it is no longer available on Bioconductor
 
 
 ## [1.0.0](https://github.com/nasa/GeneLab_Data_Processing/releases/tag/GL_RefAnnotTable_1.0.0)

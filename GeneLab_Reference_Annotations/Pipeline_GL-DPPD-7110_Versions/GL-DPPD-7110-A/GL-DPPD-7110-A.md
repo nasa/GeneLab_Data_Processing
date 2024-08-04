@@ -22,12 +22,39 @@ Barbara Novak (GeneLab Data Processing Lead)
 
 ## Updates from previous version
 
+Ensembl Releases:  
+- Animals: Updated from release 107 to 112  
+- Plants: Updated from release 54 to 59  
+- Bacteria: Updated from release 54 to 59  
 
-- Updated R from version 4.13 to 4.4.0
-- Updated Bioconductor from 3.15.1 to 3.19.1
-- Added functionality to create an annotation database using AnnotationForge. This applies to organisms without a maintained annotation database package in Bioconductor (e.g. org.Hs.eg.db). This is currently in use for Bacillus subtilis, subsp. subtilis 168 (BACSU), Escherichia coli,str. K-12 substr. MG1655 (ECOLI), and Oryzias latipes (ORYLA).
-- Added support for BACSU, ECOLI, ORYLA
 
+Added NCBI as a reference source for FASTA and GTF files for bacteria to improve annotations.
+
+Updated R version from 4.1.3 to 4.4.0.  
+
+Updated Bioconductor version from 3.15.1 to 3.19.1.  
+
+Added support for:  
+- Bacillus subtilis, subsp. subtilis 168  
+- Brachypodium distachyon  
+- Escherichia coli,str. K-12 substr. MG1655  
+- Oryzias latipes  
+- Lactobacillus acidophilus NCFM  
+- Mycobacterium marinum M  
+- Oryza sativa Japonica  
+- Pseudomonas aeruginosa UCBPP-PA14  
+- Salmonella enterica subsp. enterica serovar Typhimurium str. LT2  
+- Serratia liquefaciens ATCC 27592  
+- Staphylococcus aureus MRSA252  
+- Streptococcus mutans UA159  
+- Vibrio fischeri ES114  
+
+Added functionality to create an annotation database using AnnotationForge. This applies to organisms without a maintained annotation database package in Bioconductor (e.g. org.Hs.eg.db). This is currently in use for the following organisms:  
+- Bacillus subtilis, subsp. subtilis 168  
+- Brachypodium distachyon  
+- Escherichia coli, str. K-12 substr. MG1655  
+- Oryzias latipes  
+- Salmonella enterica subsp. enterica serovar Typhimurium str. LT2  
 
 ---
 

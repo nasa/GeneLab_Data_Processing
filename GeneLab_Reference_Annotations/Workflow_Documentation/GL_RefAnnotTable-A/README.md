@@ -18,8 +18,8 @@ We recommend installing R via the [Comprehensive R Archive Network (CRAN)](https
 
 1. Select the [CRAN Mirror](https://cran.r-project.org/mirrors.html) closest to your location.
 2. Click the link under the "Download and Install R" section that's consistent with your machine.
-3. Clink on the R-4.2.1 package consistent with your machine to download.
-4. Double click on the R-4.2.1.pkg downloaded in step 3 and follow the installation instructions.
+3. Click on the R-4.4.0 package consistent with your machine to download.
+4. Double click on the R-4.4.0.pkg downloaded in step 3 and follow the installation instructions.
 
 Once R is installed, open a CLI terminal and run the following command to activate R:
 
@@ -53,7 +53,7 @@ curl -LO https://github.com/nasa/GeneLab_Data_Processing/releases/download/GL_Re
 
 ### 3. Setup Execution Permission for Workflow Scripts
 
-Once you've downloaded the GL_RefAnnotTable workflow directory as a zip file, unzip the workflow then `cd` into the GL_RefAnnotTable_1.0.0 directory on the CLI. Next, run the following command to set the execution permissions for the R script:
+Once you've downloaded the GL_RefAnnotTable workflow directory as a zip file, unzip the workflow then `cd` into the GL_RefAnnotTable-A_1.1.0 directory on the CLI. Next, run the following command to set the execution permissions for the R script:
 
 ```bash
 chmod -R u+x *R
@@ -66,12 +66,12 @@ chmod -R u+x *R
 While in the GL_RefAnnotTable workflow directory, you are now able to run the workflow. Below is an example of how to run the workflow to build an annotation table for Mus musculus (mouse):
 
 ```bash
-Rscript GL-DPPD-7110_build-genome-annots-tab.R MOUSE
+Rscript GL-DPPD-7110-A_build-genome-annots-tab.R MOUSE
 ```
 
 **Input data:**
 
-- No input files required, but a target organism must be specified as a positional command line argument, `MOUSE` is used in the example above. Run `Rscript GL-DPPD-7110_build-genome-annots-tab.R` with no positional arguments to see the list of currently available organisms. 
+- No input files are required. Specify the target organism using a positional command line argument. `MOUSE` is used in the example above. To see a list of all available organisms, run `Rscript GL-DPPD-7110-A_build-genome-annots-tab.R` without positional arguments. The correct argument for each organism can also be found in the 'name' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
 
 - Optional: a reference table CSV can be supplied as a second positional argument instead of using the default [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
 
@@ -90,7 +90,8 @@ Rscript install-annot-dbi.R BACSU /path/to/GL-DPPD-7110-A_annotations.csv
 
 **Input data:**
 
-- The target organism must be specified as the first positional command line argument, `BACSU` is used in the example above.
+- The target organism must be specified as the first positional command line argument, `BACSU` is used in the example above. The correct argument for each organism can be found in the 'name' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
+
 - The path to a local reference table must also be supplied as the second positional argument
 
 Output data:
