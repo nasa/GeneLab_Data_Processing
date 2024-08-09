@@ -151,6 +151,8 @@ multiqc --interactive \
 ## 2. Adapter trimming/quality filtering
 See `trim_galore --help` or [TrimGalore User Guide](https://github.com/FelixKrueger/TrimGalore/blob/0.6.10/Docs/Trim_Galore_User_Guide.md) for more info on any of the below.
 
+Additionally, the Bismark documentation also includes guidelines for specific MethylSeq library types: [Bismark library type guide](http://felixkrueger.github.io/Bismark/bismark/library_types/). Some library types will require additional 5' and/or 3' hard trimming to remove the signature of the oligos used for random priming. Leaving these bases may cause misalignments and methylation biases.
+
 <br>
 
 ### If not RRBS or if RRBS using MseI digestion
@@ -177,6 +179,30 @@ trim_galore --gzip \
   --phred33 \
   --output_dir trimmed_reads_out_dir/ \
   --paired \
+  sample-1_R1_raw.fastq.gz sample-1_R2_raw.fastq.gz
+
+# renaming outputs to use GeneLab standard suffix
+mv sample-1_R1_raw_val_1.fq.gz sample-1_R1_trimmed.fastq.gz
+mv sample-1_R2_raw_val_2.fq.gz sample-1_R2_trimmed.fastq.gz
+```
+
+<br>
+
+### If using a random priming post-bisulfite method
+(such as TruSeq (formerly EpiGnome), PBAT, scBSSeq, Pico Methyl, Accel, etc.)
+Random priming is not truly random and the signature left at the ends of the reads can introduce errors, indels, and methylation biases. Add the optional clipping parameters (`--clip_r1`, `--clip_r2`, `--three_prime_clip_r1`, and `--three_prime_clip_r2`) to trim off the random priming signature on the 5' ends of each read and next to the 3' end after adapter trimming. See [Bismark library type guide](http://felixkrueger.github.io/Bismark/bismark/library_types/) for more detailed information. 
+
+**Paired-end example for TruSeq (EpiGnome) library prep**
+```bash
+trim_galore --gzip \
+  --cores NumberOfThreads \
+  --phred33 \
+  --output_dir trimmed_reads_out_dir/ \
+  --paired \
+  --clip_R1 8 \
+  --clip_R2 8 \
+  --three_prime_clip_R1 8 \
+  --three_prime_clip_R2 8 \
   sample-1_R1_raw.fastq.gz sample-1_R2_raw.fastq.gz
 
 # renaming outputs to use GeneLab standard suffix
@@ -302,6 +328,10 @@ mv sample-1_R2_trimmed.fastq_trimmed.fq.gz sample-1_R2_trimmed.fastq.gz
 * `-a2` - specific adapter sequence to be trimmed off of reverse reads (applicable for libraries prepared with the NuGEN ovation kit)
 * `--paired` - specifies data are paired-end
 * `--output_dir` - the output directory to store results
+* `--clip_R1` - number of bases to trim off the 5' end of each R1 read (optional, for use with library prep kits that use random priming, such as TruSeq(EpiGnome))
+* `--clip_R2` - number of bases to trim off the 5' end of each R2 read (optional, for use with library prep kits that use random priming, such as TruSeq(EpiGnome))
+* `--three_prime_clip_R1` - number of bases to trim off the 3' end of each R1 read AFTER adapter trimming. (optional, for use with library prep kits that use random priming, such as TruSeq(EpiGnome)) 
+* `--three_prime_clip_R2` - number of bases to trim off the 3' end of each R2 read AFTER adapter trimming. (optional, for use with library prep kits that use random priming, such as TruSeq(EpiGnome)) 
 * positional arguments represent the input read files, 2 of them if paired-end data
 
 
@@ -459,6 +489,7 @@ bismark --bowtie2 \
   --parallel NumberOfThreads \
   --non_bs_mm \
   --nucleotide_coverage \
+  --gzip \
   --output_dir mapping_files_out_dir/ \
   --genome_folder bismark_reference_genome/ \
   sample-1_trimmed.fastq.gz
@@ -478,6 +509,7 @@ bismark --bowtie2 \
   --parallel NumberOfThreads \
   --non_bs_mm \
   --nucleotide_coverage \
+  --gzip \
   --output_dir mapping_files_out_dir/ \
   --genome_folder bismark_reference_genome/ \
   -1 sample-1_R1_trimmed.fastq.gz \
@@ -497,6 +529,7 @@ mv sample-1_R1_trimmed_bismark_bt2_pe.bam sample-1_bismark_bt2_pe.bam
 * `--parallel` - allows us to specify the number of threads to use (note: will consume 3-5X this value)
 * `--non_bs_mm` - outputs an extra column in the bam file specifying the number of non-bisulfite mismatches each read has
 * `--nucleotide_coverage` - outputs a table with mono- and di-nucleotide sequence compositions and coverage values compared to genomic compositions
+* `--gzip` - write temporary bisulfite conversion files in gzip format to save disk space during alignment
 * `--output_dir` - the output directory to store results
 * `--genome_folder` - specifies the directory holding the reference genome indexes (the same that was provided in [Step 4a.](#4a-generate-reference) above)
 * input trimmed-reads are provided as a positional argument if they are single-end data
