@@ -1,429 +1,513 @@
 #!/usr/bin/env Rscript
+# Written by Mike Lee
+# GeneLab script for generating organism-specific gene annotation tables
+# Example usage: Rscript GL-DPPD-7110-A_build-genome-annots-tab.R MOUSE
 
-# Written by Mike Lee 
-# GeneLab script for generating organism ENSEMBL annotation tables
-# Example usage: Rscript GL-DPPD-7110_build-genome-annots-tab.R MOUSE
-
+# Define variables associated with current pipeline and annotation table versions
 GL_DPPD_ID <- "GL-DPPD-7110-A"
+ref_tab_path <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
+readme_path <- "https://github.com/nasa/GeneLab_Data_Processing/tree/master/GeneLab_Reference_Annotations/Workflow_Documentation/GL_RefAnnotTable-A/README.md"
+
+# List currently supported organisms 
+currently_accepted_orgs <- c("ARABIDOPSIS", "BACSU", "BRADI", "WORM", "ZEBRAFISH",
+                             "FLY", "ECOLI", "HUMAN", "NCFM", "MOUSE",
+                             "MMARINUMM", "ORYSJ", "ORYLA", "PA14", "RAT",
+                             "YEAST", "SALTY", "ATCC27592", "MRSA252", "UA159",
+                             "ES114")
+
 
 #########################################################################
-############### Pull In and Check Command Line Arguments ################
+############### Pull in and check command line arguments ################
 #########################################################################
 
-
-## Import command line arguments ##
-
+# Pull in command-line arguments
 args <- commandArgs(trailingOnly = TRUE)
 
-## Define currently acceptable input organisms (matching names in ref organisms.csv table) ##
-
-currently_accepted_orgs <- c("ARABIDOPSIS",
-                             "FLY",
-                             "HUMAN",
-                             "MOUSE",
-                             "RAT",
-                             "WORM",
-                             "YEAST",
-                             "ZEBRAFISH",
-                             "BACSU",
-                             "ECOLI",
-                             "ORYLA")
-
-## Check that at least one positional command line argument was provided ##
-
-if ( length(args) < 1 ) {
-    cat("\n  One positional argument is required that specifies the target organism. Currently available include:\n")
-
-    for ( item in currently_accepted_orgs ) {
-
-        cat(paste0("\n        ", item))
-    }
-
-    cat("\n\n")
-
-    quit()
-
-} else {
-
-    suppressWarnings(target_organism <- toupper(args[1]))
-
+# Get the target organism (CLI argument 1) and check that it is listed in currently_accepted_orgs
+validate_arguments <- function(args, supported_orgs) {
+  if (length(args) < 1) {
+    stop("One positional argument is required that specifies the target organism. Available options are:\n", paste(supported_orgs, collapse = ", "))
+  }
+  target_organism <- toupper(args[1])
+  if (!target_organism %in% supported_orgs) {
+    stop(paste0("'", target_organism, "' is not currently supported."))
+  }
+  return(target_organism)
 }
 
+target_organism <- validate_arguments(args, currently_accepted_orgs)
 
-## Check that the positional argument provided is acceptable ##
-
-if (!target_organism %in% currently_accepted_orgs) {
-
-    cat(paste0("\n  '", args[1], "' is not currently supported. \n"))
-    cat("  Creation of this annotation table will likely involve manual processing.\n\n")
-
-    quit()
-
-}
+# If provided, get the reference table URL from CLI arguments (CLI argument 2) and update ref_tab_path
+ref_tab_path <- if (length(args) >= 2) args[2] else ref_tab_path
 
 
-## checking for required packages other than the org-specific db ##
+#########################################################################
+######################## Set up environment #############################
+#########################################################################
 
-# helper function for pointing to GL setup page if missing a package
+required_packages <- c("tidyverse", "STRINGdb", "PANTHER.db", "rtracklayer")
+# Check for required packages other than the org-specific db #
 report_package_needed <- function(package_name) {
-    cat(paste0("\n  The package '", package_name, "' is required. Please see:\n"))
-    cat("    https://github.com/nasa/GeneLab_Data_Processing/tree/master/GeneLab_Reference_Annotations/Workflow_Documentation/GL_RefAnnotTable/README.md\n\n")
-    quit()
+  cat(paste0("\n  The package '", package_name, "' is required. Please see:\n"))
+  cat("    https://github.com/nasa/GeneLab_Data_Processing/tree/master/GeneLab_Reference_Annotations/Workflow_Documentation/GL_RefAnnotTable-A/README.md\n\n")
+  quit()
 }
 
-# checking and reporting
-if (!requireNamespace("tidyverse", quietly = TRUE))
-    report_package_needed("tidyverse")
+# Check and report missing packages other than the org-specific db
+for (pkg in required_packages) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    report_package_needed(pkg)
+  }
+}
 
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    report_package_needed("BiocManager")
-
-if (!requireNamespace("STRINGdb", quietly = TRUE))
-    report_package_needed("STRINGdb")
-
-if (!requireNamespace("PANTHER.db", quietly = TRUE))
-    report_package_needed("PANTHER.db")
-
-if (!requireNamespace("rtracklayer", quietly = TRUE))
-    report_package_needed("rtracklayer")
-
-#########################################################################
-######################## Set Up Environment #############################
-#########################################################################
-
-## Import libraries ##
-
+# Import libraries
 library(tidyverse)
 library(STRINGdb)
 library(PANTHER.db)
 library(rtracklayer)
 
-# Set the primary key type based on the target organism
-if (target_organism == "ARABIDOPSIS") {
-    primary_keytype <- "TAIR"
-} else {
-    primary_keytype <- "ENSEMBL"
-}
-
-## Define annotation keys to retrieve ##
-
-wanted_keys_vec <- c("SYMBOL", "GENENAME", "REFSEQ", "ENTREZID")
-
-## Define links to tables containing species-specific annotation info ##
-
-if (length(args) >= 2) {
-    ref_tab_link <- args[2]
-} else {
-    ref_tab_link <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
-}
-
 
 #########################################################################
-############## Define Variables and Output File Names ###################
+############## Define variables and output file names ###################
 #########################################################################
 
-
-## Set timeout time to ensure annotation file downloads will complete ##
-
+# Set timeout time to ensure annotation file downloads will complete
 options(timeout = 600)
 
-## Read in tables containing species-specific annotation info ##
+ref_table <- tryCatch(
+  read.csv(ref_tab_path),
+  error = function(e) {
+    message <- paste("Error: Unable to read the reference table from the path provided. Please check the path and try again.\nPath:", ref_tab_path)
+    stop(message)
+  }
+)
 
-ref_table <- read.csv(ref_tab_link)
+# Get target organism information
+target_info <- ref_table %>%
+  filter(name == target_organism)
 
-## Retrieve and define target organism taxid, annotation database name, and scientific name ##
+# Extract the relevant columns from the reference table
+target_taxid <- target_info$taxon # Taxonomic identifier
+target_org_db <- target_info$annotations # org.eg.db R package
+target_species_designation <- target_info$species # Full species name
+gtf_link <- target_info$gtf # Path to reference assembly GTF
 
-target_taxid <- ref_table %>%
-    filter(name == target_organism) %>%
-    pull(taxon)
+# Error handling for missing values
+if (is.na(target_taxid) || is.na(target_org_db) || is.na(target_species_designation) || is.na(gtf_link)) {
+  stop(paste("Error: Missing data for target organism", target_organism, "in reference table."))
+}
 
-target_org_db <- ref_table %>%
-    filter(name == target_organism) %>%
-    pull(annotations)
-
-target_species_designation <- ref_table %>%
-    filter(name == target_organism) %>%
-    pull(species)
-
-## Define link to Ensembl annotation gtf file for the target organism ##
-
-gtf_link <- ref_table %>%
-    filter(species == target_species_designation) %>%
-    pull(gtf)
-
-## Create output files names ##
-
+# Create output filenames
 base_gtf_filename <- basename(gtf_link)
 base_output_name <- str_replace(base_gtf_filename, ".gtf.gz", "")
 
 out_table_filename <- paste0(base_output_name, "-GL-annotations.tsv")
 out_log_filename <- paste0(base_output_name, "-GL-build-info.txt")
 
-## Check if output file already exists and if it does, exit without overwriting ##
-
+# Check if output file already exists and if it does, exit without overwriting
 if ( file.exists(out_table_filename) ) {
-
-    cat("\n-------------------------------------------------------------------------------------------------\n")
-    cat(paste0("\n  The file that would be created, '", out_table_filename, "', exists already.\n"))
-    cat(paste0("  We don't want to overwrite it accidentally. Move it and run this again if wanting to proceed.\n"))
-    cat("\n-------------------------------------------------------------------------------------------------\n")
-
-    quit()
-
+  cat("\n-------------------------------------------------------------------------------------------------\n")
+  cat(paste0("\n  The file that would be created, '", out_table_filename, "', exists already.\n"))
+  cat(paste0("  We don't want to overwrite it accidentally. Move it and run this again if wanting to proceed.\n"))
+  cat("\n-------------------------------------------------------------------------------------------------\n")
+  quit()
 }
 
 
-#########################################################################
-######## Load Annotation Databases and Retrieve Unique Gene IDs #########
-#########################################################################
+#############################################
+######## Load annotation databases  #########
+#############################################
 
+# Set timeout time to ensure annotation file downloads will complete
+options(timeout = 600)
 
-## Import Ensembl annotation gtf file for the target organism ##
+####### GTF ##########
 
-gtf_obj <- import(gtf_link)
+# Create the GTF dataframe from its path, unique gene identities in the reference assembly are under 'gene_id'
+GTF <- rtracklayer::import(gtf_link)
+GTF <- data.frame(GTF)
 
-## Define unique Ensembl IDs ##
+###### org.db ########
 
-unique_IDs <- gtf_obj$gene_id %>% unique()
-
-## Define target organism annotation database ##
-ann.dbi <- target_org_db
-
-
-## If ann.dbi is not null, try to install the annotations database from bioconductor, else create with install-annot-dbi.R
-if (!is.na(ann.dbi) && ann.dbi != "") {
-    BiocManager::install(ann.dbi, ask = FALSE)
-    if (!requireNamespace(ann.dbi, quietly = TRUE)) {
-        source("install-annot-dbi.R")
-        ann.dbi <- install_annotations(target_organism, ref_tab_link)
-    }
-} else {
-    source("install-annot-dbi.R")
-    ann.dbi <- install_annotations(target_organism, ref_tab_link)
-}
-
-
-library(ann.dbi, character.only = TRUE)
-
-
-#########################################################################
-######################## Build Annotation Table #########################
-#########################################################################
-
-## Begin annotation table using unique IDs of the primary keytype ##
-
-if (target_organism == "BACSU") {
-    gtf_df <- as.data.frame(gtf_obj)
-    # Create a dataframe with unique gene_ids
-    annot <- gtf_df %>%
-        dplyr::select(gene_id, gene_name) %>%
-        distinct(gene_id, .keep_all = TRUE)
-    colnames(annot) <- c(primary_keytype, "SYMBOL")
-} else {
-    annot <- data.frame(unique_IDs)
-    colnames(annot) <- primary_keytype
-}
-
-# If organism is BACSU, remove underscores from gene_ids that are present in the GTF
-if (target_organism == "BACSU") {
-  # Create a mapping of original and modified gene IDs
-  annot$original_IDs <- annot[[primary_keytype]]
-  annot[[primary_keytype]] <- gsub("_", "", annot[[primary_keytype]])
-}
-
-## Add additional annotation keys as table columns ##
-
-for ( key in wanted_keys_vec ) {
-  
-  if ( key %in% columns(eval(parse(text = ann.dbi), env = .GlobalEnv))) {
+# Define a function to load the specified org.db package for a given target organism
+install_and_load_org_db <- function(target_organism, target_org_db, ref_tab_path) {
+  if (!is.na(target_org_db) && target_org_db != "") {
+    # Attempt to install the package from Bioconductor
+    BiocManager::install(target_org_db, ask = FALSE)
     
-    if (target_organism == "BACSU") { 
-      new_list <- mapIds(eval(parse(text = ann.dbi), env = .GlobalEnv), keys = annot[["SYMBOL"]], keytype = "SYMBOL", column = key, multiVals = "list")
-    } else if (target_organism == "ECOLI") {
-      new_list <- mapIds(eval(parse(text = ann.dbi), env = .GlobalEnv), keys = unique_IDs, keytype = "ALIAS", column = key, multiVals = "list")
-    } else { new_list <- mapIds(eval(parse(text = ann.dbi), env = .GlobalEnv), keys = unique_IDs, keytype = primary_keytype, column = key, multiVals = "list")
+    # Check if the package was successfully loaded
+    if (!requireNamespace(target_org_db, quietly = TRUE)) {
+      # If not, attempt to create it locally using a helper script
+      source("install-org-db.R")
+      target_org_db <- install_annotations(target_organism, ref_tab_path)
     }
-    annot[[key]] <- sapply(new_list, paste, collapse = "|")
-    
   } else {
-    # if the annotation DB didn't have any of the wanted key types, that column will be missing
-    # adding in here as an empty column
-    annot[key] <- NA
+    # If target_org_db is NA or empty, create it locally using the helper script
+    source("install-org-db.R")
+    target_org_db <- install_annotations(target_organism, ref_tab_path)
+  }
+  
+  # Load the package into the R session
+  library(target_org_db, character.only = TRUE)
+}
+
+# Define list of supported organisms which do not use annotations from an org.db
+no_org_db <- c("NCFM", "MMARINUMM", "ORYSJ", "PA14", "ATCC27592", "MRSA252", "UA159", "ES114")
+
+# Run the function unless the target_organism is in no_org_db
+if (!(target_organism %in% no_org_db) && (target_organism %in% currently_accepted_orgs)) {
+  install_and_load_org_db(target_organism, target_org_db, ref_tab_path)
+}
+
+
+############################################
+######## Build annotation table ############
+############################################
+
+# Initialize table from GTF
+
+# Define GTF keys based on the target organism; gene_id conrains unique gene IDs in the reference assembly. Defaults to ENSEMBL
+
+gtf_keytype_mappings <- list(
+  ARABIDOPSIS = c(gene_id = "TAIR"),
+  BACSU = c(gene_id = "ENSEMBL", gene_name = "SYMBOL"),
+  BRADI = c(gene_id = "ENSEMBL", transcript_id = "ACCNUM"),
+  WORM = c(gene_id = "ENSEMBL"),  
+  ECOLI = c(gene_id = "ENSEMBL", gene_name = "SYMBOL"),
+  NCFM = c(gene_id = "LOCUS", old_locus_tag = "OLD_LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
+  MMARINUMM = c(gene_id = "LOCUS", old_locus_tag = "OLD_LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
+  PA14 = c(gene_id = "LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
+  SALTY = c(gene_id = "ENSEMBL", db_xref = "ENTREZID"),
+  ATCC27592 = c(gene_id = "LOCUS", old_locus_tag = "OLD_LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
+  MRSA252 = c(gene_id = "LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
+  UA159 = c(gene_id = "LOCUS", old_locus_tag = "OLD_LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
+  ES114 = c(gene_id = "LOCUS", old_locus_tag = "OLD_LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
+  default = c(gene_id = "ENSEMBL")
+)
+
+# Get the key types for the target organism or use the default
+wanted_gtf_keytypes <- if (!is.null(gtf_keytype_mappings[[target_organism]])) {
+  gtf_keytype_mappings[[target_organism]]
+} else {
+  c(gene_id = "ENSEMBL")
+}
+
+# Initialize the annotation table from the GTF, keeping only the wanted_gtf_keytypes
+annot_gtf <- GTF[, names(wanted_gtf_keytypes), drop = FALSE]
+annot_gtf <- annot_gtf %>% distinct()
+
+# Rename the columns in the annot_gtf dataframe according to the key types
+colnames(annot_gtf) <- wanted_gtf_keytypes
+
+# Save the name of the primary key type (gene_id) being used 
+primary_keytype <- wanted_gtf_keytypes[1]
+
+# Filter out unwanted genes from the GTF
+
+# Define filtering criteria for specific organisms
+filter_criteria <- list(
+  BACSU = "^BSU",
+  FLY = "^RR",
+  YEAST = "^Y[A-Z0-9]{6}-?[A-Z]?$",
+  ECOLI = "^b[0-9]{4}$"
+)
+
+# Apply the filter if there's a specific criterion for the target organism
+filter_pattern <- filter_criteria[[target_organism]]
+
+if (!is.null(filter_pattern)) {
+  if (target_organism == "FLY") {
+    annot_gtf <- annot_gtf %>% filter(!grepl(filter_pattern, !!sym(primary_keytype)))
+  } else {
+    annot_gtf <- annot_gtf %>% filter(grepl(filter_pattern, !!sym(primary_keytype)))
   }
 }
 
+# Remove "Gene:" labels on ENTREZ IDs 
+if (target_organism == "SALTY") { 
+  annot_gtf <- annot_gtf %>% dplyr::mutate(ENTREZID = gsub("^GeneID:", "", ENTREZID)) %>% as.data.frame
+}
+
+#########################################################################
+########################### Add org.db keys #############################
+#########################################################################
+
+annot_orgdb <- annot_gtf
+
+# Define the initial keys to pull from the organism-specific database
+orgdb_keytypes_list <- list(
+  BRADI = c("GENENAME", "REFSEQ", "ENTREZID"),
+  ECOLI = c("GENENAME", "REFSEQ", "ENTREZID"),
+  WORM = c("SYMBOL", "GENENAME", "REFSEQ", "ENTREZID", "GO"),
+  SALTY = c("SYMBOL", "GENENAME", "REFSEQ"),
+  YEAST = c("GENENAME", "ALIAS", "REFSEQ", "ENTREZID"),
+  default = c("SYMBOL", "GENENAME", "REFSEQ", "ENTREZID")
+)
+
+# Add entries for organisms in no_org_db as character(0) (no keys wanted from the org.db)
+for (organism in no_org_db) {
+  orgdb_keytypes_list[[organism]] <- character(0)
+}
+
+wanted_org_db_keytypes <- if (target_organism %in% names(orgdb_keytypes_list)) {
+  orgdb_keytypes_list[[target_organism]]
+} else {
+  orgdb_keytypes_list[["default"]]
+}
+
+# Define mappings for query and keytype based on target organism
+orgdb_keytype_mappings <- list(
+  BACSU = list(query = "SYMBOL", keytype = "SYMBOL"),
+  BRADI = list(query = "ACCNUM", keytype = "ACCNUM"),
+  WORM = list(query = primary_keytype, keytype = "ENSEMBL"),
+  ECOLI = list(query = "SYMBOL", keytype = "SYMBOL"),
+  SALTY = list(query = "ENTREZID", keytype = "ENTREZID"),
+  default = list(query = primary_keytype, keytype = primary_keytype)
+)
+
+# Define the orgdb_query, this is the key type that will be used to map to the org.db
+orgdb_query <- if (!is.null(orgdb_keytype_mappings[[target_organism]])) {
+  orgdb_keytype_mappings[[target_organism]][["query"]]
+} else {
+  orgdb_keytype_mappings[["default"]][["query"]]
+}
+
+# Define the orgdb_keytype, this is the name of the key type in the org.db 
+orgdb_keytype <- if (!is.null(orgdb_keytype_mappings[[target_organism]])) {
+  orgdb_keytype_mappings[[target_organism]][["keytype"]]
+} else {
+  orgdb_keytype_mappings[["default"]][["keytype"]]
+}
+
+# Function to clean and match ACCNUM keys for BRADI
+clean_and_match_accnum <- function(annot_table, org_db, query_col, keytype_col, target_column) {
+  # Clean the ACCNUM keys in the GTF annotations
+  cleaned_annot_keys <- sub("\\..*", "", annot_table[[query_col]])
+  
+  # Retrieve and clean the org.db keys
+  orgdb_keys <- keys(org_db, keytype = keytype_col)
+  cleaned_orgdb_keys <- sub("\\..*", "", orgdb_keys)
+  
+  # Create a lookup table for matching cleaned keys to original keys
+  lookup_table <- setNames(orgdb_keys, cleaned_orgdb_keys)
+  
+  # Match cleaned GTF keys to original org.db keys
+  matched_keys <- lookup_table[cleaned_annot_keys]
+  
+  # Use the matched keys to retrieve the target annotations from org.db
+  mapIds(org_db, keys = matched_keys, keytype = keytype_col, column = target_column, multiVals = "list")
+}
+
+# Loop through the desired key types and add annotations to the GTF table
+for (keytype in wanted_org_db_keytypes) {
+  # Check if keytype is a valid column in the target org.db
+  if (keytype %in% columns(get(target_org_db, envir = .GlobalEnv))) {
+    if (target_organism == "BRADI" && orgdb_query == "ACCNUM") {
+      # For BRADI: use the clean_and_match_accnum function to map to org.db ACCNUM entries
+      org_matches <- clean_and_match_accnum(annot_orgdb, get(target_org_db, envir = .GlobalEnv), query_col = orgdb_query, keytype_col = orgdb_keytype, target_column = keytype)
+    } else {
+      # Default mapping for other organisms
+      org_matches <- mapIds(get(target_org_db, envir = .GlobalEnv), keys = annot_orgdb[[orgdb_query]], keytype = orgdb_keytype, column = keytype, multiVals = "list")
+    }
+    # Add the mapped annotations to the GTF table
+    annot_orgdb[[keytype]] <- sapply(org_matches, function(x) paste(x, collapse = "|"))
+  } else {
+    # Set column to NA if keytype is not present in org.db
+    annot_orgdb[[keytype]] <- NA
+  }
+}
+
+# For SALTY, reorder columns to mtach other tables
+if (target_organism == "SALTY") { # Reorder columns to match others; was mismatched since ENTREZ came from GTF
+  annot_orgdb <- annot_orgdb[, c("ENSEMBL", "SYMBOL", "GENENAME", "REFSEQ", "ENTREZID")]
+}
+
+# For YEAST, Rename ALIAS to GENENAME 
+if (target_organism == "YEAST") {
+  colnames(annot_orgdb) <- c("ENSEMBL", "SYMBOL", "GENENAME", "REFSEQ", "ENTREZID")
+}
 
 #########################################################################
 ########################### Add STRING IDs ##############################
 #########################################################################
 
-## Retrieve target organism STRING protein-protein interaction database and create STRING ID map to the primary keytype ##
+# Define organisms that do not use STRING annotations
+no_stringdb <- c("PA14", "MRSA252")
 
-# for some organisms, the taxonid is not supported by STRING.
-taxid_map <- list(
-  YEAST = 4932
+# Define the key type used for mapping to STRING
+stringdb_query_list <- list(
+  NCFM = "OLD_LOCUS",
+  MMARINUMM = "OLD_LOCUS",
+  ATCC27592 = "OLD_LOCUS",
+  UA159 = "OLD_LOCUS",
+  ES114 = "OLD_LOCUS",
+  default = primary_keytype
 )
 
-# Assign the tax ID based on the target organism
-if (target_organism %in% names(taxid_map)) {
-  target_taxid <- taxid_map[[target_organism]]
+# Define the key type for mapping in STRING, using the default if necessary
+stringdb_query <- if (!is.null(stringdb_query_list[[target_organism]])) {
+  stringdb_query_list[[target_organism]]
+} else {
+  stringdb_query_list[["default"]]
 }
 
-
-## Remove gtf object to conserve RAM, since it is no longer needed ##
-rm(gtf_obj)
-
-string_db <- STRINGdb$new(version = "12.0", species = target_taxid, score_threshold = 0)
-string_map <- string_db$map(annot, primary_keytype, removeUnmappedRows = FALSE, takeFirst = FALSE)
-
-
-## Adding some blank lines just for spacing on print-out ##
-cat("\n\n")
-
-## Create a table using the gene IDs of the primary keytype as row names and a column containing STRING IDs. For genes containing multiple STRING IDs, combine all STRING IDs for each gene into one row and separate each ID with a '|' ##
-
-tab_with_multiple_STRINGids_combined <-
-    data.frame(row.names = annot[[primary_keytype]])
-
-for ( curr_gene_ID in row.names(tab_with_multiple_STRINGids_combined) ) {
-
-    curr_STRING_ids <- string_map %>%
-        filter(!!rlang::sym(primary_keytype) == curr_gene_ID) %>%
-        pull(STRING_id) %>% paste(collapse = "|")
-
-    tab_with_multiple_STRINGids_combined[curr_gene_ID, "STRING_id"] <- curr_STRING_ids
-
+# Handle organisms which do not use the GTF's gene_id keys to map to STRING 
+# These are microbial species for which NCBI references were used rather than ENSEMBL,
+# for which the STRING accessions match the GTF's gene_name keys, but not the gene_id keys.
+uses_old_locus <- c("NCFM", "MMARINUMM", "ATCC27592", "UA159", "ES114")
+# Handle STRING annotation processing based on the target organism
+if (target_organism %in% uses_old_locus) {
+  # If the target organism is one of the NOENTRY organisms, handle the OLD_LOCUS splitting
+  annot_stringdb <- annot_orgdb %>%
+    separate_rows(!!sym(stringdb_query), sep = ",", convert = TRUE) %>%
+    distinct() %>%
+    as.data.frame()
+} else {
+  # For other organisms, collapse on the primary key
+  annot_stringdb <- annot_orgdb %>% distinct()
+  annot_stringdb <- annot_stringdb %>%
+    group_by(!!sym(primary_keytype)) %>%
+    summarise(across(everything(), ~paste(unique(na.omit(.))[unique(na.omit(.)) != ""], collapse = "|")), .groups = 'drop') %>%
+    as.data.frame()
 }
 
-## Move the primary keytype gene IDs back to being a column in the STRING ID table (since they were switched to row names above) ##
-
-tab_with_multiple_STRINGids_combined <-
-    tab_with_multiple_STRINGids_combined %>%
-    rownames_to_column(primary_keytype)
-
-## Add the STRING ID column to the annotation table ##
-
-if (target_organism == "ECOLI") {
-    # Add a temporary key for joining in both tables
-    annot <- annot %>%
-        mutate(join_key = toupper(ENSEMBL))
-    string_map <- string_map %>%
-        mutate(join_key = toupper(ENSEMBL))
-
-    # Perform the left join using the temporary key and drop the join_key column if no longer needed
-    annot <- left_join(annot, string_map %>% dplyr::select(join_key, STRING_id), by = "join_key") %>%
-        dplyr::select(-join_key)
-} else{
-    annot <- left_join(annot, tab_with_multiple_STRINGids_combined, by = primary_keytype)
+# Replace "BSU_" with "BSU" in the primary_keytype column for BACSU before STRING mapping
+if (target_organism == "BACSU") {
+  annot_stringdb[[stringdb_query]] <- gsub("^BSU_", "BSU", annot_stringdb[[stringdb_query]])
 }
 
+# Map alternative taxonomy IDs for organisms not directly supported by STRING
+taxid_map <- list(
+  YEAST = 4932,
+  BRARP = 51351,
+  ATCC27592 = 614
+)
 
+# Assign the alternative taxonomy identifier if applicable
+target_taxid <- if (!is.null(taxid_map[[target_organism]])) {
+  taxid_map[[target_organism]]
+} else {
+  target_taxid
+}
 
+# Initialize string_map
+string_map <- NULL
+
+# If the target organism is supported by STRING, get STRING annotations
+if (!(target_organism %in% no_stringdb)) {
+  string_db <- STRINGdb$new(version = "12.0", species = target_taxid, score_threshold = 0)
+  string_map <- string_db$map(annot_stringdb, stringdb_query, removeUnmappedRows = FALSE, takeFirst = FALSE)
+}
+if (!is.null(string_map)) {
+  annot_stringdb <- annot_stringdb %>%
+    group_by(!!sym(primary_keytype)) %>%
+    summarise(across(everything(), ~paste(unique(na.omit(.))[unique(na.omit(.)) != ""], collapse = "|")), .groups = 'drop')
+  
+  string_map <- string_map %>%
+    group_by(!!sym(primary_keytype)) %>%
+    summarise(across(everything(), ~paste(unique(na.omit(.))[unique(na.omit(.)) != ""], collapse = "|")), .groups = 'drop')
+}
+
+if (!is.null(string_map)) {
+  # Determine the appropriate join key
+  join_key <- if (target_organism %in% c("NCFM", "MMARINUMM", "ATCC27592", "UA159", "ES114")) {
+    primary_keytype
+  } else {
+    stringdb_query
+  }
+  
+  # Add temporary column to add string IDs to annotation table
+  annot_stringdb <- annot_stringdb %>%
+    mutate(join_key = toupper(!!sym(join_key)))
+  
+  string_map <- string_map %>%
+    mutate(join_key = toupper(!!sym(join_key)))
+  
+  # Join STRING IDs to the annotation table
+  annot_stringdb <- left_join(annot_stringdb, string_map %>% dplyr::select(join_key, STRING_id), by = "join_key") %>%
+    dplyr::select(-join_key)
+}
+
+# Undo the "BSU_" to "BSU" replacement for BACSU after STRING mapping
+if (target_organism == "BACSU") {
+  annot_stringdb[[stringdb_query]] <- gsub("^BSU", "BSU_", annot_stringdb[[stringdb_query]])
+}
+
+annot_stringdb <- as.data.frame(annot_stringdb)
 
 #########################################################################
 ################ Add Gene Ontology (GO) slim IDs ########################
 #########################################################################
 
+# Define organisms that do not use PANTHER annotations 
+no_panther_db <- c("WORM", "MMARINUMM", "ORYSJ", "MRSA252", "NCFM", "ATCC27592", "UA159", "ES114", "PA14")
 
-## Retrieve target organism PANTHER GO slim annotations database ##
+annot_pantherdb <- annot_stringdb
 
-pthOrganisms(PANTHER.db) <- target_organism
-
-## Use ENTREZ IDs to map genes to respective PANTHER GO slim annotation(s) ##
-
-## Note: Since there can be none (indicated in the annotation table as "NA"), one, or multiple ENTREZ IDs for a gene, this section contains 3 distinct parts to handle each of those scenarios and create a new column in the annotation table containing the GO slim IDs ## 
-
-for ( curr_row in 1:dim(annot)[1] ) {
-
-    curr_entry <- annot[curr_row, "ENTREZID"]
-
-    ## For genes without an ENTREZ ID ##
-    if ( curr_entry == "NA" ) {
-
-        annot[curr_row, "GOSLIM_IDS"] <- "NA"
-
-    } else if ( ! grepl("|", curr_entry, fixed = TRUE) ) {
-
-        ## For genes with one ENTREZ ID ##
-        curr_GO_IDs <- mapIds(PANTHER.db, keys = curr_entry, keytype = "ENTREZ", column = "GOSLIM_ID", multiVals = "list") %>% unlist() %>% as.vector()
-
-        ## Add "NA" to the GO slim column for ENTREZ IDs that do not contain a respective GO slim ID ##
-        if ( is.null(curr_GO_IDs) ) {
-
-            curr_GO_IDs <- "NA"
-        }
-
-        annot[curr_row, "GOSLIM_IDS"] <- paste(curr_GO_IDs, collapse = "|")
-
-    } else {
-
-        ## For genes with multiple ENTREZ ID ##
-        ## Note: In this scenario, the ENTREZ IDs for each gene are first split with a '|' to separate the IDs, then the GO slim ID(s) for each ENTREZ ID are collected and combined, then duplicates are removed, and the final list of GO slim IDs for each gene are added in a single row, separated with a '|' ## 
-
-        ## Split the ENTREZ IDs ##
-        curr_entry_vec <- strsplit(curr_entry, "|", fixed = TRUE)
-
-        ## Start a vector of current GO slim IDs ##
-        curr_GO_IDs <- vector()
-
-        ## Collect and combine GO slim ID(s) for each ENTREZ ID ##
-        for ( curr_entry in curr_entry_vec ) {
-
-            new_GO_IDs <- mapIds(PANTHER.db, keys = curr_entry, keytype = "ENTREZ", column = "GOSLIM_ID", multiVals = "list") %>% unlist() %>% as.vector()
-
-            ## Add new GO slim IDs to the GO slim IDs vector ##
-            curr_GO_IDs <- c(curr_GO_IDs, new_GO_IDs)
-
-        }
-
-        ## Remove duplicate GO slim IDs ##
-        curr_GO_IDs <- unique(curr_GO_IDs)
-
-        ## Add "NA" to the GO slim vector for ENTREZ IDs that do not contain a respective GO slim ID ##
-        if ( length(curr_GO_IDs) == 0 ) {
-
-            curr_GO_IDs <- "NA"
-        }
-
-        ## Add additional GO slim IDs to the GOSLIM ID column in the annotation table ## 
-        annot[curr_row, "GOSLIM_IDS"] <- paste(curr_GO_IDs, collapse = "|")
-
+if (!(target_organism %in% no_panther_db)) {
+  
+  # Define the key type in the annotation table used to map to PANTHER DB
+  pantherdb_query = "ENTREZID"
+  pantherdb_keytype = "ENTREZ"
+  
+  # Retrieve target organism PANTHER GO slim annotations database
+  pthOrganisms(PANTHER.db) <- target_organism
+  
+  # Define a function to retrieve GO slim IDs for a given gene's ENTREZIDs, which may include entries separated by a "|"
+  get_go_slim_ids <- function(entrez_id) {
+    if (is.na(entrez_id) || entrez_id == "NA") {
+      return("NA")
     }
-
+    
+    entrez_ids <- unlist(strsplit(entrez_id, "|", fixed = TRUE))
+    go_ids <- lapply(entrez_ids, function(id) {
+      mapIds(PANTHER.db, keys = id, keytype = pantherdb_keytype, column = "GOSLIM_ID", multiVals = "list")
+    })
+    
+    # Flatten the list and remove duplicates
+    go_ids <- unique(unlist(go_ids))
+    
+    if (length(go_ids) == 0) {
+      return("NA")
+    } else {
+      return(paste(go_ids, collapse = "|"))
+    }
+  }
+  
+  # Apply the GO slim ID mapping function to all valid rows
+  annot_pantherdb <- annot_pantherdb %>%
+    mutate(GOSLIM_IDS = sapply(get(pantherdb_query), get_go_slim_ids))
 }
 
 
 #########################################################################
-############# Export Annotation Table and Build Info ####################
+############# Export annotation table and build info ####################
 #########################################################################
 
-## BACSU-specific: revert gene IDs to originals with underscores ##
-if (target_organism == "BACSU") {
-    annot[["ENSEMBL"]] <- annot$original_IDs
-    annot$original_IDs <- NULL
-}
+# Group by primary key to remove any remaining unjoined or duplicate rows
+annot <- annot_pantherdb %>%
+  group_by(!!sym(primary_keytype)) %>%
+  summarise(across(everything(), ~paste(unique(na.omit(.))[unique(na.omit(.)) != ""], collapse = "|")), .groups = 'drop')
 
-## Sort the annotation table based on primary keytype gene IDs ##
-
+# Sort the annotation table based on primary keytype gene IDs
 annot <- annot %>% arrange(.[[1]])
 
-## Replacing any blank cells with NA ##
-annot[annot == ""] <- NA
+# Replace any blank cells with NA 
+annot[annot == "" | annot == "NA"] <- NA
 
-## Export the annotation table ##
-
+# Export the annotation table
 write.table(annot, out_table_filename, sep = "\t", quote = FALSE, row.names = FALSE)
 
-## Define the date the annotation table was generated ##
-
+# Define the date when the annotation table was generated
 date_generated <- format(Sys.time(), "%d-%B-%Y")
 
-## Export annotation table build info ##
-
+# Export annotation build information
 writeLines(paste(c("Based on:\n    ", GL_DPPD_ID), collapse = ""), out_log_filename)
 write(paste(c("\nBuild done on:\n    ", date_generated), collapse = ""), out_log_filename, append = TRUE)
 write(paste(c("\nUsed gtf file:\n    ", gtf_link), collapse = ""), out_log_filename, append = TRUE)
-write(paste(c("\nUsed ", ann.dbi, " version:\n    ", packageVersion(ann.dbi) %>% as.character()), collapse = ""), out_log_filename, append = TRUE)
+if (!(target_organism %in% no_org_db)) {
+  write(paste(c("\nUsed ", target_org_db, " version:\n    ", packageVersion(target_org_db) %>% as.character()), collapse = ""), out_log_filename, append = TRUE)
+}
 write(paste(c("\nUsed STRINGdb version:\n    ", packageVersion("STRINGdb") %>% as.character()), collapse = ""), out_log_filename, append = TRUE)
 write(paste(c("\nUsed PANTHER.db version:\n    ", packageVersion("PANTHER.db") %>% as.character()), collapse = ""), out_log_filename, append = TRUE)
 

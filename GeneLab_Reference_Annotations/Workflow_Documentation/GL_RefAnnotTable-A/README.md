@@ -82,10 +82,10 @@ Rscript GL-DPPD-7110-A_build-genome-annots-tab.R MOUSE
 
 ### 5. Run the annotations database creation function as a stand-alone script
 
-When the workflow is run, if the reference table does not specify an annotations database for the target_organism in the `annotations` column, the `install_annotations` function, defined in the `install-annot-dbi.R` script, will be executed. This script will locally create and install an annotations database R package using AnnotationForge. This function can also be run as a stand-alone script from the command line:
+When the workflow is run, if the reference table does not specify an annotations database for the target_organism in the `annotations` column, the `install_annotations` function, defined in the `install-org-db.R` script, will be executed. This script will locally create and install an annotations database R package using AnnotationForge. This function can also be run as a stand-alone script from the command line:
 
 ```bash
-Rscript install-annot-dbi.R BACSU /path/to/GL-DPPD-7110-A_annotations.csv
+Rscript install-org-db.R BACSU /path/to/GL-DPPD-7110-A_annotations.csv
 ```
 
 **Input data:**

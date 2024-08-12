@@ -23,16 +23,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Staphylococcus aureus MRSA252  
     - Streptococcus mutans UA159  
     - Vibrio fischeri ES114  
-- Added AnnotationForge helper script install-annot-dbi.R to create organism-specific annotation packages (org.*.eg.db) in R if not available on Bioconductor. Used for:  
+- Added AnnotationForge helper script install-org-db.R to create organism-specific annotation packages (org.*.eg.db) in R if not available on Bioconductor. Used for:  
     - Bacillus subtilis, subsp. subtilis 168  
-    - Salmonella enterica subsp. enterica serovar Typhimurium str. LT2  
+    - Brachypodium distachyon  
     - Escherichia coli,str. K-12 substr. MG1655  
     - Oryzias latipes  
-- Added NCBI as a source for GASTA and GTF files
+    - Salmonella enterica subsp. enterica serovar Typhimurium str. LT2  
+- Added NCBI as a source for FASTA and GTF files  
 
 ### Fixed  
 
-- Fixed automated processing for ECOLI
+- Fixed processing for ECOLI
 
 ### Changed  
 
