@@ -20,7 +20,7 @@ The current pipeline for how GeneLab identifies and removes human DNA in Illumin
 ---
 
 ### 1. Install conda, mamba, and `genelab-utils` package
-We recommend installing a Miniconda, Python3 version appropriate for your system, as exemplified in [the above link](https://astrobiomike.github.io/unix/conda-intro#getting-and-installing-conda).  
+We recommend installing a Miniconda, Python3 version appropriate for your system, as exemplified in [the Happy Belly Bioinformatics conda tutorial](https://astrobiomike.github.io/unix/conda-intro#getting-and-installing-conda).  
 
 Once conda is installed on your system, we recommend installing [mamba](https://github.com/mamba-org/mamba#mamba), as it generally allows for much faster conda installations:
 
