@@ -162,7 +162,7 @@ Once you've downloaded the workflow template, you can modify the parameters in t
 
 ---
 
-### 5.  Workflow outputs
+### 5. Workflow outputs
 
 #### 5a. Main outputs
 
