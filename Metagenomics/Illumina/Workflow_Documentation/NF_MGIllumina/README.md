@@ -3,11 +3,11 @@
 ## General Workflow Info
 
 ### Implementation Tools
+
 The current GeneLab Illumina metagenomics sequencing data processing pipeline (MGIllumina), [GL-DPPD-7107-A.md](../../Pipeline_GL-DPPD-7107_Versions/GL-DPPD-7107-A.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) containers or [conda](https://docs.conda.io/en/latest/) environments to install/run all tools. This workflow is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow. 
 
 > **Note on reference databases**  
 > Many reference databases are relied upon throughout this workflow. They will be installed and setup automatically the first time the workflow is run. All together, after installed and unpacked, they will take up about about 340 GB of storage, but they may also require up to 500GB during installation and initial un-packing, so be sure there is enough room on your system before running the workflow.
-
 
 ## Utilizing the Workflow
 
@@ -19,21 +19,21 @@ The current GeneLab Illumina metagenomics sequencing data processing pipeline (M
 
 3. [Fetch Singularity Images](#3-fetch-singularity-images)  
 
-4. [Run the workflow](#3-run-the-workflow)  
-   3a. [Approach 1: Run slurm jobs in singularity containers with OSD accession as input](#3a-approach-1-run-slurm-jobs-in-singularity-containers-with-osd-accession-as-input)   
-   3b. [Approach 2: Run slurm jobs in singularity containers with a csv file as input](#3b-approach-2-run-slurm-jobs-in-singularity-containers-with-a-csv-file-as-input)  
-   3c. [Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environments](#3c-approach-run-jobs-locally-in-conda-environments-and-specify-the-path-to-one-or-more-existing-conda-environments)  
-   3d. [Modify parameters and cpu resources in the nextflow config file](#3d-modify-parameters-and-cpu-resources-in-the-nextflow-config-file)  
+4. [Run the workflow](#4-run-the-workflow)  
+   3a. [Approach 1: Run slurm jobs in singularity containers with OSD accession as input](#4a-approach-1-run-slurm-jobs-in-singularity-containers-with-osd-accession-as-input)   
+   3b. [Approach 2: Run slurm jobs in singularity containers with a csv file as input](#4b-approach-2-run-slurm-jobs-in-singularity-containers-with-a-csv-file-as-input)  
+   3c. [Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environments](#4c-approach-run-jobs-locally-in-conda-environments-and-specify-the-path-to-one-or-more-existing-conda-environments)  
+   3d. [Modify parameters and cpu resources in the nextflow config file](#4d-modify-parameters-and-cpu-resources-in-the-nextflow-config-file)  
 
-4. [Workflow outputs](#4-workflow-outputs)  
-   4a. [Main outputs](#4a-main-outputs)  
-   4b. [Resource logs](#4b-resource-logs)  
+5. [Workflow outputs](#5-workflow-outputs)  
+   4a. [Main outputs](#5a-main-outputs)  
+   4b. [Resource logs](#5b-resource-logs)  
 
 <br>
 
 ---
 
-### 1. Install Nextflow and Singularity 
+### 1. Install Nextflow and Singularity
 
 #### 1a. Install Nextflow
 
@@ -70,6 +70,7 @@ All files required for utilizing the NF_XXX GeneLab workflow for processing meta
 wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/NF_MGIllumina/NF_MGIllumina.zip
 unzip NF_MGIllumina.zip &&  cd NF_XXX-X_X.X.X
 ```
+
 <br>
 
 ---
@@ -79,12 +80,12 @@ unzip NF_MGIllumina.zip &&  cd NF_XXX-X_X.X.X
 Although Nextflow can fetch Singularity images from a url, doing so may cause issues as detailed [here](https://github.com/nextflow-io/nextflow/issues/1210).
 
 To avoid this issue, run the following command to fetch the Singularity images prior to running the NF_MGIllumina workflow:
+
 > Note: This command should be run in the location containing the `NF_MGIllumina` directory that was downloaded in [step 2](#2-download-the-workflow-files) above.  
 
 ```bash
 bash ./bin/prepull_singularity.sh nextflow.config
 ```
-
 
 Once complete, a `singularity` folder containing the Singularity images will be created. Run the following command to export this folder as a Nextflow configuration environment variable to ensure Nextflow can locate the fetched images:
 
@@ -135,17 +136,17 @@ nextflow run main.nf -resume -profile conda --csv_file SE_file.csv --conda.qc <p
 **Required Parameters For All Approaches:**
 
 * `-run main.nf` - Instructs nextflow to run the NF_XXX workflow 
-* `-resume` - Resumes  workflow execution using previously cached results
-* `-profile` – Specifies the configuration profile(s) to load, `singularity` instructs nextflow to setup and use singularity for all software called in the workflow
-  
 
+* `-resume` - Resumes  workflow execution using previously cached results
+
+* `-profile` – Specifies the configuration profile(s) to load, `singularity` instructs nextflow to setup and use singularity for all software called in the workflow
   *Required only if you would like to pull and process data directly from OSDR*
 
 * `--GLDS_accession` – A Genelab / OSD accession number e.g. OSD-574.
 
 *Required only if --GLDS_accession is not passed as an argument*
 
-* `--csv_file` –  A 3-column (single-end) or 4-column (paired-end) input csv file (sample_id, forward, [reverse,] paired). Please see the sample [SE_file.csv](workflow_code/SE_file.csv)and [PE_file.csv]((workflow_code/PE_file.csv) in this repository for examples on how to format this file.
+* `--csv_file` –  A 3-column (single-end) or 4-column (paired-end) input csv file (sample_id, forward, [reverse,] paired). Please see the sample [SE_file.csv](workflow_code/SE_file.csv)and [PE_file.csv](workflow_code/PE_file.csv) in this repository for examples on how to format this file.
 
 > See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details on how to run nextflow.
 
