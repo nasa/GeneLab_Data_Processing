@@ -374,7 +374,7 @@ workflow {
 
 
      // Software Version Capturing - combining all captured sofware versions
-     nf_version = "Nextflow Version:".concat("${nextflow.version}\n<><><>\n")
+     nf_version = "Nextflow Version ".concat("${nextflow.version}\n<><><>\n")
      nextflow_version_ch = Channel.value(nf_version)
 
      //  Write software versions to file

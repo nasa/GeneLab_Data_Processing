@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
-params.paired = false
-params.max_mem = 100e9
+//params.paired = false
+//params.max_mem = 100e9
 
 /**************************************************************************************** 
 **************************  Sequence assembly and summary *******************************

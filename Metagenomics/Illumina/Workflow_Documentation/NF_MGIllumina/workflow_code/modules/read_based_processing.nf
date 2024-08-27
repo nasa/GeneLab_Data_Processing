@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
-params.additional_filename_prefix = ""
-params.assay_suffix = "_GLmetagenomics"
+//params.additional_filename_prefix = ""
+//params.assay_suffix = "_GLmetagenomics"
 
 /**************************************************************************************** 
 ********************* Read-based processing using Humann3 *******************************

@@ -1,8 +1,8 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
-params.cat_db = "/mnt/c/Users/olabi/Documents/bioinformatics/test/processing_info/ref-dbs/CAT_prepare_20210107/2021-01-07_CAT_database/"
-params.ko_db_dir = "/mnt/c/Users/olabi/Documents/bioinformatics/test/processing_info/ref-dbs/kofamscan_db/"
-params.block_size = 4
+//params.cat_db = "/mnt/c/Users/olabi/Documents/bioinformatics/test/processing_info/ref-dbs/CAT_prepare_20210107/2021-01-07_CAT_database/"
+//params.ko_db_dir = "/mnt/c/Users/olabi/Documents/bioinformatics/test/processing_info/ref-dbs/kofamscan_db/"
+//params.block_size = 4
 
 /**************************************************************************************** 
 **************************  Sequence Assembly Annotation *******************************

@@ -6,9 +6,9 @@ nextflow.enable.dsl = 2
 ****************************************************************************************/
 include { ZIP_FASTA as ZIP_MAGS } from "./zip_fasta.nf"
 
-params.min_est_comp = 90
-params.max_est_redund = 10
-params.max_est_strain_het = 50
+//params.min_est_comp = 90
+//params.max_est_redund = 10
+//params.max_est_strain_het = 50
 
 /*
 Scratch directory for gtdb-tk, if wanting to use disk space instead of RAM, can be memory intensive;

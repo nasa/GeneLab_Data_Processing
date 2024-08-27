@@ -1,8 +1,8 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-params.GLDS_accession = "OSD-574"
-params.RawFilePattern = null // Pattern of files on OSDR for the OSD accession you want to process 
+//params.GLDS_accession = "OSD-574"
+//params.RawFilePattern = null // Pattern of files on OSDR for the OSD accession you want to process 
 
 process GET_RUNSHEET {
 

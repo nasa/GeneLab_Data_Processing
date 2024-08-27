@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
-params.pileup_mem = "5g"
+//params.pileup_mem = "5g"
 
 /*
     This process pulls out coverage and detection information for each sample, gene-level and contig-level,

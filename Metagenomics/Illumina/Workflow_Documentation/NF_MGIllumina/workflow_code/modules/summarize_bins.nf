@@ -7,7 +7,7 @@ nextflow.enable.dsl = 2
 
 include { ZIP_FASTA as ZIP_BINS } from "./zip_fasta.nf"
 
-params.reduced_tree = "True"
+//params.reduced_tree = "True"
 
 // Summarize bin assemblies
 process SUMMARIZE_BIN_ASSEMBLIES {

@@ -6,11 +6,11 @@ nextflow.enable.dsl = 2
 ****************************************************************************************/
 
 // a 2-column (single-end) or 3-column (paired-end) file
-params.prefix = "raw" // "filetered"
-params.csv_file = "file.csv" 
-params.swift_1S = false
-params.adapters = "${baseDir}/config/bbtools_dapters.fa"
-params.multiqc_config = "config/multiqc.config"
+//params.prefix = "raw" // "filetered"
+//params.csv_file = "file.csv" 
+//params.swift_1S = false
+//params.adapters = "${baseDir}/config/bbtools_dapters.fa"
+//params.multiqc_config = "config/multiqc.config"
 
 process FASTQC {
   // FastQC performed on reads

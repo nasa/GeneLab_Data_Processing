@@ -2,5 +2,7 @@ channels:
     - conda-forge
     - bioconda
     - defaults
+    - astrobiomike
 dependencies:
-    - cat=5.2.2
+    - prodigal=2.6.3
+    - bit=1.8.53
