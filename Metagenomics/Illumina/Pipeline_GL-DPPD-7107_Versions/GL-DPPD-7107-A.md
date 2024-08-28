@@ -20,6 +20,21 @@ Lauren Sanders (OSDR Project Scientist)
 
 ---
 
+## Updates from previous version  
+
+- The following tool versions were updated:
+  - FastQC
+  - MultiQC
+  - bowtie2
+  - samtools
+  - CAT
+  - gtdbtk
+  - HUMAnN3
+  - MetaPhIAn3
+- In [step 14d](#14d-mag-taxonomic-classification), MAG taxonomic classification, gtdbtk classify_wf now takes a new argument "--skip_ani_screen" which specifies to skip the ani_screening step to classify genomes using mash and skani. 
+
+---
+
 # Table of contents
 
 - [**Software used**](#software-used)
@@ -877,8 +892,8 @@ gtdbtk classify_wf --genome_dir MAGs/ -x fa --out_dir gtdbtk-output-dir  --skip_
 *  `classify_wf` – specifies the workflow being utilized
 *  `--genome_dir` – specifies the directory holding the MAGs generated in step 14c
 *  `-x` – specifies the extension that is on the MAG fasta files that are being taxonomically classified
-*  `-out_dir` – specifies the output directory
-*  `-skip_ani_screen`  - specifies to skip ani_screening step to classify genomes using mash and skani
+*  `--out_dir` – specifies the output directory
+*  `--skip_ani_screen`  - specifies to skip ani_screening step to classify genomes using mash and skani
 
 **Input data:**
 
