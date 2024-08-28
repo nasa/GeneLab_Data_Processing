@@ -4,18 +4,19 @@
 
 ---
 
-**Date:** September 15, 2021  
-**Revision:** -  
+**Date:** 2024  
+**Revision:** -A  
 **Document Number:** GL-DPPD-7107  
 
 **Submitted by:**  
-Michael D. Lee (GeneLab Analysis Team)  
+Olabiyi A. Obayomi (GeneLab Analysis Team)  
 
 **Approved by:**  
 Sylvain Costes (GeneLab Project Manager)  
 Samrawit Gebre (GeneLab Deputy Project Manager and Interim GeneLab Configuration Manager)  
-Amanda Saravia-Butler (GeneLab Data Processing Lead)  
-Jonathan Galazka (GeneLab Project Scientist)  
+Barbara Novak (GeneLab Data Processing Lead)  
+Amanda Saravia-Butler (GeneLab Science Lead)
+Lauren Sanders (OSDR Project Scientist)
 
 ---
 
@@ -55,7 +56,7 @@ Jonathan Galazka (GeneLab Project Scientist)
 |megahit| 1.2.9 |[https://github.com/voutcn/megahit#megahit](https://github.com/voutcn/megahit#megahit)|
 |bit| 1.8.53 |[https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit](https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit)|
 |bowtie2| 2.4.1 |[https://github.com/BenLangmead/bowtie2#overview](https://github.com/BenLangmead/bowtie2#overview)|
-|samtools| 1.2 |[https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)|
+|samtools| 1.20 |[https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)|
 |prodigal| 2.6.3 |[https://github.com/hyattpd/Prodigal#prodigal](https://github.com/hyattpd/Prodigal#prodigal)|
 |KOFamScan| 1.3.0 |[https://github.com/takaram/kofam_scan#kofamscan](https://github.com/takaram/kofam_scan#kofamscan)|
 |CAT| 5.2.3 |[https://github.com/dutilh/CAT#cat-and-bat](https://github.com/dutilh/CAT#cat-and-bat)|
@@ -64,7 +65,7 @@ Jonathan Galazka (GeneLab Project Scientist)
 |gtdbtk| 2.4.0 |[https://github.com/Ecogenomics/GTDBTk](https://github.com/Ecogenomics/GTDBTk)|
 |KEGGDecoder| 1.2.2 |[https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder](https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder)
 |HUMAnN3| 3.9 |[https://huttenhower.sph.harvard.edu/humann3/](https://huttenhower.sph.harvard.edu/humann3/)|
-|MetaPhlAn3| 4.10 |[https://github.com/biobakery/MetaPhlAn/tree/3.0](https://github.com/biobakery/MetaPhlAn/tree/3.0)|
+|MetaPhlAn3| 4.1.0 |[https://github.com/biobakery/MetaPhlAn/tree/3.0](https://github.com/biobakery/MetaPhlAn/tree/3.0)|
 
 ---
 
