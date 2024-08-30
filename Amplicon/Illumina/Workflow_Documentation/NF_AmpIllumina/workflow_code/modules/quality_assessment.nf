@@ -6,9 +6,9 @@ nextflow.enable.dsl = 2
 ****************************************************************************************/
 
 // A 3-column (single-end) or 4-column (paired-end) file
-params.csv_file = "${baseDir}/file.csv" 
-params.prefix = "raw"
-params.multiqc_config = "${baseDir}/config/multiqc.config"
+//params.csv_file = "${baseDir}/file.csv" 
+//params.prefix = "raw"
+//params.multiqc_config = "${baseDir}/config/multiqc.config"
 
 // FastQC performed on reads
 process FASTQC {
@@ -60,7 +60,7 @@ process MULTIQC {
 
 
 
-// cutadapt process for paired-end data
+// cutadapt process for paired-end and single-end data
 // this process runs cutadapt. It is only executed if config["trim_primers"] is "TRUE" 
 process CUTADAPT {
 

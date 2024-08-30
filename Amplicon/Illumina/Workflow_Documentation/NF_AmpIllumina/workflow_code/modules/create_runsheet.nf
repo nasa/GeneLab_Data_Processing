@@ -1,8 +1,8 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-params.GLDS_accession = "GLDS-487"
-params.target_region = "16S"
+//params.GLDS_accession = "GLDS-487"
+//params.target_region = "16S"
 
 process GET_RUNSHEET {
 

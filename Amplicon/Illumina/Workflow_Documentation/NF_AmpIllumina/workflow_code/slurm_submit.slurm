@@ -28,7 +28,7 @@ echo $HOSTNAME
 ## You can see a list of all available environments by running the command: conda env list ##
 ## If you need a conda envrionment installed request it using JIRA ##
 
-source activate /path/to/envs/genelab-utils ## Replace conda_env_name with the name of the environment ##
+source activate /path/to/envs/nextflow ## Replace conda_env_name with the name of the environment with nextflow installed ##
 
 
 ## Print the version of the tool you are using to ensure the tool version is recorded ##
@@ -40,7 +40,7 @@ echo ""
 
 ## The command(s) that you want to run in this slurm job ##
 export NXF_SINGULARITY_CACHEDIR=singularity/
-nextflow run main.nf -resume -profile slurm_sing --GLDS_accession GLDS-487 --target_region 16S ## Replace command with the command(s) you want to run ##
+nextflow run main.nf -resume -profile slurm,singularity --GLDS_accession GLDS-487 --target_region 16S ## Replace command with the command(s) you want to run ##
 
 
 ## Add a time-stamp at the end of the job then calculate how long the job took to run in seconds, minutes, and hours ##

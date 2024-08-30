@@ -1,0 +1,150 @@
+############################################################################################
+## Configuration file for GeneLab Illumina amplicon processing workflow                   ##
+## Initially developed by Michael D. Lee (Mike.Lee@nasa.gov)                              ##
+## Developed and maintained by Michael D. Lee and Alexis Torres (alexis.torres@nasa.gov)  ##
+############################################################################################
+
+
+############################################################
+##################### VARIABLES TO SET #####################
+############################################################
+
+###########################################################################
+##### These need to match what is specific to our system and our data #####
+###########################################################################
+
+## Path to ISA archive, only needed for saving a copy as metadata:
+isa_archive:
+   ""
+
+## Path to runsheet:
+runsheet:
+    "OSD-num_amplicon_v1_runsheet.csv"
+
+## Set to "PE" for paired-end, "SE" for single-end.
+data_type:
+    "PE"
+
+## single-column file with unique sample identifiers:
+sample_info_file:
+    "unique-sample-IDs.txt"
+
+## input reads directory (can be relative to workflow directory, or needs to be full path):
+raw_reads_dir:
+    "raw_reads/"
+
+## raw read suffixes:
+  # e.g. for paired-end data, Sample-1_R1_raw.fastq.gz would be _R1_raw.fastq.gz for 'raw_R1_suffix' below
+  # e.g. if single-end, Sample-1.fastq.gz would be .fastq.gz for 'raw_R1_suffix' below, and 'raw_R2_suffix' won't be used
+raw_R1_suffix:
+    "_R1_raw.fastq.gz"
+raw_R2_suffix:
+    "_R2_raw.fastq.gz"
+
+## if we are trimming primers or not ("TRUE", or "FALSE")
+trim_primers:
+    "TRUE"
+
+## primer sequences if we are trimming them (include anchoring symbols, e.g. '^', as needed, see: https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types)
+F_primer:
+    "^GTGCCAGCMGCCGCGGTAA"
+R_primer:
+    "^GGACTACHVGGGTWTCTAA"
+
+## should cutadapt treat these as linked primers? (https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads)
+primers_linked:
+    "TRUE"
+
+## if primers are linked, we need to provide them as below, where the second half, following three periods, is the other primer reverse-complemented
+  # (can reverse complement while retaining ambiguous bases at this site: http://arep.med.harvard.edu/labgc/adnan/projects/Utilities/revcomp.html)
+  # include anchoring symbols, e.g. '^', as needed, see: https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types
+F_linked_primer:
+    "^GTGCCAGCMGCCGCGGTAA...TTAGAWACCCBDGTAGTCC"
+R_linked_primer:
+    "^GGACTACHVGGGTWTCTAA...TTACCGCGGCKGCTGGCAC"
+
+## discard untrimmed, sets the "--discard-untrimmed" option if TRUE
+discard_untrimmed:
+    "TRUE"
+
+## target region (16S, 18S, or ITS is acceptable)
+  # this determines which reference database is used for taxonomic classification
+  # all are pulled from the pre-packaged DECIPHER downloads page here: http://www2.decipher.codes/Downloads.html
+  # 16S uses SILVA
+  # ITS uses UNITE
+  # 18S uses PR2
+target_region:
+    "16S"
+
+## concatenate only with dada2 instead of merging paired reads if TRUE
+  # this is typically used with primers like 515-926, that captured 18S fragments that are typically too long to merge
+  # note that 16S and 18S should have been separated already prior to running this workflow
+  # this should likely be left as FALSE for any option other than "18S" above
+
+concatenate_reads_only:
+    "FALSE"
+
+## values to be passed to dada2's filterAndTrim() function:
+left_trunc:
+    0
+right_trunc:
+    0
+left_maxEE:
+    1
+right_maxEE:
+    1
+
+## minimum length threshold for cutadapt
+min_cutadapt_len:
+    130
+
+######################################################################
+##### The rest only need to be altered if we want to change them #####
+######################################################################
+
+## filename suffixes
+primer_trimmed_R1_suffix:
+    "_R1_trimmed.fastq.gz"
+primer_trimmed_R2_suffix:
+    "_R2_trimmed.fastq.gz"
+
+filtered_R1_suffix:
+    "_R1_filtered.fastq.gz"
+filtered_R2_suffix:
+    "_R2_filtered.fastq.gz"
+
+## output prefix (if needed to distinguish from multiple primer sets, leave as empty string if not, include connecting symbol if adding, e.g. "ITS-")
+output_prefix:
+    ""
+
+## output directories (all relative to processing directory, they will be created if needed)
+info_out_dir:
+    "workflow_output/Metadata/"
+fastqc_out_dir:
+    "workflow_output/FastQC_Outputs/"
+trimmed_reads_dir:
+    "workflow_output/Trimmed_Sequence_Data/"
+filtered_reads_dir:
+    "workflow_output/Filtered_Sequence_Data/"
+final_outputs_dir:
+    "workflow_output/Final_Outputs/"
+plots_dir:
+    "workflow_output/Final_Outputs/Plots/"
+
+enable_visualizations:
+    "FALSE"
+
+############################################################
+###################### GENERAL INFO ########################
+############################################################
+# Workflow is currently equipped to work with paired-end data only, and reads are expected to be gzipped
+
+## example usage command ##
+# snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p
+
+# `--use-conda` – this specifies to use the conda environments included in the workflow
+# `--conda-prefix` – this allows us to point to where the needed conda environments should be stored...
+# `-j` – this lets us set how many jobs Snakemake should run concurrently...
+# `-p` – specifies to print out each command being run to the screen
+
+# See `snakemake -h` for more options and details.

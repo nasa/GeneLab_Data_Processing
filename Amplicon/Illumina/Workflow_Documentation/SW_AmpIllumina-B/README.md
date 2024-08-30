@@ -1,176 +1,213 @@
-# Workflow Information and Usage Instructions
+# SW_AmpIllumina-B Workflow Information and Usage Instructions <!-- omit in toc -->
 
-## General Workflow Info
 
-### Implementation Tools
-
-The current GeneLab Illumina amplicon sequencing data processing pipeline (AmpIllumina), [GL-DPPD-7104-B.md](../../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) containers or [conda](https://docs.conda.io/en/latest/) environments to install/run all tools. This workflow is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow.   
-
-## Utilizing the Workflow
-
-1. [Install nextflow, conda and singularity](#1-install-nextflow-conda-and-singularity)  
-   1a. [Install nextflow and conda](#1a-install-nextflow-and-conda)  
-   1b. [Install singularity](#1b-install-singularity)  
-
-2. [Download the workflow files](#2-download-the-workflow-files)  
-
-3. [Run the workflow](#3-run-the-workflow)  
-   3a. [Approach 1: Run slurm jobs in singularity containers with OSD accession as input](#3a-approach-1-run-slurm-jobs-in-singularity-containers-with-osd-accession-as-input)   
-   3b. [Approach 2: Run slurm jobs in singularity containers with a csv file as input](#3b-approach-2-run-slurm-jobs-in-singularity-containers-with-a-csv-file-as-input)  
-   3c. [Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environments](#3c-approach-run-jobs-locally-in-conda-environments-and-specify-the-path-to-one-or-more-existing-conda-environments)  
-   3d. [Modify parameters and cpu resources in the nextflow config file](#3d-modify-parameters-and-cpu-resources-in-the-nextflow-config-file)  
-
-4. [Workflow outputs](#4-workflow-outputs)  
-   4a. [Main outputs](#4a-main-outputs)  
-   4b. [Resource logs](#4b-resource-logs)  
+## General workflow info <!-- omit in toc -->
+The current GeneLab Illumina amplicon sequencing data processing pipeline (AmpIllumina), [GL-DPPD-7104-B.md](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md), is implemented as a [Snakemake](https://snakemake.readthedocs.io/en/stable/) workflow and utilizes [conda](https://docs.conda.io/en/latest/) environments to install/run all tools. This workflow (SW_AmpIllumina-B) is run using the command line interface (CLI) of any unix-based system. The workflow can be used even if you are unfamiliar with Snakemake and conda, but if you want to learn more about those, [this Snakemake tutorial](https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html) within [Snakemake's documentation](https://snakemake.readthedocs.io/en/stable/) is a good place to start for that, and an introduction to conda with installation help and links to other resources can be found [here at Happy Belly Bioinformatics](https://astrobiomike.github.io/unix/conda-intro).  
 
 <br>
 
-### 1. Install nextflow, conda and singularity
+---
 
+## Utilizing the workflow <!-- omit in toc -->
 
+- [1. Install conda, mamba, and `genelab-utils` package](#1-install-conda-mamba-and-genelab-utils-package)
+- [2. Download the workflow template files](#2-download-the-workflow-template-files)
+- [3. Run the workflow using `run_workflow.py`](#3-run-the-workflow-using-run_workflowpy)
+  - [3a. Approach 1: Run the workflow on a GeneLab Amplicon (Illumina) sequencing dataset with automatic retrieval of raw read files and metadata](#3a-approach-1-run-the-workflow-on-a-genelab-amplicon-illumina-sequencing-dataset-with-automatic-retrieval-of-raw-read-files-and-metadata)
+  - [3b. Approach 2: Run the workflow on a non-OSD dataset using a user-created runsheet](#3b-approach-2-run-the-workflow-on-a-non-osd-dataset-using-a-user-created-runsheet)
+- [4. Parameter definitions](#4-parameter-definitions)
+- [5. Additional output files](#5-additional-output-files)
 
-####  1a. Install nextflow and conda
+<br>
 
-Nextflow can be installed either through [Anaconda](https://anaconda.org/bioconda/nextflow) or as documented on the [Nextflow documentation page](https://www.nextflow.io/docs/latest/getstarted.html).
+___
 
-> Note: If you want to install anaconda, we recommend installing a miniconda, python3 version appropriate for your system, as instructed by [Happy Belly Bioinformatics](https://astrobiomike.github.io/unix/conda-intro#getting-and-installing-conda).  
+### 1. Install conda, mamba, and `genelab-utils` package
+We recommend installing a Miniconda, Python3 version appropriate for your system, as exemplified in [the above link](https://astrobiomike.github.io/unix/conda-intro#getting-and-installing-conda).  
 
-We recommend installing a miniconda, python3 version appropriate for your system, as exemplified in [the above link](https://astrobiomike.github.io/unix/conda-intro#getting-and-installing-conda).
-
-Once conda is installed on your system, we recommend installing [mamba](https://github.com/mamba-org/mamba#mamba), as it generally allows for much faster conda installations.
+Once conda is installed on your system, we recommend installing [mamba](https://github.com/mamba-org/mamba#mamba), as it generally allows for much faster conda installations:
 
 ```bash
 conda install -n base -c conda-forge mamba
 ```
 
-> You can read a quick intro to mamba [here](https://astrobiomike.github.io/unix/conda-intro#bonus-mamba-no-5).
+> You can read a quick intro to mamba [here](https://astrobiomike.github.io/unix/conda-intro#bonus-mamba-no-5) if wanted.
 
-Once mamba is installed, you can install the genelab-utils conda package which contains nextflow with the following command:
+Once mamba is installed, you can install the genelab-utils conda package in a new environment with the following command:
 
 ```bash
-mamba create -n genelab-utils -c conda-forge -c bioconda -c defaults -c astrobiomike genelab-utils
+mamba create -n genelab-utils -c conda-forge -c bioconda -c defaults -c astrobiomike 'genelab-utils==1.3.35'
 ```
 
-The environment then needs to be activated:
+The environment then needs to be activated by running the following command:
 
 ```bash
 conda activate genelab-utils
-
-# Test that nextflow is installed
-nextflow -h
-
-# Update nextflow
-nextflow self-update
 ```
-
 <br>
 
-#### 1b. Install singularity
+___
 
-Singularity is a container platform that allows usage of containerized software. This enables the GeneLab workflow to retrieve and use all software required for processing without the need to install the software directly on the user's system.
-
-We recommend installing singularity on a system wide level as per the associated [documentation](https://docs.sylabs.io/guides/3.10/admin-guide/admin_quickstart.html).
-
-<br>
-
-### 2. Download the workflow files
-
-All files required for utilizing the NF_XXX GeneLab workflow for processing amplicon illumina data are in the [workflow_code](workflow_code) directory. To get a copy of latest *NF_XXX* version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
+### 2. Download the workflow template files
+<!-- All files required for utilizing the GeneLab workflow for processing Illumina amplicon sequencing data are in the [workflow_code](workflow_code) directory. To get a copy of latest SW_AmpIllumina-B version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands:
 
 ```bash
-wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/NF_AmpIllumina/NF_AmpIllumina.zip
-unzip NF_AmpIllumina.zip &&  cd NF_XXX-X_X.X.X
+wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/SW_AmpIllumina-B_1.2.2/SW_AmpIllumina-B_1.2.2.zip
+
+unzip SW_AmpIllumina-B_1.2.2.zip
 ```
 
-OR by using the genelab-utils conda package
+This downloaded the workflow into a directory called `SW_AmpIllumina-B_1.2.2`. To run the workflow, you will need to move into that directory by running the following command:
 
 ```bash
-GL-get-workflow  Amplicon-Illumina
-```
+cd SW_AmpIllumina-B_1.2.2
+``` -->
 
-<br>
-
-### 3. Run the Workflow
-
-For options and detailed help on how to run the workflow, run the following command:
+All files required for utilizing the GeneLab workflow for processing Illumina amplicon sequencing data are in the [workflow_code](workflow_code) directory. To get a copy of the latest SW_AmpIllumina-B version on to your system, run the following command:
 
 ```bash
-nextflow run main.nf --help
+GL-get-workflow Amplicon-Illumina
 ```
 
-> Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --csv_file) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
+This downloaded the workflow into a directory called `SW_AmpIllumina-*/`, with the workflow version number at the end.
+
+> Note: If wanting an earlier version, the wanted version can be provided as an optional argument like so:
+> ```bash
+> GL-get-workflow Amplicon-Illumina --wanted-version 1.0.0
+> ```
 
 <br>
 
-#### 3a. Approach 1: Run slurm jobs in singularity containers with OSD accession as input
+___
+
+### 3. Run the workflow using `run_workflow.py`
+
+While in the `SW_AmpIllumina-*/` directory that was downloaded in [step 2](#2-download-the-workflow-template-files), you are now able to run the workflow using the `run_workflow.py` script in the [scripts/](workflow_code/scripts) sub-directory to set up the configuration files needed to execute the workflow.
+
+> Note: The commands to run the workflow in each approach listed below allows for two sets of options. The options specified outside of the quotation marks are specific to the `run_workflow.py` script, and the options specified within the quotation marks are specific to `snakemake`.
+
+<br>
+
+___
+
+#### 3a. Approach 1: Run the workflow on a GeneLab Amplicon (Illumina) sequencing dataset with automatic retrieval of raw read files and metadata
+
+> This approach processes data hosted on the [NASA Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/). Upon execution, the command downloads then parses the OSD ISA.zip file to create a runsheet containing link(s) to the raw reads and the metadata required for processing. The runsheet is then used to prepare the necessary configuration files before executing the workflow using the specified Snakemake run command.
 
 ```bash
-nextflow run main.nf -resume -profile slurm,singularity --GLDS_accession GLDS-487 --target_region 16S
+python ./scripts/run_workflow.py --OSD OSD-487 --target 16S --run "snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p"
 ```
 
 <br>
 
-#### 3b. Approach 2: Run slurm jobs in singularity containers with a csv file as input
+___
+
+#### 3b. Approach 2: Run the workflow on a non-OSD dataset using a user-created runsheet
+
+> If processing a non-OSD dataset, you must manually create the runsheet for your dataset to run the workflow. Specifications for creating a runsheet manually are described [here](examples/runsheet/README.md).
 
 ```bash
-nextflow run main.nf -resume -profile slurm,singularity  --csv_file PE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT 
+python ./scripts/run_workflow.py --runsheetPath </path/to/runsheet> --run "snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p"
 ```
 
 <br>
 
-#### 3c. Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environment(s)
+___
 
-```bash
-nextflow run main.nf -resume -profile conda --csv_file SE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --conda.qc <path/to/existing/conda/environment>
-```
+### 4. Parameter definitions
 
 <br>
 
-**Required Parameters For All Approaches:**
+**Parameter definitions for `run_workflow.py`:** 
 
-* `-run main.nf` - Instructs nextflow to run the NF_XXX workflow 
-* `-resume` - Resumes  workflow execution using previously cached results
-* `-profile` – Specifies the configuration profile(s) to load, `singularity` instructs nextflow to setup and use singularity for all software called in the workflow
-* `--target_region` – Specifies the amplicon target region to be analyzed, 16S, 18S or ITS.
-  
+* `--OSD OSD-###` - specifies the OSD dataset to process through the SW_AmpIllumina workflow (replace ### with the OSD number)
+   > *Used for Approach 1 only.*
 
-  *Required only if you would like to pull and process data directly from OSDR*
+* `--target` - this is a required parameter that specifies the genomic target for the assay. Options: 16S, 18S, ITS. This determines which reference database is used for taxonomic classification, and it is used to select the appropriate dataset from an OSD study when multiple options are available.
+   > *Note: Swift Amplicon 16S+ITS datasets, which use multiple primer sets, are not suitable for processing with this workflow. OSD datasets of this type are processed using alternative methods.*
 
-* `--GLDS_accession` – A Genelab / OSD accession number e.g. GLDS-487.
+* `--runsheetPath` - specifies the path to a local runsheet containing the metadata and raw reads location (as a link or local path), used for processing a non-OSD dataset through the SW_AmpIllumina workflow 
+   > *Optionally used for Approach 2 only, the form can be used instead of providing a runsheet on the NASA EDGE platform.*
 
-*Required only if --GLDS_accession is not passed as an argument*
+* `--run` - specifies the command used to execute the snakemake workflow; snakemake-specific parameters are defined below
 
-* `--csv_file` –  A 3-column (single-end) or 4-column (paired-end) input csv file (sample_id, forward, [reverse,] paired). Please see the sample `SE_file.csv` and `PE_file.csv` in this repository for examples on how to format this file.
+* `--outputDir` - specifies the output directory for the output files generated by the workflow 
+   > *This is an optional command that can be added outside the quotation marks in either approach to specify the output directory. If this option is not used, the output files will be printed to the current working directory, i.e. in the `SW_AmpIllumina-B_1.2.2` directory that was downloaded in [step 2](#2-download-the-workflow-template-files).*
 
-* `--F_primer` – Forward primer sequence.
+* `--trim-primers TRUE/FALSE` - specifies to trim primers (TRUE) or not (FALSE). Default: TRUE
+   > *Note: Primers should virtually always be trimmed from amplicon datasets. This option is here for cases where they have already been removed.*
 
-* `--R_primer` – Reverse primer sequence.
+* `--min_trimmed_length` - specifies the minimum length of trimmed reads during cutadapt filtering. For paired-end data: if one read gets filtered, both reads are discarded. Default: 130
+   > *Note: For paired-end data, all filtering and trimming should leave a minimum of an 8-base overlap of forward and reverse reads.*
 
-> See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details on how to run nextflow.
+* `--primers-linked TRUE/FALSE` - if set to TRUE, instructs cutadapt to treat the primers as linked. Default: FALSE
+   > *Note: See [cutadapt documentation here](https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads) for more info.*
+
+* `--anchor-primers TRUE/FALSE` - indicates if primers should be anchored (TRUE) or not (FALSE) when provided to cutadapt. Default: FALSE
+   > *Note: See [cutadapt documention here](https://cutadapt.readthedocs.io/en/stable/guide.html#anchored-5adapters) for more info.*
+
+* `--discard-untrimmed TRUE/FALSE` - if set to TRUE, instructs cutadapt to remove reads if the primers were not found in the expected location; if set to FALSE, these reads are kept. Default: TRUE
+
+* `--left-trunc` - dada2 parameter that specifies to truncate the forward reads to this length, bases beyond this length will be removed and reads shorter than this length are discarded. Default: 0 (no truncation)
+   > *Note: See dada2 [filterAndTrim documentation](https://rdrr.io/bioc/dada2/man/filterAndTrim.html) for more info.*
+
+* `--right-trunc` - dada2 parameter that specifies to truncate the reverse reads, bases beyond this length will be truncated and reads shorter than this length are discarded. Default: 0 (no truncation)
+   > *Note: See dada2 [filterAndTrim documentation](https://rdrr.io/bioc/dada2/man/filterAndTrim.html) for more info.*
+
+* `--left-maxEE` - dada2 parameter that specifies the maximum expected error (maxEE) allowed for each forward read, reads with a higher maxEE than provided will be discarded. Default: 1 
+   > *Note: See dada2 [filterAndTrim documentation](https://rdrr.io/bioc/dada2/man/filterAndTrim.html) for more info.*
+
+* `--right-maxEE` - dada2 parameter that specifies the maximum expected error (maxEE) allowed for each forward read, reads with a higher maxEE than provided will be discarded. Default: 1 
+   > *Note: See dada2 [filterAndTrim documentation](https://rdrr.io/bioc/dada2/man/filterAndTrim.html) for more info.*
+
+* `--concatenate_reads_only TRUE/FALSE` - if set to TRUE, specifies to concatenate forward and reverse reads only with dada2 instead of merging paired reads. Default: FALSE
+
+* `--output-prefix ""` - specifies the prefix to use on all output files to distinguish multiple primer sets, leave as an empty string if only one primer set is being processed (if used, be sure to include a connecting symbol, e.g. "ITS-"). Default: ""
+
+* `--specify-runsheet` - specifies the runsheet to use when multiple runsheets are generated
+   > *Optional parameter used in Approach 1 for datasets that have multiple assays for the same amplicon target (e.g. [OSD-249](https://osdr.nasa.gov/bio/repo/data/studies/OSD-249)).*
+
+* `--visualizations TRUE/FALSE` - if set to TRUE, the [visualizations script](workflow_code/visualizations/Illumina-R-visualizations.R) will be run. Default: FALSE
+   > *Note: For instructions on manually executing the visualizations script, refer to the [stand-alone execution documentation](./workflow_code/visualizations/README.md).*
 
 <br>
 
-#### 3d. Modify parameters and cpu resources in the nextflow config file
+**Parameter definitions for `snakemake`**
 
-Additionally, the parameters and workflow resources can be directly specified in the nextflow.config file. For detailed instructions on how to modify and set parameters in the nextflow.config file, please see the [documentation here](https://www.nextflow.io/docs/latest/config.html).
+* `--use-conda` – specifies to use the conda environments included in the workflow (these are specified in the [envs](workflow_code/envs) directory)
+* `--conda-prefix` – indicates where the needed conda environments will be stored. Adding this option will also allow the same conda environments to be re-used when processing additional datasets, rather than making new environments each time you run the workflow. The value listed for this option, `${CONDA_PREFIX}/envs`, points to the default location for conda environments (note: the variable `${CONDA_PREFIX}` will be expanded to the appropriate location on whichever system it is run on).
+* `-j` – assigns the number of jobs Snakemake should run concurrently
+* `-p` – specifies to print out each command being run to the screen
+* `--cluster-status` – specifies a script for monitoring the status of jobs on a cluster, improving Snakemake's handling of job timeouts and exceeding memory limits
+   > This is an optional parameter that can be used on a SLURM cluster by adding `--cluster-status scripts/slurm-status.py` to the Snakemake command.
 
-Once you've downloaded the workflow template, you can modify the parameters in the `params` scope and cpus/memory requirements in the `process` scope in your downloaded version of the [nextflow.config](workflow_code/nextflow.config) file as needed in order to match your dataset and system setup. For example, you can directly set the the full paths to available conda environments in the `conda` scope within the `params`  scope. Additionally, if necessary, you'll need to modify each variable in the nexflow.config file to be consistent with the study you want to process and the machine you're using.
+See `snakemake -h` and [Snakemake's documentation](https://snakemake.readthedocs.io/en/stable/) for more options and details.
 
-### 4.  Workflow outputs
+<br>
 
-#### 4a. Main outputs
+___
 
-The outputs from this pipeline are documented in the [GL-DPPD-7104-B](../../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md) processing protocol.
+### 5. Additional output files
 
-#### 4b. Resource logs
+The outputs from the `run_workflow.py` and differential abundance analysis (DAA) / visualizations scripts are described below:
+> Note: Outputs from the Amplicon Seq - Illumina pipeline are documented in the [GL-DPPD-7104-B.md](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md) processing protocol.
 
-Standard nextflow resource usage logs are also produced as follows:
-
-- Output:
-  - Resource_Usage/execution_report_{timestamp}.html (an html report that includes metrics about the workflow execution including computational resources and exact workflow process commands)
-  - Resource_Usage/execution_timeline_{timestamp}.html (an html timeline for all processes executed in the workflow)
-  - Resource_Usage/execution_trace_{timestamp}.txt (an execution tracing file that contains information about each process executed in the workflow, including: submission time, start time, completion time, cpu and memory used, machine-readable output)
-
-> Further details about these logs can also found within [this Nextflow documentation page](https://www.nextflow.io/docs/latest/tracing.html#execution-report).
-
+- **Metadata Outputs:**
+  - \*_AmpSeq_v1_runsheet.csv (table containing metadata required for processing, including the raw reads files location)
+  - \*-ISA.zip (the ISA archive of the OSD datasets to be processed, downloaded from the OSDR)
+  - config.yaml (configuration file containing the metadata from the runsheet (\*_AmpSeq_v1_runsheet.csv), required for running the SW_AmpIllumina workflow) 
+  - unique-sample-IDs.txt (text file containing the IDs of each sample used, required for running the SW_AmpIllumina workflow)
+- **DAA and Visualization Outputs:**  
+  - dendrogram_by_group_GLAmpSeq.png (Dendrogram of euclidean distance - based hierarchical clustering of the samples, colored by experimental groups) 
+  - PCoA_w_labels_GLAmpSeq.png (Principle Coordinates Analysis plot of VST transformed ASV counts, with sample labels)
+  - PCoA_without_labels_GLAmpSeq.png (Principle Coordinates Analysis plot of VST transformed ASV counts, without labels)
+  - rarefaction_curves_GLAmpSeqs.png (Rarefaction plot visualizing species richness for each sample)
+  - richness_and_diversity_estimates_by_sample_GLAmpSeq.png (Chao1 richness estimates and Shannon diversity estimates for each sample)
+  - richness_and_diversity_estimates_by_group_GLAmpSeq.png (Chao1 richness estimates and Shannon diversity estimates for each group)
+  - relative_classes_GLAmpSeq.png (Bar plot taxonomic summary of proportions of phyla identified in each group, by class)
+  - relative_phyla_GLAmpSeq.png (Bar plot taxonomic summary of proportions of phyla identified in each group, by phyla)
+  - samplewise_relative_classes_GLAmpSeq.png (Bar plot taxonomic summary of proportions of phyla identified in each sample, by class)
+  - samplewise_relative_phyla_GLAmpSeq.png (Bar plot taxonomic summary of proportions of phyla identified in each sample, by phyla)
+  - normalized_counts_GLAmpSeq.tsv (Size factor normalized ASV counts table)
+  - {group1}\_vs_{group2}.csv (Differential abundance tables for all pairwise contrasts of groups)
+  - volcano\_{group1}\_vs_{group2}.png (Volcano plots for all pairwise contrasts of groups)
