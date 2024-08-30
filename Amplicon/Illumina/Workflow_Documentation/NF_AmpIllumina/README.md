@@ -76,9 +76,9 @@ unzip NF_AmpIllumina.zip &&  cd NF_XXX-X_X.X.X
 
 Although Nextflow can fetch Singularity images from a url, doing so may cause issues as detailed [here](https://github.com/nextflow-io/nextflow/issues/1210).
 
-To avoid this issue, run the following command to fetch the Singularity images prior to running the NF_MGIllumina workflow:
+To avoid this issue, run the following command to fetch the Singularity images prior to running the NF_AmpIllumina workflow:
 
-> Note: This command should be run in the location containing the `NF_MGIllumina` directory that was downloaded in [step 2](#2-download-the-workflow-files) above.  
+> Note: This command should be run in the location containing the `NF_AMPIllumina` directory that was downloaded in [step 2](#2-download-the-workflow-files) above.  
 
 ```bash
 bash ./bin/prepull_singularity.sh nextflow.config
