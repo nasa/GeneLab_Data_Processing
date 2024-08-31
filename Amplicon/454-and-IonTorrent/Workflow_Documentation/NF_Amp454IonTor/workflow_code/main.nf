@@ -197,7 +197,7 @@ workflow {
     filtered_fastqc_files = FILTERED_FASTQC.out.html.flatten().collect()
     FILTERED_MULTIQC("filtered", filtered_fastqc_files)
   
-    // Pick outs with vsearch
+    // Pick OTUs with vsearch
     pick_otus(BBDUK.out.reads)
 
     // Assign taxonomy

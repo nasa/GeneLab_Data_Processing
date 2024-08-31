@@ -6,8 +6,8 @@ nextflow.enable.dsl = 2
 ****************************************************************************************/
 
 // A 2-column (single-end) or 3-column (paired-end) file
-params.csv_file = "${baseDir}/file.csv" 
-params.prefix = "raw"
+//params.csv_file = "${baseDir}/file.csv" 
+//params.prefix = "raw"
 
 // FastQC performed on reads
 process FASTQC {
@@ -170,9 +170,6 @@ process COMBINE_BBDUK_LOGS_AND_SUMMARIZE {
             <( cat ${counts} ) > ${params.output_prefix}filtered-read-counts${params.assay_suffix}.tsv
         """
 }
-
-
-
 
 
 

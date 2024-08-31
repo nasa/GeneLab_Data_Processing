@@ -1,0 +1,8 @@
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+    - astrobiomike
+dependencies:
+    - vsearch=2.15.2
+    - bit=1.8.37

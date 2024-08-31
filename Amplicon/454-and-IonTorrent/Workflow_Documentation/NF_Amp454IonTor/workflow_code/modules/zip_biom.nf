@@ -11,7 +11,7 @@ process ZIP_BIOM {
     tag "Zipping the taxonomy counts...."
 
     input:
-       path(taxonomy_and_counts_biom)  // path("taxonomy-and-counts${params.assay_suffix}.biom")
+       path(taxonomy_and_counts_biom)
     output:
         path("${params.output_prefix}taxonomy-and-counts${params.assay_suffix}.biom.zip"), emit: biom
         path("versions.txt"), emit: version

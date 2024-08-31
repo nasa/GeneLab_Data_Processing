@@ -1,0 +1,355 @@
+############################################################################################
+## Snakefile for GeneLab's 454/Ion Torrent amplicon workflow                              ##
+## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##
+############################################################################################
+
+import os
+
+configfile: "config.yaml"
+
+
+########################################
+############# General Info #############
+########################################
+
+
+"""
+See the corresponding 'config.yaml' file for general use information.
+Variables that may need to be adjusted should be changed there, not here.
+"""
+
+## example usage command ##
+# snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p
+
+# `--use-conda` – this specifies to use the conda environments included in the workflow
+# `--conda-prefix` – this allows us to point to where the needed conda environments should be stored. Including this means if we use the workflow on a different dataset somewhere else in the future, it will re-use the same conda environments rather than make new ones. The value listed here, `${CONDA_PREFIX}/envs`, is the default location for conda environments (the variable `${CONDA_PREFIX}` will be expanded to the appropriate location on whichever system it is run on).
+# `-j` – this lets us set how many jobs Snakemake should run concurrently (keep in mind that many of the thread and cpu parameters set in the config.yaml file will be multiplied by this)
+# `-p` – specifies to print out each command being run to the screen
+
+# See `snakemake -h` for more options and details.
+
+
+########################################
+#### Reading samples file into list ####
+########################################
+
+sample_IDs_file = config["sample_info_file"]
+sample_ID_list = [line.strip() for line in open(sample_IDs_file)]
+
+# making sure there are all unique names
+if len(set(sample_ID_list)) != len(sample_ID_list):
+
+    print("\n    Not all sample IDs in the " + str(config["sample_info_file"]) + " file are unique :(\n")
+    print("    Exiting for now.\n")
+    exit()
+
+########################################
+######## Setting up directories ########
+########################################
+
+needed_dirs = [config["fastqc_out_dir"], config["trimmed_reads_dir"], config["filtered_reads_dir"], config["final_outputs_dir"]]
+
+for dir in needed_dirs:
+    try:
+        os.mkdir(dir)
+    except:
+        pass
+
+
+########################################
+############# Rules start ##############
+########################################
+
+
+rule all:
+    input:
+        expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_suffix"], ID = sample_ID_list),
+        expand(config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_suffix"], ID = sample_ID_list),
+        config["trimmed_reads_dir"] + config["output_prefix"] + "cutadapt.log",
+        config["trimmed_reads_dir"] + config["output_prefix"] + "trimmed-read-counts.tsv",
+        config["filtered_reads_dir"] + config["output_prefix"] + "bbduk.log",
+        config["filtered_reads_dir"] + config["output_prefix"] + "filtered-read-counts.tsv",
+        config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
+        config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom.zip",
+        config["final_outputs_dir"] + config["output_prefix"] + "OTUs.fasta",
+        config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv",
+        config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv",
+        config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv",
+        config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_data.zip",
+        config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_data.zip"
+
+
+
+rule zip_biom:
+    input:
+        config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom"
+    output:
+        config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom.zip"
+    params:
+        initial_output = config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom"
+    shell:
+        """
+        zip -q {output} {params.initial_output} && rm {params.initial_output}
+        """
+
+
+rule run_R:
+    conda:
+        "envs/R.yaml"
+    input:
+        otus = config["final_outputs_dir"] + config["output_prefix"] + "OTUs.fasta",
+        counts = config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv"
+    output:
+        config["final_outputs_dir"] + config["output_prefix"] + "taxonomy.tsv",
+        config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.biom",
+        config["final_outputs_dir"] + config["output_prefix"] + "taxonomy-and-counts.tsv",
+        config["final_outputs_dir"] + config["output_prefix"] + "read-count-tracking.tsv"
+    params:
+        trimmed_reads_dir = config["trimmed_reads_dir"],
+        filtered_reads_dir = config["filtered_reads_dir"],
+        final_outputs_dir = config["final_outputs_dir"],
+        target_region = config["target_region"],
+        output_prefix = config["output_prefix"]
+    log:
+        "R-processing.log"
+    shell:
+        """
+        Rscript scripts/454-IonTorrent-R-processing.R "{input.otus}" "{params.trimmed_reads_dir}" "{params.filtered_reads_dir}" "{params.final_outputs_dir}" "{params.output_prefix}" "{params.target_region}" > {log} 2>&1
+        """
+
+
+rule vsearch_process_all:
+    conda:
+        "envs/vsearch.yaml"
+    input:
+        config["filtered_reads_dir"] + "all-samples.fa.tmp"
+    params:
+        all_derep = config["filtered_reads_dir"] + "all-samples_derep.fa.tmp",
+        rep_seqs = config["filtered_reads_dir"] + "rep-seqs.fa.tmp",
+        rep_seqs_no_singletons = config["filtered_reads_dir"] + "rep-seqs-no-singletons.fa.tmp",
+        tmp_counts = config["filtered_reads_dir"] + "counts.tmp"
+    log:
+        "vsearch.log"
+    output:
+        otus = config["final_outputs_dir"] + config["output_prefix"] + "OTUs.fasta",
+        counts = config["final_outputs_dir"] + config["output_prefix"] + "counts.tsv"
+    shell:
+        """
+        # dereplicate all
+        vsearch --derep_fulllength {input} --strand both --output {params.all_derep} --sizein --sizeout > {log} 2>&1
+
+        # clustering to get rep seqs
+        vsearch --cluster_size {params.all_derep} --id 0.97 --strand both --sizein --sizeout --relabel "OTU_" --centroids {params.rep_seqs} >> {log} 2>&1
+
+        # removing singletons
+        vsearch --sortbysize {params.rep_seqs} --minsize 2 --output {params.rep_seqs_no_singletons} >> {log} 2>&1
+
+        # chimera check and removal
+        vsearch --uchime_denovo {params.rep_seqs_no_singletons} --sizein --nonchimeras {output.otus} --relabel "OTU_" >> {log} 2>&1
+
+        # mapping seqs to OTUs to get OTU abundances per sample
+        vsearch --usearch_global {input} -db {output.otus} --sizein --id 0.97 --otutabout {params.tmp_counts} >> {log} 2>&1
+        sed 's/^#OTU ID/OTU_ID/' {params.tmp_counts} > {output.counts}
+
+        # removing line wraps from fasta file
+        bit-remove-wraps {output.otus} > {output.otus}.tmp && mv {output.otus}.tmp {output.otus}
+        
+        # cleaning up tmp files
+        rm {input} {params}
+        """
+
+
+rule vsearch_combine_derepd_samples:
+    conda:
+        "envs/vsearch.yaml"
+    input:
+        expand(config["filtered_reads_dir"] + "{ID}-derep.fa.tmp", ID = sample_ID_list)
+    output:
+        config["filtered_reads_dir"] + "all-samples.fa.tmp"
+    shell:
+        """
+        cat {input} > {output}
+        rm {input}
+        """
+
+
+rule vsearch_derep_sample:
+    conda:
+        "envs/vsearch.yaml"
+    input:
+        config["filtered_reads_dir"] + "{ID}" + config["filtered_suffix"]
+    output:
+        config["filtered_reads_dir"] + "{ID}-derep.fa.tmp"
+    shell:
+        """
+        vsearch --derep_fulllength {input} --strand both --output {output} --sizeout --relabel "sample={wildcards.ID};seq_" > /dev/null 2>&1
+        """
+
+
+rule filtered_multiqc:
+    """
+    This rule collates all trimmed/filtered fastqc outputs.
+    """
+
+    conda:
+        "envs/qc.yaml"
+    input:
+        expand(config["filtered_reads_dir"] + "{ID}" + config["filtered_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list)
+    params:
+        out_filename_prefix = config["output_prefix"] + "filtered_multiqc",
+        fastqc_out_dir = config["fastqc_out_dir"],
+        filtered_reads_dir = config["filtered_reads_dir"],
+        int_output = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc.html"
+    output:
+        html = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_report.html",
+        data = config["fastqc_out_dir"] + config["output_prefix"] + "filtered_multiqc_data.zip"
+    shell:
+        """
+        multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix}  {params.filtered_reads_dir} > /dev/null 2>&1
+        # removing the individual fastqc files and temp locations
+        rm -rf {params.filtered_reads_dir}*fastqc*
+        # renaming html file
+        mv {params.int_output} {output.html}
+        """
+
+
+rule filtered_fastqc:
+    """
+    This rule runs fastqc on all trimmed/filtered input fastq files.
+    """
+
+    conda:
+        "envs/qc.yaml"
+    input:
+        config["filtered_reads_dir"] + "{ID}" + config["filtered_suffix"]
+    output:
+        config["filtered_reads_dir"] + "{ID}" + config["filtered_suffix"].rsplit(".", 2)[0] + "_fastqc.zip"
+    shell:
+        """
+        fastqc {input} -t 1 -q
+        """
+
+
+rule combine_bbduk_logs_and_summarize:
+    input:
+        counts = expand(config["filtered_reads_dir"] + "{ID}-filtered-counts.tsv", ID = sample_ID_list),
+        logs = expand(config["filtered_reads_dir"] + "{ID}-bbduk.log", ID = sample_ID_list)
+    output:
+        combined_log = config["filtered_reads_dir"] + config["output_prefix"] + "bbduk.log",
+        combined_counts = config["filtered_reads_dir"] + config["output_prefix"] + "filtered-read-counts.tsv"
+    shell:
+        """
+        cat {input.logs} > {output.combined_log}
+        rm {input.logs}
+
+        cat <( printf "sample\tinput_reads\tfiltered_reads\n" ) <( cat {input.counts} ) > {output.combined_counts}
+        rm {input.counts}
+        """
+
+
+rule bbduk:
+    conda:
+        "envs/bbmap.yaml"
+    input:
+        config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_suffix"]
+    output:
+        filtered_reads = config["filtered_reads_dir"] + "{ID}" + config["filtered_suffix"],
+        filtered_counts = config["filtered_reads_dir"] + "{ID}-filtered-counts.tsv"
+    params:
+        min_bbduk_len = config["min_bbduk_len"],
+        min_bbduk_avg_q = config["min_bbduk_avg_quality"]
+    log:
+        config["filtered_reads_dir"] + "{ID}-bbduk.log"
+    shell:
+        """
+        bbduk.sh in={input} out1={output.filtered_reads} qtrim=r trimq=10 mlf=0.5 minavgquality={params.min_bbduk_avg_q} minlength={params.min_bbduk_len} > {log} 2>&1
+        paste <( printf "{wildcards.ID}" ) <( grep "Input:" {log} | tr -s " " "\t" | cut -f 2 ) <( grep "Result:" {log} | tr -s " " "\t" | cut -f 2 ) > {output.filtered_counts}
+        """
+
+
+rule combine_cutadapt_logs_and_summarize:
+    """ this rule combines the cutadapt logs and summarizes them. It is only executed if config["trim_primers"] is "TRUE" """
+    input:
+        counts = expand(config["trimmed_reads_dir"] + "{ID}-trimmed-counts.tsv", ID = sample_ID_list),
+        logs = expand(config["trimmed_reads_dir"] + "{ID}-cutadapt.log", ID = sample_ID_list)
+    output:
+        combined_log = config["trimmed_reads_dir"] + config["output_prefix"] + "cutadapt.log",
+        combined_counts = config["trimmed_reads_dir"] + config["output_prefix"] + "trimmed-read-counts.tsv"
+    shell:
+        """
+        cat {input.logs} > {output.combined_log}
+        rm {input.logs}
+        
+        cat <( printf "sample\traw_reads\tcutadapt_trimmed\n" ) <( cat {input.counts} ) > {output.combined_counts}
+        rm {input.counts}
+        """
+
+
+rule cutadapt:
+    conda:
+        "envs/cutadapt.yaml"
+    input:
+        config["raw_reads_dir"] + "{ID}" + config["raw_suffix"]
+    output:
+        trimmed_reads = config["trimmed_reads_dir"] + "{ID}" + config["primer_trimmed_suffix"],
+        log = config["trimmed_reads_dir"] + "{ID}-cutadapt.log",
+        trim_counts = config["trimmed_reads_dir"] + "{ID}-trimmed-counts.tsv"
+    params:
+        F_primer = config["F_primer"],
+        R_primer = config["R_primer"]
+    log:
+        config["trimmed_reads_dir"] + "{ID}-cutadapt.log"
+    shell:
+        """
+        cutadapt -g {params.F_primer} -a {params.R_primer} -o {output.trimmed_reads} {input} > {log} 2>&1
+        paste <( printf "{wildcards.ID}" ) <( grep "Total reads processed:" {log} | tr -s " " "\t" | cut -f 4 | tr -d "," ) <( grep "Reads written (passing filters):" {log} | tr -s " " "\t" | cut -f 5 | tr -d "," ) > {output.trim_counts}
+        """
+
+
+rule raw_multiqc:
+    """
+    This rule collates all raw fastqc outputs.
+    """
+
+    conda:
+        "envs/qc.yaml"
+    input:
+        expand(config["raw_reads_dir"] + "{ID}" + config["raw_suffix"].rsplit(".", 2)[0] + "_fastqc.zip", ID = sample_ID_list)
+    params:
+        out_filename_prefix = config["output_prefix"] + "raw_multiqc",
+        raw_reads_dir = config["raw_reads_dir"],
+        fastqc_out_dir = config["fastqc_out_dir"],
+        int_output = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc.html"
+    output:
+        html = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_report.html",
+        data = config["fastqc_out_dir"] + config["output_prefix"] + "raw_multiqc_data.zip"
+    shell:
+        """
+        multiqc -z -q -o {params.fastqc_out_dir} -n {params.out_filename_prefix} {params.raw_reads_dir} > /dev/null 2>&1
+        # removing the individual fastqc files
+        rm -rf {params.raw_reads_dir}*fastqc*
+
+        # renaming html file
+        mv {params.int_output} {output.html}
+        """
+
+
+rule raw_fastqc:
+    """
+    This rule runs fastqc on all raw input fastq files.
+    """
+
+    conda:
+        "envs/qc.yaml"
+    input:
+        config["raw_reads_dir"] + "{ID}" + config["raw_suffix"]
+    output:
+        config["raw_reads_dir"] + "{ID}" + config["raw_suffix"].rsplit(".", 2)[0] + "_fastqc.zip"
+    shell:
+        """
+        fastqc {input} -t 1 -q
+        """
+
+rule clean_all:
+    shell:
+        "rm -rf {needed_dirs} .snakemake/"

@@ -28,7 +28,7 @@ echo $HOSTNAME
 ## You can see a list of all available environments by running the command: conda env list ##
 ## If you need a conda envrionment installed request it using JIRA ##
 
-source activate /path/to/envs/nextflow ## Replace conda_env_name with the name of the environment ##
+source activate /path/to/envs/nextflow ## Replace conda_env_name with the name of the environment with nextflow installed ##
 
 
 ## Print the version of the tool you are using to ensure the tool version is recorded ##

@@ -1,0 +1,85 @@
+############################################################################################
+## Configuration file for GeneLab 454/Ion Torrent amplicon processing workflow            ##
+## Developed by Michael D. Lee (Mike.Lee@nasa.gov)                                        ##
+############################################################################################
+
+############################################################
+##################### VARIABLES TO SET #####################
+############################################################
+
+###################################################################################
+##### These first 6 need to match what is specific to our system and our data #####
+###################################################################################
+
+## single-column file with unique sample identifiers:
+sample_info_file:
+    "unique-sample-IDs.txt"
+
+## input reads directory (can be relative to workflow directory, or needs to be full path)
+raw_reads_dir:
+    "../Raw_Sequence_Data/"
+
+## raw read suffix (region following the unique part of the sample names)
+  # e.g. for "Sample-1_raw.fastq.gz" would be "_raw.fastq.gz"
+raw_suffix:
+    "_raw.fastq.gz"
+
+## primer sequences
+F_primer:
+    "AGAGTTTGATCCTGGCTCAG"
+R_primer:
+    "GCTGCCTCCCGTAGGAGT"
+
+## target region (16S or ITS acceptable; determines which reference database is used for taxonomic classification)
+target_region:
+    "16S"
+
+
+######################################################################
+##### The rest only need to be altered if we want to change them #####
+######################################################################
+
+## filename suffixes
+primer_trimmed_suffix:
+    "_trimmed.fastq.gz"
+
+filtered_suffix:
+    "_filtered.fastq.gz"
+
+## output prefix (if needed to distinguish from multiple primer sets, leave as empty string if not)
+output_prefix:
+    ""
+
+## output directories (all relative to processing directory, they will be created if needed)
+fastqc_out_dir:
+    "../FastQC_Outputs/"
+trimmed_reads_dir:
+    "../Trimmed_Sequence_Data/"
+filtered_reads_dir:
+    "../Filtered_Sequence_Data/"
+final_outputs_dir:
+    "../Final_Outputs/"
+
+## minimum length threshold for bbduk
+min_bbduk_len:
+    50
+
+## bbduk minimum average quality
+min_bbduk_avg_quality:
+    15
+
+
+############################################################
+###################### GENERAL INFO ########################
+############################################################
+# Workflow is currently equipped to work with paired-end data only, and reads are expected to be gzipped
+
+## example usage command ##
+# snakemake --use-conda --conda-prefix ${CONDA_PREFIX}/envs -j 2 -p
+
+# `--use-conda` – this specifies to use the conda environments included in the workflow
+# `--conda-prefix` – this allows us to point to where the needed conda environments should be stored. Including this means if we use the workflow on a different dataset somewhere else in the future, it will re-use the same conda environments rather than make new ones. The value listed here, `${CONDA_PREFIX}/envs`, is the default location for conda environments (the variable `${CONDA_PREFIX}` will be expanded to the appropriate location on whichever system it is run on).
+# `-j` – this lets us set how many jobs Snakemake should run concurrently (keep in mind that many of the thread and cpu parameters set in the config.yaml file will be multiplied by this)
+# `-p` – specifies to print out each command being run to the screen
+
+# See `snakemake -h` for more options and details.
