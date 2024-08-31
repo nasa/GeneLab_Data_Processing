@@ -6,19 +6,19 @@ The current pipeline for how GeneLab identifies and removes human DNA in Illumin
 
 ## Utilizing the workflow
 
-1.. [Install NextFlow and Singularity](#1-install-NextFlow-Singularity)
+1. [Install NextFlow and Singularity](#1-install-nextflow-and-singularity)  
    1a. [Install Nextflow](#1a-install-nextflow)  
    1b. [Install Singularity](#1b-install-singularity)
 2. [Download the workflow template files](#2-download-the-workflow-template-files)  
-3. [Modify the variables in the nextflow.config file](#3-modify-the-variables-in-the-config-file)  
-4. [Run the workflow](#4-run-the-workflow)  
+3. [Modify the variables in the nextflow.config file](#3-modify-the-variables-in-the-nextflowconfig-file)  
+4. [Run the workflow](#4-run-the-workflow)
 
 
 <br>
 
 ---
 
-### 1.Install Nextflow and Singularity 
+### 1. Install Nextflow and Singularity
 
 #### 1a. Install Nextflow
 
