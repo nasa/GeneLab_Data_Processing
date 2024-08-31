@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_MAAffymetrix_1.0.5/Microarray/Affymetrix/Workflow_Documentation/NF_MAAffymetrix) - 2024-08-30
+
+### Added
+
+- Add support for bacteria annotations using manufacturer annotations ([#113](https://github.com/nasa/GeneLab_Data_Processing/issues/113))
+- Add option to skip differential expression analysis (`--skipDE`) ([#104](https://github.com/nasa/GeneLab_Data_Processing/issues/104))
+
+### Changed
+
+- Small bug fixes in `Affymetrix.qmd`
+  - Issue combining dataframes using `bind_rows()` when `getBM()` returns no results ([#96](https://github.com/nasa/GeneLab_Data_Processing/issues/96))
+  - Unintentional renaming of columns causes issues later in selection of columns ([#97](https://github.com/nasa/GeneLab_Data_Processing/issues/97))
+  - Factor group column renaming issue when one factor is substring of another ([#100](https://github.com/nasa/GeneLab_Data_Processing/issues/100))
+  - Update MA plot to support HTAFeatureSet ([#105](https://github.com/nasa/GeneLab_Data_Processing/issues/105))
+  - Probe IDs for AFFY HTA 2 0 probes have extra .1 suffix ([#106](https://github.com/nasa/GeneLab_Data_Processing/issues/106))
+  - Legend covers density plot when sample names are long ([#107](https://github.com/nasa/GeneLab_Data_Processing/issues/107))
+- Minor updates to processed data protocol ([#98](https://github.com/nasa/GeneLab_Data_Processing/issues/98)) and software table generation ([#99](https://github.com/nasa/GeneLab_Data_Processing/issues/99))
+
 ## [1.0.4](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_MAAffymetrix_1.0.4/Microarray/Affymetrix/Workflow_Documentation/NF_MAAffymetrix) - 2024-05-17
 
 ### Changed
