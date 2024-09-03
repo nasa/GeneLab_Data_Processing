@@ -151,11 +151,14 @@ The default columns in the annotation table are:
 
 > Current GeneLab annotation tables are available on [figshare](https://figshare.com/), exact links for each reference organism are provided in the [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) file.  
 > 
-> **[Ensembl Reference Files](https://www.ensembl.org/index.html) Used:**
+> **[Ensembl Reference Versions](https://www.ensembl.org/index.html):**
 > - Animals: Ensembl release 112
 > - Plants: Ensembl plants release 59
-> - Bacteria: Ensembl bacteria release 59
-
+> - Bacteria: Ensembl bacteria release 59  
+>  
+> **PANTHER:**  18.0  
+>  
+> **STRING:**  12.0  
 
 ---
 
