@@ -114,12 +114,13 @@ The default columns in the annotation table are:
 - [Annotation Table Build Overview with Example Commands](#annotation-table-build-overview-with-example-commands)
   - [0. Set Up Environment](#0-set-up-environment)
   - [1. Define Variables and Output File Names](#1-define-variables-and-output-file-names)
-  - [2. Load Annotation Databases](#2-load-annotation-databases)
-  - [3. Build Initial Annotation Table](#3-build-initial-annotation-table)
-  - [4. Add org.db Keys](#4-add-orgdb-keys)
-  - [5. Add STRING IDs](#5-add-string-ids)
-  - [6. Add Gene Ontology (GO) Slim IDs](#6-add-gene-ontology-go-slim-ids)
-  - [7. Export Annotation Table and Build Info](#7-export-annotation-table-and-build-info)
+  - [2. Create the Organism Package if it is Not Hosted by Bioconductor](#2-create-the-organism-package-if-it-is-not-hosted-by-bioconductor)
+  - [3. Load Annotation Databases](#3-load-annotation-databases)
+  - [4. Build Initial Annotation Table](#4-build-initial-annotation-table)
+  - [5. Add org.db Keys](#5-add-orgdb-keys)
+  - [6. Add STRING IDs](#6-add-string-ids)
+  - [7. Add Gene Ontology (GO) Slim IDs](#7-add-gene-ontology-go-slim-ids)
+  - [8. Export Annotation Table and Build Info](#8-export-annotation-table-and-build-info)
 
 
 
@@ -234,7 +235,54 @@ if ( file.exists(out_table_filename) ) {
 
 ---
 
-## 2. Load Annotation Databases
+## 2. Create the Organism Package if it is Not Hosted by Bioconductor
+
+```R
+# Use AnnotationForge's makeOrgPackageFromNCBI function with default settings to create the organism-specific org.db R package from available NCBI annotations
+
+# Try to download the org.db from Bioconductor, build it locally if installation fails
+BiocManager::install(target_org_db, ask = FALSE) 
+if (!requireNamespace(target_org_db, quietly = TRUE)) { 
+  tryCatch({
+    # Parse organism's name in the reference table to create the org.db name (target_org_db)
+    genus_species <- strsplit(target_species_designation, " ")[[1]]
+    if (length(genus_species) < 1) {
+        stop("Species designation is not correctly formatted: ", target_species_designation)
+    }
+    genus <- genus_species[1]
+    species <- ifelse(length(genus_species) > 1, genus_species[2], "")
+    strain <- ref_table %>%
+      filter(name == target_organism) %>%
+      pull(strain) %>%
+      gsub("[^A-Za-z0-9]", "", .)
+    if (!is.na(strain) && strain != "") {
+        species <- paste0(species, strain)
+    }
+    target_org_db <- paste0("org.", substr(genus, 1, 1), species, ".eg.db")
+    
+    BiocManager::install(c("AnnotationForge", "biomaRt", "GO.db"), ask = FALSE) 
+    library(AnnotationForge)
+    makeOrgPackageFromNCBI( 
+        version = "0.1",
+        author = "Your Name <your.email@example.com>",
+        maintainer = "Your Name <your.email@example.com>",
+        outputDir = "./",
+        tax_id = target_taxid,
+        genus = genus,
+        species = species
+    )
+    install.packages(file.path("./", target_org_db), repos = NULL, type = "source", quiet = TRUE)
+    cat(paste0("'", target_org_db, "' has been successfully built and installed.\n"))
+  }, error = function(e) {
+      stop("Failed to build and load the package: ", target_org_db, "\nError: ", e$message)
+  })
+  target_org_db <- install_annotations(target_organism, ref_tab_path)
+}
+```
+
+---
+
+## 3. Load Annotation Databases
 
 ```R
 # Set timeout time to ensure annotation file downloads will complete
@@ -248,27 +296,8 @@ GTF <- data.frame(GTF)
 
 ###### org.db ########
 
-# Define a function to load the specified org.db package for a given target organism
-install_and_load_org_db <- function(target_organism, target_org_db, ref_tab_path) {
-  if (!is.na(target_org_db) && target_org_db != "") {
-    # Attempt to install the package from Bioconductor
-    BiocManager::install(target_org_db, ask = FALSE)
-    
-    # Check if the package was successfully loaded
-    if (!requireNamespace(target_org_db, quietly = TRUE)) {
-      # If not, attempt to create it locally using a helper script
-      source("install-org-db.R")
-      target_org_db <- install_annotations(target_organism, ref_tab_path)
-    }
-  } else {
-    # If target_org_db is NA or empty, create it locally using the helper script
-    source("install-org-db.R")
-    target_org_db <- install_annotations(target_organism, ref_tab_path)
-  }
-  
-  # Load the package into the R session
-  library(target_org_db, character.only = TRUE)
-}
+# Load the package into the R session
+library(target_org_db, character.only = TRUE)
 
 # Define list of supported organisms which do not use annotations from an org.db
 no_org_db <- c("NCFM", "MMARINUMM", "ORYSJ", "PA14", "ATCC27592", "MRSA252", "UA159", "ES114")
@@ -283,7 +312,7 @@ if (!(target_organism %in% no_org_db) && (target_organism %in% currently_accepte
 
 ---
 
-## 3. Build Initial Annotation Table
+## 4. Build Initial Annotation Table
 
 ```R
 # Initialize table from GTF
@@ -355,7 +384,7 @@ if (target_organism == "SALTY") {
 
 ---
 
-## 4. Add org.db Keys
+## 5. Add org.db Keys
 
 ```R
 annot_orgdb <- annot_gtf
@@ -458,7 +487,7 @@ if (target_organism == "YEAST") {
 
 ---
 
-## 5. Add STRING IDs
+## 6. Add STRING IDs
 
 ```R
 # Define organisms that do not use STRING annotations
@@ -570,7 +599,7 @@ annot_stringdb <- as.data.frame(annot_stringdb)
 
 ---
 
-## 6. Add Gene Ontology (GO) slim IDs
+## 7. Add Gene Ontology (GO) slim IDs
 
 ```R
 # Define organisms that do not use PANTHER annotations 
@@ -618,7 +647,7 @@ if (!(target_organism %in% no_panther_db)) {
 
 ---
 
-## 7. Export Annotation Table and Build Info
+## 8. Export Annotation Table and Build Info
 
 ```R
 # Group by primary key to remove any remaining unjoined or duplicate rows
