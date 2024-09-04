@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Plants: Ensembl plants release 59
     - Bacteria: Ensembl bacteria release 59
 - Removed org.EcK12.eg.db and replaced it with a locally created annotations database, as it is no longer available on Bioconductor
+- Changed the first argument of GL-DPPD-7110-A_build-genome-annots-tab.R from the 'name' column value to the 'species' column value (e.g., 'Mus musculus' instead of 'MOUSE')
 
 
 ## [1.0.0](https://github.com/nasa/GeneLab_Data_Processing/releases/tag/GL_RefAnnotTable_1.0.0)

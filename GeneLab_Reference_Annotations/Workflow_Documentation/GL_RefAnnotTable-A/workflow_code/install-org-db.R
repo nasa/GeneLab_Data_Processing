@@ -10,18 +10,18 @@ install_annotations <- function(target_organism, refTablePath) {
 
     ref_table <- read.csv(refTablePath)
     target_taxid <- ref_table %>%
-        filter(name == target_organism) %>%
+        filter(species == target_organism) %>%
         pull(taxon)
     
     # Get package name or build it if not provided
     target_org_db <- ref_table %>%
-        filter(name == target_organism) %>%
+        filter(species == target_organism) %>%
         pull(annotations)
     
     if (is.na(target_org_db) || target_org_db == "") {
         cat("\nNo annotation database specified. Constructing package name...\n")
         target_species_designation <- ref_table %>%
-            filter(name == target_organism) %>%
+            filter(species == target_organism) %>%
             pull(species) %>%
             gsub("\\s+", " ", .) %>%
             gsub("[^A-Za-z0-9 ]", "", .)
@@ -34,7 +34,7 @@ install_annotations <- function(target_organism, refTablePath) {
         genus <- genus_species[1]
         species <- ifelse(length(genus_species) > 1, genus_species[2], "")
         strain <- ref_table %>%
-            filter(name == target_organism) %>%
+            filter(species == target_organism) %>%
             pull(strain) %>%
             gsub("[^A-Za-z0-9]", "", .)
 

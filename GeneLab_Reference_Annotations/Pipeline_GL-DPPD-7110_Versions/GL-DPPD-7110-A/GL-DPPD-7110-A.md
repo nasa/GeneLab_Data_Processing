@@ -70,38 +70,38 @@ The default columns in the annotation table are:
 - ENSEMBL (or TAIR), SYMBOL, GENENAME, REFSEQ, ENTREZID, STRING_id, GOSLIM_IDS
 
 - For organisms with FASTA and GTF files sourced from NCBI, the LOCUS, OLD_LOCUS, SYMBOL, GENENAME, and GO annotations were directly derived from the GTF file. The `GO` column contains GO terms. `OLD_LOCUS`, or `old_locus_tag` in the GTF was retained when needed to map to STRING IDs.  
-- Missing columns indicate the absence of corresponding data for that organism
+- Missing columns indicate the absence of corresponding data for that organism.
 
-1. **Brachypodium distachyon (BRADI)**:   
+1. **Brachypodium distachyon**:   
    - Columns: ENSEMBL, ACCNUM, SYMBOL, GENENAME, REFSEQ, ENTREZID, STRING_id, GOSLIM_IDS    
      > Note: GTF `transcript_id` entries were matched with `ACCNUM` keys in the `org.db` and saved as `ACCNUM`
 
-2. **Caenorhabditis elegans (WORM)**:   
+2. **Caenorhabditis elegans**:   
    - Columns: ENSEMBL, SYMBOL, GENENAME, REFSEQ, ENTREZID, STRING_id   
      > Note: org.db ENTREZ keys did not match PANTHER ENTREZ keys so the empty `GOSLIM_IDS` column was ommitted
 
-3. **Lactobacillus acidophilus (NCFM)**:   
+3. **Lactobacillus acidophilus**:   
    - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, GO, STRING_id   
 
-4. **Mycobacterium marinum (MMARINUMM)**:  
+4. **Mycobacterium marinum**:  
    - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, GO, STRING_id   
 
-5. **Oryza sativa Japonica (ORYSJ)**:  
+5. **Oryza sativa Japonica**:  
    - Columns: ENSEMBL, STRING_id   
 
-6. **Pseudomonas aeruginosa UCBPP-PA14 (PA14)**:  
+6. **Pseudomonas aeruginosa UCBPP-PA14**:  
    - Columns: LOCUS, SYMBOL, GENENAME, GO    
 
-7. **Serratia liquefaciens ATCC 27592 (ATCC27592)**:  
+7. **Serratia liquefaciens ATCC 27592**:  
    - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, GO, STRING_id   
 
-8. **Staphylococcus aureus MRSA252 (MRSA252)**:  
+8. **Staphylococcus aureus MRSA252**:  
    - Columns: LOCUS, SYMBOL, GENENAME, GO  
 
-9. **Streptococcus mutans UA159 (UA159)**:  
+9. **Streptococcus mutans UA159**:  
    - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, GO, STRING_id  
 
-10. **Vibrio fischeri ES114 (ES114)**:  
+10. **Vibrio fischeri ES114**:  
    - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, GO, STRING_id   
 
 ---
@@ -128,22 +128,25 @@ The default columns in the annotation table are:
 
 # Software Used  
 
-| Program       | Version | Relevant Links |
-|:--------------|:-------:|:---------------|
-| R             |  4.4.0  | [https://www.r-project.org/](https://www.r-project.org/) |
-| Bioconductor  | 3.19.1  | [https://bioconductor.org](https://bioconductor.org) |
-| tidyverse     |  2.0.0  | [https://www.tidyverse.org](https://www.tidyverse.org) |
-| STRINGdb      | 2.16.0  | [https://www.bioconductor.org/packages/release/bioc/html/STRINGdb.html](https://www.bioconductor.org/packages/release/bioc/html/STRINGdb.html) |
-| PANTHER.db    | 1.0.12  | [https://bioconductor.org/packages/release/data/annotation/html/PANTHER.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/PANTHER.db.html) |
-| rtracklayer   | 1.64.0  | [https://bioconductor.org/packages/release/bioc/html/rtracklayer.html](https://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html) |
-| org.At.tair.db| 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.At.tair.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.At.tair.db.html) |
-| org.Ce.eg.db  | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Ce.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Ce.eg.db.html) |
-| org.Dm.eg.db  | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Dm.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Dm.eg.db.html) |
-| org.Dr.eg.db  | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Dr.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Dr.eg.db.html) |
-| org.Hs.eg.db  | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Hs.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Hs.eg.db.html) |
-| org.Mm.eg.db  | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Mm.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Mm.eg.db.html) |
-| org.Rn.eg.db  | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Rn.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Rn.eg.db.html) |
-| org.Sc.sgd.db | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html) |
+| Program         | Version | Relevant Links |
+|:----------------|:-------:|:---------------|
+| R               |  4.4.0  | [https://www.r-project.org/](https://www.r-project.org/) |
+| Bioconductor    | 3.19.1  | [https://bioconductor.org](https://bioconductor.org) |
+| tidyverse       |  2.0.0  | [https://www.tidyverse.org](https://www.tidyverse.org) |
+| STRINGdb        | 2.16.0  | [https://www.bioconductor.org/packages/release/bioc/html/STRINGdb.html](https://www.bioconductor.org/packages/release/bioc/html/STRINGdb.html) |
+| PANTHER.db      | 1.0.12  | [https://bioconductor.org/packages/release/data/annotation/html/PANTHER.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/PANTHER.db.html) |
+| rtracklayer     | 1.64.0  | [https://bioconductor.org/packages/release/bioc/html/rtracklayer.html](https://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html) |
+| org.At.tair.db  | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.At.tair.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.At.tair.db.html) |
+| org.Ce.eg.db    | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Ce.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Ce.eg.db.html) |
+| org.Dm.eg.db    | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Dm.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Dm.eg.db.html) |
+| org.Dr.eg.db    | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Dr.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Dr.eg.db.html) |
+| org.Hs.eg.db    | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Hs.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Hs.eg.db.html) |
+| org.Mm.eg.db    | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Mm.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Mm.eg.db.html) |
+| org.Rn.eg.db    | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Rn.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Rn.eg.db.html) |
+| org.Sc.sgd.db   | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html) |
+| AnnotationForge | 1.46.0  | [https://bioconductor.org/packages/AnnotationForge](https://bioconductor.org/packages/AnnotationForge) |
+| biomaRt         |  2.60.1  | [https://bioconductor.org/packages/biomaRt](https://bioconductor.org/packages/biomaRt) |
+| GO.db           |  2.0.0  | [https://bioconductor.org/packages/GO.db](https://bioconductor.org/packages/GO.db) |
 
 ---
 
@@ -157,8 +160,7 @@ The default columns in the annotation table are:
 > - Bacteria: Ensembl bacteria release 59  
 >  
 > **PANTHER:**  18.0  
->  
-> **STRING:**  12.0  
+> > *Note: The values in the 'name' column of [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) (e.g., MOUSE, HUMAN, ARABIDOPSIS) are derived from the short names used in PANTHER. These short names are subject to change.*
 
 ---
 
@@ -173,11 +175,13 @@ ref_tab_path <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/
 readme_path <- "https://github.com/nasa/GeneLab_Data_Processing/tree/master/GeneLab_Reference_Annotations/Workflow_Documentation/GL_RefAnnotTable-A/README.md"
 
 # List currently supported organisms 
-currently_accepted_orgs <- c("ARABIDOPSIS", "BACSU", "BRADI", "WORM", "ZEBRAFISH",
-                             "FLY", "ECOLI", "HUMAN", "NCFM", "MOUSE",
-                             "MMARINUMM", "ORYSJ", "ORYLA", "PA14", "RAT",
-                             "YEAST", "SALTY", "ATCC27592", "MRSA252", "UA159",
-                             "ES114")
+currently_accepted_orgs <- c("Arabidopsis thaliana", "Bacillus subtilis", "Brachypodium distachyon", 
+                             "Caenorhabditis elegans", "Danio rerio", "Drosophila melanogaster", 
+                             "Escherichia coli", "Homo sapiens", "Lactobacillus acidophilus", 
+                             "Mus musculus", "Mycobacterium marinum", "Oryza sativa", 
+                             "Oryzias latipes", "Pseudomonas aeruginosa", "Rattus norvegicus", 
+                             "Saccharomyces cerevisiae", "Salmonella enterica", "Serratia liquefaciens", 
+                             "Staphylococcus aureus", "Streptococcus mutans", "Vibrio fischeri")
 
 # Import libraries
 library(tidyverse)
@@ -204,13 +208,14 @@ ref_table <- tryCatch(
 
 # Get target organism information
 target_info <- ref_table %>%
-  filter(name == target_organism)
+  filter(species == target_organism)
 
 # Extract the relevant columns from the reference table
 target_taxid <- target_info$taxon # Taxonomic identifier
 target_org_db <- target_info$annotations # org.eg.db R package
 target_species_designation <- target_info$species # Full species name
 gtf_link <- target_info$gtf # Path to reference assembly GTF
+target_short_name <- target_info$name # PANTHER / UNIPROT short name; blank if not available
 
 # Error handling for missing values
 if (is.na(target_taxid) || is.na(target_org_db) || is.na(target_species_designation) || is.na(gtf_link)) {
@@ -255,7 +260,7 @@ if (!requireNamespace(target_org_db, quietly = TRUE)) {
     genus <- genus_species[1]
     species <- ifelse(length(genus_species) > 1, genus_species[2], "")
     strain <- ref_table %>%
-      filter(name == target_organism) %>%
+      filter(species == target_organism) %>%
       pull(strain) %>%
       gsub("[^A-Za-z0-9]", "", .)
     if (!is.na(strain) && strain != "") {
@@ -303,7 +308,8 @@ GTF <- data.frame(GTF)
 library(target_org_db, character.only = TRUE)
 
 # Define list of supported organisms which do not use annotations from an org.db
-no_org_db <- c("NCFM", "MMARINUMM", "ORYSJ", "PA14", "ATCC27592", "MRSA252", "UA159", "ES114")
+no_org_db <- c("Lactobacillus acidophilus", "Mycobacterium marinum", "Oryza sativa", "Pseudomonas aeruginosa",
+              "Serratia liquefaciens", "Staphylococcus aureus", "Streptococcus mutans", "Vibrio fischeri")
 
 # Run the function unless the target_organism is in no_org_db
 if (!(target_organism %in% no_org_db) && (target_organism %in% currently_accepted_orgs)) {
@@ -323,20 +329,20 @@ if (!(target_organism %in% no_org_db) && (target_organism %in% currently_accepte
 # Define GTF keys based on the target organism; gene_id conrains unique gene IDs in the reference assembly. Defaults to ENSEMBL
 
 gtf_keytype_mappings <- list(
-  ARABIDOPSIS = c(gene_id = "TAIR"),
-  BACSU = c(gene_id = "ENSEMBL", gene_name = "SYMBOL"),
-  BRADI = c(gene_id = "ENSEMBL", transcript_id = "ACCNUM"),
-  WORM = c(gene_id = "ENSEMBL"),  
-  ECOLI = c(gene_id = "ENSEMBL", gene_name = "SYMBOL"),
-  NCFM = c(gene_id = "LOCUS", old_locus_tag = "OLD_LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
-  MMARINUMM = c(gene_id = "LOCUS", old_locus_tag = "OLD_LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
-  PA14 = c(gene_id = "LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
-  SALTY = c(gene_id = "ENSEMBL", db_xref = "ENTREZID"),
-  ATCC27592 = c(gene_id = "LOCUS", old_locus_tag = "OLD_LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
-  MRSA252 = c(gene_id = "LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
-  UA159 = c(gene_id = "LOCUS", old_locus_tag = "OLD_LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
-  ES114 = c(gene_id = "LOCUS", old_locus_tag = "OLD_LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
-  default = c(gene_id = "ENSEMBL")
+  "Arabidopsis thaliana" = c(gene_id = "TAIR"),
+  "Bacillus subtilis" = c(gene_id = "ENSEMBL", gene_name = "SYMBOL"),
+  "Brachypodium distachyon" = c(gene_id = "ENSEMBL", transcript_id = "ACCNUM"),
+  "Caenorhabditis elegans" = c(gene_id = "ENSEMBL"),  
+  "Escherichia coli" = c(gene_id = "ENSEMBL", gene_name = "SYMBOL"),
+  "Lactobacillus acidophilus" = c(gene_id = "LOCUS", old_locus_tag = "OLD_LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
+  "Mycobacterium marinum" = c(gene_id = "LOCUS", old_locus_tag = "OLD_LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
+  "Pseudomonas aeruginosa" = c(gene_id = "LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
+  "Salmonella enterica" = c(gene_id = "ENSEMBL", db_xref = "ENTREZID"),
+  "Serratia liquefaciens" = c(gene_id = "LOCUS", old_locus_tag = "OLD_LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
+  "Staphylococcus aureus" = c(gene_id = "LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
+  "Streptococcus mutans" = c(gene_id = "LOCUS", old_locus_tag = "OLD_LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
+  "Vibrio fischeri" = c(gene_id = "LOCUS", old_locus_tag = "OLD_LOCUS", gene = "SYMBOL", product = "GENENAME", Ontology_term = "GO"),
+  "default" = c(gene_id = "ENSEMBL")
 )
 
 # Get the key types for the target organism or use the default
@@ -360,17 +366,17 @@ primary_keytype <- wanted_gtf_keytypes[1]
 
 # Define filtering criteria for specific organisms
 filter_criteria <- list(
-  BACSU = "^BSU",
-  FLY = "^RR",
-  YEAST = "^Y[A-Z0-9]{6}-?[A-Z]?$",
-  ECOLI = "^b[0-9]{4}$"
+  "Bacillus subtilis" = "^BSU",
+  "Drosophila melanogaster" = "^RR",
+  "Saccharomyces cerevisiae" = "^Y[A-Z0-9]{6}-?[A-Z]?$",
+  "Escherichia coli" = "^b[0-9]{4}$"
 )
 
 # Apply the filter if there's a specific criterion for the target organism
 filter_pattern <- filter_criteria[[target_organism]]
 
 if (!is.null(filter_pattern)) {
-  if (target_organism == "FLY") {
+  if (target_organism == "Drosophila melanogaster") {
     annot_gtf <- annot_gtf %>% filter(!grepl(filter_pattern, !!sym(primary_keytype)))
   } else {
     annot_gtf <- annot_gtf %>% filter(grepl(filter_pattern, !!sym(primary_keytype)))
@@ -378,7 +384,7 @@ if (!is.null(filter_pattern)) {
 }
 
 # Remove "Gene:" labels on ENTREZ IDs 
-if (target_organism == "SALTY") { 
+if (target_organism == "Salmonella enterica") { 
   annot_gtf <- annot_gtf %>% dplyr::mutate(ENTREZID = gsub("^GeneID:", "", ENTREZID)) %>% as.data.frame
 }
 ```
@@ -394,12 +400,12 @@ annot_orgdb <- annot_gtf
 
 # Define the initial keys to pull from the organism-specific database
 orgdb_keytypes_list <- list(
-  BRADI = c("GENENAME", "REFSEQ", "ENTREZID"),
-  ECOLI = c("GENENAME", "REFSEQ", "ENTREZID"),
-  WORM = c("SYMBOL", "GENENAME", "REFSEQ", "ENTREZID", "GO"),
-  SALTY = c("SYMBOL", "GENENAME", "REFSEQ"),
-  YEAST = c("GENENAME", "ALIAS", "REFSEQ", "ENTREZID"),
-  default = c("SYMBOL", "GENENAME", "REFSEQ", "ENTREZID")
+  "Brachypodium distachyon" = c("GENENAME", "REFSEQ", "ENTREZID"),
+  "Escherichia coli" = c("GENENAME", "REFSEQ", "ENTREZID"),
+  "Caenorhabditis elegans" = c("SYMBOL", "GENENAME", "REFSEQ", "ENTREZID", "GO"),
+  "Salmonella enterica" = c("SYMBOL", "GENENAME", "REFSEQ"),
+  "Saccharomyces cerevisiae" = c("GENENAME", "ALIAS", "REFSEQ", "ENTREZID"),
+  "default" = c("SYMBOL", "GENENAME", "REFSEQ", "ENTREZID")
 )
 
 # Add entries for organisms in no_org_db as character(0) (no keys wanted from the org.db)
@@ -415,12 +421,12 @@ wanted_org_db_keytypes <- if (target_organism %in% names(orgdb_keytypes_list)) {
 
 # Define mappings for query and keytype based on target organism
 orgdb_keytype_mappings <- list(
-  BACSU = list(query = "SYMBOL", keytype = "SYMBOL"),
-  BRADI = list(query = "ACCNUM", keytype = "ACCNUM"),
-  WORM = list(query = primary_keytype, keytype = "ENSEMBL"),
-  ECOLI = list(query = "SYMBOL", keytype = "SYMBOL"),
-  SALTY = list(query = "ENTREZID", keytype = "ENTREZID"),
-  default = list(query = primary_keytype, keytype = primary_keytype)
+  "Bacillus subtilis" = list(query = "SYMBOL", keytype = "SYMBOL"),
+  "Brachypodium distachyon" = list(query = "ACCNUM", keytype = "ACCNUM"),
+  "Caenorhabditis elegans" = list(query = primary_keytype, keytype = "ENSEMBL"),
+  "Escherichia coli" = list(query = "SYMBOL", keytype = "SYMBOL"),
+  "Salmonella enterica" = list(query = "ENTREZID", keytype = "ENTREZID"),
+  "default" = list(query = primary_keytype, keytype = primary_keytype)
 )
 
 # Define the orgdb_query, this is the key type that will be used to map to the org.db
@@ -460,7 +466,7 @@ clean_and_match_accnum <- function(annot_table, org_db, query_col, keytype_col, 
 for (keytype in wanted_org_db_keytypes) {
   # Check if keytype is a valid column in the target org.db
   if (keytype %in% columns(get(target_org_db, envir = .GlobalEnv))) {
-    if (target_organism == "BRADI" && orgdb_query == "ACCNUM") {
+    if (target_organism == "Brachypodium distachyon" && orgdb_query == "ACCNUM") {
       # For BRADI: use the clean_and_match_accnum function to map to org.db ACCNUM entries
       org_matches <- clean_and_match_accnum(annot_orgdb, get(target_org_db, envir = .GlobalEnv), query_col = orgdb_query, keytype_col = orgdb_keytype, target_column = keytype)
     } else {
@@ -476,12 +482,12 @@ for (keytype in wanted_org_db_keytypes) {
 }
 
 # For SALTY, reorder columns to mtach other tables
-if (target_organism == "SALTY") { # Reorder columns to match others; was mismatched since ENTREZ came from GTF
+if (target_organism == "Salmonella enterica") { # Reorder columns to match others; was mismatched since ENTREZ came from GTF
   annot_orgdb <- annot_orgdb[, c("ENSEMBL", "SYMBOL", "GENENAME", "REFSEQ", "ENTREZID")]
 }
 
 # For YEAST, Rename ALIAS to GENENAME 
-if (target_organism == "YEAST") {
+if (target_organism == "Saccharomyces cerevisiae") {
   colnames(annot_orgdb) <- c("ENSEMBL", "SYMBOL", "GENENAME", "REFSEQ", "ENTREZID")
 }
 ```
@@ -494,16 +500,16 @@ if (target_organism == "YEAST") {
 
 ```R
 # Define organisms that do not use STRING annotations
-no_stringdb <- c("PA14", "MRSA252")
+no_stringdb <- c("Pseudomonas aeruginosa", "Staphylococcus aureus")
 
 # Define the key type used for mapping to STRING
 stringdb_query_list <- list(
-  NCFM = "OLD_LOCUS",
-  MMARINUMM = "OLD_LOCUS",
-  ATCC27592 = "OLD_LOCUS",
-  UA159 = "OLD_LOCUS",
-  ES114 = "OLD_LOCUS",
-  default = primary_keytype
+  "Lactobacillus acidophilus" = "OLD_LOCUS",
+  "Mycobacterium marinum" = "OLD_LOCUS",
+  "Serratia liquefaciens" = "OLD_LOCUS",
+  "Streptococcus mutans" = "OLD_LOCUS",
+  "Vibrio fischeri" = "OLD_LOCUS",
+  "default" = primary_keytype
 )
 
 # Define the key type for mapping in STRING, using the default if necessary
@@ -516,7 +522,7 @@ stringdb_query <- if (!is.null(stringdb_query_list[[target_organism]])) {
 # Handle organisms which do not use the GTF's gene_id keys to map to STRING 
 # These are microbial species for which NCBI references were used rather than ENSEMBL,
 # for which the STRING accessions match the GTF's gene_name keys, but not the gene_id keys.
-uses_old_locus <- c("NCFM", "MMARINUMM", "ATCC27592", "UA159", "ES114")
+uses_old_locus <- c("Lactobacillus acidophilus", "Mycobacterium marinum", "Serratia liquefaciens", "Streptococcus mutans", "Vibrio fischeri")
 # Handle STRING annotation processing based on the target organism
 if (target_organism %in% uses_old_locus) {
   # If the target organism is one of the NOENTRY organisms, handle the OLD_LOCUS splitting
@@ -534,15 +540,15 @@ if (target_organism %in% uses_old_locus) {
 }
 
 # Replace "BSU_" with "BSU" in the primary_keytype column for BACSU before STRING mapping
-if (target_organism == "BACSU") {
+if (target_organism == "Bacillus subtilis") {
   annot_stringdb[[stringdb_query]] <- gsub("^BSU_", "BSU", annot_stringdb[[stringdb_query]])
 }
 
 # Map alternative taxonomy IDs for organisms not directly supported by STRING
 taxid_map <- list(
-  YEAST = 4932,
-  BRARP = 51351,
-  ATCC27592 = 614
+  "Saccharomyces cerevisiae" = 4932,
+  "Brassica rapa" = 51351,
+  "Serratia liquefaciens" = 614
 )
 
 # Assign the alternative taxonomy identifier if applicable
@@ -572,7 +578,7 @@ if (!is.null(string_map)) {
 
 if (!is.null(string_map)) {
   # Determine the appropriate join key
-  join_key <- if (target_organism %in% c("NCFM", "MMARINUMM", "ATCC27592", "UA159", "ES114")) {
+  join_key <- if (target_organism %in% c("Lactobacillus acidophilus", "Mycobacterium marinum", "Serratia liquefaciens", "Streptococcus mutans", "Vibrio fischeri")) {
     primary_keytype
   } else {
     stringdb_query
@@ -591,7 +597,7 @@ if (!is.null(string_map)) {
 }
 
 # Undo the "BSU_" to "BSU" replacement for BACSU after STRING mapping
-if (target_organism == "BACSU") {
+if (target_organism == "Bacillus subtilis") {
   annot_stringdb[[stringdb_query]] <- gsub("^BSU", "BSU_", annot_stringdb[[stringdb_query]])
 }
 
@@ -606,7 +612,7 @@ annot_stringdb <- as.data.frame(annot_stringdb)
 
 ```R
 # Define organisms that do not use PANTHER annotations 
-no_panther_db <- c("WORM", "MMARINUMM", "ORYSJ", "MRSA252", "NCFM", "ATCC27592", "UA159", "ES114", "PA14")
+no_panther_db <- c("Caenorhabditis elegans", "Mycobacterium marinum", "Oryza sativa", "Staphylococcus aureus", "Lactobacillus acidophilus", "Serratia liquefaciens", "Streptococcus mutans", "Vibrio fischeri", "Pseudomonas aeruginosa")
 
 annot_pantherdb <- annot_stringdb
 
@@ -616,8 +622,9 @@ if (!(target_organism %in% no_panther_db)) {
   pantherdb_query = "ENTREZID"
   pantherdb_keytype = "ENTREZ"
   
-  # Retrieve target organism PANTHER GO slim annotations database
-  pthOrganisms(PANTHER.db) <- target_organism
+  # Retrieve target organism PANTHER GO slim annotations database using the UNIPROT / PANTHER short name
+  target_short_name <- target_species_designation
+  pthOrganisms(PANTHER.db) <- target_short_name
   
   # Define a function to retrieve GO slim IDs for a given gene's ENTREZIDs, which may include entries separated by a "|"
   get_go_slim_ids <- function(entrez_id) {
