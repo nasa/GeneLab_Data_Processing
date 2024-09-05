@@ -1,7 +1,7 @@
 # GL_RefAnnotTable Workflow Information and Usage Instructions
 
 ## General workflow info
-The current GeneLab Reference Annotation Table (GL_RefAnnotTable) pipeline is implemented as an R workflow that can be run from a command line interface (CLI) using bash. The workflow can be used even if you are unfamiliar with R, but if you want to learn more about R, visit the [R-project about page here](https://www.r-project.org/about.html). Additionally, an introduction to R along with installation help and information about using R for bioinformatics can be found [here at Happy Belly Bioinformatics](https://astrobiomike.github.io/R/basics).  
+The current GeneLab Reference Annotation Table (GL_RefAnnotTable-A) pipeline is implemented as an R workflow that can be run from a command line interface (CLI) using bash. The workflow can be used even if you are unfamiliar with R, but if you want to learn more about R, visit the [R-project about page here](https://www.r-project.org/about.html). Additionally, an introduction to R along with installation help and information about using R for bioinformatics can be found [here at Happy Belly Bioinformatics](https://astrobiomike.github.io/R/basics).  
 
 ## Utilizing the workflow
 
@@ -32,18 +32,21 @@ Within an active R environment, run the following commands to install the requir
 ```R
 install.packages("tidyverse", version = 2.0.0, repos = "http://cran.us.r-project.org")
 
-install.packages("BiocManager", version = 3.19, repos = "http://cran.us.r-project.org")
+install.packages("BiocManager", version = 3.19.1, repos = "http://cran.us.r-project.org")
 
-BiocManager::install("STRINGdb", version = 3.19)
-BiocManager::install("PANTHER.db", version = 3.19)
-BiocManager::install("rtracklayer", version = 3.19)
+BiocManager::install("STRINGdb", version = 3.19.1)
+BiocManager::install("PANTHER.db", version = 3.19.1)
+BiocManager::install("rtracklayer", version = 3.19.1)
+BiocManager::install("AnnotationForge", version = 1.46.0)
+BiocManager::install("biomaRt", version = 2.60.1)
+BiocManager::install("GO.db", version = 3.19.1)
 ```
 
 <br>
 
 ### 2. Download the Workflow Files
 
-All files required for utilizing the GL_RefAnnotTable workflow for generating reference annotation tables are in the [workflow_code](workflow_code) directory. To get a copy of latest GL_RefAnnotTable version on to your system, run the following command:
+All files required for utilizing the GL_RefAnnotTable-A workflow for generating reference annotation tables are in the [workflow_code](workflow_code) directory. To get a copy of latest GL_RefAnnotTable version on to your system, run the following command:
 
 ```bash
 curl -LO https://github.com/nasa/GeneLab_Data_Processing/releases/download/GL_RefAnnotTable-A_1.1.0/GL_RefAnnotTable-A_1.1.0.zip
@@ -53,9 +56,11 @@ curl -LO https://github.com/nasa/GeneLab_Data_Processing/releases/download/GL_Re
 
 ### 3. Setup Execution Permission for Workflow Scripts
 
-Once you've downloaded the GL_RefAnnotTable workflow directory as a zip file, unzip the workflow then `cd` into the GL_RefAnnotTable-A_1.1.0 directory on the CLI. Next, run the following command to set the execution permissions for the R script:
+Once you've downloaded the GL_RefAnnotTable-A workflow directory as a zip file, unzip the workflow then `cd` into the GL_RefAnnotTable-A_1.1.0 directory on the CLI. Next, run the following command to set the execution permissions for the R script:
 
 ```bash
+unzip GL_RefAnnotTable-A_1.1.0.zip
+cd GL_RefAnnotTable-A_1.1.0
 chmod -R u+x *R
 ```
 
@@ -94,6 +99,6 @@ Rscript install-org-db.R 'Bacillus subtilis' /path/to/GL-DPPD-7110-A_annotations
 
 - The path to a local reference table must also be supplied as the second positional argument
 
-Output data:
+**Output data:**
 
 - org.*.eg.db/ (species-specific annotation database, as a local R package)
