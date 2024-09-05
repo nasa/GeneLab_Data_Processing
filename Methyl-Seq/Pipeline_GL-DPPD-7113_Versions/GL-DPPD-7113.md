@@ -21,8 +21,6 @@ Jonathan Galazka (GeneLab Project Scientist)
 
 # Table of contents
 
-- [Bioinformatics pipeline for Methylation Sequencing (Methyl-Seq) data](#bioinformatics-pipeline-for-methylation-sequencing-methyl-seq-data)
-- [Table of contents](#table-of-contents)
 - [Software used](#software-used)
 - [General processing overview with example commands](#general-processing-overview-with-example-commands)
   - [1. Raw Data QC](#1-raw-data-qc)
