@@ -1,174 +1,8 @@
-# GeneLab Pipeline for Generating Reference Annotation Tables  
+#!/usr/bin/env Rscript
+# Written by Mike Lee
+# GeneLab script for generating organism-specific gene annotation tables
+# Example usage: Rscript GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'
 
-> **This page provides an overview and instructions for how GeneLab generates reference annotation tables. The GeneLab reference annotation table used to add annotations to processed data files is indicated in the exact processing scripts provided for each GLDS dataset under the respective omics datatype subdirectory.**  
- 
----
-
-**Date:** August 12, 2024  
-**Revision:** -A  
-**Document Number:** GL-DPPD-7110-A  
-
-**Submitted by:**  
-Alexis Torres and Crystal Han (GeneLab Data Processing Team)  
-
-**Approved by:**  
-Sylvain Costes (OSDR Project Manager)  
-Samrawit Gebre (GeneLab Deputy Project Manager and Acting GeneLab Configuration Manager)  
-Lauren Sanders (OSDR Project Scientist)  
-Amanda Saravia-Butler (GeneLab Science Lead)  
-Barbara Novak (GeneLab Data Processing Lead)  
-
----
-
-## Updates from Previous Version
-
-- **Updated Software:**
-  - R version updated from 4.1.3 to 4.4.0.  
-  - Bioconductor version updated from 3.15.1 to 3.19.1.  
-
-- **Ensembl Releases:**
-  - Animals: Updated from release 107 to 112  
-  - Plants: Updated from release 54 to 59   
-  - Bacteria: Updated from release 54 to 59  
-
-- **New Organism Support:**
-  1. Bacillus subtilis, subsp. subtilis 168   
-  2. Brachypodium distachyon  
-  3. Escherichia coli, str. K-12 substr. MG1655   
-  4. Oryzias latipes   
-  5. Lactobacillus acidophilus NCFM  
-  6. Mycobacterium marinum M  
-  7. Oryza sativa Japonica   
-  8. Pseudomonas aeruginosa UCBPP-PA14  
-  9. Salmonella enterica subsp. enterica serovar Typhimurium str. LT2   
-  10. Serratia liquefaciens ATCC 27592   
-  11. Staphylococcus aureus MRSA252   
-  12. Streptococcus mutans UA159  
-  13. Vibrio fischeri ES114   
-
-- **Added NCBI as a Reference Source:** 
-  FASTA and GTF files were sourced from NCBI for the following organisms: 
-  1. Lactobacillus acidophilus NCFM   
-  2. Mycobacterium marinum M   
-  3. Pseudomonas aeruginosa UCBPP-PA14   
-  4. Serratia liquefaciens ATCC 27592   
-  5. Staphylococcus aureus MRSA252   
-  6. Streptococcus mutans UA159   
-  7. Vibrio fischeri ES114    
-
-- **org.db Creation:**  
-  Added functionality to create an annotation database using `AnnotationForge`. This is applicable to organisms without a maintained annotation database package in Bioconductor (e.g., `org.Hs.eg.db`). Currently, this approach is in use for the following organisms:  
-  1. Bacillus subtilis, subsp. subtilis 168   
-  2. Brachypodium distachyon   
-  3. Escherichia coli, str. K-12 substr. MG1655   
-  4. Oryzias latipes   
-  5. Salmonella enterica subsp. enterica serovar Typhimurium str. LT2   
-
-The pipeline is designed to annotate unique gene IDs in a reference assembly, map them to organism-specific `org.db` databases for additional annotations, integrate STRING DB IDs, and use PANTHER to obtain GO slim IDs based on ENTREZ IDs.
-
-The default columns in the annotation table are:  
-- ENSEMBL (or TAIR), SYMBOL, GENENAME, REFSEQ, ENTREZID, STRING_id, GOSLIM_IDS
-
-- For organisms with FASTA and GTF files sourced from NCBI, the LOCUS, OLD_LOCUS, SYMBOL, GENENAME, and GO annotations were directly derived from the GTF file. The `GO` column contains GO terms. `OLD_LOCUS`, or `old_locus_tag` in the GTF was retained when needed to map to STRING IDs.  
-- Missing columns indicate the absence of corresponding data for that organism.
-
-1. **Brachypodium distachyon**:   
-   - Columns: ENSEMBL, ACCNUM, SYMBOL, GENENAME, REFSEQ, ENTREZID, STRING_id, GOSLIM_IDS    
-     > Note: GTF `transcript_id` entries were matched with `ACCNUM` keys in the `org.db` and saved as `ACCNUM`
-
-2. **Caenorhabditis elegans**:   
-   - Columns: ENSEMBL, SYMBOL, GENENAME, REFSEQ, ENTREZID, STRING_id   
-     > Note: org.db ENTREZ keys did not match PANTHER ENTREZ keys so the empty `GOSLIM_IDS` column was ommitted
-
-3. **Lactobacillus acidophilus**:   
-   - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, GO, STRING_id   
-
-4. **Mycobacterium marinum**:  
-   - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, GO, STRING_id   
-
-5. **Oryza sativa Japonica**:  
-   - Columns: ENSEMBL, STRING_id   
-
-6. **Pseudomonas aeruginosa UCBPP-PA14**:  
-   - Columns: LOCUS, SYMBOL, GENENAME, GO    
-
-7. **Serratia liquefaciens ATCC 27592**:  
-   - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, GO, STRING_id   
-
-8. **Staphylococcus aureus MRSA252**:  
-   - Columns: LOCUS, SYMBOL, GENENAME, GO  
-
-9. **Streptococcus mutans UA159**:  
-   - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, GO, STRING_id  
-
-10. **Vibrio fischeri ES114**:  
-   - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, GO, STRING_id   
-
----
-
-# Table of Contents
-
-- [GeneLab Pipeline for Generating Reference Annotation Tables](#genelab-pipeline-for-generating-reference-annotation-tables)
-- [Table of Contents](#table-of-contents)
-- [Software Used](#software-used)
-- [Annotation Table Build Overview with Example Commands](#annotation-table-build-overview-with-example-commands)
-  - [0. Set Up Environment](#0-set-up-environment)
-  - [1. Define Variables and Output File Names](#1-define-variables-and-output-file-names)
-  - [2. Create the Organism Package if it is Not Hosted by Bioconductor](#2-create-the-organism-package-if-it-is-not-hosted-by-bioconductor)
-  - [3. Load Annotation Databases](#3-load-annotation-databases)
-  - [4. Build Initial Annotation Table](#4-build-initial-annotation-table)
-  - [5. Add org.db Keys](#5-add-orgdb-keys)
-  - [6. Add STRING IDs](#6-add-string-ids)
-  - [7. Add Gene Ontology (GO) Slim IDs](#7-add-gene-ontology-go-slim-ids)
-  - [8. Export Annotation Table and Build Info](#8-export-annotation-table-and-build-info)
-
-
-
----
-
-# Software Used  
-
-| Program         | Version | Relevant Links |
-|:----------------|:-------:|:---------------|
-| R               |  4.4.0  | [https://www.r-project.org/](https://www.r-project.org/) |
-| Bioconductor    | 3.19.1  | [https://bioconductor.org](https://bioconductor.org) |
-| tidyverse       |  2.0.0  | [https://www.tidyverse.org](https://www.tidyverse.org) |
-| STRINGdb        | 2.16.0  | [https://www.bioconductor.org/packages/release/bioc/html/STRINGdb.html](https://www.bioconductor.org/packages/release/bioc/html/STRINGdb.html) |
-| PANTHER.db      | 1.0.12  | [https://bioconductor.org/packages/release/data/annotation/html/PANTHER.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/PANTHER.db.html) |
-| rtracklayer     | 1.64.0  | [https://bioconductor.org/packages/release/bioc/html/rtracklayer.html](https://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html) |
-| org.At.tair.db  | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.At.tair.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.At.tair.db.html) |
-| org.Ce.eg.db    | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Ce.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Ce.eg.db.html) |
-| org.Dm.eg.db    | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Dm.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Dm.eg.db.html) |
-| org.Dr.eg.db    | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Dr.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Dr.eg.db.html) |
-| org.Hs.eg.db    | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Hs.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Hs.eg.db.html) |
-| org.Mm.eg.db    | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Mm.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Mm.eg.db.html) |
-| org.Rn.eg.db    | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Rn.eg.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Rn.eg.db.html) |
-| org.Sc.sgd.db   | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html) |
-| AnnotationForge | 1.46.0  | [https://bioconductor.org/packages/AnnotationForge](https://bioconductor.org/packages/AnnotationForge) |
-| biomaRt         |  2.60.1  | [https://bioconductor.org/packages/biomaRt](https://bioconductor.org/packages/biomaRt) |
-| GO.db           |  2.0.0  | [https://bioconductor.org/packages/GO.db](https://bioconductor.org/packages/GO.db) |
-
----
-
-# Annotation table build overview with example commands  
-
-> Current GeneLab annotation tables are available on [figshare](https://figshare.com/), exact links for each reference organism are provided in the [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) file.  
-> 
-> **[Ensembl Reference Versions](https://www.ensembl.org/index.html):**
-> - Animals: Ensembl release 112
-> - Plants: Ensembl plants release 59
-> - Bacteria: Ensembl bacteria release 59  
->  
-> **PANTHER:**  18.0  
-> > *Note: The values in the 'name' column of [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) (e.g., MOUSE, HUMAN, ARABIDOPSIS) are derived from the short names used in PANTHER. These short names are subject to change.*
-
----
-
-This example below is done for *Mus musculus*. All code is executed in R.
-
-## 0. Set Up Environment
-
-```R
 # Define variables associated with current pipeline and annotation table versions
 GL_DPPD_ID <- "GL-DPPD-7110-A"
 ref_tab_path <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
@@ -183,18 +17,67 @@ currently_accepted_orgs <- c("Arabidopsis thaliana", "Bacillus subtilis", "Brach
                              "Saccharomyces cerevisiae", "Salmonella enterica", "Serratia liquefaciens", 
                              "Staphylococcus aureus", "Streptococcus mutans", "Vibrio fischeri")
 
+
+#########################################################################
+############### Pull in and check command line arguments ################
+#########################################################################
+
+# Pull in command-line arguments
+args <- commandArgs(trailingOnly = TRUE)
+
+# Get the target organism (CLI argument 1) and check that it is listed in currently_accepted_orgs
+validate_arguments <- function(args, supported_orgs) {
+  if (length(args) < 1) {
+    stop("One positional argument is required that specifies the target organism. Available options are:\n", paste(supported_orgs, collapse = ", "))
+  }
+  
+  # Convert the first argument to uppercase
+  target_organism <- toupper(args[1])
+  
+  # Check if the uppercased target organism is in the uppercased supported_orgs
+  if (!target_organism %in% sapply(supported_orgs, toupper)) {
+    stop(paste0("'", target_organism, "' is not currently supported."))
+  }
+  
+  return(args[1])
+}
+
+target_organism <- validate_arguments(args, currently_accepted_orgs)
+
+# If provided, get the reference table URL from CLI arguments (CLI argument 2) and update ref_tab_path
+ref_tab_path <- if (length(args) >= 2) args[2] else ref_tab_path
+
+
+#########################################################################
+######################## Set up environment #############################
+#########################################################################
+
+required_packages <- c("tidyverse", "STRINGdb", "PANTHER.db", "rtracklayer")
+# Check for required packages other than the org-specific db #
+report_package_needed <- function(package_name) {
+  cat(paste0("\n  The package '", package_name, "' is required. Please see:\n"))
+  cat("    https://github.com/nasa/GeneLab_Data_Processing/tree/master/GeneLab_Reference_Annotations/Workflow_Documentation/GL_RefAnnotTable-A/README.md\n\n")
+  quit()
+}
+
+# Check and report missing packages other than the org-specific db
+for (pkg in required_packages) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    report_package_needed(pkg)
+  }
+}
+
 # Import libraries
 library(tidyverse)
 library(STRINGdb)
 library(PANTHER.db)
 library(rtracklayer)
-```
 
----
 
-## 1. Define Variables and Output File Names
+#########################################################################
+############## Define variables and output file names ###################
+#########################################################################
 
-```R
 # Set timeout time to ensure annotation file downloads will complete
 options(timeout = 600)
 
@@ -237,62 +120,12 @@ if ( file.exists(out_table_filename) ) {
   cat("\n-------------------------------------------------------------------------------------------------\n")
   quit()
 }
-```
 
-<br>
 
----
+#############################################
+######## Load annotation databases  #########
+#############################################
 
-## 2. Create the Organism Package if it is Not Hosted by Bioconductor
-
-```R
-# Use AnnotationForge's makeOrgPackageFromNCBI function with default settings to create the organism-specific org.db R package from available NCBI annotations
-
-# Try to download the org.db from Bioconductor, build it locally if installation fails
-BiocManager::install(target_org_db, ask = FALSE) 
-if (!requireNamespace(target_org_db, quietly = TRUE)) { 
-  tryCatch({
-    # Parse organism's name in the reference table to create the org.db name (target_org_db)
-    genus_species <- strsplit(target_species_designation, " ")[[1]]
-    if (length(genus_species) < 1) {
-        stop("Species designation is not correctly formatted: ", target_species_designation)
-    }
-    genus <- genus_species[1]
-    species <- ifelse(length(genus_species) > 1, genus_species[2], "")
-    strain <- ref_table %>%
-      filter(species == target_organism) %>%
-      pull(strain) %>%
-      gsub("[^A-Za-z0-9]", "", .)
-    if (!is.na(strain) && strain != "") {
-        species <- paste0(species, strain)
-    }
-    target_org_db <- paste0("org.", substr(genus, 1, 1), species, ".eg.db")
-    
-    BiocManager::install(c("AnnotationForge", "biomaRt", "GO.db"), ask = FALSE) 
-    library(AnnotationForge)
-    makeOrgPackageFromNCBI( 
-        version = "0.1",
-        author = "Your Name <your.email@example.com>",
-        maintainer = "Your Name <your.email@example.com>",
-        outputDir = "./",
-        tax_id = target_taxid,
-        genus = genus,
-        species = species
-    )
-    install.packages(file.path("./", target_org_db), repos = NULL, type = "source", quiet = TRUE)
-    cat(paste0("'", target_org_db, "' has been successfully built and installed.\n"))
-  }, error = function(e) {
-      stop("Failed to build and load the package: ", target_org_db, "\nError: ", e$message)
-  })
-  target_org_db <- install_annotations(target_organism, ref_tab_path)
-}
-```
-
----
-
-## 3. Load Annotation Databases
-
-```R
 # Set timeout time to ensure annotation file downloads will complete
 options(timeout = 600)
 
@@ -304,8 +137,27 @@ GTF <- data.frame(GTF)
 
 ###### org.db ########
 
-# Load the package into the R session
-library(target_org_db, character.only = TRUE)
+# Define a function to load the specified org.db package for a given target organism
+install_and_load_org_db <- function(target_organism, target_org_db, ref_tab_path) {
+  if (!is.na(target_org_db) && target_org_db != "") {
+    # Attempt to install the package from Bioconductor
+    BiocManager::install(target_org_db, ask = FALSE)
+    
+    # Check if the package was successfully loaded
+    if (!requireNamespace(target_org_db, quietly = TRUE)) {
+      # If not, attempt to create it locally using a helper script
+      source("install-org-db.R")
+      target_org_db <- install_annotations(target_organism, ref_tab_path)
+    }
+  } else {
+    # If target_org_db is NA or empty, create it locally using the helper script
+    source("install-org-db.R")
+    target_org_db <- install_annotations(target_organism, ref_tab_path)
+  }
+  
+  # Load the package into the R session
+  library(target_org_db, character.only = TRUE)
+}
 
 # Define list of supported organisms which do not use annotations from an org.db
 no_org_db <- c("Lactobacillus acidophilus", "Mycobacterium marinum", "Oryza sativa", "Pseudomonas aeruginosa",
@@ -315,15 +167,12 @@ no_org_db <- c("Lactobacillus acidophilus", "Mycobacterium marinum", "Oryza sati
 if (!(target_organism %in% no_org_db) && (target_organism %in% currently_accepted_orgs)) {
   install_and_load_org_db(target_organism, target_org_db, ref_tab_path)
 }
-```
 
-<br>
 
----
+############################################
+######## Build annotation table ############
+############################################
 
-## 4. Build Initial Annotation Table
-
-```R
 # Initialize table from GTF
 
 # Define GTF keys based on the target organism; gene_id conrains unique gene IDs in the reference assembly. Defaults to ENSEMBL
@@ -387,15 +236,11 @@ if (!is.null(filter_pattern)) {
 if (target_organism == "Salmonella enterica") { 
   annot_gtf <- annot_gtf %>% dplyr::mutate(ENTREZID = gsub("^GeneID:", "", ENTREZID)) %>% as.data.frame
 }
-```
 
-<br>
+#########################################################################
+########################### Add org.db keys #############################
+#########################################################################
 
----
-
-## 5. Add org.db Keys
-
-```R
 annot_orgdb <- annot_gtf
 
 # Define the initial keys to pull from the organism-specific database
@@ -490,15 +335,11 @@ if (target_organism == "Salmonella enterica") { # Reorder columns to match other
 if (target_organism == "Saccharomyces cerevisiae") {
   colnames(annot_orgdb) <- c("ENSEMBL", "SYMBOL", "GENENAME", "REFSEQ", "ENTREZID")
 }
-```
 
-<br>
+#########################################################################
+########################### Add STRING IDs ##############################
+#########################################################################
 
----
-
-## 6. Add STRING IDs
-
-```R
 # Define organisms that do not use STRING annotations
 no_stringdb <- c("Pseudomonas aeruginosa", "Staphylococcus aureus")
 
@@ -602,15 +443,11 @@ if (target_organism == "Bacillus subtilis") {
 }
 
 annot_stringdb <- as.data.frame(annot_stringdb)
-```
 
-<br>
+#########################################################################
+################ Add Gene Ontology (GO) slim IDs ########################
+#########################################################################
 
----
-
-## 7. Add Gene Ontology (GO) slim IDs
-
-```R
 # Define organisms that do not use PANTHER annotations 
 no_panther_db <- c("Caenorhabditis elegans", "Mycobacterium marinum", "Oryza sativa", "Staphylococcus aureus", "Lactobacillus acidophilus", "Serratia liquefaciens", "Streptococcus mutans", "Vibrio fischeri", "Pseudomonas aeruginosa")
 
@@ -623,7 +460,6 @@ if (!(target_organism %in% no_panther_db)) {
   pantherdb_keytype = "ENTREZ"
   
   # Retrieve target organism PANTHER GO slim annotations database using the UNIPROT / PANTHER short name
-  target_short_name <- target_species_designation
   pthOrganisms(PANTHER.db) <- target_short_name
   
   # Define a function to retrieve GO slim IDs for a given gene's ENTREZIDs, which may include entries separated by a "|"
@@ -651,15 +487,12 @@ if (!(target_organism %in% no_panther_db)) {
   annot_pantherdb <- annot_pantherdb %>%
     mutate(GOSLIM_IDS = sapply(get(pantherdb_query), get_go_slim_ids))
 }
-```
 
-<br>
 
----
+#########################################################################
+############# Export annotation table and build info ####################
+#########################################################################
 
-## 8. Export Annotation Table and Build Info
-
-```R
 # Group by primary key to remove any remaining unjoined or duplicate rows
 annot <- annot_pantherdb %>%
   group_by(!!sym(primary_keytype)) %>%
@@ -689,17 +522,3 @@ write(paste(c("\nUsed PANTHER.db version:\n    ", packageVersion("PANTHER.db") %
 
 write("\n\nAll session info:\n", out_log_filename, append = TRUE)
 write(capture.output(sessionInfo()), out_log_filename, append = TRUE)
-```
-
-<br>
-
----
-
-**Pipeline Input data:**
-
-- No input files required, but a target organism must be specified as a positional command line argument
-
-**Pipeline Output data:**
-
-- *-GL-annotations.tsv (Tab delineated table of gene annotations, used to add gene annotations in other GeneLab processing pipelines)
-- *-GL-build-info.txt (Text file containing information used to create the annotation table, including tool and tool versions and date of creation)

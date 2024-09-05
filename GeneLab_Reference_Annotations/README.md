@@ -20,6 +20,6 @@
 **Developed by:**  
 Mike Lee
 
-**Maintained by:**
-Alexis Torres
+**Maintained by:**  
+Alexis Torres  
 Crystal Han
