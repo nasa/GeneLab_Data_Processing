@@ -24,7 +24,16 @@ Barbara Novak (GeneLab Data Processing Lead)
 
 - **Updated Software:**
   - R version updated from 4.1.3 to 4.4.0.  
-  - Bioconductor version updated from 3.15.1 to 3.19.1.  
+  - Bioconductor version updated from 3.15.1 to 3.19.1.
+  - tidyverse version updated from 1.3.2 to 2.0.0.  
+  - STRINGdb version updated from 2.8.4 to 2.16.0.   
+  - PANTHER.db version updated from 1.0.11 to 1.0.12.  
+  - rtracklayer version updated from 1.56.1 to 1.64.0.
+
+- **Added Software:**
+  - AnnotationForge version 1.46.0.
+  - biomaRt version 2.60.1.
+  - GO.db version 2.0.0.    
 
 - **Ensembl Releases:**
   - Animals: Updated from release 107 to 112  
@@ -57,7 +66,7 @@ Barbara Novak (GeneLab Data Processing Lead)
   7. Vibrio fischeri ES114    
 
 - **org.db Creation:**  
-  Added functionality to create an annotation database using `AnnotationForge`. This is applicable to organisms without a maintained annotation database package in Bioconductor (e.g., `org.Hs.eg.db`). Currently, this approach is in use for the following organisms:  
+  Added functionality to create an annotation database using `AnnotationForge`. This is applicable to organisms without a maintained annotation database package in Bioconductor (e.g., `org.Hs.eg.db`). This approach was used for the following organisms:  
   1. Bacillus subtilis, subsp. subtilis 168   
   2. Brachypodium distachyon   
   3. Escherichia coli, str. K-12 substr. MG1655   
@@ -81,10 +90,10 @@ The default columns in the annotation table are:
      > Note: org.db ENTREZ keys did not match PANTHER ENTREZ keys so the empty `GOSLIM_IDS` column was ommitted
 
 3. **Lactobacillus acidophilus**:   
-   - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, GO, STRING_id   
+   - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, STRING_id, GO   
 
 4. **Mycobacterium marinum**:  
-   - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, GO, STRING_id   
+   - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, STRING_id, GO   
 
 5. **Oryza sativa Japonica**:  
    - Columns: ENSEMBL, STRING_id   
@@ -93,23 +102,21 @@ The default columns in the annotation table are:
    - Columns: LOCUS, SYMBOL, GENENAME, GO    
 
 7. **Serratia liquefaciens ATCC 27592**:  
-   - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, GO, STRING_id   
+   - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, STRING_id, GO   
 
 8. **Staphylococcus aureus MRSA252**:  
    - Columns: LOCUS, SYMBOL, GENENAME, GO  
 
 9. **Streptococcus mutans UA159**:  
-   - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, GO, STRING_id  
+   - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, STRING_id, GO  
 
 10. **Vibrio fischeri ES114**:  
-   - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, GO, STRING_id   
+   - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, STRING_id, GO   
 
 ---
 
 # Table of Contents
 
-- [GeneLab Pipeline for Generating Reference Annotation Tables](#genelab-pipeline-for-generating-reference-annotation-tables)
-- [Table of Contents](#table-of-contents)
 - [Software Used](#software-used)
 - [Annotation Table Build Overview with Example Commands](#annotation-table-build-overview-with-example-commands)
   - [0. Set Up Environment](#0-set-up-environment)
@@ -121,8 +128,6 @@ The default columns in the annotation table are:
   - [6. Add STRING IDs](#6-add-string-ids)
   - [7. Add Gene Ontology (GO) Slim IDs](#7-add-gene-ontology-go-slim-ids)
   - [8. Export Annotation Table and Build Info](#8-export-annotation-table-and-build-info)
-
-
 
 ---
 
