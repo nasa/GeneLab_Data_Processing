@@ -28,10 +28,10 @@ Lauren Sanders (OSDR Project Scientist)
   - bowtie2
   - samtools
   - CAT
-  - gtdbtk
+  - GTDB-Tk
   - HUMAnN3
   - MetaPhIAn3
-- In [step 14d](#14d-mag-taxonomic-classification), MAG taxonomic classification, gtdbtk classify_wf now takes a new argument "--skip_ani_screen" which specifies to skip the ani_screening step to classify genomes using mash and skani. 
+- In [step 14d](#14d-mag-taxonomic-classification), MAG taxonomic classification, added the new `--skip_ani_screen` argument to `gtdbtk classify_wf` to continue classifying genomes as in previous versions of GTDB-Tk.
 
 ---
 
@@ -77,7 +77,7 @@ Lauren Sanders (OSDR Project Scientist)
 |CAT| 5.2.3 |[https://github.com/dutilh/CAT#cat-and-bat](https://github.com/dutilh/CAT#cat-and-bat)|
 |Metabat2| 2.15 |[https://bitbucket.org/berkeleylab/metabat/src/master/](https://bitbucket.org/berkeleylab/metabat/src/master/)|
 |checkm| 1.1.3 |[https://github.com/Ecogenomics/CheckM](https://github.com/Ecogenomics/CheckM)|
-|gtdbtk| 2.4.0 |[https://github.com/Ecogenomics/GTDBTk](https://github.com/Ecogenomics/GTDBTk)|
+|GTDB-Tk| 2.4.0 |[https://github.com/Ecogenomics/GTDBTk](https://github.com/Ecogenomics/GTDBTk)|
 |KEGGDecoder| 1.2.2 |[https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder](https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder)
 |HUMAnN3| 3.9 |[https://huttenhower.sph.harvard.edu/humann3/](https://huttenhower.sph.harvard.edu/humann3/)|
 |MetaPhlAn3| 4.1.0 |[https://github.com/biobakery/MetaPhlAn/tree/3.0](https://github.com/biobakery/MetaPhlAn/tree/3.0)|
