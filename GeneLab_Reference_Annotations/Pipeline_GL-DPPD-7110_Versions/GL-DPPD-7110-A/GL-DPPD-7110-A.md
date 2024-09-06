@@ -151,7 +151,7 @@ The default columns in the annotation table are:
 | org.Sc.sgd.db   | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html) |
 | AnnotationForge | 1.46.0  | [https://bioconductor.org/packages/AnnotationForge](https://bioconductor.org/packages/AnnotationForge) |
 | biomaRt         |  2.60.1  | [https://bioconductor.org/packages/biomaRt](https://bioconductor.org/packages/biomaRt) |
-| GO.db           |  2.0.0  | [https://bioconductor.org/packages/GO.db](https://bioconductor.org/packages/GO.db) |
+| GO.db           |  3.19.1  | [https://bioconductor.org/packages/GO.db](https://bioconductor.org/packages/GO.db) |
 
 ---
 
@@ -164,8 +164,12 @@ The default columns in the annotation table are:
 > - Plants: Ensembl plants release 59
 > - Bacteria: Ensembl bacteria release 59  
 >  
-> **PANTHER:**  18.0  
-> > *Note: The values in the 'name' column of [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) (e.g., MOUSE, HUMAN, ARABIDOPSIS) are derived from the short names used in PANTHER. These short names are subject to change.*
+> **Database Versions:**
+> - STRINGdb: 12.0  
+> - PANTHERdb: 18.0  
+> - GO.db: 2.1 (used only when creating a local org.db R package)  
+>  
+> > *Note: The values in the 'name' column of [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) (e.g., HUMAN, MOUSE, RAT) are derived from the short names used in PANTHER. These short names are subject to change.*  
 
 ---
 

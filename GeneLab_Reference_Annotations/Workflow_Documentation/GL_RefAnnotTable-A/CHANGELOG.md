@@ -10,9 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added  
 
 - Added software: 
-    - AnnotationForge version 1.46.0.  
-    - biomaRt version 2.60.1.  
-    - GO.db version 2.0.0.  
+    - AnnotationForge version 1.46.0    
+    - biomaRt version 2.60.1  
+    - GO.db version 3.19.1  
 - Added support for:
     - Bacillus subtilis, subsp. subtilis 168  
     - Brachypodium distachyon  
@@ -48,11 +48,11 @@ Bioconductor. Used for:
     - Plants: Ensembl plants release 59
     - Bacteria: Ensembl bacteria release 59
 - Updated software:
-    - tidyverse version updated from 1.3.2 to 2.0.0.  
-    - STRINGdb version updated from 2.8.4 to 2.16.0.   
-    - PANTHER.db version updated from 1.0.11 to 1.0.12. 
-    - rtracklayer version updated from 1.56.1 to 1.64.0.
-    - Bioconductor version updated from 3.15.1 to 3.19.1.  
+    - tidyverse version updated from 1.3.2 to 2.0.0  
+    - STRINGdb version updated from 2.8.4 to 2.16.0   
+    - PANTHER.db version updated from 1.0.11 to 1.0.12 
+    - rtracklayer version updated from 1.56.1 to 1.64.0
+    - Bioconductor version updated from 3.15.1 to 3.19.1  
 - Removed org.EcK12.eg.db and replaced it with a locally created annotations 
 database, as it is no longer available on Bioconductor
 - Changed the first argument of GL-DPPD-7110-A_build-genome-annots-tab.R from 
