@@ -194,6 +194,18 @@ library(STRINGdb)
 library(PANTHER.db)
 library(rtracklayer)
 ```
+**Input Data:**
+
+- None (This is an initial setup step using predefined variables)
+
+**Output Data:**
+
+- GL_DPPD_ID (GeneLab Data Processing Pipeline Document ID)
+- ref_tab_path (path to the reference table CSV file)
+- readme_path (path to the README file)
+- currently_accepted_orgs (list of currently supported organisms)
+
+<br>
 
 ---
 
@@ -251,7 +263,7 @@ if ( file.exists(out_table_filename) ) {
 ```
 **Input Data:**
 
-- ref_tab_path (path to the reference table CSV file containing organism-specific information)
+- ref_tab_path (path to the reference table CSV file, output from [step 0](#0-set-up-environment))
 - target_organism (name of the target organism for which annotations are being generated)
 
 **Output Data:**
@@ -363,14 +375,13 @@ if (!(target_organism %in% no_org_db) && (target_organism %in% currently_accepte
 - gtf_link (URL to the GTF file for the target organism, output from [step 1](#1-define-variables-and-output-file-names))
 - target_org_db (name of the org.eg.db R package for the target organism, output from [steps 1](#1-define-variables-and-output-file-names) and [2](#2-create-the-organism-package-if-it-is-not-hosted-by-bioconductor))
 - target_organism (name of the target organism, output from [step 1](#1-define-variables-and-output-file-names))
-- currently_accepted_orgs (list of currently supported organisms, defined at the beginning of the script)
-- ref_tab_path ([path to the reference table CSV](GL-DPPD-7110-A_annotations.csv))
+- currently_accepted_orgs (list of currently supported organisms, output from [step 0](#0-set-up-environment))
+- ref_tab_path (path to the reference table CSV file, output from [step 0](#0-set-up-environment))
 
 **Output Data:**
 
 - GTF (data frame containing the GTF file for the target organism)
 - no_org_db (list of organisms that do not use org.db annotations due to inconsistent gene names across GTF and org.db)
-- Loaded org.db package (the organism-specific annotation package is loaded into the R session, if applicable)
 
 <br>
 
@@ -812,7 +823,7 @@ write(capture.output(sessionInfo()), out_log_filename, append = TRUE)
 - primary_keytype (the name of the primary key type being used, output from [step 4](#4-build-initial-annotation-table))
 - out_table_filename (name of the output annotation table file, output from [step 1](#1-define-variables-and-output-file-names))
 - out_log_filename (name of the output log file, output from [step 1](#1-define-variables-and-output-file-names))
-- GL_DPPD_ID (GeneLab Data Processing Pipeline Document ID, from step 0)
+- GL_DPPD_ID (GeneLab Data Processing Pipeline Document ID, output from [step 0](#0-set-up-environment))
 - gtf_link (URL to the GTF file for the target organism, output from [step 1](#1-define-variables-and-output-file-names))
 - target_org_db (name of the org.eg.db R package for the target organism, output from [steps 1](#1-define-variables-and-output-file-names) and [2](#2-create-the-organism-package-if-it-is-not-hosted-by-bioconductor))
 - no_org_db (list of organisms that do not use org.db annotations, output from [step 3](#3-load-annotation-databases))
