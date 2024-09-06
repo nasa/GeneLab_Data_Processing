@@ -167,12 +167,13 @@ Current GeneLab annotation tables are available on [figshare](https://figshare.c
 **Database Versions:**
 - STRINGdb: 12.0  
 - PANTHERdb: 18.0  
+  > Note: The values in the 'name' column of [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) (e.g., HUMAN, MOUSE, RAT) are derived from the short names used in PANTHER. These short names are subject to change.  
 - GO.db:
   - GO ontology file updated on 2024-01-17
   - Entrez gene data updated on 2024-03-12
   - DB schema version 2.1
 
-  > *Note: The values in the 'name' column of [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) (e.g., HUMAN, MOUSE, RAT) are derived from the short names used in PANTHER. These short names are subject to change.*  
+
 
 ---
 
