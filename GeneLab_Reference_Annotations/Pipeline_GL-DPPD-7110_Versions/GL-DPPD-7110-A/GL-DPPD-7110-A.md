@@ -157,19 +157,22 @@ The default columns in the annotation table are:
 
 # Annotation table build overview with example commands  
 
-> Current GeneLab annotation tables are available on [figshare](https://figshare.com/), exact links for each reference organism are provided in the [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) file.  
-> 
-> **[Ensembl Reference Versions](https://www.ensembl.org/index.html):**
-> - Animals: Ensembl release 112
-> - Plants: Ensembl plants release 59
-> - Bacteria: Ensembl bacteria release 59  
->  
-> **Database Versions:**
-> - STRINGdb: 12.0  
-> - PANTHERdb: 18.0  
-> - GO.db: 2.1 (used only when creating a local org.db R package)  
->  
-> > *Note: The values in the 'name' column of [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) (e.g., HUMAN, MOUSE, RAT) are derived from the short names used in PANTHER. These short names are subject to change.*  
+Current GeneLab annotation tables are available on [figshare](https://figshare.com/), exact links for each reference organism are provided in the [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) file.  
+
+**[Ensembl Reference Versions](https://www.ensembl.org/index.html):**
+- Animals: Ensembl release 112
+- Plants: Ensembl plants release 59
+- Bacteria: Ensembl bacteria release 59  
+
+**Database Versions:**
+- STRINGdb: 12.0  
+- PANTHERdb: 18.0  
+- GO.db:
+  - GO ontology file updated on 2024-01-17
+  - Entrez gene data updated on 2024-03-12
+  - DB schema version 2.1
+
+  > *Note: The values in the 'name' column of [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) (e.g., HUMAN, MOUSE, RAT) are derived from the short names used in PANTHER. These short names are subject to change.*  
 
 ---
 
