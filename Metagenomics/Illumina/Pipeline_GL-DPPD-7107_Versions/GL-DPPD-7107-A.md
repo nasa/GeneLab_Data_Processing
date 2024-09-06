@@ -31,7 +31,7 @@ Lauren Sanders (OSDR Project Scientist)
   - GTDB-Tk
   - HUMAnN3
   - MetaPhIAn3
-- In [step 14d](#14d-mag-taxonomic-classification), MAG taxonomic classification, added the new `--skip_ani_screen` argument to `gtdbtk classify_wf` to continue classifying genomes as in previous versions of GTDB-Tk.
+- In [step 14d](#14d-mag-taxonomic-classification), MAG taxonomic classification, added the new `--skip_ani_screen` argument to `gtdbtk classify_wf` to continue classifying genomes as in previous versions of GTDB-Tk, using mash and skani.
 
 ---
 
