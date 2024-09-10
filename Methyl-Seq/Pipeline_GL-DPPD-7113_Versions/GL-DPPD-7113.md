@@ -66,21 +66,23 @@ Jonathan Galazka (GeneLab Project Scientist)
 # Software used
 
 |Program|Version|Relevant Links|
-|:-----------|:------:|------:|
-|FastQC      | 0.12.0 |[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
-|MultiQC     | 1.22.1 |[https://multiqc.info/](https://multiqc.info/)|
-|Cutadapt    | 4.8    |[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
-|TrimGalore! | 0.6.7  |[https://github.com/FelixKrueger/TrimGalore](https://github.com/FelixKrueger/TrimGalore)|
-|Bismark     | 0.24.2 |[https://github.com/FelixKrueger/Bismark](https://github.com/FelixKrueger/Bismark)|
-|bowtie2     | 2.5.4  |[https://github.com/BenLangmead/bowtie2#overview](https://github.com/BenLangmead/bowtie2#overview)|
-|hisat2      | 2.2.1  |[https://github.com/DaehwanKimLab/hisat2](https://github.com/DaehwanKimLab/hisat2)|
-|samtools    | 1.20   |[https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)|
-|qualimap    | 2.3    |[http://qualimap.conesalab.org/](http://qualimap.conesalab.org/)|
-|R           | 4.4.0  |[https://www.r-project.org](https://www.r-project.org)|
-|tidyverse   | 2.0.0  |[https://tidyverse.tidyverse.org/](https://tidyverse.tidyverse.org/)|
-|Bioconductor| 3.19  |[https://bioconductor.org](https://bioconductor.org)
-|methylKit   | 1.30.0 |[https://bioconductor.org/packages/release/bioc/html/methylKit.html](https://bioconductor.org/packages/release/bioc/html/methylKit.html)|
-|genomation  | 1.36.0 |[https://bioconductor.org/packages/release/bioc/html/genomation.html](https://bioconductor.org/packages/release/bioc/html/genomation.html)|
+|:------------|:------:|------:|
+|FastQC       | 0.12.0 |[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
+|MultiQC      | 1.22.1 |[https://multiqc.info/](https://multiqc.info/)|
+|Cutadapt     | 4.8    |[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
+|TrimGalore!  | 0.6.10 |[https://github.com/FelixKrueger/TrimGalore](https://github.com/FelixKrueger/TrimGalore)|
+|Bismark      | 0.24.2 |[https://github.com/FelixKrueger/Bismark](https://github.com/FelixKrueger/Bismark)|
+|bowtie2      | 2.5.4  |[https://github.com/BenLangmead/bowtie2#overview](https://github.com/BenLangmead/bowtie2#overview)|
+|hisat2       | 2.2.1  |[https://github.com/DaehwanKimLab/hisat2](https://github.com/DaehwanKimLab/hisat2)|
+|samtools     | 1.20   |[https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)|
+|qualimap     | 2.3    |[http://qualimap.conesalab.org/](http://qualimap.conesalab.org/)|
+|gtfToGenePred| 447    |[http://hgdownload.cse.ucsc.edu/admin/exe/](http://hgdownload.cse.ucsc.edu/admin/exe/)|
+|genePredToBed| 447    |[http://hgdownload.cse.ucsc.edu/admin/exe/](http://hgdownload.cse.ucsc.edu/admin/exe/)
+|R            | 4.4.0  |[https://www.r-project.org](https://www.r-project.org)|
+|tidyverse    | 2.0.0  |[https://tidyverse.tidyverse.org/](https://tidyverse.tidyverse.org/)|
+|Bioconductor | 3.19   |[https://bioconductor.org](https://bioconductor.org)
+|methylKit    | 1.30.0 |[https://bioconductor.org/packages/release/bioc/html/methylKit.html](https://bioconductor.org/packages/release/bioc/html/methylKit.html)|
+|genomation   | 1.36.0 |[https://bioconductor.org/packages/release/bioc/html/genomation.html](https://bioconductor.org/packages/release/bioc/html/genomation.html)|
 
 ---
 
