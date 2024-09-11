@@ -87,7 +87,7 @@ The default columns in the annotation table are:
 
 2. **Caenorhabditis elegans**:   
    - Columns: ENSEMBL, SYMBOL, GENENAME, REFSEQ, ENTREZID, STRING_id   
-     > Note: org.db ENTREZ keys did not match PANTHER ENTREZ keys so the empty `GOSLIM_IDS` column was ommitted
+     > Note: org.db ENTREZ keys did not match PANTHER ENTREZ keys so the empty `GOSLIM_IDS` column was omitted
 
 3. **Lactobacillus acidophilus**:   
    - Columns: LOCUS, OLD_LOCUS, SYMBOL, GENENAME, STRING_id, GO   
@@ -564,7 +564,7 @@ for (keytype in wanted_org_db_keytypes) {
   }
 }
 
-# For SALTY, reorder columns to mtach other tables
+# For SALTY, reorder columns to match other tables
 if (target_organism == "Salmonella enterica") { # Reorder columns to match others; was mismatched since ENTREZ came from GTF
   annot_orgdb <- annot_orgdb[, c("ENSEMBL", "SYMBOL", "GENENAME", "REFSEQ", "ENTREZID")]
 }
