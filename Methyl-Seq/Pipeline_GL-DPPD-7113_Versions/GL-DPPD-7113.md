@@ -67,7 +67,7 @@ Jonathan Galazka (GeneLab Project Scientist)
 
 |Program|Version|Relevant Links|
 |:------------|:------:|------:|
-|FastQC       | 0.12.0 |[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
+|FastQC       | 0.12.1 |[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
 |MultiQC      | 1.22.1 |[https://multiqc.info/](https://multiqc.info/)|
 |Cutadapt     | 4.8    |[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
 |TrimGalore!  | 0.6.10 |[https://github.com/FelixKrueger/TrimGalore](https://github.com/FelixKrueger/TrimGalore)|
