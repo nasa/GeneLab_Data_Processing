@@ -26,14 +26,14 @@ Barbara Novak (GeneLab Data Processing Lead)
   - R version updated from 4.1.3 to 4.4.0.  
   - Bioconductor version updated from 3.15.1 to 3.19.1.
   - tidyverse version updated from 1.3.2 to 2.0.0.  
-  - STRINGdb version updated from 2.8.4 to 2.16.0.   
-  - PANTHER.db version updated from 1.0.11 to 1.0.12.  
+  - STRINGdb version updated from 2.8.4 to 2.16.0 (DB version: 12.0).   
+  - PANTHER.db version updated from 1.0.11 to 1.0.12 (DB version: 18.0).  
   - rtracklayer version updated from 1.56.1 to 1.64.0.
 
 - **Added Software:**
   - AnnotationForge version 1.46.0.
   - biomaRt version 2.60.1.
-  - GO.db version 2.0.0.    
+  - GO.db version 3.19.1 (DB schema version 2.1)    
 
 - **Ensembl Releases:**
   - Animals: Updated from release 107 to 112  
