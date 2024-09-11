@@ -68,17 +68,17 @@ Lauren Sanders (OSDR Project Scientist)
 |FastQC| 0.12.1 |[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
 |MultiQC| 1.19 |[https://multiqc.info/](https://multiqc.info/)|
 |bbduk| 38.86 |[https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/)|
-|megahit| 1.2.9 |[https://github.com/voutcn/megahit#megahit](https://github.com/voutcn/megahit#megahit)|
+|MEGAHIT| 1.2.9 |[https://github.com/voutcn/megahit#megahit](https://github.com/voutcn/megahit#megahit)|
 |bit| 1.8.53 |[https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit](https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit)|
 |bowtie2| 2.4.1 |[https://github.com/BenLangmead/bowtie2#overview](https://github.com/BenLangmead/bowtie2#overview)|
 |samtools| 1.20 |[https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)|
-|prodigal| 2.6.3 |[https://github.com/hyattpd/Prodigal#prodigal](https://github.com/hyattpd/Prodigal#prodigal)|
+|Prodigal| 2.6.3 |[https://github.com/hyattpd/Prodigal#prodigal](https://github.com/hyattpd/Prodigal#prodigal)|
 |KOFamScan| 1.3.0 |[https://github.com/takaram/kofam_scan#kofamscan](https://github.com/takaram/kofam_scan#kofamscan)|
 |CAT| 5.2.3 |[https://github.com/dutilh/CAT#cat-and-bat](https://github.com/dutilh/CAT#cat-and-bat)|
 |MetaBAT| 2.15 |[https://bitbucket.org/berkeleylab/metabat/src/master/](https://bitbucket.org/berkeleylab/metabat/src/master/)|
-|checkm| 1.1.3 |[https://github.com/Ecogenomics/CheckM](https://github.com/Ecogenomics/CheckM)|
+|CheckM| 1.1.3 |[https://github.com/Ecogenomics/CheckM](https://github.com/Ecogenomics/CheckM)|
 |GTDB-Tk| 2.4.0 |[https://github.com/Ecogenomics/GTDBTk](https://github.com/Ecogenomics/GTDBTk)|
-|KEGGDecoder| 1.2.2 |[https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder](https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder)
+|KEGG-Decoder| 1.2.2 |[https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder](https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder)
 |HUMAnN| 3.9 |[https://github.com/biobakery/humann](https://github.com/biobakery/humann)|
 |MetaPhlAn| 4.1.0 |[https://github.com/biobakery/MetaPhlAn](https://github.com/biobakery/MetaPhlAn)|
 
@@ -113,7 +113,7 @@ fastqc -o raw_fastqc_output *raw.fastq.gz
 #### 1a. Compile Raw Data QC
 
 ```
-multiqc -o raw_multiqc_output -n raw_multiqc -z raw_fastqc_output/
+multiqc -o raw_multiqc_output -n raw_multiqc raw_fastqc_output/
 # this is how it's packaged with our workflow outputs
 zip -r raw_multiqc_GLmetagenomics_report.zip raw_multiqc_output
 ```
@@ -122,7 +122,6 @@ zip -r raw_multiqc_GLmetagenomics_report.zip raw_multiqc_output
 
 *	`-o` – the output directory to store results
 *	`-n` – the filename prefix of results
-*	`-z` – specifies to zip the output data directory
 *	`raw_fastqc_output/` – the directory holding the output data from the fastqc run, provided as a positional argument
 
 **Input data:**
@@ -175,7 +174,7 @@ bbduk.sh in=sample-1-R1-raw.fastq.gz in2=sample-1-R2-raw.fastq.gz out1=sample-1_
 
 *	`maxns` – sets the maximum number of Ns allowed in a read before it will be filtered out
 
-*  `swift` – tells the program to look for and trim low-complexity adaptase reminants from the Swift1S kit
+*	`swift` – tells the program to look for and trim low-complexity adaptase reminants from the Swift1S kit
 
 *	`> bbduk.log 2>&1` – redirects the stderr and stdout to a log file for saving
 
@@ -214,7 +213,7 @@ fastqc -o filtered_fastqc_output/ *filtered.fastq.gz
 
 #### 3a. Compile Filtered/Trimmed Data QC
 ```
-multiqc -o filtered_multiqc_output -n filtered_multiqc -z filtered_fastqc_output/
+multiqc -o filtered_multiqc_output -n filtered_multiqc filtered_fastqc_output/
 # this is how it's packaged with our workflow outputs
 zip -r filtered_multiqc_GLmetagenomics_report.zip filtered_multiqc_output
 ```
@@ -223,7 +222,6 @@ zip -r filtered_multiqc_GLmetagenomics_report.zip filtered_multiqc_output
 
 *	`-o` – the output directory to store results
 *	`-n` – the filename prefix of results
-*	`-z` – specifies to zip the output data directory
 *	`filtered_fastqc_output/` – the directory holding the output data from the fastqc run, provided as a positional argument
 
 **Input data:**
@@ -244,7 +242,7 @@ zip -r filtered_multiqc_GLmetagenomics_report.zip filtered_multiqc_output
 ### 4. Sample assembly
 ```
 megahit -1 sample-1_R1_filtered.fastq.gz -2 sample-1_R2_filtered.fastq.gz \
-        -o sample-1-assembly -t 10 --min-contig-length 500 > sample-1-assembly.log 2>&1
+        -o sample-1-assembly -t NumberOfThreads --min-contig-length 500 > sample-1-assembly.log 2>&1
 ```
 
 **Parameter Definitions:**  
@@ -587,8 +585,8 @@ bowtie2-build sample-1-assembly.fasta sample-1-assembly-bt-index
 
 #### 9b. Performing mapping, conversion to bam, and sorting
 ```
-bowtie2 --threads 15 -x sample-1-assembly-bt-index -1 sample-1_R1_filtered.fastq.gz \
-        -2 sample-1_R2_filtered.fastq.gz 2> sample-1-mapping-info.txt | samtools view -b | samtools sort -@ 15 > sample-1.bam
+bowtie2 --threads NumberOfThreads -x sample-1-assembly-bt-index -1 sample-1_R1_filtered.fastq.gz \
+        -2 sample-1_R2_filtered.fastq.gz 2> sample-1-mapping-info.txt | samtools view -b | samtools sort -@ NumberOfThreads > sample-1.bam
 ```
 
 **Parameter Definitions:**  
@@ -609,7 +607,7 @@ bowtie2 --threads 15 -x sample-1-assembly-bt-index -1 sample-1_R1_filtered.fastq
 
 #### 9c. Indexing
 ```
-samtools index -@ 15 sample-1.bam 
+samtools index -@ NumberOfThreads sample-1.bam 
 ```
 
 **Parameter Definitions:**  
@@ -787,7 +785,7 @@ bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o Combi
 ```
 jgi_summarize_bam_contig_depths --outputDepth sample-1-metabat-assembly-depth.tsv --percentIdentity 97 --minContigLength 1000 --minContigDepth 1.0  --referenceFasta sample-1-assembly.fasta sample-1.bam
 
-metabat2  --inFile sample-1-assembly.fasta --outFile sample-1 --abdFile sample-1-metabat-assembly-depth.tsv -t 4
+metabat2  --inFile sample-1-assembly.fasta --outFile sample-1 --abdFile sample-1-metabat-assembly-depth.tsv -t NumberOfThreads
 
 mkdir sample-1-bins
 mv sample-1*bin*.fasta sample-1-bins
@@ -993,7 +991,7 @@ metaphlan --install
   # forward and reverse reads need to be provided combined if paired-end (if not paired-end, single-end reads are provided to the --input argument next)
 cat sample-1_R1_filtered.fastq.gz sample-1_R2_filtered.fastq.gz > sample-1-combined.fastq.gz
 
-humann --input sample-1-combined.fastq.gz --output sample-1-humann3-out-dir --threads 15 \
+humann --input sample-1-combined.fastq.gz --output sample-1-humann3-out-dir --threads NumberOfThreads \
        --output-basename sample-1 --metaphlan-options "--unknown_estimation --add_viruses \
        --sample_id sample-1"
 ```
