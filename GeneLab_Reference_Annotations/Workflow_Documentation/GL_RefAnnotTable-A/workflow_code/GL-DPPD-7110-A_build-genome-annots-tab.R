@@ -96,13 +96,12 @@ target_info <- ref_table %>%
 # Extract the relevant columns from the reference table
 target_taxid <- target_info$taxon # Taxonomic identifier
 target_org_db <- target_info$annotations # org.eg.db R package
-target_species_designation <- target_info$species # Full species name
 gtf_link <- target_info$gtf # Path to reference assembly GTF
 target_short_name <- target_info$name # PANTHER / UNIPROT short name; blank if not available
 ref_source <- target_info$ref_source # Reference files source  
 
 # Error handling for missing values
-if (is.na(target_taxid) || is.na(target_org_db) || is.na(target_species_designation) || is.na(gtf_link)) {
+if (is.na(target_taxid) || is.na(target_org_db) || is.na(target_organism) || is.na(gtf_link)) {
   stop(paste("Error: Missing data for target organism", target_organism, "in reference table."))
 }
 
@@ -112,7 +111,7 @@ base_output_name <- str_replace(base_gtf_filename, ".gtf.gz", "")
 
 # Add the species name to base_output_name if the reference source is not ENSEMBL
 if (!(ref_source %in% c("ensembl_plants", "ensembl_bacteria", "ensembl"))) {
-  base_output_name <- paste(str_replace(target_species_designation, " ", "_"), base_output_name, sep = "_")
+  base_output_name <- paste(str_replace(target_organism, " ", "_"), base_output_name, sep = "_")
 }
 
 out_table_filename <- paste0(base_output_name, "-GL-annotations.tsv")
