@@ -331,7 +331,7 @@ for (keytype in wanted_org_db_keytypes) {
   }
 }
 
-# For SALTY, reorder columns to mtach other tables
+# For SALTY, reorder columns to match other tables
 if (target_organism == "Salmonella enterica") { # Reorder columns to match others; was mismatched since ENTREZ came from GTF
   annot_orgdb <- annot_orgdb[, c("ENSEMBL", "SYMBOL", "GENENAME", "REFSEQ", "ENTREZID")]
 }
