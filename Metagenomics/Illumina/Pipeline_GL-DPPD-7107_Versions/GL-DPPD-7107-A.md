@@ -979,7 +979,7 @@ KEGG-decoder -v interactive -i MAG-level-KO-annotations_GLmetagenomics.tsv -o MA
 
 ## Read-based processing
 ### 16. Taxonomic and functional profiling
-The following uses the `humann3` and `metaphlan3` reference databases downloaded on 26-Sept-2020 as follows:
+The following uses the `humann` and `metaphlan` reference databases downloaded on 13-Jun-2024 as follows:
 
 ```bash
 humann_databases --download chocophlan full
@@ -988,7 +988,7 @@ humann_databases --download utility_mapping full
 metaphlan --install
 ```
 
-#### 16a. Running humann3 (which also runs metaphlan3)
+#### 16a. Running humann (which also runs metaphlan)
 ```bash
   # forward and reverse reads need to be provided combined if paired-end (if not paired-end, single-end reads are provided to the --input argument next)
 cat sample-1_R1_filtered.fastq.gz sample-1_R2_filtered.fastq.gz > sample-1-combined.fastq.gz
