@@ -99,6 +99,7 @@ target_org_db <- target_info$annotations # org.eg.db R package
 target_species_designation <- target_info$species # Full species name
 gtf_link <- target_info$gtf # Path to reference assembly GTF
 target_short_name <- target_info$name # PANTHER / UNIPROT short name; blank if not available
+ref_source <- target_info$ref_source # Reference files source  
 
 # Error handling for missing values
 if (is.na(target_taxid) || is.na(target_org_db) || is.na(target_species_designation) || is.na(gtf_link)) {
@@ -108,6 +109,11 @@ if (is.na(target_taxid) || is.na(target_org_db) || is.na(target_species_designat
 # Create output filenames
 base_gtf_filename <- basename(gtf_link)
 base_output_name <- str_replace(base_gtf_filename, ".gtf.gz", "")
+
+# Add the species name to base_output_name if the reference source is not ENSEMBL
+if (!(ref_source %in% c("ensembl_plants", "ensembl_bacteria", "ensembl"))) {
+  base_output_name <- paste(str_replace(target_species_designation, " ", "_"), base_output_name, sep = "_")
+}
 
 out_table_filename <- paste0(base_output_name, "-GL-annotations.tsv")
 out_log_filename <- paste0(base_output_name, "-GL-build-info.txt")
@@ -288,12 +294,12 @@ orgdb_keytype <- if (!is.null(orgdb_keytype_mappings[[target_organism]])) {
   orgdb_keytype_mappings[["default"]][["keytype"]]
 }
 
-# Function to clean and match ACCNUM keys for BRADI
-clean_and_match_accnum <- function(annot_table, org_db, query_col, keytype_col, target_column) {
-  # Clean the ACCNUM keys in the GTF annotations
+# Function to remove version numbers from ACCNUM keys and match them for BRADI
+match_accnum <- function(annot_table, org_db, query_col, keytype_col, target_column) {
+  # Remove version numbers from the ACCNUM keys in the GTF annotations
   cleaned_annot_keys <- sub("\\..*", "", annot_table[[query_col]])
   
-  # Retrieve and clean the org.db keys
+  # Retrieve and remove version numbers from the org.db keys
   orgdb_keys <- keys(org_db, keytype = keytype_col)
   cleaned_orgdb_keys <- sub("\\..*", "", orgdb_keys)
   
@@ -312,8 +318,8 @@ for (keytype in wanted_org_db_keytypes) {
   # Check if keytype is a valid column in the target org.db
   if (keytype %in% columns(get(target_org_db, envir = .GlobalEnv))) {
     if (target_organism == "Brachypodium distachyon" && orgdb_query == "ACCNUM") {
-      # For BRADI: use the clean_and_match_accnum function to map to org.db ACCNUM entries
-      org_matches <- clean_and_match_accnum(annot_orgdb, get(target_org_db, envir = .GlobalEnv), query_col = orgdb_query, keytype_col = orgdb_keytype, target_column = keytype)
+      # For BRADI: use the match_accnum function to map to org.db ACCNUM entries
+      org_matches <- match_accnum(annot_orgdb, get(target_org_db, envir = .GlobalEnv), query_col = orgdb_query, keytype_col = orgdb_keytype, target_column = keytype)
     } else {
       # Default mapping for other organisms
       org_matches <- mapIds(get(target_org_db, envir = .GlobalEnv), keys = annot_orgdb[[orgdb_query]], keytype = orgdb_keytype, column = keytype, multiVals = "list")
@@ -497,6 +503,13 @@ if (!(target_organism %in% no_panther_db)) {
 annot <- annot_pantherdb %>%
   group_by(!!sym(primary_keytype)) %>%
   summarise(across(everything(), ~paste(unique(na.omit(.))[unique(na.omit(.)) != ""], collapse = "|")), .groups = 'drop')
+
+# If "GO" column exists, move it to the end to keep columns in consistent order across organisms
+if ("GO" %in% names(annot)) {
+  go_column <- annot$GO
+  annot$GO <- NULL
+  annot$GO <- go_column
+}
 
 # Sort the annotation table based on primary keytype gene IDs
 annot <- annot %>% arrange(.[[1]])

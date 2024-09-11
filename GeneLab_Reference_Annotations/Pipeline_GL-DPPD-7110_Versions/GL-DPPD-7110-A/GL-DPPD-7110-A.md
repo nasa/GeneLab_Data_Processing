@@ -151,21 +151,29 @@ The default columns in the annotation table are:
 | org.Sc.sgd.db   | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html) |
 | AnnotationForge | 1.46.0  | [https://bioconductor.org/packages/AnnotationForge](https://bioconductor.org/packages/AnnotationForge) |
 | biomaRt         |  2.60.1  | [https://bioconductor.org/packages/biomaRt](https://bioconductor.org/packages/biomaRt) |
-| GO.db           |  2.0.0  | [https://bioconductor.org/packages/GO.db](https://bioconductor.org/packages/GO.db) |
+| GO.db           |  3.19.1  | [https://bioconductor.org/packages/GO.db](https://bioconductor.org/packages/GO.db) |
 
 ---
 
 # Annotation table build overview with example commands  
 
-> Current GeneLab annotation tables are available on [figshare](https://figshare.com/), exact links for each reference organism are provided in the [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) file.  
-> 
-> **[Ensembl Reference Versions](https://www.ensembl.org/index.html):**
-> - Animals: Ensembl release 112
-> - Plants: Ensembl plants release 59
-> - Bacteria: Ensembl bacteria release 59  
->  
-> **PANTHER:**  18.0  
-> > *Note: The values in the 'name' column of [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) (e.g., MOUSE, HUMAN, ARABIDOPSIS) are derived from the short names used in PANTHER. These short names are subject to change.*
+Current GeneLab annotation tables are available on [figshare](https://figshare.com/), exact links for each reference organism are provided in the [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) file.  
+
+**[Ensembl Reference Versions](https://www.ensembl.org/index.html):**
+- Animals: Ensembl release 112
+- Plants: Ensembl plants release 59
+- Bacteria: Ensembl bacteria release 59  
+
+**Database Versions:**
+- STRINGdb: 12.0  
+- PANTHERdb: 18.0  
+  > Note: The values in the 'name' column of [GL-DPPD-7110-A_annotations.csv](GL-DPPD-7110-A_annotations.csv) (e.g., HUMAN, MOUSE, RAT) are derived from the short names used in PANTHER. These short names are subject to change.  
+- GO.db:
+  - GO ontology file updated on 2024-01-17
+  - Entrez gene data updated on 2024-03-12
+  - DB schema version 2.1
+
+
 
 ---
 
@@ -194,6 +202,18 @@ library(STRINGdb)
 library(PANTHER.db)
 library(rtracklayer)
 ```
+**Input Data:**
+
+- None (This is an initial setup step using predefined variables)
+
+**Output Data:**
+
+- GL_DPPD_ID (GeneLab Data Processing Pipeline Document ID)
+- ref_tab_path (path to the reference table CSV file)
+- readme_path (path to the README file)
+- currently_accepted_orgs (list of currently supported organisms)
+
+<br>
 
 ---
 
@@ -221,6 +241,7 @@ target_org_db <- target_info$annotations # org.eg.db R package
 target_species_designation <- target_info$species # Full species name
 gtf_link <- target_info$gtf # Path to reference assembly GTF
 target_short_name <- target_info$name # PANTHER / UNIPROT short name; blank if not available
+ref_source <- target_info$ref_source # Reference files source  
 
 # Error handling for missing values
 if (is.na(target_taxid) || is.na(target_org_db) || is.na(target_species_designation) || is.na(gtf_link)) {
@@ -230,6 +251,11 @@ if (is.na(target_taxid) || is.na(target_org_db) || is.na(target_species_designat
 # Create output filenames
 base_gtf_filename <- basename(gtf_link)
 base_output_name <- str_replace(base_gtf_filename, ".gtf.gz", "")
+
+# Add the species name to base_output_name if the reference source is not ENSEMBL
+if (!(ref_source %in% c("ensembl_plants", "ensembl_bacteria", "ensembl"))) {
+  base_output_name <- paste(str_replace(target_species_designation, " ", "_"), base_output_name, sep = "_")
+}
 
 out_table_filename <- paste0(base_output_name, "-GL-annotations.tsv")
 out_log_filename <- paste0(base_output_name, "-GL-build-info.txt")
@@ -243,6 +269,21 @@ if ( file.exists(out_table_filename) ) {
   quit()
 }
 ```
+**Input Data:**
+
+- ref_tab_path (path to the reference table CSV file, output from [step 0](#0-set-up-environment))
+- target_organism (name of the target organism for which annotations are being generated)
+
+**Output Data:**
+
+- target_taxid (taxonomic identifier for the target organism)
+- target_org_db (name of the org.db R package for the target organism)
+- target_species_designation (full species name of the target organism)
+- gtf_link (URL to the GTF file for the target organism)
+- target_short_name (PANTHER/UNIPROT short name for the target organism)
+- ref_source (source of the reference files, e.g., "ensembl", "ensembl_plants", "ensembl_bacteria", "ncbi")
+- out_table_filename (name of the output annotation table file)
+- out_log_filename (name of the output log file)
 
 <br>
 
@@ -293,6 +334,21 @@ if (!requireNamespace(target_org_db, quietly = TRUE)) {
 }
 ```
 
+**Input Data:**
+
+- target_org_db (name of the org.db R package for the target organism, output from [step 1](#1-define-variables-and-output-file-names))
+- target_species_designation (full species name of the target organism, output from [step 1](#1-define-variables-and-output-file-names))
+- ref_table (reference table containing organism-specific information, output from [step 1](#1-define-variables-and-output-file-names))
+- target_organism (name of the target organism, output from [step 1](#1-define-variables-and-output-file-names))
+- target_taxid (taxonomic identifier for the target organism, output from [step 1](#1-define-variables-and-output-file-names))
+
+**Output Data:**
+
+- target_org_db (updated name of the org.db R package, if it was created locally)
+- Locally installed org.db package (if the package is not available on Bioconductor, a new package is created and installed)
+
+<br>
+
 ---
 
 ## 3. Load Annotation Databases
@@ -321,6 +377,19 @@ if (!(target_organism %in% no_org_db) && (target_organism %in% currently_accepte
   install_and_load_org_db(target_organism, target_org_db, ref_tab_path)
 }
 ```
+
+**Input Data:**
+
+- gtf_link (URL to the GTF file for the target organism, output from [step 1](#1-define-variables-and-output-file-names))
+- target_org_db (name of the org.eg.db R package for the target organism, output from [steps 1](#1-define-variables-and-output-file-names) and [2](#2-create-the-organism-package-if-it-is-not-hosted-by-bioconductor))
+- target_organism (name of the target organism, output from [step 1](#1-define-variables-and-output-file-names))
+- currently_accepted_orgs (list of currently supported organisms, output from [step 0](#0-set-up-environment))
+- ref_tab_path (path to the reference table CSV file, output from [step 0](#0-set-up-environment))
+
+**Output Data:**
+
+- GTF (data frame containing the GTF file for the target organism)
+- no_org_db (list of organisms that do not use org.db annotations due to inconsistent gene names across GTF and org.db)
 
 <br>
 
@@ -394,6 +463,17 @@ if (target_organism == "Salmonella enterica") {
 }
 ```
 
+**Input Data:**
+
+- GTF (data frame containing the parsed GTF file for the target organism, output from [step 3](#3-load-annotation-databases))
+- target_organism (target organism's full species name, output from [step 1](#1-define-variables-and-output-file-names))
+- gtf_keytype_mappings (list of keys to extract from the GTF, for each organism)
+
+**Output Data:**
+
+- annot_gtf (initial annotation table derived from the GTF file, containing only the relevant columns for the target organism)
+- primary_keytype (the name of the primary key type being used, e.g., "ENSEMBL", "TAIR", "LOCUS", based on the GTF gene_id entries)
+
 <br>
 
 ---
@@ -448,12 +528,12 @@ orgdb_keytype <- if (!is.null(orgdb_keytype_mappings[[target_organism]])) {
   orgdb_keytype_mappings[["default"]][["keytype"]]
 }
 
-# Function to clean and match ACCNUM keys for BRADI
-clean_and_match_accnum <- function(annot_table, org_db, query_col, keytype_col, target_column) {
-  # Clean the ACCNUM keys in the GTF annotations
+# Function to remove version numbers from ACCNUM keys and match them for BRADI
+match_accnum <- function(annot_table, org_db, query_col, keytype_col, target_column) {
+  # Remove version numbers from the ACCNUM keys in the GTF annotations
   cleaned_annot_keys <- sub("\\..*", "", annot_table[[query_col]])
   
-  # Retrieve and clean the org.db keys
+  # Retrieve and remove version numbers from the org.db keys
   orgdb_keys <- keys(org_db, keytype = keytype_col)
   cleaned_orgdb_keys <- sub("\\..*", "", orgdb_keys)
   
@@ -472,8 +552,8 @@ for (keytype in wanted_org_db_keytypes) {
   # Check if keytype is a valid column in the target org.db
   if (keytype %in% columns(get(target_org_db, envir = .GlobalEnv))) {
     if (target_organism == "Brachypodium distachyon" && orgdb_query == "ACCNUM") {
-      # For BRADI: use the clean_and_match_accnum function to map to org.db ACCNUM entries
-      org_matches <- clean_and_match_accnum(annot_orgdb, get(target_org_db, envir = .GlobalEnv), query_col = orgdb_query, keytype_col = orgdb_keytype, target_column = keytype)
+      # For BRADI: use the match_accnum function to map to org.db ACCNUM entries
+      org_matches <- match_accnum(annot_orgdb, get(target_org_db, envir = .GlobalEnv), query_col = orgdb_query, keytype_col = orgdb_keytype, target_column = keytype)
     } else {
       # Default mapping for other organisms
       org_matches <- mapIds(get(target_org_db, envir = .GlobalEnv), keys = annot_orgdb[[orgdb_query]], keytype = orgdb_keytype, column = keytype, multiVals = "list")
@@ -496,6 +576,20 @@ if (target_organism == "Saccharomyces cerevisiae") {
   colnames(annot_orgdb) <- c("ENSEMBL", "SYMBOL", "GENENAME", "REFSEQ", "ENTREZID")
 }
 ```
+
+**Input Data:**
+
+- annot_gtf (initial annotation table derived from the GTF file, output from [step 4](#4-build-initial-annotation-table))
+- target_organism (target organism's full species name, output from [step 1](#1-define-variables-and-output-file-names))
+- no_org_db (list of organisms that do not use annotations from an org.db, output from [step 3](#3-load-annotation-databases))
+- primary_keytype (the name of the primary key type being used, output from [step 4](#4-build-initial-annotation-table))
+- target_org_db (name of the org.eg.db R package for the target organism, output from [steps 1](#1-define-variables-and-output-file-names) and [2](#2-create-the-organism-package-if-it-is-not-hosted-by-bioconductor))
+
+**Output Data:**
+
+- annot_orgdb (updated annotation table with additional keys from the organism-specific org.db)
+- orgdb_query (the key type used to map to the org.db)
+- orgdb_keytype (the name of the key type in the org.db)
 
 <br>
 
@@ -609,6 +703,20 @@ if (target_organism == "Bacillus subtilis") {
 annot_stringdb <- as.data.frame(annot_stringdb)
 ```
 
+**Input Data:**
+
+- annot_orgdb (annotation table with GTF and org.db annotations, output from [step 5](#5-add-orgdb-keys))
+- target_organism (target organism's full species name, output from [step 1](#1-define-variables-and-output-file-names))
+- primary_keytype (the name of the primary key type being used, output from [step 4](#4-build-initial-annotation-table))
+- target_taxid (taxonomic identifier for the target organism, output from [step 1](#1-define-variables-and-output-file-names))
+
+**Output Data:**
+
+- annot_stringdb (updated annotation table with added STRING IDs)
+- no_stringdb (list of organisms that do not use STRING annotations)
+- stringdb_query (the key type used for mapping to STRING database)
+- uses_old_locus (list of organisms where GTF gene_id entries do not match those in STRING, so entries in OLD_LOCUS are used to query STRING)
+
 <br>
 
 ---
@@ -658,6 +766,20 @@ if (!(target_organism %in% no_panther_db)) {
 }
 ```
 
+**Input Data:**
+
+- annot_orgdb (annotation table with GTF and org.db annotations, output from [step 5](#5-add-orgdb-keys))
+- target_organism (target organism's full species name, output from [step 1](#1-define-variables-and-output-file-names))
+- primary_keytype (the name of the primary key type being used, output from [step 4](#4-build-initial-annotation-table))
+- target_taxid (taxonomic identifier for the target organism, output from [step 1](#1-define-variables-and-output-file-names))
+
+**Output Data:**
+
+- annot_stringdb (updated annotation table with added STRING IDs)
+- no_stringdb (list of organisms that do not use STRING annotations)
+- stringdb_query (the key type used for mapping to STRING database)
+- uses_old_locus (list of organisms where the 'gene_id' column in the GTF dataframe does not match STRING identifiers, so the 'old_locus_tag' column from the GTF dataframe is used to query STRING instead)
+
 <br>
 
 ---
@@ -669,6 +791,13 @@ if (!(target_organism %in% no_panther_db)) {
 annot <- annot_pantherdb %>%
   group_by(!!sym(primary_keytype)) %>%
   summarise(across(everything(), ~paste(unique(na.omit(.))[unique(na.omit(.)) != ""], collapse = "|")), .groups = 'drop')
+
+# If "GO" column exists, move it to the end to keep columns in consistent order across organisms
+if ("GO" %in% names(annot)) {
+  go_column <- annot$GO
+  annot$GO <- NULL
+  annot$GO <- go_column
+}
 
 # Sort the annotation table based on primary keytype gene IDs
 annot <- annot %>% arrange(.[[1]])
@@ -696,6 +825,23 @@ write("\n\nAll session info:\n", out_log_filename, append = TRUE)
 write(capture.output(sessionInfo()), out_log_filename, append = TRUE)
 ```
 
+**Input Data:**
+
+- annot_pantherdb (annotation table with GTF, org.db, STRING, and PANTHER annotations, output from [step 7](#7-add-gene-ontology-go-slim-ids))
+- primary_keytype (the name of the primary key type being used, output from [step 4](#4-build-initial-annotation-table))
+- out_table_filename (name of the output annotation table file, output from [step 1](#1-define-variables-and-output-file-names))
+- out_log_filename (name of the output log file, output from [step 1](#1-define-variables-and-output-file-names))
+- GL_DPPD_ID (GeneLab Data Processing Pipeline Document ID, output from [step 0](#0-set-up-environment))
+- gtf_link (URL to the GTF file for the target organism, output from [step 1](#1-define-variables-and-output-file-names))
+- target_org_db (name of the org.eg.db R package for the target organism, output from [steps 1](#1-define-variables-and-output-file-names) and [2](#2-create-the-organism-package-if-it-is-not-hosted-by-bioconductor))
+- no_org_db (list of organisms that do not use org.db annotations, output from [step 3](#3-load-annotation-databases))
+
+**Output Data:**
+
+- annot (final annotation table with annotations from the GTF, org.db, STRING, and PANTHER)
+- ***-GL-annotations.tsv** (annot saved as a tab-delimited table file)
+- ***-GL-build-info.txt** (annotation table build information log file)
+
 <br>
 
 ---
@@ -706,5 +852,5 @@ write(capture.output(sessionInfo()), out_log_filename, append = TRUE)
 
 **Pipeline Output data:**
 
-- *-GL-annotations.tsv (Tab delineated table of gene annotations, used to add gene annotations in other GeneLab processing pipelines)
-- *-GL-build-info.txt (Text file containing information used to create the annotation table, including tool and tool versions and date of creation)
+- ***-GL-annotations.tsv** (Tab-delineated table of gene annotations, used to add gene annotations in other GeneLab processing pipelines)
+- ***-GL-build-info.txt** (Text file containing information used to create the annotation table, including tool and tool versions and date of creation)
