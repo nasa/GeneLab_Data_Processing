@@ -26,6 +26,8 @@ The current GeneLab Illumina amplicon sequencing data processing pipeline (AmpIl
    5a. [Main outputs](#5a-main-outputs)  
    5b. [Resource logs](#5b-resource-logs)  
 
+6. [Post Processing](#6-post-processing) 
+
 <br>
 
 ---
@@ -136,7 +138,6 @@ nextflow run main.nf -resume -profile conda --csv_file SE_file.csv --target_regi
 * `-resume` - Resumes  workflow execution using previously cached results
 * `-profile` – Specifies the configuration profile(s) to load, `singularity` instructs nextflow to setup and use singularity for all software called in the workflow
 * `--target_region` – Specifies the amplicon target region to be analyzed, 16S, 18S or ITS.
-  
 
   *Required only if you would like to pull and process data directly from OSDR*
 
@@ -181,3 +182,22 @@ Standard nextflow resource usage logs are also produced as follows:
 
 > Further details about these logs can also found within [this Nextflow documentation page](https://www.nextflow.io/docs/latest/tracing.html#execution-report).
 
+<br>
+
+---
+
+### 6. Post Processing
+
+For options and detailed help on how to run the post-processing workflow, run the following command:
+
+```bash
+nextflow run post_processng.nf --help
+```
+
+To generate a README file, a protocols file, a md5sums table and a file association table after running the processing workflow sucessfully, modify and set the parameters in [post_processing.config](workflow_code/post_processing.config) then run the following command:
+
+```bash
+nextflow -C post_processing.config run post_processng.nf -resume -profile slurm,singularity
+``` 
+
+The outputs of the run will be in a directory called `Post_Processing` by default.
