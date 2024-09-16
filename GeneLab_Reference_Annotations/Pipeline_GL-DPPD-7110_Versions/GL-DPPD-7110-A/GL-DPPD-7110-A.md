@@ -136,9 +136,9 @@ The default columns in the annotation table are:
 | Program         | Version | Relevant Links |
 |:----------------|:-------:|:---------------|
 | R               |  4.4.0  | [https://www.r-project.org/](https://www.r-project.org/) |
-| Bioconductor    | 3.19.1  | [https://bioconductor.org](https://bioconductor.org) |
+| Bioconductor    |  3.19    | [https://bioconductor.org](https://bioconductor.org) |
 | tidyverse       |  2.0.0  | [https://www.tidyverse.org](https://www.tidyverse.org) |
-| STRINGdb        | 2.16.0  | [https://www.bioconductor.org/packages/release/bioc/html/STRINGdb.html](https://www.bioconductor.org/packages/release/bioc/html/STRINGdb.html) |
+| STRINGdb        | 2.16.4  | [https://www.bioconductor.org/packages/release/bioc/html/STRINGdb.html](https://www.bioconductor.org/packages/release/bioc/html/STRINGdb.html) |
 | PANTHER.db      | 1.0.12  | [https://bioconductor.org/packages/release/data/annotation/html/PANTHER.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/PANTHER.db.html) |
 | rtracklayer     | 1.64.0  | [https://bioconductor.org/packages/release/bioc/html/rtracklayer.html](https://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html) |
 | org.At.tair.db  | 3.19.1  | [https://bioconductor.org/packages/release/data/annotation/html/org.At.tair.db.html](https://www.bioconductor.org/packages/release/data/annotation/html/org.At.tair.db.html) |
@@ -294,42 +294,58 @@ if ( file.exists(out_table_filename) ) {
 # Use AnnotationForge's makeOrgPackageFromNCBI function with default settings to create the organism-specific org.db R package from available NCBI annotations
 
 # Try to download the org.db from Bioconductor, build it locally if installation fails
-BiocManager::install(target_org_db, ask = FALSE) 
-if (!requireNamespace(target_org_db, quietly = TRUE)) { 
+BiocManager::install(target_org_db, ask = FALSE)
+if (!requireNamespace(target_org_db, quietly = TRUE)) {
   tryCatch({
-    # Parse organism's name in the reference table to create the org.db name (target_org_db)
-    genus_species <- strsplit(target_organism, " ")[[1]]
+    # Define genus and species regardless of target_org_db
+    target_species_designation <- ref_table %>%
+      filter(species == target_organism) %>%
+      pull(species) %>%
+      gsub("\\s+", " ", .) %>%
+      gsub("[^A-Za-z0-9 ]", "", .)
+    
+    genus_species <- strsplit(target_species_designation, " ")[[1]]
     if (length(genus_species) < 1) {
-        stop("Species designation is not correctly formatted: ", target_organism)
+      stop("Species designation is not correctly formatted: ", target_species_designation)
     }
+    
     genus <- genus_species[1]
     species <- ifelse(length(genus_species) > 1, genus_species[2], "")
     strain <- ref_table %>%
       filter(species == target_organism) %>%
       pull(strain) %>%
       gsub("[^A-Za-z0-9]", "", .)
-    if (!is.na(strain) && strain != "") {
-        species <- paste0(species, strain)
-    }
-    target_org_db <- paste0("org.", substr(genus, 1, 1), species, ".eg.db")
     
-    BiocManager::install(c("AnnotationForge", "biomaRt", "GO.db"), ask = FALSE) 
+    if (!is.na(strain) && strain != "") {
+      species <- paste0(species, strain)
+    }
+    
+    # Get package name or build it if not provided
+    target_org_db <- ref_table %>%
+      filter(species == target_organism) %>%
+      pull(annotations)
+    
+    if (is.na(target_org_db) || target_org_db == "") {
+      cat("\nNo annotation database specified. Constructing package name...\n")
+      target_org_db <- paste0("org.", substr(genus, 1, 1), species, ".eg.db")
+    }
+    
+    BiocManager::install(c("AnnotationForge", "biomaRt", "GO.db"), ask = FALSE)
     library(AnnotationForge)
-    makeOrgPackageFromNCBI( 
-        version = "0.1",
-        author = "Your Name <your.email@example.com>",
-        maintainer = "Your Name <your.email@example.com>",
-        outputDir = "./",
-        tax_id = target_taxid,
-        genus = genus,
-        species = species
+    makeOrgPackageFromNCBI(
+      version = "0.1",
+      author = "Your Name <your.email@example.com>",
+      maintainer = "Your Name <your.email@example.com>",
+      outputDir = "./",
+      tax_id = target_taxid,
+      genus = genus,
+      species = species
     )
     install.packages(file.path("./", target_org_db), repos = NULL, type = "source", quiet = TRUE)
     cat(paste0("'", target_org_db, "' has been successfully built and installed.\n"))
   }, error = function(e) {
-      stop("Failed to build and load the package: ", target_org_db, "\nError: ", e$message)
+    stop("Failed to build and load the package: ", target_org_db, "\nError: ", e$message)
   })
-  target_org_db <- install_annotations(target_organism, ref_tab_path)
 }
 ```
 

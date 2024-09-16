@@ -26,20 +26,20 @@ Once R is installed, open a CLI terminal and run the following command to activa
 ```bash
 R
 ```
-
+`
 Within an active R environment, run the following commands to install the required R packages:
 
 ```R
-install.packages("tidyverse", version = 2.0.0, repos = "http://cran.us.r-project.org")
+install.packages("tidyverse")
 
-install.packages("BiocManager", version = 3.19.1, repos = "http://cran.us.r-project.org")
+install.packages("BiocManager")
 
-BiocManager::install("STRINGdb", version = 3.19.1)
-BiocManager::install("PANTHER.db", version = 3.19.1)
-BiocManager::install("rtracklayer", version = 3.19.1)
-BiocManager::install("AnnotationForge", version = 1.46.0)
-BiocManager::install("biomaRt", version = 2.60.1)
-BiocManager::install("GO.db", version = 3.19.1)
+BiocManager::install("STRINGdb")
+BiocManager::install("PANTHER.db")
+BiocManager::install("rtracklayer")
+BiocManager::install("AnnotationForge")
+BiocManager::install("biomaRt")
+BiocManager::install("GO.db")
 ```
 
 <br>
@@ -102,3 +102,37 @@ Rscript install-org-db.R 'Bacillus subtilis' /path/to/GL-DPPD-7110-A_annotations
 **Output data:**
 
 - org.*.eg.db/ (species-specific annotation database, as a local R package)
+
+### 6. Run the Workflow Using Docker
+
+Rather than running the workflow in your local environment, you can use a Docker image. This method ensures that all dependencies are correctly installed.
+
+1. **Pull the Docker image:**
+
+   ```bash
+   docker pull quay.io/torres-alexis/gl_images:GL_RefAnnotTable_v1.1.0-rc.1
+   ```
+
+2. **Download the workflow files:**
+
+   ```bash
+   curl -LO https://github.com/nasa/GeneLab_Data_Processing/releases/download/GL_RefAnnotTable-A_1.1.0/GL_RefAnnotTable-A_1.1.0.zip
+   unzip GL_RefAnnotTable-A_1.1.0.zip
+   ```
+
+3. **Run the workflow using Docker:**
+
+   ```bash
+   docker run -it -v $(pwd)/GL_RefAnnotTable-A_1.1.0:/home/rstudio/work quay.io/torres-alexis/gl_images:GL_RefAnnotTable_v1.1.0-rc.1 bash -c "cd /home/rstudio/work && Rscript GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'"
+   ```
+
+**Input data:**
+
+- No input files are required. Specify the target organism using a positional command line argument. `Mus musculus` is used in the example above. To see a list of all available organisms, run `Rscript GL-DPPD-7110-A_build-genome-annots-tab.R` without positional arguments. The correct argument for each organism can also be found in the 'species' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
+
+- Optional: a reference table CSV can be supplied as a second positional argument instead of using the default [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
+
+**Output data:**
+
+- *-GL-annotations.tsv (Tab delineated table of gene annotations)
+- *-GL-build-info.txt (Text file containing information used to create the annotation table, including tool and tool versions and date of creation)
