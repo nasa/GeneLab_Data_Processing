@@ -177,7 +177,7 @@ Current GeneLab annotation tables are available on [figshare](https://figshare.c
 
 ---
 
-This example below is done for *Mus musculus*. All code is executed in R.
+*All code is executed in R.*
 
 ## 0. Set Up Environment
 
