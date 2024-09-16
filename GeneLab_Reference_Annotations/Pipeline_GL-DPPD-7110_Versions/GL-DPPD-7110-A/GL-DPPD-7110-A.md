@@ -253,7 +253,7 @@ base_output_name <- str_replace(base_gtf_filename, ".gtf.gz", "")
 
 # Add the species name to base_output_name if the reference source is not ENSEMBL
 if (!(ref_source %in% c("ensembl_plants", "ensembl_bacteria", "ensembl"))) {
-  base_output_name <- paste(str_replace(target_species_designation, " ", "_"), base_output_name, sep = "_")
+  base_output_name <- paste(str_replace(target_organism, " ", "_"), base_output_name, sep = "_")
 }
 
 out_table_filename <- paste0(base_output_name, "-GL-annotations.tsv")
@@ -298,15 +298,9 @@ BiocManager::install(target_org_db, ask = FALSE)
 if (!requireNamespace(target_org_db, quietly = TRUE)) {
   tryCatch({
     # Define genus and species regardless of target_org_db
-    target_species_designation <- ref_table %>%
-      filter(species == target_organism) %>%
-      pull(species) %>%
-      gsub("\\s+", " ", .) %>%
-      gsub("[^A-Za-z0-9 ]", "", .)
-    
-    genus_species <- strsplit(target_species_designation, " ")[[1]]
+    genus_species <- strsplit(target_organism, " ")[[1]]
     if (length(genus_species) < 1) {
-      stop("Species designation is not correctly formatted: ", target_species_designation)
+      stop("Species designation is not correctly formatted: ", target_organism)
     }
     
     genus <- genus_species[1]
