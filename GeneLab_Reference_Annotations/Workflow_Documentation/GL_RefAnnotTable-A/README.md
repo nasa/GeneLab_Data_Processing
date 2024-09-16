@@ -123,7 +123,9 @@ Rather than running the workflow in your local environment, you can use a Docker
 3. **Run the workflow using Docker:**
 
    ```bash
-   docker run -it -v $(pwd)/GL_RefAnnotTable-A_1.1.0:/home/rstudio/work quay.io/torres-alexis/gl_images:GL_RefAnnotTable_v1.1.0-rc.1 bash -c "cd /home/rstudio/work && Rscript GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'"
+   docker run -it -v $(pwd)/GL_RefAnnotTable-A_1.1.0:/work \
+     quay.io/torres-alexis/gl_images:GL_RefAnnotTable_v1.1.0-rc.1 \
+     bash -c "cd /work && Rscript GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'"
    ```
 
 **Input data:**
