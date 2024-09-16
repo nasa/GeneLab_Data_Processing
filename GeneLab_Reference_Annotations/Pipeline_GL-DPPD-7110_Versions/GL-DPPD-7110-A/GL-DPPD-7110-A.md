@@ -182,6 +182,10 @@ Current GeneLab annotation tables are available on [figshare](https://figshare.c
 ## 0. Set Up Environment
 
 ```R
+# Set R library path to current working directory
+lib_path <- file.path(getwd())
+.libPaths(lib_path)
+
 # Define variables associated with current pipeline and annotation table versions
 GL_DPPD_ID <- "GL-DPPD-7110-A"
 ref_tab_path <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"

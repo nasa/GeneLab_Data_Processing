@@ -10,6 +10,7 @@ The current GeneLab Reference Annotation Table (GL_RefAnnotTable-A) pipeline is 
 3. [Setup Execution Permission for Workflow Scripts](#3-setup-execution-permission-for-workflow-scripts)
 4. [Run the workflow](#4-run-the-workflow)  
 5. [Run the annotations database creation function as a stand-alone script](#5-run-the-annotations-database-creation-function-as-a-stand-alone-script)
+6. [Run the Workflow Using Docker or Singularity](#6-run-the-workflow-using-docker-or-singularity)
 <br>
 
 ### 1. Install R and R packages
@@ -103,14 +104,20 @@ Rscript install-org-db.R 'Bacillus subtilis' /path/to/GL-DPPD-7110-A_annotations
 
 - org.*.eg.db/ (species-specific annotation database, as a local R package)
 
-### 6. Run the Workflow Using Docker
+### 6. Run the Workflow Using Docker or Singularity
 
-Rather than running the workflow in your local environment, you can use a Docker image. This method ensures that all dependencies are correctly installed.
+Rather than running the workflow in your local environment, you can use a Docker or Singularity container. This method ensures that all dependencies are correctly installed.
 
-1. **Pull the Docker image:**
+1. **Pull the container image:**
 
+   Docker:
    ```bash
    docker pull quay.io/torres-alexis/gl_images:GL_RefAnnotTable_v1.1.0-rc.1
+   ```
+
+   Singularity:
+   ```bash
+   singularity pull docker://quay.io/torres-alexis/gl_images:GL_RefAnnotTable_v1.1.0-rc.1
    ```
 
 2. **Download the workflow files:**
@@ -120,11 +127,19 @@ Rather than running the workflow in your local environment, you can use a Docker
    unzip GL_RefAnnotTable-A_1.1.0.zip
    ```
 
-3. **Run the workflow using Docker:**
+3. **Run the workflow:**
 
+   Docker:
    ```bash
    docker run -it -v $(pwd)/GL_RefAnnotTable-A_1.1.0:/work \
      quay.io/torres-alexis/gl_images:GL_RefAnnotTable_v1.1.0-rc.1 \
+     bash -c "cd /work && Rscript GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'"
+   ```
+
+   Singularity:
+   ```bash
+   singularity exec -B $(pwd)/GL_RefAnnotTable-A_1.1.0:/work \
+     gl_images_GL_RefAnnotTable_v1.1.0-rc.1.sif \
      bash -c "cd /work && Rscript GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'"
    ```
 
