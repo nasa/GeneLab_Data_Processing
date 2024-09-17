@@ -1,3 +1,8 @@
+# install-org-db.R
+
+# Function: Get annotations db from ref table. If no annotations db is defined, create the package name from genus, species, (and strain for microbes), 
+# Try to Bioconductor install annotations db. If fail then build the package using AnnotationForge, install it into the current directory.
+# Requires ~80GB for NCBIFilesDir file caching
 install_annotations <- function(target_organism, refTablePath) {
     if (!file.exists(refTablePath)) {
         stop("Reference table file does not exist at the specified path: ", refTablePath)
