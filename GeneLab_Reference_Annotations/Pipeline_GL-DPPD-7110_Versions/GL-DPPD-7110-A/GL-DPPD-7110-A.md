@@ -301,7 +301,7 @@ if ( file.exists(out_table_filename) ) {
 BiocManager::install(target_org_db, ask = FALSE)
 if (!requireNamespace(target_org_db, quietly = TRUE)) {
   tryCatch({
-    # Define genus and species regardless of target_org_db
+    # Parse organism's name in the reference table to create the org.db name (target_org_db)
     genus_species <- strsplit(target_organism, " ")[[1]]
     if (length(genus_species) < 1) {
       stop("Species designation is not correctly formatted: ", target_organism)

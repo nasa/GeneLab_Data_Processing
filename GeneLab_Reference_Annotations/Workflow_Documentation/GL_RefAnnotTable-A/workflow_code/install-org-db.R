@@ -8,7 +8,7 @@ install_annotations <- function(target_organism, refTablePath) {
         filter(species == target_organism) %>%
         pull(taxon)
     
-    # Define genus and species regardless of target_org_db
+    # Parse organism's name in the reference table to create the org.db name (target_org_db)
     target_species_designation <- ref_table %>%
         filter(species == target_organism) %>%
         pull(species) %>%
