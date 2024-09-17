@@ -112,12 +112,12 @@ Rather than running the workflow in your local environment, you can use a Docker
 
    Docker:
    ```bash
-   docker pull quay.io/torres-alexis/gl_images:GL_RefAnnotTable_v1.1.0-rc.1
+   docker pull quay.io/nasa_genelab/gl-refannottable:v1.0.0
    ```
 
    Singularity:
    ```bash
-   singularity pull docker://quay.io/torres-alexis/gl_images:GL_RefAnnotTable_v1.1.0-rc.1
+   singularity pull docker://quay.io/nasa_genelab/gl-refannottable:v1.0.0
    ```
 
 2. **Download the workflow files:**
@@ -132,14 +132,14 @@ Rather than running the workflow in your local environment, you can use a Docker
    Docker:
    ```bash
    docker run -it -v $(pwd)/GL_RefAnnotTable-A_1.1.0:/work \
-     quay.io/torres-alexis/gl_images:GL_RefAnnotTable_v1.1.0-rc.1 \
+     quay.io/nasa_genelab/gl-refannottable:v1.0.0 \
      bash -c "cd /work && Rscript GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'"
    ```
 
    Singularity:
    ```bash
    singularity exec -B $(pwd)/GL_RefAnnotTable-A_1.1.0:/work \
-     gl_images_GL_RefAnnotTable_v1.1.0-rc.1.sif \
+     gl-refannottable_v1.0.0.sif \
      bash -c "cd /work && Rscript GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'"
    ```
 
