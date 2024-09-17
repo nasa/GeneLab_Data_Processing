@@ -15,13 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Small bug fixes in `Affymetrix.qmd`
-  - Issue combining dataframes using `bind_rows()` when `getBM()` returns no results ([#96](https://github.com/nasa/GeneLab_Data_Processing/issues/96))
-  - Unintentional renaming of columns causes issues later in selection of columns ([#97](https://github.com/nasa/GeneLab_Data_Processing/issues/97))
-  - Factor group column renaming issue when one factor is substring of another ([#100](https://github.com/nasa/GeneLab_Data_Processing/issues/100))
+  - Check if `getBM()` returned results before concatenating it to dataframe to avoid error in `bind_rows()` ([#96](https://github.com/nasa/GeneLab_Data_Processing/issues/96))
+  - When renaming column names, specify which columns to rename to avoid unintentional renaming ([#97](https://github.com/nasa/GeneLab_Data_Processing/issues/97))
+  - When renaming factor names, prevent cases where a factor is partially renamed because it contains a substring that is another factor ([#100](https://github.com/nasa/GeneLab_Data_Processing/issues/100))
   - Update MA plot to support HTAFeatureSet ([#105](https://github.com/nasa/GeneLab_Data_Processing/issues/105))
-  - Probe IDs for AFFY HTA 2 0 probes have extra .1 suffix ([#106](https://github.com/nasa/GeneLab_Data_Processing/issues/106))
-  - Legend covers density plot when sample names are long ([#107](https://github.com/nasa/GeneLab_Data_Processing/issues/107))
-- Minor updates to processed data protocol ([#98](https://github.com/nasa/GeneLab_Data_Processing/issues/98)) and software table generation ([#99](https://github.com/nasa/GeneLab_Data_Processing/issues/99))
+  - Remove extra `.1` suffix in AFFY HTA 2 0 Probe IDs in the raw data to allow for merging to BioMart data ([#106](https://github.com/nasa/GeneLab_Data_Processing/issues/106))
+  - Decrease legend size when sample names are long to prevent it from covering plot ([#107](https://github.com/nasa/GeneLab_Data_Processing/issues/107))
+- Update processed data protocol to auto-populate workflow version from `nextflow.config` and add Caenorhabditis elegans, Saccharomyces cerevisiae, Escherichia coli, and Pseudomonas aeruginosa to supported organisms ([#98](https://github.com/nasa/GeneLab_Data_Processing/issues/98))
+- Update software table generation to exclude `R.utils` from table if data files are not compressed ([#99](https://github.com/nasa/GeneLab_Data_Processing/issues/99))
 
 ## [1.0.4](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_MAAffymetrix_1.0.4/Microarray/Affymetrix/Workflow_Documentation/NF_MAAffymetrix) - 2024-05-17
 
