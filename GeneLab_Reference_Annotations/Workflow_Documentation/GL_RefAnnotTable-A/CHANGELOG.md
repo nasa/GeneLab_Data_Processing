@@ -49,10 +49,10 @@ Bioconductor. Used for:
     - Bacteria: Ensembl bacteria release 59
 - Updated software:
     - tidyverse version updated from 1.3.2 to 2.0.0  
-    - STRINGdb version updated from 2.8.4 to 2.16.0   
+    - STRINGdb version updated from 2.8.4 to 2.16.4   
     - PANTHER.db version updated from 1.0.11 to 1.0.12 
     - rtracklayer version updated from 1.56.1 to 1.64.0
-    - Bioconductor version updated from 3.15.1 to 3.19.1  
+    - Bioconductor version updated from 3.15.1 to 3.19  
 - Removed org.EcK12.eg.db and replaced it with a locally created annotations 
 database, as it is no longer available on Bioconductor
 - Changed the first argument of GL-DPPD-7110-A_build-genome-annots-tab.R from 
