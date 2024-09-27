@@ -6,9 +6,10 @@
 
 |Pipeline Version|Current Workflow Version (for respective pipeline version)|
 |:---------------|:---------------------------------------------------------|
+|*[GL-DPPD-7104-B.md](../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md)|[1.0.0](NF_AmpIllumina)|
 |*[GL-DPPD-7104-B.md](../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md)|[1.2.2](SW_AmpIllumina-B)|
 |[GL-DPPD-7104-A.md](../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-A.md)|[1.1.1](SW_AmpIllumina-A)|
 
 *Current GeneLab Pipeline/Workflow Implementation
 
-> See the [workflow change log](SW_AmpIllumina-B/CHANGELOG.md) to access previous workflow versions and view all changes associated with each version update.
+> See the [workflow change log](NF_AmpIllumina/CHANGELOG.md) to access workflow versions and view all changes associated with each version update.

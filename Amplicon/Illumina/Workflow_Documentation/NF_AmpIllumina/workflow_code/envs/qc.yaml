@@ -1,0 +1,9 @@
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+    - fastqc==0.12.1
+    - multiqc==1.19
+    - zip==3.0
+    - python==3.8

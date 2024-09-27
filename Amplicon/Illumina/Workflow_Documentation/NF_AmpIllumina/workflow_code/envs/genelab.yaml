@@ -1,0 +1,8 @@
+name: genelab-utils
+channels:
+    - conda-forge 
+    - bioconda
+    - defaults 
+    - astrobiomike
+dependencies:
+    - genelab-utils==1.3.22=py312_1
