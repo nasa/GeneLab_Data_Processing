@@ -175,6 +175,11 @@ workflow {
     file_ch.map{row -> tuple( "${row.sample_id}", [file("${row.read}", checkIfExists: true)] )}
           .set{reads_ch}
 
+    // Generating a file with sample ids on a new line
+    file_ch.map{row -> "${row.sample_id}"}
+              .collectFile(name: "${baseDir}/unique-sample-IDs.txt", newLine: true)
+              .set{sample_ids_ch}
+
     // Read quality check and trimming
     RAW_FASTQC(reads_ch)
     raw_fastqc_files = RAW_FASTQC.out.html.flatten().collect()
