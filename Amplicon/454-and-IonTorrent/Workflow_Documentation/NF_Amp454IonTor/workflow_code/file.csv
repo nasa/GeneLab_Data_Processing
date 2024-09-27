@@ -1,0 +1,10 @@
+sample_id,read
+SAMN03652399,path/to/Raw_Data/SAMN03652399_raw.fastq.gz
+SAMN03652400,path/to/Raw_Data/SAMN03652400_raw.fastq.gz
+SAMN03652401,path/to/Raw_Data/SAMN03652401_raw.fastq.gz
+SAMN03652402,path/to/Raw_Data/SAMN03652402_raw.fastq.gz
+SAMN03652403,path/to/Raw_Data/SAMN03652403_raw.fastq.gz
+SAMN03652404,path/to/Raw_Data/SAMN03652404_raw.fastq.gz
+SAMN03652405,path/to/Raw_Data/SAMN03652405_raw.fastq.gz
+SAMN03652406,path/to/Raw_Data/SAMN03652406_raw.fastq.gz
+SAMN03652407,path/to/Raw_Data/SAMN03652407_raw.fastq.gz

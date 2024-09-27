@@ -6,8 +6,8 @@
 
 |Pipeline Version|Current Workflow Version (for respective pipeline version)|
 |:---------------|:---------------------------------------------------------|
-|*[GL-DPPD-7106.md](../Pipeline_GL-DPPD-7106_Versions/GL-DPPD-7106.md)|[1.0.0](SW_Amp454IonTor)|
+|*[GL-DPPD-7106.md](../Pipeline_GL-DPPD-7106_Versions/GL-DPPD-7106.md)|[1.0.0](NF_Amp454IonTor)|
 
 *Current GeneLab Pipeline/Workflow Implementation
 
-> See the [workflow change log](SW_Amp454IonTor/CHANGELOG.md) to access previous workflow versions and view all changes associated with each version update.
+> See the [workflow change log](NF_Amp454IonTor/CHANGELOG.md) to access previous workflow versions and view all changes associated with each version update.
