@@ -29,13 +29,17 @@ env | grep "_VERSION"
 source meta.sh
 
 # List of organisms
-organism_list=("Mus musculus" "Homo sapiens" "Rattus norvegicus" "Drosophila melanogaster" "Danio rerio")
+organism_list=("Homo sapiens" "Mus musculus" "Rattus norvegicus" "Drosophila melanogaster" "Caenorhabditis elegans" "Danio rerio" "Saccharomyces cerevisiae")
 
 # Check the value of 'organism' variable and set 'GENE_MAPPING_STEP' accordingly
 if [[ $organism == "Arabidopsis thaliana" ]]; then
-    GENE_MAPPING_STEP="Ensembl gene ID mappings were retrieved for each probeset using the Plants Ensembl database ftp server (plants.ensembl.org, release 54). "
+    GENE_MAPPING_STEP="Ensembl gene ID mappings were retrieved for each probeset using the Plants Ensembl database ftp server (plants.ensembl.org, release 54)."
+elif [[ $organism == "Escherichia coli" ]]; then
+    GENE_MAPPING_STEP="Gene annotations were retrieved for each probeset from ThermoFisher (https://www.thermofisher.com/order/catalog/product/sec/assets?url=TFS-Assets/LSG/Support-Files/E_coli_2-na36-annot-csv.zip, created March 2016, accessed June 2024)."
+elif [[ $organism == "Pseudomonas aeruginosa" ]]; then
+    GENE_MAPPING_STEP="Gene annotations were retrieved for each probeset from ThermoFisher (https://www.thermofisher.com/order/catalog/product/sec/assets?url=TFS-Assets/LSG/Support-Files/Pae_G1a-na36-annot-csv.zip, created March 2016, accessed June 2024)."
 elif [[ " ${organism_list[*]} " == *"${organism//\"/}"* ]]; then
-    GENE_MAPPING_STEP="Ensembl gene ID mappings were retrieved for each probeset using biomaRt (version ${biomaRt_VERSION}), Ensembl database (ensembl.org, release 107). "
+    GENE_MAPPING_STEP="Ensembl gene ID mappings were retrieved for each probeset using biomaRt (version ${biomaRt_VERSION}), Ensembl database (ensembl.org, release 107)."
 else
     GENE_MAPPING_STEP="TBD"
 fi
@@ -53,12 +57,30 @@ elif [[ $organism == "Drosophila melanogaster" ]]; then
     GENE_ANNOTATION_DB="org.Dm.eg.db"
 elif [[ $organism == "Caenorhabditis elegans" ]]; then
     GENE_ANNOTATION_DB="org.Ce.eg.db"
+elif [[ $organism == "Danio rerio" ]]; then
+    GENE_ANNOTATION_DB="org.Dr.eg.db"
+elif [[ $organism == "Saccharomyces cerevisiae" ]]; then
+    GENE_ANNOTATION_DB="org.Sc.sgd.db"
 else
     GENE_ANNOTATION_DB="TBD"
 fi
 
+# Check if DGE was performed
+if $2; then
+    DE_STEP=""
+else
+    DE_STEP="Differential expression analysis was performed in R (version ${R_VERSION}) using limma (version ${limma_VERSION}); all groups were compared pairwise for each probeset to generate a moderated t-statistic and associated p- and adjusted p-value."
+fi
+
+# Gene annotations
+if [[ $organism == "Escherichia coli" || $organism == "Pseudomonas aeruginosa" ]]; then
+    ANNOT_STEP=""  # Already covered in GENE_MAPPING_STEP
+else
+    ANNOT_STEP="Gene annotations were assigned for every probeset that mapped to exactly one Ensembl gene ID using the custom annotation tables generated in-house as detailed in GL-DPPD-7110 (https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110.md), with STRINGdb (version 2.8.4), PANTHER.db (version 1.0.11), and ${GENE_ANNOTATION_DB} (version 3.15.0)."
+fi
+
 # Read the template file
-template="Data were processed as described in GL-DPPD-7114 (https://github.com/nasa/GeneLab_Data_Processing/blob/master/Microarray/Affymetrix/Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114.md) using NF_MAAffymetrix version 1.0.3 (https://github.com/nasa/GeneLab_Data_Processing/tree/NF_MAAffymetrix_1.0.3/Microarray/Affymetrix/Workflow_Documentation/NF_MAAffymetrix).  In short, a RunSheet containing raw data file location and processing metadata from the study's *ISA.zip file was generated using dp_tools (version ${dp_tools_VERSION}). The raw array data files were loaded into R (version ${R_VERSION}) using oligo (version ${oligo_VERSION}). Raw data quality assurance density plot, pseudo images, MA plots, and boxplots were generated using oligo (version ${oligo_VERSION}). The raw probe level intensity data was background corrected and normalized across arrays via the oligo (version ${oligo_VERSION}) quantile method. Normalized probe level data quality assurance density plot, pseudo images, MA plots, and boxplots were generated using oligo (version ${oligo_VERSION}).  Normalized probe level data was summarized to the probeset level using the oligo (version ${oligo_VERSION}) RMA method. ${GENE_MAPPING_STEP} Differential expression analysis was performed in R (version ${R_VERSION}) using limma (version ${limma_VERSION}); all groups were compared pairwise for each probeset to generate a moderated t-statistic and associated p- and adjusted p-value. Gene annotations were assigned for every probeset that mapped to exactly one Ensembl gene ID using the custom annotation tables generated in-house as detailed in GL-DPPD-7110 (https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110.md), with STRINGdb (version 2.8.4), PANTHER.db (version 1.0.11), and ${GENE_ANNOTATION_DB} (version 3.15.0)."
+template="Data were processed as described in GL-DPPD-7114 (https://github.com/nasa/GeneLab_Data_Processing/blob/master/Microarray/Affymetrix/Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114.md) using NF_MAAffymetrix version $1 (https://github.com/nasa/GeneLab_Data_Processing/tree/NF_MAAffymetrix_$1/Microarray/Affymetrix/Workflow_Documentation/NF_MAAffymetrix). In short, a RunSheet containing raw data file location and processing metadata from the study's *ISA.zip file was generated using dp_tools (version ${dp_tools_VERSION}). The raw array data files were loaded into R (version ${R_VERSION}) using oligo (version ${oligo_VERSION}). Raw data quality assurance density plot, pseudo images, MA plots, and boxplots were generated using oligo (version ${oligo_VERSION}). The raw probe level intensity data was background corrected and normalized across arrays via the oligo (version ${oligo_VERSION}) quantile method. Normalized probe level data quality assurance density plot, pseudo images, MA plots, and boxplots were generated using oligo (version ${oligo_VERSION}). Normalized probe level data was summarized to the probeset level using the oligo (version ${oligo_VERSION}) RMA method. ${GENE_MAPPING_STEP} ${DE_STEP} ${ANNOT_STEP}"
 
 # Output the filled template
 echo "$template" > PROTOCOL_GLmicroarray.txt

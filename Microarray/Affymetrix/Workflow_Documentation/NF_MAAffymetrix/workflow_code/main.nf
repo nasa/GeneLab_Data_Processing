@@ -35,6 +35,7 @@ if (params.help) {
   println("                        the GLDS accession id to process through the Affymetrix Microarray Pipeline.")
   println("  --runsheetPath        Use a local runsheet instead one automatically generated from a GLDS ISA archive.")
   println("  --skipVV              Skip automated V&V. Default: false")
+  println("  --skipDE              Skip DE. Default: false")
   println("  --resultsDir           Directory to save staged raw files and processed files. Default: <launch directory>")
   exit 0
   }
@@ -87,15 +88,16 @@ workflow {
       channel.fromPath( "${ projectDir }/bin/Affymetrix.qmd" ),
       ch_runsheet,
       PARSE_ANNOTATION_TABLE.out.annotations_db_url,
-      ch_meta | map { it.organism },
-      params.limit_biomart_query
+      PARSE_ANNOTATION_TABLE.out.reference_version_and_source,
+      params.limit_biomart_query,
+      params.skipDE
     )
 
     VV_AFFYMETRIX( 
       ch_runsheet, 
       PROCESS_AFFYMETRIX.out.de,
       params.skipVV,
-      "${ projectDir }/bin/dp_tools__affymetrix" // dp_tools plugin
+      "${ projectDir }/bin/${ params.skipDE ? 'dp_tools__affymetrix_skipDE' : 'dp_tools__affymetrix' }" // dp_tools plugin
       )
 
     // Software Version Capturing
@@ -108,13 +110,12 @@ workflow {
     ch_software_versions = Channel.value(nf_version)
     PROCESS_AFFYMETRIX.out.versions | map{ it -> it.text } | mix(ch_software_versions) | set{ch_software_versions}
     VV_AFFYMETRIX.out.versions | map{ it -> it.text } | mix(ch_software_versions) | set{ch_software_versions}
-    ch_software_versions | unique 
-                         | collectFile(
-                            newLine: true, 
-                            sort: true,
-                            cache: false
-                            )
-                         | GENERATE_SOFTWARE_TABLE
+
+    GENERATE_SOFTWARE_TABLE(
+      ch_software_versions | unique | collectFile(newLine: true, sort: true, cache: false),
+      ch_runsheet | splitCsv(header: true, quote: '"') | first | map{ row -> row['Array Data File Name'] },
+      params.skipDE
+    )
 
     // export meta for post processing usage
     ch_meta | DUMP_META

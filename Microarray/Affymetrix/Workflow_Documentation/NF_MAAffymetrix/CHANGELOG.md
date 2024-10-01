@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_MAAffymetrix_1.0.5/Microarray/Affymetrix/Workflow_Documentation/NF_MAAffymetrix) - 2024-08-30
+
+### Added
+
+- Add support for bacteria annotations using manufacturer annotations ([#113](https://github.com/nasa/GeneLab_Data_Processing/issues/113))
+- Add option to skip differential expression analysis (`--skipDE`) ([#104](https://github.com/nasa/GeneLab_Data_Processing/issues/104))
+
+### Changed
+
+- Small bug fixes in `Affymetrix.qmd`
+  - Check if `getBM()` returned results before concatenating it to dataframe to avoid error in `bind_rows()` ([#96](https://github.com/nasa/GeneLab_Data_Processing/issues/96))
+  - When renaming column names, specify which columns to rename to avoid unintentional renaming ([#97](https://github.com/nasa/GeneLab_Data_Processing/issues/97))
+  - When renaming factor names, prevent cases where a factor is partially renamed because it contains a substring that is another factor ([#100](https://github.com/nasa/GeneLab_Data_Processing/issues/100))
+  - Update MA plot to support HTAFeatureSet ([#105](https://github.com/nasa/GeneLab_Data_Processing/issues/105))
+  - Remove extra `.1` suffix in AFFY HTA 2 0 Probe IDs in the raw data to allow for merging to BioMart data ([#106](https://github.com/nasa/GeneLab_Data_Processing/issues/106))
+  - Decrease legend size when sample names are long to prevent it from covering plot ([#107](https://github.com/nasa/GeneLab_Data_Processing/issues/107))
+- Update processed data protocol to auto-populate workflow version from `nextflow.config` and add Caenorhabditis elegans, Saccharomyces cerevisiae, Escherichia coli, and Pseudomonas aeruginosa to supported organisms ([#98](https://github.com/nasa/GeneLab_Data_Processing/issues/98))
+- Update software table generation to exclude `R.utils` from table if data files are not compressed ([#99](https://github.com/nasa/GeneLab_Data_Processing/issues/99))
+
 ## [1.0.4](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_MAAffymetrix_1.0.4/Microarray/Affymetrix/Workflow_Documentation/NF_MAAffymetrix) - 2024-05-17
 
 ### Changed

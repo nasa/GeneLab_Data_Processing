@@ -5,12 +5,14 @@ process GENERATE_SOFTWARE_TABLE {
 
   input:
     path("software_versions.yaml")
+    val(filename)
+    val(skipDE)
   
   output:
     path("software_versions_GLmicroarray.md")
   
   script:
     """
-    SoftwareYamlToMarkdownTable.py software_versions.yaml
+    SoftwareYamlToMarkdownTable.py software_versions.yaml \"$filename\" $skipDE
     """
 }
