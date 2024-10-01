@@ -530,7 +530,10 @@ if (organism %in% c("athaliana")) {
             values = probe_id_chunk, 
             mart = ensembl)
 
-    df_mapping <- df_mapping %>% dplyr::bind_rows(chunk_results)
+    if (nrow(chunk_results) > 0) {
+      df_mapping <- df_mapping %>% dplyr::bind_rows(chunk_results)
+    }
+    
     Sys.sleep(10) # Slight break between requests to prevent back-to-back requests
   }
 }
