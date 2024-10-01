@@ -725,7 +725,7 @@ reformat_names <- function(colname, group_name_mapping) {
   return(new_colname)
 }
 
-df_interim <- df_interim %>% dplyr::rename_with( reformat_names, group_name_mapping = design_data$mapping )
+df_interim <- df_interim %>% dplyr::rename_with(reformat_names, .cols = matches('\\.condition|^Genes\\.'), group_name_mapping = design_data$mapping)
 
 
 # Concatenate expression values for each sample
