@@ -82,14 +82,14 @@ cd GL_RefAnnotTable-A_1.1.0
 
 #### 3. Fetch Apptainer Image
 
-To fetch the Apptainer images needed for the workflow, run:
+To fetch the Apptainer image needed for the workflow, run:
 
 ```bash
 bash bin/prepull_apptainer.sh config/software/by_docker_image.config
 ```
 > Note: This command should be run in the directory containing the GL_RefAnnotTable-A_1.1.0 folder downloaded in [step 2](#2-download-the-workflow-files). Depending on your network speed, this may take approximately 20 minutes.
 
-Once complete, an apptainer folder containing the Apptainer images will be created. Export this folder as an Apptainer configuration environment variable:
+Once complete, an apptainer folder containing the Apptainer image will be created. Export this folder as an Apptainer configuration environment variable:
 
 ```bash
 export APPTAINER_CACHEDIR=$(pwd)/apptainer
@@ -111,9 +111,7 @@ bash -c "cd /work && Rscript GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus muscu
 
 **Input data:**
 
-- No input files are required.
-- Specify the target organism using a positional command line argument. `Mus musculus` is used in the example above.
-- To see a list of all available organisms, run `Rscript GL-DPPD-7110-A_build-genome-annots-tab.R` without positional arguments. The correct argument for each organism can also be found in the 'species' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
+- No input files are required. Specify the target organism using a positional command line argument. `Mus musculus` is used in the example above. To see a list of all available organisms, run `Rscript GL-DPPD-7110-A_build-genome-annots-tab.R` without positional arguments. The correct argument for each organism can also be found in the 'species' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
 - Optional: a reference table CSV can be supplied as a second positional argument instead of using the default [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
 
 **Output data:**
@@ -225,8 +223,7 @@ Rscript GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'
 
 **Input data:**
 
-- No input files are required. Specify the target organism using a positional command line argument. `Mus musculus` is used in the example above. To see a list of all available organisms, run `Rscript GL-DPPD-7110-A_build-genome-annots-tab.R` without positional arguments. The correct argument for each organism can also be found in the 'species' column of [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
-
+- No input files are required. Specify the target organism using a positional command line argument. `Mus musculus` is used in the example above. To see a list of all available organisms, run `Rscript GL-DPPD-7110-A_build-genome-annots-tab.R` without positional arguments. The correct argument for each organism can also be found in the 'species' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
 - Optional: a reference table CSV can be supplied as a second positional argument instead of using the default [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
 
 **Output data:**
