@@ -93,9 +93,9 @@ We recommend installing Singularity on a system wide level as per the associated
 All files required for utilizing the NF_MAAgilent1ch GeneLab workflow for processing Agilent 1 Channel Microarray data are in the [workflow_code](workflow_code) directory. To get a copy of latest NF_MAAgilent1ch version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
 
 ```bash
-wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/NF_MAAgilent1ch_1.0.3/NF_MAAgilent1ch_1.0.3.zip
+wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/NF_MAAgilent1ch_1.0.4/NF_MAAgilent1ch_1.0.4.zip
 
-unzip NF_MAAgilent1ch_1.0.3.zip
+unzip NF_MAAgilent1ch_1.0.4.zip
 ```
 
 <br>
@@ -104,7 +104,7 @@ unzip NF_MAAgilent1ch_1.0.3.zip
 
 ### 3. Run the Workflow
 
-While in the location containing the `NF_MAAgilent1ch_1.0.3` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are three examples of how to run the NF_MAAgilent1ch workflow:
+While in the location containing the `NF_MAAgilent1ch_1.0.4` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are three examples of how to run the NF_MAAgilent1ch workflow:
 > Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --ensemblVersion) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
 
 <br>
@@ -112,7 +112,7 @@ While in the location containing the `NF_MAAgilent1ch_1.0.3` directory that was 
 #### 3a. Approach 1: Run the workflow on a GeneLab Agilent 1 Channel Microarray dataset
 
 ```bash
-nextflow run NF_MAAgilent1ch_1.0.3/main.nf \ 
+nextflow run NF_MAAgilent1ch_1.0.4/main.nf \ 
    -profile singularity \
    --osdAccession OSD-548 \
    --gldsAccession GLDS-548 
@@ -125,7 +125,7 @@ nextflow run NF_MAAgilent1ch_1.0.3/main.nf \
 > Note: Specifications for creating a runsheet manually are described [here](examples/runsheet/README.md).
 
 ```bash
-nextflow run NF_MAAgilent1ch_1.0.3/main.nf \ 
+nextflow run NF_MAAgilent1ch_1.0.4/main.nf \ 
    -profile singularity \
    --runsheetPath </path/to/runsheet> 
 ```
@@ -134,7 +134,7 @@ nextflow run NF_MAAgilent1ch_1.0.3/main.nf \
 
 **Required Parameters For All Approaches:**
 
-* `NF_MAAgilent1ch_1.0.3/main.nf` - Instructs Nextflow to run the NF_MAAgilent1ch workflow 
+* `NF_MAAgilent1ch_1.0.4/main.nf` - Instructs Nextflow to run the NF_MAAgilent1ch workflow 
 
 * `-profile` - Specifies the configuration profile(s) to load, `singularity` instructs Nextflow to setup and use singularity for all software called in the workflow
 
@@ -166,7 +166,7 @@ nextflow run NF_MAAgilent1ch_1.0.3/main.nf \
 All parameters listed above and additional optional arguments for the NF_MAAgilent1ch workflow, including debug related options that may not be immediately useful for most users, can be viewed by running the following command:
 
 ```bash
-nextflow run NF_MAAgilent1ch_1.0.3/main.nf --help
+nextflow run NF_MAAgilent1ch_1.0.4/main.nf --help
 ```
 
 See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details common to all nextflow workflows.
@@ -180,7 +180,7 @@ See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nex
 All R code steps and output are rendered within a Quarto document yielding the following:
 
    - Output:
-     - NF_MAAgilent1ch_1.0.3.html (html report containing executed code and output including QA plots)
+     - NF_MAAgilent1ch_1.0.4.html (html report containing executed code and output including QA plots)
   
 
 The outputs from the Analysis Staging and V&V Pipeline Subworkflows are described below:
