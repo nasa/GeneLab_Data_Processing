@@ -89,7 +89,7 @@ While in the directory containing the `GL_RefAnnotTable-A_1.1.0` folder, you can
 
 ```bash
 singularity exec -B $(pwd)/GL_RefAnnotTable-A_1.1.0:/work \
-$SINGULARITY_CACHEDIR/quay.io-nasa_genelab-gl-refannottable-a-1.1.0.sif \
+$SINGULARITY_CACHEDIR/quay.io-nasa_genelab-gl-refannottable-a-1.1.0.img \
 Rscript /work/GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'
 ```
 
@@ -109,7 +109,7 @@ If the reference table does not specify an annotations database for the target o
 
 ```bash
 singularity exec -B $(pwd)/GL_RefAnnotTable-A_1.1.0:/work \
-$SINGULARITY_CACHEDIR/quay.io-nasa_genelab-gl-refannottable-a-1.1.0.sif \
+$SINGULARITY_CACHEDIR/quay.io-nasa_genelab-gl-refannottable-a-1.1.0.img \
 Rscript /work/install-org-db.R 'Bacillus subtilis'
 ```
 
