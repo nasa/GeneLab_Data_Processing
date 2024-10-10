@@ -26,7 +26,7 @@ while IFS= read -r line; do
         name=${name/:/-}
         name=${name//\//-}
         echo $name
-        singulairty pull ${name}.img docker://$line
+        singularity pull ${name}.img docker://$line
 done < $TMPFILE
 
 cd $CURDIR
