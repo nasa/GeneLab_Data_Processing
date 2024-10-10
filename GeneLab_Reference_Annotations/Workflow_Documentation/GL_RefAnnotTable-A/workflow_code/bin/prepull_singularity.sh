@@ -4,7 +4,7 @@
 # Addresses issue: https://github.com/nextflow-io/nextflow/issues/1210
 
 CONFILE=${1:-nextflow.config}
-OUTDIR=${2:-./apptainer}
+OUTDIR=${2:-./singularity}
 
 if [ ! -e $CONFILE ]; then
         echo "$CONFILE does not exist"
@@ -26,7 +26,7 @@ while IFS= read -r line; do
         name=${name/:/-}
         name=${name//\//-}
         echo $name
-        apptainer pull ${name}.img docker://$line
+        singulairty pull ${name}.img docker://$line
 done < $TMPFILE
 
 cd $CURDIR
