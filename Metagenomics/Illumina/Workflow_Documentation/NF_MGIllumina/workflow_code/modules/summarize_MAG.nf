@@ -17,7 +17,7 @@ leave empty if wanting to use memory, the default, put in quotes the path to a d
 already exists if wanting to use disk space
 */
 
-params.gtdb_tk_scratch_location = ""
+//params.gtdb_tk_scratch_location = ""
 
 /*  Retrieve MAGS.
     Filters checkm results based on estimate completion, redundancy, and 

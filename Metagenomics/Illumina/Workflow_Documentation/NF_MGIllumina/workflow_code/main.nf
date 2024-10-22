@@ -80,7 +80,7 @@ if (params.help) {
   println("      --genes_dir [PATH] Specifies where predicted genes from the assemblies will be published. Default: ../Assembly-based_Processing/predicted-genes/.")
   println("      --annotations_and_tax_dir [PATH] Contig taxonomy and annotation directory.  Default: ../Assembly-based_Processing/annotations-and-taxonomy/.")
   println("      --mapping_dir [PATH] Read mapping to assembly directory.  Default: ../Assembly-based_Processing/read-mapping/.")
-  println("      --combined_output_dir [PATH] Assembly summuries and reports across samples directory.  Default: ../Assembly-based_Processing/combined-outputs/.")
+  println("      --combined_output_dir [PATH] Assembly summaries and reports across samples directory.  Default: ../Assembly-based_Processing/combined-outputs/.")
   println("      --bins_dir [PATH] Assembly bins directory.  Default: ../Assembly-based_Processing/bins/.")
   println("      --MAGs_dir [PATH] Meta assembled genomes (MAGs) directory.  Default: ../Assembly-based_Processing/MAGs/.")
   println("      --read_based_dir [PATH] Read-based analysis outputs directory.  Default: ../Read-based_Processing/.")

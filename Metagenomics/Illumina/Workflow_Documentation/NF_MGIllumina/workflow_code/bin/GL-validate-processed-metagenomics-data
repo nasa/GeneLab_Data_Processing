@@ -1,0 +1,800 @@
+#!/usr/bin/env python
+
+"""
+This is a program for validating GeneLab pipeline processed metagenomics datasets.
+"""
+
+import os
+import sys
+import argparse
+import textwrap
+import pandas as pd
+import zipfile
+from statistics import mean, median
+
+parser = argparse.ArgumentParser(description = "This program validates a GeneLab pipeline processed metagenomics dataset.  It is intended to \
+                                             only be run after `GL-gen-processed-metagenomics-readme` has been run successfully.")
+required = parser.add_argument_group('required arguments')
+
+required.add_argument("-g", "--GLDS-ID", help = 'GLDS ID (e.g. "GLDS-276")', action = "store", required = True)
+required.add_argument("-s", "--sample-IDs-file", help = "Single-column file with unique file-name prefixes for each sample",
+                       action = "store", required = True)
+parser.add_argument("--output", 
+                    help = 'Name of output log file (default: "<GLDS-ID>_<output_prefix>metagenomics-validation.log", with appended prefix if one is provided)',
+                    default = "", action = "store")
+parser.add_argument("-p", "--output-prefix", help = "Output additional file prefix if there is one", action = "store", default = "")
+parser.add_argument("-l", "--V_V_guidelines_link", help = "Validation and verification guidelines link", action = "store", 
+                    default = "https://genelab-tools.arc.nasa.gov/confluence/pages/viewpage.action?pageId=8225175")
+parser.add_argument("--zip_targets", help = "A comma separated list of target files and/or directories to check in processing_info.zip",
+                     action = "store", default = "Snakefile,config.yaml,envs/,logs/,scripts/,unique-sample-IDs.txt")
+parser.add_argument("--assay_suffix", help = "Genelab assay suffix", action = "store", default = "_GLmetagenomics")
+parser.add_argument("--raw_suffix", help = "Raw reads suffix", action = "store", default ="_HRremoved_raw.fastq.gz")
+parser.add_argument("--raw_R1_suffix", help = "Raw forward reads suffix", action = "store", default = "_R1_HRremoved_raw.fastq.gz")
+parser.add_argument("--raw_R2_suffix", help = "Raw reverse reads suffix", action = "store", default = "_R2_HRremoved_raw.fastq.gz")
+parser.add_argument("--filtered_suffix", help = "Filtered reads suffix", action = "store", default = "_filtered.fastq.gz")
+parser.add_argument("--filtered_R1_suffix", help = "Filtered forward reads suffix", action = "store", default = "_R1_filtered.fastq.gz")
+parser.add_argument("--filtered_R2_suffix", help = "Filtered reverse reads suffix", action = "store", default = "_R2_filtered.fastq.gz")
+parser.add_argument("--logs_dir_basename", help = "Specifies the basename of the directory containing per sample run logs", 
+                    action = "store", default = "logs/")
+parser.add_argument("--processing_zip_file", help = "Specifies the location of processing_info.zip", 
+                    action = "store", default = "processing_info.zip")
+parser.add_argument("--readme", help = "Specifies the location of README.txt", 
+                    action = "store", default = "README.txt")
+parser.add_argument("--raw_reads_dir", help = "Specifies the location of the raw reads directory if they are to be included", action = "store", default = "")
+parser.add_argument("--fastqc_dir", help = "Specifies the location of fastqc and multiqc reports directory", 
+                    action = "store", default = "FastQC_Outputs/")
+parser.add_argument("--filtered_reads_dir", help = "Specifies the location of the filtered reads directory", 
+                    action = "store", default = "Filtered_Sequence_Data/")
+parser.add_argument("--assembly_based_dir", help = "Specifies the location of the directory containing results generated from assembly-based processing approach", 
+                    action = "store", default = "Assembly-based_Processing/")
+parser.add_argument("--read_based_dir", help = "Specifies the location of the directory containing results generated from read-based processing approach", 
+                    action = "store", default = "Read-based_Processing/")
+parser.add_argument("--assemblies_dir", help = "Specifies the location of the directory containing sample contig assemblies", 
+                    action = "store", default = "Assembly-based_Processing/assemblies/")
+parser.add_argument("--genes_dir", help = "Specifies the location of the directory containing predicted genes", 
+                    action = "store", default = "Assembly-based_Processing/predicted-genes/")
+parser.add_argument("--annotations_and_tax_dir", help = "Specifies the location of the directory containing contigs annotation and taxonomy", 
+                    action = "store", default = "Assembly-based_Processing/annotations-and-taxonomy/")
+parser.add_argument("--mapping_dir", help = "Specifies the location of the directory containing per-sample bam, coverage, and mapping info files", 
+                    action = "store", default = "Assembly-based_Processing/read-mapping/")
+parser.add_argument("--bins_dir", help = "Specifies the location of the directory containing recovered genome bins", 
+                    action = "store", default = "Assembly-based_Processing/bins/")
+parser.add_argument("--MAGs_dir", help = "Specifies the location of the directory containing meta-assembled genomes (MAGs)", 
+                    action = "store", default = "Assembly-based_Processing/MAGs/")
+parser.add_argument("--combined_output_dir", help = "Specifies the location of the directory containing contig annotation summary outputs with all samples combined", 
+                    action = "store", default = "Assembly-based_Processing/combined-outputs/")
+parser.add_argument("--single-ended", help = "Add this flag if data are single-end sequencing.", action = "store_true")
+parser.add_argument("--primers-already-trimmed", help = "Add this flag if primers were trimmed prior to GeneLab processing, \
+                    therefore there are no trimmed sequence data", action = "store_true")
+parser.add_argument("--R1-used-as-single-ended-data", help = "Provide this flag if processing only R1 reads as single-end (as the expected raw \
+                    filename suffixes will have 'R1' in there)", 
+                    action = "store_true")
+parser.add_argument("--skip_raw_multiqc", help = "Provide this flag to skip checking for samples present in raw_multiqc<assay_suffix>_report.zip",
+                    action = "store_true")
+
+
+if len(sys.argv)==1:
+    parser.print_help(sys.stderr)
+    sys.exit(0)
+
+args = parser.parse_args()
+
+
+################################################################################
+
+# Setting some colors
+tty_colors = {
+    'green' : '\033[0;32m%s\033[0m',
+    'yellow' : '\033[0;33m%s\033[0m',
+    'red' : '\033[0;31m%s\033[0m'
+}
+
+
+######################### Aesthetic functions ################################
+def color_text(text, color='green'):
+    if sys.stdout.isatty():
+        return tty_colors[color] % text
+    else:
+        return text
+
+
+def wprint(text):
+    """ Print wrapper """
+    print(textwrap.fill(text, width = 80, initial_indent="  ", 
+          subsequent_indent="  ", break_on_hyphens=False))
+    
+
+def report_failure(validation_log,  message, color = "yellow", write_log = True):
+    print("")
+    wprint(color_text(message, color))
+    print("\nValidation failed.\n")
+
+    if write_log:
+        with open(validation_log, "a") as log:
+            log.write(message + "\n" + "Validation failed." + "\n\n")
+    sys.exit(1)
+
+
+def modify_symbolic_link(file_path):
+    """ Modify symbolic link such that it retruns a string containing the parent dir and the base name"""
+    full_path = os.path.realpath(file_path)
+    parent_dir = os.path.basename(os.path.dirname(full_path))
+    base_name = os.path.basename(full_path)
+    mod_path = os.path.join(parent_dir, base_name)
+    return(mod_path)
+
+
+######################### End of Aesthetic functions ################################
+
+
+############ Main functions ##############
+
+def setup_log(validation_log, V_V_guidelines_link):
+    """ Writes validation log's header """
+
+    with open(validation_log, "w") as log:
+        log.write(f"Performing baseline Metagenomics V+V as per: {V_V_guidelines_link}\n\n")
+        command_run = " ".join(sys.argv)
+        log.write(f"Validation program executed as:\n    {command_run}\n\n")
+
+def append_message_to_log(validation_log, message, one_return = False):
+    """ Appends line to validation log with one or two newline characters """
+
+    with open(validation_log, "a") as log:
+        if one_return:
+            log.write(f"{message}\n")
+        else:
+            log.write(f"{message}\n\n")
+
+def check_for_file_and_contents(validation_log, file_path):
+    """ Used by various functions to check if a file exists and that it is not empty """
+
+    if not os.path.exists(file_path):
+        report_failure(validation_log, "The expected file '" + str(file_path) + "' does not exist.")
+    if not os.path.getsize(file_path) > 0:
+        report_failure(validation_log, "The file '" + str(file_path) + "' is empty.")
+
+def check_expected_directories(validation_log, expected_dirs):
+    """ Checks that the expected directories exist """
+
+    for directory in expected_dirs:
+        if not os.path.isdir(directory):
+            report_failure(validation_log, "The directory '" + str(directory) + "' was expected but not found.")
+
+def read_samples(file_path):
+    """ Reads unique sample names from file_path into a list """
+
+    with open(file_path) as f:
+        sample_names = f.read().splitlines()
+    return(sample_names)
+
+def check_multiqc_outputs(validation_log, sample_names, multiqc_zip, 
+                          multiqc_stats_file_path, R1_suffix,
+                          R2_suffix, unpaired_suffix, prefix, isSingle_ended):
+    """ Makes sure all samples' read files are in the multiqc outputs """
+
+    # Checking raw
+    zip_file = zipfile.ZipFile(multiqc_zip)
+
+    df = pd.read_csv(zip_file.open(multiqc_stats_file_path), sep = "\t", usecols = ["Sample"])
+
+    file_prefixes_in_multiqc = df["Sample"].tolist()
+    
+    # If paired-end
+    if not isSingle_ended:
+
+        R1_suffix = R1_suffix.split(".")[0].replace(f"_{prefix}", "")
+        R2_suffix = R2_suffix.split(".")[0].replace(f"_{prefix}", "")
+
+        for sample in sample_names:
+            if not sample + R1_suffix in file_prefixes_in_multiqc:
+                report_failure(validation_log, f"The {prefix} multiqc output is missing the expected '" + \
+                               sample + R1_suffix + "' entry.")
+            if not sample + R2_suffix in file_prefixes_in_multiqc:
+                report_failure(validation_log, f"The {prefix} multiqc output is missing the expected '" + \
+                               sample + R2_suffix + "' entry.")
+    # If single-end
+    else:
+
+        suffix = unpaired_suffix.split(".")[0].replace(f"_{prefix}", "")
+
+        for sample in sample_names:
+            if not sample + suffix in file_prefixes_in_multiqc and not sample in file_prefixes_in_multiqc:
+                report_failure(validation_log, f"The {prefix} multiqc output is missing the expected '" + \
+                               sample + suffix + "' entry.")
+
+                
+def check_fastq_files(validation_log, sample_names, reads_dir, 
+                      unpaired_suffix, R1_suffix, R2_suffix, isSingle_ended):
+    """ Makes sure all expected read fastq files exist and hold something """
+
+    for sample in sample_names:
+        ## If paired-end
+        if not isSingle_ended:
+            check_for_file_and_contents(validation_log, os.path.join(reads_dir, sample + R1_suffix))
+            check_for_file_and_contents(validation_log, os.path.join(reads_dir, sample + R2_suffix))
+        ## If single-end
+        else:
+            check_for_file_and_contents(validation_log, os.path.join(reads_dir, sample + unpaired_suffix))
+
+
+def get_files_in_dir(dir_path):
+
+    return([f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))])
+
+
+def check_read_based_outputs(validation_log, filenames, read_based_dir):
+    """ Makes sure outputs exist and aren't empty """
+
+    for file in filenames:
+
+        check_for_file_and_contents(validation_log, os.path.join(read_based_dir, file))
+
+
+def check_general_fasta_format(validation_log, file_path):
+    """ 
+       Check that a fasta file is formatted properly i.e. 
+       the number of headers equals the number of sequences
+    """
+    if not os.path.getsize(file_path) > 0:
+        report_failure(validation_log, "The fasta file '" + str(file_path) + "' is empty but isn't expected to be.")
+
+    line_num = 0
+    num_headers = 0
+    num_seqs = 0
+
+    with open(file_path) as in_file:
+
+        for line in in_file:
+
+            # Keeping track of current line for reporting any problems
+            line_num += 1
+
+            if line.strip().startswith(">"):
+                num_headers += 1
+            else:
+                num_seqs += 1
+
+            if num_headers != num_seqs + 1 and num_headers != num_seqs:
+                report_failure(validation_log, "Fasta file '" + str(file_path) + \
+                               "' does not seem to be formatted properly. Problem detected at line " + \
+                                str(line_num) + ".")
+
+
+def get_failed_assemblies(failed_assemblies):
+    """ Retrieves a list of samples for which assembly failed """
+
+    failed_assemblies_list = []
+
+    if os.path.exists(failed_assemblies):
+        with open(failed_assemblies) as failed:
+            for line in failed:
+                failed_assemblies_list.append(line.strip().split("\t")[0])
+    return(failed_assemblies_list)
+
+
+def check_assembly_based_file(validation_log, sample, file_path, failed_assemblies_list, assembly = True):
+
+    if not os.path.exists(file_path):
+        report_failure(validation_log, "The expected file '" + str(file_path) + "' does not exist.")
+
+    if not os.path.getsize(file_path) > 0:
+
+        # A sample can have no genes called even if the assembly produced contigs, 
+        # so this is only throwing a warning if we are checking an assembly here
+        if sample not in failed_assemblies_list and assembly == True:
+
+            report_failure(validation_log, "The file '" + str(file_path) + \
+                           "' is empty, but that sample isn't noted in the 'Failed-assemblies.tsv' file as it should be if the assembly failed.")
+
+
+def check_assembly_based_genes_file(validation_log, sample, file_path, failed_assemblies_list, assembly = True):
+    """ 
+    Separate function for working with expected output genes files, to handle
+    cases where assemblies can succeed while there are still no gene calls
+
+    Just checks the file isn't empty if it exists
+    """
+
+    if os.path.exists(file_path) and sample not in failed_assemblies_list:
+
+        if not os.path.getsize(file_path) > 0:
+
+            report_failure(validation_log, "The expected file '" + str(file_path) + \
+                           "' exists, but appears to be empty when it shouldn't be.")
+
+
+def check_assemblies(validation_log, sample_names, failed_assemblies_list,
+                     assembly_suffix, assemblies_dir, assembly_summary):
+    """ A function to find sample assemblies """
+
+    ## Assemblies_dir ##
+    for sample in sample_names:
+
+        curr_fasta_path = os.path.join(assemblies_dir, sample + assembly_suffix)
+
+        # Checking that the file is present and not empty, unless it is noted
+        #  in the Failed-assemblies file, then continuing to next sample
+        if sample not in failed_assemblies_list:
+
+            check_assembly_based_file(validation_log, sample, curr_fasta_path, failed_assemblies_list)
+
+            # Checking the general fasta format if present
+            check_general_fasta_format(validation_log, curr_fasta_path)
+    
+    # Making sure assembly summary file is there
+    assembly_summary_path = os.path.join(assemblies_dir, assembly_summary)
+
+    if not os.path.exists(assembly_summary_path):
+        report_failure(validation_log, "The assembly summary file, " + str(assembly_summary_path) + \
+                       ", is expected but was not found.")
+
+
+def check_genes(validation_log, sample_names, failed_assemblies_list, genes_dir,
+                 predicted_gene_file_suffixes, gene_fasta_suffixes):
+    """ A function to find samples predicted genes associated files """
+
+    # If any assembly failed, these files won't exist for that assembly 
+    # (they also may not exist if an assembly produced contigs too but not genes were called)
+    for sample in sample_names:
+
+        if sample not in failed_assemblies_list:
+
+            for suffix in predicted_gene_file_suffixes:
+
+                curr_file_path = os.path.join(genes_dir, sample + suffix)
+
+                # Checking that the file is present and not empty
+                check_assembly_based_genes_file(validation_log, sample, curr_file_path,
+                                                 failed_assemblies_list, assembly = False)
+
+            # Checking fasta format for those that exist
+            for suffix in gene_fasta_suffixes:
+
+                curr_fasta_path = os.path.join(genes_dir, sample + suffix)
+
+                if os.path.exists(curr_fasta_path) and os.path.getsize(curr_fasta_path) > 0:
+                    check_general_fasta_format(validation_log, curr_fasta_path)
+
+
+def check_contig_annotation(validation_log, sample_names, annotations_and_tax_dir, annotations_suffixes):
+    """Checks that the contig annotation files exist and that they are not empty"""
+    for sample in sample_names:
+
+        for suffix in annotations_suffixes:
+
+            curr_file_path = os.path.join(annotations_and_tax_dir, sample + suffix)
+
+            check_for_file_and_contents(validation_log, curr_file_path)
+
+
+def check_mapping(validation_log, sample_names, mapping_dir, failed_assemblies_list,
+                  mapping_dir_suffixes_all_have, mapping_info_suffix):
+    """Checks that the outputs of read mapping to sample assemblies exist and that they are not empty"""
+
+    for sample in sample_names:
+
+        for suffix in mapping_dir_suffixes_all_have:
+
+            curr_file_path = os.path.join(mapping_dir, sample + suffix)
+
+            # Checking the file is present and not empty unless it is noted in the Failed-assemblies file
+            if sample not in failed_assemblies_list:
+                check_assembly_based_file(validation_log, sample, curr_file_path, failed_assemblies_list)
+
+        # Checking for mapping-info file for those that should have it
+        if sample not in failed_assemblies_list:
+
+            curr_file_path = os.path.join(mapping_dir, sample + mapping_info_suffix)
+
+            check_assembly_based_file(validation_log, sample, curr_file_path, failed_assemblies_list)
+
+
+def check_combined_outputs(validation_log, combined_output_dir, expected_assembly_combined_outputs):
+    """Checks that assembly-based summary files exist and that they are not empty"""
+
+    for filename in expected_assembly_combined_outputs:
+
+        curr_file_path = os.path.join(combined_output_dir, filename)
+
+        check_for_file_and_contents(validation_log, curr_file_path)
+
+
+def check_bins(validation_log, bins_dir, bins_summary, output_fasta_bins):
+
+    # Checking for contents (checking fasta format not straightforward when there are softwraps,
+    #  but don't want to remove them on these due to large contigs)
+    for bin_file in output_fasta_bins:
+
+        curr_file_path = os.path.join(bins_dir, bin_file)
+
+        if not os.path.getsize(curr_file_path) > 0:
+
+            report_failure(validation_log, "The file '" + str(curr_file_path) + \
+                            "' is empty, but shouldn't be there if that's the case.")
+
+    # Making sure summary table is there if there are any bins
+    if len(output_fasta_bins) > 0:
+
+        bins_summary_path = os.path.join(bins_dir, bins_summary)
+
+        if not os.path.exists(bins_summary_path):
+
+            report_failure(validation_log, "The bins summary file, " + str(bins_summary_path) + \
+                            ", is expected but was not found.")
+
+
+def check_mags(validation_log, MAGs_dir, output_fasta_MAGs, output_fasta_bins, MAGs_summary):
+
+    # Checking for contents (checking fasta format not straightforward when there are softwraps,
+    #  but don't want to remove them on these due to large contigs)
+    for MAG_file in output_fasta_MAGs:
+
+        curr_file_path = os.path.join(MAGs_dir, MAG_file)
+
+        if not os.path.getsize(curr_file_path) > 0:
+
+            report_failure(validation_log, "The file '" + str(curr_file_path) + \
+                            "' is empty, but shouldn't be there if that's the case.")
+
+    # Making sure summary table is there if there are any bins
+    if len(output_fasta_bins) > 0:
+
+        MAGs_summary_path = os.path.join(MAGs_dir, MAGs_summary)
+
+        if not os.path.exists(MAGs_summary_path):
+
+            report_failure(validation_log, "The MAGs summary file, " + str(MAGs_summary_path) + \
+                            ", is expected but was not found.")
+
+
+def check_assembly_based_overview_table(validation_log, expected_samples, overview_table_path):
+    """ Makes sure the output table exists and all input samples are in it """
+
+    # Making sure it exists and is not empty
+    check_for_file_and_contents(validation_log, overview_table_path)
+
+    # Making sure all samples are in there
+    # reading in table and getting sample IDs in list
+    overview_tab = pd.read_csv(overview_table_path, sep = "\t")
+    samples_in_tab = overview_tab['Sample_ID'].tolist()
+
+    missing_sample_IDs = []
+
+    for sample in expected_samples:
+        if sample not in samples_in_tab:
+            missing_sample_IDs.append(sample)
+
+    if len(missing_sample_IDs) > 0:
+        report_failure(validation_log, "The assembly overview table, '" + \
+                       overview_table_path + \
+                        f"', does not contain these ({', '.join(missing_sample_IDs)}) expected sample(s).")
+
+
+def check_metagenomics_processing_zip(validation_log, samples, processing_zip_file, expected_zip_contents,
+                                       expected_log_file_suffixes, logs_dir):
+    """ This makes sure a processing zip exists and has the expected core components """
+
+    # Check that the file exists and that it is not empty
+    check_for_file_and_contents(validation_log, processing_zip_file)
+
+    with zipfile.ZipFile(processing_zip_file) as zip_obj:
+        entries = zip_obj.namelist()
+    ROOT_DIR = entries[0]
+
+    for item in expected_zip_contents:
+
+        if ROOT_DIR + item not in entries:
+            report_failure(validation_log, "The '" + str(processing_zip_file) + \
+                           "' does not have '" + str(item) + "' as expected.")
+
+    # Checking log files
+    for sample in samples:
+
+        for suffix in expected_log_file_suffixes:
+
+            target_log = ROOT_DIR + logs_dir + sample + suffix
+
+            if target_log not in entries:   
+                report_failure(validation_log, "The '" + str(processing_zip_file) + \
+                               "' does not have the '" + str(target_log) + "' log file as expected.")
+
+
+def report_success(validation_log):
+    print("")
+    wprint(color_text("Validation has completed successfully :)", "green"))
+    print(f"\n  Log written to: '{validation_log}'\n")
+
+    with open(validation_log, "a") as log:
+
+        log.write("   -----------------------------------------------------------------------------\n")
+        log.write("                         Validation completed successfully." + "\n")
+        log.write("   -----------------------------------------------------------------------------\n")
+
+def gen_stats(list_of_ints):
+
+    """ Returns min, max, mean, median of input integer list """
+
+    min_val = min(list_of_ints)
+    max_val = max(list_of_ints)
+
+    mean_val = round(mean(list_of_ints), 2)
+    median_val = int(median(list_of_ints))
+    
+    return(min_val, max_val, mean_val, median_val)
+
+
+def get_read_count_stats(validation_log, prefix, multiqc_zip, multiqc_stats_file_path):
+    
+    """ Grabs read counts and summarizes """
+
+    zip_file = zipfile.ZipFile(multiqc_zip)
+
+    df = pd.read_csv(zip_file.open(multiqc_stats_file_path), sep = "\t", usecols = [6])
+
+    df.columns = ["counts"]
+    counts = df.counts.tolist()
+
+    # Getting rid of decimals
+    counts = [ int(round(i, 0)) for i in counts ]
+
+    Min, Max, Mean, Median = gen_stats(counts)
+
+
+    print(f"\n  {prefix.title()} read count summary:")
+    print("    {:<10} {:>0}".format("Min:", Min))
+    print("    {:<10} {:>0}".format("Max:", Max))
+    print("    {:<10} {:>0}".format("Mean:", Mean))
+    print("    {:<10} {:>0}".format("Median:", Median))
+
+    with open(validation_log, "a") as log:
+
+        log.write(f"\n  {prefix.title()} read count summary:")
+        log.write("\n    {:<10} {:>0}".format("Min:", Min))
+        log.write("\n    {:<10} {:>0}".format("Max:", Max))
+        log.write("\n    {:<10} {:>0}".format("Mean:", Mean))
+        log.write("\n    {:<10} {:>0}".format("Median:", Median))
+
+
+def main():
+
+    ###----------------------------------------  Variable setup ----------------------------------------------###
+    output_prefix = str(args.output_prefix)
+    fastqc_dir = str(args.fastqc_dir)
+    filtered_reads_dir = str(args.filtered_reads_dir)
+    read_based_dir =  str(args.read_based_dir) 
+    assembly_based_dir = str(args.assembly_based_dir)
+    assemblies_dir = str(args.assemblies_dir)
+    genes_dir = str(args.genes_dir)
+    annotations_and_tax_dir = str(args.annotations_and_tax_dir)
+    mapping_dir = str(args.mapping_dir)
+    bins_dir = str(args.bins_dir)
+    MAGs_dir = str(args.MAGs_dir)
+    combined_output_dir = str(args.combined_output_dir)
+    logs_dir = str(args.logs_dir_basename)
+    processing_zip_file = str(args.processing_zip_file)
+
+    # Just in case user only specified --R1-used-as-single-ended, but didn't specify --single-ended
+    if args.R1_used_as_single_ended_data:
+        args.single_ended = True
+
+    V_V_guidelines_link = str(args.V_V_guidelines_link )
+    
+    # Suffixes
+    assay_suffix = str(args.assay_suffix)
+    raw_suffix = str(args.raw_suffix)
+    raw_R1_suffix = str(args.raw_R1_suffix)
+    raw_R2_suffix = str(args.raw_R2_suffix)
+    filtered_suffix = str(args.filtered_suffix)
+    filtered_R1_suffix = str(args.filtered_R1_suffix)
+    filtered_R2_suffix = str(args.filtered_R2_suffix)
+    assembly_suffix = "-assembly.fasta"
+    predicted_gene_file_suffixes = ["-genes.faa", "-genes.gff", "-genes.fasta"]
+    gene_fasta_suffixes = ["-genes.faa", "-genes.fasta"]
+    annotations_suffixes = ["-gene-coverage-annotation-and-tax.tsv", "-contig-coverage-and-tax.tsv"]
+    mapping_dir_suffixes_all_have = [".bam", "-metabat-assembly-depth.tsv"]
+    mapping_info_suffix = "-mapping-info.txt"
+
+    # Expected Directories
+    expected_dirs = [fastqc_dir, filtered_reads_dir, assembly_based_dir,
+                    assemblies_dir, genes_dir, annotations_and_tax_dir, mapping_dir,
+                    combined_output_dir, bins_dir, MAGs_dir, read_based_dir]
+
+    if args.raw_reads_dir != "":
+        expected_dirs.append(args.raw_reads_dir)
+
+
+    # Expected files
+    assembly_summary = f"{output_prefix}assembly-summaries{assay_suffix}.tsv"
+    failed_assemblies = os.path.join(assemblies_dir,f"{output_prefix}Failed-assemblies.tsv")
+
+    raw_multiqc_zip = f"{output_prefix}raw_multiqc{assay_suffix}_report.zip"
+    filtered_multiqc_zip = f"{output_prefix}filtered_multiqc{assay_suffix}_report.zip"
+    raw_multiqc_stats_file_path = f"{output_prefix}raw_multiqc_report.zip".split(".")[0] + \
+                                  f"/{output_prefix}raw_multiqc_data/multiqc_general_stats.txt"
+    filtered_multiqc_stats_file_path = f"{output_prefix}filtered_multiqc_report.zip".split(".")[0] + \
+                                       f"/{output_prefix}filtered_multiqc_data/multiqc_general_stats.txt"
+
+
+    expected_assembly_combined_outputs = [f"{output_prefix}Combined-contig-level-taxonomy-coverages-CPM{assay_suffix}.tsv",
+                                          f"{output_prefix}Combined-gene-level-KO-function-coverages-CPM{assay_suffix}.tsv",
+                                          f"{output_prefix}Combined-gene-level-taxonomy-coverages-CPM{assay_suffix}.tsv",
+                                          f"{output_prefix}Combined-contig-level-taxonomy-coverages{assay_suffix}.tsv",
+                                          f"{output_prefix}Combined-gene-level-KO-function-coverages{assay_suffix}.tsv",
+                                          f"{output_prefix}Combined-gene-level-taxonomy-coverages{assay_suffix}.tsv"]
+
+    assembly_based_overview_table = os.path.join(assembly_based_dir, f"{output_prefix}Assembly-based-processing-overview{assay_suffix}.tsv")
+
+    expected_read_based_outputs = [f"{output_prefix}Gene-families-KO-cpm{assay_suffix}.tsv",
+                                   f"{output_prefix}Gene-families-cpm{assay_suffix}.tsv",
+                                   f"{output_prefix}Gene-families-grouped-by-taxa{assay_suffix}.tsv",
+                                   f"{output_prefix}Gene-families{assay_suffix}.tsv",
+                                   f"{output_prefix}Metaphlan-taxonomy{assay_suffix}.tsv",
+                                   f"{output_prefix}Pathway-abundances-cpm{assay_suffix}.tsv",
+                                   f"{output_prefix}Pathway-abundances-grouped-by-taxa{assay_suffix}.tsv",
+                                   f"{output_prefix}Pathway-abundances{assay_suffix}.tsv",
+                                   f"{output_prefix}Pathway-coverages-grouped-by-taxa{assay_suffix}.tsv",
+                                   f"{output_prefix}Pathway-coverages{assay_suffix}.tsv"]
+
+    expected_zip_contents = str(args.zip_targets).split(",")
+
+    #expected_log_file_suffixes = ["-CAT.log", "-assembly.log", "-bam-summarize-and-metabat.log", "-bowtie2-build.log", 
+    #                              "-bbduk.log", "-kofamscan.log", "-pileup.log", "-prodigal.log", "-humann3-run.log"]
+    
+    expected_log_file_suffixes = ["-assembly.log", "-bbduk.log"]
+
+    # Setting-up the output log file name
+    if args.output == "":
+        validation_log = f"{str(args.GLDS_ID)}_{output_prefix}metagenomics-validation.log"
+    else:
+        validation_log = str(args.output)
+
+    # ------------------------------------------------- Logging Begins -----------------------------------------------------------#
+
+    # Initializing the log file
+    setup_log(validation_log, V_V_guidelines_link)
+    append_message_to_log(validation_log, f"Summary of checks:")
+
+    # Check if README.txt exists
+    check_for_file_and_contents(validation_log, args.readme)
+    append_message_to_log(validation_log, f"    - populated {args.readme} detected")
+    # Check if the expected directories exist
+    check_expected_directories(validation_log, expected_dirs)
+    # Retrieve unique sample names from the sample IDs file
+    sample_names = read_samples(args.sample_IDs_file)
+
+    # Check raw multiqc outputs
+    raw_multiqc_zip = os.path.join(fastqc_dir, raw_multiqc_zip)
+    raw_prefix = "raw"
+
+    if not args.skip_raw_multiqc:
+        check_multiqc_outputs(validation_log, sample_names, raw_multiqc_zip, 
+                              raw_multiqc_stats_file_path, raw_R1_suffix,
+                              raw_R2_suffix, raw_suffix, raw_prefix, args.single_ended)
+        append_message_to_log(validation_log, f"    - all expected samples were found in raw multiqc files in {fastqc_dir}")
+
+    # Check filtered multiqc outputs
+    filtered_multiqc_zip = os.path.join(fastqc_dir,filtered_multiqc_zip)
+    filtered_prefix = "filtered"   
+    check_multiqc_outputs(validation_log,  sample_names, filtered_multiqc_zip,
+                          filtered_multiqc_stats_file_path, filtered_R1_suffix, 
+                          filtered_R2_suffix, filtered_suffix, filtered_prefix, args.single_ended)
+    append_message_to_log(validation_log, f"    - all expected samples were found in filtered multiqc files in {fastqc_dir}")
+
+    # Raw reads
+    if args.raw_reads_dir != "":
+        check_fastq_files(validation_log, sample_names, args.raw_reads_dir, 
+                          raw_suffix, raw_R1_suffix, raw_R2_suffix, args.single_ended)
+        append_message_to_log(validation_log, f"    - all expected fastq read files were found in {args.raw_reads_dir}")
+
+    # Filtered reads
+    check_fastq_files(validation_log, sample_names, filtered_reads_dir, 
+                      filtered_suffix, filtered_R1_suffix, 
+                      filtered_R2_suffix, args.single_ended)
+    append_message_to_log(validation_log, f"    - all expected fastq read files were found in {filtered_reads_dir}")
+
+    # -------- Read-based approach files checking  --------#
+    check_read_based_outputs(validation_log, expected_read_based_outputs, read_based_dir)
+    for file in expected_read_based_outputs:
+        append_message_to_log(validation_log, f"    - {file} was found in {read_based_dir}")
+    append_message_to_log(validation_log, f"    - all expected files for read-based analysis were found in the {read_based_dir} directory")
+
+    # ------------- Aseembly-based approach files checking  ---------#
+    # Get list of samples for which assembly failed
+    failed_assemblies_list = get_failed_assemblies(failed_assemblies)
+
+    # Check assemblies
+    check_assemblies(validation_log, sample_names, failed_assemblies_list,
+                     assembly_suffix, assemblies_dir, assembly_summary) 
+    mod_assemblies_dir = modify_symbolic_link(assemblies_dir) if os.path.islink(assemblies_dir) else assemblies_dir
+    if len(failed_assemblies_list) > 0:
+        append_message_to_log(validation_log, f"    - all samples except {', '.join(failed_assemblies_list)} had assemblies found in {mod_assemblies_dir}")
+    else:
+        append_message_to_log(validation_log, f"    - all samples had assemblies found in {mod_assemblies_dir}")
+    append_message_to_log(validation_log, f"    - {assembly_summary} was found in {mod_assemblies_dir}")
+    append_message_to_log(validation_log, f"    - all expected assembly files for  assembly-based analysis were found in the {mod_assemblies_dir} directory")
+
+    # Check genes
+    check_genes(validation_log, sample_names, failed_assemblies_list,
+                genes_dir, predicted_gene_file_suffixes, gene_fasta_suffixes)
+    mod_genes_dir = modify_symbolic_link(genes_dir) if os.path.islink(genes_dir) else genes_dir
+
+    checked_suffixes = predicted_gene_file_suffixes + gene_fasta_suffixes
+    for suffix in checked_suffixes:
+        append_message_to_log(validation_log, f"    - *{suffix} predicted genes files were found in {mod_genes_dir}")
+    append_message_to_log(validation_log, f"    - all expected predicted genes files for assembly-based analysis were found in the {mod_genes_dir} directory")
+
+     # Check contig annotation
+    check_contig_annotation(validation_log, sample_names, annotations_and_tax_dir, annotations_suffixes)
+    mod_annotations_and_tax_dir = modify_symbolic_link(annotations_and_tax_dir) if os.path.islink(annotations_and_tax_dir) else annotations_and_tax_dir
+
+    for suffix in annotations_suffixes:
+        append_message_to_log(validation_log, f"    - *{suffix} annotation files were found in {mod_annotations_and_tax_dir}")
+    append_message_to_log(validation_log, f"    - all expected annotation files for assembly-based analysis were found in the {mod_annotations_and_tax_dir} directory")
+
+    # Check read mapping
+    check_mapping(validation_log, sample_names, mapping_dir, failed_assemblies_list,
+                  mapping_dir_suffixes_all_have, mapping_info_suffix)
+    mod_mapping_dir = modify_symbolic_link(mapping_dir) if os.path.islink(mapping_dir) else mapping_dir
+    checked_suffixes = mapping_dir_suffixes_all_have + [mapping_info_suffix]
+    for suffix in checked_suffixes:
+        append_message_to_log(validation_log, f"    - *{suffix} read mapping files were found in the {mod_mapping_dir}")
+    append_message_to_log(validation_log, f"    - all expected read mapping files for assembly-based analysis were found in the {mod_mapping_dir} directory")
+
+    # Combined contigs annotation outputs
+    check_combined_outputs(validation_log, combined_output_dir, expected_assembly_combined_outputs)
+    mod_combined_output_dir = modify_symbolic_link(combined_output_dir) if os.path.islink(combined_output_dir) else combined_output_dir
+    for file in expected_assembly_combined_outputs:
+        append_message_to_log(validation_log, f"    - {file} was found in {mod_combined_output_dir}")
+    append_message_to_log(validation_log, f"    - all expected contig annotation summary files for assembly-based analysis were found in the {mod_combined_output_dir} directory")
+    
+    # Check bins - Only if there were bins recovered
+    output_files_present = get_files_in_dir(bins_dir)
+    if output_files_present:
+        bins_summary = f"{output_prefix}bins-overview{assay_suffix}.tsv"
+        output_fasta_bins = [filename for filename in output_files_present if filename.endswith(".fasta")]
+        check_bins(validation_log, bins_dir, bins_summary, output_fasta_bins)
+        mod_bins_dir = modify_symbolic_link(bins_dir) if os.path.islink(bins_dir) else bins_dir
+        append_message_to_log(validation_log, f"    - bins were found in {mod_bins_dir}")
+        append_message_to_log(validation_log, f"    - {bins_summary} was found in {mod_bins_dir}")
+    else:
+        append_message_to_log(validation_log, f"    - No bin was recovered for any sample")
+
+    # Check MAGS - only if there were MAGs recovered
+    output_files_present = get_files_in_dir(MAGs_dir)
+    if output_files_present:
+        output_fasta_MAGs = [filename for filename in output_files_present if filename.endswith(".fasta")]
+        MAGs_summary = f"{output_prefix}MAGs-overview{assay_suffix}.tsv"
+        check_mags(validation_log, MAGs_dir, output_fasta_MAGs, output_fasta_bins, MAGs_summary)
+        mod_MAGs_dir = modify_symbolic_link(MAGs_dir) if os.path.islink(MAGs_dir) else MAGs_dir
+        append_message_to_log(validation_log, f"    - MAGs were found in {mod_MAGs_dir}")
+        append_message_to_log(validation_log, f"    - {MAGs_summary} was found in {mod_MAGs_dir} directory")
+    else:
+        append_message_to_log(validation_log, f"    - No MAG was recovered for any sample")
+
+    check_assembly_based_overview_table(validation_log, sample_names, assembly_based_overview_table)
+    append_message_to_log(validation_log, f"    - {assembly_based_overview_table} was found in {assembly_based_dir}")
+
+    append_message_to_log(validation_log, f"    - all expected files were found in the {assembly_based_dir} directory")
+
+    # Check processing info
+    check_metagenomics_processing_zip(validation_log, sample_names, processing_zip_file, 
+                                      expected_zip_contents, expected_log_file_suffixes, logs_dir)
+    for file in expected_zip_contents:
+        append_message_to_log(validation_log, f"    - {file} was found in {processing_zip_file}")
+    
+    suffixes_modified = [f"*{suffix}" for suffix in expected_log_file_suffixes]
+    files = ", ".join(suffixes_modified)
+    append_message_to_log(validation_log,
+                        f"    - all expected sample log files with these suffixes ({files}) were found in {processing_zip_file}")
+    append_message_to_log(validation_log, f"    - all expected files were found in {processing_zip_file}")
+
+    # ------------- Summarize ------------------------#
+    report_success(validation_log)
+    # Raw
+    get_read_count_stats(validation_log, raw_prefix, raw_multiqc_zip, raw_multiqc_stats_file_path)
+    # Filtered
+    get_read_count_stats(validation_log, filtered_prefix, filtered_multiqc_zip, filtered_multiqc_stats_file_path)
+
+if __name__ == "__main__":
+    main()
