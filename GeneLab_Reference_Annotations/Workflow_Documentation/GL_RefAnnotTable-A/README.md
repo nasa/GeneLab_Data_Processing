@@ -10,11 +10,11 @@
       - [Step 1: Install Singularity](#step-1-install-singularity)
       - [Step 2: Fetch the Singularity Image](#step-2-fetch-the-singularity-image)
       - [Step 3: Run the Workflow](#step-3-run-the-workflow)
-      - [Optional: Run the Annotations Database Creation Function as a Stand-Alone Script](#optional-run-the-annotations-database-creation-function-as-a-stand-alone-script)
+      - [Optional: Run the Annotations Database Creation Function as a Stand-Alone Script via Singularity](#optional-run-the-annotations-database-creation-function-as-a-stand-alone-script-via-singularity)
     - [Approach 2: Using a Local R Environment](#approach-2-using-a-local-r-environment)
       - [Step 1: Install R and Required R Packages](#step-1-install-r-and-required-r-packages)
       - [Step 2: Run the Workflow](#step-2-run-the-workflow)
-      - [Optional: Run the Annotations Database Creation Function as a Stand-Alone Script](#optional-run-the-annotations-database-creation-function-as-a-stand-alone-script)
+      - [Optional: Run the Annotations Database Creation Function as a Stand-Alone Script via R](#optional-run-the-annotations-database-creation-function-as-a-stand-alone-script-via-r)
 
 <br> 
 
@@ -111,19 +111,21 @@ Rscript /work/GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'
 
 - No input files are required. Specify the species name of the target organism using a positional command line argument. `Mus musculus` is used in the example above.
   > **Notes**:  
-  > - To see a list of all available organisms, run `Rscript GL-DPPD-7110-A_build-genome-annots-tab.R` without positional arguments.  
-  > - The correct argument for each organism can also be found in the 'species' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)  
+  > - To see a list of all available organisms, run `Rscript GL-DPPD-7110-A_build-genome-annots-tab.R` without positional arguments.   
+  > - The correct argument for each organism can also be found in the 'species' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
+  
 - *Optional*: A local reference table CSV file can be supplied as a second positional argument. If not provided, the script will download the current version of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) table by default.  
     
 
 **Output data:**
 
 - *-GL-annotations.tsv (Tab delineated table of gene annotations)
+  
 - *-GL-build-info.txt (Text file containing information used to create the annotation table, including tool and tool versions and date of creation)
 
 <br> 
 
-#### *Optional*: Run the Annotations Database Creation Function as a Stand-Alone Script
+#### *Optional*: Run the Annotations Database Creation Function as a Stand-Alone Script via Singularity
 
 If the reference table does not specify an annotations database for the target organism in the 'annotations' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file, the `install_annotations` function (defined in `install-org-db.R`) will be executed by default. This function can also be run as a stand-alone script:  
   
@@ -139,7 +141,8 @@ Rscript /work/install-org-db.R 'Bacillus subtilis'
 **Input data:**
 
 - The species name of the target organism must be specified as the first positional command line argument. `Bacillus subtilis` is used in the example above.  
-  > **Note**: The correct argument for each organism can also be found in the 'species' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)   
+  > **Note**: The correct argument for each organism can also be found in the 'species' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
+  
 - *Optional*: A local reference table CSV file can be supplied as a second positional argument. If not provided, the script will download the current version of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) table by default.  
 
 
@@ -208,19 +211,21 @@ Rscript GL_RefAnnotTable-A_1.1.0/GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus m
 
 - No input files are required. Specify the species name of the target organism using a positional command line argument. `Mus musculus` is used in the example above.
   > **Notes**:  
-  > - To see a list of all available organisms, run `Rscript GL-DPPD-7110-A_build-genome-annots-tab.R` without positional arguments.
-  > - The correct argument for each organism can also be found in the 'species' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)   
+  > - To see a list of all available organisms, run `Rscript GL-DPPD-7110-A_build-genome-annots-tab.R` without positional arguments.  
+  > - The correct argument for each organism can also be found in the 'species' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
+  
 - *Optional*: A local reference table CSV file can be supplied as a second positional argument. If not provided, the script will download the current version of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) table by default.
    
 
 **Output data:**
 
 - *-GL-annotations.tsv (Tab delineated table of gene annotations)
+  
 - *-GL-build-info.txt (Text file containing information used to create the annotation table, including tool and tool versions and date of creation)
 
 <br> 
 
-#### *Optional*: Run the Annotations Database Creation Function as a Stand-Alone Script
+#### *Optional*: Run the Annotations Database Creation Function as a Stand-Alone Script via R
 
 If the reference table does not specify an annotations database for the target organism in the 'annotations' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file, the `install_annotations` function (defined in `install-org-db.R`) will be executed by default. This function can also be run as a stand-alone script:  
  
@@ -234,7 +239,8 @@ Rscript GL_RefAnnotTable-A_1.1.0/install-org-db.R 'Bacillus subtilis'
 **Input data:**
 
 - The species name of the target organism must be specified as the first positional command line argument. `Bacillus subtilis` is used in the example above.
-  > **Note**: The correct argument for each organism can also be found in the 'species' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)   
+  > **Note**: The correct argument for each organism can also be found in the 'species' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
+  
 - *Optional*: A local reference table CSV file can be supplied as a second positional argument. If not provided, the script will download the current version of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) table by default.  
 
 
