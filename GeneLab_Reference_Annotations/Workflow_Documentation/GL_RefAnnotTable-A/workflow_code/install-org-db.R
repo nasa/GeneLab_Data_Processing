@@ -1,14 +1,31 @@
 # install-org-db.R
 
+# Set R library path to current working directory
+lib_path <- file.path(getwd())
+.libPaths(lib_path)
+
+# Load required libraries
+library(tidyverse)
+library(AnnotationForge)
+library(BiocManager)
+
 # Function: Get annotations db from ref table. If no annotations db is defined, create the package name from genus, species, (and strain for microbes), 
 # Try to Bioconductor install annotations db. If fail then build the package using AnnotationForge, install it into the current directory.
 # Requires ~80GB for NCBIFilesDir file caching
-install_annotations <- function(target_organism, refTablePath) {
-    if (!file.exists(refTablePath)) {
-        stop("Reference table file does not exist at the specified path: ", refTablePath)
-    }
+install_annotations <- function(target_organism, refTablePath = NULL) {
+    # Default URL for the specific version of the reference CSV
+    default_url <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
+    
+    # Use the provided path if available, otherwise use the default URL
+    csv_source <- ifelse(is.null(refTablePath), default_url, refTablePath)
+    
+    # Attempt to read the CSV file
+    ref_table <- tryCatch({
+        read.csv(csv_source)
+    }, error = function(e) {
+        stop("Failed to read the reference table: ", e$message)
+    })
 
-    ref_table <- read.csv(refTablePath)
     target_taxid <- ref_table %>%
         filter(species == target_organism) %>%
         pull(taxon)
@@ -52,6 +69,7 @@ install_annotations <- function(target_organism, refTablePath) {
     } else {
         cat(paste0("\nAttempting to install '", target_org_db, "' from Bioconductor...\n"))
         BiocManager::install(target_org_db, ask = FALSE)
+        
         if (requireNamespace(target_org_db, quietly = TRUE)) {
             cat(paste0("'", target_org_db, "' has been successfully installed from Bioconductor.\n"))
         } else {
@@ -84,4 +102,18 @@ install_annotations <- function(target_organism, refTablePath) {
     library(target_org_db, character.only = TRUE)
     cat(paste0("Using Annotation Database '", target_org_db, "'.\n"))
     return(target_org_db)
+}
+
+if (!interactive()) {
+  # Parse command line arguments
+  args <- commandArgs(trailingOnly = TRUE)
+  
+  if (length(args) < 1) {
+    stop("Usage: Rscript install-org-db.R <target_organism> [refTablePath]")
+  }
+  
+  target_organism <- args[1]
+  refTablePath <- if (length(args) > 1) args[2] else NULL
+  
+  install_annotations(target_organism, refTablePath)
 }
