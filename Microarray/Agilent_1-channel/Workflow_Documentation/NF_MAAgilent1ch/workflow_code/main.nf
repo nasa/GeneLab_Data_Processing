@@ -97,13 +97,11 @@ workflow {
     ch_software_versions = Channel.value(nf_version)
     AGILE1CH.out.versions | map{ it -> it.text } | mix(ch_software_versions) | set{ch_software_versions}
     VV_AGILE1CH.out.versions | map{ it -> it.text } | mix(ch_software_versions) | set{ch_software_versions}
-    ch_software_versions | unique 
-                         | collectFile(
-                            newLine: true, 
-                            sort: true,
-                            cache: false
-                            )
-                         | GENERATE_SOFTWARE_TABLE
+
+    GENERATE_SOFTWARE_TABLE(
+      ch_software_versions | unique | collectFile(newLine: true, sort: true, cache: false),
+      ch_runsheet | splitCsv(header: true, quote: '"') | first | map{ row -> row['Array Data File Name'] }
+    )
 
     emit:
       meta = ch_meta 
