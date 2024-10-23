@@ -188,6 +188,8 @@ lib_path <- file.path(getwd())
 
 # Define variables associated with current pipeline and annotation table versions
 GL_DPPD_ID <- "GL-DPPD-7110-A"
+workflow_version <- "GL_RefAnnotTable-A_1.1.0"
+
 ref_tab_path <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
 readme_path <- "https://github.com/nasa/GeneLab_Data_Processing/tree/master/GeneLab_Reference_Annotations/Workflow_Documentation/GL_RefAnnotTable-A/README.md"
 
@@ -213,6 +215,7 @@ library(rtracklayer)
 **Output Data:**
 
 - `GL_DPPD_ID` (variable specifying the GeneLab Data Processing Pipeline Document ID)
+- `workflow_version (variable specifying the current version of the workflow)
 - `ref_tab_path` (variable specifying the path to the reference table CSV file)
 - `readme_path` (variable specifying the path to the README file)
 - `currently_accepted_orgs` (variable specifying the list of currently supported organisms)
