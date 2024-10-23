@@ -118,7 +118,7 @@ nextflow run main.nf --help
 #### 4a. Approach 1: Run slurm jobs in singularity containers with OSD accession as input
 
 ```bash
-nextflow run main.nf -resume -profile slurm,singularity --GLDS_accession OSD-574
+nextflow run main.nf -resume -profile slurm,singularity --accession OSD-574
 ```
 
 <br>
@@ -149,9 +149,9 @@ nextflow run main.nf -resume -profile conda --csv_file SE_file.csv --conda.qc <p
 
 *Required only if you would like to pull and process data directly from OSDR*
 
-* `--GLDS_accession` – A Genelab / OSD accession number e.g. OSD-574.
+* `--accession` – A Genelab / OSD accession number e.g. OSD-574.
 
-*Required only if --GLDS_accession is not passed as an argument*
+*Required only if --accession is not passed as an argument*
 
 * `--csv_file` –  A single-end or paired-end input csv file containing assay metadata for each sample, including sample_id, forward, reverse, and/or paired. Please see the sample [SE_file.csv](workflow_code/SE_file.csv) and [PE_file.csv](workflow_code/PE_file.csv) in this repository for examples on how to format this file.
 
@@ -204,4 +204,21 @@ To generate a README file, a protocols file, a md5sums table and a file associat
 nextflow -C post_processing.config run post_processng.nf -resume -profile slurm,singularity
 ``` 
 
-The outputs of the run will be in a directory called `Post_Processing` by default.
+The outputs of the run will be in a directory called `Post_Processing` by default and they are as follows:
+
+ - Post_processing/FastQC_Outputs/filtered_multiqc_GLmetagenomics_report.zip (Filtered sequence multiqc report with paths purged) 
+
+ - Post_processing/FastQC_Outputs/raw_multiqc_GLmetagenomics_report.zip (Raw sequence multiqc report with paths purged)
+
+ - Post_processing/<GLDS_accession>_-associated-file-names.tsv (File association table for curation)
+
+ - Post_processing/<GLDS_accession>_metagenomics-validation.log (Automatic verification and validation log file)
+
+ - Post_processing/processed_md5sum_GLmetagenomics.tsv (md5sums for the files to be released on OSDR)
+
+ - Post_processing/processing_info_GLmetagenomics.zip  (Zip file containing all files used to run the workflow and required logs with paths purged) 
+
+ - Post_processing/protocol.txt  (File describing the methods used by the workflow)
+
+ - Post_processing/README_GLmetagenomics.txt (README file listing and describing the outputs of the workflow)
+
