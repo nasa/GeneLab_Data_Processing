@@ -6,6 +6,7 @@
 
 # Define variables associated with current pipeline and annotation table versions
 GL_DPPD_ID <- "GL-DPPD-7110-A"
+workflow_version <- "GL_RefAnnotTable-A_1.1.0"
 ref_tab_path <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
 readme_path <- "https://github.com/nasa/GeneLab_Data_Processing/tree/master/GeneLab_Reference_Annotations/Workflow_Documentation/GL_RefAnnotTable-A/README.md"
 
@@ -147,7 +148,7 @@ GTF <- data.frame(GTF)
 install_and_load_org_db <- function(target_organism, target_org_db, ref_tab_path) {
   # Folder names for the script location: Parent directories or . for executing from parent dir or cd.
   ## No functionality to pull in the path of an executing R script is available
-  possible_folders <- c("workflow_code", "GL_RefAnnotTable-A_1.1.0", ".")
+  possible_folders <- c("workflow_code", workflow_version, ".")
   
   # Get the current working directory and attempt to locate the correct folder
   script_dir <- getwd()
