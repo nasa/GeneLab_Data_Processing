@@ -145,33 +145,46 @@ GTF <- data.frame(GTF)
 
 # Define a function to load the specified org.db package for a given target organism
 install_and_load_org_db <- function(target_organism, target_org_db, ref_tab_path) {
+  # Folder names for the script location: Parent directories or . for executing from parent dir or cd.
+  ## No functionality to pull in the path of an executing R script is available
+  possible_folders <- c("workflow_code", "GL_RefAnnotTable-A_1.1.0", ".")
+  
+  # Get the current working directory and attempt to locate the correct folder
+  script_dir <- getwd()
+  
+  install_script_path <- NULL
+  
+  for (folder in possible_folders) {
+    potential_path <- file.path(script_dir, folder, "install-org-db.R")
+    if (file.exists(potential_path)) {
+      install_script_path <- potential_path
+      break
+    }
+  }
+  
+  # If the install script path was not found, stop with an error
+  if (is.null(install_script_path)) {
+    stop("Cannot find 'install-org-db.R' in the expected folders: 'workflow_code' or 'GL_RefAnnotTable-A_1.1.0'")
+  }
+  
+  # If target_org_db is provided, try to install it from Bioconductor
   if (!is.na(target_org_db) && target_org_db != "") {
-    # Attempt to install the package from Bioconductor
     BiocManager::install(target_org_db, ask = FALSE)
     
     # Check if the package was successfully loaded
     if (!requireNamespace(target_org_db, quietly = TRUE)) {
-      # If not, attempt to create it locally using a helper script
-      source("install-org-db.R")
+      # Source the install script to create the database locally
+      source(install_script_path)
       target_org_db <- install_annotations(target_organism, ref_tab_path)
     }
   } else {
     # If target_org_db is NA or empty, create it locally using the helper script
-    source("install-org-db.R")
+    source(install_script_path)
     target_org_db <- install_annotations(target_organism, ref_tab_path)
   }
   
   # Load the package into the R session
   library(target_org_db, character.only = TRUE)
-}
-
-# Define list of supported organisms which do not use annotations from an org.db
-no_org_db <- c("Lactobacillus acidophilus", "Mycobacterium marinum", "Oryza sativa", "Pseudomonas aeruginosa",
-              "Serratia liquefaciens", "Staphylococcus aureus", "Streptococcus mutans", "Vibrio fischeri")
-
-# Run the function unless the target_organism is in no_org_db
-if (!(target_organism %in% no_org_db) && (target_organism %in% currently_accepted_orgs)) {
-  install_and_load_org_db(target_organism, target_org_db, ref_tab_path)
 }
 
 
