@@ -4,7 +4,7 @@
 
 ### Implementation Tools
 
-The current GeneLab Illumina metagenomics sequencing data processing pipeline (MGIllumina), [GL-DPPD-7107-A.md](../../Pipeline_GL-DPPD-7107_Versions/GL-DPPD-7107-A.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) containers or [conda](https://docs.conda.io/en/latest/) environments to install/run all tools. This workflow is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow. 
+The current GeneLab Illumina metagenomics sequencing data processing pipeline (MGIllumina-A), [GL-DPPD-7107-A.md](../../Pipeline_GL-DPPD-7107_Versions/GL-DPPD-7107-A.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) containers or [conda](https://docs.conda.io/en/latest/) environments to install/run all tools. This workflow is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow. 
 
 > **Note on reference databases**  
 > Many reference databases are relied upon throughout this workflow. They will be installed and setup automatically the first time the workflow is run. All together, after installed and unpacked, they will take up about about 340 GB of storage, but they may also require up to 500GB during installation and initial un-packing, so be sure there is enough room on your system before running the workflow.
@@ -66,11 +66,11 @@ We recommend installing Singularity on a system wide level as per the associated
 
 ### 2. Download the workflow files
 
-All files required for utilizing the NF_XXX GeneLab workflow for processing metagenomics illumina data are in the [workflow_code](workflow_code) directory. To get a copy of latest *NF_XXX* version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
+All files required for utilizing the NF_MGIllumina-A GeneLab workflow for processing metagenomics Illumina data are in the [workflow_code](workflow_code) directory. To get a copy of latest *NF_MGIllumina-A* version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
 
 ```bash
-wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/NF_MGIllumina/NF_MGIllumina.zip
-unzip NF_MGIllumina.zip &&  cd NF_XXX-X_X.X.X
+wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/NF_MGIllumina-A_1.0.0/NF_MGIllumina-A_1.0.0.zip
+unzip NF_MGIllumina-A_1.0.0.zip &&  cd NF_MGIllumina-A_1.0.0
 ```
 
 <br>
@@ -81,9 +81,9 @@ unzip NF_MGIllumina.zip &&  cd NF_XXX-X_X.X.X
 
 Although Nextflow can fetch Singularity images from a url, doing so may cause issues as detailed [here](https://github.com/nextflow-io/nextflow/issues/1210).
 
-To avoid this issue, run the following command to fetch the Singularity images prior to running the NF_MGIllumina workflow:
+To avoid this issue, run the following command to fetch the Singularity images prior to running the NF_MGIllumina-A workflow:
 
-> Note: This command should be run in the location containing the `NF_MGIllumina` directory that was downloaded in [step 2](#2-download-the-workflow-files) above.  
+> Note: This command should be run from within the `NF_MGIllumina-A_1.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files) above.  
 
 ```bash
 bash ./bin/prepull_singularity.sh nextflow.config
@@ -100,6 +100,8 @@ export NXF_SINGULARITY_CACHEDIR=$(pwd)/singularity
 ---
 
 ### 4. Run the Workflow
+
+> ***Note:** All the commands in this step must be run from within the `NF_MGIllumina-A_1.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files) above.*
 
 For options and detailed help on how to run the workflow, run the following command:
 
@@ -137,9 +139,9 @@ nextflow run main.nf -resume -profile conda --csv_file SE_file.csv --conda.qc <p
 
 **Required Parameters For All Approaches:**
 
-* `-run main.nf` - Instructs nextflow to run the NF_XXX workflow 
+* `-run main.nf` - Instructs nextflow to run the NF_MGIllumina-A workflow 
 
-* `-resume` - Resumes  workflow execution using previously cached results
+* `-resume` - Resumes workflow execution using previously cached results
 
 * `-profile` – Specifies the configuration profile(s) to load, `singularity` instructs nextflow to setup and use singularity for all software called in the workflow
 
@@ -149,7 +151,7 @@ nextflow run main.nf -resume -profile conda --csv_file SE_file.csv --conda.qc <p
 
 *Required only if --GLDS_accession is not passed as an argument*
 
-* `--csv_file` –  A 3-column (single-end) or 4-column (paired-end) input csv file (sample_id, forward, [reverse,] paired). Please see the sample [SE_file.csv](workflow_code/SE_file.csv)and [PE_file.csv](workflow_code/PE_file.csv) in this repository for examples on how to format this file.
+* `--csv_file` –  A single-end or paired-end input csv file containing assay metadata for each sample, including sample_id, forward, reverse, and/or paired. Please see the sample [SE_file.csv](workflow_code/SE_file.csv) and [PE_file.csv](workflow_code/PE_file.csv) in this repository for examples on how to format this file.
 
 > See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details on how to run nextflow.
 
@@ -159,7 +161,7 @@ nextflow run main.nf -resume -profile conda --csv_file SE_file.csv --conda.qc <p
 
 Additionally, the parameters and workflow resources can be directly specified in the nextflow.config file. For detailed instructions on how to modify and set parameters in the nextflow.config file, please see the [documentation here](https://www.nextflow.io/docs/latest/config.html).
 
-Once you've downloaded the workflow template, you can modify the parameters in the `params` scope and cpus/memory requirements in the `process` scope in your downloaded version of the [nextflow.config](workflow_code/nextflow.config) file as needed in order to match your dataset and system setup. For example, you can directly set the the full paths to available conda environments in the `conda` scope within the `params`  scope. Additionally, if necessary, you'll need to modify each variable in the [nextflow.config](workflow_code/nextflow.config) file to be consistent with the study you want to process and the machine you're using.
+Once you've downloaded the workflow template, you can modify the parameters in the `params` scope and cpus/memory requirements in the `process` scope in your downloaded version of the [nextflow.config](workflow_code/nextflow.config) file as needed in order to match your dataset and system setup. For example, you can directly set the the full paths to available conda environments in the `conda` scope within the `params` scope. Additionally, if necessary, you'll need to modify each variable in the [nextflow.config](workflow_code/nextflow.config) file to be consistent with the study you want to process and the machine you're using.
 
 <br>
 
@@ -175,7 +177,7 @@ The outputs from this pipeline are documented in the [GL-DPPD-7107-A](../../Pipe
 
 Standard nextflow resource usage logs are also produced as follows:
 
-- Output:
+- **Output:**
   - Resource_Usage/execution_report_{timestamp}.html (an html report that includes metrics about the workflow execution including computational resources and exact workflow process commands)
   - Resource_Usage/execution_timeline_{timestamp}.html (an html timeline for all processes executed in the workflow)
   - Resource_Usage/execution_trace_{timestamp}.txt (an execution tracing file that contains information about each process executed in the workflow, including: submission time, start time, completion time, cpu and memory used, machine-readable output)
