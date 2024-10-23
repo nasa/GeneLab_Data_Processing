@@ -9,6 +9,8 @@ The current GeneLab Illumina metagenomics sequencing data processing pipeline (M
 > **Note on reference databases**  
 > Many reference databases are relied upon throughout this workflow. They will be installed and setup automatically the first time the workflow is run. All together, after installed and unpacked, they will take up about about 340 GB of storage, but they may also require up to 500GB during installation and initial un-packing, so be sure there is enough room on your system before running the workflow.
 
+<br>
+
 ## Utilizing the Workflow
 
 1. [Install Nextflow and Singularity](#1-install-nextflow-and-singularity)  
