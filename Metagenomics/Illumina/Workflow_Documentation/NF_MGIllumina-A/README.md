@@ -151,7 +151,7 @@ nextflow run main.nf -resume -profile conda --csv_file SE_file.csv --conda.qc <p
 
 * `--accession` – A Genelab / OSD accession number e.g. OSD-574.
 
-*Required only if --GLDS_accession is not passed as an argument*
+*Required only if --accession is not passed as an argument*
 
 * `--csv_file` –  A single-end or paired-end input csv file containing assay metadata for each sample, including sample_id, forward, reverse, and/or paired. Please see the sample [SE_file.csv](workflow_code/SE_file.csv) and [PE_file.csv](workflow_code/PE_file.csv) in this repository for examples on how to format this file.
 
