@@ -23,7 +23,7 @@ if (params.help) {
   println("   > nextflow run main.nf -resume -profile slurm,conda --csv_file SE_file.csv")
   println()
   println("Example 3: Run jobs locally in conda environments, supply a GLDS accession, and specify the path to an existing conda environment.")
-  println("   > nextflow run main.nf -resume -profile conda --GLDS_accession OSD-574 --conda.qc <path/to/existing/conda/environment>")
+  println("   > nextflow run main.nf -resume -profile conda --accession OSD-574 --conda.qc <path/to/existing/conda/environment>")
   println()
   println("Required arguments:")
   println("""-profile [STRING] Specifies the profile to be used to run the workflow. Options are [slurm, singularity, docker, and  conda].
@@ -86,7 +86,7 @@ if (params.help) {
   println("      --read_based_dir [PATH] Read-based analysis outputs directory.  Default: ../Read-based_Processing/.")
   println()
   println("Genelab specific arguements:")
-  println("      --GLDS_accession [STRING]  A Genelab accession number if the --csv_file parameter is not set. If this parameter is set, it will ignore the --csv_file parameter.")
+  println("      --accession [STRING]  A Genelab accession number if the --csv_file parameter is not set. If this parameter is set, it will ignore the --csv_file parameter.")
   println("      --RawFilePattern [STRING]  If we do not want to download all files (which we often won't), we can specify a pattern here to subset the total files.")
   println("                                 For example, if we know we want to download just the fastq.gz files, we can say 'fastq.gz'. We can also provide multiple patterns")
   println("                                 as a comma-separated list. For example, If we want to download the fastq.gz files that also have 'NxtaFlex', 'metagenomics', and 'raw' in") 
@@ -145,7 +145,7 @@ log.info """
          You have set the following parameters:
          Profile: ${workflow.profile} 
          Input csv file : ${params.csv_file}
-         GLDS Accession : ${params.GLDS_accession}
+         GLDS or OSD Accession : ${params.accession}
          GLDS Raw File Pattern: ${params.RawFilePattern}         
          Workflow : ${params.workflow}
          Nextflow Directory publishing mode: ${params.publishDir_mode}
@@ -317,9 +317,9 @@ workflow {
      // Software Version Capturing - runsheet
      software_versions_ch = Channel.empty()
      // Parse file input
-       if(params.GLDS_accession){
+       if(params.accession){
 
-       GET_RUNSHEET(params.GLDS_accession)
+       GET_RUNSHEET(params.accession)
        GET_RUNSHEET.out.input_file
            .splitCsv(header:true)
            .set{file_ch}

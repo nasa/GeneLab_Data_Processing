@@ -26,7 +26,6 @@ echo $HOSTNAME
 
 ## Activate the conda environemnt containing the tools you need to run your job ##
 ## You can see a list of all available environments by running the command: conda env list ##
-## If you need a conda envrionment installed request it using JIRA ##
 
 source activate /path/to/envs/nextflow ## Replace conda_env_name with the name of the conda environment with nextflow installed ##
 
@@ -40,8 +39,10 @@ echo ""
 
 ## The command(s) that you want to run in this slurm job ##
 export NXF_SINGULARITY_CACHEDIR=singularity/
-#nextflow run main.nf -profile slurm,singularity -resume --csv_file PE_file.csv ## Replace command with the command(s) you want to run ##
-nextflow run main.nf -profile slurm,singularity --GLDS_accession OSD-574 -resume 
+export TOWER_ACCESS_TOKEN=<ACCESS_TOKEN>
+export TOWER_WORKSPACE_ID=<WORKSPACE_ID>
+#nextflow run main.nf -profile slurm,singularity -resume --csv_file PE_file.csv -with-tower ## Replace command with the command(s) you want to run ##
+nextflow run main.nf -profile slurm,singularity --accession OSD-574 -resume -with-tower
 
 
 ## Add a time-stamp at the end of the job then calculate how long the job took to run in seconds, minutes, and hours ##
