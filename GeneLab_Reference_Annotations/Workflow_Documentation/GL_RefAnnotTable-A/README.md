@@ -10,11 +10,13 @@
       - [Step 1: Install Singularity](#step-1-install-singularity)
       - [Step 2: Fetch the Singularity Image](#step-2-fetch-the-singularity-image)
       - [Step 3: Run the Workflow](#step-3-run-the-workflow)
-      - [Optional: Run the Annotations Database Creation Function as a Stand-Alone Script via Singularity](#optional-run-the-annotations-database-creation-function-as-a-stand-alone-script-via-singularity)
     - [Approach 2: Using a Local R Environment](#approach-2-using-a-local-r-environment)
       - [Step 1: Install R and Required R Packages](#step-1-install-r-and-required-r-packages)
       - [Step 2: Run the Workflow](#step-2-run-the-workflow)
-      - [Optional: Run the Annotations Database Creation Function as a Stand-Alone Script via R](#optional-run-the-annotations-database-creation-function-as-a-stand-alone-script-via-r)
+    - [Workflow Input/Output Data](#workflow-input-output-data)
+  - [3. Run the Annotations Database Creation Function as a Stand-Alone Script](#3-run-the-annotations-database-creation-function-as-a-stand-alone-script)
+    - [Using Singularity](#using-singularity)
+    - [Using a Local R Environment](#using-a-local-r-environment)
 
 <br> 
 
@@ -93,11 +95,12 @@ Once complete, a `singularity` folder containing the Singularity images will be 
 ```bash
 export SINGULARITY_CACHEDIR=$(pwd)/singularity
 ```
+
 <br> 
 
 #### Step 3: Run the Workflow
 
-While in the directory containing the `GL_RefAnnotTable-A_1.1.0` folder, you can now run the workflow. Below is an example for generating the annotation table for *Mus musculus* (mouse): 
+While in the directory containing the `GL_RefAnnotTable-A_1.1.0` folder that was downloaded in [step 1](#1-download-the-workflow-files), you can now run the workflow. Below is an example for generating the annotation table for *Mus musculus* (mouse): 
  
 
 ```bash
@@ -105,50 +108,6 @@ singularity exec -B $(pwd)/GL_RefAnnotTable-A_1.1.0:/work \
 $SINGULARITY_CACHEDIR/quay.io-nasa_genelab-gl-refannottable-a-1.1.0.img \
 Rscript /work/GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'
 ```
-<br> 
-
-**Input data:**
-
-- No input files are required. Specify the species name of the target organism using a positional command line argument. `Mus musculus` is used in the example above.
-  > **Notes**:  
-  > - To see a list of all available organisms, run `Rscript GL-DPPD-7110-A_build-genome-annots-tab.R` without positional arguments.   
-  > - The correct argument for each organism can also be found in the 'species' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
-  
-- *Optional*: A local reference table CSV file can be supplied as a second positional argument. If not provided, the script will download the current version of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) table by default.  
-    
-
-**Output data:**
-
-- *-GL-annotations.tsv (Tab delineated table of gene annotations)
-  
-- *-GL-build-info.txt (Text file containing information used to create the annotation table, including tool and tool versions and date of creation)
-
-<br> 
-
-#### *Optional*: Run the Annotations Database Creation Function as a Stand-Alone Script via Singularity
-
-If the reference table does not specify an annotations database for the target organism in the 'annotations' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file, the `install_annotations` function (defined in `install-org-db.R`) will be executed by default. This function can also be run as a stand-alone script:  
-  
-
-```bash
-singularity exec -B $(pwd)/GL_RefAnnotTable-A_1.1.0:/work \
-$SINGULARITY_CACHEDIR/quay.io-nasa_genelab-gl-refannottable-a-1.1.0.img \
-Rscript /work/install-org-db.R 'Bacillus subtilis'
-```
- 
-<br>
-
-**Input data:**
-
-- The species name of the target organism must be specified as the first positional command line argument. `Bacillus subtilis` is used in the example above.  
-  > **Note**: The correct argument for each organism can also be found in the 'species' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
-  
-- *Optional*: A local reference table CSV file can be supplied as a second positional argument. If not provided, the script will download the current version of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) table by default.  
-
-
-**Output data:**
-
-- org.*.eg.db/ (Species-specific annotation database, as a local R package)
 
 <br> 
 
@@ -198,7 +157,7 @@ BiocManager::install("GO.db")
 
 #### Step 2: Run the Workflow
 
-While in the directory containing the `GL_RefAnnotTable-A_1.1.0` folder, you can now run the workflow. Below is an example of how to run the workflow to build an annotation table for *Mus musculus* (mouse):  
+While in the directory containing the `GL_RefAnnotTable-A_1.1.0` folder that was downloaded in [step 1](#1-download-the-workflow-files), you can now run the workflow. Below is an example of how to run the workflow to build an annotation table for *Mus musculus* (mouse):  
  
 
 ```bash
@@ -207,9 +166,17 @@ Rscript GL_RefAnnotTable-A_1.1.0/GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus m
 
  <br> 
 
+ --- 
+
+ ### Workflow Input/Output Data 
+
+The input and output data are the same for both [Approach 1: Using Singularity](#approach-1-using-singularity) and [Approach 2: Using a Local R Environment](#approach-2-using-a-local-r-environment).
+
+ <br>
+
 **Input data:**
 
-- No input files are required. Specify the species name of the target organism using a positional command line argument. `Mus musculus` is used in the example above.
+- No input files are required. Specify the species name of the target organism using a positional command line argument. `Mus musculus` is used in both the Singularity and the local R environment examples above.
   > **Notes**:  
   > - To see a list of all available organisms, run `Rscript GL-DPPD-7110-A_build-genome-annots-tab.R` without positional arguments.  
   > - The correct argument for each organism can also be found in the 'species' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
@@ -223,12 +190,27 @@ Rscript GL_RefAnnotTable-A_1.1.0/GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus m
   
 - *-GL-build-info.txt (Text file containing information used to create the annotation table, including tool and tool versions and date of creation)
 
-<br> 
+<br>
 
-#### *Optional*: Run the Annotations Database Creation Function as a Stand-Alone Script via R
+---
 
-If the reference table does not specify an annotations database for the target organism in the 'annotations' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file, the `install_annotations` function (defined in `install-org-db.R`) will be executed by default. This function can also be run as a stand-alone script:  
+### 3. Run the Annotations Database Creation Function as a Stand-Alone Script 
+
+If the reference table does not specify an annotations database for the target organism in the 'annotations' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file, the `install_annotations` function (defined in `install-org-db.R`) will be executed by default. This function can also be run as a stand-alone script:
+
+<br>
+
+#### Using Singularity 
+
+```bash
+singularity exec -B $(pwd)/GL_RefAnnotTable-A_1.1.0:/work \
+$SINGULARITY_CACHEDIR/quay.io-nasa_genelab-gl-refannottable-a-1.1.0.img \
+Rscript /work/install-org-db.R 'Bacillus subtilis'
+```
  
+<br>
+
+#### Using a Local R Environment
 
 ```bash
 Rscript GL_RefAnnotTable-A_1.1.0/install-org-db.R 'Bacillus subtilis'
@@ -238,7 +220,7 @@ Rscript GL_RefAnnotTable-A_1.1.0/install-org-db.R 'Bacillus subtilis'
 
 **Input data:**
 
-- The species name of the target organism must be specified as the first positional command line argument. `Bacillus subtilis` is used in the example above.
+- The species name of the target organism must be specified as the first positional command line argument. `Bacillus subtilis` is used in both the Singularity and local R examples above.
   > **Note**: The correct argument for each organism can also be found in the 'species' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
   
 - *Optional*: A local reference table CSV file can be supplied as a second positional argument. If not provided, the script will download the current version of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) table by default.  
@@ -247,5 +229,7 @@ Rscript GL_RefAnnotTable-A_1.1.0/install-org-db.R 'Bacillus subtilis'
 **Output data:**
 
 - org.*.eg.db/ (Species-specific annotation database, as a local R package)
+
+<br>
 
 ---
