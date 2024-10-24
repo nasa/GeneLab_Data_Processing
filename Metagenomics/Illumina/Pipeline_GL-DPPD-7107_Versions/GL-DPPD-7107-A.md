@@ -4,7 +4,7 @@
 
 ---
 
-**Date:** 10/XX/2024  
+**Date:** October XX, 2024  
 **Revision:** -A  
 **Document Number:** GL-DPPD-7107  
 
