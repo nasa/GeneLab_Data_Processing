@@ -4,7 +4,7 @@
  
 ---
 
-**Date:** August 12, 2024  
+**Date:** October XX, 2024  
 **Revision:** -A  
 **Document Number:** GL-DPPD-7110-A  
 
@@ -12,11 +12,10 @@
 Alexis Torres and Crystal Han (GeneLab Data Processing Team)  
 
 **Approved by:**  
-Sylvain Costes (OSDR Project Manager)  
-Samrawit Gebre (GeneLab Deputy Project Manager and Acting GeneLab Configuration Manager)  
-Lauren Sanders (OSDR Project Scientist)  
-Amanda Saravia-Butler (GeneLab Science Lead)  
-Barbara Novak (GeneLab Data Processing Lead)  
+Samrawit Gebre (OSDR Project Manager)
+Lauren Sanders (OSDR Project Scientist)
+Amanda Saravia-Butler (GeneLab Science Lead)
+Barbara Novak (GeneLab Data Processing Lead)
 
 ---
 
