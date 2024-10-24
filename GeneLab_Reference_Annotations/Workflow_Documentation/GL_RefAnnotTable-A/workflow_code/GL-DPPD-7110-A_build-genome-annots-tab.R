@@ -188,6 +188,14 @@ install_and_load_org_db <- function(target_organism, target_org_db, ref_tab_path
   library(target_org_db, character.only = TRUE)
 }
 
+# Define list of supported organisms which do not use annotations from an org.db
+no_org_db <- c("Lactobacillus acidophilus", "Mycobacterium marinum", "Oryza sativa", "Pseudomonas aeruginosa",
+               "Serratia liquefaciens", "Staphylococcus aureus", "Streptococcus mutans", "Vibrio fischeri")
+
+# Run the function unless the target_organism is in no_org_db
+if (!(target_organism %in% no_org_db) && (target_organism %in% currently_accepted_orgs)) {
+  install_and_load_org_db(target_organism, target_org_db, ref_tab_path)
+}
 
 ############################################
 ######## Build annotation table ############
