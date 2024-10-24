@@ -14,7 +14,7 @@ Olabiyi A. Obayomi (GeneLab Analysis Team)
 **Approved by:**  
 Samrawit Gebre (OSDR Project Manager)  
 Lauren Sanders (OSDR Project Scientist)  
-Amanda Saravia-Butler (GeneLab Science Lead)
+Amanda Saravia-Butler (GeneLab Science Lead)  
 Barbara Novak (GeneLab Data Processing Lead)  
 
 ---
