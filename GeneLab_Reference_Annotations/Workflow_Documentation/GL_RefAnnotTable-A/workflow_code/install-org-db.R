@@ -1,9 +1,5 @@
 # install-org-db.R
 
-# Set R library path to current working directory
-lib_path <- file.path(getwd())
-.libPaths(lib_path)
-
 # Load required libraries
 library(tidyverse)
 library(AnnotationForge)
