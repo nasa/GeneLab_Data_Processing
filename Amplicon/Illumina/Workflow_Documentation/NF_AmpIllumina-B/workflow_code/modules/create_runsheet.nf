@@ -1,8 +1,8 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-params.GLDS_accession = "GLDS-487"
-params.target_region = "16S"
+//params.accession = "GLDS-487"
+//params.target_region = "16S"
 
 process GET_RUNSHEET {
 
@@ -30,7 +30,8 @@ process GET_RUNSHEET {
 
 workflow {
 
-    GET_RUNSHEET()
+    values = Channel.of([params.accession, params.target_region])
+    GET_RUNSHEET(values)
     file_ch = GET_RUNSHEET.out.input_file
                      .splitCsv(header:true)
 
