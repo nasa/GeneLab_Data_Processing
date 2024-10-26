@@ -7,6 +7,7 @@ c_bright_green = "\u001b[32;1m";
 c_blue = "\033[0;34m";
 c_reset = "\033[0m";
 
+
 params.help = false
 params.debug = false
 
@@ -24,7 +25,7 @@ if (params.help) {
   println("   > nextflow run main.nf -resume -profile slurm,conda --csv_file SE_file.csv --target_region ITS --F_primer TCCGTAGGTGAACCTGCGG --R_primer GCTGCGTTCTTCATCGATGC")
   println()
   println("Example 3: Run jobs locally in conda environments, supplying a GLDS accession, and specifying the path to an existing conda environment")
-  println("   > nextflow run main.nf -resume -profile conda --GLDS_accession GLDS-487 --target_region 16S --conda.qc <path/to/existing/conda/environment>")
+  println("   > nextflow run main.nf -resume -profile conda --accession GLDS-487 --target_region 16S --conda.qc <path/to/existing/conda/environment>")
   println()
   println("Required arguments:")
   println("""-profile [STRING] Specifies the profile to be used to run the workflow. Options are [singularity, docker, conda, slurm].
@@ -66,6 +67,12 @@ if (params.help) {
   println("      Note that 16S and 18S should have been separated already prior to running this workflow. This should likely be left as FALSE for any option other than 18S above.") 	    
   println("	     Options are TRUE or FALSE Default: FALSE.")
   println()
+  println("ANCOMBC differential abundance testing parameters:")
+  println("         --ancombc_version [INTEGER] The version of ancombc to use for differential abundance testing. Either 1 or 2. Default: 2")
+  println("         --metadata [PATH] Metadata to be used for differential abundance testing. Default: null")
+  println("         --group [STRING] Column in metadata with treatments to be compared using ANCOMBC. Default: 'groups' ")
+  println("         --samples_column [STRING] Column in metdata with sample names belonging to each treatment group. Dafault: 'Sample Name' ")
+  println()
   println("File Suffixes:")
   println("      --primer_trimmed_R1_suffix [STRING] Suffix to use for naming your primer trimmed forward reads. Default: _R1_trimmed.fastq.gz.")
   println("      --primer_trimmed_R2_suffix [STRING] Suffix to use for naming your primer trimmed reverse reads. Default: _R2_trimmed.fastq.gz.")  
@@ -80,7 +87,7 @@ if (params.help) {
   println("      --plots_dir [PATH] Specifies where plots will be published if visualization is enabled. Default: ../workflow_output/Final_Outputs/Plots/.")
   println("      --final_outputs_dir [PATH] Specifies where final outputs and summary reports will be published.  Default: ../workflow_output/Final_Outputs/.")
   println("Genelab specific arguments:")
-  println("      --GLDS_accession [STRING]  A Genelab / OSD accession number if the --csv_file parameter is not set. If this parameter is set, it will ignore the --csv_file parameter.")
+  println("      --accession [STRING]  A Genelab / OSD accession number if the --csv_file parameter is not set. If this parameter is set, it will ignore the --csv_file parameter.")
   println("      --assay_suffix [STRING]  Genelabs assay suffix. Default: _GLAmpSeq.")
   println("      --output_prefix [STRING] Unique name to tag onto output files. Default: empty string.")
   println("Paths to existing conda environments to use, otherwise, a new one will be created using the yaml files in envs/.")
@@ -89,12 +96,11 @@ if (params.help) {
   println("      --conda.genelab  [PATH] Path to a conda environment containing genlab-utils. Default: null.")
   println("      --conda.cutadapt [PATH] Path to a conda environment containing cutadapt. Default: null.")
   println("      --conda.R_visualizations [PATH] Path to a conda environment containing R packages required for plotting. Default: null.")
+  println("      --conda.ancombc [PATH] Path to a conda environment containing ANCOMBC R package and its dependencies for differential abundance testing. Default: null.")
   println()
   print("Advanced users can edit the nextflow.config file for more control over default settings such container choice, number of cpus, memory per task etc.")
   exit 0
   }
-
-
 
 /************************************************
 *********** Show pipeline parameters ************
@@ -130,6 +136,12 @@ log.info """
          Primers Are linked: ${params.primers_linked}
          Discard Untrimmed Reads: ${params.discard_untrimmed}
 
+
+         ANCOMBC Parameters:
+         ANCOMBC Version: ${params.ancombc_version}
+         Metadata: ${params.metadata}
+         Group Column: ${params.group}
+         Samples Column: ${params.samples_column} 
  
          Dada2 Parameters:
          Truncate left: ${params.left_trunc}bp
@@ -156,6 +168,7 @@ log.info """
          genelab: ${params.conda.genelab}
          cutadapt: ${params.conda.cutadapt}
          R_visualizations: ${params.conda.R_visualizations}
+         ancombc: ${params.conda.ancombc}
          """.stripIndent()
 }
 
@@ -171,7 +184,7 @@ include { FASTQC as TRIMMED_FASTQC ; MULTIQC as TRIMMED_MULTIQC  } from './modul
 include { RUN_R_TRIM; RUN_R_NOTRIM } from './modules/run_dada.nf'
 include { ZIP_BIOM } from './modules/zip_biom.nf'
 include { R_VISUALIZATION } from './modules/visualization.nf'
-
+include { ANCOMBC } from './modules/ancombc.nf'
 
 
 // A function to delete white spaces from an input string and covert it to lower case
@@ -188,9 +201,11 @@ workflow {
     // Capture software versions
     software_versions_ch = Channel.empty()
 
-   if(params.GLDS_accession){
+   if(params.accession){
 
-       GET_RUNSHEET()
+       values = Channel.of([params.accession, params.target_region])
+
+       GET_RUNSHEET(values)
        GET_RUNSHEET.out.input_file
            .splitCsv(header:true)
            .set{file_ch}
@@ -237,7 +252,7 @@ workflow {
 
     if(params.trim_primers){
 
-        if(!params.GLDS_accession) primers_ch = Channel.value([params.F_primer, params.R_primer])
+        if(!params.accession) primers_ch = Channel.value([params.F_primer, params.R_primer])
         CUTADAPT(reads_ch, primers_ch)
         logs = CUTADAPT.out.logs.map{ sample_id, log -> file("${log}")}.collect()
         counts = CUTADAPT.out.trim_counts.map{ sample_id, count -> file("${count}")}.collect()
@@ -275,7 +290,7 @@ workflow {
                           sample_id, reads, isPaired -> reads instanceof List ? reads.each{file("${it}")}: file("${reads}")
                           }.flatten().collect()
 
-        if(!params.GLDS_accession) {
+        if(!params.accession) {
             raw_read_suffix_ch =  reads_ch.map{
                                       sample_id, reads, isPaired -> isPaired  == 'true' ? [params.raw_R1_suffix, params.raw_R2_suffix] : [params.raw_R1_suffix]
                                          }
@@ -303,13 +318,29 @@ workflow {
 
     if(params.enable_visualizations){
         // Visualize
-        runsheet = params.GLDS_accession ? GET_RUNSHEET.out.runsheet : params.runsheet
+        runsheet = params.accession ? GET_RUNSHEET.out.runsheet : params.runsheet
         R_VISUALIZATION(runsheet, sample_ids_ch, dada_counts, dada_taxonomy)
         R_VISUALIZATION.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
     }
 
-        // Software Version Capturing - combining all captured sofware versions
+    // RUN ANCOMBC
+    if(params.accession){
+
+    data_ch   =  Channel.of(["groups", "Sample Name"])
+    metadata  =  GET_RUNSHEET.out.runsheet
+
+    }else{
+
+    data_ch   =  Channel.of([params.group, params.samples_column])
+    metadata  =  Channel.fromPath(params.metadata, checkIfExists: true)
+
+    }
+    
+    ANCOMBC(data_ch, metadata, dada_counts, dada_taxonomy)
+    ANCOMBC.out.version | mix(software_versions_ch) | set{software_versions_ch}
+
+     // Software Version Capturing - combining all captured sofware versions
      nf_version = "Nextflow Version:".concat("${nextflow.version}\n<><><>\n")
      nextflow_version_ch = Channel.value(nf_version)
 

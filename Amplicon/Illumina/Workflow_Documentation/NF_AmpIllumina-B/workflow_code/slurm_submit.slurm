@@ -4,9 +4,9 @@
 #SBATCH --output=nf_master.o.%j ## Replace job_name with the name of the job you are running ##
 #SBATCH --error=nf_master.e.%j ## Replace job_name with the name of the job you are running ##
 #SBATCH --partition=normal ## Specifies the job queue to use, for urgent jobs change normal to priority ##
-#SBATCH --mem=2G ## Memory required to run the job in MB, this example is showing 10,000 MB or 10GB, change this number based on how much RAM you need ##
+#SBATCH --mem=20G ## Memory required to run the job in MB, this example is showing 10,000 MB or 10GB, change this number based on how much RAM you need ##
 #SBATCH --cpus-per-task=1 ## Number of CPUs to run the job, this example is showing 5 CPUs, change this number based on how many CPUs you need ##
-#SBATCH --mail-user=email@domain.com ## Specifies the e-mail address to e-mail when the job is complete, replace this e-mail address with your NASA e-mail address ##
+#SBATCH --mail-user=olabiyi.a.obayomi@nasa.gov ## Specifies the e-mail address to e-mail when the job is complete, replace this e-mail address with your NASA e-mail address ##
 #SBATCH --mail-type=END ## Tells slurm to e-mail the address above when the job has completed ##
 
 . ~/.profile
@@ -26,9 +26,8 @@ echo $HOSTNAME
 
 ## Activate the conda environemnt containing the tools you need to run your job ##
 ## You can see a list of all available environments by running the command: conda env list ##
-## If you need a conda envrionment installed request it using JIRA ##
 
-source activate /path/to/envs/nextflow ## Replace conda_env_name with the name of the environment with nextflow installed ##
+source activate /path/to/envs/nextflow/  ## Replace conda_env_name with the name of the environment ##
 
 
 ## Print the version of the tool you are using to ensure the tool version is recorded ##
@@ -40,9 +39,11 @@ echo ""
 
 ## The command(s) that you want to run in this slurm job ##
 export NXF_SINGULARITY_CACHEDIR=singularity/
-nextflow run main.nf -resume -profile slurm,singularity --GLDS_accession GLDS-487 --target_region 16S ## Replace command with the command(s) you want to run ##
-
-
+export TOWER_ACCESS_TOKEN=<ACCESS TOKEN>
+export TOWER_WORKSPACE_ID=<WORKSPACE ID>
+#nextflow run main.nf -resume -profile slurm,singularity --accession GLDS-487 --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT  -with-tower ## Replace command with the command(s) you want to run ##
+nextflow run main.nf -resume -profile slurm,conda --accession GLDS-487 --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT  -with-tower 
+#nextflow run ancombc.nf -resume -profile conda,slurm -with-tower
 ## Add a time-stamp at the end of the job then calculate how long the job took to run in seconds, minutes, and hours ##
 echo ""
 end=$(date +%s)
@@ -60,4 +61,3 @@ echo ""
 
 ## Print the slurm job ID so you have it recorded and can view slurm job statistics if needed ##
 echo "slurm job ID: ${SLURM_JOB_ID}"
-

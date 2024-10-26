@@ -1,13 +1,16 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-//params.GLDS_accession = "GLDS-487"
-//params.target_region = "16S"
+params.GLDS_accession = "GLDS-487"
+params.target_region = "16S"
 
 process GET_RUNSHEET {
 
     beforeScript "chmod +x ${baseDir}/bin/create_runsheet.py"
-
+    tag "Retrieving raw sequences and metadata for ${accession}..."
+    input:
+        tuple val(accession), val(target_region)
+        
     output:
         path("*_runsheet.csv"), emit: runsheet
         path("*.zip"), emit: zip
@@ -17,7 +20,7 @@ process GET_RUNSHEET {
 
     script:
         """
-        create_runsheet.py --OSD ${params.GLDS_accession} --target ${params.target_region}
+        create_runsheet.py --OSD ${accession} --target ${target_region}
         GL-version | grep "GeneLab utils"| sed -E 's/^\\s+//' > versions.txt
         echo "dptools v1.3.4" >> versions.txt
         python --version >> versions.txt 
