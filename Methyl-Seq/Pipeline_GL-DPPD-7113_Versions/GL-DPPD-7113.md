@@ -469,7 +469,7 @@ bam2nuc --genomic_composition_only \
     * BS_GA.rev.2.bt2
     * genome_mfa.GA_conversion.fa
   * \*.txt (captured standard output from the command)
-* bismark_reference_genome/genomic_nucleotide_frequencies.txt (tab-delimited table of mono- and di-nucleotide frequencies in reference genome)
+* **bismark_reference_genome/genomic_nucleotide_frequencies.txt** (tab-delimited table of mono- and di-nucleotide frequencies in reference genome)
 
 
 
