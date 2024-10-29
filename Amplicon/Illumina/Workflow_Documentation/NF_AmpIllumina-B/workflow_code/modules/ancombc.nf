@@ -11,7 +11,7 @@ nextflow.enable.dsl = 2
 
 process ANCOMBC {
 
-    tag "Running ANCOMBC ${params.ancombc_version} for differential abundance testing"
+    tag "Running ANCOMBC ${params.ancombc_version} for differential abundance testing..."
 
     input: 
         tuple val(group), val(samples_column)
@@ -21,15 +21,14 @@ process ANCOMBC {
 
     output:
         path("Plots/"), emit: plots
-        path("differential_abundance_${params.assay_suffix}.csv"), emit: table
+        path("differential_abundance${params.assay_suffix}.csv"), emit: table
         path("versions.txt"), emit: version
 
     script:
         def script_name = params.ancombc_version == 1 ? "pairwise_ancombc1.R" : "pairwise_ancombc2.R"
         """
-        cp `which ${script_name}` . && chmod +x ./${script_name}
-        Rscript ./${script_name} \\
-                  --out-file  "differential_abundance_${params.assay_suffix}.csv"   \\
+        ${script_name} \\
+                  --out-file  "differential_abundance${params.assay_suffix}.csv"   \\
                   --metadata-table '${metadata}' \\
                   --feature-table '${asv_table}' \\
                   --taxonomy-table '${taxonomy}' \\
