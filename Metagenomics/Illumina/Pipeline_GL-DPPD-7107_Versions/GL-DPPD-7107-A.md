@@ -4,7 +4,7 @@
 
 ---
 
-**Date:** 2024  
+**Date:** October XX, 2024  
 **Revision:** -A  
 **Document Number:** GL-DPPD-7107  
 
@@ -12,11 +12,10 @@
 Olabiyi A. Obayomi (GeneLab Analysis Team)  
 
 **Approved by:**  
-Sylvain Costes (GeneLab Project Manager)  
-Samrawit Gebre (GeneLab Deputy Project Manager and Interim GeneLab Configuration Manager)  
+Samrawit Gebre (OSDR Project Manager)  
+Lauren Sanders (OSDR Project Scientist)  
+Amanda Saravia-Butler (GeneLab Science Lead)  
 Barbara Novak (GeneLab Data Processing Lead)  
-Amanda Saravia-Butler (GeneLab Science Lead)
-Lauren Sanders (OSDR Project Scientist)
 
 ---
 
