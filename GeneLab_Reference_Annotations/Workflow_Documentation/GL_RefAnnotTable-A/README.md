@@ -106,9 +106,9 @@ While in the directory containing the `GL_RefAnnotTable-A_1.1.0` folder that was
  
 
 ```bash
-singularity exec -B $(pwd)/GL_RefAnnotTable-A_1.1.0:/work \
+singularity exec --no-home -B $(pwd)/GL_RefAnnotTable-A_1.1.0:$(pwd)/GL_RefAnnotTable-A_1.1.0 \
 $SINGULARITY_CACHEDIR/quay.io-nasa_genelab-gl-refannottable-a-1.1.0.img \
-Rscript /work/GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'
+Rscript GL_RefAnnotTable-A_1.1.0/GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'
 ```
 
 <br> 
@@ -207,9 +207,9 @@ If the reference table does not specify an annotations database for the target o
 #### Using Singularity 
 
 ```bash
-singularity exec -B $(pwd)/GL_RefAnnotTable-A_1.1.0:/work \
+singularity exec --no-home -B $(pwd)/GL_RefAnnotTable-A_1.1.0:$(pwd)/GL_RefAnnotTable-A_1.1.0 \
 $SINGULARITY_CACHEDIR/quay.io-nasa_genelab-gl-refannottable-a-1.1.0.img \
-Rscript /work/install-org-db.R 'Bacillus subtilis'
+Rscript GL_RefAnnotTable-A_1.1.0/install-org-db.R 'Bacillus subtilis'
 ```
  
 <br>
