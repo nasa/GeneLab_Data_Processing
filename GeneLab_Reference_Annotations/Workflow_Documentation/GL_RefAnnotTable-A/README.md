@@ -54,6 +54,8 @@ The GL_RefAnnotTable-A workflow can be run using one of two approaches:
 
 Please follow the instructions for the approach that best matches your setup and preferences. Each method is explained in detail below. 
 
+> **Note**: If you encounter timeout errors, you can increase the default timeout (3600 seconds) by modifying the `options(timeout=3600)` line at the top of the `GL-DPPD-7110-A_build-genome-annots-tab.R` script.
+
 <br> 
 
 ---
@@ -197,6 +199,8 @@ The input and output data are the same for both [Approach 1: Using Singularity](
 ### 3. Run the Annotations Database Creation Function as a Stand-Alone Script 
 
 If the reference table does not specify an annotations database for the target organism in the 'annotations' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file, the `install_annotations` function (defined in `install-org-db.R`) will be executed by default. This function can also be run as a stand-alone script:
+
+> **Note**: If you encounter timeout errors, you can increase the default timeout (3600 seconds) by modifying the `options(timeout=3600)` line at the top of the `install-org-db.R` script.
 
 <br>
 

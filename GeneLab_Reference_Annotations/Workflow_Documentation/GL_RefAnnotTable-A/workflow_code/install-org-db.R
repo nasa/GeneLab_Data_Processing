@@ -1,5 +1,5 @@
 # install-org-db.R
-
+options(timeout=3600)
 # Load required libraries
 library(tidyverse)
 library(AnnotationForge)

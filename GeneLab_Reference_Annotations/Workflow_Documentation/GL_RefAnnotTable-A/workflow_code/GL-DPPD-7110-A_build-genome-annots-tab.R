@@ -2,7 +2,7 @@
 # Written by Mike Lee
 # GeneLab script for generating organism-specific gene annotation tables
 # Example usage: Rscript GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'
-
+options(timeout = 3600)
 
 # Define variables associated with current pipeline and annotation table versions
 GL_DPPD_ID <- "GL-DPPD-7110-A"
@@ -80,9 +80,6 @@ library(rtracklayer)
 ############## Define variables and output file names ###################
 #########################################################################
 
-# Set timeout time to ensure annotation file downloads will complete
-options(timeout = 600)
-
 ref_table <- tryCatch(
   read.csv(ref_tab_path),
   error = function(e) {
@@ -132,9 +129,6 @@ if ( file.exists(out_table_filename) ) {
 #############################################
 ######## Load annotation databases  #########
 #############################################
-
-# Set timeout time to ensure annotation file downloads will complete
-options(timeout = 600)
 
 ####### GTF ##########
 
@@ -186,15 +180,18 @@ install_and_load_org_db <- function(target_organism, target_org_db, ref_tab_path
   
   # Load the package into the R session
   library(target_org_db, character.only = TRUE)
+  
+  # Return the target_org_db name
+  return(target_org_db)
 }
 
 # Define list of supported organisms which do not use annotations from an org.db
 no_org_db <- c("Lactobacillus acidophilus", "Mycobacterium marinum", "Oryza sativa", "Pseudomonas aeruginosa",
                "Serratia liquefaciens", "Staphylococcus aureus", "Streptococcus mutans", "Vibrio fischeri")
 
-# Run the function unless the target_organism is in no_org_db
+# Run the function unless the target_organism is in no_org_db and update target_org_db with the result
 if (!(target_organism %in% no_org_db) && (target_organism %in% currently_accepted_orgs)) {
-  install_and_load_org_db(target_organism, target_org_db, ref_tab_path)
+  target_org_db <- install_and_load_org_db(target_organism, target_org_db, ref_tab_path)
 }
 
 ############################################
