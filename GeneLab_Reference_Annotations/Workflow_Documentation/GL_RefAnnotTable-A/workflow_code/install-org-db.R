@@ -1,5 +1,6 @@
 # install-org-db.R
 options(timeout=3600)
+.libPaths(Sys.getenv("R_LIBS_USER"))
 # Load required libraries
 library(tidyverse)
 library(AnnotationForge)

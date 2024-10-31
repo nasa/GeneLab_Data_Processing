@@ -3,7 +3,7 @@
 # GeneLab script for generating organism-specific gene annotation tables
 # Example usage: Rscript GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'
 options(timeout = 3600)
-
+.libPaths(Sys.getenv("R_LIBS_USER"))
 # Define variables associated with current pipeline and annotation table versions
 GL_DPPD_ID <- "GL-DPPD-7110-A"
 workflow_version <- "GL_RefAnnotTable-A_1.1.0"
