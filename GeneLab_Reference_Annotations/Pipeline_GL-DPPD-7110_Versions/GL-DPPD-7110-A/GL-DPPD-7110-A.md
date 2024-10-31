@@ -188,7 +188,7 @@ lib_path <- file.path(getwd())
 
 # Define variables associated with current pipeline and annotation table versions
 GL_DPPD_ID <- "GL-DPPD-7110-A"
-workflow_version <- "GL_RefAnnotTable-A_1.1.0"
+workflow_version <- ""
 
 ref_tab_path <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
 readme_path <- "https://github.com/nasa/GeneLab_Data_Processing/tree/master/GeneLab_Reference_Annotations/Workflow_Documentation/GL_RefAnnotTable-A/README.md"
@@ -215,7 +215,7 @@ library(rtracklayer)
 **Output Data:**
 
 - `GL_DPPD_ID` (variable specifying the GeneLab Data Processing Pipeline Document ID)
-- `workflow_version (variable specifying the current version of the workflow)
+- `workflow_version` (variable specifying the [current version of the workflow](https://github.com/nasa/GeneLab_Data_Processing/tree/DEV_GeneLab_Reference_Annotations_vGL-DPPD-7110-A/GeneLab_Reference_Annotations/Workflow_Documentation/GL_RefAnnotTable-A))
 - `ref_tab_path` (variable specifying the path to the reference table CSV file)
 - `readme_path` (variable specifying the path to the README file)
 - `currently_accepted_orgs` (variable specifying the list of currently supported organisms)
@@ -244,7 +244,7 @@ target_info <- ref_table %>%
 
 # Extract the relevant columns from the reference table
 target_taxid <- target_info$taxon # Taxonomic identifier
-target_org_db <- target_info$annotations # org.eg.db R package
+target_org_db <- target_info$bioconductor_annotations # org.eg.db R package
 gtf_link <- target_info$gtf # Path to reference assembly GTF
 target_short_name <- target_info$name # PANTHER / UNIPROT short name; blank if not available
 ref_source <- target_info$ref_source # Reference files source  
@@ -284,7 +284,7 @@ if ( file.exists(out_table_filename) ) {
 **Output Data:**
 
 - `target_taxid` (variable specifying the taxonomic identifier for the target organism)
-- `target_org_db` (variable specifying the name of the org.db R package for the target organism)
+- `target_org_db` (variable specifying the name of the org.eg.db R package for the target organism if it is hosted by Bioconductor)
 - `gtf_link` (variable specifying the URL to the GTF file for the target organism)
 - `target_short_name` (variable specifying the PANTHER/UNIPROT short name for the target organism)
 - `ref_source` (variable specifying the source of the reference files, e.g., "ensembl", "ensembl_plants", "ensembl_bacteria", "ncbi")

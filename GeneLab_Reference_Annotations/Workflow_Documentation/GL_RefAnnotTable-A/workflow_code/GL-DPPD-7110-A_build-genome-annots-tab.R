@@ -94,7 +94,7 @@ target_info <- ref_table %>%
 
 # Extract the relevant columns from the reference table
 target_taxid <- target_info$taxon # Taxonomic identifier
-target_org_db <- target_info$annotations # org.eg.db R package
+target_org_db <- target_info$bioconductor_annotations # org.eg.db R package
 gtf_link <- target_info$gtf # Path to reference assembly GTF
 target_short_name <- target_info$name # PANTHER / UNIPROT short name; blank if not available
 ref_source <- target_info$ref_source # Reference files source  

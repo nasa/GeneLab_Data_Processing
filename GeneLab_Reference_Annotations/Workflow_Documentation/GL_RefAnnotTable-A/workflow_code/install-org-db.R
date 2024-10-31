@@ -52,7 +52,7 @@ install_annotations <- function(target_organism, refTablePath = NULL) {
     # Get package name or build it if not provided
     target_org_db <- ref_table %>%
         filter(species == target_organism) %>%
-        pull(annotations)
+        pull(bioconductor_annotations)
     
     if (is.na(target_org_db) || target_org_db == "") {
         cat("\nNo annotation database specified. Constructing package name...\n")
