@@ -30,6 +30,7 @@ process MAPPING {
             else
 
                 touch ${sample_id}.sam
+                echo "Mapping not performed for ${sample_id} because the assembly didn't produce anything." > ${sample_id}-mapping-info.txt
                 printf "Mapping not performed for ${sample_id} because the assembly didn't produce anything.\\n"
 
             fi
@@ -48,6 +49,7 @@ process MAPPING {
             else
 
                 touch ${sample_id}.sam
+                echo "Mapping not performed for ${sample_id} because the assembly didn't produce anything."  > ${sample_id}-mapping-info.txt
                 printf "Mapping not performed for ${sample_id} because the assembly didn't produce anything.\\n"
 
             fi

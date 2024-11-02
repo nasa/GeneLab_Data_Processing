@@ -7,6 +7,7 @@ nextflow.enable.dsl = 2
 process GET_RUNSHEET {
 
     beforeScript "chmod +x ${baseDir}/bin/create_runsheet.sh" 
+    tag "Downloading raw fastq files and runsheet for ${accession}..."
 
     input:
         val(accession)
@@ -17,7 +18,7 @@ process GET_RUNSHEET {
         path("versions.txt"), emit: version
     script:
         """
-        # Download ISA zip file for the GLDS_accession then unzip it
+        # Download ISA zip file for the GLDS/OSD accession then unzip it
         GL-download-GLDS-data -g ${accession} -p ISA -f && unzip *-ISA.zip
 
         if [ ${params.RawFilePattern} == null ];then
