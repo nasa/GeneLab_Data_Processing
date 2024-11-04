@@ -48,6 +48,12 @@ workflow assembly_based {
                                       sample_id, assembly -> file("${assembly}")
                                       }.collect()
         SUMMARIZE_ASSEMBLIES(assemblies_ch)
+
+        // Write failed assemblies to a Failed assemblies file
+        failed_assemblies = RENAME_HEADERS.out.failed_assembly
+        failed_assemblies
+              .map{ it.text }
+              .collectFile(name: "${params.assemblies_dir}/Failed-assemblies.tsv", cache: false)
         
         // Map reads to assembly
         MAPPING(assembly_ch.join(filtered_ch))
