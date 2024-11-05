@@ -1,9 +1,6 @@
 # install-org-db.R
-
-# Set R library path to current working directory
-lib_path <- file.path(getwd())
-.libPaths(lib_path)
-
+options(timeout=3600)
+.libPaths(Sys.getenv("R_LIBS_USER"))
 # Load required libraries
 library(tidyverse)
 library(AnnotationForge)
@@ -56,7 +53,7 @@ install_annotations <- function(target_organism, refTablePath = NULL) {
     # Get package name or build it if not provided
     target_org_db <- ref_table %>%
         filter(species == target_organism) %>%
-        pull(annotations)
+        pull(bioconductor_annotations)
     
     if (is.na(target_org_db) || target_org_db == "") {
         cat("\nNo annotation database specified. Constructing package name...\n")

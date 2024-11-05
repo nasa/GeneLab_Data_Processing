@@ -54,6 +54,8 @@ The GL_RefAnnotTable-A workflow can be run using one of two approaches:
 
 Please follow the instructions for the approach that best matches your setup and preferences. Each method is explained in detail below. 
 
+> **Note**: If you encounter timeout errors, you can increase the default timeout (3600 seconds) by modifying the `options(timeout=3600)` line at the top of the `GL-DPPD-7110-A_build-genome-annots-tab.R` script.
+
 <br> 
 
 ---
@@ -68,13 +70,13 @@ This approach allows you to run the workflow within a containerized environment,
 
 Singularity is a containerization platform for running applications portably and reproducibly. We use container images hosted on Quay.io to encapsulate all the necessary software and dependencies required by the GL_RefAnnotTable-A workflow. This setup allows you to run the workflow without installing any software directly on your system. 
   
-> ***Note**: Other containerization tools like Docker or Apptainer can also be used to pull and run these images.*
+> **Note**: Other containerization tools like Docker or Apptainer can also be used to pull and run these images.
    
 
 We recommend installing Singularity system-wide as per the official [Singularity installation documentation](https://docs.sylabs.io/guides/3.10/admin-guide/admin_quickstart.html).  
  
 
-> ***Note**: While Singularity is also available through [Anaconda](https://anaconda.org/conda-forge/singularity), we recommend installing Singularity system-wide following the official installation documentation.*
+> **Note**: While Singularity is also available through [Anaconda](https://anaconda.org/conda-forge/singularity), we recommend installing Singularity system-wide following the official installation documentation.
 
 <br> 
 
@@ -82,17 +84,19 @@ We recommend installing Singularity system-wide as per the official [Singularity
 
 To pull the Singularity image needed for the workflow, you can use the provided script as directed below or pull the image directly.  
 
-> ***Note**: This command should be run in the location containing the `GL_RefAnnotTable-A_1.1.0` directory that was downloaded in [step 1](#1-download-the-workflow-files). Depending on your network speed, fetching the images will take approximately 20 minutes.*  
- 
+> **Note**: This command should be run in the location containing the `GL_RefAnnotTable-A_1.1.0` directory that was downloaded in [step 1](#1-download-the-workflow-files). Depending on your network speed, fetching the images will take approximately 20 minutes.
 
 ```bash
 bash GL_RefAnnotTable-A_1.1.0/bin/prepull_singularity.sh GL_RefAnnotTable-A_1.1.0/config/software/by_docker_image.config
 ```
  
-Once complete, a `singularity` folder containing the Singularity images will be created. Run the following command to export this folder as an environment variable:  
- 
+Once complete, a `singularity` folder containing the Singularity images will be created. Next, set up the required environment variables:
 
 ```bash
+# Set R library path to current working directory
+export R_LIBS_USER=$(pwd)/R_libs
+
+# Set Singularity cache directory 
 export SINGULARITY_CACHEDIR=$(pwd)/singularity
 ```
 
@@ -100,13 +104,15 @@ export SINGULARITY_CACHEDIR=$(pwd)/singularity
 
 #### Step 3: Run the Workflow
 
-While in the directory containing the `GL_RefAnnotTable-A_1.1.0` folder that was downloaded in [step 1](#1-download-the-workflow-files), you can now run the workflow. Below is an example for generating the annotation table for *Mus musculus* (mouse): 
- 
+> **Note**: The annotation database creation process requires FTP access through port 21. If you encounter connection issues, please verify that port 21 is not blocked by your network/firewall settings or try running the workflow on a system with unrestricted FTP access.
+
+While in the directory containing the `GL_RefAnnotTable-A_1.1.0` folder that was downloaded in [step 1](#1-download-the-workflow-files), you can now run the workflow. Below is an example for generating the annotation table for *Mus musculus* (mouse):
 
 ```bash
-singularity exec -B $(pwd)/GL_RefAnnotTable-A_1.1.0:/work \
-$SINGULARITY_CACHEDIR/quay.io-nasa_genelab-gl-refannottable-a-1.1.0.img \
-Rscript /work/GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'
+singularity exec \
+    --bind $(pwd):$(pwd) \
+    $SINGULARITY_CACHEDIR/quay.io-nasa_genelab-gl-refannottable-a-1.1.0.img \
+    Rscript GL_RefAnnotTable-A_1.1.0/GL-DPPD-7110-A_build-genome-annots-tab.R 'Mus musculus'
 ```
 
 <br> 
@@ -198,16 +204,24 @@ The input and output data are the same for both [Approach 1: Using Singularity](
 
 If the reference table does not specify an annotations database for the target organism in the 'annotations' column of the [GL-DPPD-7110-A_annotations.csv](../../Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file, the `install_annotations` function (defined in `install-org-db.R`) will be executed by default. This function can also be run as a stand-alone script:
 
+> **Note**: If you encounter timeout errors, you can increase the default timeout (3600 seconds) by modifying the `options(timeout=3600)` line at the top of the `install-org-db.R` script.
+
 <br>
 
 #### Using Singularity 
 
+> **Note**: The annotation database creation process requires FTP access through port 21. If you encounter connection issues, please verify that port 21 is not blocked by your network/firewall settings.
+
 ```bash
-singularity exec -B $(pwd)/GL_RefAnnotTable-A_1.1.0:/work \
-$SINGULARITY_CACHEDIR/quay.io-nasa_genelab-gl-refannottable-a-1.1.0.img \
-Rscript /work/install-org-db.R 'Bacillus subtilis'
+# Set R library path if not already set
+export R_LIBS_USER=$(pwd)/R_libs
+
+singularity exec \
+    --bind $(pwd):$(pwd) \
+    $SINGULARITY_CACHEDIR/quay.io-nasa_genelab-gl-refannottable-a-1.1.0.img \
+    Rscript GL_RefAnnotTable-A_1.1.0/install-org-db.R 'Bacillus subtilis'
 ```
- 
+
 <br>
 
 #### Using a Local R Environment
