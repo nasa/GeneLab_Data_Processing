@@ -1,15 +1,16 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-//params.GLDS_accession = "OSD-574"
+//params.accession = "OSD-574"
 //params.RawFilePattern = null // Pattern of files on OSDR for the OSD accession you want to process 
 
 process GET_RUNSHEET {
 
     beforeScript "chmod +x ${baseDir}/bin/create_runsheet.sh" 
+    tag "Downloading raw fastq files and runsheet for ${accession}..."
 
     input:
-        val(GLDS_accession)
+        val(accession)
     output:
         path("a_*metagenomic*.txt"), emit: assay_TABLE
         path("*.zip"), emit: zip
@@ -17,20 +18,20 @@ process GET_RUNSHEET {
         path("versions.txt"), emit: version
     script:
         """
-        # Download ISA zip file for the GLDS_accession then unzip it
-        GL-download-GLDS-data -g ${GLDS_accession} -p ISA -f && unzip *-ISA.zip
+        # Download ISA zip file for the GLDS/OSD accession then unzip it
+        GL-download-GLDS-data -g ${accession} -p ISA -f && unzip *-ISA.zip
 
         if [ ${params.RawFilePattern} == null ];then
         
             # Attempt to download the sequences using the assay table, if that fails then
             # attempt retrieving all fastq.gz files
-            GL-download-GLDS-data -f -g ${GLDS_accession} -a a_*metagenomic*.txt -o Raw_Sequence_Data || \\
-            GL-download-GLDS-data -f -g ${GLDS_accession} -p ".fastq.gz" -o Raw_Sequence_Data
+            GL-download-GLDS-data -f -g ${accession} -a a_*metagenomic*.txt -o Raw_Sequence_Data || \\
+            GL-download-GLDS-data -f -g ${accession} -p ".fastq.gz" -o Raw_Sequence_Data
         
         else
 
         
-            GL-download-GLDS-data -f -g ${GLDS_accession} -p  ${params.RawFilePattern} -o Raw_Sequence_Data
+            GL-download-GLDS-data -f -g ${accession} -p  ${params.RawFilePattern} -o Raw_Sequence_Data
 
         fi
 
@@ -39,8 +40,8 @@ process GET_RUNSHEET {
            grep '+' *wanted-file-download-commands.sh | \\
            sort -u | \\
            awk '{gsub(/\\+/,"%2B", \$NF);print}' \\
-           > plus_containing_${GLDS_accession}-wanted-file-download-commands.sh
-           cat plus_containing_${GLDS_accession}-wanted-file-download-commands.sh | parallel -j $task.cpus
+           > plus_containing_${accession}-wanted-file-download-commands.sh
+           cat plus_containing_${accession}-wanted-file-download-commands.sh | parallel -j $task.cpus
        fi
         
         # Create runsheet from the assay table
@@ -52,7 +53,7 @@ process GET_RUNSHEET {
 
 workflow {
 
-    GET_RUNSHEET(params.GLDS_accession)
+    GET_RUNSHEET(params.accession)
     file_ch = GET_RUNSHEET.out.input_file
                      .splitCsv(header:true)
 

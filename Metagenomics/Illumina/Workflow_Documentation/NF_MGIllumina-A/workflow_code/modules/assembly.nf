@@ -61,6 +61,7 @@ process RENAME_HEADERS {
     output:
         tuple val(sample_id), path("${sample_id}-assembly.fasta"), emit: contigs
         path("versions.txt"), emit: version
+        path("Failed-assemblies.tsv"), optional: true, emit: failed_assembly
     script:
         """
         bit-rename-fasta-headers -i ${assembly} \\

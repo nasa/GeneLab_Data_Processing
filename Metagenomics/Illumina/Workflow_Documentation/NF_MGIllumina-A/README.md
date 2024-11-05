@@ -115,7 +115,7 @@ nextflow run main.nf --help
 
 <br>
 
-#### 4a. Approach 1: Run slurm jobs in singularity containers with OSD accession as input
+#### 4a. Approach 1: Run slurm jobs in singularity containers with OSD or GLDS accession as input
 
 ```bash
 nextflow run main.nf -resume -profile slurm,singularity --accession OSD-574
@@ -195,30 +195,30 @@ Standard nextflow resource usage logs are also produced as follows:
 For options and detailed help on how to run the post-processing workflow, run the following command:
 
 ```bash
-nextflow run post_processng.nf --help
+nextflow run post_processing.nf --help
 ```
 
 To generate a README file, a protocols file, a md5sums table and a file association table after running the processing workflow sucessfully, modify and set the parameters in [post_processing.config](workflow_code/post_processing.config) then run the following command:
 
 ```bash
-nextflow -C post_processing.config run post_processng.nf -resume -profile slurm,singularity
+nextflow -C post_processing.config run post_processing.nf -resume -profile slurm,singularity
 ``` 
 
 The outputs of the run will be in a directory called `Post_Processing` by default and they are as follows:
 
- - Post_processing/FastQC_Outputs/filtered_multiqc_GLmetagenomics_report.zip (Filtered sequence multiqc report with paths purged) 
+ - Post_processing/FastQC_Outputs/filtered_multiqc_GLmetagenomics_report.zip (Filtered sequence multiqc report with paths purged)  
 
- - Post_processing/FastQC_Outputs/raw_multiqc_GLmetagenomics_report.zip (Raw sequence multiqc report with paths purged)
+ - Post_processing/FastQC_Outputs/raw_multiqc_GLmetagenomics_report.zip (Raw sequence multiqc report with paths purged)  
 
- - Post_processing/<GLDS_accession>_-associated-file-names.tsv (File association table for curation)
+ - Post_processing/<GLDS_accession>_-associated-file-names.tsv (File association table for curation)  
 
- - Post_processing/<GLDS_accession>_metagenomics-validation.log (Automatic verification and validation log file)
+ - Post_processing/<GLDS_accession>_metagenomics-validation.log (Automatic verification and validation log file)  
 
- - Post_processing/processed_md5sum_GLmetagenomics.tsv (md5sums for the files to be released on OSDR)
+ - Post_processing/processed_md5sum_GLmetagenomics.tsv (md5sums for the files to be released on OSDR)  
 
- - Post_processing/processing_info_GLmetagenomics.zip  (Zip file containing all files used to run the workflow and required logs with paths purged) 
+ - Post_processing/processing_info_GLmetagenomics.zip  (Zip file containing all files used to run the workflow and required logs with paths purged)  
 
- - Post_processing/protocol.txt  (File describing the methods used by the workflow)
+ - Post_processing/protocol.txt  (File describing the methods used by the workflow)  
 
  - Post_processing/README_GLmetagenomics.txt (README file listing and describing the outputs of the workflow)
 
