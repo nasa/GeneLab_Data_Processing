@@ -741,7 +741,7 @@ bismark_methylation_extractor --parallel NumberOfThreads \
 **Output data:**
 
 * **\*\_context\_\*.txt.gz** (bismark methylation-call files for CpG, CHG, and CHH contexts that were detected; see [bismark documentation](https://felixkrueger.github.io/Bismark/), namely [methylation call](http://felixkrueger.github.io/Bismark/bismark/alignment/#methylation-call) for symbols, and [methylation extraction output](http://felixkrueger.github.io/Bismark/bismark/methylation_extraction/#the-methylation-extractor-output-looks-like-this-tab-separated) for file format)
-* **\*.bedGraph.gz** (gzip-compressed bedGraph-formatted file of methylation percentages of each CpG site; see [bismark documentation](https://github.com/FelixKrueger/Bismark/tree/master/Docs#optional-bedgraph-output))
+* **\*.bedGraph.gz** (gzip-compressed bedGraph-formatted file of methylation percentages of each CpG site; see [bismark documentation](https://felixkrueger.github.io/Bismark/options/methylation_extraction/#bedgraph-output))
 * **\*.bismark.cov.gz** (gzip-compressed bedGraph-formatted file like above "\*.bedGraph.gz", but also including 2 more columns of methylated and unmethylated counts at the specified position; see [bismark documentation](https://felixkrueger.github.io/Bismark/options/methylation_extraction/#bedgraph-specific-options))
 * **\*.M-bias.txt** (text file with methylation information in the context of the position in reads, helpful for investigating bias as a function of base position in the read; see [bismark documentation](http://felixkrueger.github.io/Bismark/bismark/methylation_extraction/#m-bias-plot))
 * **\*_splitting_report.txt** (text file containing general methylation detection information)
