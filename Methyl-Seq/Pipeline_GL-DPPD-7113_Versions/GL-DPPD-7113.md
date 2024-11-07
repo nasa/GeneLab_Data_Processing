@@ -249,7 +249,7 @@ mv sample-1_R2_raw_val_2.fq.gz sample-1_R2_trimmed.fastq.gz
 <br>
 
 ### If RRBS with NuGEN ovation kit
-Libraries prepared with the NuGEN ovation kit need to be procesed with an additional script provided by the company's [github](https://github.com/nugentechnologies/NuMetRRBS#analysis-guide-for-nugen-ovation-rrbs-methyl-seq). 
+Libraries prepared with the NuGEN ovation kit need to be processed with an additional script provided by the company's [github](https://github.com/nugentechnologies/NuMetRRBS#analysis-guide-for-nugen-ovation-rrbs-methyl-seq). 
 
 Following their instructions, we first run an adapter-trimming/quality-filtering step with trimgalore. Note that the `--rrbs` option is not appropriate to pass to trimgalore when this kit is used (see Bismark documentation for [RRBS NuGEN Ovation Methyl-Seq System](http://felixkrueger.github.io/Bismark/bismark/library_types/#rrbs-nugen-ovation-methyl-seq-system). Then we utilize the company's script to remove the random diversity sequences added by the kit. 
 
@@ -437,7 +437,7 @@ bam2nuc --genomic_composition_only \
 *bismark_genome_preparation*
 *	`--bowtie2` - specify bismark to create bisulfite indexes for use with Bowtie2
 *	`--parallel` – specifies how many threads to use (note these will be doubled as it operates on both strands simultaneously)
-*  positional argument specifing the directory holding the reference genome (should end in ".fa" or ".fasta", can be gzipped and including ".gz")
+*  positional argument specifying the directory holding the reference genome (should end in ".fa" or ".fasta", can be gzipped and including ".gz")
 
 *bam2nuc*
 * --genomic_composition_only - specifies creation of the (genome-specific) genomic_nucleotide_frequencies.txt report  
@@ -598,8 +598,8 @@ qualimap bamqc -bam sample-1_bismark_bt2_sorted.bam \
 
 * `bamqc` - specifies the `bamqc` sub-program of `qualimap`
 * `-bam` - specifies the input bam file
-* `-gff` - specifices the feature file contining regions of interest for the reference genome (can be gff, gtf, or bed format)
-* `-outdir` - specifices the path to print the alignment QC output files to
+* `-gff` - specifies the feature file containing regions of interest for the reference genome (can be gff, gtf, or bed format)
+* `-outdir` - specifies the path to print the alignment QC output files to
 * `--collect-overlap-pairs` - instructs the program to output statistics of overlapping paired-end reads (if data were paired-end, no effect if single-end)
 * `--java-mem-size=6G` - specifies the amount of memory to use (here this is set to 6G; see [qualimap FAQ here](http://qualimap.conesalab.org/doc_html/faq.html?highlight=java-mem-size))
 * `-nt` - specifies the number of threads to use
@@ -607,7 +607,7 @@ qualimap bamqc -bam sample-1_bismark_bt2_sorted.bam \
 **Input data:**
 
 * sample-1_bismark_{bt2,hisat2}_sorted.bam (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, output from [Step 4c](#4c-sort-alignment-files) above)
-* a feature file contining regions of interest for the reference genome in gtf format (this pipeline version uses the Ensembl fasta file indicated in the `gtf` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file))
+* a feature file containing regions of interest for the reference genome in gtf format (this pipeline version uses the Ensembl fasta file indicated in the `gtf` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file))
 > **NOTE**  
 > If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
 
@@ -726,7 +726,7 @@ bismark_methylation_extractor --parallel NumberOfThreads \
 * `--cytosine_report` - instructions the program to produce a genome-wide methylation report for all cytosines in the genome
 * `--genome_folder` - a directory holding the reference genome in fasta format (this pipeline version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file))
 * `--ignore_r2` - specifies how many bases to ignore from the 5' end of the reverse reads (bismark docs recommend 2, see [bismark documentation](https://felixkrueger.github.io/Bismark/options/methylation_extraction/#options))
-  > Note: The first couple of bases in the reverse read of bisulfite sequence experiments show a severe bias towards non-methylation as a result of end-reparing sonicated fragments with unmentulated cytosines, so it is recommened to remove the first couple basepairs
+  > Note: The first couple of bases in the reverse read of bisulfite sequence experiments show a severe bias towards non-methylation as a result of end-repairing sonicated fragments with unmethylated cytosines, so it is recommended to remove the first few basepairs
 * `--ignore_3prime_r2` - specifies how many bases to ignore from the 3' end of the reverse reads to remove unwanted biases from the end of reads (For specific recommnendations see Bismark documentation on [Library Types](https://felixkrueger.github.io/Bismark/bismark/library_types/)) 
 * sample-1_bismark_bt2_sorted.bam - the input bam file, provided as a positional argument
 
@@ -1081,7 +1081,7 @@ tiles_myDiff.all_sig <- getMethylDiff(tiles_diff, difference = 25, qvalue = 0.01
 # Get significantly hypermethylated tiles
 tiles_myDiff.hyper <- getMethylDiff(tiles_diff, difference = 25, qvalue = 0.01, type = "hyper")
 
-# Get signifcantly hypomethylated tiles
+# Get significantly hypomethylated tiles
 tiles_myDiff.hypo <- getMethylDiff(tiles_diff, difference = 25, qvalue = 0.01, type = "hypo")
 ```
 
