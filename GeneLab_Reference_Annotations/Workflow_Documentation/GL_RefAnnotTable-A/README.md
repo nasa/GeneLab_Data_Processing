@@ -96,7 +96,7 @@ Once complete, a `singularity` folder containing the Singularity images will be 
 # Set R library path to current working directory
 export R_LIBS_USER=$(pwd)/R_libs
 # Create the specified R library path if it doesn't already exist
-mkdir -p $R_LIBS
+mkdir -p $R_LIBS_USER
 
 # Set Singularity cache directory 
 export SINGULARITY_CACHEDIR=$(pwd)/singularity
@@ -217,6 +217,11 @@ If the reference table does not specify an annotations database for the target o
 ```bash
 # Set R library path if not already set
 export R_LIBS_USER=$(pwd)/R_libs
+# Create the specified R library path if it doesn't already exist
+mkdir -p $R_LIBS_USER
+
+# Set Singularity cache directory if not already set
+export SINGULARITY_CACHEDIR=$(pwd)/singularity
 
 singularity exec \
     --bind $(pwd):$(pwd) \
