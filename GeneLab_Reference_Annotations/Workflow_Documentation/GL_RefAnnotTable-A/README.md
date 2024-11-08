@@ -95,6 +95,8 @@ Once complete, a `singularity` folder containing the Singularity images will be 
 ```bash
 # Set R library path to current working directory
 export R_LIBS_USER=$(pwd)/R_libs
+# Create the specified R library path if it doesn't already exist
+mkdir -p $R_LIBS
 
 # Set Singularity cache directory 
 export SINGULARITY_CACHEDIR=$(pwd)/singularity
