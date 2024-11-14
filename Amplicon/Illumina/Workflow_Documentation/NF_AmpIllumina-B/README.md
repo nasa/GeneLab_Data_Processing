@@ -104,11 +104,11 @@ For options and detailed help on how to run the workflow, run the following comm
 nextflow run main.nf --help
 ```
 
-> Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --csv_file) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
+> Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --input_file) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
 
 <br>
 
-#### 4a. Approach 1: Run slurm jobs in singularity containers with OSD accession as input
+#### 4a. Approach 1: Run slurm jobs in singularity containers with OSD or GLDS accession as input
 
 ```bash
 nextflow run main.nf -resume -profile slurm,singularity --accession GLDS-487 --target_region 16S
@@ -119,7 +119,7 @@ nextflow run main.nf -resume -profile slurm,singularity --accession GLDS-487 --t
 #### 4b. Approach 2: Run slurm jobs in singularity containers with a csv file as input
 
 ```bash
-nextflow run main.nf -resume -profile slurm,singularity  --csv_file PE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT 
+nextflow run main.nf -resume -profile slurm,singularity  --input_file PE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT 
 ```
 
 <br>
@@ -127,7 +127,7 @@ nextflow run main.nf -resume -profile slurm,singularity  --csv_file PE_file.csv 
 #### 4c. Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environment(s)
 
 ```bash
-nextflow run main.nf -resume -profile conda --csv_file SE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --conda.qc <path/to/existing/conda/environment>
+nextflow run main.nf -resume -profile conda --input_file SE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --conda.qc <path/to/existing/conda/environment>
 ```
 
 <br>
@@ -145,7 +145,7 @@ nextflow run main.nf -resume -profile conda --csv_file SE_file.csv --target_regi
 
 *Required only if --accession is not passed as an argument*
 
-* `--csv_file` –  A 3-column (single-end) or 4-column (paired-end) input csv file (sample_id, forward, [reverse,] paired). Please see the sample [SE_file.csv](workflow_code/SE_file.csv) and [PE_file.csv](workflow_code/PE_file.csv) in this repository for examples on how to format this file.
+* `--input_file` –  A 4-column (single-end) or 5-column (paired-end) input csv file with the following headers (sample_id, forward, [reverse,] paired, groups). Please see the sample [SE_file.csv](workflow_code/SE_file.csv) and [PE_file.csv](workflow_code/PE_file.csv) in this repository for examples on how to format this file.
 
 * `--F_primer` – Forward primer sequence.
 
@@ -191,29 +191,21 @@ Standard nextflow resource usage logs are also produced as follows:
 For options and detailed help on how to run the post-processing workflow, run the following command:
 
 ```bash
-nextflow run post_processng.nf --help
+nextflow run post_processing.nf --help
 ```
 
 To generate a README file, a protocols file, a md5sums table and a file association table after running the processing workflow sucessfully, modify and set the parameters in [post_processing.config](workflow_code/post_processing.config) then run the following command:
 
 ```bash
-nextflow -C post_processing.config run post_processng.nf -resume -profile slurm,singularity
+nextflow -C post_processing.config run post_processing.nf -resume -profile slurm,singularity
 ``` 
 
 The outputs of the run will be in a directory called `Post_Processing` by default and they are as follows:
-
  - Post_processing/FastQC_Outputs/filtered_multiqc_GLAmpSeq_report.zip (Filtered sequence multiqc report with paths purged) 
-
  - Post_processing/FastQC_Outputs/raw_multiqc_GLAmpSeq_report.zip (Raw sequence multiqc report with paths purged)
-
  - Post_processing/<GLDS_accession>_-associated-file-names.tsv (File association table for curation)
-
  - Post_processing/<GLDS_accession>_amplicon-validation.log (Automatic verification and validation log file)
-
  - Post_processing/processed_md5sum_GLAmpSeq.tsv (md5sums for the files to be released on OSDR)
-
  - Post_processing/processing_info_GLAmpSeq.zip  (Zip file containing all files used to run the workflow and required logs with paths purged) 
-
  - Post_processing/protocol.txt  (File describing the methods used by the workflow)
-
  - Post_processing/README_GLAmpSeq.txt (README file listing and describing the outputs of the workflow)

@@ -17,8 +17,8 @@ RUN Rscript -e "install.packages(c('BiocManager', 'devtools', 'tidyverse', 'knit
 RUN Rscript -e "install.packages('unixtools', repos = 'http://www.rforge.net/')" # buildkit
 RUN Rscript -e "install.packages(c('remotes', 'jsonlite', 'furrr', 'glue', 'optparse', 'patchwork', 'ggrepel', 'here',  'DescTools'))"
 RUN Rscript -e "remotes::install_github(c('ropensci/bold', 'ropensci/taxize'), upgrade=TRUE)"
-RUN Rscript -e "install.packages(c('gsl', 'gmp', 'Rmpfr', 'CVXR', 'energy'))"
-RUN Rscript -e "BiocManager::install(c('phyloseq', 'DirichletMultinomial', 'mia', 'ANCOMBC'))"
+RUN Rscript -e "install.packages(c('gsl', 'gmp', 'Rmpfr', 'CVXR', 'energy', 'rstatix', 'FSA', 'multcompView', 'RColorBrewer', 'ggdendro', 'broom', 'dendextend'))"
+RUN Rscript -e "BiocManager::install(c('phyloseq', 'DirichletMultinomial', 'mia', 'ANCOMBC', 'DESeq2'))"
 
 CMD ["bash"]
 

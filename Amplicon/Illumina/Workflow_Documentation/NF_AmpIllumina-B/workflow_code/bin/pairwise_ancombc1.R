@@ -2,9 +2,9 @@
 
 ###############################################################################
 # AUTHOR : OLABIYI ADEREMI OBAYOMI
-# DESCRIPTION: A script to write to perform pairwise ANCOM BC2.
+# DESCRIPTION: A script to write to perform pairwise ANCOM BC1 diffrential abundance testing.
 # E-mail: obadbotanist@yahoo.com
-# Created: October 2024
+# Created: November 2024
 # example: Rscript pairwise_ancombc1.R \
 #                  --metadata-table 'mapping/GLDS-487_amplicon_v1_runsheet.csv' \
 #                  --feature-table 'data/counts_GLAmpSeq.tsv' \
@@ -39,10 +39,12 @@ option_list <- list(
               help="path to feature taxonomy table i.e. ASV or OTU taxonomy table.",
               metavar="path"),
   
-  make_option(c("-o", "--out-file"), type="character", 
-              default="differential_abundance_GLAMPIllumina.csv", 
-              help="Output table file name. Default is differential_abundance_GLAMPIllumina.csv",
-              metavar="differential_abundance_GLAMPIllumina.csv"),
+  make_option(c("-o", "--output-prefix"), type="character", default="", 
+              help="Unique name to tag onto output files. Default: empty string.",
+              metavar=""),
+  
+  make_option(c("-y", "--assay-suffix"), type="character", default="_GLAmpSeq", 
+              help="Genelab assay suffix.", metavar="GLAmpSeq"),
   
   make_option(c("-g", "--group"), type="character", default="groups", 
               help="Column in metadata to be analyzed",
@@ -292,12 +294,15 @@ metadata_file <- here(opt[["metadata-table"]])
 taxonomy_file <-  here(opt[["taxonomy-table"]])
 feature_table_file <- here(opt[["feature-table"]]) 
 feature <- opt[["feature-type"]]   # "ASV"
-output_file <- here(opt[["out-file"]])
+output_prefix <- opt[["output-prefix"]]
+assay_suffix <- opt[["assay-suffix"]]
 
 # taxon / ASV prevalence cutoff
 prevalence_cutoff <- opt[["prevalence-cutoff"]] # 0.15 (15%)
 # sample / library read count cutoff
 library_cutoff <- opt[["library-cutoff"]]  # 100
+diff_abund_out_dir <- here("differential_abundance/")
+if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir)
 
 
 # ------------------------ Read metadata ---------------------------------- #
@@ -523,7 +528,6 @@ names(comp_names) <- comp_names
 
 message("Making volcano plots...")
 # -------------- Make volcano plots ------------------ #
-if(!dir.exists("Plots/")) dir.create("Plots/")
 volcano_plots <- map(comp_names, function(comparison){
   
   comp_col  <- c(
@@ -550,8 +554,8 @@ volcano_plots <- map(comp_names, function(comparison){
     labs(x="logFC", y="-log10(Pvalue)", 
          title = comparison, color="Significant") + publication_format
   
-  ggsave(filename = glue("{comparison}_volcano.png"), plot = p, device = "png",
-         width = 6, height = 8, units = "in", dpi = 300, path="Plots/")
+  ggsave(filename = glue("{output_prefix}{comparison}_volcano{assay_suffix}.png"), plot = p, device = "png",
+         width = 6, height = 8, units = "in", dpi = 300, path=diff_abund_out_dir)
   
   return(p)
 })
@@ -566,9 +570,9 @@ fig_height = 7.5 * number_of_rows
 p <- wrap_plots(volcano_plots, ncol = 2)
 #  Try to combine all the volcano plots in one figure
 try(
-ggsave(filename = glue("{feature}_volcano.png"), plot = p, device = "png",
+ggsave(filename = glue("{output_prefix}{feature}_volcano{assay_suffix}.png"), plot = p, device = "png",
        width = 16, height = fig_height, units = "in", dpi = 300,
-       path="Plots/", limitsize = FALSE)
+       path=diff_abund_out_dir, limitsize = FALSE)
 )
 
 # Add NCBI id to feature i.e. ASV
@@ -637,7 +641,7 @@ merged_df <- merged_df %>%
   mutate(across(where(is.numeric), ~round(.x, digits=3))) %>% 
   mutate(across(where(is.matrix), as.numeric))
 
-
+output_file <- glue("{diff_abund_out_dir}/{output_prefix}ancombc1_differential_abundance{assay_suffix}.csv")
 message("Writing out results of differential abundance using ANCOMBC1...")
 write_csv(merged_df,output_file)
 
@@ -663,8 +667,8 @@ boxplots <- map( merged_stats_df[[feature]], function(feature){
           legend.title = element_text(face = "bold", size=12))
   
   # Save feature boxplot as separate figures
-  ggsave(plot = p, filename = glue("{feature}_boxplot.png"), device = "png", 
-         width = 8, height = 5, units = "in", dpi = 300, path = "Plots/")
+  ggsave(plot = p, filename = glue("{output_prefix}{feature}_boxplot{assay_suffix}.png"), device = "png", 
+         width = 8, height = 5, units = "in", dpi = 300, path = diff_abund_out_dir)
   
   return(p)
 })
@@ -679,9 +683,9 @@ fig_height = 5 * number_of_rows
 
 # Try to Plot all features / ASVs in one figure
 try(
-ggsave(filename = glue("{feature}_boxplots.png"), plot = p, device = "png",
+ggsave(filename = glue("{output_prefix}{feature}_boxplots{assay_suffix}.png"), plot = p, device = "png",
        width = 14, height = fig_height, units = "in", dpi = 300,
-       limitsize = FALSE, path = "Plots/")  # There too many things to plot
+       limitsize = FALSE, path = diff_abund_out_dir)  # There too many things to plot
 
 )
 

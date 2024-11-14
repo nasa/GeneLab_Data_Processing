@@ -41,9 +41,8 @@ echo ""
 export NXF_SINGULARITY_CACHEDIR=singularity/
 export TOWER_ACCESS_TOKEN=<ACCESS TOKEN>
 export TOWER_WORKSPACE_ID=<WORKSPACE ID>
-#nextflow run main.nf -resume -profile slurm,singularity --accession GLDS-487 --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT  -with-tower ## Replace command with the command(s) you want to run ##
-nextflow run main.nf -resume -profile slurm,conda --accession GLDS-487 --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT  -with-tower 
-#nextflow run ancombc.nf -resume -profile conda,slurm -with-tower
+#nextflow run main.nf -resume -profile slurm,singularity --input_file PE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT  -with-tower ## Replace command with the command(s) you want to run ##
+nextflow run main.nf -resume -profile slurm,conda --accession GLDS-487 --target_region 16S -with-tower 
 ## Add a time-stamp at the end of the job then calculate how long the job took to run in seconds, minutes, and hours ##
 echo ""
 end=$(date +%s)

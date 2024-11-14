@@ -7,10 +7,6 @@ c_bright_green = "\u001b[32;1m";
 c_blue = "\033[0;34m";
 c_reset = "\033[0m";
 
-
-params.help = false
-params.debug = false
-
 /**************************************************
 * HELP MENU  **************************************
 **************************************************/
@@ -19,42 +15,43 @@ if (params.help) {
   println("Nextflow AmpIllumina Consensus Pipeline: $workflow.manifest.version")
   println("USAGE:")
   println("Example 1: Submit and run jobs with slurm in singularity containers.")
-  println("   > nextflow run main.nf -resume -profile slurm,singularity --csv_file PE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT")
+  println("   > nextflow run main.nf -resume -profile slurm,singularity --input_file PE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT")
   println()
   println("Example 2: : Submit and run jobs with slurm in conda environments.")
-  println("   > nextflow run main.nf -resume -profile slurm,conda --csv_file SE_file.csv --target_region ITS --F_primer TCCGTAGGTGAACCTGCGG --R_primer GCTGCGTTCTTCATCGATGC")
+  println("   > nextflow run main.nf -resume -profile slurm,conda --input_file SE_file.csv --target_region 1TS --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT")
   println()
-  println("Example 3: Run jobs locally in conda environments, supplying a GLDS accession, and specifying the path to an existing conda environment")
+  println("Example 3: Run jobs locally in conda environments, supplying a GLDS or OSD accession, and specifying the path to an existing conda environment")
   println("   > nextflow run main.nf -resume -profile conda --accession GLDS-487 --target_region 16S --conda.qc <path/to/existing/conda/environment>")
   println()
   println("Required arguments:")
-  println("""-profile [STRING] Specifies the profile to be used to run the workflow. Options are [singularity, docker, conda, slurm].
-	             singularity, docker and conda will run the pipelne locally using singularity, docker, and conda, respectively.
-                 To combine profiles, pass them together separated by comma. For example, to run jobs using slurm in singularity containers use 'slurm,singularity' . """)			 
-  println("--csv_file  [PATH] A 3-column (single-end) or 4-column (paired-end) input csv file (sample_id, forward, [reverse,] paired). Mandatory if a GLDS accession is not provided.")
+  println("""-profile [STRING] What profile should be used to run the workflow. Options are [singularity, docker, conda, slurm].
+	         singularity, docker and conda will run the pipelne locally using singularity, docker, and conda, respectively.
+                 To combnine profiles, pass them together separated by comma. For example, to run jobs using slurm in singularity containers use 'slurm,singularity' . """)			 
+  println("--input_file  [PATH] A 4-column (single-end) or 5-column (paired-end) input file (sample_id, forward, [reverse,] paired, groups). Mandatory if a GLDS accession is not provided.")
   println(" Please see the files: SE_file.csv and PE_file.csv for single-end and paired-end examples, respectively.")
   println(" The sample_id column should contain unique sample ids.")
   println(" The forward and reverse columns should contain the absolute or relative path to the sample's forward and reverse reads.")
   println(" The paired column should be true for paired-end or anything else for single-end reads.")
-  println("--target_region [STRING] Specifies the amplicon target region to be analyzed. Options are one of [16S, 18S, ITS]. Default: 16S.")
+  println(" The groups column contain group levels / treatments to be compared during diversity and differential abundance testing analysis.")
+  println("--target_region [STRING] What is the amplicon target region to be analyzed. Options are one of [16S, 18S, ITS]. Default: 16S.")
   println("--trim_primers [BOOLEAN] Should primers be trimmed? true or false. Default: true.") 
-  println("PLEASE NOTE: This workflow assumes that all your raw reads end with the same suffix. If they don't, please modify your filenames to have the same suffix as shown below.")
+  println("PLEASE NOTE: This workflow assumes that all your raw reads end with the same suffix. If they don't please modify your filenames to have the same suffix as shown below.")
   println("--raw_R1_suffix [STRING] Raw forward reads suffix (region following the unique part of the sample names). e.g. _R1_raw.fastq.gz.") 
   println("--raw_R2_suffix [STRING] Raw reverse reads suffix (region following the unique part of the sample names). e.g. _R2_raw.fastq.gz.") 
   println()
   println("Cutadapt (trimming) parameters:")
-  println("	    --F_primer [STRING] Forward primer sequence e.g. AGAGTTTGATCCTGGCTCAG. Default: empty string.")
-  println("	    --R_primer [STRING] Reverse primer sequence e.g. CTGCCTCCCGTAGGAGT. Default: empty string.")
-  println("	    --min_cutadapt_len [INTEGER] Specifies the minimum read length after quality trimming with cutadapt. Default: 130.")
+  println("	    --F_primer [STRING] Forward primer sequence e.g. AGAGTTTGATCCTGGCTCAG. Default: emptry string.")
+  println("	    --R_primer [STRING] Reverse primer sequence e.g. CTGCCTCCCGTAGGAGT. Default: emptry string.")
+  println("	    --min_cutadapt_len [INTEGER] What should be the minimum read length after quality trimming with cutadapt. Default: 130.")
   println("	    --primers_linked [STRING] Are the primers linked?. https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads. Default: TRUE. ")
   println("	    --discard_untrimmed [STRING] Should untrimmed reads be discarded? Any supplied string except TRUE will not discard them. Default: TRUE.")
   println()	
   println("Optional arguments:")  
   println("  --help  Print this help message and exit.")
-  println("  --publishDir_mode [STRING]  Specifies how nextflow publishes file outputs. Options can be found here https://www.nextflow.io/docs/latest/process.html#publishdir. Default: link.")
-  println("  --errorStrategy [STRING] Specifies how nextflow handles workflow errors. Options can be found here https://www.nextflow.io/docs/latest/process.html#errorstrategy. Default: terminate")
-  println("  --enable_visualizations [BOOLEAN] Should ASV plots be made? true or false. if true supply a path to the runsheet for plotting to the --runsheet option. Default: false.")
-  println("  --runsheet [PATH] A 4-column file with these exact headers [Sample Name, read1_path, raw_R1_suffix, groups] for plotting. Only relevant if --enable_visualizations is true. Default: null.") 
+  println("  --publishDir_mode [STRING]  How should nextflow publish file outputs. Options can be found here https://www.nextflow.io/docs/latest/process.html#publishdir. Default: link.")
+  println("  --errorStrategy [STRING] How should nextflow handle errors. Options can be found here https://www.nextflow.io/docs/latest/process.html#errorstrategy. Default: terminate")
+  println("  --enable_visualizations [BOOLEAN] Should ASV plots be made? true or false. if true supply a path to the ruhnsheet for plotting to the --runsheet option. Default: false.")
+  //println("  --runsheet [PATH] A 4-column file with these exact headers [Sample Name, read1_path, raw_R1_suffix, groups] for plotting. Only relevant if --enable_visualizations is true. Default: null.") 
   println("  --multiqc_config [PATH] Path to a custome multiqc config file. Default: config/multiqc.config.")
   println()
   println("Dada2 parameters passed to filterAndTrim() function:")
@@ -65,60 +62,55 @@ if (params.help) {
   println("	    --concatenate_reads_only [STRING] Concatenate only with dada2 instead of merging paired reads if TRUE.")
   println("      This is typically used with primers like 515-926, that captured 18S fragments that are typically too long to merge.")
   println("      Note that 16S and 18S should have been separated already prior to running this workflow. This should likely be left as FALSE for any option other than 18S above.") 	    
-  println("	     Options are TRUE or FALSE Default: FALSE.")
+  println("	     Values are TRUE or FALSE Default: FALSE.")
   println()
-  println("ANCOMBC differential abundance testing parameters:")
-  println("         --ancombc_version [INTEGER] The version of ancombc to use for differential abundance testing. Either 1 or 2. Default: 2")
-  println("         --metadata [PATH] Metadata to be used for differential abundance testing. Default: null")
-  println("         --group [STRING] Column in metadata with treatments to be compared using ANCOMBC. Default: 'groups' ")
-  println("         --samples_column [STRING] Column in metdata with sample names belonging to each treatment group. Dafault: 'Sample Name' ")
+  println("Diversity and Differential abundance testing parameters:")
+  println("         --diff_abund_method [STRING] The method to use for differential abundance testing. Either ['ancombc1', 'ancombc2', or 'deseq2'] respectively. Default: 'ancombc2' ")
+  println("         --rarefaction_depth [STRING] The Minimum desired sample rarefaction depth for diversity analysis. Default: 500.")
+  println("         --group [STRING] Column in input csv file with treatments to be compared. Default: 'groups' ")
+  println("         --samples_column [STRING] Column in input csv file with sample names belonging to each treatment group. Default: 'sample_id' ")
   println()
   println("File Suffixes:")
   println("      --primer_trimmed_R1_suffix [STRING] Suffix to use for naming your primer trimmed forward reads. Default: _R1_trimmed.fastq.gz.")
   println("      --primer_trimmed_R2_suffix [STRING] Suffix to use for naming your primer trimmed reverse reads. Default: _R2_trimmed.fastq.gz.")  
   println("      --filtered_R1_suffix [STRING]  Suffix to use for naming your quality filtered forward reads. Default: _R1_filtered.fastq.gz.")
   println("      --filtered_R2_suffix [STRING]  Suffix to use for naming your quality filtered reverse reads. Default: _R2_filtered.fastq.gz.")
+  println()
   println("Output directories:")
-  println("      --raw_reads_dir [PATH] Specifies where the fastqc report of the raw reads will be published. Default: ../Raw_Sequence_Data/.")
-  println("      --fastqc_out_dir [PATH] Specifies where multiqc outputs will be published. Default: ../workflow_output/FastQC_Outputs/.")
-  println("      --trimmed_reads_dir [PATH] Specifies where cutadapt trimmed reads will be published. Default: ../workflow_output/Trimmed_Sequence_Data/.")
-  println("      --filtered_reads_dir [PATH] Specifies where filtered reads will be published.  Default: ../workflow_output/Filtered_Sequence_Data/.")
-  println("      --info_out_dir [PATH] Specifies where output metadata will be published. Default: ../workflow_output/Metadata/.")
-  println("      --plots_dir [PATH] Specifies where plots will be published if visualization is enabled. Default: ../workflow_output/Final_Outputs/Plots/.")
-  println("      --final_outputs_dir [PATH] Specifies where final outputs and summary reports will be published.  Default: ../workflow_output/Final_Outputs/.")
-  println("Genelab specific arguments:")
-  println("      --accession [STRING]  A Genelab / OSD accession number if the --csv_file parameter is not set. If this parameter is set, it will ignore the --csv_file parameter.")
-  println("      --assay_suffix [STRING]  Genelabs assay suffix. Default: _GLAmpSeq.")
+  println("      --raw_reads_dir [PATH] Where should the fastqc report of the raw reads be stored. Default: ../Raw_Sequence_Data/")
+  println("      --fastqc_out_dir [PATH] Where should multiqc outputs be stored. Default: ../workflow_output/FastQC_Outputs/")
+  println("      --trimmed_reads_dir [PATH] Where should your cutadapt trimmed reads be stored. Default: ../workflow_output/Trimmed_Sequence_Data/")
+  println("      --filtered_reads_dir [PATH] Where should your filtered reads be stored.  Default: ../workflow_output/Filtered_Sequence_Data/")
+  println("      --info_out_dir [PATH] Where should output metadata be stored. Default: ../workflow_output/Metadata/")
+  println("      --final_outputs_dir [PATH] Where should most outputs and summary reports be stored.  Default: ../workflow_output/Final_Outputs/")
+  println()
+  println("Genelab specific arguements:")
+  println("      --accession [STRING]  A Genelab accession number if the --input_file parameter is not set. If this parameter is set, it will ignore the --input_file parameter.")
+  println("      --assay_suffix [STRING]  Genelabs assay suffix. Default: GLAmpSeq.")
   println("      --output_prefix [STRING] Unique name to tag onto output files. Default: empty string.")
-  println("Paths to existing conda environments to use, otherwise, a new one will be created using the yaml files in envs/.")
+  println()
+  println("Paths to existing conda environments to use otherwise a new one will be created using the yaml file in envs/")
   println("      --conda.qc [PATH] Path to a conda environment containing fastqc, multiqc, zip and python. Default: null.")
   println("      --conda.R [PATH] Path to a conda environment containing R along with the packages decipher and biomformat installed. Default: null.")
   println("      --conda.genelab  [PATH] Path to a conda environment containing genlab-utils. Default: null.")
   println("      --conda.cutadapt [PATH] Path to a conda environment containing cutadapt. Default: null.")
-  println("      --conda.R_visualizations [PATH] Path to a conda environment containing R packages required for plotting. Default: null.")
-  println("      --conda.ancombc [PATH] Path to a conda environment containing ANCOMBC R package and its dependencies for differential abundance testing. Default: null.")
-  println()
+  println("      --conda.diversity [PATH] Path to a conda environment containing R packages required for diversity and differential abundance testing. Default: null.")
   print("Advanced users can edit the nextflow.config file for more control over default settings such container choice, number of cpus, memory per task etc.")
   exit 0
   }
 
-/************************************************
-*********** Show pipeline parameters ************
-*************************************************/
 
 if(params.debug){
 log.info """
          Nextflow AmpIllumina Consensus Pipeline: $workflow.manifest.version
          
          You have set the following parameters:
-         Input csv file : ${params.csv_file}
-         GLDS_accession : ${params.GLDS_accession}
+         Input csv file : ${params.input_file}
+         GLDS_accession : ${params.accession}
          Amplicon target region : ${params.target_region}
          Nextflow Directory publishing mode: ${params.publishDir_mode}
          Trim Primers: ${params.trim_primers}
          Nextflow Error strategy: ${params.errorStrategy}
-         Enable visualization: ${params.enable_visualizations}
-         Runsheet For plotting: ${params.runsheet}
          MultiQC configuration file: ${params.multiqc_config}
 
          File Suffixes:
@@ -136,12 +128,6 @@ log.info """
          Primers Are linked: ${params.primers_linked}
          Discard Untrimmed Reads: ${params.discard_untrimmed}
 
-
-         ANCOMBC Parameters:
-         ANCOMBC Version: ${params.ancombc_version}
-         Metadata: ${params.metadata}
-         Group Column: ${params.group}
-         Samples Column: ${params.samples_column} 
  
          Dada2 Parameters:
          Truncate left: ${params.left_trunc}bp
@@ -149,6 +135,13 @@ log.info """
          Max error left: ${params.left_maxEE}
          Max error right: ${params.right_maxEE}
          Concatenate Reads: ${params.concatenate_reads_only}
+         
+         Diversity and Differential abundance Parameters:
+         Method: ${params.diff_abund_method}
+         Rarefaction Depth: ${params.rarefaction_depth}
+         Groups to Comapre Column: ${params.group}
+         Samples Column: ${params.samples_column}
+         
  
          Output Directories:
          Raw reads: ${params.raw_reads_dir}
@@ -156,7 +149,6 @@ log.info """
          Trimmed Reads: ${params.trimmed_reads_dir}
          Filtered Reads: ${params.filtered_reads_dir}
          Metadata: ${params.info_out_dir}
-         Plots: ${params.plots_dir}
          Reports: ${params.final_outputs_dir}
 
          Genelab Assay Suffix: ${params.assay_suffix}
@@ -167,8 +159,7 @@ log.info """
          R: ${params.conda.R}
          genelab: ${params.conda.genelab}
          cutadapt: ${params.conda.cutadapt}
-         R_visualizations: ${params.conda.R_visualizations}
-         ancombc: ${params.conda.ancombc}
+         Diversity and Differential abundance : ${params.conda.diversity}
          """.stripIndent()
 }
 
@@ -183,8 +174,13 @@ include { FASTQC as TRIMMED_FASTQC ; MULTIQC as TRIMMED_MULTIQC  } from './modul
 // Cluster ASvs
 include { RUN_R_TRIM; RUN_R_NOTRIM } from './modules/run_dada.nf'
 include { ZIP_BIOM } from './modules/zip_biom.nf'
-include { R_VISUALIZATION } from './modules/visualization.nf'
+
+// Diversity, differential abundance and visualizations
+include { ALPHA_DIVERSITY; BETA_DIVERSITY } from './modules/diversity.nf'
+include { PLOT_TAXONOMY } from './modules/taxonomy_plots.nf'
 include { ANCOMBC } from './modules/ancombc.nf'
+include { DESEQ } from './modules/deseq.nf'
+
 
 
 // A function to delete white spaces from an input string and covert it to lower case
@@ -198,8 +194,8 @@ def deleteWS(string){
 
 workflow {
     
-    // Capture software versions
-    software_versions_ch = Channel.empty()
+   // Capture software versions
+   software_versions_ch = Channel.empty()
 
    if(params.accession){
 
@@ -226,7 +222,7 @@ workflow {
 
    }else{
 
-        Channel.fromPath(params.csv_file, checkIfExists: true)
+        Channel.fromPath(params.input_file, checkIfExists: true)
            .splitCsv(header:true)
            .set{file_ch}
    }
@@ -316,29 +312,56 @@ workflow {
 
     ZIP_BIOM.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
-    if(params.enable_visualizations){
-        // Visualize
-        runsheet = params.accession ? GET_RUNSHEET.out.runsheet : params.runsheet
-        R_VISUALIZATION(runsheet, sample_ids_ch, dada_counts, dada_taxonomy)
-        R_VISUALIZATION.out.version | mix(software_versions_ch) | set{software_versions_ch}
-
-    }
-
-    // RUN ANCOMBC
+    
+    // Diversity, diffrential abundance testing and their corresponding visualizations
     if(params.accession){
-
-    data_ch   =  Channel.of(["groups", "Sample Name"])
+    meta  = Channel.of(["samples": "Sample Name",
+                        "group" : "groups",
+                        "depth" : params.rarefaction_depth,
+                        "assay_suffix" : params.assay_suffix,
+                        "output_prefix" : params.output_prefix
+                        ])
+    
     metadata  =  GET_RUNSHEET.out.runsheet
 
     }else{
 
-    data_ch   =  Channel.of([params.group, params.samples_column])
-    metadata  =  Channel.fromPath(params.metadata, checkIfExists: true)
+    meta  = Channel.of(["samples": params.samples_column,
+                        "group" : params.group,
+                        "depth" : params.rarefaction_depth,
+                        "assay_suffix" : params.assay_suffix,
+                        "output_prefix" : params.output_prefix
+                        ])
+    
+    metadata  =  Channel.fromPath(params.input_file, checkIfExists: true)
 
     }
     
-    ANCOMBC(data_ch, metadata, dada_counts, dada_taxonomy)
-    ANCOMBC.out.version | mix(software_versions_ch) | set{software_versions_ch}
+    // Diversity analysis
+    ALPHA_DIVERSITY(meta, dada_counts, dada_taxonomy, metadata)
+    BETA_DIVERSITY(meta, dada_counts, dada_taxonomy, metadata)
+    // Taxonomy plotting
+    PLOT_TAXONOMY(meta, dada_counts, dada_taxonomy, metadata)
+    
+    ALPHA_DIVERSITY.out.version | mix(software_versions_ch) | set{software_versions_ch}
+    BETA_DIVERSITY.out.version | mix(software_versions_ch) | set{software_versions_ch}
+    PLOT_TAXONOMY.out.version | mix(software_versions_ch) | set{software_versions_ch}
+    
+    
+    // Differential abundance testing
+    if (params.diff_abund_method == "deseq2"){
+    
+        DESEQ(meta, dada_counts, dada_taxonomy, metadata)
+        DESEQ.out.version | mix(software_versions_ch) | set{software_versions_ch}
+    
+    }else{
+    
+        ANCOMBC(meta, dada_counts, dada_taxonomy, metadata)
+        ANCOMBC.out.version | mix(software_versions_ch) | set{software_versions_ch}
+    }
+    
+
+    
 
      // Software Version Capturing - combining all captured sofware versions
      nf_version = "Nextflow Version:".concat("${nextflow.version}\n<><><>\n")

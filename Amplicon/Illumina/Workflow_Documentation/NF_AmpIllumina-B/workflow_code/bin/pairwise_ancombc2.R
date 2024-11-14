@@ -39,10 +39,13 @@ option_list <- list(
               help="path to feature taxonomy table i.e. ASV or OTU taxonomy table.",
               metavar="path"),
   
-  make_option(c("-o", "--out-file"), type="character", 
-              default="differential_abundance_GLAMPIllumina.csv", 
-              help="Output table file name. Default is differential_abundance_GLAMPIllumina.csv",
-              metavar="differential_abundance_GLAMPIllumina.csv"),
+  make_option(c("-o", "--output-prefix"), type="character", default="", 
+              help="Unique name to tag onto output files. Default: empty string.",
+              metavar=""),
+  
+  make_option(c("-y", "--assay-suffix"), type="character", default="_GLAmpSeq", 
+              help="Genelab assay suffix.", metavar="GLAmpSeq"),
+  
   
   make_option(c("-g", "--group"), type="character", default="groups", 
               help="Column in metadata to be analyzed",
@@ -347,13 +350,15 @@ metadata_file <- here(opt[["metadata-table"]])
 taxonomy_file <-  here(opt[["taxonomy-table"]])
 feature_table_file <- here(opt[["feature-table"]]) 
 feature <- opt[["feature-type"]]   # "ASV"
-output_file <- here(opt[["out-file"]])
+output_prefix <- opt[["output-prefix"]]
+assay_suffix <- opt[["assay-suffix"]]
 
 # taxon / ASV prevalence cutoff
 prevalence_cutoff <- opt[["prevalence-cutoff"]] # 0.15 (15%)
 # sample / library read count cutoff
 library_cutoff <- opt[["library-cutoff"]]  # 100
-
+diff_abund_out_dir <- here("differential_abundance/")
+if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir)
 
 # ------------------------ Read metadata ---------------------------------- #
 metadata <- read_csv(metadata_file)  %>% as.data.frame()
@@ -576,11 +581,11 @@ merged_df <- merged_df %>%
   mutate(across(where(is.numeric), ~round(.x, digits=3)))
 
 message("Writing out results of differential abundance using ANCOMBC2...")
+output_file <- glue("{diff_abund_out_dir}/{output_prefix}ancombc2_differential_abundance{assay_suffix}.csv")
 write_csv(merged_df,output_file)
 
 
 # ---------------------- Visualization --------------------------------------- #
-if(!dir.exists("Plots/")) dir.create("Plots/")
 message("Making volcano plots...")
 # ------------ Make volcano ---------------- #
 volcano_plots <- map(uniq_comps, function(comparison){
@@ -610,8 +615,8 @@ volcano_plots <- map(uniq_comps, function(comparison){
     labs(x="logFC", y="-log10(Pvalue)", 
          title = comparison, color="Significant") + publication_format
   
-  ggsave(filename = glue("{comparison}_volcano.png"), plot = p, device = "png",
-         width = 6, height = 8, units = "in", dpi = 300, path="Plots/")
+  ggsave(filename = glue("{output_prefix}{comparison}_volcano{assay_suffix}.png"), plot = p, device = "png",
+         width = 6, height = 8, units = "in", dpi = 300, path=diff_abund_out_dir)
   
   return(p)
   
@@ -626,9 +631,9 @@ fig_height = 7.5 * number_of_rows
 
 #  Try to combine all the volcano plots in one figure
 try(
-ggsave(filename = glue("{feature}_volcano.png"), plot = p, device = "png", 
+ggsave(filename = glue("{output_prefix}{feature}_volcano{assay_suffix}.png"), plot = p, device = "png", 
        width = 16, height = fig_height, units = "in",
-       dpi = 300, limitsize = FALSE, path="Plots/")
+       dpi = 300, limitsize = FALSE, path=diff_abund_out_dir)
 )
 
 # ------------- Box plots ---------------- #
@@ -651,8 +656,8 @@ boxplots <- map(res_df[[feature]], function(feature){
           legend.text = element_text(face = "bold", size=10), 
           legend.title = element_text(face = "bold", size=12))
   
-  ggsave(filename = glue("{feature}_boxplot.png"), plot = p, device = "png",
-         width = 8, height = 5, units = "in", dpi = 300, path = "Plots/")
+  ggsave(filename = glue("{output_prefix}{feature}_boxplot{assay_suffix}.png"), plot = p, device = "png",
+         width = 8, height = 5, units = "in", dpi = 300, path =diff_abund_out_dir)
   
   return(p)
 })
@@ -667,9 +672,9 @@ fig_height = 5 * number_of_rows
 
 # Try to Plot all features / ASVs in one figure
 try(
-ggsave(filename = glue("{feature}_boxplots.png"), plot = p, device = "png",
+ggsave(filename = glue("{output_prefix}{feature}_boxplots{assay_suffix}.png"), plot = p, device = "png",
        width = 14, height = fig_height, units = "in", dpi = 300,
-       path = "Plots/", limitsize = FALSE)
+       path = diff_abund_out_dir, limitsize = FALSE)
 )
 
 
