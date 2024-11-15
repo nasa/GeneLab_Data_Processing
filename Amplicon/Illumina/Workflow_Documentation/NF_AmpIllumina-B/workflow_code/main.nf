@@ -26,7 +26,7 @@ if (params.help) {
   println("Required arguments:")
   println("""-profile [STRING] What profile should be used to run the workflow. Options are [singularity, docker, conda, slurm].
 	         singularity, docker and conda will run the pipelne locally using singularity, docker, and conda, respectively.
-                 To combnine profiles, pass them together separated by comma. For example, to run jobs using slurm in singularity containers use 'slurm,singularity' . """)			 
+                 To combine profiles, pass them together separated by comma. For example, to run jobs using slurm in singularity containers use 'slurm,singularity' . """)			 
   println("--input_file  [PATH] A 4-column (single-end) or 5-column (paired-end) input file (sample_id, forward, [reverse,] paired, groups). Mandatory if a GLDS accession is not provided.")
   println(" Please see the files: SE_file.csv and PE_file.csv for single-end and paired-end examples, respectively.")
   println(" The sample_id column should contain unique sample ids.")
@@ -66,7 +66,7 @@ if (params.help) {
   println()
   println("Diversity and Differential abundance testing parameters:")
   println("         --diff_abund_method [STRING] The method to use for differential abundance testing. Either ['ancombc1', 'ancombc2', or 'deseq2'] respectively. Default: 'ancombc2' ")
-  println("         --rarefaction_depth [STRING] The Minimum desired sample rarefaction depth for diversity analysis. Default: 500.")
+  println("         --rarefaction_depth [INTEGER] The Minimum desired sample rarefaction depth for diversity analysis. Default: 500.")
   println("         --group [STRING] Column in input csv file with treatments to be compared. Default: 'groups' ")
   println("         --samples_column [STRING] Column in input csv file with sample names belonging to each treatment group. Default: 'sample_id' ")
   println()

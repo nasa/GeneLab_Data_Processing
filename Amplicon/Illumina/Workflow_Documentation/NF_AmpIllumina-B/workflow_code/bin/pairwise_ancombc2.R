@@ -394,6 +394,13 @@ print(glue("There are {sum(taxonomy_table$domain == 'Other')} features without
 # Dropping features that couldn't be assigned taxonomy
 taxonomy_table <- taxonomy_table[-which(taxonomy_table$domain == 'Other'),]
 
+# Removing Chloroplast and Mitochondria Organelle DNA contamination
+asvs2drop <- taxonomy_table %>%
+  unite(col="taxonomy",domain:species) %>%
+  filter(str_detect(taxonomy, "[Cc]hloroplast|[Mn]itochondria")) %>%
+  row.names()
+taxonomy_table <- taxonomy_table[!(rownames(taxonomy_table) %in% asvs2drop),]
+
 # Get long asv taxonomy names and clean
 species <- taxonomy_table %>%
   unite(species,domain:species,sep = ";") %>% # Generalize this line -------- 
