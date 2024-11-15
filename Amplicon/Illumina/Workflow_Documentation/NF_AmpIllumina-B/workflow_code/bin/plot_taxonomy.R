@@ -361,10 +361,10 @@ custom_palette <- custom_palette[-c(21:23, grep(pattern = pattern_to_filter,
 
 
 # Required variables
-metadata_file <- here(opt[["metadata-table"]]) 
-features_file <- here(opt[["feature-table"]])
-taxonomy_file <- here(opt[["taxonomy-table"]])
-taxonomy_plots_out_dir <- here("taxonomy_plots/")
+metadata_file <- opt[["metadata-table"]]
+features_file <- opt[["feature-table"]]
+taxonomy_file <- opt[["taxonomy-table"]]
+taxonomy_plots_out_dir <- "taxonomy_plots/"
 if(!dir.exists(taxonomy_plots_out_dir)) dir.create(taxonomy_plots_out_dir)
 # Metadata group column name to compare
 groups_colname <- opt[["group"]]
