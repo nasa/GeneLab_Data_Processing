@@ -1,0 +1,25 @@
+FROM obiba/obiba-r:4.4.1
+
+
+LABEL AUTHOR="Olabiyi Obayomi"
+LABEL EMAIL="obadbotanist@yahoo.com"
+
+# Update environment
+RUN apt-get update -y && apt-get upgrade -y
+# Install dependencies
+RUN apt-get remove -y libmariadb-dev && apt-get install -y libgdal-dev
+RUN apt-get install -y libgsl-dev
+RUN apt-get install -y libgmp-dev
+RUN apt-get install -y libmpfr-dev
+
+# Install R packages
+RUN Rscript -e "install.packages(c('BiocManager', 'devtools', 'tidyverse', 'knitr', 'rmarkdown'), repos=c('https://cloud.r-project.org', 'https://cran.obiba.org'), dependencies=TRUE, lib='/usr/local/lib/R/site-library')"
+RUN Rscript -e "install.packages('unixtools', repos = 'http://www.rforge.net/')" # buildkit
+RUN Rscript -e "install.packages(c('remotes', 'jsonlite', 'furrr', 'glue', 'optparse', 'patchwork', 'ggrepel', 'here',  'DescTools'))"
+RUN Rscript -e "remotes::install_github(c('ropensci/bold', 'ropensci/taxize'), upgrade=TRUE)"
+RUN Rscript -e "install.packages(c('gsl', 'gmp', 'Rmpfr', 'CVXR', 'energy', 'rstatix', 'FSA', 'multcompView', 'RColorBrewer', 'ggdendro', 'broom', 'dendextend'))"
+RUN Rscript -e "BiocManager::install(c('phyloseq', 'DirichletMultinomial', 'mia', 'ANCOMBC', 'DESeq2'))"
+
+CMD ["bash"]
+
+
