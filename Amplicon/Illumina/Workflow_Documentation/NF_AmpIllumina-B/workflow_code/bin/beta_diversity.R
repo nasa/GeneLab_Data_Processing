@@ -221,10 +221,10 @@ custom_palette <- custom_palette[-c(21:23, grep(pattern = pattern_to_filter,
 # 2. Add rarefaction
 
 # Required variables
-metadata_file <- here(opt[["metadata-table"]])
-features_file <-  here(opt[["feature-table"]]) 
-taxonomy_file <-  here(opt[["taxonomy-table"]])
-beta_diversity_out_dir <- here("beta_diversity/")
+metadata_file <- opt[["metadata-table"]]
+features_file <-  opt[["feature-table"]] 
+taxonomy_file <-  opt[["taxonomy-table"]]
+beta_diversity_out_dir <- "beta_diversity/"
 if(!dir.exists(beta_diversity_out_dir)) dir.create(beta_diversity_out_dir)
 # Metadata group column name to compare
 groups_colname <- opt[["group"]]

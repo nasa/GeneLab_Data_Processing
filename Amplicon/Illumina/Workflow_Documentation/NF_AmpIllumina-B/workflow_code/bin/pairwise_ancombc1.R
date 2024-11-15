@@ -290,9 +290,9 @@ publication_format <- theme_bw() +
 group <- opt[["group"]]  # "groups"
 samples_column <- opt[["samples-column"]] # "Sample Name"
 threads <- opt[["cpus"]] # 8
-metadata_file <- here(opt[["metadata-table"]])
-taxonomy_file <-  here(opt[["taxonomy-table"]])
-feature_table_file <- here(opt[["feature-table"]]) 
+metadata_file <- opt[["metadata-table"]]
+taxonomy_file <-  opt[["taxonomy-table"]]
+feature_table_file <- opt[["feature-table"]]
 feature <- opt[["feature-type"]]   # "ASV"
 output_prefix <- opt[["output-prefix"]]
 assay_suffix <- opt[["assay-suffix"]]
@@ -301,7 +301,7 @@ assay_suffix <- opt[["assay-suffix"]]
 prevalence_cutoff <- opt[["prevalence-cutoff"]] # 0.15 (15%)
 # sample / library read count cutoff
 library_cutoff <- opt[["library-cutoff"]]  # 100
-diff_abund_out_dir <- here("differential_abundance/")
+diff_abund_out_dir <- "differential_abundance/"
 if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir)
 
 
@@ -338,6 +338,14 @@ print(glue("There are {sum(taxonomy_table$domain == 'Other')} features without
 
 # Dropping features that couldn't be assigned taxonomy
 taxonomy_table <- taxonomy_table[-which(taxonomy_table$domain == 'Other'),]
+
+# Removing Chloroplast and Mitochondria Organelle DNA contamination
+asvs2drop <- taxonomy_table %>%
+  unite(col="taxonomy",domain:species) %>%
+  filter(str_detect(taxonomy, "[Cc]hloroplast|[Mn]itochondria")) %>%
+  row.names()
+taxonomy_table <- taxonomy_table[!(rownames(taxonomy_table) %in% asvs2drop),]
+
 
 # Get long asv taxonomy names and clean
 species <- taxonomy_table %>%
