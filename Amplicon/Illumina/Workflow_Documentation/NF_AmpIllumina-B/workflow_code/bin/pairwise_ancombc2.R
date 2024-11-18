@@ -149,7 +149,6 @@ library(ANCOMBC)
 library(DescTools)
 library(taxize)
 library(glue)
-library(here)
 library(mia)
 library(phyloseq)
 library(utils)
@@ -474,20 +473,31 @@ new_colnames <- map_chr(output$res_pair  %>% colnames,
                           if(str_count(colname,group) == 1){
                             str_replace_all(string=colname, 
                                             pattern=glue("(.+)_{group}(.+)"),
-                                            replacement=glue("\\1_(\\2).vs.({ref_group})"))
+                                            replacement=glue("\\1_(\\2)v({ref_group})")) %>% 
+                            str_replace(pattern = "^lfc_", replacement = "logFC_") %>% 
+                            str_replace(pattern = "^se_", replacement = "lfcSE_") %>% 
+                            str_replace(pattern = "^W_", replacement = "Wstat_") %>%
+                            str_replace(pattern = "^p_", replacement = "pvalue_") %>%
+                            str_replace(pattern = "^q_", replacement = "qvalue_")
+                            
                           # Columns with normal two groups comparison
                           } else if(str_count(colname,group) == 2){
                             
                             str_replace_all(string=colname, 
                                             pattern=glue("(.+)_{group}(.+)_{group}(.+)"),
-                                            replacement=glue("\\1_(\\2).vs.(\\3)"))
+                                            replacement=glue("\\1_(\\2)v(\\3)")) %>% 
+                            str_replace(pattern = "^lfc_", replacement = "logFC_") %>% 
+                            str_replace(pattern = "^se_", replacement = "lfcSE_") %>% 
+                            str_replace(pattern = "^W_", replacement = "Wstat_") %>%
+                            str_replace(pattern = "^p_", replacement = "pvalue_") %>%
+                            str_replace(pattern = "^q_", replacement = "qvalue_")
+                            
                             # Feature/ ASV column 
                           } else{
                             
                             return(colname)
                           }
                         } )
-
 
 
 # Change the column named taxon to the feature name e.g. ASV
@@ -539,20 +549,29 @@ normalized_table <- output$bias_correct_log_table  %>%
   mutate(across(where(is.numeric), ~replace_na(.x, replace=0)))
 
 
+samples <- metadata[[samples_column]]
+samplesdropped <- setdiff(x = samples, y = colnames(normalized_table)[-1])
+missing_df <- data.frame(ASV=normalized_table[[feature]],
+           matrix(data = NA, 
+                  nrow = nrow(normalized_table),
+                  ncol = length(samplesdropped)
+                  )
+           )
+colnames(missing_df) <- c(feature,samplesdropped)
+
 
 group_means_df <- normalized_table[feature]
-walk(uniq_comps, function(comp){
+walk(group_levels, function(group_level){
   
-  group1 <- str_replace(comp, "\\((.+)\\).vs.\\((.+)\\)", "\\1")
-  group2 <- str_replace(comp, "\\((.+)\\).vs.\\((.+)\\)", "\\2")
   
-  mean_col <- glue("Group.Mean_({group1}).vs.({group2})")
-  std_col <- glue("Group.Stdev_({group1}).vs.({group2})")
+  mean_col <- glue("Group.Mean_({group_level})")
+  std_col <- glue("Group.Stdev_({group_level})")
   
+  # Samples that belong to the current group
   Samples <- metadata %>%
-    filter(!!sym(group) %in% c(group1, group2)) %>%
+    filter(!!sym(group) == group_level) %>%
     pull(!!sym(samples_column))
-  
+  # Samples that belong to the current group that are in the normalized table
   Samples <- intersect(colnames(normalized_table), Samples)
   
   temp_df <- normalized_table %>% select(!!feature, all_of(Samples)) %>% 
@@ -570,7 +589,9 @@ walk(uniq_comps, function(comp){
 normalized_table <- normalized_table %>%
   rowwise() %>%
   mutate(All.Mean=mean(c_across(where(is.numeric))),
-         All.Stdev=sd(c_across(where(is.numeric))) )
+         All.Stdev=sd(c_across(where(is.numeric))) ) %>% 
+  left_join(missing_df, by = feature) %>% 
+  select(!!feature, all_of(samples), All.Mean, All.Stdev)
 
 # Append the taxonomy table to the ncbi and stats table
 merged_df <- df  %>%
@@ -598,11 +619,11 @@ message("Making volcano plots...")
 volcano_plots <- map(uniq_comps, function(comparison){
   
   comp_col  <- c(
-    glue("lfc_{comparison}"),
-    glue("se_{comparison}"),
-    glue("W_{comparison}"),
-    glue("p_{comparison}"),
-    glue("q_{comparison}"),
+    glue("logFC_{comparison}"),
+    glue("lfcSE_{comparison}"),
+    glue("Wstat_{comparison}"),
+    glue("pvalue_{comparison}"),
+    glue("qvalue_{comparison}"),
     glue("diff_{comparison}"),
     glue("passed_ss_{comparison}")
   )
@@ -614,16 +635,17 @@ volcano_plots <- map(uniq_comps, function(comparison){
                                           pattern = "(.+)_.+", 
                                           replacement = "\\1")
   
-  p <- ggplot(sub_res_df, aes(x=lfc, y=-log10(p), color=diff, label=!!sym(feature))) +
+  p <- ggplot(sub_res_df, aes(x=logFC, y=-log10(pvalue), color=diff, label=!!sym(feature))) +
     geom_point(size=4) + geom_point(size=4) +
     scale_color_manual(values=c("TRUE"="cyan2", "FALSE"="red")) +
     geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
     ggrepel::geom_text_repel() + 
     labs(x="logFC", y="-log10(Pvalue)", 
          title = comparison, color="Significant") + publication_format
-  
+
+
   ggsave(filename = glue("{output_prefix}{comparison}_volcano{assay_suffix}.png"), plot = p, device = "png",
-         width = 6, height = 8, units = "in", dpi = 300, path=diff_abund_out_dir)
+         width = 6, height = 8, units = "in", dpi = 300, path = diff_abund_out_dir)
   
   return(p)
   
@@ -664,7 +686,7 @@ boxplots <- map(res_df[[feature]], function(feature){
           legend.title = element_text(face = "bold", size=12))
   
   ggsave(filename = glue("{output_prefix}{feature}_boxplot{assay_suffix}.png"), plot = p, device = "png",
-         width = 8, height = 5, units = "in", dpi = 300, path =diff_abund_out_dir)
+         width = 8, height = 5, units = "in", dpi = 300, path = diff_abund_out_dir)
   
   return(p)
 })

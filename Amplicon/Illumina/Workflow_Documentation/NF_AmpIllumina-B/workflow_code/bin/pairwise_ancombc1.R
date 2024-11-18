@@ -148,7 +148,6 @@ library(ANCOMBC)
 library(DescTools)
 library(taxize)
 library(glue)
-library(here)
 library(mia)
 library(phyloseq)
 library(utils)
@@ -390,7 +389,7 @@ pairwise_comp.m <- utils::combn(metadata[,group] %>% unique, 2)
 pairwise_comp_df <- pairwise_comp.m %>% as.data.frame 
 
 colnames(pairwise_comp_df) <- map_chr(pairwise_comp_df,
-                                      \(col) str_c(col, collapse = ".vs."))
+                                      \(col) str_c(col, collapse = "v"))
 comparisons <- colnames(pairwise_comp_df)
 names(comparisons) <- comparisons
 
@@ -443,7 +442,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     select(-contains("Intercept")) %>% 
     set_names(
       c("taxon",
-        glue("lfc_({group2}).vs.({group1})"))
+        glue("logFC_({group2})v({group1})"))
     )
   
   # SE
@@ -452,7 +451,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     select(-contains("Intercept")) %>%
     set_names(
       c("taxon",
-        glue("se_({group2}).vs.({group1})"))
+        glue("lfcSE_({group2})v({group1})"))
     )
   
   # W    
@@ -461,7 +460,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     select(-contains("Intercept")) %>%
     set_names(
       c("taxon",
-        glue("W_({group2}).vs.({group1})"))
+        glue("Wstat_({group2})v({group1})"))
     )
   
   # p_val
@@ -470,7 +469,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     select(-contains("Intercept")) %>%
     set_names(
       c("taxon",
-        glue("p_({group2}).vs.({group1})"))
+        glue("pvalue_({group2})v({group1})"))
     )
   
   # q_val
@@ -479,7 +478,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     select(-contains("Intercept")) %>% 
     set_names(
       c("taxon",
-        glue("q_({group2}).vs.({group1})"))
+        glue("qvalue_({group2})v({group1})"))
     )
   
   
@@ -489,7 +488,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     select(-contains("Intercept")) %>%
     set_names(
       c("taxon",
-        glue("diff_({group2}).vs.({group1})"))
+        glue("diff_({group2})v({group1})"))
     )
   
   
@@ -524,14 +523,13 @@ walk(comparisons[names(final_results_bc1)], .f = function(comparison){
 # Sort ASVs in ascending order
 merged_stats_df <- merged_stats_df %>% 
   rename(!!feature := taxon) %>%
-  #filter(str_detect(ASV, "ASV")) %>%
   mutate(!!feature := SortMixed(!!sym(feature)))
 
 
 
 comp_names <- merged_stats_df %>% 
-  select(starts_with("lfc")) %>%
-  colnames() %>% str_remove_all("lfc_")
+  select(starts_with("logFC")) %>%
+  colnames() %>% str_remove_all("logFC_")
 names(comp_names) <- comp_names
 
 message("Making volcano plots...")
@@ -539,11 +537,11 @@ message("Making volcano plots...")
 volcano_plots <- map(comp_names, function(comparison){
   
   comp_col  <- c(
-    glue("lfc_{comparison}"),
-    glue("se_{comparison}"),
-    glue("W_{comparison}"),
-    glue("p_{comparison}"),
-    glue("q_{comparison}"),
+    glue("logFC_{comparison}"),
+    glue("lfcSE_{comparison}"),
+    glue("Wstat_{comparison}"),
+    glue("pvalue_{comparison}"),
+    glue("qvalue_{comparison}"),
     glue("diff_{comparison}")
   )
   
@@ -554,8 +552,8 @@ volcano_plots <- map(comp_names, function(comparison){
                                           pattern = "(.+)_.+", 
                                           replacement = "\\1")
   
-  p <- ggplot(sub_res_df, aes(x=lfc, y=-log10(p), color=diff, label=!!sym(feature))) +
-    geom_point(size=4) + geom_point(size=4) +
+  p <- ggplot(sub_res_df, aes(x=logFC, y=-log10(pvalue), color=diff, label=!!sym(feature))) +
+    geom_point(size=4) +
     scale_color_manual(values=c("TRUE"="cyan2", "FALSE"="red")) +
     geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
     ggrepel::geom_text_repel() + 
@@ -563,7 +561,7 @@ volcano_plots <- map(comp_names, function(comparison){
          title = comparison, color="Significant") + publication_format
   
   ggsave(filename = glue("{output_prefix}{comparison}_volcano{assay_suffix}.png"), plot = p, device = "png",
-         width = 6, height = 8, units = "in", dpi = 300, path=diff_abund_out_dir)
+         width = 6, height = 8, units = "in", dpi = 300, path = diff_abund_out_dir)
   
   return(p)
 })
@@ -580,7 +578,7 @@ p <- wrap_plots(volcano_plots, ncol = 2)
 try(
 ggsave(filename = glue("{output_prefix}{feature}_volcano{assay_suffix}.png"), plot = p, device = "png",
        width = 16, height = fig_height, units = "in", dpi = 300,
-       path=diff_abund_out_dir, limitsize = FALSE)
+       path = diff_abund_out_dir, limitsize = FALSE)
 )
 
 # Add NCBI id to feature i.e. ASV
@@ -602,25 +600,37 @@ normalized_table <- as.data.frame(feature_table + 1) %>%
   mutate(across( where(is.numeric), log ) )
 
 
-group_means_df <- normalized_table[feature]
+samples <- metadata[[samples_column]]
+samplesdropped <- setdiff(x = samples, y = colnames(normalized_table)[-1])
+missing_df <- data.frame(ASV=normalized_table[[feature]],
+                         matrix(data = NA, 
+                                nrow = nrow(normalized_table),
+                                ncol = length(samplesdropped)
+                         )
+)
+colnames(missing_df) <- c(feature,samplesdropped)
 
-walk(pairwise_comp_df, function(col){
+
+group_levels <- metadata[, group] %>% unique() %>% sort()
+group_means_df <- normalized_table[feature]
+walk(group_levels, function(group_level){
   
-  group1 <- col[1] 
-  group2 <- col[2]
   
-  mean_col <- glue("Group.Mean_({group2}).vs.({group1})")
-  std_col <- glue("Group.Stdev_({group2}).vs.({group1})")
+  mean_col <- glue("Group.Mean_({group_level})")
+  std_col <- glue("Group.Stdev_({group_level})")
   
+  # Samples that belong to the current group
   Samples <- metadata %>%
-    filter(!!sym(group) %in% c(group1, group2)) %>%
-    pull(!!samples_column)
+    filter(!!sym(group) == group_level) %>%
+    pull(!!sym(samples_column))
+  # Samples that belong to the current group that are in the normalized table
+  Samples <- intersect(colnames(normalized_table), Samples)
   
-  temp_df <- normalized_table %>% select(!!feature, !!Samples) %>% 
+  temp_df <- normalized_table %>% select(!!feature, all_of(Samples)) %>% 
     rowwise() %>%
     mutate(!!mean_col := mean(c_across(where(is.numeric))),
            !!std_col := sd(c_across(where(is.numeric))) ) %>% 
-    select(!!feature, !!sym(mean_col), !!sym(std_col))
+    select(!!feature,!!sym(mean_col), !!sym(std_col))
   
   group_means_df <<- group_means_df %>% left_join(temp_df)
   
@@ -631,7 +641,9 @@ walk(pairwise_comp_df, function(col){
 normalized_table <- normalized_table %>%
   rowwise() %>%
   mutate(All.Mean=mean(c_across(where(is.numeric))),
-         All.Stdev=sd(c_across(where(is.numeric))) )
+         All.Stdev=sd(c_across(where(is.numeric))) )%>% 
+  left_join(missing_df, by = feature) %>% 
+  select(!!feature, all_of(samples), All.Mean, All.Stdev)
 
 
 merged_df <- df  %>%
@@ -643,9 +655,9 @@ merged_df <- df  %>%
 
 merged_df <- merged_df %>%
   select(!!sym(feature):NCBI_id) %>%
-  left_join(normalized_table) %>%
+  left_join(normalized_table, by = feature) %>%
   left_join(merged_df) %>% 
-  left_join(group_means_df) %>% 
+  left_join(group_means_df, by = feature) %>% 
   mutate(across(where(is.numeric), ~round(.x, digits=3))) %>% 
   mutate(across(where(is.matrix), as.numeric))
 
@@ -697,8 +709,4 @@ ggsave(filename = glue("{output_prefix}{feature}_boxplots{assay_suffix}.png"), p
 
 )
 
-# Error: One or both dimensions exceed the maximum (50000px).
-# - Use `options(ragg.max_dim = ...)` to change the max
-# Warning: May cause the R session to crash
-# Execution halted
 message("Run completed sucessfully.")

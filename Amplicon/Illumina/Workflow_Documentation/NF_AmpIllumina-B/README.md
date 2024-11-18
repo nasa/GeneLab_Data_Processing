@@ -105,7 +105,7 @@ nextflow run main.nf --help
 ```
 
 > Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --input_file) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
-
+> Please Note: This workflow assumes that all your raw reads end with the same suffix. If they don't, please modify your input read filenames to have the same suffix as shown in [SE_file.csv](workflow_code/SE_file.csv) and [PE_file.csv](workflow_code/PE_file.csv).
 <br>
 
 #### 4a. Approach 1: Run slurm jobs in singularity containers with OSD or GLDS accession as input

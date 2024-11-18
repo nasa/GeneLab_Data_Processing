@@ -24,20 +24,20 @@ if (params.help) {
   println("   > nextflow run main.nf -resume -profile conda --accession GLDS-487 --target_region 16S --conda.qc <path/to/existing/conda/environment>")
   println()
   println("Required arguments:")
-  println("""-profile [STRING] What profile should be used to run the workflow. Options are [singularity, docker, conda, slurm].
-	         singularity, docker and conda will run the pipelne locally using singularity, docker, and conda, respectively.
-                 To combine profiles, pass them together separated by comma. For example, to run jobs using slurm in singularity containers use 'slurm,singularity' . """)			 
-  println("--input_file  [PATH] A 4-column (single-end) or 5-column (paired-end) input file (sample_id, forward, [reverse,] paired, groups). Mandatory if a GLDS accession is not provided.")
-  println(" Please see the files: SE_file.csv and PE_file.csv for single-end and paired-end examples, respectively.")
-  println(" The sample_id column should contain unique sample ids.")
-  println(" The forward and reverse columns should contain the absolute or relative path to the sample's forward and reverse reads.")
-  println(" The paired column should be true for paired-end or anything else for single-end reads.")
-  println(" The groups column contain group levels / treatments to be compared during diversity and differential abundance testing analysis.")
-  println("--target_region [STRING] What is the amplicon target region to be analyzed. Options are one of [16S, 18S, ITS]. Default: 16S.")
-  println("--trim_primers [BOOLEAN] Should primers be trimmed? true or false. Default: true.") 
+  println("""   -profile [STRING] What profile should be used to run the workflow. Options are [singularity, docker, conda, slurm].
+	                 singularity, docker and conda will run the pipelne locally using singularity, docker, and conda, respectively.
+                         To combine profiles, pass them together separated by comma. For example, to run jobs using slurm in singularity containers use 'slurm,singularity' . """)			 
+  println("     --input_file  [PATH] A 4-column (single-end) or 5-column (paired-end) input file (sample_id, forward, [reverse,] paired, groups). Mandatory if a GLDS or OSD accession is not provided.")
+  println("                   Please see the files: SE_file.csv and PE_file.csv for single-end and paired-end examples, respectively.")
+  println("                   The sample_id column should contain unique sample ids.")
+  println("                   The forward and reverse columns should contain the absolute or relative path to the sample's forward and reverse reads.")
+  println("                   The paired column should be true for paired-end or anything else for single-end reads.")
+  println("                   The groups column contain group levels / treatments to be compared during diversity and differential abundance testing analysis.")
+  println("     --target_region [STRING] What is the amplicon target region to be analyzed. Options are one of [16S, 18S, ITS]. Default: 16S.")
+  println("     --trim_primers [BOOLEAN] Should primers be trimmed? true or false. Default: true.") 
   println("PLEASE NOTE: This workflow assumes that all your raw reads end with the same suffix. If they don't please modify your filenames to have the same suffix as shown below.")
-  println("--raw_R1_suffix [STRING] Raw forward reads suffix (region following the unique part of the sample names). e.g. _R1_raw.fastq.gz.") 
-  println("--raw_R2_suffix [STRING] Raw reverse reads suffix (region following the unique part of the sample names). e.g. _R2_raw.fastq.gz.") 
+  println("     --raw_R1_suffix [STRING] Raw forward reads suffix (region following the unique part of the sample names). e.g. _R1_raw.fastq.gz.") 
+  println("     --raw_R2_suffix [STRING] Raw reverse reads suffix (region following the unique part of the sample names). e.g. _R2_raw.fastq.gz.") 
   println()
   println("Cutadapt (trimming) parameters:")
   println("	    --F_primer [STRING] Forward primer sequence e.g. AGAGTTTGATCCTGGCTCAG. Default: emptry string.")
@@ -50,8 +50,6 @@ if (params.help) {
   println("  --help  Print this help message and exit.")
   println("  --publishDir_mode [STRING]  How should nextflow publish file outputs. Options can be found here https://www.nextflow.io/docs/latest/process.html#publishdir. Default: link.")
   println("  --errorStrategy [STRING] How should nextflow handle errors. Options can be found here https://www.nextflow.io/docs/latest/process.html#errorstrategy. Default: terminate")
-  println("  --enable_visualizations [BOOLEAN] Should ASV plots be made? true or false. if true supply a path to the ruhnsheet for plotting to the --runsheet option. Default: false.")
-  //println("  --runsheet [PATH] A 4-column file with these exact headers [Sample Name, read1_path, raw_R1_suffix, groups] for plotting. Only relevant if --enable_visualizations is true. Default: null.") 
   println("  --multiqc_config [PATH] Path to a custome multiqc config file. Default: config/multiqc.config.")
   println()
   println("Dada2 parameters passed to filterAndTrim() function:")
@@ -95,6 +93,7 @@ if (params.help) {
   println("      --conda.genelab  [PATH] Path to a conda environment containing genlab-utils. Default: null.")
   println("      --conda.cutadapt [PATH] Path to a conda environment containing cutadapt. Default: null.")
   println("      --conda.diversity [PATH] Path to a conda environment containing R packages required for diversity and differential abundance testing. Default: null.")
+  println()
   print("Advanced users can edit the nextflow.config file for more control over default settings such container choice, number of cpus, memory per task etc.")
   exit 0
   }
@@ -106,7 +105,7 @@ log.info """
          
          You have set the following parameters:
          Input csv file : ${params.input_file}
-         GLDS_accession : ${params.accession}
+         GLDS or OSD accession : ${params.accession}
          Amplicon target region : ${params.target_region}
          Nextflow Directory publishing mode: ${params.publishDir_mode}
          Trim Primers: ${params.trim_primers}
@@ -171,7 +170,7 @@ include { FASTQC as RAW_FASTQC ; MULTIQC as RAW_MULTIQC  } from './modules/quali
 include { CUTADAPT; COMBINE_CUTADAPT_LOGS_AND_SUMMARIZE } from './modules/quality_assessment.nf'
 include { FASTQC as TRIMMED_FASTQC ; MULTIQC as TRIMMED_MULTIQC  } from './modules/quality_assessment.nf'
 
-// Cluster ASvs
+// Cluster ASVs
 include { RUN_R_TRIM; RUN_R_NOTRIM } from './modules/run_dada.nf'
 include { ZIP_BIOM } from './modules/zip_biom.nf'
 
@@ -313,7 +312,7 @@ workflow {
     ZIP_BIOM.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
     
-    // Diversity, diffrential abundance testing and their corresponding visualizations
+    // Diversity, differential abundance testing and their corresponding visualizations
     if(params.accession){
     meta  = Channel.of(["samples": "Sample Name",
                         "group" : "groups",
