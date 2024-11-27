@@ -22,11 +22,11 @@ The current GeneLab Illumina amplicon sequencing data processing pipeline (AmpIl
    4c. [Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environments](#4c-approach-run-jobs-locally-in-conda-environments-and-specify-the-path-to-one-or-more-existing-conda-environments)  
    4d. [Modify parameters and cpu resources in the nextflow config file](#4d-modify-parameters-and-cpu-resources-in-the-nextflow-config-file)  
 
-5. [Run the workflow indirectly using the python wrapper script](#5-run-the-workflow-indirectly-using-the-python-wrapper-script)
-   5a. [Approach 1: Use an OSD or Genelab acession as input](#5a-approach-1-use-an-osd-or-Genelab-acession-as-input)
-   5b. [Approach 2: Use a csv file as input to the workflow](#5b-approach-2-use-a-csv-file-as-input-to-the-workflow)
-   5c. [Approach 3: Use a csv file as input to the workflow and supply extra arguments to nextflow run](#5c-approach-3-use-a-csv-file-as-input-to-the-workflow-and-supply-extra-arguments-to-nextflow-run)
-   5d. [Approach 4: Just create an edited nextflow.config file but dont run the workflow](#5d-approach-4-just-create-an-edited-nextflow.config-file-but-dont-run-the-workflow)
+5. [Run the workflow indirectly using the python wrapper script](#5-run-the-workflow-indirectly-using-the-python-wrapper-script)  
+   5a. [Approach 1: Use an OSD or Genelab acession as input](#5a-approach-1-use-an-osd-or-Genelab-acession-as-input)  
+   5b. [Approach 2: Use a csv file as input to the workflow](#5b-approach-2-use-a-csv-file-as-input-to-the-workflow)  
+   5c. [Approach 3: Use a csv file as input to the workflow and supply extra arguments to nextflow run](#5c-approach-3-use-a-csv-file-as-input-to-the-workflow-and-supply-extra-arguments-to-nextflow-run)  
+   5d. [Approach 4: Just create an edited nextflow.config file but dont run the workflow](#5d-approach-4-just-create-an-edited-nextflow.config-file-but-dont-run-the-workflow)  
 
 6. [Workflow outputs](#6-workflow-outputs)  
    6a. [Main outputs](#6a-main-outputs)  
