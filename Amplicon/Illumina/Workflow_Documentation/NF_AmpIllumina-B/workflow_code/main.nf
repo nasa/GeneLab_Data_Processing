@@ -27,7 +27,7 @@ if (params.help) {
   println("""   -profile [STRING] What profile should be used to run the workflow. Options are [singularity, docker, conda, slurm].
 	                 singularity, docker and conda will run the pipelne locally using singularity, docker, and conda, respectively.
                          To combine profiles, pass them together separated by comma. For example, to run jobs using slurm in singularity containers use 'slurm,singularity' . """)			 
-  println("     --input_file  [PATH] A 4-column (single-end) or 5-column (paired-end) input file (sample_id, forward, [reverse,] paired, groups). Mandatory if a GLDS or OSD accession is not provided.")
+  println("     --input_file  [PATH] A 4-column (single-end) or 5-column (paired-end) input file (sample_id, forward, [reverse,] paired, groups). Mandatory if a GLDS or OSD accession is not provided. Default: null")
   println("                   Please see the files: SE_file.csv and PE_file.csv for single-end and paired-end examples, respectively.")
   println("                   The sample_id column should contain unique sample ids.")
   println("                   The forward and reverse columns should contain the absolute or relative path to the sample's forward and reverse reads.")
@@ -40,11 +40,11 @@ if (params.help) {
   println("     --raw_R2_suffix [STRING] Raw reverse reads suffix (region following the unique part of the sample names). e.g. _R2_raw.fastq.gz.") 
   println()
   println("Cutadapt (trimming) parameters:")
-  println("	    --F_primer [STRING] Forward primer sequence e.g. AGAGTTTGATCCTGGCTCAG. Default: emptry string.")
-  println("	    --R_primer [STRING] Reverse primer sequence e.g. CTGCCTCCCGTAGGAGT. Default: emptry string.")
+  println("	    --F_primer [STRING] Forward primer sequence e.g. AGAGTTTGATCCTGGCTCAG. Default: null.")
+  println("	    --R_primer [STRING] Reverse primer sequence e.g. CTGCCTCCCGTAGGAGT. Default: null.")
   println("	    --min_cutadapt_len [INTEGER] What should be the minimum read length after quality trimming with cutadapt. Default: 130.")
-  println("	    --primers_linked [STRING] Are the primers linked?. https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads. Default: TRUE. ")
-  println("	    --discard_untrimmed [STRING] Should untrimmed reads be discarded? Any supplied string except TRUE will not discard them. Default: TRUE.")
+  println("	    --primers_linked [STRING] Are the primers linked?. https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads. Default: 'TRUE'. ")
+  println("	    --discard_untrimmed [STRING] Should untrimmed reads be discarded? Any supplied string except TRUE will not discard them. Default: 'TRUE'.")
   println()	
   println("Optional arguments:")  
   println("  --help  Print this help message and exit.")
@@ -83,7 +83,7 @@ if (params.help) {
   println("      --final_outputs_dir [PATH] Where should most outputs and summary reports be stored.  Default: ../workflow_output/Final_Outputs/")
   println()
   println("Genelab specific arguements:")
-  println("      --accession [STRING]  A Genelab accession number if the --input_file parameter is not set. If this parameter is set, it will ignore the --input_file parameter.")
+  println("      --accession [STRING]  A Genelab accession number if the --input_file parameter is not set. If this parameter is set, it will ignore the --input_file parameter. Default: null")
   println("      --assay_suffix [STRING]  Genelabs assay suffix. Default: GLAmpSeq.")
   println("      --output_prefix [STRING] Unique name to tag onto output files. Default: empty string.")
   println()
@@ -192,6 +192,32 @@ def deleteWS(string){
 
 
 workflow {
+
+        
+    //  ---------------------  Sanity Checks ------------------------------------- //
+    // Test input requirement
+    if (params.accession == null  &&  params.input_file == null){
+     
+       error("""
+              Please supply either an accession (OSD or Genelab number) or an input CSV file
+              by passing either to the --accession or --input_file parameter, respectively.
+              """)
+    } 
+    
+    // Test input csv file
+    if(params.input_file){
+        // Test primers
+        if(params.F_primer == null || params.R_primer == null){
+
+            error("""
+                  When using a csv file as input (--input_file) to this workflow you must provide 
+                  foward and reverse primer sequences. Please provide your forward 
+                  and reverse primer sequences as arguements to the --F_primer 
+                  and --R_primer parameters, respectively. 
+                  """)
+         }
+     }
+
     
    // Capture software versions
    software_versions_ch = Channel.empty()

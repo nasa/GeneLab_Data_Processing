@@ -6,7 +6,7 @@
 #SBATCH --partition=normal ## Specifies the job queue to use, for urgent jobs change normal to priority ##
 #SBATCH --mem=20G ## Memory required to run the job in MB, this example is showing 10,000 MB or 10GB, change this number based on how much RAM you need ##
 #SBATCH --cpus-per-task=1 ## Number of CPUs to run the job, this example is showing 5 CPUs, change this number based on how many CPUs you need ##
-#SBATCH --mail-user=olabiyi.a.obayomi@nasa.gov ## Specifies the e-mail address to e-mail when the job is complete, replace this e-mail address with your NASA e-mail address ##
+#SBATCH --mail-user=name@domain ## Specifies the e-mail address to e-mail when the job is complete, replace this e-mail address with your NASA e-mail address ##
 #SBATCH --mail-type=END ## Tells slurm to e-mail the address above when the job has completed ##
 
 . ~/.profile
@@ -42,7 +42,9 @@ export NXF_SINGULARITY_CACHEDIR=singularity/
 export TOWER_ACCESS_TOKEN=<ACCESS TOKEN>
 export TOWER_WORKSPACE_ID=<WORKSPACE ID>
 #nextflow run main.nf -resume -profile slurm,singularity --input_file PE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT  -with-tower ## Replace command with the command(s) you want to run ##
-nextflow run main.nf -resume -profile slurm,conda --accession GLDS-487 --target_region 16S -with-tower 
+#nextflow run main.nf -resume -profile slurm,conda --accession GLDS-487 --target_region 16S -with-tower 
+#python3 run_workflow.py --run --target-region 16S --input-file PE_file.csv --F-primer GTGCCAGCMGCCGCGGTAA --R-primer GGACTACHVGGGTWTCTAAT --profile slurm,singularity --singularity-cacheDir /path/to/singularity_images/ --extra 'with-tower' --R-memory '20 GB'
+python3 run_workflow.py --run --target-region 16S --accession GLDS-487 --profile slurm,singularity --singularity-cacheDir /path/to/singularity_images/ --extra 'with-tower' --R-memory '20 GB'
 ## Add a time-stamp at the end of the job then calculate how long the job took to run in seconds, minutes, and hours ##
 echo ""
 end=$(date +%s)
