@@ -684,11 +684,14 @@ def main():
     
     # Run the nextflow workflow if --run is used
     if args.run:
-        # Get extra arguement(s) to nextflow run
-        extra = ""
-        for opt in args.extra.split(","):
-            extra += f"-{opt} "
-        command = f"nextflow run main.nf -resume -profile {args.profile} {extra}"
+        if(args.extra != ""):
+            # Get extra arguement(s) to nextflow run
+            extra = ""
+            for opt in args.extra.split(","):
+                extra += f"-{opt} "
+            command = f"nextflow run main.nf -resume -profile {args.profile} {extra}"
+        else:
+            command = f"nextflow run main.nf -resume -profile {args.profile}"
         print(f"Running this nextflow command: {command}")
         subprocess.run(command, shell=True, check=True)
 

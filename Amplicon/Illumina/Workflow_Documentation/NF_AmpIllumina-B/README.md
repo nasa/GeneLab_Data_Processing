@@ -191,7 +191,7 @@ python run_workflow.py --run --target-region 16S --accession GLDS-487 --profile 
 python run_workflow.py --run --target-region 16S --input-file PE_file.csv --F-primer AGAGTTTGATCCTGGCTCAG --R-primer CTGCCTCCCGTAGGAGT --profile singularity 
 ```
 
-#### 5c. Approach 3: Use a csv file as input to the workflow and supply extra arguments to nextflow run. 
+#### 5c. Approach 3: Use a csv file as input to the workflow and supply extra arguments to nextflow run 
 
 Here were want to monitor our jobs with nextflow tower.
 
