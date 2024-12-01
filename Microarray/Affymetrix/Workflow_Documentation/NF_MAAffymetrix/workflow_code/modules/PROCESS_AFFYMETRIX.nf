@@ -28,6 +28,7 @@ process PROCESS_AFFYMETRIX {
         export HOME=\$PWD;
 
         quarto render \$PWD/${qmd} \
+            -P 'workflow_version:${workflow.manifest.version}' \
             -P 'runsheet:${runsheet_csv}' \
             -P 'annotation_file_path:${annotation_file_path}' \
             -P 'ensembl_version:${ensemblVersion}' \
