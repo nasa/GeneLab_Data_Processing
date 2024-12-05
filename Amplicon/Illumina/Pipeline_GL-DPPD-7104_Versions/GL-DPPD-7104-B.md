@@ -38,7 +38,7 @@ Amanda Saravia-Butler (GeneLab Data Processing Lead)
 
 <!-- Included R packages -->
 - Assay-specific suffixes were added where needed for GeneLab repo ("GLAmpSeq")
-- The ITS UNITE reference database used was updated to "UNITE_v2023_July2023.RData", from http://www2.decipher.codes/Classification/TrainingSets/
+- The ITS UNITE reference database used was updated to "UNITE_v2023_July2023.RData", from https://www2.decipher.codes/Downloads.html
 - Several program versions were updated (all versions listed in [Software used](#software-used) below)
 
 # Table of contents  
@@ -101,8 +101,8 @@ Amanda Saravia-Butler (GeneLab Data Processing Lead)
 
 |Program used| Database| Relevant Links|
 |:-----|:-----:|--------:|
-|DECIPHER| SILVA SSU r138 | [http://www2.decipher.codes/Classification/TrainingSets/SILVA_SSU_r138_2019.RData](http://www2.decipher.codes/Classification/TrainingSets/)|
-|DECIPHER| UNITE v2020 | [http://www2.decipher.codes/Classification/TrainingSets/UNITE_v2020_February2020.RData](http://www2.decipher.codes/Classification/TrainingSets/)|
+|DECIPHER| SILVA SSU r138 | [https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2019.RData](https://www2.decipher.codes/Downloads.html)|
+|DECIPHER| UNITE v2023 | [https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2023_July2023.RData](https://www2.decipher.codes/Downloads.html)|
 
 ---
 
@@ -441,7 +441,7 @@ dna <- DNAStringSet(getSequences(seqtab.nochim))
 
 Downloading the reference R taxonomy object:
 ```R
-download.file( url=“http://www2.decipher.codes/Classification/TrainingSets/SILVA_SSU_r138_2019.RData”, destfile=“SILVA_SSU_r138_2019.RData”)
+download.file( url=“https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2019.RData”, destfile=“SILVA_SSU_r138_2019.RData”)
 ```
 
 **Parameter Definitions:**  
