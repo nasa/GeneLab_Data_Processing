@@ -37,15 +37,11 @@ process ANCOMBC {
                   --assay-suffix  '${meta.assay_suffix}' \\
                   --output-prefix  '${meta.output_prefix}' \\
                   --cpus ${task.cpus}
-
-	      Rscript -e "VERSION=sprintf('ANCOMBC %s',  packageVersion('ANCOMBC')); \\
-                    write(x=VERSION, file='versions.txt', append=TRUE)"
                     
-        Rscript -e "VERSIONS=sprintf('tidyverse %s\\nglue %s\\nANCOMBC %s\\nhere %s\\nphyloseq %s\\nmia %s\\ntaxize %s\\nDescTools %s\\npatchwork %s\\nggrepel %s\\n',  \\
+        Rscript -e "VERSIONS=sprintf('tidyverse %s\\nglue %s\\nANCOMBC %s\\nphyloseq %s\\nmia %s\\ntaxize %s\\nDescTools %s\\npatchwork %s\\nggrepel %s\\n',  \\
                                     packageVersion('tidyverse'), \\
                                     packageVersion('glue'), \\
                                     packageVersion('ANCOMBC'), \\
-                                    packageVersion('here'), \\
                                     packageVersion('phyloseq'), \\
                                     packageVersion('mia'), \\
                                     packageVersion('taxize'), \\
