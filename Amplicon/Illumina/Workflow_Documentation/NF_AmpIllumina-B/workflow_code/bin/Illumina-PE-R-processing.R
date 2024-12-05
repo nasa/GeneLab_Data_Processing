@@ -173,11 +173,11 @@ if ( target_region == "16S" ) {
 
 } else if (target_region == "ITS" ) {
 
-    download.file("https://figshare.com/ndownloader/files/46245586", "UNITE_v2020_February2020.RData")    
+    download.file("https://figshare.com/ndownloader/files/49181545", "UNITE_v2023_July2023.RData")    
     # loading reference taxonomy object
-    load("UNITE_v2020_February2020.RData")
+    load("UNITE_v2023_July2023.RData")
     # removing downloaded file
-    #file.remove("UNITE_v2020_February2020.RData")
+    #file.remove("UNITE_v2023_July2023.RData")
 
     ranks <- c("kingdom", "phylum", "class", "order", "family", "genus", "species")
 
