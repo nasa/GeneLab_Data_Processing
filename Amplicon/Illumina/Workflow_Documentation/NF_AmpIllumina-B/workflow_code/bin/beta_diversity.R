@@ -287,11 +287,8 @@ run_stats <- function(dist_obj, metadata, groups_colname){
 
 # Make PCoA
 plot_pcoa <- function(ps, stats_res, distance_method,
-                      groups_colname, sample_colname,
-                      group_colors, legend_title,
+                      groups_colname, group_colors, legend_title,
                       addtext=FALSE) {
-  
-
   
   # Generating a PCoA with phyloseq
   pcoa <- ordinate(physeq = ps, method = "PCoA", distance = distance_method)
@@ -306,13 +303,25 @@ plot_pcoa <- function(ps, stats_res, distance_method,
   label_PC1 <- sprintf("PC1 [%.1f%%]", percent_variance[1])
   label_PC2 <- sprintf("PC2 [%.1f%%]", percent_variance[2])
   
-  p <-  plot_ordination(ps, pcoa, color = groups_colname) + 
-    geom_point(size = 1) 
+  vectors_df <- pcoa$vectors %>%
+                   as.data.frame() %>%
+                   rownames_to_column("samples")
+  
+  plot_df <- sample_data(ps) %>%
+               as.matrix() %>%
+               as.data.frame() %>%
+               rownames_to_column("samples") %>% 
+               select(samples, !!groups_colname) %>% 
+               right_join(vectors_df, join_by("samples"))
+  
+  p <- ggplot(plot_df, aes(x=Axis.1, y=Axis.2, 
+                           color=!!sym(groups_colname), 
+                           label=samples)) +
+    geom_point(size=1)
+
   
   if(addtext){
-    sample_colname <- make.names(sample_colname)
-    sample_names <- p$data[[sample_colname]]
-    p <- p + geom_text(aes(label = sample_names), show.legend = FALSE,
+    p <- p + geom_text(show.legend = FALSE,
                        hjust = 0.3, vjust = -0.4, size = 4)
   }
   
@@ -526,16 +535,14 @@ write_csv(x = stats_res$adonis,
 
 #---------------------------- Make PCoA
 # Unlabeled PCoA plot
-ordination_plot_u <- plot_pcoa(ps, stats_res, distance_method,
-                               groups_colname, sample_colname,
-                               group_colors, legend_title) 
+ordination_plot_u <- plot_pcoa(ps, stats_res, distance_method, 
+                               groups_colname,group_colors, legend_title) 
 ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_without_labels{assay_suffix}.png"),
        plot=ordination_plot_u, width = 14, height = 8.33, dpi = 300, units = "in")
 
 # Labeled PCoA plot
 ordination_plot <- plot_pcoa(ps, stats_res, distance_method,
-                             groups_colname, sample_colname,
-                             group_colors, legend_title,
+                             groups_colname, group_colors, legend_title,
                              addtext=TRUE) 
 ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_w_labels{assay_suffix}.png"),
        plot=ordination_plot, width = 14, height = 8.33, dpi = 300, units = "in")
