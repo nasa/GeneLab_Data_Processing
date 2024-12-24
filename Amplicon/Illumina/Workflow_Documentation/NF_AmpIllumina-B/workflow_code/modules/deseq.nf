@@ -14,24 +14,24 @@ process DESEQ  {
         path(metadata)
 
     output:
-        path("differential_abundance/"), emit: output_dir
+        path("differential_abundance/deseq2/"), emit: output_dir
         path("versions.txt"), emit: version
 
     script:
         """
-        run_deseq.R \\
+        run_deseq2.R \\
                   --metadata-table '${metadata}' \\
                   --feature-table '${feature_table}' \\
                   --taxonomy-table '${taxonomy_table}' \\
                   --group '${meta.group}' \\
                   --samples-column '${meta.samples}' \\
                   --assay-suffix  '${meta.assay_suffix}' \\
-                  --output-prefix  '${meta.output_prefix}'
+                  --output-prefix  '${meta.output_prefix}' \\
+                  --target-region  '${meta.target_region}'
         
-        Rscript -e "VERSIONS=sprintf('tidyverse %s\\nglue %s\\nhere %s\\nDESeq2 %s\\nRColorBrewer %s\\n',  \\
+        Rscript -e "VERSIONS=sprintf('tidyverse %s\\nglue %s\\nDESeq2 %s\\nRColorBrewer %s\\n',  \\
                                     packageVersion('tidyverse'), \\
                                     packageVersion('glue'), \\
-                                    packageVersion('here'), \\
                                     packageVersion('DESeq2'), \\
                                     packageVersion('RColorBrewer')); \\
                     write(x=VERSIONS, file='versions.txt', append=TRUE)"     

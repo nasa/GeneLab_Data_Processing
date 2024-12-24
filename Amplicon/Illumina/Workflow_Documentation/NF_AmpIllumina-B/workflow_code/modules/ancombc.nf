@@ -12,23 +12,29 @@ nextflow.enable.dsl = 2
 
 process ANCOMBC {
 
-    tag "Running ${params.diff_abund_method} for differential abundance testing..."
+    tag "Running ${method} for differential abundance testing..."
     label "visualization"
 
     input: 
+        val(method)
         val(meta)
         path(feature_table)
         path(taxonomy)
         path(metadata)
 
     output:
-        path("differential_abundance/"), emit: output_dir
+        path("differential_abundance/${method}/"), emit: output_dir
         path("versions.txt"), emit: version
 
-    script:
-        def script_name = params.diff_abund_method == "ancombc1" ? "pairwise_ancombc1.R" : "pairwise_ancombc2.R"
+    script:      
         """
-        ${script_name} \\
+        if [  ${method} == "ancombc1" ]; then
+            script_name='pairwise_ancombc1.R'
+        else
+            script_name='pairwise_ancombc2.R'
+        fi
+        
+        \${script_name} \\
                   --metadata-table '${metadata}' \\
                   --feature-table '${feature_table}' \\
                   --taxonomy-table '${taxonomy}' \\
@@ -36,7 +42,8 @@ process ANCOMBC {
                   --samples-column '${meta.samples}' \\
                   --assay-suffix  '${meta.assay_suffix}' \\
                   --output-prefix  '${meta.output_prefix}' \\
-                  --cpus ${task.cpus}
+                  --cpus ${task.cpus} \\
+                  --target-region  '${meta.target_region}'
                     
         Rscript -e "VERSIONS=sprintf('tidyverse %s\\nglue %s\\nANCOMBC %s\\nphyloseq %s\\nmia %s\\ntaxize %s\\nDescTools %s\\npatchwork %s\\nggrepel %s\\n',  \\
                                     packageVersion('tidyverse'), \\
@@ -61,7 +68,8 @@ workflow {
     meta  = Channel.of(["samples": params.samples_column,
                         "group" : params.group,
                         "assay_suffix" : params.assay_suffix,
-                        "output_prefix" : params.output_prefix
+                        "output_prefix" : params.output_prefix,
+                        "target_region" : params.target_region
                         ])
                             
                             
@@ -69,8 +77,8 @@ workflow {
     asv_table = Channel.fromPath(params.asv_table, checkIfExists: true) 
     taxonomy  =  Channel.fromPath(params.taxonomy, checkIfExists: true)
 
-    
-    ANCOMBC(meta, asv_table, taxonomy, metadata)
+    method = Channel.of(params.diff_abund_method)
+    ANCOMBC(method, meta, asv_table, taxonomy, metadata)
 
     emit:
         version = ANCOMBC.out.version

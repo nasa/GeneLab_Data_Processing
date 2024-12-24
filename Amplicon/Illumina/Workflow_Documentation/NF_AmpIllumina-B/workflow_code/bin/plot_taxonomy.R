@@ -48,19 +48,29 @@ option_list <- list(
                     Deafault: 'Sample Name' ",
               metavar="Sample Name"),
   
-  make_option(c("-p", "--output-prefix"), type="character", default="", 
+  make_option(c("-o", "--output-prefix"), type="character", default="", 
               help="Unique name to tag onto output files. Default: empty string.",
               metavar=""),
-  
-  make_option(c("-c", "--abundance-cutoff"), type="numeric", default=0.2, 
-              help="A fraction defining how abundant features most be to be \
-                   analyzes. Default: 1/5. ",
-              metavar="0.2"),
   
   make_option(c("-r", "--remove-rare"), type="logical", default=FALSE, 
               help="Should rare features be filtered out?. \
                    Default: FALSE. ", action= "store_true",
               metavar="FALSE"),
+  
+  make_option(c("-p", "--prevalence-cutoff"), type="numeric", default=0.15, 
+              help="If --remove-rare, a numerical fraction between 0 and 1. Taxa with prevalences
+              (the proportion of samples in which the taxon is present) less 
+              than --prevalence-cutoff will be excluded in the analysis. 
+              Default is 0.15, i.e. exclude taxa / features that are not present
+              in at least 15% of the samples.",
+              metavar="0.15"),
+  
+  make_option(c("-l", "--library-cutoff"), type="numeric", default=100, 
+              help="If --remove-rare, a numerical threshold for filtering samples based on library
+              sizes. Samples with library sizes less than lib_cut will be 
+              excluded in the analysis. Default is 100. 
+              if you do not want to discard any sample then set to 0.",
+              metavar="100"),
   
   make_option(c("-a", "--assay-suffix"), type="character", default="_GLAmpSeq", 
               help="Genelab assay suffix.", metavar="GLAmpSeq"),
@@ -92,7 +102,7 @@ opt <- parse_args(opt_parser)
 
 
 if (opt$version) {
-  cat("taxonomy_plots.R version: ", version, "\n")
+  cat("plot_taxonomy.R version: ", version, "\n")
   options_tmp <- options(show.error.messages=FALSE)
   on.exit(options(options_tmp))
   stop()
@@ -114,7 +124,7 @@ if(is.null(opt[["taxonomy-table"]])) {
 }
 
 if(opt[["group"]] == "groups") {
-  message("Alpha diversity will be run on the default 'groups' column \n")
+  message("Taxonomy plots will be grouped by the default 'groups' column \n")
 }
 
 if(opt[["samples-column"]] == "Sample Name") {
@@ -364,16 +374,18 @@ custom_palette <- custom_palette[-c(21:23, grep(pattern = pattern_to_filter,
 metadata_file <- opt[["metadata-table"]]
 features_file <- opt[["feature-table"]]
 taxonomy_file <- opt[["taxonomy-table"]]
-taxonomy_plots_out_dir <- "taxonomy_plots/"
-if(!dir.exists(taxonomy_plots_out_dir)) dir.create(taxonomy_plots_out_dir)
 # Metadata group column name to compare
 groups_colname <- opt[["group"]]
 sample_colname  <- opt[["samples-column"]]
 output_prefix <- opt[["output-prefix"]]
 assay_suffix <- opt[["assay-suffix"]]
 remove_rare <- opt[["remove-rare"]]
-abundance_cutoff <- opt[["abundance-cutoff"]]
-
+# taxon / ASV prevalence cutoff
+prevalence_cutoff <- opt[["prevalence-cutoff"]] # 0.15 (15%)
+# sample / library read count cutoff
+library_cutoff <- opt[["library-cutoff"]]  # 100
+taxonomy_plots_out_dir <- "taxonomy_plots/"
+if(!dir.exists(taxonomy_plots_out_dir)) dir.create(taxonomy_plots_out_dir)
 
 
 # Read in processed data
@@ -388,10 +400,16 @@ feature_table <- read.table(file = features_file, header = TRUE,
                             row.names = 1, sep = "\t")
 
 if(remove_rare){
+  
+  # Remove samples with less than library-cutoff
+  message(glue("Dropping samples with less than {library_cutoff} read counts"))
+  feature_table <- feature_table[,colSums(feature_table) >= library_cutoff]
   # Remove rare ASVs
+  message(glue("Dropping features with prevalence less than {prevalence_cutoff * 100}%"))
   feature_table <- remove_rare_features(feature_table,
-                                        cut_off_percent=abundance_cutoff)
+                                        cut_off_percent = prevalence_cutoff)
 }
+
 
 # Taxonomy 
 taxonomy_table <-  read.table(file = taxonomy_file, header = TRUE,

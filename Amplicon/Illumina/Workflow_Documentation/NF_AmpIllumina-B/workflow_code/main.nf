@@ -27,12 +27,12 @@ if (params.help) {
   println("""   -profile [STRING] What profile should be used to run the workflow. Options are [singularity, docker, conda, slurm].
 	                 singularity, docker and conda will run the pipelne locally using singularity, docker, and conda, respectively.
                          To combine profiles, pass them together separated by comma. For example, to run jobs using slurm in singularity containers use 'slurm,singularity' . """)			 
-  println("     --input_file  [PATH] A 4-column (single-end) or 5-column (paired-end) input file (sample_id, forward, [reverse,] paired, groups). Mandatory if a GLDS or OSD accession is not provided. Default: null")
+  println("     --input_file  [PATH] A 4-column (single-end) or 5-column (paired-end) input file (sample_id, forward, [reverse,] paired, groups). Mandatory if a GLDS or OSD accession is not provided.")
   println("                   Please see the files: SE_file.csv and PE_file.csv for single-end and paired-end examples, respectively.")
   println("                   The sample_id column should contain unique sample ids.")
   println("                   The forward and reverse columns should contain the absolute or relative path to the sample's forward and reverse reads.")
   println("                   The paired column should be true for paired-end or anything else for single-end reads.")
-  println("                   The groups column contain group levels / treatments to be compared during diversity and differential abundance testing analysis.")
+  println("                   The groups column contain group levels / treatments to be compared during diversity and differential abundance testing analysis. Default: null")
   println("     --target_region [STRING] What is the amplicon target region to be analyzed. Options are one of [16S, 18S, ITS]. Default: 16S.")
   println("     --trim_primers [BOOLEAN] Should primers be trimmed? true or false. Default: true.") 
   println("PLEASE NOTE: This workflow assumes that all your raw reads end with the same suffix. If they don't please modify your filenames to have the same suffix as shown below.")
@@ -43,8 +43,8 @@ if (params.help) {
   println("	    --F_primer [STRING] Forward primer sequence e.g. AGAGTTTGATCCTGGCTCAG. Default: null.")
   println("	    --R_primer [STRING] Reverse primer sequence e.g. CTGCCTCCCGTAGGAGT. Default: null.")
   println("	    --min_cutadapt_len [INTEGER] What should be the minimum read length after quality trimming with cutadapt. Default: 130.")
-  println("	    --primers_linked [STRING] Are the primers linked?. https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads. Default: 'TRUE'. ")
-  println("	    --discard_untrimmed [STRING] Should untrimmed reads be discarded? Any supplied string except TRUE will not discard them. Default: 'TRUE'.")
+  println("	    --primers_linked [STRING] Are the primers linked?. https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads. Default: TRUE. ")
+  println("	    --discard_untrimmed [STRING] Should untrimmed reads be discarded? Any supplied string except TRUE will not discard them. Default: TRUE.")
   println()	
   println("Optional arguments:")  
   println("  --help  Print this help message and exit.")
@@ -63,7 +63,7 @@ if (params.help) {
   println("	     Values are TRUE or FALSE Default: FALSE.")
   println()
   println("Diversity and Differential abundance testing parameters:")
-  println("         --diff_abund_method [STRING] The method to use for differential abundance testing. Either ['ancombc1', 'ancombc2', or 'deseq2'] respectively. Default: 'ancombc2' ")
+  println("         --diff_abund_method [STRING] The method to use for differential abundance testing. Either ['all', 'ancombc1', 'ancombc2', or 'deseq2'] respectively. Default: 'all' ")
   println("         --rarefaction_depth [INTEGER] The Minimum desired sample rarefaction depth for diversity analysis. Default: 500.")
   println("         --group [STRING] Column in input csv file with treatments to be compared. Default: 'groups' ")
   println("         --samples_column [STRING] Column in input csv file with sample names belonging to each treatment group. Default: 'sample_id' ")
@@ -79,11 +79,11 @@ if (params.help) {
   println("      --fastqc_out_dir [PATH] Where should multiqc outputs be stored. Default: ../workflow_output/FastQC_Outputs/")
   println("      --trimmed_reads_dir [PATH] Where should your cutadapt trimmed reads be stored. Default: ../workflow_output/Trimmed_Sequence_Data/")
   println("      --filtered_reads_dir [PATH] Where should your filtered reads be stored.  Default: ../workflow_output/Filtered_Sequence_Data/")
-  println("      --info_out_dir [PATH] Where should output metadata be stored. Default: ../workflow_output/Metadata/")
+  println("      --metadata_dir [PATH] Where should output metadata be stored. Default: ../Metadata/")
   println("      --final_outputs_dir [PATH] Where should most outputs and summary reports be stored.  Default: ../workflow_output/Final_Outputs/")
   println()
   println("Genelab specific arguements:")
-  println("      --accession [STRING]  A Genelab accession number if the --input_file parameter is not set. If this parameter is set, it will ignore the --input_file parameter. Default: null")
+  println("      --accession [STRING]  A Genelab accession number if the --input_file parameter is not set. If this parameter is set, it will ignore the --input_file parameter.")
   println("      --assay_suffix [STRING]  Genelabs assay suffix. Default: GLAmpSeq.")
   println("      --output_prefix [STRING] Unique name to tag onto output files. Default: empty string.")
   println()
@@ -147,7 +147,7 @@ log.info """
          FastQC: ${params.fastqc_out_dir}
          Trimmed Reads: ${params.trimmed_reads_dir}
          Filtered Reads: ${params.filtered_reads_dir}
-         Metadata: ${params.info_out_dir}
+         Metadata: ${params.metadata_dir}
          Reports: ${params.final_outputs_dir}
 
          Genelab Assay Suffix: ${params.assay_suffix}
@@ -177,7 +177,8 @@ include { ZIP_BIOM } from './modules/zip_biom.nf'
 // Diversity, differential abundance and visualizations
 include { ALPHA_DIVERSITY; BETA_DIVERSITY } from './modules/diversity.nf'
 include { PLOT_TAXONOMY } from './modules/taxonomy_plots.nf'
-include { ANCOMBC } from './modules/ancombc.nf'
+include { ANCOMBC as ANCOMBC1 } from './modules/ancombc.nf'
+include { ANCOMBC as ANCOMBC2 } from './modules/ancombc.nf'
 include { DESEQ } from './modules/deseq.nf'
 
 
@@ -196,7 +197,7 @@ workflow {
         
     //  ---------------------  Sanity Checks ------------------------------------- //
     // Test input requirement
-    if (params.accession == null  &&  params.input_file == null){
+    if (!params.accession &&  !params.input_file){
      
        error("""
               Please supply either an accession (OSD or Genelab number) or an input CSV file
@@ -207,7 +208,7 @@ workflow {
     // Test input csv file
     if(params.input_file){
         // Test primers
-        if(params.F_primer == null || params.R_primer == null){
+        if(!params.F_primer || !params.R_primer){
 
             error("""
                   When using a csv file as input (--input_file) to this workflow you must provide 
@@ -344,7 +345,8 @@ workflow {
                         "group" : "groups",
                         "depth" : params.rarefaction_depth,
                         "assay_suffix" : params.assay_suffix,
-                        "output_prefix" : params.output_prefix
+                        "output_prefix" : params.output_prefix,
+                        "target_region" : params.target_region
                         ])
     
     metadata  =  GET_RUNSHEET.out.runsheet
@@ -355,7 +357,8 @@ workflow {
                         "group" : params.group,
                         "depth" : params.rarefaction_depth,
                         "assay_suffix" : params.assay_suffix,
-                        "output_prefix" : params.output_prefix
+                        "output_prefix" : params.output_prefix,
+                        "target_region" : params.target_region
                         ])
     
     metadata  =  Channel.fromPath(params.input_file, checkIfExists: true)
@@ -372,20 +375,35 @@ workflow {
     BETA_DIVERSITY.out.version | mix(software_versions_ch) | set{software_versions_ch}
     PLOT_TAXONOMY.out.version | mix(software_versions_ch) | set{software_versions_ch}
     
-    
-    // Differential abundance testing
-    if (params.diff_abund_method == "deseq2"){
+     // Differential abundance testing
+     method = Channel.of(params.diff_abund_method)
+     if (params.diff_abund_method == "deseq2"){
     
         DESEQ(meta, dada_counts, dada_taxonomy, metadata)
         DESEQ.out.version | mix(software_versions_ch) | set{software_versions_ch}
     
-    }else{
+    }else if (params.diff_abund_method == "ancombc1"){
     
-        ANCOMBC(meta, dada_counts, dada_taxonomy, metadata)
-        ANCOMBC.out.version | mix(software_versions_ch) | set{software_versions_ch}
-    }
-    
+        ANCOMBC1(method, meta, dada_counts, dada_taxonomy, metadata)
+        ANCOMBC1.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
+    }else if (params.diff_abund_method == "ancombc2"){
+
+        ANCOMBC2(method, meta, dada_counts, dada_taxonomy, metadata)
+        ANCOMBC2.out.version | mix(software_versions_ch) | set{software_versions_ch}
+
+    }else{
+
+        ANCOMBC1("ancombc1", meta, dada_counts, dada_taxonomy, metadata)
+        ANCOMBC1.out.version | mix(software_versions_ch) | set{software_versions_ch}
+
+        ANCOMBC2("ancombc2", meta, dada_counts, dada_taxonomy, metadata)
+        ANCOMBC2.out.version | mix(software_versions_ch) | set{software_versions_ch}
+
+        DESEQ(meta, dada_counts, dada_taxonomy, metadata)
+        DESEQ.out.version | mix(software_versions_ch) | set{software_versions_ch}
+
+    }
     
 
      // Software Version Capturing - combining all captured sofware versions

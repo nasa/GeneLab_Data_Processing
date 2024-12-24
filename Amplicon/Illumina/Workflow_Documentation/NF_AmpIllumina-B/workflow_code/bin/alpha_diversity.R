@@ -49,7 +49,7 @@ option_list <- list(
                     Deafault: 'Sample Name' ",
               metavar="Sample Name"),
   
-  make_option(c("-p", "--output-prefix"), type="character", default="", 
+  make_option(c("-o", "--output-prefix"), type="character", default="", 
               help="Unique name to tag onto output files. Default: empty string.",
               metavar=""),
   
@@ -57,18 +57,28 @@ option_list <- list(
               help="Minimum rarefaction depth for alpha diversity estimation. \
                    Default: 500. ",
               metavar="500"),
-  
-  make_option(c("-c", "--abundance-cutoff"), type="numeric", default=0.2, 
-              help="A fraction defining how abundant features most be to be \
-                   analyzes. Default: 1/5. ",
-              metavar="0.2"),
-  
+
   make_option(c("-r", "--remove-rare"), type="logical", default=FALSE, 
               help="Should rare features be filtered out?. \
                    Default: FALSE. ", action= "store_true",
-              metavar="FALSE"),
+              metavar="FALSE"),  
+    
+  make_option(c("-p", "--prevalence-cutoff"), type="numeric", default=0.15, 
+              help="If --remove-rare, a numerical fraction between 0 and 1. Taxa with prevalences
+              (the proportion of samples in which the taxon is present) less 
+              than --prevalence-cutoff will be excluded in the analysis. 
+              Default is 0.15, i.e. exclude taxa / features that are not present
+              in at least 15% of the samples.",
+              metavar="0.15"),
   
-  make_option(c("-l", "--legend-title"), type="character", default="Groups", 
+  make_option(c("-l", "--library-cutoff"), type="numeric", default=100, 
+              help="If --remove-rare, a numerical threshold for filtering samples based on library
+              sizes. Samples with library sizes less than lib_cut will be 
+              excluded in the analysis. Default is 100. 
+              if you do not want to discard any sample then set to 0.",
+              metavar="100"),
+  
+  make_option(c("-e", "--legend-title"), type="character", default="Groups", 
               help="Legend title for alpha diversity plots.",
               metavar="Groups"),
   
@@ -213,8 +223,6 @@ custom_palette <- custom_palette[-c(21:23, grep(pattern = pattern_to_filter,
 metadata_file <- opt[["metadata-table"]] 
 features_file <- opt[["feature-table"]]
 taxonomy_file <- opt[["taxonomy-table"]]
-alpha_diversity_out_dir <-"alpha_diversity/"
-if(!dir.exists(alpha_diversity_out_dir)) dir.create(alpha_diversity_out_dir)
 # Metadata group column name to compare
 groups_colname <- opt[["group"]]
 sample_colname  <- opt[["samples-column"]]
@@ -223,8 +231,12 @@ assay_suffix <- opt[["assay-suffix"]]
 legend_title <- opt[["legend-title"]]
 rarefaction_depth  <- opt[["rarefaction-depth"]]
 remove_rare <- opt[["remove-rare"]]
-abundance_cutoff <- opt[["abundance-cutoff"]]
-
+# taxon / ASV prevalence cutoff
+prevalence_cutoff <- opt[["prevalence-cutoff"]] # 0.15 (15%)
+# sample / library read count cutoff
+library_cutoff <- opt[["library-cutoff"]]  # 100
+alpha_diversity_out_dir <-"alpha_diversity/"
+if(!dir.exists(alpha_diversity_out_dir)) dir.create(alpha_diversity_out_dir)
 
 
 
@@ -273,10 +285,16 @@ feature_table <- read.table(file = features_file, header = TRUE,
                             row.names = 1, sep = "\t")
 
 if(remove_rare){
-# Remove rare ASVs
-feature_table <- remove_rare_features(feature_table,
-                                      cut_off_percent=abundance_cutoff)
+  
+  # Remove samples with less than library-cutoff
+  message(glue("Dropping samples with less than {library_cutoff} read counts"))
+  feature_table <- feature_table[,colSums(feature_table) >= library_cutoff]
+  # Remove rare ASVs
+  message(glue("Dropping features with prevalence less than {prevalence_cutoff * 100}%"))
+  feature_table <- remove_rare_features(feature_table,
+                                        cut_off_percent = prevalence_cutoff)
 }
+
 
 # Taxonomy 
 taxonomy_table <-  read.table(file = taxonomy_file, header = TRUE,

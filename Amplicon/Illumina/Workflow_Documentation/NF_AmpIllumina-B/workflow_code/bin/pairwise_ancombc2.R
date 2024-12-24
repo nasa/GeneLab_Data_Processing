@@ -55,9 +55,15 @@ option_list <- list(
               help="Column in metadata containing the sample names in the feature table",
               metavar="Sample Name"),
   
+  make_option(c("-r", "--target-region"), type="character", default="16S", 
+              help="Amplicon target region. Options are either 16S, 18S or ITS \
+              Default: 16S",
+              metavar="16S"),
+  
   make_option(c("-a", "--feature-type"), type="character", default="ASV", 
               help="What feature counts are in the feature table i.e ASV, OTU etc.
-              This name will be used to name the feature column in the final table.",
+              This name will be used to name the feature column in the final table. \
+              Default: ASV",
               metavar="ASV"),
   
   make_option(c("-c", "--cpus"), type="numeric", default=1, 
@@ -314,9 +320,17 @@ ancombc2 <- function(data, ...) {
 
 taxize_options(ncbi_sleep = 0.8)
 # A function to retrieve the NCBI taxonomy id for a given taxonomy name
-get_ncbi_ids <- function(taxonomy){
+get_ncbi_ids <- function(taxonomy, target_region){
   
-  uid <- get_uid(taxonomy, division_filter = "bacteria")
+  if(target_region == "ITS"){
+    search_string <- "fungi"
+  }else if(target_region == "18S"){
+    search_string <- "eukaryote"
+  }else{
+    search_string <- "bacteria"
+  }
+  
+  uid <- get_uid(taxonomy, division_filter = search_string)
   
   tax_ids <- uid[1:length(uid)]
   
@@ -349,6 +363,7 @@ metadata_file <- opt[["metadata-table"]]
 taxonomy_file <-  opt[["taxonomy-table"]]
 feature_table_file <- opt[["feature-table"]]
 feature <- opt[["feature-type"]]   # "ASV"
+target_region <- opt[["target-region"]] # 16S
 output_prefix <- opt[["output-prefix"]]
 assay_suffix <- opt[["assay-suffix"]]
 
@@ -356,8 +371,8 @@ assay_suffix <- opt[["assay-suffix"]]
 prevalence_cutoff <- opt[["prevalence-cutoff"]] # 0.15 (15%)
 # sample / library read count cutoff
 library_cutoff <- opt[["library-cutoff"]]  # 100
-diff_abund_out_dir <- "differential_abundance/"
-if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir)
+diff_abund_out_dir <- "differential_abundance/ancombc2/"
+if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir, recursive = TRUE)
 
 # ------------------------ Read metadata ---------------------------------- #
 metadata <- read_csv(metadata_file)  %>% as.data.frame()
@@ -387,11 +402,29 @@ feature_names <- rownames(taxonomy_table)
 taxonomy_table  <- process_taxonomy(taxonomy_table)
 rownames(taxonomy_table) <- feature_names
 
-print(glue("There are {sum(taxonomy_table$domain == 'Other')} features without 
+print(glue("There are {sum(taxonomy_table$phylum == 'Other')} features without 
            taxonomy assignments. Dropping them ..."))
 
 # Dropping features that couldn't be assigned taxonomy
-taxonomy_table <- taxonomy_table[-which(taxonomy_table$domain == 'Other'),]
+taxonomy_table <- taxonomy_table[-which(taxonomy_table$phylum == 'Other'),]
+
+# Handle case where no domain was assigned but a phylum wasn't.
+if(all(is.na(taxonomy$domain))){
+   
+   if(target_region == "ITS"){
+  
+        taxonomy_table$domain <- "Fungi"
+
+   }else if(target_region == "18S"){
+     
+       taxonomy_table$domain <- "Eukaryotes"
+       
+   }else{
+      
+        taxonomy_table$domain <- "Bacteria"
+    }
+
+}
 
 # Removing Chloroplast and Mitochondria Organelle DNA contamination
 asvs2drop <- taxonomy_table %>%
@@ -522,7 +555,7 @@ walk(uniq_comps, function(comp){
   # Get the results for a comparison
   temp_df <- paired_stats_df %>% select(ASV, contains(comp))
   
-  # Merge the current comparison to previous comparions by feature/ASV id
+  # Merge the current comparison to previous comparisons by feature/ASV id
   res_df <<- res_df %>% left_join(temp_df)
 })
 
@@ -538,9 +571,15 @@ tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","")  %>%
 df <- data.frame(ASV=rownames(taxonomy_table), best_taxonomy=tax_names)
 
 message("Querying NCBI...")
+# Pull NCBI IDS for unique taxonomy names
+df2 <- data.frame(best_taxonomy = df$best_taxonomy %>%
+                    unique()) %>%
+  mutate(NCBI_id=get_ncbi_ids(best_taxonomy, target_region),
+         .after = best_taxonomy)
+
 df <- df %>%
-  right_join(res_df) %>%
-  mutate(NCBI_id=get_ncbi_ids(best_taxonomy), .after = best_taxonomy)
+  left_join(df2, join_by("best_taxonomy")) %>% 
+  right_join(res_df)
 
 
 # Retrieve the normalized table
@@ -637,7 +676,7 @@ volcano_plots <- map(uniq_comps, function(comparison){
   
   p <- ggplot(sub_res_df, aes(x=logFC, y=-log10(pvalue), color=diff, label=!!sym(feature))) +
     geom_point(size=4) + geom_point(size=4) +
-    scale_color_manual(values=c("TRUE"="cyan2", "FALSE"="red")) +
+    scale_color_manual(values=c("TRUE"="red", "FALSE"="black")) +
     geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
     ggrepel::geom_text_repel() + 
     labs(x="logFC", y="-log10(Pvalue)", 

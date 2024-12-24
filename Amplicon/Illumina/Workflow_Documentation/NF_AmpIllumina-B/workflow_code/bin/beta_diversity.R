@@ -49,7 +49,7 @@ option_list <- list(
                     Deafault: 'Sample Name' ",
               metavar="Sample Name"),
   
-  make_option(c("-p", "--output-prefix"), type="character", default="", 
+  make_option(c("-o", "--output-prefix"), type="character", default="", 
               help="Unique name to tag onto output files. Default: empty string.",
               metavar=""),
   
@@ -58,16 +58,27 @@ option_list <- list(
                    Default: 500. ",
               metavar="500"),
   
-  make_option(c("-c", "--abundance-cutoff"), type="numeric", default=0.2, 
-              help="A fraction defining how abundant features most be to be \
-                   analyzes. Default: 1/5. ",
-              metavar="0.2"),
   make_option(c("-r", "--remove-rare"), type="logical", default=FALSE, 
               help="Should rare features be filtered out?. \
                    Default: FALSE. ", action= "store_true",
               metavar="FALSE"),
   
-  make_option(c("-l", "--legend-title"), type="character", default="Groups", 
+  make_option(c("-p", "--prevalence-cutoff"), type="numeric", default=0.15, 
+              help="If --remove-rare, a numerical fraction between 0 and 1. Taxa with prevalences
+              (the proportion of samples in which the taxon is present) less 
+              than --prevalence-cutoff will be excluded in the analysis. 
+              Default is 0.15, i.e. exclude taxa / features that are not present
+              in at least 15% of the samples.",
+              metavar="0.15"),
+  
+  make_option(c("-l", "--library-cutoff"), type="numeric", default=100, 
+              help="If --remove-rare, a numerical threshold for filtering samples based on library
+              sizes. Samples with library sizes less than lib_cut will be 
+              excluded in the analysis. Default is 100. 
+              if you do not want to discard any sample then set to 0.",
+              metavar="100"),
+  
+  make_option(c("-e", "--legend-title"), type="character", default="Groups", 
               help="Legend title for alpha diversity plots.",
               metavar="Groups"),
   
@@ -94,7 +105,7 @@ opt_parser <- OptionParser(
   description = paste("Author: Olabiyi Aderemi Obayomi",
                       "\nEmail: olabiyi.a.obayomi@nasa.gov",
                       "\n A script to perform ASV beta diversity analysis.",
-                      "\nIt outputs a dendogram, pcoa and statistics tables. ",
+                      "\nIt outputs a dendograms, pcoas and statistics tables. ",
                       sep="")
 )
 
@@ -125,7 +136,7 @@ if(is.null(opt[["taxonomy-table"]])) {
 }
 
 if(opt[["group"]] == "groups") {
-  message("Alpha diversity will be run on the default 'groups' column \n")
+  message("Beta diversity will be run on the default 'groups' column \n")
 }
 
 if(opt[["samples-column"]] == "Sample Name") {
@@ -141,29 +152,172 @@ library(DESeq2)
 library(ggdendro)
 library(RColorBrewer)
 library(broom)
+library(ggrepel)
 library(tidyverse)
 
 
 
 # ----------------------------- Functions ----------------------------------- #
-
-plot_pcoa <- function(phy, pcoa, addtext=FALSE) {
+# A a function to create a phyloseq object with the appropriate
+# sample count transformation depending on the supplied transformation method
+# i.e. either 'rarefy' or  'vst'
+transform_phyloseq <- function( feature_table, metadata, method, rarefaction_depth=500){
+  # feature_table  [DATAFRAME] ~ Feature / ASV count table with samples as columns and features as rows 
+  # metadata [DATAFRAME] ~  Samples metadata with samples as row names
+  # method [STRING] ~ Distance transformation method to use.
+  #                   Either 'rarefy' or 'vst' for rarefaction and variance 
+  #                   stabilizing transformation, respectively.
+  # rarefaction_depth [INT] ~ Sample rarefaction to even depth when method is 'bray'
   
-  p <-  plot_ordination(phy, pcoa,
-                        color = groups_colname) + 
+  if(method == 'rarefy'){
+    # Create phyloseq object
+    ASV_physeq <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
+                           sample_data(metadata))
+    
+    
+    seq_per_sample <- colSums(feature_table) %>% sort()
+    # Minimum value
+    depth <- min(seq_per_sample)
+    
+    for (count in seq_per_sample) {
+      # Get the count equal to rarefaction_depth or nearest to it
+      if(count >= rarefaction_depth) {
+        depth <- count
+        break
+      }
+      
+    }
+    
+    #----- Rarefy sample counts to even depth per sample
+    ps <- rarefy_even_depth(physeq = ASV_physeq, 
+                            sample.size = depth,
+                            rngseed = 1, 
+                            replace = FALSE, 
+                            verbose = FALSE)
+    
+  }else if(method == "vst"){
+    
+    # Using deseq
+    # Keep only ASVs with at least 1 count
+    feature_table <- feature_table[rowSums(feature_table) > 0, ]
+    # Add +1 pseudocount for VST for vst transformation
+    feature_table <- feature_table + 1
+    
+    # Make the order of samples in metadata match the order in feature table
+    metadata <- metadata[colnames(feature_table),]
+    
+    # Create VST normalized counts matrix
+    # ~1 means no design
+    deseq_counts <- DESeqDataSetFromMatrix(countData = feature_table, 
+                                           colData = metadata, 
+                                           design = ~1)
+    deseq_counts_vst <- varianceStabilizingTransformation(deseq_counts)
+    vst_trans_count_tab <- assay(deseq_counts_vst)
+    
+    # Making a phyloseq object with our transformed table
+    vst_count_phy <- otu_table(object = vst_trans_count_tab, taxa_are_rows = TRUE)
+    sample_info_tab_phy <- sample_data(metadata)
+    ps <- phyloseq(vst_count_phy, sample_info_tab_phy)
+  }else{
+    
+    stop("Please supply a valid normalization method, either 'rarefy' or 'vst' ")
+  }
+  
+  
+  return(ps)
+}
+
+# -----------    Hierarchical Clustering and dendogram plotting
+make_dendogram <- function(dist_obj, metadata, groups_colname,
+                           group_colors, legend_title){
+  
+  
+  sample_clust <- hclust(d = dist_obj, method = "ward.D2")
+  
+  # Extract clustering data
+  hcdata <- dendro_data(sample_clust, type = "rectangle")
+  segment_data <- segment(hcdata)
+  label_data <- label(hcdata) %>%
+    left_join(metadata %>% 
+                rownames_to_column("label"))
+  
+  dendogram <- ggplot() +
+    geom_segment(data = segment_data, 
+                 aes(x = x, y = y, xend = xend, yend = yend)
+    ) +
+    geom_text(data = label_data , 
+              aes(x = x, y = y, label = label, 
+                  color = !!sym(groups_colname) , hjust = 0), 
+              size = 4.5, key_glyph = "rect") +
+    scale_color_manual(values = group_colors) +
+    coord_flip() +
+    scale_y_reverse(expand = c(0.2, 0)) +
+    labs(color = legend_title) +
+    theme_dendro() +
+    guides(colour = guide_legend(override.aes = list(size = 5)))+
+    theme(legend.key = element_rect(fill=NA),
+          text = element_text(face = 'bold'),
+          legend.title = element_text(size = 12, face='bold'),
+          legend.text = element_text(face = 'bold', size = 11))
+  
+  
+  return(dendogram)
+  
+}
+
+# Run variance test and adonis test
+run_stats <- function(dist_obj, metadata, groups_colname){
+  
+  samples <- attr(dist_obj, "Label")
+  metadata <- metadata[samples,]
+  variance_test <- betadisper(d = dist_obj, 
+                              group = metadata[[groups_colname]]) %>%
+    anova() %>%
+    broom::tidy() %>% 
+    mutate(across(where(is.numeric), ~round(.x, digits = 2)))
+  
+  
+  adonis_res <- adonis2(formula = dist_obj ~ metadata[[groups_colname]])
+  adonis_test <- adonis_res %>%
+    broom::tidy() %>% 
+    mutate(across(where(is.numeric), ~round(.x, digits = 2)))
+  
+  return(list(variance = variance_test, adonis = adonis_test))
+}
+
+# Make PCoA
+plot_pcoa <- function(ps, stats_res, distance_method,
+                      groups_colname, sample_colname,
+                      group_colors, legend_title,
+                      addtext=FALSE) {
+  
+
+  
+  # Generating a PCoA with phyloseq
+  pcoa <- ordinate(physeq = ps, method = "PCoA", distance = distance_method)
+  eigen_vals <- pcoa$values$Eigenvalues
+  
+  # Calculate the percentage of variance
+  percent_variance <- eigen_vals / sum(eigen_vals) * 100
+  
+  # Retrieving plot labels
+  r2_value <- stats_res$adonis[["R2"]][1]
+  prf_value <- stats_res$adonis[["p.value"]][1]
+  label_PC1 <- sprintf("PC1 [%.1f%%]", percent_variance[1])
+  label_PC2 <- sprintf("PC2 [%.1f%%]", percent_variance[2])
+  
+  p <-  plot_ordination(ps, pcoa, color = groups_colname) + 
     geom_point(size = 1) 
   
   if(addtext){
-    p <- p + geom_text(aes(label = sample_names), 
-                       show.legend = FALSE,
+    sample_colname <- make.names(sample_colname)
+    sample_names <- p$data[[sample_colname]]
+    p <- p + geom_text(aes(label = sample_names), show.legend = FALSE,
                        hjust = 0.3, vjust = -0.4, size = 4)
   }
-  p + 
-    labs( 
-      x = label_PC1,
-      y = label_PC2,
-      col = legend_title
-    ) +
+  
+  
+ p <-  p +  labs(x = label_PC1, y = label_PC2, color = legend_title) +
     coord_fixed(sqrt(eigen_vals[2]/eigen_vals[1])) + 
     scale_color_manual(values = group_colors) +
     theme_bw() + theme(text = element_text(size = 15, face="bold"),
@@ -176,6 +330,9 @@ plot_pcoa <- function(phy, pcoa, addtext=FALSE) {
     annotate("text", x = Inf, y = -Inf, 
              label = paste("Pr(>F)", toString(round(prf_value,4))),
              hjust = 1.1, vjust = -0.5, size = 4) + ggtitle("PCoA")
+  
+  
+  return(p)
 }
 
 remove_rare_features <- function(feature_table, cut_off_percent=3/4){
@@ -232,8 +389,12 @@ sample_colname  <- opt[["samples-column"]]
 output_prefix <- opt[["output-prefix"]]
 assay_suffix <- opt[["assay-suffix"]]
 legend_title <- opt[["legend-title"]] 
+rarefaction_depth  <- opt[["rarefaction-depth"]]
 remove_rare <- opt[["remove-rare"]]
-abundance_cutoff <- opt[["abundance-cutoff"]]
+# taxon / ASV prevalence cutoff
+prevalence_cutoff <- opt[["prevalence-cutoff"]] # 0.15 (15%)
+# sample / library read count cutoff
+library_cutoff <- opt[["library-cutoff"]]  # 100
 
 
 # Read in processed data
@@ -265,7 +426,7 @@ group_colors <- setNames(colors, group_levels)
 metadata <- metadata %>%
   mutate(color = map_chr(!!sym(groups_colname),
                          function(group) { group_colors[group] }
-  ) 
+                         ) 
   )
 sample_names <- rownames(metadata)
 deseq2_sample_names <- make.names(sample_names, unique = TRUE)
@@ -280,14 +441,19 @@ sample_info_tab <- metadata %>%
 # Feature or ASV table
 feature_table <- read.table(file = features_file, header = TRUE,
                             row.names = 1, sep = "\t")
+
+# ----------------- Preprocess ASV and taxonomy tables
 if(remove_rare){
+  
+  # Remove samples with less than library-cutoff
+  message(glue("Dropping samples with less than {library_cutoff} read counts"))
+  feature_table <- feature_table[,colSums(feature_table) >= library_cutoff]
   # Remove rare ASVs
+  message(glue("Dropping features with prevalence less than {prevalence_cutoff * 100}%"))
   feature_table <- remove_rare_features(feature_table,
-                                        cut_off_percent=abundance_cutoff)
+                                        cut_off_percent = prevalence_cutoff)
 }
 
-
-# Preprocess ASV and taxonomy tables
 
 # Taxonomy 
 taxonomy_table <-  read.table(file = taxonomy_file, header = TRUE,
@@ -317,113 +483,61 @@ common_ids <- intersect(rownames(feature_table), rownames(taxonomy_table))
 feature_table <- feature_table[common_ids,]
 taxonomy_table <- taxonomy_table[common_ids,]
 
+distance_methods <- c("euclidean", "bray") # "bray" # "euclidean"
+normalization_methods <- c("vst", "rarefy")
+legend_title <- NULL
 
+options(warn=-1) # ignore warnings
+# Run the analysis
+walk2(.x = normalization_methods, .y = distance_methods,
+      .f = function(normalization_method, distance_method){
+  
+# Create transformed phyloseq object
+ps <- transform_phyloseq(feature_table, metadata, 
+                         method = normalization_method,
+                         rarefaction_depth = rarefaction_depth)
 
-# Using deseq
+# ---------Clustering and dendogram plotting
 
+# Extract normalized count table
+count_tab <- otu_table(ps)
 
-# Keep only ASVs with at least 1 count
-feature_table <- feature_table[rowSums(feature_table) > 0, ]
-# Add +1 pseudocount for VST for vst transformation
-feature_table <- feature_table + 1
+# Calculate distance between samples
+dist_obj <- vegdist(t(count_tab), method = distance_method)
 
-# Make the order of samples in metadata match the order in feature table
-metadata <- metadata[colnames(feature_table),]
+# Make dendogram
+dendogram <- make_dendogram(dist_obj, metadata, groups_colname,
+                            group_colors, legend_title)
 
-# Create VST normalized counts matrix
-# ~1 means no design
-deseq_counts <- DESeqDataSetFromMatrix(countData = feature_table, 
-                                       colData = metadata, 
-                                       design = ~1)
-deseq_counts_vst <- varianceStabilizingTransformation(deseq_counts)
-vst_trans_count_tab <- assay(deseq_counts_vst)
-
-
-
-
-# -----------    Hierarchical Clustering and dendogram plotting
-euc_dist <- dist(t(vst_trans_count_tab))
-euc_clust <- hclust(d = euc_dist, method = "ward.D2")
-
-# Extract clustering data
-hcdata <- dendro_data(euc_clust, type = "rectangle")
-segment_data <- segment(hcdata)
-label_data <- label(hcdata) %>%
-                       left_join(sample_info_tab %>% 
-                                    rownames_to_column("label"))
-
-dendogram <- ggplot() +
-  geom_segment(data = segment_data, 
-               aes(x = x, y = y, xend = xend, yend = yend)
-  ) +
-  geom_text(data = label_data , 
-            aes(x = x, y = y, label = label, 
-                color = !!sym(groups_colname) , hjust = 0), 
-            size = 4.5, key_glyph = "rect") +
-  scale_color_manual(values = group_colors) +
-  coord_flip() +
-  scale_y_reverse(expand = c(0.2, 0)) +
-  labs(color = legend_title) +
-  theme_dendro() +
-  guides(colour = guide_legend(override.aes = list(size = 5)))+
-  theme(legend.key=element_rect(fill=NA),
-        text = element_text(face = 'bold'),
-        legend.title = element_text(size = 12, face='bold'),
-        legend.text = element_text(face = 'bold', size = 11))
-
-ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}dendrogram_by_group{assay_suffix}.png"),
+# Save dendogram
+ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_dendrogram{assay_suffix}.png"),
        plot = dendogram, width = 14, height = 10, dpi = 300, units = "in")
 
 
-##### Making PCoA
+#---------------------------- Run stats
+# Checking homogeneity of variance and comparing groups using adonis test
 
-# Making a phyloseq object with our transformed table
-vst_count_phy <- otu_table(object = vst_trans_count_tab, taxa_are_rows = TRUE)
-sample_info_tab_phy <- sample_data(sample_info_tab)
-vst_physeq <- phyloseq(vst_count_phy, sample_info_tab_phy)
+stats_res <- run_stats(dist_obj, metadata, groups_colname)
+write_csv(x = stats_res$variance, 
+          file = glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_variance_table{assay_suffix}.csv"))
 
-# generating a PCoA with phyloseq
-vst_pcoa <- ordinate(physeq = vst_physeq, 
-                     method = "PCoA", 
-                     distance = "euclidean")
-eigen_vals <- vst_pcoa$values$Eigenvalues
+write_csv(x = stats_res$adonis, 
+          file = glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_adonis_table{assay_suffix}.csv"))
 
-# Calculate the percentage of variance
-percent_variance <- eigen_vals / sum(eigen_vals) * 100
-
-message("Checking homogeneity of variance across groups")
-variance_test <- betadisper(d = euc_dist, group = sample_info_tab[[groups_colname]]) %>%
-  anova() %>%
-  broom::tidy() %>% 
-  mutate(across(where(is.numeric), ~round(.x, digits = 2)))
-
-write_csv(x = variance_test, 
-            file = glue("{beta_diversity_out_dir}/{output_prefix}variance_table{assay_suffix}.csv"))
-
-
-
-adonis_res <- adonis2(formula = euc_dist ~ sample_info_tab[[groups_colname]])
-adonis_test <- adonis_res %>%
-                   broom::tidy() %>% 
-                   mutate(across(where(is.numeric), ~round(.x, digits = 2)))
-write_csv(x = adonis_test, 
-            file = glue("{beta_diversity_out_dir}/{output_prefix}adonis_table{assay_suffix}.csv"))
-
-
-# Retrieving plot labels
-r2_value <- adonis_res$R2[1]
-prf_value <- adonis_res$`Pr(>F)`[1]
-label_PC1 <- sprintf("PC1 [%.1f%%]", percent_variance[1])
-label_PC2 <- sprintf("PC2 [%.1f%%]", percent_variance[2])
-
-
-
+#---------------------------- Make PCoA
 # Unlabeled PCoA plot
-ordination_plot_u <- plot_pcoa(vst_physeq, vst_pcoa) 
-ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}PCoA_without_labels{assay_suffix}.png"),
+ordination_plot_u <- plot_pcoa(ps, stats_res, distance_method,
+                               groups_colname, sample_colname,
+                               group_colors, legend_title) 
+ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_without_labels{assay_suffix}.png"),
        plot=ordination_plot_u, width = 14, height = 8.33, dpi = 300, units = "in")
 
 # Labeled PCoA plot
-ordination_plot <- plot_pcoa(vst_physeq, vst_pcoa, addtext=TRUE) 
-ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}PCoA_w_labels{assay_suffix}.png"), 
+ordination_plot <- plot_pcoa(ps, stats_res, distance_method,
+                             groups_colname, sample_colname,
+                             group_colors, legend_title,
+                             addtext=TRUE) 
+ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_w_labels{assay_suffix}.png"),
        plot=ordination_plot, width = 14, height = 8.33, dpi = 300, units = "in")
+
+})
