@@ -1677,6 +1677,7 @@ where distance_method is either bray or euclidean for Bray Curtis and Euclidean 
 
 ## 9. Taxonomy Plots
 
+Taxonomic summaries provide insights into the composition of microbial communities at various taxonomic levels.
 
 ```bash
 Rscript plot_taxonomy.R \
@@ -1880,6 +1881,8 @@ where taxon_level is one of phylum, class, order, family, genus and species.
 
 ## 10. Differential Abundance Testing
 
+Using ANCOMBC 1, ANCOMBC 2, and DESeq2, we aim to uncover specific taxa that exhibit notable variations across different conditions, complemented by visualizations like volcano plots to illustrate these disparities and their implications on ASV expression and overall microbial community dynamics.
+
 
 ### 10a. ANCOMBC 1
 ```bash
@@ -1901,8 +1904,8 @@ Rscript pairwise_ancombc1.R \
 *	`--metadata-table` – specifies the path to a comma separated samples metadata file with the group/treatment to be analyzed
 *	`--feature-table` – specifies the path to a tab separated samples feature table i.e. ASV or OTU table
 *	`--taxonomy-table` – specifies the path to a feature taxonomy table i.e. ASV taxonomy table
-*	`--group` – specifies the group column in metadata to be analyzed
-* `--samples-column` – specifies the column in metadata containing the sample names in the feature table
+*	`--group` – specifies the group column in the metadata to be analyzed
+* `--samples-column` – specifies the column in the metadata containing the sample names in the feature table
 * `--target-region`  – specifies the amplicon target region. Options are either 16S, 18S or ITS
 * `--remove-rare` - should rare features be filtered out prior to analysis? If set, rare feature will be removed
 * `--prevalence-cutoff` - If --remove-rare, a numerical fraction between 0 and 1. 
@@ -1910,7 +1913,7 @@ Rscript pairwise_ancombc1.R \
 * `--library-cutoff` - If --remove-rare, a numerical threshold for filtering samples based on library sizes. 
                        Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 100. 
                        if you do not want to discard any sample then set to 0.
-* `--cpus ` - Specifies the number of cpus to use for parallel processing.
+* `--cpus ` - specifies the number of cpus to use for parallel processing.
 
 Type `Rscript pairwise_ancombc1.R --help` at the commandline for a full list of available parameters
 
@@ -1922,7 +1925,7 @@ diff_abund_out_dir <- "differential_abundance/ancombc1/"
 if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir, recursive = TRUE)
 
 
-# Create phyloseq object
+# Create phyloseq object from feature, taxonomy and sample metadata tables
 ps <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
                sample_data(metadata),
                tax_table(as.matrix(taxonomy_table)))
@@ -1934,20 +1937,22 @@ tse <-  mia::makeTreeSummarizedExperimentFromPhyloseq(ps)
 # Get unique group comparison as a matrix
 pairwise_comp.m <- utils::combn(metadata[,group] %>% unique, 2)
 pairwise_comp_df <- pairwise_comp.m %>% as.data.frame 
-
+# Name the columns in the pairwise matrix as group1vgroup2
 colnames(pairwise_comp_df) <- map_chr(pairwise_comp_df,
                                       \(col) str_c(col, collapse = "v"))
 comparisons <- colnames(pairwise_comp_df)
 names(comparisons) <- comparisons
 
 
-message("Running ANCOMBC1....")
+# Running ANCOMBC 1
 set.seed(123)
 final_results_bc1  <- map(pairwise_comp_df, function(col){
   
   group1 <- col[1]
   group2 <- col[2]
   
+  # Subset the treeSummarizedExperiment object to contain only samples
+  # in group1 and group2 
   tse_sub <-  tse[, tse[[group]] %in% c(group1, group2)]
   
   # Note that by default, levels of a categorical variable in R are sorted 
@@ -2038,7 +2043,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
         glue("diff_({group2})v({group1})"))
     )
   
-  
+  # Merge the dataframes to one results dataframe
   res <-lfc %>%
     left_join(se) %>%
     left_join(W) %>% 
@@ -2053,15 +2058,19 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
 
 
 
-# Create merged stats pairwise dataframe
-# initialize the merged stats dataframe to contain the taxon column for joining
+# ------------ Create merged stats pairwise dataframe ----------------- #
+# Initialize the merged stats dataframe to contain the taxon column for joining
 merged_stats_df <- final_results_bc1[[names(final_results_bc1)[1]]] %>%
   as.data.frame() %>% select(taxon)
 
+# Loop over the results of every comparion and join it the pre-existing 
+# stats table
 walk(comparisons[names(final_results_bc1)], .f = function(comparison){
   
+  # Get comparison specific statistics
   df <-  final_results_bc1[[comparison]] %>% as.data.frame()
   
+  # Merge it to the pre-existing statistics table
   merged_stats_df <<- merged_stats_df %>%
     dplyr::full_join(df, by = join_by("taxon"))
   
@@ -2073,16 +2082,20 @@ merged_stats_df <- merged_stats_df %>%
   mutate(!!feature := SortMixed(!!sym(feature)))
 
 
-
+# ------ Get comparison names
+# Since all column groups i.e. logFC, pval, W, etc. have the same
+# suffixes as comparison names, we only need to extract the comparion names
+# from one of them. Here we extract them from the "logFC" prefixed columns
 comp_names <- merged_stats_df %>% 
   select(starts_with("logFC")) %>%
   colnames() %>% str_remove_all("logFC_")
 names(comp_names) <- comp_names
 
-message("Making volcano plots...")
+
 # -------------- Make volcano plots ------------------ #
 volcano_plots <- map(comp_names, function(comparison){
   
+  # Construct column names for columns to be selected
   comp_col  <- c(
     glue("logFC_{comparison}"),
     glue("lfcSE_{comparison}"),
@@ -2091,13 +2104,15 @@ volcano_plots <- map(comp_names, function(comparison){
     glue("qvalue_{comparison}"),
     glue("diff_{comparison}")
   )
-    
+
+  # Subset the statistics table for the current comparison  
   sub_res_df <- merged_stats_df %>% 
     select(!!feature, all_of(comp_col)) %>% drop_na()
   colnames(sub_res_df) <- str_replace_all(colnames(sub_res_df),
                                           pattern = "(.+)_.+", 
                                           replacement = "\\1")
   
+  # Make plot
   p <- ggplot(sub_res_df, aes(x=logFC, y=-log10(pvalue), color=diff, label=!!sym(feature))) +
     geom_point(size=4) +
     scale_color_manual(values=c("TRUE"="red", "FALSE"="black")) +
@@ -2105,13 +2120,14 @@ volcano_plots <- map(comp_names, function(comparison){
     ggrepel::geom_text_repel() + 
     labs(x="logFC", y="-log10(Pvalue)", 
          title = comparison, color="Significant") + publication_format
-  
+  # Save the volcano plot
   ggsave(filename = glue("{output_prefix}{comparison}_volcano{assay_suffix}.png"), plot = p, device = "png",
          width = 6, height = 8, units = "in", dpi = 300, path = diff_abund_out_dir)
   
   return(p)
 })
 
+# Set dimensions for saving faceted plot
 number_of_columns <- 2
 number_of_rows = ceiling(length(comp_names) / number_of_columns)
 fig_height = 7.5 * number_of_rows
@@ -2124,7 +2140,8 @@ ggsave(filename = glue("{output_prefix}{feature}_volcano{assay_suffix}.png"), pl
        path = diff_abund_out_dir, limitsize = FALSE)
 )
 
-# Add NCBI id to feature i.e. ASV
+# ------------------- Add NCBI id to feature i.e. ASV -------------- #
+# Get the best/least possible taxonomy name for the ASVs
 tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","")  %>%
                        str_split(";"),
                      function(row) row[length(row)])
@@ -2160,6 +2177,7 @@ missing_df <- data.frame(ASV=normalized_table[[feature]],
 colnames(missing_df) <- c(feature,samplesdropped)
 
 
+# Create mean and standard deviation table
 group_levels <- metadata[, group] %>% unique() %>% sort()
 group_means_df <- normalized_table[feature]
 walk(group_levels, function(group_level){
@@ -2186,7 +2204,7 @@ walk(group_levels, function(group_level){
 })
 
 
-# Append Mean and standard deviation
+# Append Mean and standard deviation to normalized table
 normalized_table <- normalized_table %>%
   rowwise() %>%
   mutate(All.Mean=mean(c_across(where(is.numeric))),
@@ -2194,14 +2212,14 @@ normalized_table <- normalized_table %>%
   left_join(missing_df, by = feature) %>% 
   select(!!feature, all_of(samples), All.Mean, All.Stdev)
 
-
+# Merge the taxonomy table to the stats table
 merged_df <- df  %>%
   left_join(taxonomy_table %>%
               as.data.frame() %>%
               rownames_to_column(feature)) %>% 
-  select(!!feature, domain:species,everything()) # Try to generalize
+  select(!!feature, domain:species,everything())
 
-
+# Merge all the pre-combined dataframes
 merged_df <- merged_df %>%
   select(!!sym(feature):NCBI_id) %>%
   left_join(normalized_table, by = feature) %>%
@@ -2210,20 +2228,21 @@ merged_df <- merged_df %>%
   mutate(across(where(is.numeric), ~round(.x, digits=3))) %>% 
   mutate(across(where(is.matrix), as.numeric))
 
+# Writing out results of differential abundance using ANCOMBC 1
 output_file <- glue("{diff_abund_out_dir}/{output_prefix}ancombc1_differential_abundance{assay_suffix}.csv")
-message("Writing out results of differential abundance using ANCOMBC1...")
 write_csv(merged_df,output_file)
 
 
 #  --------------- Make log abundance box plots ------------------ #
 
+# Merge the metadata with the feature table
 df2 <- (metadata %>% select(!!samples_column, !!group)) %>% 
   left_join(feature_table %>%
               t %>%
               as.data.frame %>%
               rownames_to_column(samples_column))
 
-message("Making abundance box plots...")
+# Making abundance box plots
 boxplots <- map( merged_stats_df[[feature]], function(feature){
   
   p <- ggplot(df2, aes(x=!!sym(group), y=log(!!sym(feature)+1), fill=!!sym(group) )) +
@@ -2242,6 +2261,7 @@ boxplots <- map( merged_stats_df[[feature]], function(feature){
   return(p)
 })
 
+# Make faceted plot
 p <- wrap_plots(boxplots, ncol = 2, guides = 'collect')
 
 number_of_features <- merged_stats_df[[feature]] %>% length
@@ -2332,6 +2352,25 @@ tse[[group]] <- factor(tse[[group]] , levels = group_levels)
 
 message("Running ANCOMBC2....")
 # Run acombc2
+
+  # data - input data. TreeSummarizedExperiment or Phyloseq object
+  # assay_name - name of count table in the input data object.
+  # tax_level - taxonomy level for aggregation and analysis
+  # prv_cut - prevalence cut-off. proportion of samples in which taxon is present.
+  # lib_cut - a numerical threshold for filtering samples based on library sizes.
+  # p_adj_method - p-value adjustment method for multiple comparisons
+  # struc_zero - should group-wise rare taxa be detected
+  # neg_lb - whether to classify a taxon as a structural zero using its asymptotic lower bound. i.e.the best the algorithm can possibly achieve 
+  # group - name of the group variable in metadata. Only important you'd like to perform global test  can be set to NULL.
+  # alpha - significance level
+  # n_cl - number of processes to run in parallel
+  # global - should a global test be performed to detect significant differences between at least 2 groups (ANOVA-like comparison) 
+  # tol - iteration convergence tolerance for the E-M algorithm.
+  # max_iter - max iteration 
+  # formula - fixed effects formula
+  # conserve - should a conservative variance estimator be used for the test statistic? 
+  # it is recommended to set to TRUE if your sample size is small and the number of expected differentially abundant taxa is large.
+
 output <- ancombc2(data = tse, assay_name = "counts", tax_level = NULL,
                    fix_formula = group, rand_formula = NULL,
                    p_adj_method = "fdr", pseudo_sens = TRUE,
@@ -2636,8 +2675,8 @@ Rscript run_deseq2.R \
 *	`--metadata-table` – specifies the path to a comma separated samples metadata file with the group/treatment to be analyzed
 *	`--feature-table` – specifies the path to a tab separated samples feature table i.e. ASV or OTU table
 *	`--taxonomy-table` – specifies the path to a feature taxonomy table i.e. ASV taxonomy table
-*	`--group` – specifies the group column in metadata to be analyzed
-* `--samples-column` – specifies the column in metadata containing the sample names in the feature table
+*	`--group` – specifies the group column in the metadata to be analyzed
+* `--samples-column` – specifies the column in the metadata containing the sample names in the feature table
 * `--target-region`  – specifies the amplicon target region. Options are either 16S, 18S or ITS
 * `--remove-rare` - should rare features be filtered out prior to analysis? If set, rare feature will be removed
 * `--prevalence-cutoff` - If --remove-rare, a numerical fraction between 0 and 1. 
@@ -2655,21 +2694,19 @@ Content of `run_deseq2.R`
 diff_abund_out_dir <- "differential_abundance/deseq2/"
 if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir, recursive = TRUE)
 
-#### pairwise comparisons
-unique_groups <- unique(metadata[[group]])
-
-# Create phyloseq object
+# Create phyloseq object from the feature, taxonomy and metadata tables 
 ASV_physeq <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
                        tax_table(as.matrix(taxonomy_table)),
                        sample_data(metadata))
-
+# Convert the phyloseq object to a deseq object 
 deseq_obj <- phyloseq_to_deseq2(physeq = ASV_physeq,
                                 design = reformulate(group))
 
 # Add pseudocount if any 0 count samples are present
 if (sum(colSums(counts(deseq_obj)) == 0) > 0) {
+  # Add pseudo count of 1
   count_data <- counts(deseq_obj) + 1 
-  
+  # Make a columns of integer type
   count_data <- as.matrix(apply(count_data, 2, as.integer))
   rownames(count_data) <- rownames(counts(deseq_obj))
   colnames(count_data) <- colnames(counts(deseq_obj))
@@ -2679,7 +2716,8 @@ if (sum(colSums(counts(deseq_obj)) == 0) > 0) {
 # Run Deseq
 # https://rdrr.io/bioc/phyloseq/src/inst/doc/phyloseq-mixture-models.R 
 deseq_modeled <- tryCatch({
-  # Attempt to run DESeq
+  # Attempt to run DESeq, if error occurs then attempt an alternative 
+  # size factor estimation method
   DESeq(deseq_obj)
 }, error = function(e) {
   message("Error encountered in DESeq, applying alternative \
@@ -2698,7 +2736,7 @@ deseq_modeled <- tryCatch({
 # Get unique group comparison as a matrix
 pairwise_comp.m <- utils::combn(metadata[,group] %>% unique, 2)
 pairwise_comp_df <- pairwise_comp.m %>% as.data.frame 
-
+# Set the colnames as group1vgroup2
 colnames(pairwise_comp_df) <- map_chr(pairwise_comp_df,
                                       \(col) str_c(col, collapse = "v"))
 comparisons <- colnames(pairwise_comp_df)
@@ -2712,8 +2750,9 @@ walk(pairwise_comp_df, function(col){
   
   group1 <- col[1]
   group2 <- col[2]
-  
-df <- results(deseq_modeled, contrast = c(group, group1, group2)) %>%
+
+# Retrieve the statistics table for the cuurrent pair and rename the columns  
+df <- results(deseq_modeled, contrast = c(group, group1, group2)) %>% # Get stats
   data.frame() %>%
   rownames_to_column(feature) %>% 
   set_names(c(feature ,
@@ -2723,16 +2762,16 @@ df <- results(deseq_modeled, contrast = c(group, group1, group2)) %>%
               glue("stat_({group1})v({group2})"), 
               glue("pvalue_({group1})v({group2})"),
               glue("padj_({group1})v({group2})") 
-            ))
+            )) # rename the columns
 
             
   merged_stats_df <<- merged_stats_df %>% 
                           dplyr::left_join(df, join_by("ASV"))
 })
 
+# ---------------------- Add NCBI id to feature i.e. ASV
 
-
-# Add NCBI id to feature i.e. ASV
+# Get the best / lowest possible taxonomy assignment for the features i.e. ASVs
 tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","")  %>%
                        str_split(";"),
                      function(row) row[length(row)])
@@ -2749,16 +2788,13 @@ df <- df %>%
   left_join(df2, join_by("best_taxonomy")) %>% 
   right_join(merged_stats_df)
 
-
-
-
-group_levels <- metadata[, group] %>% unique() %>% sort()
+# -------- Retrieve deseq normalized table from the deseq model
 normalized_table <- counts(deseq_modeled, normalized=TRUE) %>% 
                         as.data.frame() %>%
                         rownames_to_column(feature)
 
 # Creating a dataframe of samples that were dropped because they didn't
-# meet are cut-off criteria
+# meet our cut-off criteria
 samples <- metadata[[samples_column]]
 samplesdropped <- setdiff(x = samples, y = colnames(normalized_table)[-1])
 missing_df <- data.frame(ASV=normalized_table[[feature]],
@@ -2769,21 +2805,24 @@ missing_df <- data.frame(ASV=normalized_table[[feature]],
 )
 colnames(missing_df) <- c(feature,samplesdropped)
 
-
+# Calculate mean and standard deviation of all ASVs for each group in 
+# a dataframe called group_means_df
+group_levels <- metadata[, group] %>% unique() %>% sort()
 group_means_df <- normalized_table[feature]
 walk(group_levels, function(group_level){
   
-  
+  # Initializing mean and std column names
   mean_col <- glue("Group.Mean_({group_level})")
   std_col <- glue("Group.Stdev_({group_level})")
   
-  # Samples that belong to the current group
+  # Get a vector of samples that belong to the current group
   Samples <- metadata %>%
     filter(!!sym(group) == group_level) %>%
     pull(!!sym(samples_column))
-  # Samples that belong to the current group that are in the normalized table
+  # Retain only samples that belong to the current group that are in the normalized table
   Samples <- intersect(colnames(normalized_table), Samples)
   
+  # Calculate the means and standard deviations for the current group 
   temp_df <- normalized_table %>% select(!!feature, all_of(Samples)) %>% 
     rowwise() %>%
     mutate(!!mean_col := mean(c_across(where(is.numeric))),
@@ -2795,67 +2834,67 @@ walk(group_levels, function(group_level){
 })
 
 
-# Append Mean and standard deviation
+# Append mean, standard deviation and missing samples to the normalized table
 normalized_table <- normalized_table %>%
   rowwise() %>%
   mutate(All.Mean=mean(c_across(where(is.numeric))),
-         All.Stdev=sd(c_across(where(is.numeric))) )%>% 
-  left_join(missing_df, by = feature) %>% 
-  select(!!feature, all_of(samples), All.Mean, All.Stdev)
+         All.Stdev=sd(c_across(where(is.numeric))) ) %>%  # calculate mean and std
+  left_join(missing_df, by = feature) %>% # append missing samples
+  select(!!feature, all_of(samples), All.Mean, All.Stdev) # select columns of interest
 
 
 # Add taxonomy
-merged_df <- df  %>%
+merged_df <- df  %>% # statistics table
   left_join(taxonomy_table %>%
               as.data.frame() %>%
-              rownames_to_column(feature)) %>% 
-  select(!!feature, domain:species,everything()) # Try to generalize
+              rownames_to_column(feature)) %>% # append taxonomy table
+  select(!!feature, domain:species,everything()) # select columns of interest
 
 # Merge all prepared tables 
 merged_df <- merged_df %>%
-  select(!!sym(feature):NCBI_id) %>%
-  left_join(normalized_table, by = feature) %>%
-  left_join(merged_df) %>% 
-  left_join(group_means_df, by = feature) %>% 
-  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>% 
-  mutate(across(where(is.matrix), as.numeric))
+  select(!!sym(feature):NCBI_id) %>% # select on the features and NCBI ids
+  left_join(normalized_table, by = feature) %>% # append the normalized table
+  left_join(merged_df) %>% # append the stats table
+  left_join(group_means_df, by = feature) %>%  # append the group means and stds
+  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>% # round numeric columns
+  mutate(across(where(is.matrix), as.numeric)) # convert meatrix columns to numeric columns
 
-
+# Defining the output file
 output_file <- glue("{diff_abund_out_dir}/{output_prefix}deseq2_differential_abundance{assay_suffix}.csv")
-message("Writing out results of differential abundance using DESeq2...")
+# Writing out results of differential abundance using DESeq2
 write_csv(merged_df,output_file)
 
 
 
-# Make volcano plots
+# ------------------------- Make volcano plots ------------------------ #
+# Loop over group pairs and make a volcano comparing the pair 
 walk(pairwise_comp_df, function(col){
   
   group1 <- col[1]
   group2 <- col[2]
   
+  # Setting plot dimensions 
   plot_width_inches <- 11.1
   plot_height_inches <- 8.33
-  p_val <- 0.1 #also logfc cutoff?
+  p_val <- 0.1 # logfc cutoff
   
+  # Retrieve data for plotting
   deseq_res <- results(deseq_modeled, contrast = c(group, group1, group2))
   volcano_data <- as.data.frame(deseq_res)
-  
-  
   volcano_data <- volcano_data[!is.na(volcano_data$padj), ]
-  volcano_data$significant <- volcano_data$padj <= p_val #also logfc cutoff?
+  volcano_data$significant <- volcano_data$padj <= p_val
   
-  ###### Long x-axis label adjustments ##########
+  # -------- Long x-axis label adjustments
   x_label <- paste("Log2 Fold Change\n(",group1," vs ",group2,")")
   label_length <- nchar(x_label)
   max_allowed_label_length <- plot_width_inches * 10
   
-  # Construct x-axis label with new line breaks if was too long
+  # Construct x-axis label with new line breaks if it is too long
   if (label_length > max_allowed_label_length){
     x_label <- paste("Log2 Fold Change\n\n(", group1, "\n vs \n", group2, ")", sep="")
   }
-  #######################################
   
-  # ASVs promoted in space on right, reduced on left
+  # -------- Compose the plot
   p <- ggplot(volcano_data, aes(x=log2FoldChange, y=-log10(padj), 
                                 color=significant)) +
     geom_point(alpha=0.7, size=2) +
@@ -2870,19 +2909,20 @@ walk(pairwise_comp_df, function(col){
          color=paste0("")) +
     theme(legend.position="top")
   
-  # label points and plot
+  # Subset the 10 most significant asvs based on p adjusted values
   top_points <- volcano_data %>%
     arrange(padj) %>%
     filter(significant) %>%
     head(10)
   
+  # Add text of the top 10 ASVs to the volcano plot
   volcano_plot <- p + geom_text_repel(data=top_points, 
                                       aes(label=row.names(top_points)),
                                       size=3)
   
   # Save volcano plot
-  ggsave(filename=glue("{diff_abund_out_dir}{output_prefix}volcano_{group1}_vs_{group2}.png"),
-         plot=volcano_plot,
+  ggsave(filename = glue("{diff_abund_out_dir}{output_prefix}volcano_{group1}_vs_{group2}.png"),
+         plot = volcano_plot,
          width = plot_width_inches, 
          height = plot_height_inches, 
          dpi = 300)
@@ -2891,13 +2931,13 @@ walk(pairwise_comp_df, function(col){
 
 **Input Data:**
 
-* **amplicon_metdata.csv** (metadata table)
+* **amplicon_runsheet.csv** (metadata table)
 * **counts_GLAmpSeq.tsv** (count table)
 * **taxonomy_GLAmpSeq.tsv** (taxonomy table)
 
 **Output Data:**
 
-* **differential_abundance/deseq2/<output_prefix>volcano_<group1>_vs_<group2>.png** (Comparion Volcano Plot)
+* **differential_abundance/deseq2/<output_prefix>volcano_<group1>__vs__<group2>.png** (Comparion Volcano Plot)
 * **differential_abundance/deseq2/<output_prefix>deseq2_differential_abundance_GLAmpSeq.csv** (Statistics Table)
 
 
