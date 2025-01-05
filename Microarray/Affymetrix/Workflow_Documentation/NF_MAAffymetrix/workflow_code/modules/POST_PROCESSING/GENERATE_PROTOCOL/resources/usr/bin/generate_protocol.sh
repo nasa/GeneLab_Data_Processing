@@ -34,9 +34,9 @@ organism_list=("Homo sapiens" "Mus musculus" "Rattus norvegicus" "Drosophila mel
 # Check the value of 'organism' variable and set 'GENE_MAPPING_STEP' accordingly
 if [[ $organism == "Arabidopsis thaliana" ]]; then
     GENE_MAPPING_STEP="Ensembl gene ID mappings were retrieved for each probeset using the Plants Ensembl database ftp server (plants.ensembl.org, release 54)."
-elif [[ $organism == "Escherichia coli" ]]; then
+elif [[ $biomart_attribute == "AFFY E coli Genome 2 0" ]]; then
     GENE_MAPPING_STEP="Gene annotations were retrieved for each probeset from ThermoFisher (https://www.thermofisher.com/order/catalog/product/sec/assets?url=TFS-Assets/LSG/Support-Files/E_coli_2-na36-annot-csv.zip, created March 2016, accessed June 2024)."
-elif [[ $organism == "Pseudomonas aeruginosa" ]]; then
+elif [[ $biomart_attribute == "AFFY GeneChip P. aeruginosa Genome" ]]; then
     GENE_MAPPING_STEP="Gene annotations were retrieved for each probeset from ThermoFisher (https://www.thermofisher.com/order/catalog/product/sec/assets?url=TFS-Assets/LSG/Support-Files/Pae_G1a-na36-annot-csv.zip, created March 2016, accessed June 2024)."
 elif [[ " ${organism_list[*]} " == *"${organism//\"/}"* ]]; then
     GENE_MAPPING_STEP="Ensembl gene ID mappings were retrieved for each probeset using biomaRt (version ${biomaRt_VERSION}), Ensembl database (ensembl.org, release 107)."
