@@ -253,7 +253,7 @@ def get_read_counts_from_raw_multiqc(mapping_tab, raw_multiqc_stats_file_path,
 
             # Reading in
             zip_file = zipfile.ZipFile(curr_file_path)
-            curr_df = pd.read_csv(zip_file.open(raw_multiqc_stats_file_path), sep = "\t", usecols = [0,5])
+            curr_df = pd.read_csv(zip_file.open(raw_multiqc_stats_file_path), sep = "\t", usecols = [0,6])
             curr_df.columns = ["sample", "counts"]
             curr_df.set_index("sample", inplace = True)
 
@@ -268,7 +268,7 @@ def get_read_counts_from_raw_multiqc(mapping_tab, raw_multiqc_stats_file_path,
     else:
         input_zip = os.path.join(fastqc_dir, output_prefix + raw_multiqc_zip)
         zip_file = zipfile.ZipFile(input_zip)
-        df = pd.read_csv(zip_file.open(raw_multiqc_stats_file_path), sep = "\t", usecols = [0,5])
+        df = pd.read_csv(zip_file.open(raw_multiqc_stats_file_path), sep = "\t", usecols = [0,6])
         df.columns = ["sample", "counts"]
         df.set_index("sample", inplace = True)
 
