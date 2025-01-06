@@ -300,6 +300,7 @@ workflow {
         dada_counts = RUN_R_TRIM.out.counts
         dada_taxonomy = RUN_R_TRIM.out.taxonomy
         dada_biom = RUN_R_TRIM.out.biom
+        r_version = RUN_R_TRIM.out.version
 
         CUTADAPT.out.version | mix(software_versions_ch) | set{software_versions_ch}
         TRIMMED_FASTQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
@@ -327,6 +328,7 @@ workflow {
         dada_counts = RUN_R_NOTRIM.out.counts
         dada_taxonomy = RUN_R_NOTRIM.out.taxonomy
         dada_biom = RUN_R_NOTRIM.out.biom
+        r_version = RUN_R_NOTRIM.out.version
 
         RUN_R_NOTRIM.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
@@ -379,28 +381,28 @@ workflow {
      method = Channel.of(params.diff_abund_method)
      if (params.diff_abund_method == "deseq2"){
     
-        DESEQ(meta, dada_counts, dada_taxonomy, metadata)
+        DESEQ(meta, dada_counts, dada_taxonomy, metadata, r_version)
         DESEQ.out.version | mix(software_versions_ch) | set{software_versions_ch}
     
     }else if (params.diff_abund_method == "ancombc1"){
     
-        ANCOMBC1(method, meta, dada_counts, dada_taxonomy, metadata)
+        ANCOMBC1(method, meta, dada_counts, dada_taxonomy, metadata, r_version)
         ANCOMBC1.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
     }else if (params.diff_abund_method == "ancombc2"){
 
-        ANCOMBC2(method, meta, dada_counts, dada_taxonomy, metadata)
+        ANCOMBC2(method, meta, dada_counts, dada_taxonomy, metadata, r_version)
         ANCOMBC2.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
     }else{
 
-        ANCOMBC1("ancombc1", meta, dada_counts, dada_taxonomy, metadata)
+        ANCOMBC1("ancombc1", meta, dada_counts, dada_taxonomy, metadata, r_version)
         ANCOMBC1.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
-        ANCOMBC2("ancombc2", meta, dada_counts, dada_taxonomy, metadata)
+        ANCOMBC2("ancombc2", meta, dada_counts, dada_taxonomy, metadata, ANCOMBC1.out.version)
         ANCOMBC2.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
-        DESEQ(meta, dada_counts, dada_taxonomy, metadata)
+        DESEQ(meta, dada_counts, dada_taxonomy, metadata, ANCOMBC2.out.version)
         DESEQ.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
     }
