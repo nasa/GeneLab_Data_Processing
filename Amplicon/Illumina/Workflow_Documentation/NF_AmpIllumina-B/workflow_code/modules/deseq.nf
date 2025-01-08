@@ -13,6 +13,7 @@ process DESEQ  {
         path(taxonomy_table)
         path(metadata)
         path(version) // dummy path to ensure dependency between this step and the step that generates this file
+
     output:
         path("differential_abundance/deseq2/"), emit: output_dir
         path("versions.txt"), emit: version
@@ -27,13 +28,12 @@ process DESEQ  {
                   --samples-column '${meta.samples}' \\
                   --assay-suffix  '${meta.assay_suffix}' \\
                   --output-prefix  '${meta.output_prefix}' \\
-                  --target-region  '${meta.target_region}'
+                  --target-region  '${meta.target_region}' \\
+                  --prevalence-cutoff ${meta.prevalence_cutoff} \\
+                  --library-cutoff  ${meta.library_cutoff} ${meta.extra}
+
         
-        Rscript -e "VERSIONS=sprintf('tidyverse %s\\nglue %s\\nDESeq2 %s\\nRColorBrewer %s\\n',  \\
-                                    packageVersion('tidyverse'), \\
-                                    packageVersion('glue'), \\
-                                    packageVersion('DESeq2'), \\
-                                    packageVersion('RColorBrewer')); \\
+        Rscript -e "VERSIONS=sprintf('DESeq2 %s\\n', packageVersion('DESeq2')); \\
                     write(x=VERSIONS, file='versions.txt', append=TRUE)"     
         """
 }
@@ -44,8 +44,13 @@ workflow {
     
     meta  = Channel.of(["samples": params.samples_column,
                         "group" : params.group,
+                        "depth" : params.rarefaction_depth,
                         "assay_suffix" : params.assay_suffix,
-                        "output_prefix" : params.output_prefix
+                        "output_prefix" : params.output_prefix,
+                        "target_region" : params.target_region,
+                        "library_cutoff" : params.library_cutoff,
+                        "prevalence_cutoff" : params.prevalence_cutoff,
+                        "extra" : params.remove_rare ? "--remove-rare" : ""
                         ])
                             
                             
@@ -54,7 +59,7 @@ workflow {
     taxonomy  =  Channel.fromPath(params.taxonomy, checkIfExists: true)
     // Dummy file
     version  =  Channel.fromPath(params.taxonomy, checkIfExists: true)
-    
+
     DESEQ(meta, metadata, asv_table, taxonomy, version)
 
     emit:

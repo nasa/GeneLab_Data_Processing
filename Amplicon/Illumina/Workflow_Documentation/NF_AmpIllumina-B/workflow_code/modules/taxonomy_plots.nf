@@ -36,11 +36,10 @@ process PLOT_TAXONOMY  {
                   --assay-suffix  '${meta.assay_suffix}' \\
                   --output-prefix  '${meta.output_prefix}'
                   
-        Rscript -e "VERSIONS=sprintf('tidyverse %s\\nglue %s\\ntools %s\\nhere %s\\n',  \\
+        Rscript -e "VERSIONS=sprintf('tidyverse %s\\nglue %s\\ntools %s\\n',  \\
                                     packageVersion('tidyverse'), \\
                                     packageVersion('glue'), \\
-                                    packageVersion('tools'), \\
-                                    packageVersion('here')); \\
+                                    packageVersion('tools')); \\
                     write(x=VERSIONS, file='versions.txt', append=TRUE)"
         """
 
@@ -51,10 +50,15 @@ workflow {
 
 
      meta  = Channel.of(["samples": params.samples_column,
-                            "group" : params.group,
-                            "assay_suffix" : params.assay_suffix,
-                            "output_prefix" : params.output_prefix
-                            ])
+                         "group" : params.group,
+                         "depth" : params.rarefaction_depth,
+                         "assay_suffix" : params.assay_suffix,
+                         "output_prefix" : params.output_prefix,
+                         "target_region" : params.target_region,
+                         "library_cutoff" : params.library_cutoff,
+                         "prevalence_cutoff" : params.prevalence_cutoff,
+                         "extra" : params.remove_rare ? "--remove-rare" : ""
+                        ])
                             
      
      asv_table       =  Channel.fromPath(params.asv_table, checkIfExists: true)

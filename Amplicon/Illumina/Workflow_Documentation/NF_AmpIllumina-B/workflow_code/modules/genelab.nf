@@ -190,6 +190,7 @@ process GENERATE_CURATION_TABLE {
     script:
         def INPUT_TABLE = "${params.files.assay_table}" == "" ? "--isa-zip  ${input_table}" : "--assay-table ${input_table}"
         """
+
         GL-gen-amplicon-file-associations-table ${INPUT_TABLE} \\
                     --output '${GLDS_accession}_${output_prefix}-associated-file-names.tsv' \\
                     --GLDS-ID  '${GLDS_accession}' \\
@@ -211,6 +212,7 @@ process GENERATE_CURATION_TABLE {
                     --filtered_reads_dir '${filtered_reads_dir}' \\
                     --trimmed_reads_dir '${trimmed_reads_dir}' \\
                     --final_outputs_dir '${final_outputs_dir}'  ${params.file_association_extra}
+
         """
 }
 

@@ -35,19 +35,15 @@ process ALPHA_DIVERSITY {
                   --samples-column '${meta.samples}' \\
                   --rarefaction-depth ${meta.depth}   \\
                   --assay-suffix  '${meta.assay_suffix}' \\
-                  --output-prefix  '${meta.output_prefix}'
+                  --output-prefix  '${meta.output_prefix}' \\
+                  --prevalence-cutoff ${meta.prevalence_cutoff} \\
+                  --library-cutoff  ${meta.library_cutoff} ${meta.extra}
+
                   
-        Rscript -e "VERSIONS=sprintf('tidyverse %s\\nglue %s\\nvegan %s\\nhere %s\\nphyloseq %s\\nFSA %s\\nmultcompView %s\\nrstatix %s\\npatchwork %s\\nRColorBrewer %s\\n',  \\
-                                    packageVersion('tidyverse'), \\
-                                    packageVersion('glue'), \\
-                                    packageVersion('vegan'), \\
-                                    packageVersion('here'), \\
-                                    packageVersion('phyloseq'), \\
+        Rscript -e "VERSIONS=sprintf('FSA %s\\nmultcompView %s\\nrstatix %s\\n',  \\
                                     packageVersion('FSA'), \\
                                     packageVersion('multcompView'), \\
-                                    packageVersion('rstatix'), \\
-                                    packageVersion('patchwork'), \\
-                                    packageVersion('RColorBrewer')); \\
+                                    packageVersion('rstatix')); \\
                     write(x=VERSIONS, file='versions.txt', append=TRUE)"
         """
 
@@ -82,18 +78,21 @@ process BETA_DIVERSITY {
                   --samples-column '${meta.samples}' \\
                   --rarefaction-depth ${meta.depth}   \\
                   --assay-suffix  '${meta.assay_suffix}' \\
-                  --output-prefix  '${meta.output_prefix}'
+                  --output-prefix  '${meta.output_prefix}' \\
+                  --prevalence-cutoff ${meta.prevalence_cutoff} \\
+                  --library-cutoff  ${meta.library_cutoff} ${meta.extra}
         
-        Rscript -e "VERSIONS=sprintf('tidyverse %s\\nglue %s\\nvegan %s\\nhere %s\\nphyloseq %s\\nDESeq2 %s\\nggdendro %s\\nbroom %s\\nRColorBrewer %s\\n',  \\
-                                    packageVersion('tidyverse'), \\
-                                    packageVersion('glue'), \\
+        Rscript -e "VERSIONS=sprintf('vegan %s\\nmia %s\\nphyloseq %s\\nggdendro %s\\nbroom %s\\nRColorBrewer %s\\ntaxize %s\\nDescTools %s\\npatchwork %s\\nggrepel %s\\n',  \\
                                     packageVersion('vegan'), \\
-                                    packageVersion('here'), \\
+                                    packageVersion('mia'), \\
                                     packageVersion('phyloseq'), \\
-                                    packageVersion('DESeq2'), \\
                                     packageVersion('ggdendro'), \\
                                     packageVersion('broom'), \\
-                                    packageVersion('RColorBrewer')); \\
+                                    packageVersion('RColorBrewer'), \\
+                                    packageVersion('taxize'), \\
+                                    packageVersion('DescTools'), \\
+                                    packageVersion('patchwork'), \\
+                                    packageVersion('ggrepel')); \\
                     write(x=VERSIONS, file='versions.txt', append=TRUE)"         
         """
 
@@ -104,11 +103,15 @@ workflow{
 
 
      meta  = Channel.of(["samples": params.samples_column,
-                            "group" : params.group,
-                            "depth" : params.rarefaction_depth,
-                            "assay_suffix" : params.assay_suffix,
-                            "output_prefix" : params.output_prefix
-                            ])
+                         "group" : params.group,
+                         "depth" : params.rarefaction_depth,
+                         "assay_suffix" : params.assay_suffix,
+                         "output_prefix" : params.output_prefix,
+                         "target_region" : params.target_region,
+                         "library_cutoff" : params.library_cutoff,
+                         "prevalence_cutoff" : params.prevalence_cutoff,
+                         "extra" : params.remove_rare ? "--remove-rare" : ""
+                        ])
                             
      
      asv_table       =  Channel.fromPath(params.asv_table, checkIfExists: true)

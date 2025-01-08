@@ -67,6 +67,9 @@ if (params.help) {
   println("         --rarefaction_depth [INTEGER] The Minimum desired sample rarefaction depth for diversity analysis. Default: 500.")
   println("         --group [STRING] Column in input csv file with treatments to be compared. Default: 'groups' ")
   println("         --samples_column [STRING] Column in input csv file with sample names belonging to each treatment group. Default: 'sample_id' ")
+  println("         --remove_rare [BOOLEAN] Should rare features be filtered out prior to analysis? If true, rare features will be removed. Options are true or false. Default: false.")
+  println("         --prevalence_cutoff [FLOAT] If --remove_rare is true, a numerical fraction between 0 and 1. Taxa with prevalences(the proportion of samples in which the taxon is present) less than this will be excluded from diversity and diffrential abundance analysis. Default is 0 , i.e. do not exclude any taxa. For example, to exclude taxa that are not present in at least 15% of the samples set it to 0.15.")
+  println("         --library_cutoff [INTEGER] If --remove-rare is true, a numerical threshold for filtering samples based on library sizes. Samples with library sizes less than this number will be excluded in the analysis. Default is 0 i.e do not remove any sample. For example, if you want to discard samples with library sizes less than 100 then set to 100.")
   println()
   println("File Suffixes:")
   println("      --primer_trimmed_R1_suffix [STRING] Suffix to use for naming your primer trimmed forward reads. Default: _R1_trimmed.fastq.gz.")
@@ -84,7 +87,7 @@ if (params.help) {
   println()
   println("Genelab specific arguements:")
   println("      --accession [STRING]  A Genelab accession number if the --input_file parameter is not set. If this parameter is set, it will ignore the --input_file parameter.")
-  println("      --assay_suffix [STRING]  Genelabs assay suffix. Default: GLAmpSeq.")
+  println("      --assay_suffix [STRING]  Genelabs assay suffix. Default: _GLAmpSeq.")
   println("      --output_prefix [STRING] Unique name to tag onto output files. Default: empty string.")
   println()
   println("Paths to existing conda environments to use otherwise a new one will be created using the yaml file in envs/")
@@ -138,6 +141,9 @@ log.info """
          Diversity and Differential abundance Parameters:
          Method: ${params.diff_abund_method}
          Rarefaction Depth: ${params.rarefaction_depth}
+         Remove Rare Taxa and Samples: ${params.remove_rare}
+         Taxa Prevalence Cut Off: ${params.prevalence_cutoff}
+         Sample Library Cut Off: ${params.library_cutoff}
          Groups to Comapre Column: ${params.group}
          Samples Column: ${params.samples_column}
          
@@ -343,25 +349,36 @@ workflow {
     
     // Diversity, differential abundance testing and their corresponding visualizations
     if(params.accession){
-    meta  = Channel.of(["samples": "Sample Name",
-                        "group" : "groups",
-                        "depth" : params.rarefaction_depth,
-                        "assay_suffix" : params.assay_suffix,
-                        "output_prefix" : params.output_prefix,
-                        "target_region" : params.target_region
-                        ])
+
+    values = ["samples": "Sample Name",
+              "group" : "groups",
+              "depth" : params.rarefaction_depth,
+              "assay_suffix" : params.assay_suffix,
+              "output_prefix" : params.output_prefix,
+              "target_region" : params.target_region,
+              "library_cutoff" : params.library_cutoff,
+              "prevalence_cutoff" : params.prevalence_cutoff,
+              "extra" : params.remove_rare ? "--remove-rare" : ""
+              ]
+
+    meta  = Channel.of(values)
     
     metadata  =  GET_RUNSHEET.out.runsheet
 
     }else{
 
-    meta  = Channel.of(["samples": params.samples_column,
-                        "group" : params.group,
-                        "depth" : params.rarefaction_depth,
-                        "assay_suffix" : params.assay_suffix,
-                        "output_prefix" : params.output_prefix,
-                        "target_region" : params.target_region
-                        ])
+    values = ["samples": params.samples_column,
+              "group" : params.group,
+              "depth" : params.rarefaction_depth,
+              "assay_suffix" : params.assay_suffix,
+              "output_prefix" : params.output_prefix,
+              "target_region" : params.target_region,
+              "library_cutoff" : params.library_cutoff,
+              "prevalence_cutoff" : params.prevalence_cutoff,
+              "extra" : params.remove_rare ? "--remove-rare" : ""
+             ]
+
+    meta  = Channel.of(values)
     
     metadata  =  Channel.fromPath(params.input_file, checkIfExists: true)
 

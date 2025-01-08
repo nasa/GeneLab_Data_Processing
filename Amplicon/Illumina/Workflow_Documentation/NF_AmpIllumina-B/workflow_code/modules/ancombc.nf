@@ -22,6 +22,7 @@ process ANCOMBC {
         path(taxonomy)
         path(metadata)
         path(version) // dummy path to ensure dependency between this step and the step that generates this file
+
     output:
         path("differential_abundance/${method}/"), emit: output_dir
         path("versions.txt"), emit: version
@@ -43,18 +44,11 @@ process ANCOMBC {
                   --assay-suffix  '${meta.assay_suffix}' \\
                   --output-prefix  '${meta.output_prefix}' \\
                   --cpus ${task.cpus} \\
-                  --target-region  '${meta.target_region}'
+                  --target-region  '${meta.target_region}' \\
+                  --prevalence-cutoff ${meta.prevalence_cutoff} \\
+                  --library-cutoff  ${meta.library_cutoff}
                     
-        Rscript -e "VERSIONS=sprintf('tidyverse %s\\nglue %s\\nANCOMBC %s\\nphyloseq %s\\nmia %s\\ntaxize %s\\nDescTools %s\\npatchwork %s\\nggrepel %s\\n',  \\
-                                    packageVersion('tidyverse'), \\
-                                    packageVersion('glue'), \\
-                                    packageVersion('ANCOMBC'), \\
-                                    packageVersion('phyloseq'), \\
-                                    packageVersion('mia'), \\
-                                    packageVersion('taxize'), \\
-                                    packageVersion('DescTools'), \\
-                                    packageVersion('patchwork'), \\
-                                    packageVersion('ggrepel')); \\
+        Rscript -e "VERSIONS=sprintf('ANCOMBC %s\\n', packageVersion('ANCOMBC'))
                     write(x=VERSIONS, file='versions.txt', append=TRUE)"
         """
 
@@ -69,7 +63,10 @@ workflow {
                         "group" : params.group,
                         "assay_suffix" : params.assay_suffix,
                         "output_prefix" : params.output_prefix,
-                        "target_region" : params.target_region
+                        "target_region" : params.target_region,
+                        "library_cutoff" : params.library_cutoff,
+                        "prevalence_cutoff" : params.prevalence_cutoff,
+                        "extra" : params.remove_rare ? "--remove-rare" : ""
                         ])
                             
                             
@@ -78,7 +75,6 @@ workflow {
     taxonomy  =  Channel.fromPath(params.taxonomy, checkIfExists: true)
     // Dummy file
     version  =  Channel.fromPath(params.taxonomy, checkIfExists: true)
-
 
     method = Channel.of(params.diff_abund_method)
     ANCOMBC(method, meta, asv_table, taxonomy, metadata, version)
