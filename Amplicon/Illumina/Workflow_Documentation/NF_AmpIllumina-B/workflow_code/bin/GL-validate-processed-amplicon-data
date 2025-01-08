@@ -312,8 +312,8 @@ def get_read_count_stats(validation_log, prefix, multiqc_zip, multiqc_stats_file
     """ Grabs read counts and summarizes """
 
     zip_file = zipfile.ZipFile(multiqc_zip)
-
-    df = pd.read_csv(zip_file.open(multiqc_stats_file_path), sep = "\t", usecols = [5])
+    read_count_column = 6
+    df = pd.read_csv(zip_file.open(multiqc_stats_file_path), sep = "\t", usecols = [read_count_column])
 
     df.columns = ["counts"]
     counts = df.counts.tolist()
