@@ -12,7 +12,7 @@ process DESEQ  {
         path(feature_table)
         path(taxonomy_table)
         path(metadata)
-        path(version) // dummy path to ensure dependency between this step and the step that generates this file
+        path(dummy) // dummy path to ensure dependency between this step and the step that generates this file
 
     output:
         path("differential_abundance/deseq2/"), emit: output_dir
@@ -58,9 +58,9 @@ workflow {
     asv_table = Channel.fromPath(params.asv_table, checkIfExists: true) 
     taxonomy  =  Channel.fromPath(params.taxonomy, checkIfExists: true)
     // Dummy file
-    version  =  Channel.fromPath(params.taxonomy, checkIfExists: true)
+    dummy  =  Channel.fromPath(params.taxonomy, checkIfExists: true)
 
-    DESEQ(meta, metadata, asv_table, taxonomy, version)
+    DESEQ(meta, metadata, asv_table, taxonomy, dummy)
 
     emit:
         version = DESEQ.out.version

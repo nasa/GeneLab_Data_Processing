@@ -21,7 +21,7 @@ process ANCOMBC {
         path(feature_table)
         path(taxonomy)
         path(metadata)
-        path(version) // dummy path to ensure dependency between this step and the step that generates this file
+        path(dummy) // dummy path to ensure dependency between this step and the step that generates this file
 
     output:
         path("differential_abundance/${method}/"), emit: output_dir
@@ -74,10 +74,10 @@ workflow {
     asv_table = Channel.fromPath(params.asv_table, checkIfExists: true) 
     taxonomy  =  Channel.fromPath(params.taxonomy, checkIfExists: true)
     // Dummy file
-    version  =  Channel.fromPath(params.taxonomy, checkIfExists: true)
+    dummy  =  Channel.fromPath(params.taxonomy, checkIfExists: true)
 
     method = Channel.of(params.diff_abund_method)
-    ANCOMBC(method, meta, asv_table, taxonomy, metadata, version)
+    ANCOMBC(method, meta, asv_table, taxonomy, metadata, dummy)
 
     emit:
         version = ANCOMBC.out.version

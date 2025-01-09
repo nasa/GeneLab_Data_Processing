@@ -6,7 +6,7 @@ nextflow.enable.dsl = 2
 
 process GET_RUNSHEET {
 
-    beforeScript "chmod +x ${baseDir}/bin/create_runsheet.py"
+    beforeScript "chmod +x ${projectDir}/bin/create_runsheet.py"
     tag "Retrieving raw sequences and metadata for ${accession}..."
     input:
         tuple val(accession), val(target_region)

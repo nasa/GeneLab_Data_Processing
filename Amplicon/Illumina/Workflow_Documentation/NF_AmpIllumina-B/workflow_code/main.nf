@@ -69,7 +69,7 @@ if (params.help) {
   println("         --samples_column [STRING] Column in input csv file with sample names belonging to each treatment group. Default: 'sample_id' ")
   println("         --remove_rare [BOOLEAN] Should rare features be filtered out prior to analysis? If true, rare features will be removed. Options are true or false. Default: false.")
   println("         --prevalence_cutoff [FLOAT] If --remove_rare is true, a numerical fraction between 0 and 1. Taxa with prevalences(the proportion of samples in which the taxon is present) less than this will be excluded from diversity and diffrential abundance analysis. Default is 0 , i.e. do not exclude any taxa. For example, to exclude taxa that are not present in at least 15% of the samples set it to 0.15.")
-  println("         --library_cutoff [INTEGER] If --remove-rare is true, a numerical threshold for filtering samples based on library sizes. Samples with library sizes less than this number will be excluded in the analysis. Default is 0 i.e do not remove any sample. For example, if you want to discard samples with library sizes less than 100 then set to 100.")
+  println("         --library_cutoff [INTEGER] If --remove-rare is true, a numerical threshold for filtering samples based on library sizes. Samples with library sizes less than this number will be excluded in the analysis. Default is 0 i.e do not remove any sample. For example, if you want to discard samples with library sizes less than 100, then set to 100.")
   println()
   println("File Suffixes:")
   println("      --primer_trimmed_R1_suffix [STRING] Suffix to use for naming your primer trimmed forward reads. Default: _R1_trimmed.fastq.gz.")
@@ -266,7 +266,7 @@ workflow {
 
     // Generating a file with sample ids on a new line
     file_ch.map{row -> "${row.sample_id}"}
-              .collectFile(name: "${baseDir}/unique-sample-IDs.txt", newLine: true)
+              .collectFile(name: "${projectDir}/unique-sample-IDs.txt", newLine: true)
               .set{sample_ids_ch}
 
     // Read quality check and trimming
@@ -306,7 +306,7 @@ workflow {
         dada_counts = RUN_R_TRIM.out.counts
         dada_taxonomy = RUN_R_TRIM.out.taxonomy
         dada_biom = RUN_R_TRIM.out.biom
-        r_version = RUN_R_TRIM.out.version
+        filtered_count = RUN_R_TRIM.out.filtered_count
 
         CUTADAPT.out.version | mix(software_versions_ch) | set{software_versions_ch}
         TRIMMED_FASTQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
@@ -334,7 +334,7 @@ workflow {
         dada_counts = RUN_R_NOTRIM.out.counts
         dada_taxonomy = RUN_R_NOTRIM.out.taxonomy
         dada_biom = RUN_R_NOTRIM.out.biom
-        r_version = RUN_R_NOTRIM.out.version
+        filtered_count  = RUN_R_NOTRIM.out.filtered_count
 
         RUN_R_NOTRIM.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
@@ -398,41 +398,42 @@ workflow {
      method = Channel.of(params.diff_abund_method)
      if (params.diff_abund_method == "deseq2"){
     
-        DESEQ(meta, dada_counts, dada_taxonomy, metadata, r_version)
+        DESEQ(meta, dada_counts, dada_taxonomy, metadata, filtered_count)
         DESEQ.out.version | mix(software_versions_ch) | set{software_versions_ch}
     
     }else if (params.diff_abund_method == "ancombc1"){
     
-        ANCOMBC1(method, meta, dada_counts, dada_taxonomy, metadata, r_version)
+        ANCOMBC1(method, meta, dada_counts, dada_taxonomy, metadata, filtered_count)
         ANCOMBC1.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
     }else if (params.diff_abund_method == "ancombc2"){
 
-        ANCOMBC2(method, meta, dada_counts, dada_taxonomy, metadata, r_version)
+        ANCOMBC2(method, meta, dada_counts, dada_taxonomy, metadata, filtered_count)
         ANCOMBC2.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
     }else{
 
-        ANCOMBC1("ancombc1", meta, dada_counts, dada_taxonomy, metadata, r_version)
+        ANCOMBC1("ancombc1", meta, dada_counts, dada_taxonomy, metadata, filtered_count)
         ANCOMBC1.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
-        ANCOMBC2("ancombc2", meta, dada_counts, dada_taxonomy, metadata, ANCOMBC1.out.version)
+        ANCOMBC2("ancombc2", meta, dada_counts, dada_taxonomy, metadata, ANCOMBC1.out.output_dir)
         ANCOMBC2.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
-        DESEQ(meta, dada_counts, dada_taxonomy, metadata, ANCOMBC2.out.version)
+        DESEQ(meta, dada_counts, dada_taxonomy, metadata, ANCOMBC2.out.output_dir)
         DESEQ.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
     }
     
 
      // Software Version Capturing - combining all captured sofware versions
-     nf_version = "Nextflow Version:".concat("${nextflow.version}\n<><><>\n")
+     nf_version = "Nextflow Version ".concat("${nextflow.version}")
      nextflow_version_ch = Channel.value(nf_version)
 
      //  Write software versions to file
-     software_versions_ch | map { it.text + "\n<><><>\n"}
+     software_versions_ch | map { it.text.strip() }
                           | unique
                           | mix(nextflow_version_ch)
+                          | unique
                           | collectFile(name: "${params.metadata_dir}/software_versions.txt", newLine: true, cache: false)
                           | set{final_software_versions_ch}
 

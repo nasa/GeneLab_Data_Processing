@@ -6,15 +6,15 @@ nextflow.enable.dsl = 2
 ****************************************************************************************/
 
 // A 3-column (single-end) or 4-column (paired-end) file
-//params.csv_file = "${baseDir}/file.csv" 
+//params.csv_file = "${projectDir}/PE_file.csv" 
 //params.prefix = "raw"
-//params.multiqc_config = "${baseDir}/config/multiqc.config"
+//params.multiqc_config = "${projectDir}/config/multiqc.config"
 
 // FastQC performed on reads
 process FASTQC {
 
     tag "Running fastqc on ${sample_id}..."
-    beforeScript "chmod +x ${baseDir}/bin/*"
+    beforeScript "chmod +x ${projectDir}/bin/*"
     label "fastqc"
 
     input:
@@ -35,7 +35,7 @@ process FASTQC {
 process MULTIQC {
 
     tag "Running multiqc on the ${prefix} files..."
-    beforeScript "chmod +x ${baseDir}/bin/*"
+    beforeScript "chmod +x ${projectDir}/bin/*"
     
     input:
         val(prefix)   
@@ -65,7 +65,7 @@ process MULTIQC {
 process CUTADAPT {
 
     tag "Trimming off primers for ${sample_id} using cutadapt..."
-    beforeScript "chmod +x ${baseDir}/bin/*"
+    beforeScript "chmod +x ${projectDir}/bin/*"
 
     input:
         tuple val(sample_id), path(reads), val(isPaired)
