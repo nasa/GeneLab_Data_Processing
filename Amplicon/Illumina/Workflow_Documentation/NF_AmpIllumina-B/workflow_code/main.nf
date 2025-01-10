@@ -186,6 +186,7 @@ include { PLOT_TAXONOMY } from './modules/taxonomy_plots.nf'
 include { ANCOMBC as ANCOMBC1 } from './modules/ancombc.nf'
 include { ANCOMBC as ANCOMBC2 } from './modules/ancombc.nf'
 include { DESEQ } from './modules/deseq.nf'
+include { SOFTWARE_VERSIONS } from './modules/utils.nf'
 
 
 
@@ -425,7 +426,7 @@ workflow {
     }
     
 
-     // Software Version Capturing - combining all captured sofware versions
+     // Software Version Capturing - combining all captured software versions
      nf_version = "Nextflow Version ".concat("${nextflow.version}")
      nextflow_version_ch = Channel.value(nf_version)
 
@@ -433,9 +434,8 @@ workflow {
      software_versions_ch | map { it.text.strip() }
                           | unique
                           | mix(nextflow_version_ch)
-                          | unique
-                          | collectFile(name: "${params.metadata_dir}/software_versions.txt", newLine: true, cache: false)
-                          | set{final_software_versions_ch}
+                          | collectFile({it -> it}, newLine: true, cache: false)
+                          | SOFTWARE_VERSIONS
 
 
 }

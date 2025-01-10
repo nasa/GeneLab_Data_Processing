@@ -51,7 +51,6 @@ params {{
           // Specify the paths to existing conda environments (/path/to/envs/genelab-utils)
           // leave as is if you want to create a new conda environment
           genelab          = "{conda_genelab}" == "null" ? null :  "{conda_genelab}"     // /path/to/envs/genelab-utils
-          genelab          = "{conda_genelab}" == "null" ? null :  "{conda_genelab}"     // /path/to/envs/genelab-utils
           qc               = "{conda_qc}" == "null" ? null : "{conda_qc}"   // /path/to/envs/qc
           R                = "{conda_R}" == "null" ? null : "{conda_R}"     // /path/to/envs/R
           cutadapt         = "{conda_cutadapt}" == "null" ? null :  "{conda_cutadapt}"  // /path/to/envs/cutadapt
@@ -221,11 +220,15 @@ process {{
            }}
 
 
-        withName: ANCOMBC {{
+    withName: ANCOMBC {{
 
              container = "{container_ancom}"
 
              }}
+
+    withName: SOFTWARE_VERSIONS {{
+                  publishDir = [path: params.metadata_dir, mode: params.publishDir_mode]
+            }}
 
 }}
 

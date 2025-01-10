@@ -315,7 +315,7 @@ def get_read_count_stats(validation_log, prefix, multiqc_zip, multiqc_stats_file
     #read_count_column = 6
     #df = pd.read_csv(zip_file.open(multiqc_stats_file_path), sep = "\t", usecols = [read_count_column])
     df = pd.read_csv(zip_file.open(multiqc_stats_file_path), sep = "\t")
-    df = df.iloc[:,-1] # retrieve the last column which is reads counts column
+    df = df.iloc[:,[-1]] # retrieve the last column which is reads counts column
     df.columns = ["counts"]
     counts = df.counts.tolist()
 
