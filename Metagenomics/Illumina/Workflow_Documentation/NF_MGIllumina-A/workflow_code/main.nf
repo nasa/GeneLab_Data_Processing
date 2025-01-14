@@ -17,10 +17,10 @@ if (params.help) {
   println("Nextflow Metagenomics Illumina Consensus Pipeline: $workflow.manifest.version")
   println("USAGE:")
   println("Example 1: Submit and run jobs with slurm in singularity containers.")
-  println("   > nextflow run main.nf -resume -profile slurm,singularity --csv_file PE_file.csv")
+  println("   > nextflow run main.nf -resume -profile slurm,singularity --input_file PE_file.csv")
   println()
   println("Example 2: : Submit and run jobs with slurm in conda environments.")
-  println("   > nextflow run main.nf -resume -profile slurm,conda --csv_file SE_file.csv")
+  println("   > nextflow run main.nf -resume -profile slurm,conda --input_file SE_file.csv")
   println()
   println("Example 3: Run jobs locally in conda environments, supply a GLDS accession, and specify the path to an existing conda environment.")
   println("   > nextflow run main.nf -resume -profile conda --accession OSD-574 --conda.qc <path/to/existing/conda/environment>")
@@ -29,7 +29,7 @@ if (params.help) {
   println("""-profile [STRING] Specifies the profile to be used to run the workflow. Options are [slurm, singularity, docker, and  conda].
 	                    singularity, docker and conda will run the pipeline locally using singularity, docker, and conda, respectively.
                       To combine profiles, separate two or more profiles with comma. For example, to combine slurm and singularity profiles, pass 'slurm,singularity' as argument. """)			 
-  println("--csv_file  [PATH] A 3-column (single-end) or 4-column (paired-end) input file (sample_id, forward, [reverse,] paired). Required only if a GLDS accession is not provided.")
+  println("--input_file  [PATH] A 3-column (single-end) or 4-column (paired-end) csv input file (sample_id, forward, [reverse,] paired). Required only if a GLDS accession is not provided. Default : null")
   println("   Please see the files: SE_file.csv and PE_file.csv for single-end and paired-end examples, respectively.")
   println("   The sample_id column should contain unique sample ids.")
   println("   The forward and reverse columns should contain the absolute or relative path to the sample's forward and reverse reads.")
@@ -86,7 +86,7 @@ if (params.help) {
   println("      --read_based_dir [PATH] Read-based analysis outputs directory.  Default: ../Read-based_Processing/.")
   println()
   println("Genelab specific arguements:")
-  println("      --accession [STRING]  A Genelab accession number if the --csv_file parameter is not set. If this parameter is set, it will ignore the --csv_file parameter.")
+  println("      --accession [STRING]  A Genelab accession number if the --input_file parameter is not set. If this parameter is set, it will ignore the --input_file parameter.")
   println("      --RawFilePattern [STRING]  If we do not want to download all files (which we often won't), we can specify a pattern here to subset the total files.")
   println("                                 For example, if we know we want to download just the fastq.gz files, we can say 'fastq.gz'. We can also provide multiple patterns")
   println("                                 as a comma-separated list. For example, If we want to download the fastq.gz files that also have 'NxtaFlex', 'metagenomics', and 'raw' in") 
@@ -144,7 +144,7 @@ log.info """
          
          You have set the following parameters:
          Profile: ${workflow.profile} 
-         Input csv file : ${params.csv_file}
+         Input csv file : ${params.input_file}
          GLDS or OSD Accession : ${params.accession}
          GLDS Raw File Pattern: ${params.RawFilePattern}         
          Workflow : ${params.workflow}
@@ -313,6 +313,15 @@ def deleteWS(string){
 
 // Main workflow
 workflow {
+
+    // Sanity check : Test input requirement
+    if (!params.accession &&  !params.input_file){
+     
+       error("""
+              Please supply either an accession (OSD or Genelab number) or an input CSV file
+              by passing either to the --accession or --input_file parameter, respectively.
+              """)
+    } 
         
      // Software Version Capturing - runsheet
      software_versions_ch = Channel.empty()
@@ -327,7 +336,7 @@ workflow {
        GET_RUNSHEET.out.version | mix(software_versions_ch) | set{software_versions_ch}
       }else{
  
-       Channel.fromPath(params.csv_file, checkIfExists: true)
+       Channel.fromPath(params.input_file, checkIfExists: true)
            .splitCsv(header:true)
            .set{file_ch}
       }
@@ -374,11 +383,11 @@ workflow {
 
 
      // Software Version Capturing - combining all captured sofware versions
-     nf_version = "Nextflow Version ".concat("${nextflow.version}\n<><><>\n")
+     nf_version = "Nextflow Version ".concat("${nextflow.version}")
      nextflow_version_ch = Channel.value(nf_version)
 
      //  Write software versions to file
-     software_versions_ch | map { it.text + "\n<><><>\n"}
+     software_versions_ch | map { it.text.strip() }
                           | unique
                           | mix(nextflow_version_ch)
                           | collectFile(name: "${params.metadata_dir}/software_versions.txt", newLine: true, cache: false)

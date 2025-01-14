@@ -111,7 +111,7 @@ For options and detailed help on how to run the workflow, run the following comm
 nextflow run main.nf --help
 ```
 
-> Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --csv_file) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
+> Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --input_file) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
 
 <br>
 
@@ -126,7 +126,7 @@ nextflow run main.nf -resume -profile slurm,singularity --accession OSD-574
 #### 4b. Approach 2: Run slurm jobs in singularity containers with a csv file as input
 
 ```bash
-nextflow run main.nf -resume -profile slurm,singularity  --csv_file PE_file.csv
+nextflow run main.nf -resume -profile slurm,singularity  --input_file PE_file.csv
 ```
 
 <br>
@@ -134,7 +134,7 @@ nextflow run main.nf -resume -profile slurm,singularity  --csv_file PE_file.csv
 #### 4c. Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environment(s)
 
 ```bash
-nextflow run main.nf -resume -profile conda --csv_file SE_file.csv --conda.qc <path/to/existing/conda/environment>
+nextflow run main.nf -resume -profile conda --input_file SE_file.csv --conda.qc <path/to/existing/conda/environment>
 ```
 
 <br>
@@ -153,7 +153,7 @@ nextflow run main.nf -resume -profile conda --csv_file SE_file.csv --conda.qc <p
 
 *Required only if --accession is not passed as an argument*
 
-* `--csv_file` –  A single-end or paired-end input csv file containing assay metadata for each sample, including sample_id, forward, reverse, and/or paired. Please see the sample [SE_file.csv](workflow_code/SE_file.csv) and [PE_file.csv](workflow_code/PE_file.csv) in this repository for examples on how to format this file.
+* `--input_file` –  A single-end or paired-end input csv file containing assay metadata for each sample, including sample_id, forward, reverse, and/or paired. Please see the sample [SE_file.csv](workflow_code/SE_file.csv) and [PE_file.csv](workflow_code/PE_file.csv) in this repository for examples on how to format this file.
 
 > See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details on how to run nextflow.
 

@@ -43,16 +43,15 @@ process SUMMARIZE_BIN_ASSEMBLIES {
 }
 
 
-// Runs checkm on recovered bins
-process CHECKM_ON_BINS {
+// Runs checkm on a recovered bin
+process CHECKM_ON_BIN {
 
-    tag "Running checkm on the recovered bins..."
-    label "bins"
+    tag "Running checkm on a recovered bin if any..."
     
     input:
-        path(bins) 
+        path(bin) 
     output:
-        path("${params.additional_filename_prefix}bins-checkm-out.tsv"), emit: checkm_output
+        path("bin-checkm-out.tsv"), emit: checkm_output
         path("versions.txt"), emit: version
     script:
         """
@@ -64,7 +63,7 @@ process CHECKM_ON_BINS {
             if [ ${params.reduced_tree} == "True" ]; then
 
                 checkm lineage_wf \\
-                       -f ${params.additional_filename_prefix}bins-checkm-out.tsv \\
+                       -f bin-checkm-out.tsv \\
                        --tab_table \\
                        -t ${task.cpus} \\
                        --reduced_tree \\
@@ -75,7 +74,7 @@ process CHECKM_ON_BINS {
             else
 
                 checkm lineage_wf \\
-                       -f ${params.additional_filename_prefix}bins-checkm-out.tsv \\
+                       -f bin-checkm-out.tsv \\
                        --tab_table \\
                        -t ${task.cpus} \\
                        --pplacer_threads 1 \\
@@ -87,12 +86,43 @@ process CHECKM_ON_BINS {
         else
 
             printf "There were no bins recovered, so checkm was not run.\\n" \\
-              > ${params.additional_filename_prefix}bins-checkm-out.tsv
+              > bin-checkm-out.tsv
 
         fi
         checkm | grep CheckM | head -n 1 | sed -E 's/.+(CheckM\\sv.+)\\s.+/\\1/' > versions.txt
         """
 }
+
+// Combines the outputs of running checkm on every bin into one file
+process COMBINE_CHECKM {
+    tag "Combining CheckM results for all recovered bins..."
+    label "bins"
+    
+    input:
+        path(checkm_output, stageAs: "?/*") 
+    output:
+        path("${params.additional_filename_prefix}bins-checkm-out.tsv"), emit: checkm_output
+        path("versions.txt"), emit: version
+    script:
+        """
+        [ -f temp-bins-checkm-out.tsv ] && rm -rf temp-bins-checkm-out.tsv
+
+        for bin_file in ${checkm_output}; do
+
+            cat \${bin_file} >> temp-bins-checkm-out.tsv
+
+        done
+
+        (grep "^Bin Id" temp-bins-checkm-out.tsv | sort -u; \\
+         grep -v "^Bin Id" temp-bins-checkm-out.tsv | sort -uV) \\
+           >  ${params.additional_filename_prefix}bins-checkm-out.tsv
+
+        checkm | grep CheckM | head -n 1 | sed -E 's/.+(CheckM\\sv.+)\\s.+/\\1/' > versions.txt
+        """
+
+}
+
+
 
 process GENERATE_BINS_OVERVIEW_TABLE {
 
@@ -153,15 +183,17 @@ workflow summarize_bins {
         SUMMARIZE_BIN_ASSEMBLIES(bins)
         bin_assembly_summaries_ch = SUMMARIZE_BIN_ASSEMBLIES.out.summary
 
-        CHECKM_ON_BINS(bins)
-        bins_checkm_results_ch = CHECKM_ON_BINS.out.checkm_output    
+        CHECKM_ON_BIN(bins.flatten())
+        COMBINE_CHECKM(CHECKM_ON_BIN.out.checkm_output.collect())
+        bins_checkm_results_ch = COMBINE_CHECKM.out.checkm_output    
 
         table = GENERATE_BINS_OVERVIEW_TABLE(bin_assembly_summaries_ch, bins_checkm_results_ch, bins)
    
         software_versions_ch = Channel.empty()
         ZIP_BINS.out.version | mix(software_versions_ch) | set{software_versions_ch}
         SUMMARIZE_BIN_ASSEMBLIES.out.version | mix(software_versions_ch) | set{software_versions_ch}
-        CHECKM_ON_BINS.out.version | mix(software_versions_ch) | set{software_versions_ch}
+        CHECKM_ON_BIN.out.version | mix(software_versions_ch) | set{software_versions_ch}
+        COMBINE_CHECKM.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
     emit:
         bins_checkm_results = bins_checkm_results_ch
