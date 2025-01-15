@@ -1333,10 +1333,10 @@ taxonomy_table <- taxonomy_table[common_ids,]
 Alpha diversity examines the variety and abundance of taxa within individual samples. Rarefaction curves are utilized to visually represent this diversity, plotting the number of unique sequences (ASVs) identified against the total number of sequences sampled, offering a perspective on the saturation and completeness of sampling. Metrics like Chao1 richness estimates and Shannon diversity indices are employed to quantify the richness (total number of unique sequences) and diversity (combination of richness and evenness) within these samples.
 
 > Please note that if you'd like **to run this section in R, make sure that you run the code in the following sections above sequentially first**:
-> [Load Libraries](#load-libraries)
-> [Load Functions](#load-functions)
-> [Set Variables](#set-variables)
-> [Read-in Input Tables](#read-in-input-tables)
+> [Load Libraries](#load-libraries), 
+> [Load Functions](#load-functions), 
+> [Set Variables](#set-variables), 
+> [Read-in Input Tables](#read-in-input-tables), and
 > [Preprocessing](#preprocessing)
 
 ```R
@@ -1628,10 +1628,10 @@ ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}richness_and_di
 Beta diversity measures the variation in species composition between different samples or environments. A common practice in working with a new dataset is to generate some exploratory visualizations like ordinations and hierarchical clusterings. These give us a quick overview of how our samples relate to each other and can be a way to check for problems like batch effects.
 
 > Please note that if you'd like **to run this section in R, make sure that you run the code in the following sections above sequentially first**:
-> [Load Libraries](#load-libraries)
-> [Load Functions](#load-functions)
-> [Set Variables](#set-variables)
-> [Read-in Input Tables](#read-in-input-tables)
+> [Load Libraries](#load-libraries), 
+> [Load Functions](#load-functions), 
+> [Set Variables](#set-variables), 
+> [Read-in Input Tables](#read-in-input-tables), and 
 > [Preprocessing](#preprocessing)
 
 ```R
@@ -1734,10 +1734,10 @@ Taxonomic summaries provide insights into the composition of microbial communiti
 
 
 > Please note that if you'd like **to run this section in R, make sure that you run the code in the following sections above sequentially first**:
-> [Load Libraries](#load-libraries)
-> [Load Functions](#load-functions)
-> [Set Variables](#set-variables)
-> [Read-in Input Tables](#read-in-input-tables)
+> [Load Libraries](#load-libraries), 
+> [Load Functions](#load-functions), 
+> [Set Variables](#set-variables), 
+> [Read-in Input Tables](#read-in-input-tables), and 
 > [Preprocessing](#preprocessing)
 
 ```R
@@ -1931,10 +1931,10 @@ Where taxon_level is all of phylum, class, order, family, genus and species.
 Using ANCOMBC 1, ANCOMBC 2, and DESeq2, we aim to uncover specific taxa that exhibit notable variations across different conditions, complemented by visualizations like volcano plots to illustrate these disparities and their implications on ASV expression and overall microbial community dynamics.
 
 > Please note that if you'd like **to run this section in R, make sure that you run the code in the following sections above sequentially first**:
-> [Load Libraries](#load-libraries)
-> [Load Functions](#load-functions)
-> [Set Variables](#set-variables)
-> [Read-in Input Tables](#read-in-input-tables)
+> [Load Libraries](#load-libraries), 
+> [Load Functions](#load-functions), 
+> [Set Variables](#set-variables), 
+> [Read-in Input Tables](#read-in-input-tables), and 
 > [Preprocessing](#preprocessing)
 
 ### 10a. ANCOMBC 1
