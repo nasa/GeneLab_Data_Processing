@@ -12,10 +12,11 @@
 Olabiyi Obayomi, Alexis Torres, and Michael D. Lee (GeneLab Data Processing Team)
 
 **Approved by:**  
-Samrawit Gebre  (GeneLab Project Manager)  
-Danielle Lopez (GeneLab Deputy Project Manager)  
-Lauren Sanders (OSDR Project Scientist)  
-Amanda Saravia-Butler (GeneLab Data Processing Lead)  
+Samrawit Gebre (OSDR Project Manager)
+Danielle Lopez (OSDR Deputy Project Manager)
+Lauren Sanders (OSDR Project Scientist)
+Amanda Saravia-Butler (GeneLab Science Lead)
+Barbara Novak (GeneLab Data Processing Lead)
 
 ---
 
@@ -1150,10 +1151,20 @@ publication_format <- theme_bw() +
         legend.text = element_text(size = 14,face ='bold', color = 'black'),
         strip.text =  element_text(size = 14,face ='bold', color = 'black'))
 ```
+**Output Variables:**
+* `custom_palette`     - custom color palette for coloring plots
+* `publication_format` - custom ggplot theme for plotting
 
 #### Read-in Input Tables
 
 ```R
+custom_palette  <-{COLOR_VECTOR}
+groups_colname <- "groups"
+sample_colname <- "Sample Name"
+metadata_file <- file.path("amplicon_runsheet.csv")
+features_file <- file.path("counts_GLAmpSeq.tsv")
+taxonomy_file <- file.path("taxonomy_GLAmpSeq.tsv")
+
 # Read-in metadata
 metadata <- read_csv(file = metadata_file) %>% as.data.frame()
 row.names(metadata) <- metadata[[sample_colname]]
@@ -1186,10 +1197,7 @@ sample_info_tab <- metadata %>%
   select(!!groups_colname, color) %>%
   arrange(!!sym(groups_colname))
 
-
 values <- sample_info_tab %>% pull(color) %>% unique()
-
-
 
 # Feature or ASV table
 feature_table <- read.table(file = features_file, header = TRUE,
@@ -1200,10 +1208,37 @@ taxonomy_table <-  read.table(file = taxonomy_file, header = TRUE,
                               row.names = 1, sep = "\t")
 ```
 
+**Parameter Definitions:**
+
+*	`metadata_table` – path to a comma separated samples metadata file with the group/treatment to be analyzed. [{OSD-Accession-ID}_AmpSeq_v{version}_runsheet.csv](#6a-create-sample-runsheet)
+*	`feature_table`  – path to a tab separated samples feature table i.e. ASV or OTU table [counts_GLAmpSeq.tsv](#5g-generating-and-writing-standard-outputs)
+*	`taxonomy_table` – path to a feature taxonomy table i.e. ASV taxonomy table [taxonomy_GLAmpSeq.tsv](#5g-generating-and-writing-standard-outputs)
+*	`groups_colname` – group column in metadata to be analyzed
+* `sample_colname` – column in metadata containing the sample names in the feature table
+* `custom_palette` - color palette defined in [Set Variables](#set-variables)
+
+**Output Variables:**
+*	`metadata_table`      – samples metadata dataframe with the group/treatment to be analyzed
+*	`feature_table`       – samples feature table, i.e. ASV counts dataframe. 
+*	`taxonomy_table`      – feature taxonomy table i.e. ASV taxonomy dataframe.
+* `sample_info_tab`     - dataframe of sample information i.e. a subset of samples metadata
+* `values`              - character vector of unique color values.
+* `sample_names`        - character vector of sample names
+* `deseq2_sample_names` - character vector of sample names for deseq2
+* `group_colors`        - named character vector of colors for each group
+* `group_levels`        - unique group levels within `groups_colname` to be compared
 
 #### Preprocessing
 
 ```R
+feature_table <- {DATAFRAME} # from step [Read-in Input Tables]
+taxonomy_table <- {DATAFRAME} # from step [Read-in Input Tables]
+target_region <- "16S" # 16S, 18S, or ITS
+remove_rare <- FALSE # TRUE OR FALSE
+prevalence_cutoff <- 0
+library_cutoff <- 0
+
+
 if(remove_rare){
   
   # Remove samples with less than library-cutoff
@@ -1270,37 +1305,54 @@ common_ids <- intersect(rownames(feature_table), rownames(taxonomy_table))
 feature_table <- feature_table[common_ids,]
 taxonomy_table <- taxonomy_table[common_ids,]
 ```
+**Parameter Definitions:**
 
+* `remove_rare`       - should rare features and samples be filtered out prior to analysis? If true, rare feature and samples will be removed
+                        according to the cutoffs set below.
+* `prevalence_cutoff` - If `remove_rare` is true, a numerical fraction between 0 and 1. 
+                        Taxa with prevalences(the proportion of samples in which the taxon is present) less than this will be excluded from the analysis. Default is 0, i.e. do not exclude any taxa / features.
+* `library_cutoff`    - If `remove_rare` is true, a numerical threshold for filtering samples based on library sizes. 
+                        Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0 i.e. no sample will be dropped. if you want to discard samples with read counts less than or equal to 100 then set to 100.
+* `target_region`     - amplicon target region. Options are either 16S, 18S or ITS
+* `feature_table`     - ASV count table varaiable from [Read-in Input Tables](#read-in-input-tables)
+* `taxonomy_table`    - ASV taxonomy table variable from [Read-in Input Tables](#read-in-input-tables)
+
+**Output Variables:**
+*	`metadata_table`      – samples metadata dataframe with the group/treatment to be analyzed
+*	`feature_table`       – samples feature table, i.e. ASV counts dataframe. 
+*	`taxonomy_table`      – feature taxonomy table i.e. ASV taxonomy dataframe.
+* `sample_info_tab`     - dataframe of sample information i.e. a subset of samples metadata
+* `values`              - unique color values.
+* `sample_names`        - character vector of sample names
+* `deseq2_sample_names` - character vector of sample names for deseq2
+* `group_colors`        - named character vector of colors for each group
+* `group_levels`        - unique group levels within `groups_colname` to be compared
 
 ## 7. Alpha Diversity Analysis
 
 Alpha diversity examines the variety and abundance of taxa within individual samples. Rarefaction curves are utilized to visually represent this diversity, plotting the number of unique sequences (ASVs) identified against the total number of sequences sampled, offering a perspective on the saturation and completeness of sampling. Metrics like Chao1 richness estimates and Shannon diversity indices are employed to quantify the richness (total number of unique sequences) and diversity (combination of richness and evenness) within these samples.
 
-```bash
-Rscript alpha_diversity.R \
-                  --metadata-table amplicon_runsheet.csv \
-                  --feature-table counts_GLAmpSeq.tsv \
-                  --taxonomy-table taxonomy_GLAmpSeq.tsv \
-                  --group groups \
-                  --samples-column 'Sample Name' \
-                  --rarefaction-depth 500
-```
-**Parameter Definitions:**
+> Please note that if you'd like **to run this section in R, make sure that you run the code in the following sections above sequentially first**:
+> [Load Libraries](#load-libraries)
+> [Load Functions](#load-functions)
+> [Set Variables](#set-variables)
+> [Read-in Input Tables](#read-in-input-tables)
+> [Preprocessing](#preprocessing)
 
-*	`--metadata-table` – specifies the path to a comma separated samples metadata file with the group/treatment to be analyzed
-*	`--feature-table` – specifies the path to a tab separated samples feature table i.e. ASV or OTU table
-*	`--taxonomy-table` – specifies the path to a feature taxonomy table i.e. ASV taxonomy table
-*	`--group` – specifies the group column in metadata to be analyzed
-* `--samples-column` – specifies the column in metadata containing the sample names in the feature table
-* `--rarefaction-depth`  – specifies the minimum rarefaction depth for alpha diversity estimation
-
-Type `Rscript alpha_diversity.R --help` at the commandline for a full list of available parameters
-
-Content of `alpha_diversity.R`  
 ```R
 # Create output directory if it doesn't already exist
 alpha_diversity_out_dir <- "alpha_diversity/"
 if(!dir.exists(alpha_diversity_out_dir)) dir.create(alpha_diversity_out_dir)
+metadata  <-  {DATAFRAME}
+sample_info_tab <-  {DATAFRAME} 
+feature_table <- {DATAFRAME}
+taxonomy_table <- {DATAFRAME}
+group_colors  <- {NAMED_VECTOR} 
+groups_colname  <- "groups"
+rarefaction_depth <- 500
+legend_title  <- "Groups"
+assay_suffix  <- "_GLAmpSeq"
+output_prefix  <- ""
 
 # Create phyloseq object
 ASV_physeq <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
@@ -1534,10 +1586,8 @@ p <- map(.x = metrics2plot, .f = function(metric){
   
   # Add text to plot
   p + geom_text(data=summary_table,
-                                    mapping = aes(y=max+toAdd, 
-                                                  label=label,
-                                                  fontface = "bold"),
-                                  size = text_size)
+                mapping = aes(y=max+toAdd, label=label, fontface = "bold"),
+                size = text_size)
 })
 
 richness_by_group <- wrap_plots(p, ncol = 2, guides =  'collect')
@@ -1547,12 +1597,19 @@ width <- 3.6 * length(group_levels)
 ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}richness_and_diversity_estimates_by_group{assay_suffix}.png"),
        plot=richness_by_group, width = width, height = 8.33, dpi = 300, units = "in")
 ```
+**Input Data and Parameter Definitions:**
 
-**Input Data:**
+* `metadata`          - samples metadata dataframe with the group/treatment to be analyzed from  [Preprocessing](#preprocessing)
+* `sample_info_tab`   - dataframe of sample information i.e. a subset of samples metadata DATAFRAME} from [Preprocessing](#preprocessing)
+* `feature_table`     - ASV counts table dataframe from [Preprocessing](#preprocessing)
+* `taxonomy_table`    - taxonomy dataframe from [Preprocessing](#preprocessing)
+* `rarefaction_depth` – minimum rarefaction depth for alpha diversity estimation
+* `groups_colname`    - group column in metadata to be analyzed
+* `group_colors`      - named character vector of colors for each group 
+* `legend_title`      - legend title for plotting
+* `assay_suffix`      - Genelab assay suffix. Default : "_GLAmpSeq"
+* `output_prefix`     - additdional prefix to be added to output files. Default: ""
 
-* **amplicon_runsheet.csv** (metadata table - e.g {OSD-Accession-ID}_AmpSeq_v{version}_runsheet.csv )
-* **counts_GLAmpSeq.tsv** (count table)
-* **taxonomy_GLAmpSeq.tsv** (taxonomy table)
 
 **Output Data:**
 
@@ -1566,38 +1623,28 @@ ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}richness_and_di
 
 ---
 
-
 ## 8. Beta Diversity Analysis
 
 Beta diversity measures the variation in species composition between different samples or environments. A common practice in working with a new dataset is to generate some exploratory visualizations like ordinations and hierarchical clusterings. These give us a quick overview of how our samples relate to each other and can be a way to check for problems like batch effects.
 
-```bash
-Rscript beta_diversity.R \
-                  --metadata-table amplicon_runsheet.csv \
-                  --feature-table counts_GLAmpSeq.tsv \
-                  --taxonomy-table taxonomy_GLAmpSeq.tsv \
-                  --group groups \
-                  --samples-column 'Sample Name' \
-                  --rarefaction-depth 500
-```
-**Parameter Definitions:**
-
-*	`--metadata-table` – specifies the path to a comma separated samples metadata file with the group/treatment to be analyzed
-*	`--feature-table` – specifies the path to a tab separated samples feature table i.e. ASV or OTU table
-*	`--taxonomy-table` – specifies the path to a feature taxonomy table i.e. ASV taxonomy table
-*	`--group` – specifies the group column in metadata to be analyzed
-* `--samples-column` – specifies the column in metadata containing the sample names in the feature table
-* `--rarefaction-depth`  – specifies the minimum rarefaction depth for diversity estimation. Relavant only for Bray Curtis distance calculation between samples 
-
-type `Rscript beta_diversity.R --help` at the commandline for a full list of available parameters
-
-Content of `beta_diversity.R`  
+> Please note that if you'd like **to run this section in R, make sure that you run the code in the following sections above sequentially first**:
+> [Load Libraries](#load-libraries)
+> [Load Functions](#load-functions)
+> [Set Variables](#set-variables)
+> [Read-in Input Tables](#read-in-input-tables)
+> [Preprocessing](#preprocessing)
 
 ```R
-
 beta_diversity_out_dir <- "beta_diversity/"
 if(!dir.exists(beta_diversity_out_dir)) dir.create(beta_diversity_out_dir)
-
+metadata  <-  {DATAFRAME}  
+feature_table <- {DATAFRAME} 
+group_colors  <- {NAMED_VECTOR} 
+groups_colname  <- "groups"
+rarefaction_depth <- 500
+legend_title  <- "Groups"
+assay_suffix  <- "_GLAmpSeq"
+output_prefix  <- ""
 distance_methods <- c("euclidean", "bray")
 normalization_methods <- c("vst", "rarefy")
 legend_title <- NULL
@@ -1654,12 +1701,18 @@ ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_
 
 })
 ```
+**Input Data and Parameter Definitions:**
 
-**Input Data:**
-
-* **amplicon_runsheet.csv** (metadata table)
-* **counts_GLAmpSeq.tsv** (count table)
-* **taxonomy_GLAmpSeq.tsv** (taxonomy table)
+* `metadata`              - samples metadata dataframe with the group/treatment to be analyzed from  [Preprocessing](#preprocessing)
+* `feature_table`         - ASV counts table dataframe from [Preprocessing](#preprocessing)
+* `rarefaction_depth`     – minimum rarefaction depth when using Bray Curtis distance
+* `groups_colname`        - group column in metadata to be analyzed
+* `group_colors`          - named character vector of colors for each group 
+* `legend_title`          - legend title for plotting
+* `assay_suffix`          - Genelab's amplicon assay suffix. Default : "_GLAmpSeq"
+* `output_prefix`         - additdional prefix to be added to output files. Default: ""
+* `distance_methods`      - method used to calculate the distance between samples. "euclidean" and "bray" for euclidean and Bray Curtis distance, respectively.
+* `normalization_methods` - method for normalizing sample counts. "vst" and "rarefy" variance stabilizing transformation and rarefaction, respectively.
 
 **Output Data:**
 
@@ -1668,7 +1721,7 @@ ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_
 * **beta_diversity/<output_prefix><distance_method>_PCoA_without_labels_GLAmpSeq.png** (Unlabeled PCoA)
 * **beta_diversity/<output_prefix><distance_method>_PCoA_w_labels_GLAmpSeq.png** (Labeled PCoA)
 
-where distance_method is either bray or euclidean for Bray Curtis and Euclidean distance, respectively.
+Were distance_method is either bray or euclidean for Bray Curtis and Euclidean distance, respectively.
 
 <br>
 
@@ -1679,38 +1732,26 @@ where distance_method is either bray or euclidean for Bray Curtis and Euclidean 
 
 Taxonomic summaries provide insights into the composition of microbial communities at various taxonomic levels.
 
-```bash
-Rscript plot_taxonomy.R \
-                  --metadata-table mapping/GLDS-487_amplicon_v1_runsheet.csv \
-                  --feature-table data/counts_GLAmpSeq.tsv \
-                  --taxonomy-table data/taxonomy_GLAmpSeq.tsv \
-                  --group groups \
-                  --samples-column 'Sample Name' \
-                  --remove-rare FALSE \
-                  --prevalence-cutoff 0.15 \
-                  --library-cutoff 100
 
-```
-**Parameter Definitions:**
-
-*	`--metadata-table` – specifies the path to a comma separated samples metadata file with the group/treatment to be analyzed
-*	`--feature-table` – specifies the path to a tab separated samples feature table i.e. ASV or OTU table
-*	`--taxonomy-table` – specifies the path to a feature taxonomy table i.e. ASV taxonomy table
-*	`--group` – specifies the group column in metadata to be analyzed
-* `--samples-column` – specifies the column in metadata containing the sample names in the feature table
-* `--remove-rare` - should rare features be filtered out prior to analysis? If set, rare feature will be removed
-* `--prevalence-cutoff` - If --remove-rare, a numerical fraction between 0 and 1. 
-                         Taxa with prevalences(the proportion of samples in which the taxon is present) less than --prevalence-cutoff will be excluded in the analysis. Default is 0.15, i.e. exclude taxa / features that are not present in at least 15% of the samples.
-* `--library-cutoff` - If --remove-rare, a numerical threshold for filtering samples based on library sizes. 
-                       Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 100. 
-                       if you do not want to discard any sample then set to 0.
-type `Rscript plot_taxonomy.R --help` at the commandline for a full list of available parameters
-
-Content of `plot_taxonomy.R`  
+> Please note that if you'd like **to run this section in R, make sure that you run the code in the following sections above sequentially first**:
+> [Load Libraries](#load-libraries)
+> [Load Functions](#load-functions)
+> [Set Variables](#set-variables)
+> [Read-in Input Tables](#read-in-input-tables)
+> [Preprocessing](#preprocessing)
 
 ```R
 taxonomy_plots_out_dir <- "taxonomy_plots/"
 if(!dir.exists(taxonomy_plots_out_dir)) dir.create(taxonomy_plots_out_dir)
+metadata  <-  {DATAFRAME} 
+feature_table <- {DATAFRAME}
+taxonomy_table <- {DATAFRAME}
+custom_palette  <-{COLOR_VECTOR}
+publication_format <- {GGPLOT_THEME}
+groups_colname <- "groups"
+assay_suffix  <- "_GLAmpSeq"
+output_prefix  <- ""
+
 
 # -------------------------Prepare feature tables -------------------------- #
 taxon_levels <- colnames(taxonomy_table)
@@ -1726,6 +1767,7 @@ group_rare <- TRUE
 samples_order <- metadata %>% arrange(!!sym(groups_colname)) %>% rownames()
 dont_group <- c("phylum")
 # In percentage
+# phylum 1%, class 3%, order 3%, family 8%, genus 8% and species 9%
 thresholds <- c(phylum=1,class=3, order=3, family=8, genus=8, species=9)
 # Convert from wide to long format
 # -1 drops the kingdom level since all the microbes are bacteria
@@ -1796,11 +1838,12 @@ walk2(.x = relAbundace_tbs_rare_grouped, .y = taxon_levels[-1],
 
 # ------------------------ Group abundance plots ----------------------------- #
 # In percentage
+# phylum 1% and 2% for class to species.
 thresholds <- c(phylum=1,class=2, order=2, family=2, genus=2, species=2)
 
 # Convert from wide to long format for every treatment group of interest
-group_rare <- TRUE
-maximum_number_of_taxa <- 500
+group_rare <- TRUE # should rare taxa be grouped ?
+maximum_number_of_taxa <- 500 # If the number of taxa is more than this then rare taxa will be grouped anyway. 
 
 group_relAbundace_tbs <- map2(.x = taxon_levels[-1], .y = taxon_tables[-1], 
                                      .f = function(taxon_level=.x, taxon_table=.y){
@@ -1858,19 +1901,23 @@ walk2(.x = group_relAbundace_tbs, .y = taxon_levels[-1],
                                     plot=p, width = plot_width, height = 10, dpi = 300)
                            })
 ```
+**Input Data and Parameters Definitions:**
 
-**Input Data:**
-
-* **amplicon_metdata.csv** (metadata table)
-* **counts_GLAmpSeq.tsv** (count table)
-* **taxonomy_GLAmpSeq.tsv** (taxonomy table)
+* `metadata`           - samples metadata dataframe with the group/treatment to be analyzed from  [Preprocessing](#preprocessing)
+* `feature_table`      - ASV counts table dataframe from [Preprocessing](#preprocessing)
+* `taxonomy_table`     - taxonomy dataframe from [Preprocessing](#preprocessing)
+* `groups_colname`     - group column in metadata to be analyzed
+* `assay_suffix`       - Genelab assay suffix, default : "_GLAmpSeq"
+* `output_prefix`      - additdional prefix to be added to output files . Default: ""
+* `custom_palette`     - color palette defined in [Set Variables](#set-variables)
+* `publication_format` - ggplot theme defined in [Set Variables](#set-variables)
 
 **Output Data:**
 
 * **taxonomy_plots/<output_prefix>samples_<taxon_level>_GLAmpSeq.png** (samples barplots)
 * **taxonomy_plots/<output_prefix>groups_<taxon_level>_GLAmpSeq.png** (groups barplots)
 
-where taxon_level is one of phylum, class, order, family, genus and species.
+Where taxon_level is all of phylum, class, order, family, genus and species.
 
 > please note that species plot should only be taken with a grain of salt as short amplicon sequences can't be used to accurately predict species.
 
@@ -1883,46 +1930,32 @@ where taxon_level is one of phylum, class, order, family, genus and species.
 
 Using ANCOMBC 1, ANCOMBC 2, and DESeq2, we aim to uncover specific taxa that exhibit notable variations across different conditions, complemented by visualizations like volcano plots to illustrate these disparities and their implications on ASV expression and overall microbial community dynamics.
 
+> Please note that if you'd like **to run this section in R, make sure that you run the code in the following sections above sequentially first**:
+> [Load Libraries](#load-libraries)
+> [Load Functions](#load-functions)
+> [Set Variables](#set-variables)
+> [Read-in Input Tables](#read-in-input-tables)
+> [Preprocessing](#preprocessing)
 
 ### 10a. ANCOMBC 1
-```bash
-Rscript pairwise_ancombc1.R \
-                  --metadata-table amplicon_runsheet.csv \
-                  --feature-table counts_GLAmpSeq.tsv \
-                  --taxonomy-table taxonomy_GLAmpSeq.tsv \
-                  --group groups \
-                  --samples-column 'Sample Name' \
-                  --target-region 16S \
-                  --remove-rare FALSE \
-                  --prevalence-cutoff 0.15 \
-                  --library-cutoff 100 \
-                  --cpus 5
-
-```
-**Parameter Definitions:**
-
-*	`--metadata-table` – specifies the path to a comma separated samples metadata file with the group/treatment to be analyzed
-*	`--feature-table` – specifies the path to a tab separated samples feature table i.e. ASV or OTU table
-*	`--taxonomy-table` – specifies the path to a feature taxonomy table i.e. ASV taxonomy table
-*	`--group` – specifies the group column in the metadata to be analyzed
-* `--samples-column` – specifies the column in the metadata containing the sample names in the feature table
-* `--target-region`  – specifies the amplicon target region. Options are either 16S, 18S or ITS
-* `--remove-rare` - should rare features be filtered out prior to analysis? If set, rare feature will be removed
-* `--prevalence-cutoff` - If --remove-rare, a numerical fraction between 0 and 1. 
-                         Taxa with prevalences(the proportion of samples in which the taxon is present) less than --prevalence-cutoff will be excluded in the analysis. Default is 0.15, i.e. exclude taxa / features that are not present in at least 15% of the samples.
-* `--library-cutoff` - If --remove-rare, a numerical threshold for filtering samples based on library sizes. 
-                       Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 100. 
-                       if you do not want to discard any sample then set to 0.
-* `--cpus ` - specifies the number of cpus to use for parallel processing.
-
-Type `Rscript pairwise_ancombc1.R --help` at the commandline for a full list of available parameters
-
-Content of `pairwise_ancombc1.R`  
 
 ```R
 # Create output directory if it doesn't already exist
 diff_abund_out_dir <- "differential_abundance/ancombc1/"
 if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir, recursive = TRUE)
+metadata  <-  {DATAFRAME}  
+feature_table <- {DATAFRAME}
+taxonomy_table <- {DATAFRAME}
+publication_format <- {GGPLOT_THEME}
+feature <- "ASV"
+groups_colname  <- "groups"
+samples_column  <- "Sample Name"
+assay_suffix  <- "_GLAmpSeq"
+target_region <- "16S" # "16S", "18S" or "ITS"
+output_prefix  <- ""
+prevalence_cutoff <- 0
+library_cutoff <- 0
+threads <- 5
 
 
 # Create phyloseq object from feature, taxonomy and sample metadata tables
@@ -1935,7 +1968,7 @@ tse <-  mia::makeTreeSummarizedExperimentFromPhyloseq(ps)
 
 
 # Get unique group comparison as a matrix
-pairwise_comp.m <- utils::combn(metadata[,group] %>% unique, 2)
+pairwise_comp.m <- utils::combn(metadata[, groups_colname] %>% unique, 2)
 pairwise_comp_df <- pairwise_comp.m %>% as.data.frame 
 # Name the columns in the pairwise matrix as group1vgroup2
 colnames(pairwise_comp_df) <- map_chr(pairwise_comp_df,
@@ -1953,12 +1986,12 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
   
   # Subset the treeSummarizedExperiment object to contain only samples
   # in group1 and group2 
-  tse_sub <-  tse[, tse[[group]] %in% c(group1, group2)]
+  tse_sub <-  tse[, tse[[groups_colname]] %in% c(group1, group2)]
   
   # Note that by default, levels of a categorical variable in R are sorted 
   # alphabetically. 
   # Changing the reference group by reordering the factor levels
-  tse_sub[[group]] <- factor(tse_sub[[group]] , levels = c(group1, group2))
+  tse_sub[[groups_colname]] <- factor(tse_sub[[groups_colname]] , levels = c(group1, group2))
   
   # data - input data. TreeSummarizedExperiment or Phyloseq object
   # assay_name - name of count table in the input data object.
@@ -1980,10 +2013,10 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
   
   out <-  ancombc(data = tse_sub, assay_name = "counts", 
                   tax_level = NULL, phyloseq = NULL, 
-                  formula = group, 
+                  formula = groups_colname, 
                   p_adj_method = "fdr", prv_cut = prevalence_cutoff,
                   lib_cut = library_cutoff, 
-                  group = group, struc_zero = TRUE, neg_lb = TRUE, tol = 1e-5, 
+                  group = groups_colname , struc_zero = TRUE, neg_lb = TRUE, tol = 1e-5, 
                   max_iter = 100, conserve = TRUE, alpha = 0.05, global = FALSE,
                   n_cl = threads, verbose = TRUE)
   
@@ -2044,7 +2077,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     )
   
   # Merge the dataframes to one results dataframe
-  res <-lfc %>%
+  res <- lfc %>%
     left_join(se) %>%
     left_join(W) %>% 
     left_join(p_val)  %>% 
@@ -2129,8 +2162,8 @@ volcano_plots <- map(comp_names, function(comparison){
 
 # Set dimensions for saving faceted plot
 number_of_columns <- 2
-number_of_rows = ceiling(length(comp_names) / number_of_columns)
-fig_height = 7.5 * number_of_rows
+number_of_rows <- ceiling(length(comp_names) / number_of_columns)
+fig_height <- 7.5 * number_of_rows
 
 p <- wrap_plots(volcano_plots, ncol = 2)
 #  Try to combine all the volcano plots in one figure
@@ -2178,7 +2211,7 @@ colnames(missing_df) <- c(feature,samplesdropped)
 
 
 # Create mean and standard deviation table
-group_levels <- metadata[, group] %>% unique() %>% sort()
+group_levels <- metadata[, groups_colname] %>% unique() %>% sort()
 group_means_df <- normalized_table[feature]
 walk(group_levels, function(group_level){
   
@@ -2188,7 +2221,7 @@ walk(group_levels, function(group_level){
   
   # Samples that belong to the current group
   Samples <- metadata %>%
-    filter(!!sym(group) == group_level) %>%
+    filter(!!sym(groups_colname) == group_level) %>%
     pull(!!sym(samples_column))
   # Samples that belong to the current group that are in the normalized table
   Samples <- intersect(colnames(normalized_table), Samples)
@@ -2230,13 +2263,13 @@ merged_df <- merged_df %>%
 
 # Writing out results of differential abundance using ANCOMBC 1
 output_file <- glue("{diff_abund_out_dir}/{output_prefix}ancombc1_differential_abundance{assay_suffix}.csv")
-write_csv(merged_df,output_file)
+write_csv(merged_df, output_file)
 
 
 #  --------------- Make log abundance box plots ------------------ #
 
 # Merge the metadata with the feature table
-df2 <- (metadata %>% select(!!samples_column, !!group)) %>% 
+df2 <- (metadata %>% select(!!samples_column, !!groups_colname)) %>% 
   left_join(feature_table %>%
               t %>%
               as.data.frame %>%
@@ -2245,9 +2278,9 @@ df2 <- (metadata %>% select(!!samples_column, !!group)) %>%
 # Making abundance box plots
 boxplots <- map( merged_stats_df[[feature]], function(feature){
   
-  p <- ggplot(df2, aes(x=!!sym(group), y=log(!!sym(feature)+1), fill=!!sym(group) )) +
+  p <- ggplot(df2, aes(x=!!sym(groups_colname), y=log(!!sym(feature)+1), fill=!!sym(groups_colname) )) +
     geom_boxplot() + 
-    labs(x=NULL, y="Log Abundance", fill=tools::toTitleCase(group), title = feature) +
+    labs(x=NULL, y="Log Abundance", fill=tools::toTitleCase(groups_colname), title = feature) +
     theme_light() +
     theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
           axis.title.y = element_text(face = "bold", size=12),
@@ -2273,16 +2306,29 @@ fig_height = 5 * number_of_rows
 try(
 ggsave(filename = glue("{output_prefix}{feature}_boxplots{assay_suffix}.png"), plot = p, device = "png",
        width = 14, height = fig_height, units = "in", dpi = 300,
-       limitsize = FALSE, path = diff_abund_out_dir)  # There too many things to plot
+       limitsize = FALSE, path = diff_abund_out_dir)  # There may be too many things to plot
 
 )
 
 ```
 
-**Input Data:**
-* **amplicon_metdata.csv** (metadata table)
-* **counts_GLAmpSeq.tsv** (count table)
-* **taxonomy_GLAmpSeq.tsv** (taxonomy table)
+**Input Data and Parameter Definitions:**
+
+* `metadata`           - samples metadata dataframe with the group/treatment to be analyzed from  [Preprocessing](#preprocessing)
+* `feature_table`      - ASV counts table dataframe from [Preprocessing](#preprocessing)
+* `feature`            - feature type i.e. ASV or OTU.
+* `taxonomy_table`     - taxonomy dataframe from [Preprocessing](#preprocessing)
+* `groups_colname`     - group column in metadata to be analyzed
+* `samples_column`     – specifies the column in metadata containing the sample names in the feature table
+* `assay_suffix`       - Genelab assay suffix, default : "_GLAmpSeq"
+* `output_prefix`      - additdional prefix to be added to output files . Default: ""
+* `threads`            - specifies the number of cpus to use for parallel processing.
+* `prevalence_cutoff`  - If `remove_rare` is true, a numerical fraction between 0 and 1. 
+                         Taxa with prevalences(the proportion of samples in which the taxon is present) less than this will be excluded from the analysis. Default is 0, i.e. do not exclude any taxa / features.
+* `library_cutoff`     - If `remove_rare` is true, a numerical threshold for filtering samples based on library sizes. 
+                         Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0 i.e. no sample will be dropped. if you want to discard samples with read counts less than or equal to 100 then set to 100.
+* `publication_format` - ggplot theme defined in [Set Variables](#set-variables)
+* `target_region`      - amplicon target region. Options are either 16S, 18S or ITS
 
 **Output Data:**
 
@@ -2297,44 +2343,24 @@ ggsave(filename = glue("{output_prefix}{feature}_boxplots{assay_suffix}.png"), p
 ---
 
 ### 10b. ANCOMBC 2
-```bash
-Rscript pairwise_ancombc2.R \
-                  --metadata-table amplicon_runsheet.csv \
-                  --feature-table counts_GLAmpSeq.tsv \
-                  --taxonomy-table taxonomy_GLAmpSeq.tsv \
-                  --group groups \
-                  --samples-column 'Sample Name' \
-                  --target-region 16S \
-                  --remove-rare FALSE \
-                  --prevalence-cutoff 0.15 \
-                  --library-cutoff 100 \
-                  --cpus 5
-
-```
-**Parameter Definitions:**
-
-*	`--metadata-table` – specifies the path to a comma separated samples metadata file with the group/treatment to be analyzed
-*	`--feature-table` – specifies the path to a tab separated samples feature table i.e. ASV or OTU table
-*	`--taxonomy-table` – specifies the path to a feature taxonomy table i.e. ASV taxonomy table
-*	`--group` – specifies the group column in metadata to be analyzed
-* `--samples-column` – specifies the column in metadata containing the sample names in the feature table
-* `--target-region`  – specifies the amplicon target region. Options are either 16S, 18S or ITS
-* `--remove-rare` - should rare features be filtered out prior to analysis? If set, rare feature will be removed
-* `--prevalence-cutoff` - If --remove-rare, a numerical fraction between 0 and 1. 
-                         Taxa with prevalences(the proportion of samples in which the taxon is present) less than --prevalence-cutoff will be excluded in the analysis. Default is 0.15, i.e. exclude taxa / features that are not present in at least 15% of the samples.
-* `--library-cutoff` - If --remove-rare, a numerical threshold for filtering samples based on library sizes. 
-                       Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 100. 
-                       if you do not want to discard any sample then set to 0.
-
-* `--cpus ` - Specifies the number of cpus to use for parallel processing.
-
-Type `Rscript pairwise_ancombc2.R --help` at the commandline for a full list of available parameters
-
-Content of `pairwise_ancombc2.R`  
 
 ```R
 diff_abund_out_dir <- "differential_abundance/ancombc2/"
 if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir, recursive = TRUE)
+metadata  <-  {DATAFRAME} 
+feature_table <- {DATAFRAME}
+taxonomy_table <- {DATAFRAME}
+publication_format <- {GGPLOT_THEME}
+feature <- "ASV"
+target_region <- "16S" # "16S" , "18S" or "ITS"
+groups_colname  <- "groups"
+samples_column  <- "Sample Name"
+assay_suffix  <- "_GLAmpSeq"
+output_prefix  <- ""
+prevalence_cutoff <- 0
+library_cutoff <- 0
+threads <- 5
+
 
 # Create phyloseq object
 ps <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
@@ -2346,11 +2372,11 @@ tse <-  mia::makeTreeSummarizedExperimentFromPhyloseq(ps)
 
 # Getting the reference group and making sure that it is the reference 
 # used in the analysis
-group_levels <- metadata[, group] %>% unique() %>% sort()
+group_levels <- metadata[, groups_colname] %>% unique() %>% sort()
 ref_group <- group_levels[1]
-tse[[group]] <- factor(tse[[group]] , levels = group_levels)
+tse[[groups_colname]] <- factor(tse[[groups_colname]] , levels = group_levels)
 
-message("Running ANCOMBC2....")
+# Running ANCOMBC2....
 # Run acombc2
 
   # data - input data. TreeSummarizedExperiment or Phyloseq object
@@ -2372,11 +2398,11 @@ message("Running ANCOMBC2....")
   # it is recommended to set to TRUE if your sample size is small and the number of expected differentially abundant taxa is large.
 
 output <- ancombc2(data = tse, assay_name = "counts", tax_level = NULL,
-                   fix_formula = group, rand_formula = NULL,
+                   fix_formula = groups_colname, rand_formula = NULL,
                    p_adj_method = "fdr", pseudo_sens = TRUE,
                    prv_cut = prevalence_cutoff, 
                    lib_cut = library_cutoff, s0_perc = 0.05,
-                   group = group, struc_zero = TRUE, neg_lb = FALSE,
+                   group = groups_colname, struc_zero = TRUE, neg_lb = FALSE,
                    alpha = 0.05, n_cl = threads, verbose = TRUE,
                    global = TRUE, pairwise = TRUE, 
                    dunnet = TRUE, trend = FALSE,
@@ -2393,9 +2419,9 @@ output <- ancombc2(data = tse, assay_name = "counts", tax_level = NULL,
 new_colnames <- map_chr(output$res_pair  %>% colnames, 
                         function(colname) {
                           # Columns comparing a group to the reference group
-                          if(str_count(colname,group) == 1){
+                          if(str_count(colname, groups_colname) == 1){
                             str_replace_all(string=colname, 
-                                            pattern=glue("(.+)_{group}(.+)"),
+                                            pattern=glue("(.+)_{groups_colname}(.+)"),
                                             replacement=glue("\\1_(\\2)v({ref_group})")) %>% 
                             str_replace(pattern = "^lfc_", replacement = "logFC_") %>% 
                             str_replace(pattern = "^se_", replacement = "lfcSE_") %>% 
@@ -2404,10 +2430,10 @@ new_colnames <- map_chr(output$res_pair  %>% colnames,
                             str_replace(pattern = "^q_", replacement = "qvalue_")
                             
                           # Columns with normal two groups comparison
-                          } else if(str_count(colname,group) == 2){
+                          } else if(str_count(colname, groups_colname) == 2){
                             
                             str_replace_all(string=colname, 
-                                            pattern=glue("(.+)_{group}(.+)_{group}(.+)"),
+                                            pattern=glue("(.+)_{groups_colname}(.+)_{groups_colname}(.+)"),
                                             replacement=glue("\\1_(\\2)v(\\3)")) %>% 
                             str_replace(pattern = "^lfc_", replacement = "logFC_") %>% 
                             str_replace(pattern = "^se_", replacement = "lfcSE_") %>% 
@@ -2449,8 +2475,6 @@ walk(uniq_comps, function(comp){
   res_df <<- res_df %>% left_join(temp_df)
 })
 
-
-
 # --------- Add NCBI id to feature  ---------------#
 
 # Get the best taxonomy assigned to each ASV
@@ -2460,7 +2484,7 @@ tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","")  %>%
 
 df <- data.frame(ASV=rownames(taxonomy_table), best_taxonomy=tax_names)
 
-message("Querying NCBI...")
+# Querying NCBI...
 # Pull NCBI IDS for unique taxonomy names
 df2 <- data.frame(best_taxonomy = df$best_taxonomy %>%
                     unique()) %>%
@@ -2486,7 +2510,7 @@ missing_df <- data.frame(ASV=normalized_table[[feature]],
                   ncol = length(samplesdropped)
                   )
            )
-colnames(missing_df) <- c(feature,samplesdropped)
+colnames(missing_df) <- c(feature, samplesdropped)
 
 
 group_means_df <- normalized_table[feature]
@@ -2498,7 +2522,7 @@ walk(group_levels, function(group_level){
   
   # Samples that belong to the current group
   Samples <- metadata %>%
-    filter(!!sym(group) == group_level) %>%
+    filter(!!sym(groups_colname) == group_level) %>%
     pull(!!sym(samples_column))
   # Samples that belong to the current group that are in the normalized table
   Samples <- intersect(colnames(normalized_table), Samples)
@@ -2537,13 +2561,13 @@ merged_df <- merged_df %>%
   left_join(group_means_df, by = feature) %>% 
   mutate(across(where(is.numeric), ~round(.x, digits=3)))
 
-message("Writing out results of differential abundance using ANCOMBC2...")
+# Writing out results of differential abundance using ANCOMBC2...
 output_file <- glue("{diff_abund_out_dir}/{output_prefix}ancombc2_differential_abundance{assay_suffix}.csv")
-write_csv(merged_df,output_file)
+write_csv(merged_df, output_file)
 
 
 # ---------------------- Visualization --------------------------------------- #
-message("Making volcano plots...")
+# Making volcano plots...
 # ------------ Make volcano ---------------- #
 volcano_plots <- map(uniq_comps, function(comparison){
   
@@ -2584,8 +2608,8 @@ p <- wrap_plots(volcano_plots, ncol = 2)
 
 
 number_of_columns <- 2
-number_of_rows = ceiling(length(uniq_comps) / number_of_columns)
-fig_height = 7.5 * number_of_rows
+number_of_rows  <- ceiling(length(uniq_comps) / number_of_columns)
+fig_height <- 7.5 * number_of_rows
 
 #  Try to combine all the volcano plots in one figure
 try(
@@ -2596,18 +2620,18 @@ ggsave(filename = glue("{output_prefix}{feature}_volcano{assay_suffix}.png"), pl
 
 # ------------- Box plots ---------------- #
 
-df2 <- (metadata %>% select(!!samples_column, !!group)) %>% 
+df2 <- (metadata %>% select(!!samples_column, !!groups_colname)) %>% 
   left_join(feature_table %>%
               t %>%
               as.data.frame %>%
               rownames_to_column(samples_column))
 
-message("Making abundance box plots...")
+# Making abundance box plots...
 boxplots <- map(res_df[[feature]], function(feature){
   
-  p <- ggplot(df2, aes(x=!!sym(group), y=log(!!sym(feature)+1), fill=!!sym(group) )) +
+  p <- ggplot(df2, aes(x=!!sym(groups_colname), y=log(!!sym(feature)+1), fill=!!sym(groups_colname) )) +
     geom_boxplot() + 
-    labs(x=NULL, y="Log Abundance", fill=tools::toTitleCase(group), title = feature) +
+    labs(x=NULL, y="Log Abundance", fill=tools::toTitleCase(groups_colname), title = feature) +
     theme_light() +
     theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
           axis.title.y = element_text(face = "bold", size=12),
@@ -2625,8 +2649,8 @@ p <- wrap_plots(boxplots, ncol = 2, guides = 'collect')
 
 number_of_features <- res_df[[feature]] %>% length
 number_of_columns <- 2
-number_of_rows = ceiling(number_of_features / number_of_columns)
-fig_height = 5 * number_of_rows
+number_of_rows <- ceiling(number_of_features / number_of_columns)
+fig_height <- 5 * number_of_rows
 
 # Try to Plot all features / ASVs in one figure
 try(
@@ -2636,11 +2660,24 @@ ggsave(filename = glue("{output_prefix}{feature}_boxplots{assay_suffix}.png"), p
 )
 ```
 
-**Input Data:**
+**Input Data and Parameter Definitions:**
 
-* **amplicon_metdata.csv** (metadata table)
-* **counts_GLAmpSeq.tsv** (count table)
-* **taxonomy_GLAmpSeq.tsv** (taxonomy table)
+* `metadata`           - samples metadata dataframe with the group/treatment to be analyzed from  [Preprocessing](#preprocessing)
+* `feature_table`      - ASV counts table dataframe from [Preprocessing](#preprocessing)
+* `feature`            - feature type i.e. ASV or OTU.
+* `taxonomy_table`     - taxonomy dataframe from [Preprocessing](#preprocessing)
+* `samples_column`     – column in metadata containing the sample names in the feature table
+* `groups_colname`     - group column in metadata to be analyzed
+* `assay_suffix`       - Genelab assay suffix, default : "_GLAmpSeq"
+* `output_prefix`      - additdional prefix to be added to output files . Default: ""
+* `threads`            - specifies the number of cpus to use for parallel processing.
+* `prevalence_cutoff`  - If `remove_rare` is true, a numerical fraction between 0 and 1. 
+                         Taxa with prevalences(the proportion of samples in which the taxon is present) less than this will be excluded from the analysis. Default is 0, i.e. do not exclude any taxa / features.
+* `library_cutoff`     - If `remove_rare` is true, a numerical threshold for filtering samples based on library sizes. 
+                         Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0 i.e. no sample will be dropped. if you want to discard samples with read counts less than or equal to 100 then set to 100.
+* `publication_format` - ggplot theme defined in [Set Variables](#set-variables)
+* `target_region`      - amplicon target region. Options are either 16S, 18S or ITS
+
 
 **Output Data:**
 
@@ -2657,42 +2694,23 @@ ggsave(filename = glue("{output_prefix}{feature}_boxplots{assay_suffix}.png"), p
 
 ### 10c. DESeq2
 
-```bash
-Rscript run_deseq2.R \
-                  --metadata-table amplicon_runsheet.csv \
-                  --feature-table counts_GLAmpSeq.tsv \
-                  --taxonomy-table taxonomy_GLAmpSeq.tsv \
-                  --group groups \
-                  --samples-column 'Sample Name' \
-                  --target-region 16S \
-                  --remove-rare FALSE \
-                  --prevalence-cutoff 0.15 \
-                  --library-cutoff 100
-
-```
-**Parameter Definitions:**
-
-*	`--metadata-table` – specifies the path to a comma separated samples metadata file with the group/treatment to be analyzed
-*	`--feature-table` – specifies the path to a tab separated samples feature table i.e. ASV or OTU table
-*	`--taxonomy-table` – specifies the path to a feature taxonomy table i.e. ASV taxonomy table
-*	`--group` – specifies the group column in the metadata to be analyzed
-* `--samples-column` – specifies the column in the metadata containing the sample names in the feature table
-* `--target-region`  – specifies the amplicon target region. Options are either 16S, 18S or ITS
-* `--remove-rare` - should rare features be filtered out prior to analysis? If set, rare feature will be removed
-* `--prevalence-cutoff` - If --remove-rare, a numerical fraction between 0 and 1. 
-                         Taxa with prevalences(the proportion of samples in which the taxon is present) less than --prevalence-cutoff will be excluded in the analysis. Default is 0.15, i.e. exclude taxa / features that are not present in at least 15% of the samples.
-* `--library-cutoff` - If --remove-rare, a numerical threshold for filtering samples based on library sizes. 
-                       Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 100. 
-                       if you do not want to discard any sample then set to 0.
-
-type `Rscript run_deseq2.R --help` at the commandline for a full list of available parameters
-
-Content of `run_deseq2.R`  
-
 ```R
 # Create output directory if it doesn't already exist
 diff_abund_out_dir <- "differential_abundance/deseq2/"
 if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir, recursive = TRUE)
+metadata  <-  {DATAFRAME}
+feature_table <- {DATAFRAME}
+taxonomy_table <- {DATAFRAME}
+publication_format <- {GGPLOT_THEME}
+feature <- "ASV"
+samples_column <- "Sample Name"
+groups_colname  <- "groups" 
+assay_suffix  <- "_GLAmpSeq"
+target_region <- "16S" # "16S", "18S" or "ITS"
+output_prefix  <- ""
+prevalence_cutoff <- 0
+library_cutoff <- 0
+
 
 # Create phyloseq object from the feature, taxonomy and metadata tables 
 ASV_physeq <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
@@ -2700,7 +2718,7 @@ ASV_physeq <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
                        sample_data(metadata))
 # Convert the phyloseq object to a deseq object 
 deseq_obj <- phyloseq_to_deseq2(physeq = ASV_physeq,
-                                design = reformulate(group))
+                                design = reformulate(groups_colname))
 
 # Add pseudocount if any 0 count samples are present
 if (sum(colSums(counts(deseq_obj)) == 0) > 0) {
@@ -2734,7 +2752,7 @@ deseq_modeled <- tryCatch({
 
 
 # Get unique group comparison as a matrix
-pairwise_comp.m <- utils::combn(metadata[,group] %>% unique, 2)
+pairwise_comp.m <- utils::combn(metadata[,groups_colname] %>% unique, 2)
 pairwise_comp_df <- pairwise_comp.m %>% as.data.frame 
 # Set the colnames as group1vgroup2
 colnames(pairwise_comp_df) <- map_chr(pairwise_comp_df,
@@ -2752,7 +2770,7 @@ walk(pairwise_comp_df, function(col){
   group2 <- col[2]
 
 # Retrieve the statistics table for the cuurrent pair and rename the columns  
-df <- results(deseq_modeled, contrast = c(group, group1, group2)) %>% # Get stats
+df <- results(deseq_modeled, contrast = c(groups_colname, group1, group2)) %>% # Get stats
   data.frame() %>%
   rownames_to_column(feature) %>% 
   set_names(c(feature ,
@@ -2807,7 +2825,7 @@ colnames(missing_df) <- c(feature,samplesdropped)
 
 # Calculate mean and standard deviation of all ASVs for each group in 
 # a dataframe called group_means_df
-group_levels <- metadata[, group] %>% unique() %>% sort()
+group_levels <- metadata[, groups_colname] %>% unique() %>% sort()
 group_means_df <- normalized_table[feature]
 walk(group_levels, function(group_level){
   
@@ -2817,7 +2835,7 @@ walk(group_levels, function(group_level){
   
   # Get a vector of samples that belong to the current group
   Samples <- metadata %>%
-    filter(!!sym(group) == group_level) %>%
+    filter(!!sym(groups_colname) == group_level) %>%
     pull(!!sym(samples_column))
   # Retain only samples that belong to the current group that are in the normalized table
   Samples <- intersect(colnames(normalized_table), Samples)
@@ -2862,9 +2880,7 @@ merged_df <- merged_df %>%
 # Defining the output file
 output_file <- glue("{diff_abund_out_dir}/{output_prefix}deseq2_differential_abundance{assay_suffix}.csv")
 # Writing out results of differential abundance using DESeq2
-write_csv(merged_df,output_file)
-
-
+write_csv(merged_df, output_file)
 
 # ------------------------- Make volcano plots ------------------------ #
 # Loop over group pairs and make a volcano comparing the pair 
@@ -2879,7 +2895,7 @@ walk(pairwise_comp_df, function(col){
   p_val <- 0.1 # logfc cutoff
   
   # Retrieve data for plotting
-  deseq_res <- results(deseq_modeled, contrast = c(group, group1, group2))
+  deseq_res <- results(deseq_modeled, contrast = c(groups_colname, group1, group2))
   volcano_data <- as.data.frame(deseq_res)
   volcano_data <- volcano_data[!is.na(volcano_data$padj), ]
   volcano_data$significant <- volcano_data$padj <= p_val
@@ -2929,11 +2945,22 @@ walk(pairwise_comp_df, function(col){
 })
 ```
 
-**Input Data:**
+**Input Data and Parameter Definitions:**
 
-* **amplicon_runsheet.csv** (metadata table)
-* **counts_GLAmpSeq.tsv** (count table)
-* **taxonomy_GLAmpSeq.tsv** (taxonomy table)
+* `metadata`           - samples metadata dataframe with the group/treatment to be analyzed from  [Preprocessing](#preprocessing)
+* `feature_table`      - ASV counts table dataframe from [Preprocessing](#preprocessing)
+* `feature`            - feature type i.e. ASV or OTU.
+* `taxonomy_table`     - taxonomy dataframe from [Preprocessing](#preprocessing)
+* `samples_column`     – column in metadata containing the sample names in the feature table
+* `groups_colname`     - group column in metadata to be analyzed
+* `assay_suffix`       - Genelab assay suffix, default : "_GLAmpSeq"
+* `output_prefix`      - additdional prefix to be added to output files . Default: ""
+* `prevalence_cutoff`  - If `remove_rare` is true, a numerical fraction between 0 and 1. 
+                         Taxa with prevalences(the proportion of samples in which the taxon is present) less than this will be excluded from the analysis. Default is 0, i.e. do not exclude any taxa / features.
+* `library_cutoff`     - If `remove_rare` is true, a numerical threshold for filtering samples based on library sizes. 
+                         Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0 i.e. no sample will be dropped. if you want to discard samples with read counts less than or equal to 100 then set to 100.
+* `publication_format` - ggplot theme defined in [Set Variables](#set-variables)
+* `target_region`      - amplicon target region. Options are either 16S, 18S or ITS
 
 **Output Data:**
 
