@@ -584,7 +584,10 @@ write.table(tax_and_count_tab, "taxonomy-and-counts_GLAmpSeq.tsv", sep="\t", quo
 
 ### 6a. Create Sample Runsheet
 
-> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the examples for [Paired-end](../Workflow_Documentation/NF_AmpIllumina-B/workflow_code/PE_file.csv) and [Single-end](../Workflow_Documentation/NF_AmpIllumina-B/workflow_code/SE_file.csv) samples.
+> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the examples for [Paired-end](../Workflow_Documentation/NF_AmpIllumina-B/workflow_code/PE_file.csv) and [Single-end](../Workflow_Documentation/NF_AmpIllumina-B/workflow_code/SE_file.csv) samples. When creating this table manually, the most important columns for the analyses below are:
+
+* `sample_id` - column with unique sample names.
+* `groups`    - column with the groups/treatments that each sample belong. This column is used for comparison.
 
 ```bash
 ### Download the *ISA.zip file from the OSDR ###
@@ -657,8 +660,11 @@ library(tidyverse)
 ```R
 # Function to calculate text size for plotting
 calculate_text_size <- function(num_samples, start_samples = 25, min_size = 3) {
-  max_size = 11  # Maximum size for up to start_samples
-  slope = -0.15
+  # num_samples [INT]   - the number of samples to plot
+  # start_samples [INT] - start of samples
+  # min_size [INT]    - minimum text size for plotting
+  max_size <- 11  # Maximum size for up to start_samples
+  slope <- -0.15
   
   if (num_samples <= start_samples) {
     return(max_size)
@@ -675,23 +681,27 @@ calculate_text_size <- function(num_samples, start_samples = 25, min_size = 3) {
 # sample count transformation depending on the supplied transformation method
 # i.e. either 'rarefy' or  'vst'
 transform_phyloseq <- function( feature_table, metadata, method, rarefaction_depth=500){
-  # feature_table  [DATAFRAME] ~ Feature / ASV count table with samples as columns and features as rows 
-  # metadata [DATAFRAME] ~  Samples metadata with samples as row names
-  # method [STRING] ~ Distance transformation method to use.
+  # feature_table  [DATAFRAME] - Feature / ASV count table with samples as columns and features as rows 
+  # metadata [DATAFRAME] -  Samples metadata with samples as row names
+  # method [STRING] - Distance transformation method to use.
   #                   Either 'rarefy' or 'vst' for rarefaction and variance 
   #                   stabilizing transformation, respectively.
-  # rarefaction_depth [INT] ~ Sample rarefaction to even depth when method is 'bray'
+  # rarefaction_depth [INT] - Sample rarefaction to even depth when method is 'bray'
   
+
+  # Rarefaction
   if(method == 'rarefy'){
     # Create phyloseq object
     ASV_physeq <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
                            sample_data(metadata))
     
-    
+    # Get the count for every sample sorted in ascending order
     seq_per_sample <- colSums(feature_table) %>% sort()
-    # Minimum value
+    # Minimum sequences/count value
     depth <- min(seq_per_sample)
     
+    # Loop through the sequences per sample and return the count
+    # nearest to the minimum required rarefaction depth
     for (count in seq_per_sample) {
       # Get the count equal to rarefaction_depth or nearest to it
       if(count >= rarefaction_depth) {
@@ -707,7 +717,8 @@ transform_phyloseq <- function( feature_table, metadata, method, rarefaction_dep
                             rngseed = 1, 
                             replace = FALSE, 
                             verbose = FALSE)
-    
+
+  # Variance Stabilizing Transformation
   }else if(method == "vst"){
     
     # Using deseq
@@ -740,25 +751,31 @@ transform_phyloseq <- function( feature_table, metadata, method, rarefaction_dep
   return(ps)
 }
 
-# -----------    Hierarchical Clustering and dendogram plotting
+# -----------  A function  Hierarchical Clustering and dendogram plotting
 make_dendogram <- function(dist_obj, metadata, groups_colname,
                            group_colors, legend_title){
-  
-  
+  # dis_obj [DIST] - a distance object holding the calculated distance (euclidean, bry curtid etc.) between samples 
+  # metadata [DATAFRAME] - sample metadata with samples as rownames and sample info as columns
+  # groups_colname [STRING] - name of column in metadata to group samples by.
+  # legend_title [STRING]  - legend time to use for plotting
+
+  # Hierarchical Clustering
   sample_clust <- hclust(d = dist_obj, method = "ward.D2")
   
-  # Extract clustering data
+  # Extract clustering data for plotting
   hcdata <- dendro_data(sample_clust, type = "rectangle")
-  segment_data <- segment(hcdata)
+  segment_data <- segment(hcdata) # sepcifications for tree structure
   label_data <- label(hcdata) %>%
     left_join(metadata %>% 
-                rownames_to_column("label"))
+                rownames_to_column("label")) # Labels are sample names
 
   # Plot dendogram
   dendogram <- ggplot() +
+    # Plot tree
     geom_segment(data = segment_data, 
-                 aes(x = x, y = y, xend = xend, yend = yend)
+                 aes(x = x, y = y, xend = xend, yend = yend) 
     ) +
+    # Add sample text labels to tree
     geom_text(data = label_data , 
               aes(x = x, y = y, label = label, 
                   color = !!sym(groups_colname) , hjust = 0), 
@@ -779,23 +796,34 @@ make_dendogram <- function(dist_obj, metadata, groups_colname,
   
 }
 
-# Run variance test and adonis test
+# A function to arun variance test and adonis test
 run_stats <- function(dist_obj, metadata, groups_colname){
+
+  # dis_obj [DIST] - a distance object holding the calculated distance (euclidean, bry curtid etc.) between samples 
+  # metadata [DATAFRAME] - sample metadata with samples as rownames and sample info as columns
+  # groups_colname [STRING] - name of column in metadata to group samples by.
   
+  # Retrieve sample names from the dist object
   samples <- attr(dist_obj, "Label")
+  # subset metadata to contain ony samples in the dist_obj
   metadata <- metadata[samples,]
+  
+  # Run variance test and present the result in a nicely formatted table / dataframe
   variance_test <- betadisper(d = dist_obj, 
                               group = metadata[[groups_colname]]) %>%
-    anova() %>%
-    broom::tidy() %>% 
-    mutate(across(where(is.numeric), ~round(.x, digits = 2)))
+    anova() %>% # MAke results anova-like
+    broom::tidy() %>%  # make the table 'tidy'
+    mutate(across(where(is.numeric), ~round(.x, digits = 2))) # round-up numeric columns
   
   
+  # Run Adonis test
   adonis_res <- adonis2(formula = dist_obj ~ metadata[[groups_colname]])
+
   adonis_test <- adonis_res %>%
-    broom::tidy() %>% 
-    mutate(across(where(is.numeric), ~round(.x, digits = 2)))
+    broom::tidy() %>% # Make tidy table 
+    mutate(across(where(is.numeric), ~round(.x, digits = 2))) # round-up numeric columns
   
+  # Return a named list with the variance and adonis test results
   return(list(variance = variance_test, adonis = adonis_test))
 }
 
@@ -803,6 +831,16 @@ run_stats <- function(dist_obj, metadata, groups_colname){
 plot_pcoa <- function(ps, stats_res, distance_method,
                       groups_colname, group_colors, legend_title,
                       addtext=FALSE) {
+
+  # ps [PHYLOSEQ]  - Phyloseq object contructed from  feature, taxonmy and metadata tables
+  # stats_res [LIST] - named list generated after runing the function `run_stats`.
+  #                    The list should contain variance and adonis tests dataframes 
+  # distance_method [STRING] - Method used to calculate the distance between samples. 
+  #                      "euclidean" or "bray" for euclidean and Bray Curtis distance, respectively.
+  # groups_colname [STRING] - name of column in metadata to group samples by.
+  # group_colors   [VECTOR] - named character vector of colors for each group in `groups_colname`
+  # legend_title [STRING]  - legend time to use for plotting
+  # addtext [BOOLEAN]  - should text labels be added to your pcoa plot? Default: FALSE. 
   
   # Generating a PCoA with phyloseq
   pcoa <- ordinate(physeq = ps, method = "PCoA", distance = distance_method)
@@ -817,29 +855,30 @@ plot_pcoa <- function(ps, stats_res, distance_method,
   label_PC1 <- sprintf("PC1 [%.1f%%]", percent_variance[1])
   label_PC2 <- sprintf("PC2 [%.1f%%]", percent_variance[2])
   
+  # Retrieving pcoa vectors
   vectors_df <- pcoa$vectors %>%
                    as.data.frame() %>%
                    rownames_to_column("samples")
-  
+  # Creating a dataframe for plotting
   plot_df <- sample_data(ps) %>%
                as.matrix() %>%
                as.data.frame() %>%
                rownames_to_column("samples") %>% 
                select(samples, !!groups_colname) %>% 
                right_join(vectors_df, join_by("samples"))
-  
+  # Plot pcoa
   p <- ggplot(plot_df, aes(x=Axis.1, y=Axis.2, 
                            color=!!sym(groups_colname), 
                            label=samples)) +
     geom_point(size=1)
 
-  
+  # Add text
   if(addtext){
     p <- p + geom_text(show.legend = FALSE,
                        hjust = 0.3, vjust = -0.4, size = 4)
   }
   
-  
+ # Add annotations to pcoa plot 
  p <-  p +  labs(x = label_PC1, y = label_PC2, color = legend_title) +
     coord_fixed(sqrt(eigen_vals[2]/eigen_vals[1])) + 
     scale_color_manual(values = group_colors) +
@@ -862,10 +901,10 @@ plot_pcoa <- function(ps, stats_res, distance_method,
 # on the supplied cut off.
 remove_rare_features <- function(feature_table, cut_off_percent=3/4){
   
-  # feature_table [MATRIX]  feature table matrix with samples as columns and 
-  #                         features as rows
-  # cut_off_percent [NUMERIC] cut-off fraction  or decimal between 0.001 to 1 
-  #                          of the total number of samples to determine the 
+  # feature_table [MATRIX] -  feature table matrix with samples as columns and 
+  #                           features as rows
+  # cut_off_percent [NUMERIC] - cut-off fraction  or decimal between 0.001 to 1 
+  #                             of the total number of samples to determine the 
   #                          most abundant features. By default it removes 
   #                          features that are not present in 3/4 of the total 
   #                          number of samples
@@ -882,25 +921,28 @@ remove_rare_features <- function(feature_table, cut_off_percent=3/4){
   return(abun_features.m)
 }
 
+ # Function to process a taxonopmy assignment table
 process_taxonomy <- function(taxonomy, prefix='\\w__') {
-  # Function to process a taxonopmy assignment table
-  #1. ~ taxonomy is a string specifying the taxonomic assignment file name
-  #2 prefix ~ is a regular expression specifying the characters to remove
-  # from the taxon names  '\\w__'  for greengenes and 'D_\\d__' for SILVA
+ 
+  # taxonomy [DATAFRAME] - taxonomy dataframe to process
+  # prefix [STRING] - regular expression specifying the characters to remove
+  #                  from taxon names. Use '\\w__'  for greengenes and 'D_\\d__' for SILVA
   
-  
+  # Ensure that all columns are of character data type
   taxonomy <- apply(X = taxonomy, MARGIN = 2, FUN = as.character) 
   
+  # Loop over every column (rank i.e. domain to species) amd make the necessary edits
   for (rank in colnames(taxonomy)) {
-    #delete the taxonomy prefix
+    # Delete the taxonomy prefix
     taxonomy[,rank] <- gsub(pattern = prefix, x = taxonomy[, rank],
                             replacement = '')
     indices <- which(is.na(taxonomy[,rank]))
     taxonomy[indices, rank] <- rep(x = "Other", times=length(indices)) 
-    #replace empty cell
+    # replace empty cell with the string 'Other'
     indices <- which(taxonomy[,rank] == "")
     taxonomy[indices,rank] <- rep(x = "Other", times=length(indices))
   }
+  # Replace _ with space
   taxonomy <- apply(X = taxonomy,MARGIN = 2,
                     FUN =  gsub,pattern = "_",replacement = " ") %>% 
     as.data.frame(stringAsfactor=F)
@@ -909,9 +951,12 @@ process_taxonomy <- function(taxonomy, prefix='\\w__') {
 
 # Function to format a taxonomy assignment table by appending a suffix
 # to a known name
-format_taxonomy_table <- function(taxonomy=taxonomy.m,stringToReplace="Other",
-                                  suffix=";Other") {
-  
+format_taxonomy_table <- function(taxonomy, stringToReplace="Other", suffix=";Other") {
+
+  # taxonomy [DATAFRAME] - taxonomy dataframe to process
+  # stringToReplace [STRING] - String to replace
+  # suffix [STRING]  - Replacement string
+
   for (taxa_index in seq_along(taxonomy)) {
     
     indices <- grep(x = taxonomy[,taxa_index], pattern = stringToReplace)
@@ -921,13 +966,14 @@ format_taxonomy_table <- function(taxonomy=taxonomy.m,stringToReplace="Other",
              rep(x = suffix, times=length(indices)))
     
   }
+
   return(taxonomy)
 }
 
 fix_names<- function(taxonomy,stringToReplace,suffix){
-  #1~ taxonomy is a taxonomy dataframe with taxonomy ranks as column names
-  #2~ stringToReplace is a vector of regex strings specifying what to replace
-  #3~ suffix is a string specifying the replacement value
+  # taxonomy [DATAFRAME] - taxonomy dataframe with taxonomy ranks as column names
+  # stringToReplace [STRING VECTOR] - is a vector of regex strings specifying what to replace
+  # suffix [STRING VECTOR] - string specifying the replacement value
   
   
   for(index in seq_along(stringToReplace)){
@@ -946,6 +992,10 @@ make_feature_table <- function(count_matrix,taxonomy,
   # EAMPLE:
   # make_feature_table(count_matrix = feature_counts_matrix,
   #                    taxonomy = taxonomy_table, taxon_level = "Phylum")
+
+  # count_matrix [MATRIX] - ASV or OTU table
+  # taxonomy    [MATRIX] - Taxonomy table
+  # taxon_level [STRING] - taxonol level string i.e. domain to species
 
   feature_counts_df <- data.frame(taxon_level=taxonomy[,taxon_level],
                                   count_matrix, check.names = FALSE,
@@ -973,11 +1023,14 @@ make_feature_table <- function(count_matrix,taxonomy,
 # Function to group rare taxa or return a table with the rare taxa
 group_low_abund_taxa <- function(abund_table, threshold=0.05,
                                  rare_taxa=FALSE) {
-  # abund_table is a relative abundance matrix with taxa as columns and  samples as rows
-  #rare_taxa is a boolean specifying if only rare taxa should be returned
-  #If set to TRU then a table with only the rare taxa will be returned 
-  #intialize an empty vector that will contain the indices for the
-  #low abundance columns/ taxa to group
+
+  # abund_table [MATRIX] - relative abundance matrix with taxa as columns and  samples as rows
+  # threshold [NUMERIC] - threshold for filtering out rare taxa.
+  # rare_taxa [BOOLEAN] - boolean specifying if only rare taxa should be returned
+  #                       If set to TRU then a table with only the rare taxa will be returned 
+  
+  # Intialize an empty vector that will contain the indices for the
+  # low abundance columns/ taxa to group
   taxa_to_group <- c()
   #intialize the index variable of species with low abundance (taxa/columns)
   index <- 1
@@ -1027,12 +1080,14 @@ group_low_abund_taxa <- function(abund_table, threshold=0.05,
 collapse_samples <- function(taxon_table,metadata,group,fun=sum, 
                              convertToRelativeAbundance=FALSE){
   # function to collapse the samples in an oTU table with a defined function(fun)  based on a group in metadata 
-  # taxon_table - a matrix count table with samples as rows and features/OTUs as columns
-  # metadata - a dataframe to containing the group to collapse samples by. Sample names must be the rownames of the metadata
-  # group - an independent factor variable within the metadata to collapse the samples by
-  # fun - a function without brackets to apply in order to collapse the samples
-  # convertToRelativeAbundance - a boolean set to TRUE OR FALSE if the taxon_table shout be converted to relative abundance
-  # default is FALSE
+  # taxon_table [MATRIX] - a matrix count table with samples as rows and features/OTUs as columns
+  # metadata [DATAFRAME] - a dataframe to containing the group to collapse samples by. 
+  #                        Sample names must be the rownames of the metadata
+  # group [STRING] - an independent factor variable within the metadata to collapse the samples by
+  # fun   [FUNCTION] - a function without brackets to apply in order to collapse the samples
+  # convertToRelativeAbundance [BOOLEAN] - a boolean set to TRUE OR FALSE if the taxon_table shout 
+  #                                        be converted to relative abundance default is FALSE.
+
   common.ids <- intersect(rownames(taxon_table),rownames(metadata))
   metadata <- droplevels(metadata[common.ids,,drop=FALSE])
   taxon_table <- taxon_table[common.ids,,drop=FALSE]
@@ -1054,6 +1109,9 @@ collapse_samples <- function(taxon_table,metadata,group,fun=sum,
 taxize_options(ncbi_sleep = 0.8)
 # A function to retrieve NCBI taxonomy id for a given taxonomy name
 get_ncbi_ids <- function(taxonomy, target_region){
+
+  # taxonomy [STRING] - taxonomy name to search for it's NCBI ID
+  # target [STRING]  - amplicon target region analyzed. options are "16S", "18S" or "ITS"
   
   if(target_region == "ITS"){
     search_string <- "fungi"
@@ -1072,6 +1130,8 @@ get_ncbi_ids <- function(taxonomy, target_region){
 # Error handling function when running ANCOMBC2
 find_bad_taxa <- function(cnd){
 
+  # cnd [TRY ERROR] - error condition to catch when running ancombc2 function below
+
   if(split_res == "replacement has 0 rows, data has 1" || 
      split_res == "All taxa contain structural zeros") { 
     
@@ -1088,6 +1148,10 @@ find_bad_taxa <- function(cnd){
 
 # A function to run ANCOMBC2 while handlixnxg commxon 
 ancombc2 <- function(data, ...) {
+
+  # data [treeSummarizedExperiment] - a treeSummarizedExperiment containing the feature, 
+  #                                   taxonomy and metdata to be analyzed using ancombc2.
+
   tryCatch(
     ANCOMBC::ancombc2(data = data, ...),
     error = function(cnd) {
@@ -1116,6 +1180,8 @@ ancombc2 <- function(data, ...) {
 
 # Geometric mean function used when running DESeq2
 gm_mean <- function(x, na.rm=TRUE) {
+  # x [NUMERIC] - a numeric vector to calculate geometric mean on
+  # na.rm [BOOLEAN] - should NAs be remove prior to calculation.
   exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
 }
 
@@ -1332,12 +1398,9 @@ taxonomy_table <- taxonomy_table[common_ids,]
 
 Alpha diversity examines the variety and abundance of taxa within individual samples. Rarefaction curves are utilized to visually represent this diversity, plotting the number of unique sequences (ASVs) identified against the total number of sequences sampled, offering a perspective on the saturation and completeness of sampling. Metrics like Chao1 richness estimates and Shannon diversity indices are employed to quantify the richness (total number of unique sequences) and diversity (combination of richness and evenness) within these samples.
 
-> Please note that if you'd like **to run this section in R, make sure that you run the code in the following sections above sequentially first**:
-> [Load Libraries](#load-libraries), 
-> [Load Functions](#load-functions), 
-> [Set Variables](#set-variables), 
-> [Read-in Input Tables](#read-in-input-tables), and
-> [Preprocessing](#preprocessing)
+> Please note that if you'd like to run the code in this section, make sure that you [load the libraries](#load-libraries) 
+and [functions](#load-functions), [read-in input tables](#read-in-input-tables) and [preprocess](#preprocessing) them in R 
+by running the lines of code in [section 6](#6-amplicon-seq-data-analysis-set-up) sequentially, particularly those in [section 6b](#6b-r-environment-set-up).
 
 ```R
 # Create output directory if it doesn't already exist
@@ -1627,12 +1690,9 @@ ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}richness_and_di
 
 Beta diversity measures the variation in species composition between different samples or environments. A common practice in working with a new dataset is to generate some exploratory visualizations like ordinations and hierarchical clusterings. These give us a quick overview of how our samples relate to each other and can be a way to check for problems like batch effects.
 
-> Please note that if you'd like **to run this section in R, make sure that you run the code in the following sections above sequentially first**:
-> [Load Libraries](#load-libraries), 
-> [Load Functions](#load-functions), 
-> [Set Variables](#set-variables), 
-> [Read-in Input Tables](#read-in-input-tables), and 
-> [Preprocessing](#preprocessing)
+> Please note that if you'd like to run the code in this section, make sure that you [load the libraries](#load-libraries) 
+and [functions](#load-functions), [read-in input tables](#read-in-input-tables) and [preprocess](#preprocessing) them in R 
+by running the lines of code in [section 6](#6-amplicon-seq-data-analysis-set-up) sequentially, particularly those in [section 6b](#6b-r-environment-set-up).
 
 ```R
 beta_diversity_out_dir <- "beta_diversity/"
@@ -1733,12 +1793,9 @@ Were distance_method is either bray or euclidean for Bray Curtis and Euclidean d
 Taxonomic summaries provide insights into the composition of microbial communities at various taxonomic levels.
 
 
-> Please note that if you'd like **to run this section in R, make sure that you run the code in the following sections above sequentially first**:
-> [Load Libraries](#load-libraries), 
-> [Load Functions](#load-functions), 
-> [Set Variables](#set-variables), 
-> [Read-in Input Tables](#read-in-input-tables), and 
-> [Preprocessing](#preprocessing)
+> Please note that if you'd like to run the code in this section, make sure that you [load the libraries](#load-libraries) 
+and [functions](#load-functions), [read-in input tables](#read-in-input-tables) and [preprocess](#preprocessing) them in R 
+by running the lines of code in [section 6](#6-amplicon-seq-data-analysis-set-up) sequentially, particularly those in [section 6b](#6b-r-environment-set-up).
 
 ```R
 taxonomy_plots_out_dir <- "taxonomy_plots/"
@@ -1930,12 +1987,9 @@ Where taxon_level is all of phylum, class, order, family, genus and species.
 
 Using ANCOMBC 1, ANCOMBC 2, and DESeq2, we aim to uncover specific taxa that exhibit notable variations across different conditions, complemented by visualizations like volcano plots to illustrate these disparities and their implications on ASV expression and overall microbial community dynamics.
 
-> Please note that if you'd like **to run this section in R, make sure that you run the code in the following sections above sequentially first**:
-> [Load Libraries](#load-libraries), 
-> [Load Functions](#load-functions), 
-> [Set Variables](#set-variables), 
-> [Read-in Input Tables](#read-in-input-tables), and 
-> [Preprocessing](#preprocessing)
+> Please note that if you'd like to run the code in this section, make sure that you [load the libraries](#load-libraries) 
+and [functions](#load-functions), [read-in input tables](#read-in-input-tables) and [preprocess](#preprocessing) them in R 
+by running the lines of code in [section 6](#6-amplicon-seq-data-analysis-set-up) sequentially, particularly those in [section 6b](#6b-r-environment-set-up).
 
 ### 10a. ANCOMBC 1
 
