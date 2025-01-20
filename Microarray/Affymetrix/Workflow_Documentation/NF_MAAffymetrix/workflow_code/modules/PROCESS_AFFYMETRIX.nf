@@ -33,6 +33,7 @@ process PROCESS_AFFYMETRIX {
             -P 'annotation_file_path:${annotation_file_path}' \
             -P 'ensembl_version:${ensemblVersion}' \
             -P 'local_annotation_dir:${params.referenceStorePath}' \
+            -P 'annotation_config_path:${params.annotation_config_path}' \
             ${limit_biomart_query_parameter} \
             ${run_DE}
 

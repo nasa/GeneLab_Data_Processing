@@ -21,6 +21,7 @@ params:
   annotation_file_path: NULL # str, Annotation file from 'genelab_annots_link' column of https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv
   ensembl_version: NULL # str, Used to determine ensembl version
   local_annotation_dir: NULL
+  annotation_config_path: NULL
   DEBUG_limit_biomart_query: NULL # int, If supplied, only the first n probeIDs are queried
   run_DE: 'true'
 
@@ -47,8 +48,9 @@ if (is.null(params$runsheet)) {
 
 runsheet <- params$runsheet # <path/to/runsheet>
 
-# If using custom annotation, local_annotation_dir is path to directory containing annotation file and config
-local_annotation_dir <- params$local_annotation_dir # <path/to/custom_annotation>
+# If using custom annotation, local_annotation_dir is path to directory containing annotation file and annotation_config_path is path/url to config file
+local_annotation_dir <- params$local_annotation_dir # <path/to/annotation_dir>
+annotation_config_path <- params$annotation_config_path # <path/to/config_file>
 
 message(params)
 
@@ -671,16 +673,16 @@ if (use_custom_annot) {
   expected_attribute_name <- 'ProbesetID'
 
   annot_type <- 'NO_CUSTOM_ANNOT'
-  if (!is.null(local_annotation_dir) && file.exists(file.path(local_annotation_dir, 'config.csv'))) {
-    config_df <- read.csv(file.path(local_annotation_dir, 'config.csv'), row.names=1)
-    if (df_rs$`biomart_attribute` %in% row.names(config_df)) {
-      annot_config <- config_df[df_rs$`biomart_attribute`, ]
+  if (!is.null(local_annotation_dir) && !is.null(annotation_config_path)) {
+    config_df <- read.csv(annotation_config_path, row.names=1)
+    if (unique(df_rs$`biomart_attribute`) %in% row.names(config_df)) {
+      annot_config <- config_df[unique(df_rs$`biomart_attribute`), ]
       annot_type <- annot_config$annot_type[[1]]
     } else {
-      warning(paste0("No entry for '", df_rs$`biomart_attribute`, "' in provided config.csv"))
+      warning(paste0("No entry for '", unique(df_rs$`biomart_attribute`), "' in provided config file: ", annotation_config_path))
     }
   } else {
-    warning(paste0("No 'config.csv' file found in path (--referenceStorePath): ", local_annotation_dir))
+    warning("Need to provide both local_annotation_dir and annotation_config_path to use custom annotation.")
   }
 
   if (annot_type == '3prime-IVT') {

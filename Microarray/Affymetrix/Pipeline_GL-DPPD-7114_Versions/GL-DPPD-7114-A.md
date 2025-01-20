@@ -155,8 +155,9 @@ options(dplyr.summarise.inform = FALSE) # Don't print out '`summarise()` has gro
 # Define path to runsheet
 runsheet <- "/path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv"
 
-# If using custom annotation, define path to directory containing annotation file and config
+# If using custom annotation, local_annotation_dir is path to directory containing annotation file and annotation_config_path is path/url to config file
 local_annotation_dir <- NULL # <path/to/custom_annotation>
+annotation_config_path <- NULL # <path/to/config_file>
 
 ## Set up output structure
 
@@ -287,6 +288,10 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 - `local_annotation_dir` (Path to local annotation directory if using custom annotations, see [Step 8a](#8a-get-probeset-annotations))
 
     > Note: If not using custom annotations, leave `local_annotation_dir` as `NULL`.
+
+- `annotation_config_path` (URL or path to annotation config file if using custom annotations, see [Step 8a](#8a-get-probeset-annotations))
+
+    > Note: If not using custom annotations, leave `annotation_config_path` as `NULL`.
 
 **Output Data:**
 
@@ -843,16 +848,16 @@ if (use_custom_annot) {
   expected_attribute_name <- 'ProbesetID'
 
   annot_type <- 'NO_CUSTOM_ANNOT'
-  if (!is.null(local_annotation_dir) && file.exists(file.path(local_annotation_dir, 'config.csv'))) {
-    config_df <- read.csv(file.path(local_annotation_dir, 'config.csv'), row.names=1)
-    if (df_rs$`biomart_attribute` %in% row.names(config_df)) {
-      annot_config <- config_df[df_rs$`biomart_attribute`, ]
+  if (!is.null(local_annotation_dir) && !is.null(annotation_config_path)) {
+    config_df <- read.csv(annotation_config_path, row.names=1)
+    if (unique(df_rs$`biomart_attribute`) %in% row.names(config_df)) {
+      annot_config <- config_df[unique(df_rs$`biomart_attribute`), ]
       annot_type <- annot_config$annot_type[[1]]
     } else {
-      warning(paste0("No entry for '", df_rs$`biomart_attribute`, "' in provided config.csv"))
+      warning(paste0("No entry for '", unique(df_rs$`biomart_attribute`), "' in provided config file: ", annotation_config_path))
     }
   } else {
-    warning(paste0("No 'config.csv' file found in path (--referenceStorePath): ", local_annotation_dir))
+    warning("Need to provide both local_annotation_dir and annotation_config_path to use custom annotation.")
   }
 
   if (annot_type == '3prime-IVT') {
@@ -941,8 +946,9 @@ probeset_expression_matrix.gene_mapped <- probeset_expression_matrix %>%
 - `ensembl_version` (reference organism Ensembl version indicated in the 'ensemblVersion' column of the GeneLab Annotations file provided in `annotation_table_link`, output from [Step 2b](#2b-load-annotation-metadata))
 - `annot_key` (Keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL')
 - `local_annotation_dir` (Path to local annotation directory if using custom annotations, defined in [Step 2a](#2a-load-metadata-and-raw-data))
+- `annotation_config_path` (URL or path to annotation config file if using custom annotations, defined in [Step 2a](#2a-load-metadata-and-raw-data))
 
-  > Note: See [here](../Workflow_Documentation/NF_MAAffymetrix/examples/annotations/README.md) for details on what to include in this directory.
+  > Note: See [Affymetrix_array_annotations.csv](../Array_Annotations/Affymetrix_array_annotations.csv) for the latest config file used at GeneLab. This file can also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAffymetrix/examples/annotations/README.md).
 
 **Input Data:**
 
