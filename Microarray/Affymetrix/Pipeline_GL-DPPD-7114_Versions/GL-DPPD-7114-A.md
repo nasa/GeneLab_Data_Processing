@@ -57,21 +57,21 @@ Lauren Sanders (acting GeneLab Project Scientist)
 
 |Program|Version|Relevant Links|
 |:------|:------:|:-------------|
-|R|4.1.3|[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
-|DT|0.26|[https://github.com/rstudio/DT](https://github.com/rstudio/DT)|
-|dplyr|1.0.10|[https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)|
-|tibble|3.1.8|[https://tibble.tidyverse.org](https://tibble.tidyverse.org)|
-|stringr|1.5.0|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
-|R.utils|2.12.2|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
-|oligo|1.58.0|[https://bioconductor.org/packages/3.14/bioc/html/oligo.html](https://bioconductor.org/packages/3.14/bioc/html/oligo.html)|
-|limma|3.50.3|[https://bioconductor.org/packages/3.14/bioc/html/limma.html](https://bioconductor.org/packages/3.14/bioc/html/limma.html)|
-|glue|1.6.2|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
-|biomaRt|2.50.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
-|matrixStats|0.63.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
+|R|4.4.2|[https://www.r-project.org/](https://www.r-project.org/)|
+|DT|0.33|[https://github.com/rstudio/DT](https://github.com/rstudio/DT)|
+|dplyr|1.1.4|[https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)|
+|tibble|3.2.1|[https://tibble.tidyverse.org](https://tibble.tidyverse.org)|
+|stringr|1.5.1|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
+|R.utils|2.12.3|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
+|oligo|1.70.0|[https://bioconductor.org/packages/3.14/bioc/html/oligo.html](https://bioconductor.org/packages/3.14/bioc/html/oligo.html)|
+|limma|3.62.2|[https://bioconductor.org/packages/3.14/bioc/html/limma.html](https://bioconductor.org/packages/3.14/bioc/html/limma.html)|
+|glue|1.8.0|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
+|biomaRt|2.62.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
+|matrixStats|1.5.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
 |statmod|1.5.0|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
-|dp_tools|1.3.4|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
+|dp_tools|1.3.5|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |singularity|3.9|[https://sylabs.io](https://sylabs.io)|
-|Quarto|1.2.313|[https://quarto.org](https://quarto.org)|
+|Quarto|1.6.40|[https://quarto.org](https://quarto.org)|
 
 ---
 

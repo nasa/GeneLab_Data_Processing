@@ -319,8 +319,8 @@ def utils_common_constraints_on_dataframe(
         col_constraints = col_constraints.copy()
 
         # limit to only columns of interest
-        query_df = df[col_set]
-        for (colname, colseries) in query_df.iteritems():
+        query_df = df[list(col_set)]
+        for (colname, colseries) in query_df.items():
             # check non null constraint
             if col_constraints.pop("nonNull", False) and nonNull(colseries) == False:
                 issues["Failed non null constraint"].append(colname)
@@ -398,7 +398,7 @@ def check_dge_table_sample_columns_constraints(
 ) -> FlagEntry:
     MINIMUM_COUNT = 0
     # data specific preprocess
-    df_dge = pd.read_csv(dge_table)[samples]
+    df_dge = pd.read_csv(dge_table)[list(samples)]
 
     schema = pa.DataFrameSchema({
         sample: pa.Column(float)
