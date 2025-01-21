@@ -42,7 +42,7 @@ Software Updates:
 | TrimGalore!       | 0.6.7         | 0.6.10  |
 | STAR              | 2.7.10a       | 2.7.11b |
 | RSEM              | 1.3.1         | 1.3.3   |
-| Samtools          | 1.15          | 1.2.1   |
+| Samtools          | 1.15          | 1.21    |
 | gtfToGenePred     | 377           | 469     |
 | genePredToBed     | 377           | 469     |
 | infer_experiment  | 4.0.0         | 5.0.4   |
@@ -136,9 +136,9 @@ DESeq2 Analysis Workflow
     - [8a. Count Aligned Reads with RSEM](#8a-count-aligned-reads-with-rsem)
     - [8b. Compile RSEM Count Logs](#8b-compile-rsem-count-logs)
     - [8c. Calculate Total Number of Genes Expressed Per Sample in R](#8c-calculate-total-number-of-genes-expressed-per-sample-in-r)
-    - [8d. Remove rRNA Genes from RSEM Counts](#8d-remove-rrna-genes-from-rsem-counts)
+    - [8d. Remove rRNA Genes from RSEM Genes Results](#8d-remove-rrna-genes-from-rsem-genes-results)
       - [8d.1 Extract rRNA Gene IDs from GTF](#8d1-extract-rrna-gene-ids-from-gtf)
-      - [8d.2 Filter rRNA Genes from RSEM Counts](#8d2-filter-rrna-genes-from-rsem-counts)
+      - [8d.2 Filter rRNA Genes from RSEM Genes Results](#8d2-filter-rrna-genes-from-rsem-genes-results)
   - [**9. Normalize Read Counts and Perform Differential Gene Expression Analysis**](#9-normalize-read-counts-and-perform-differential-gene-expression-analysis)
     - [9a. Create Sample RunSheet](#9a-create-sample-runsheet)
     - [9b. Environment Set Up](#9b-environment-set-up)
@@ -165,7 +165,7 @@ DESeq2 Analysis Workflow
 |TrimGalore!|0.6.10|[https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/)|
 |STAR|2.7.11b|[https://github.com/alexdobin/STAR](https://github.com/alexdobin/STAR)|
 |RSEM|1.3.3|[https://github.com/deweylab/RSEM](https://github.com/deweylab/RSEM)|
-|Samtools|1.2.1|[http://www.htslib.org/](http://www.htslib.org/)|
+|Samtools|1.21|[http://www.htslib.org/](http://www.htslib.org/)|
 |gtfToGenePred|469|[http://hgdownload.cse.ucsc.edu/admin/exe/](http://hgdownload.cse.ucsc.edu/admin/exe/)|
 |genePredToBed|469|[http://hgdownload.cse.ucsc.edu/admin/exe/](http://hgdownload.cse.ucsc.edu/admin/exe/)|
 |infer_experiment|5.0.4|[http://rseqc.sourceforge.net/#infer-experiment-py](http://rseqc.sourceforge.net/#infer-experiment-py)|
@@ -1051,7 +1051,7 @@ sessionInfo()
 
 <br>
 
-### 8d. Remove rRNA Genes from RSEM Counts  
+### 8d. Remove rRNA Genes from RSEM Genes Results  
 
 <br>
 
@@ -1075,7 +1075,7 @@ grep "rRNA" /path/to/annotation/gtf/file \
 
 <br>
 
-#### 8d.2 Filter rRNA Genes from RSEM Counts  
+#### 8d.2 Filter rRNA Genes from RSEM Genes Results 
 
 ```bash
 ### Filter out rRNA entries ###
