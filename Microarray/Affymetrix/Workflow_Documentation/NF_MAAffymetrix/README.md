@@ -4,7 +4,7 @@
 
 ### Implementation Tools <!-- omit in toc -->
 
-The current GeneLab Affymetrix Microarray consensus processing pipeline (NF_MAAffymetrix), [GL-DPPD-7114](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) to run all tools in containers. This workflow (NF_MAAffymetrix) is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow.   
+The current GeneLab Affymetrix Microarray consensus processing pipeline (NF_MAAffymetrix), [GL-DPPD-7114-A](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114-A.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) to run all tools in containers. This workflow (NF_MAAffymetrix) is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow.   
 
 ### Workflow & Subworkflows <!-- omit in toc -->
 
@@ -14,8 +14,8 @@ The current GeneLab Affymetrix Microarray consensus processing pipeline (NF_MAAf
 
 ---
 The NF_MAAffymetrix workflow is composed of three subworkflows as shown in the image above.
-Below is a description of each subworkflow and the additional output files generated that are not already indicated in the [GL-DPPD-7114 pipeline 
-document](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114.md):
+Below is a description of each subworkflow and the additional output files generated that are not already indicated in the [GL-DPPD-7114-A pipeline 
+document](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114-A.md):
 
 1. **Analysis Staging Subworkflow**
 
@@ -26,7 +26,7 @@ document](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114.md):
 2. **Affymetrix Microarray Processing Subworkflow**
 
    - Description:
-     - This subworkflow uses the staged raw data and metadata parameters from the Analysis Staging Subworkflow to generate processed data using the [GL-DPPD-7114 pipeline](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114.md).
+     - This subworkflow uses the staged raw data and metadata parameters from the Analysis Staging Subworkflow to generate processed data using the [GL-DPPD-7114-A pipeline](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114-A.md).
 
 1. **V&V Pipeline Subworkflow**
 
@@ -200,7 +200,7 @@ All R code steps and output are rendered within a Quarto document yielding the f
   
 
 The outputs from the Analysis Staging and V&V Pipeline Subworkflows are described below:
-> Note: The outputs from the Affymetrix Microarray Processing Subworkflow are documented in the [GL-DPPD-7114.md](../../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114.md) processing protocol.
+> Note: The outputs from the Affymetrix Microarray Processing Subworkflow are documented in the [GL-DPPD-7114-A.md](../../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114-A.md) processing protocol.
 
 **Analysis Staging Subworkflow**
 
