@@ -26,6 +26,8 @@ include { ASSESS_STRANDEDNESS } from '../modules/assess_strandedness.nf'
 include { BUILD_RSEM_INDEX } from '../modules/build_rsem_index.nf'
 include { QUANTIFY_STAR_GENES } from '../modules/quantify_star_genes.nf'
 include { COUNT_ALIGNED } from '../modules/count_aligned.nf' 
+include { EXTRACT_RRNA } from '../modules/extract_rrna.nf'
+include { REMOVE_RRNA } from '../modules/remove_rrna.nf'
 include { QUANTIFY_RSEM_GENES } from '../modules/quantify_rsem_genes.nf'
 include { PARSE_QC_METRICS } from '../modules/parse_qc_metrics.nf'
 
@@ -46,6 +48,16 @@ include { MULTIQC as ALL_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLab
 include { DESEQ2_DGE } from '../modules/deseq2_dge.nf'
 include { ADD_GENE_ANNOTATIONS } from '../modules/add_gene_annotations.nf'
 include { EXTEND_DGE_TABLE } from '../modules/extend_dge_table.nf'
+include { GENERATE_PCA_TABLE } from '../modules/generate_pca_table.nf'
+
+
+include { VV_RAW_READS;
+          VV_TRIMMED_READS;
+          VV_STAR_ALIGNMENTS;
+          VV_RSEQC;
+          VV_RSEM_COUNTS;
+          VV_DESEQ2_ANALYSIS;
+          VV_CONCAT_FILTER } from '../modules/vv.nf'
 
 def colorCodes = [
     c_line: "┅" * 70,
@@ -164,7 +176,6 @@ workflow RNASEQ {
 
         RAW_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] }
                           | flatten
-                          | unique
                           | collect        // Collect all zip files into a single list
                           | set { raw_fastqc_zip }     // Create a channel with all zip files
         
@@ -185,7 +196,7 @@ workflow RNASEQ {
                               | flatten \
                               | unique \
                               | collect \
-                              | set { trim_fastqc_zip }
+                              | set { trimmed_fastqc_zip }
 
 
         // Build STAR genome index
@@ -204,13 +215,22 @@ workflow RNASEQ {
         // RSeQC modules
         INFER_EXPERIMENT( sorted_bam, genome_bed )
         GENEBODY_COVERAGE( sorted_bam, genome_bed )
-        INNER_DISTANCE( sorted_bam, genome_bed )
+        INNER_DISTANCE( sorted_bam, genome_bed, max_read_length )
         READ_DISTRIBUTION( sorted_bam, genome_bed )
         infer_expt_out = INFER_EXPERIMENT.out.log | map { it[1] }
                                | collect
         // Parse RSeQC infer_experiment.py results using thresholds set in bin/assess_strandedness.py to determine the strandedness of the dataset
         ASSESS_STRANDEDNESS( infer_expt_out )
         strandedness = ASSESS_STRANDEDNESS.out | map { it.text.split(":")[0] }
+
+        // Combine RSeQC module logs
+        ch_rseqc_logs = Channel.empty()
+        ch_rseqc_logs | mix(INFER_EXPERIMENT.out.log_only,
+                         GENEBODY_COVERAGE.out.all_output,
+                         INNER_DISTANCE.out.all_output,
+                         READ_DISTRIBUTION.out.log_only)
+                   | collect
+                   | set{ ch_rseqc_logs }
 
         // Run Qualimap BAM QC and rnaseq - not implemented
         // QUALIMAP_BAM_QC( sorted_bam, genome_bed, strandedness )
@@ -229,6 +249,8 @@ workflow RNASEQ {
 
         // Run RSEM on the transcriptome-aligned BAM from STAR to calculate transcript expression estimates and quantify gene counts
         COUNT_ALIGNED( transcriptome_aligned_bam, rsem_index_dir, strandedness )
+        EXTRACT_RRNA ( organism_sci, genome_references | map { it[1] })
+        REMOVE_RRNA ( ch_meta, EXTRACT_RRNA.out.rrna_ids, COUNT_ALIGNED.out.genes_results )
         rsem_counts = COUNT_ALIGNED.out.counts | map { it[1] } | collect
         QUANTIFY_RSEM_GENES( samples_txt, rsem_counts )
 
@@ -237,7 +259,7 @@ workflow RNASEQ {
         ch_multiqc_config = params.multiqc_config ? Channel.fromPath( params.multiqc_config ) : Channel.fromPath("NO_FILE")
         RAW_READS_MULTIQC( samples_txt, raw_fastqc_zip, ch_multiqc_config )
         TRIMMING_MULTIQC( samples_txt, trimgalore_reports, ch_multiqc_config )
-        TRIMMED_READS_MULTIQC( samples_txt, trim_fastqc_zip, ch_multiqc_config )
+        TRIMMED_READS_MULTIQC( samples_txt, trimmed_fastqc_zip, ch_multiqc_config )
         ALIGN_MULTIQC( samples_txt, star_alignment_logs, ch_multiqc_config )
         INFER_EXPERIMENT_MULTIQC( samples_txt, INFER_EXPERIMENT.out.log | map { it[1] } | collect, ch_multiqc_config )
         GENEBODY_COVERAGE_MULTIQC( samples_txt, GENEBODY_COVERAGE.out.log | map { it[1] } | collect, ch_multiqc_config )
@@ -247,7 +269,7 @@ workflow RNASEQ {
         COUNT_MULTIQC( samples_txt, rsem_counts, ch_multiqc_config )
         all_multiqc_input = raw_fastqc_zip
                     | concat(trimgalore_reports)
-                    | concat(trim_fastqc_zip)
+                    | concat(trimmed_fastqc_zip)
                     | concat(star_alignment_logs)
                     | concat(INFER_EXPERIMENT.out.log | map { it[1] } | collect)
                     | concat(GENEBODY_COVERAGE.out.log | map { it[1] } | collect)
@@ -260,13 +282,17 @@ workflow RNASEQ {
         
 
         // Normalize counts, DGE 
-        DESEQ2_DGE( ch_meta, runsheet_path, COUNT_ALIGNED.out.gene_counts | toSortedList )
-        dge_table = DESEQ2_DGE.out.dge | map { it[2] }
+        DESEQ2_DGE( ch_meta, runsheet_path, COUNT_ALIGNED.out.genes_results | toSortedList )
+        dge_table = DESEQ2_DGE.out.dge_table
         // Add annotations to DGE table
         ADD_GENE_ANNOTATIONS( ch_meta, gene_annotations_url, dge_table )
         annotated_dge_table = ADD_GENE_ANNOTATIONS.out.annotated_dge_table
         // Extend DGE table to generate visualization table
-        EXTEND_DGE_TABLE( annotated_dge_table )
+        // Step being removed on update
+        //EXTEND_DGE_TABLE( annotated_dge_table )
+        // Generate PCA table from normalized counts 
+        // Step being removed on update
+        //GENERATE_PCA_TABLE ( DESEQ2_DGE.out.norm_counts | map { it[1] })
 
         // Parse QC metrics
         all_multiqc_output = RAW_READS_MULTIQC.out.data
@@ -288,6 +314,81 @@ workflow RNASEQ {
             QUANTIFY_RSEM_GENES.out.publishables
         )
 
+        // Run dp_tools V&V modules on workflow outputs and publish them
+        // VV_RAW_READS( 
+        //     publishdir,
+        //     ch_meta,
+        //     runsheet_path,
+        //     raw_reads | map{ it -> it[1] } | collect,
+        //     raw_fastqc_zip,
+        //     RAW_READS_MULTIQC.out.unzipped_report,
+        //     RAW_READS_MULTIQC.out.zipped_report,
+        //     "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
+        // )
+        // VV_TRIMMED_READS( 
+        //     publishdir,
+        //     ch_meta,
+        //     runsheet_path,
+        //     trimmed_reads | map{ it -> it[1] } | collect,
+        //     trimmed_fastqc_zip,
+        //     TRIMMED_READS_MULTIQC.out.unzipped_report,
+        //     TRIMMED_READS_MULTIQC.out.zipped_report,
+        //     "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
+        // )
+        // VV_STAR_ALIGNMENTS(
+        //     publishdir,
+        //     runsheet_path,
+        //     ALIGN_STAR.out.publishables | collect,
+        //     QUANTIFY_STAR_GENES.out.publishables | collect,
+        //     ALIGN_MULTIQC.out.zipped_report,
+        //     ALIGN_MULTIQC.out.unzipped_report,
+        //     SORT_AND_INDEX_BAM.out.bam_bed | collect,
+        //     "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
+        // )
+        // VV_RSEQC(
+        //     publishdir,
+        //     ch_meta,
+        //     runsheet_path,
+        //     ch_rseqc_logs,
+        //     GENEBODY_COVERAGE_MULTIQC.out.zipped_report
+        //         .mix( GENEBODY_COVERAGE_MULTIQC.out.unzipped_report )
+        //         .collect(),
+        //     INFER_EXPERIMENT_MULTIQC.out.zipped_report
+        //         .mix( INFER_EXPERIMENT_MULTIQC.out.unzipped_report )
+        //         .collect(),
+        //     INNER_DISTANCE_MULTIQC.out.zipped_report
+        //         .mix( INNER_DISTANCE_MULTIQC.out.unzipped_report )
+        //         .collect(),
+        //     READ_DISTRIBUTION_MULTIQC.out.zipped_report
+        //         .mix( READ_DISTRIBUTION_MULTIQC.out.unzipped_report )
+        //         .collect(),
+        //     "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
+        // )
+        // VV_RSEM_COUNTS(
+        //     publishdir,
+        //     runsheet_path,
+        //     COUNT_ALIGNED.out.only_counts | collect,
+        //     QUANTIFY_RSEM_GENES.out.publishables,
+        //     COUNT_MULTIQC.out.zipped_report,
+        //     COUNT_MULTIQC.out.unzipped_report,
+        //     "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
+        // )
+        // VV_DESEQ2_ANALYSIS(
+        //     publishdir,
+        //     ch_meta,
+        //     runsheet_path,
+        //     QUANTIFY_RSEM_GENES.out.publishables,
+        //     COUNT_MULTIQC.out.zipped_report,
+        //     COUNT_MULTIQC.out.unzipped_report,
+        //     DESEQ2_DGE.out.norm_counts,
+        //     DESEQ2_DGE.out.contrasts
+        //         .mix( DESEQ2_DGE.out.sample_table )
+        //         .mix( annotated_dge_table )
+        //         .mix( GENERATE_PCA_TABLE.out.pca_table ),
+        //     DESEQ2_DGE.out.norm_counts_ercc | ifEmpty( { file("NO_FILES.placeholder") }),
+        //     DGE_BY_DESEQ2.out.dge_ercc | ifEmpty( { file("NO_FILES.placeholder") }),
+        //     "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
+        //             )
     emit:
-        annotated_dge_table
+        PARSE_QC_METRICS.out.file
 }
