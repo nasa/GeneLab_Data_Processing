@@ -1,9 +1,9 @@
 # GeneLab bioinformatics processing pipeline for Illumina RNA-sequencing data
 
-> **The document [`GL-DPPD-7101-F.md`](Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md) holds an overview and example commands for how GeneLab processes RNAseq datasets. See the [Repository Links](#repository-links) descriptions below for more information. Processed data output files and a GeneLab data processing summary is provided for each GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
+> **The document [`GL-DPPD-7101-G.md`](Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md) holds an overview and example commands for how GeneLab processes RNAseq datasets. See the [Repository Links](#repository-links) descriptions below for more information. Processed data output files and a GeneLab data processing summary is provided for each GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 
 ---
-
+<img src="images/pipeline_diagram.png" align="center" alt=""/> 
 <img src="images/RNAseq_pipeline_diagram.png" align="center" alt=""/>
 
 ---

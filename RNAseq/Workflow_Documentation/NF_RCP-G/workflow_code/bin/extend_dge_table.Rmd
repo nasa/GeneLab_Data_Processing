@@ -1,15 +1,16 @@
 ---
 title: Extend Differential Expresssion Table To Generate Visualization Table
-output: 
-    html_document:
-        code_folding: show
+output:
+  html_document:
+    pandoc_args: ["+RTS", "-K1024m", "-RTS"]
+
 params:
+    work_dir: "." 
+    output_directory: "." # Directory for output files
+    output_filename_suffix: "_GLbulkRNAseq.csv"
     input_table_path: "" # MUST be a table with output from 'Perform_DGE.Rmd'
     table_sep: ","
-    extended_table_output_prefix: "dge_output_ercc/"
-    extended_table_output_suffix: "_GLbulkRNAseq.csv"
-    output_base_fn: "visualization_output_table"
-    work_dir: "." 
+    
 ---
 
 ## Results {.tabset}
@@ -35,15 +36,6 @@ df <- read.csv(params$input_table_path,
                sep = params$table_sep,
                 check.names = FALSE # don't rename column names with check.names
                  )
-# DT::datatable(head(df),
-#   caption = "First few rows of the input table on load",
-#   extensions = "FixedColumns",
-#   options = list(
-#     dom = "t",
-#     scrollX = TRUE,
-#     fixedColumns = TRUE
-#   )
-# )
 ```
 
 ```{r, add-viz-columns}
@@ -77,36 +69,26 @@ colnames(log_adj_pval_table) <- paste0("Log2_", colnames(log_adj_pval_table))
 df <- cbind(df, log_adj_pval_table)
 rm(log_adj_pval_table)
 
-# DT::datatable(head(df),
-#   caption = "DGE table extended with Visualization Columns",
-#   extensions = "FixedColumns",
-#   options = list(
-#     dom = "t",
-#     scrollX = TRUE,
-#     scrollY = TRUE,
-#     fixedColumns = TRUE
-#   )
-# )
-
-dir.create(dirname(paste0(params$extended_table_output_prefix, "_")), recursive = TRUE)
-write.csv(df,
-          row.names = FALSE,
-          paste0(params$extended_table_output_prefix,
-                 params$output_base_fn,
-                 params$extended_table_output_suffix)
-          )
+dir.create(dirname(paste0(params$output_directory)), recursive = TRUE)
+write.csv(
+    df,
+    row.names = FALSE,
+    file = file.path(params$output_directory, 
+                     paste0(params$extended_table_output_prefix, 
+                            "visualization_output_table", 
+                            params$output_filename_suffix, ".csv"))
+)
 ```
 
-```{r verson-reporting}
+```{r version-reporting}
 ## print session info ##
-print("Session Info below: ")
-sessionInfo()
-## Log same info into versions.txt file
-version_output_fn <- "versions.txt"
-cat(capture.output(sessionInfo()),
+session_info_output <- capture.output(sessionInfo())
+
+# Write versions file
+cat(session_info_output,
     "BioC_version_associated_with_R_version",
-    toString(tools:::.BioC_version_associated_with_R_version()),
-    file = version_output_fn,
+    toString(BiocManager::version()),
+    file = file.path(params$output_directory, "versions.txt"),
     append = TRUE,
     sep = "\n")
 ```

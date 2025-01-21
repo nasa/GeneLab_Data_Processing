@@ -1,0 +1,118 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.0.0](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-G_2.0.0/RNAseq/Workflow_Documentation/NF_RCP-G) - 2025-01-21
+
+### Added
+
+- Microbes pipeline support via `--microbes` parameter
+  - In short, reads are aligned to a reference genome using Bowtie2 rather than STAR, gene counts are quantified using FeatureCounts rather than RSEM. Other steps remain unchanged.
+- Unaligned reads FASTQ output from STAR
+- Variance-stabilizing transformation (VST) counts output
+- Parallel rRNA-removed DGE analysis and results. Additional 04-DESeq2_NormCounts_rRNArm/ and 05-DESeq2_DGE_rRNArm/ directories are created for rRNA-removed DGE results.
+
+### Changed
+
+- Updated software versions:
+  - FastQC 0.12.1
+  - MultiQC 1.26
+  - Cutadapt 4.2
+  - TrimGalore! 0.6.10
+  - STAR 2.7.11b
+  - RSEM 1.3.3
+  - Samtools 1.2.1
+  - gtfToGenePred/genePredToBed 469
+  - RSeQC tools 5.0.4
+  - R 4.4.2
+  - Bioconductor 3.20
+  - DESeq2 1.46.0
+  - tximport 1.34.0
+  - tidyverse 2.0.0
+  - stringr 1.5.1
+  - dp_tools 1.3.5
+  - pandas 2.2.3
+  - seaborn 0.13.2
+  - matplotlib 3.8.3
+  - numpy 1.26.4
+  - scipy 1.14.1
+- Updated Ensembl reference files:
+  - Animals: release 111 → 112
+  - Plants: release 57 → 59
+  - Bacteria: release 57 → 59
+- Added "_GLbulkRNAseq" suffix to output files
+- RSeQC inner_distance minimum value now dynamically set based on read length
+- DESeq2 analysis now handles technical replicates
+
+### Removed
+
+- ERCC-normalized DGE analysis and associated output files
+- GeneLab visualization output tables
+
+
+## [1.0.4](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-F_1.0.4/RNAseq/Workflow_Documentation/NF_RCP-F) - 2024-02-08
+
+### Fixed
+
+- Workflow usage files will all follow output directory set by workflow user
+- ERCC Notebook:
+  - Moved gene prefix definition to start of notebook
+  - Added fallback for scenarios where every gene has zeros: use "poscounts" estimator to calculate a modified geometric mean
+  - Reordered box-whisker plots from descending to ascending reference concentration order, ordered bar plots similarly
+  
+### Changed
+
+- TrimGalore! will now use autodetect for adaptor type
+- V&V migrated from dp_tools version 1.1.8 to 1.3.4 including:
+  - Migration of V&V protocol code to this codebase instead of dp_tools
+  - Fix for sample wise checks reusing same sample
+- Added '_GLbulkRNAseq' to output file names
+
+## [1.0.3](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-F_1.0.3/RNAseq/Workflow_Documentation/NF_RCP-F) - 2023-01-25
+
+### Added
+
+- Test coverage using [nf-test](https://github.com/askimed/nf-test) approach
+
+### Changed
+
+- Updated software versions (via container update)
+  - tximport == 1.27.1
+
+### Fixed
+
+- 'ERCC Non detection causes non-silent error' #65
+- 'This function is not compatible with certain updated ISA archive metadata filenaming' #56
+- 'Groups can become misassigned during group statistic calculation' #55
+- 'sample to filename mapping fails when sample names are prefix substrings of other sample names' #60
+- Fixed Singularity specific container issue related to DESeq2 steps
+
+## [1.0.2](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-F_1.0.2/RNAseq/Workflow_Documentation/NF_RCP-F) - 2022-11-30
+
+### Added
+
+- Manual tool version reporting functionality for [script](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-F_1.0.2/RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/bin/format_software_versions.py) that consolidates tool versions for full workflow.
+  - Currently includes manual version reporting for gtfToGenePred and genePredToBed
+
+### Fixed
+
+- Updated Cutadapt version in workflow from 3.4 to 3.7 in accordance with pipeline [specification](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-F_1.0.2/RNAseq/Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md)
+
+## [1.0.1](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-F_1.0.1/RNAseq/Workflow_Documentation/NF_RCP-F) - 2022-11-17
+
+### Changed
+
+- Updated to dp_tools version 1.1.8 from 1.1.7: This addresses api changes from the release of the [OSDR](https://osdr.nasa.gov/bio/)
+
+### Removed
+
+- Docs: Recommendation to use Nextflow Version 21.10.6 removed as newer stable releases address original issue that had merited the recommendation
+
+## [1.0.0](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-F_1.0.0/RNAseq/Workflow_Documentation/NF_RCP-F) - 2022-11-04
+
+### Added
+
+- First internal production ready release of the RNASeq Consensus Pipeline Nextflow Workflow
