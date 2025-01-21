@@ -63,6 +63,10 @@ The “GeneLab RNA Sequencing Processing Pipeline and Workflow” software also 
 <br>
 
 ---
-**Developed and maintained by:**  
-Amanda Saravia-Butler  
-Jonathan Oribello
+**Developed by:**  
+Amanda Saravia-Butler    
+Jonathan Oribello  
+
+**Maintained by:**  
+Alexis Torres  
+Crystal Han  
