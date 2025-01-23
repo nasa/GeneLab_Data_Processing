@@ -1075,18 +1075,17 @@ group_low_abund_taxa <- function(abund_table, threshold=0.05,
 }
 
 
-# Function to collapse the samples in an oTU table with a defined function(fun)
+# Function to collapse samples in a feature table with a defined function(fun)
 # based on a group in metadata 
-collapse_samples <- function(taxon_table,metadata,group,fun=sum, 
-                             convertToRelativeAbundance=FALSE){
-  # function to collapse the samples in an oTU table with a defined function(fun)  based on a group in metadata 
+collapse_samples <- function(taxon_table, metadata, group, fun=sum, convertToRelativeAbundance=FALSE){
+  
   # taxon_table [MATRIX] - a matrix count table with samples as rows and features/OTUs as columns
   # metadata [DATAFRAME] - a dataframe to containing the group to collapse samples by. 
   #                        Sample names must be the rownames of the metadata
-  # group [STRING] - an independent factor variable within the metadata to collapse the samples by
-  # fun   [FUNCTION] - a function without brackets to apply in order to collapse the samples
-  # convertToRelativeAbundance [BOOLEAN] - a boolean set to TRUE OR FALSE if the taxon_table shout 
-  #                                        be converted to relative abundance default is FALSE.
+  # group [STRING] - variable / column within the metadata to collapse samples by
+  # fun   [FUNCTION] - function (without brackets) to apply in order to collapse samples
+  # convertToRelativeAbundance [BOOLEAN] - should the value in the taxon table be converted 
+  #                                        to per sample relave abundance values? Default: FALSE.
 
   common.ids <- intersect(rownames(taxon_table),rownames(metadata))
   metadata <- droplevels(metadata[common.ids,,drop=FALSE])
@@ -1180,8 +1179,8 @@ ancombc2 <- function(data, ...) {
 
 # Geometric mean function used when running DESeq2
 gm_mean <- function(x, na.rm=TRUE) {
-  # x [NUMERIC] - a numeric vector to calculate geometric mean on
-  # na.rm [BOOLEAN] - should NAs be remove prior to calculation.
+  # x [NUMERIC] -  numeric vector to calculate geometric mean on
+  # na.rm [BOOLEAN] - should NAs be removed prior to the calculation?
   exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
 }
 
@@ -1224,22 +1223,24 @@ publication_format <- theme_bw() +
 #### Read-in Input Tables
 
 ```R
-custom_palette  <-{COLOR_VECTOR}
+custom_palette  <- {COLOR_VECTOR}
 groups_colname <- "groups"
 sample_colname <- "Sample Name"
 metadata_file <- file.path("amplicon_runsheet.csv")
 features_file <- file.path("counts_GLAmpSeq.tsv")
 taxonomy_file <- file.path("taxonomy_GLAmpSeq.tsv")
 
-# Read-in metadata
+# Read-in metadata and convert from tibble to dataframe
 metadata <- read_csv(file = metadata_file) %>% as.data.frame()
+# Set row names
 row.names(metadata) <- metadata[[sample_colname]]
+# Delet sample column since the rownames now contain sample names
 metadata[,sample_colname] <- NULL
+# Get unique group names
 group_column_values <- metadata %>% pull(!!sym(groups_colname))
 group_levels <- unique(group_column_values)
 
-# Add colors to metadata equals to the number of levels
-# in the factor groups column
+# Add colors to metadata that equals the number of groups
 num_colors <- length(group_levels)
 palette <- 'Set1'
 number_of_colors_in_palette <- 9
@@ -1249,27 +1250,32 @@ if(num_colors <= number_of_colors_in_palette){
   colors <- custom_palette[1:num_colors]
 }
 
-# Metadata
+# ------ Metadata ----- #
+# Assign color names to each group
 group_colors <- setNames(colors, group_levels)
 metadata <- metadata %>%
   mutate(color = map_chr(!!sym(groups_colname),
                          function(group) { group_colors[group] }
                          ) 
-        )
+        ) # assign group specific colors to each row in metadata
+
+# Retrieve sample names
 sample_names <- rownames(metadata)
 deseq2_sample_names <- make.names(sample_names, unique = TRUE)
 
+# Subset metadata to contain on the groups and color columns
 sample_info_tab <- metadata %>%
-  select(!!groups_colname, color) %>%
-  arrange(!!sym(groups_colname))
+  select(!!groups_colname, color) %>% # select groups and color columns
+  arrange(!!sym(groups_colname)) # metadata by groups column
 
+# Retrieves unique colors
 values <- sample_info_tab %>% pull(color) %>% unique()
 
-# Feature or ASV table
+# ---- Import Feature or ASV table ---- #
 feature_table <- read.table(file = features_file, header = TRUE,
                             row.names = 1, sep = "\t")
 
-# Taxonomy table
+# ---- Import Taxonomy table ---- #
 taxonomy_table <-  read.table(file = taxonomy_file, header = TRUE,
                               row.names = 1, sep = "\t")
 ```
@@ -1373,10 +1379,10 @@ taxonomy_table <- taxonomy_table[common_ids,]
 ```
 **Parameter Definitions:**
 
-* `remove_rare`       - should rare features and samples be filtered out prior to analysis? If true, rare feature and samples will be removed
+* `remove_rare`       - should rare features and samples be filtered out prior to analysis? If true, rare features and samples will be removed
                         according to the cutoffs set below.
 * `prevalence_cutoff` - If `remove_rare` is true, a numerical fraction between 0 and 1. 
-                        Taxa with prevalences(the proportion of samples in which the taxon is present) less than this will be excluded from the analysis. Default is 0, i.e. do not exclude any taxa / features.
+                        Taxa with prevalences(the proportion of samples in which the taxon is present) less than this will be excluded from the analysis. Default is 0, i.e. do not exclude any taxon / feature.
 * `library_cutoff`    - If `remove_rare` is true, a numerical threshold for filtering samples based on library sizes. 
                         Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0 i.e. no sample will be dropped. if you want to discard samples with read counts less than or equal to 100 then set to 100.
 * `target_region`     - amplicon target region. Options are either 16S, 18S or ITS
