@@ -75,13 +75,11 @@ RSeQC Analysis
 DESeq2 Analysis Workflow  
 - Added variance-stabilizing transformation (VST) transformed counts output file, VST_Counts_GLbulkRNAseq.csv.
 - Account for technical replicates
-  - For datasets without uniform technical replicates:
-    - Only use first technical replicate in DGE analysis
-  - For datasets with uniform technical replicates:
+  - For datasets with uniform technical replicates (all samples have same number):
     - Sum counts across technical replicates using DESeq2's collapseReplicates
-  - For datasets with varying numbers of technical replicates:
-    - Use number of replicates matching sample with least amount
-    - Sum counts across included technical replicates  
+  - For datasets with non-uniform technical replicates:
+    - Keep only the first N technical replicates for each sample, where N is the smallest number of technical replicates among all samples
+    - Sum counts across the kept technical replicates  
 - Removed DGE and PCA output tables used for GeneLab visualization (visualization_output_table_GLbulkRNAseq.csv and visualization_PCA_table_GLbulkRNAseq.csv)
 - ERCC-normalized DGE analysis was removed. The following output files were removed:
   - ERCC_Normalized_Counts_GLbulkRNAseq.csv
