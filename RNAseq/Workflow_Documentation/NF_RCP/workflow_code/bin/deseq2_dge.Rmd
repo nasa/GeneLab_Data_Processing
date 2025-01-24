@@ -353,8 +353,8 @@ output_table <- tibble::rownames_to_column(normCounts, var = params$gene_id_type
 print(sprintf("DEBUG: %s: Generating Likelihood Ratio Test Based Statistics", Sys.time()))
 dds_1_lrt <- DESeq(dds_1, test = "LRT", reduced = ~1)
 res_1_lrt <- results(dds_1_lrt)
-## Add F statistic p-value (similar to ANOVA p-value) column to the (non-ERCC) normalized counts table
-output_table$LRT.p.value <- res_1_lrt@listData$padj
+# Store LRT p-value (add after means and stdevs)
+lrt_pvalues <- res_1_lrt@listData$padj
 ```
 
 ```{r wald-test-iteration}
@@ -386,32 +386,37 @@ output_table <- cbind(output_table, res_df)
 ```
 
 ```{r}
-## Generate and add all sample mean column to the (non-ERCC) normalized counts table
-output_table$All.mean <- rowMeans(normCounts, na.rm = TRUE, dims = 1)
-
-## Generate and add all sample stdev column to the (non-ERCC) normalized counts table
-output_table$All.stdev <- rowSds(as.matrix(normCounts), na.rm = TRUE, dims = 1)
-```
-
-```{r}
 ## Generate and add group mean and stdev columns to the (non-ERCC) normalized counts table
 print(sprintf("DEBUG: %s: Computing group mean and stdev", Sys.time()))
 tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- names(group) # Used final table group name formatting (e.g. '( Space Flight & Blue Light )' )
+tcounts$group <- names(group)
 
-group_means <- as.data.frame(t(aggregate(. ~ group,data = tcounts,mean))) # Compute group name group-wise means
-colnames(group_means) <- paste0("Group.Mean_", group_means['group',]) # assign group name as column names
+# Compute means and standard deviations
+group_means <- as.data.frame(t(aggregate(. ~ group, data = tcounts, mean)))
+group_stdev <- as.data.frame(t(aggregate(. ~ group, data = tcounts, sd)))
 
-group_stdev <- as.data.frame(t(aggregate(. ~ group,data = tcounts,sd))) # Compute group name group-wise standard deviation
-colnames(group_stdev) <- paste0("Group.Stdev_", group_stdev['group',]) # assign group name as column names
+# Drop group name row from data rows
+group_means <- group_means[-c(1),]
+group_stdev <- group_stdev[-c(1),]
 
-group_means <- group_means[-c(1),] # Drop group name row from data rows (now present as column names)
-group_stdev <- group_stdev[-c(1),] # Drop group name row from data rows (now present as column names)
-output_table <- cbind(output_table,group_means, group_stdev) # Column bind the group-wise data
+# Add means, stdevs, and LRT p-values columns
+output_table$All.mean <- rowMeans(normCounts, na.rm = TRUE, dims = 1)
+output_table$All.stdev <- rowSds(as.matrix(normCounts), na.rm = TRUE, dims = 1)
+output_table$LRT.p.value <- lrt_pvalues
 
+# For each group, add mean and stdev columns
+for (group_name in names(group)) {
+    # Add mean column for this group
+    mean_col <- paste0("Group.Mean_(", group_name, ")")
+    output_table[[mean_col]] <- group_means[, paste0("Group.Mean_", group_means['group',])]
+    
+    # Add stdev column for this group
+    stdev_col <- paste0("Group.Stdev_(", group_name, ")")
+    output_table[[stdev_col]] <- group_stdev[, paste0("Group.Stdev_", group_stdev['group',])]
+}
 
-print(sprintf("DEBUG: %s: Done Computing grup mean and stdev", Sys.time() ))
-rm(group_stdev,group_means,tcounts)
+print(sprintf("DEBUG: %s: Done Computing group mean and stdev", Sys.time()))
+rm(group_stdev, group_means, tcounts)
 ```
 
 ```{r output-dge-related-files}
