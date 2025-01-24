@@ -3,8 +3,12 @@
 > **The document [`GL-DPPD-7101-G.md`](Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md) holds an overview and example commands for how GeneLab processes RNAseq datasets. See the [Repository Links](#repository-links) descriptions below for more information. Processed data output files and a GeneLab data processing summary is provided for each GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 
 ---
-<img src="images/pipeline_diagram.png" align="center" alt=""/> 
-<img src="images/RNAseq_pipeline_diagram.png" align="center" alt=""/>
+RNAseq:
+<img src="images/RNAseq_eukaryotes_pipeline_diagram.png" align="center" alt=""/> 
+
+RNAseq (Prokaryotes):
+
+<img src="images/RNAseq_prokaryotes_pipeline_diagram.png" align="center" alt=""/>
 
 ---
 ## Repository Links
@@ -12,6 +16,10 @@
 * [**Pipeline_GL-DPPD-7101_Versions**](Pipeline_GL-DPPD-7101_Versions)
 
   - Contains the current and previous GeneLab RNAseq consensus processing pipeline (RCP) versions documentation
+
+* [**Pipeline_GL-DPPD-7XXX_Versions**](Pipeline_GL-DPPD-7XXX_Versions)
+
+  - Contains the current and previous GeneLab RNAseq (Prokaryotes) consensus processing pipeline (RCP) versions documentation
 
 * [**RNAseq_Tool_Install**](RNAseq_Tool_Install)
 

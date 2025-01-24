@@ -5,12 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-G_2.0.0/RNAseq/Workflow_Documentation/NF_RCP-G) - 2025-01-21
+## [2.0.0](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-G_2.0.0/RNAseq/Workflow_Documentation/NF_RCP) - 2025-01-24
 
 ### Added
 
-- Microbes pipeline support via `--microbes` parameter
-  - In short, reads are aligned to a reference genome using Bowtie2 rather than STAR, gene counts are quantified using FeatureCounts rather than RSEM. Other steps remain unchanged.
+- Prokaryotes pipeline support via `--microbes` parameter
+  - In short, reads are aligned to a reference genome using Bowtie 2 rather than STAR, gene counts are quantified using featureCounts rather than RSEM. Other steps remain unchanged.
 - Unaligned reads FASTQ output from STAR
 - Variance-stabilizing transformation (VST) counts output
 - Parallel rRNA-removed DGE analysis and results. Additional 04-DESeq2_NormCounts_rRNArm/ and 05-DESeq2_DGE_rRNArm/ directories are created for rRNA-removed DGE results.

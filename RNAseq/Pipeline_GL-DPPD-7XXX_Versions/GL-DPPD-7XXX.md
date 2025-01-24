@@ -26,10 +26,10 @@ This initial release of the RNAseq pipeline documentation details the workflow s
 
 Differences with default workflow:
 - STAR is replaced with Bowtie 2 for alignment
-- RSEM is replaced with FeatureCounts for gene quantification
+- RSEM is replaced with featureCounts for gene quantification
 - kentUtils gtfToGenePred and genePredToBed are replaced with gtfToBed.py
 - rRNA genes are removed from featureCounts results on a dataset-wide basis. rRNA removal logs are all reported in the same file.
-- Rather than importing RSEM Sample.Genes.Results using tximport, the entire FeatureCounts table is imported into R for normalization and DGE analysis.
+- Rather than importing RSEM Genes.Results files for each sample using tximport, the entire FeatureCounts table is imported into R for normalization and DGE analysis.
 
 
 ---
