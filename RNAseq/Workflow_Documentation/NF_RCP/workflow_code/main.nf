@@ -58,7 +58,7 @@ if ((params.accession) || params.runsheet_path || params.isa_archive_path) {
 }
 
 include { RNASEQ } from './workflows/rnaseq.nf'
-
+include { RNASEQ_MICROBES } from './workflows/rnaseq_microbes.nf'
 // Validate accession format. Must be OSD-#. 
 if (params.accession && !params.accession.matches(/^(OSD|GLDS)-\d+$/)) {
     log.error "Invalid accession format. Expected format: OSD-# or GLDS-#"
@@ -102,7 +102,22 @@ ch_reference_gtf = params.reference_gtf ? Channel.fromPath(params.reference_gtf)
 // Main workflows
 workflow {
     if (params.mode == 'microbes') {
-        //RNASEQ_MICROBES() // Uncomment after implemented
+        RNASEQ_MICROBES(
+            ch_dp_tools_plugin,
+            ch_reference_table,
+            ch_accession,
+            ch_isa_archive,
+            ch_runsheet,
+            ch_api_url,
+            ch_force_single_end,
+            ch_truncate_to,
+            ch_reference_source,
+            ch_reference_version,
+            ch_reference_fasta,
+            ch_reference_gtf,
+            ch_reference_store_path,
+            ch_derived_store_path
+        )
     } else {
         RNASEQ(
             ch_dp_tools_plugin,

@@ -45,10 +45,10 @@ include { MULTIQC as ALL_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLab
 //include { QUALIMAP_BAM_QC } from '../modules/qualimap.nf' not implemented
 //include { QUALIMAP_RNASEQ_QC } from '../modules/qualimap.nf' not implemented
 
-include { DESEQ2_DGE } from '../modules/deseq2_dge.nf'
+include { DGE_DESEQ2 } from '../modules/dge_deseq2.nf'
 include { ADD_GENE_ANNOTATIONS } from '../modules/add_gene_annotations.nf'
-include { EXTEND_DGE_TABLE } from '../modules/extend_dge_table.nf'
-include { GENERATE_PCA_TABLE } from '../modules/generate_pca_table.nf'
+// include { EXTEND_DGE_TABLE } from '../modules/extend_dge_table.nf'
+// include { GENERATE_PCA_TABLE } from '../modules/generate_pca_table.nf'
 
 
 include { VV_RAW_READS;
@@ -282,8 +282,8 @@ workflow RNASEQ {
         
 
         // Normalize counts, DGE 
-        DESEQ2_DGE( ch_meta, runsheet_path, COUNT_ALIGNED.out.genes_results | toSortedList )
-        dge_table = DESEQ2_DGE.out.dge_table
+        DGE_DESEQ2( ch_meta, runsheet_path, COUNT_ALIGNED.out.genes_results | toSortedList )
+        dge_table = DGE_DESEQ2.out.dge_table
         // Add annotations to DGE table
         ADD_GENE_ANNOTATIONS( ch_meta, gene_annotations_url, dge_table )
         annotated_dge_table = ADD_GENE_ANNOTATIONS.out.annotated_dge_table
@@ -292,7 +292,7 @@ workflow RNASEQ {
         //EXTEND_DGE_TABLE( annotated_dge_table )
         // Generate PCA table from normalized counts 
         // Step being removed on update
-        //GENERATE_PCA_TABLE ( DESEQ2_DGE.out.norm_counts | map { it[1] })
+        //GENERATE_PCA_TABLE ( DGE_DESEQ2.out.norm_counts | map { it[1] })
 
         // Parse QC metrics
         all_multiqc_output = RAW_READS_MULTIQC.out.data
@@ -380,12 +380,12 @@ workflow RNASEQ {
         //     QUANTIFY_RSEM_GENES.out.publishables,
         //     COUNT_MULTIQC.out.zipped_report,
         //     COUNT_MULTIQC.out.unzipped_report,
-        //     DESEQ2_DGE.out.norm_counts,
-        //     DESEQ2_DGE.out.contrasts
-        //         .mix( DESEQ2_DGE.out.sample_table )
+        //     DGE_DESEQ2.out.norm_counts,
+        //     DGE_DESEQ2.out.contrasts
+        //         .mix( DGE_DESEQ2.out.sample_table )
         //         .mix( annotated_dge_table )
         //         .mix( GENERATE_PCA_TABLE.out.pca_table ),
-        //     DESEQ2_DGE.out.norm_counts_ercc | ifEmpty( { file("NO_FILES.placeholder") }),
+        //     DGE_DESEQ2.out.norm_counts_ercc | ifEmpty( { file("NO_FILES.placeholder") }),
         //     DGE_BY_DESEQ2.out.dge_ercc | ifEmpty( { file("NO_FILES.placeholder") }),
         //     "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
         //             )

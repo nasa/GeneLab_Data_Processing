@@ -3,8 +3,7 @@
  */
 // ERCC counts are removed before normalization
 
-process DESEQ2_DGE {
-    tag "Dataset-wide"
+process DGE_DESEQ2 {
 
     input:
         val(meta)
