@@ -1,6 +1,6 @@
 process BUILD_BOWTIE2_INDEX {
   // Builds Bowtie 2 index, this is ercc-spike-in and organism specific
-  tag "Refs: ${ genome_fasta }, ${ genome_gtf }, Source: ${reference_source}${reference_source.toLowerCase().contains('ensembl') ? ', Version: ' + reference_version : ''}, GenomeSubsample: ' + params.genome_subsample : ''}"
+  tag "Refs: ${ genome_fasta.baseName }, ${ genome_gtf.baseName }, Source: ${reference_source}${reference_source.toLowerCase().contains('ensembl') ? ', Version: ' + reference_version : ''}${params.genome_subsample ? ', GenomeSubsample: ' + params.genome_subsample : ''}"
   storeDir "${ derived_store_path }/Bowtie2_Indices/${ reference_source }/${reference_source.toLowerCase().contains('ensembl') ? reference_version + '/' : ''}${ meta.organism_sci }"
 
   input:

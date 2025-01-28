@@ -150,7 +150,7 @@ workflow RNASEQ_MICROBES {
         // Metadata and reference files are ready. Stage the raw reads, find the max read length, and build the Bowtie 2 index.
 
         // Stage the raw or truncated reads.
-        STAGE_RAW_READS( publishdir, samples )
+        STAGE_RAW_READS( samples )
         raw_reads = STAGE_RAW_READS.out.raw_reads
         samples_txt = STAGE_RAW_READS.out.samples_txt
         //samples_txt | view
@@ -182,7 +182,7 @@ workflow RNASEQ_MICROBES {
                               | set { trimmed_fastqc_zip }
 
 
-        // Build Bowtie 2 genome index
+        // // Build Bowtie 2 genome index
         BUILD_BOWTIE2_INDEX(derived_store_path, organism_sci, reference_source, reference_version, genome_references, ch_meta)
         bowtie2_index_dir = BUILD_BOWTIE2_INDEX.out.index_dir
 
@@ -195,10 +195,10 @@ workflow RNASEQ_MICROBES {
         // MultiQC
         ch_multiqc_config = params.multiqc_config ? Channel.fromPath( params.multiqc_config ) : Channel.fromPath("NO_FILE")
         RAW_READS_MULTIQC( samples_txt, raw_fastqc_zip, ch_multiqc_config )
-        TRIMMING_MULTIQC( samples_txt, trimgalore_reports, ch_multiqc_config )
-        TRIMMED_READS_MULTIQC( samples_txt, trimmed_fastqc_zip, ch_multiqc_config )
-        ALIGN_MULTIQC( samples_txt, bowtie2_alignment_logs, ch_multiqc_config )
+        // TRIMMING_MULTIQC( samples_txt, trimgalore_reports, ch_multiqc_config )
+        // TRIMMED_READS_MULTIQC( samples_txt, trimmed_fastqc_zip, ch_multiqc_config )
+        // ALIGN_MULTIQC( samples_txt, bowtie2_alignment_logs, ch_multiqc_config )
 
     emit:
-        PARSE_QC_METRICS.out.file
+        RAW_FASTQC.out.fastqc
 }

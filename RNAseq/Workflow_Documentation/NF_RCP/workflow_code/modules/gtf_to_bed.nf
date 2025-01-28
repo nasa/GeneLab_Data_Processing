@@ -14,6 +14,6 @@ process GTF_TO_BED {
 
     script:
     """
-    gtf_to_bed.py ${ genome_gtf } ${ genome_gtf.baseName }.bed
+    python gtf_to_bed.py ${ genome_gtf } ${ genome_gtf.baseName }.bed
     """
 }

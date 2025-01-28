@@ -21,7 +21,7 @@ process ALIGN_BOWTIE2 {
 
     
     mkdir -p ${ meta.id }
-    bowtie2 -x ${ BOWTIE2_INDEX_DIR } \
+    bowtie2 -x ${ BOWTIE2_INDEXES } \
     ${readArgs} \
     --threads ${ task.cpus } \
     --minins 0 \

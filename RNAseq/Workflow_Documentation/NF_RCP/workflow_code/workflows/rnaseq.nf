@@ -167,7 +167,7 @@ workflow RNASEQ {
         // Metadata and reference files are ready. Stage the raw reads, find the max read length, and build the STAR index.
 
         // Stage the raw or truncated reads.
-        STAGE_RAW_READS( publishdir, samples )
+        STAGE_RAW_READS( samples )
         raw_reads = STAGE_RAW_READS.out.raw_reads
         samples_txt = STAGE_RAW_READS.out.samples_txt
         //samples_txt | view
