@@ -4,7 +4,7 @@
 
 ### Implementation Tools <!-- omit in toc -->
 
-The current GeneLab RNAseq consensus processing pipeline (RCP), [GL-DPPD-7101-G](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) to run all tools in containers. This workflow (NF_RCP-F) is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow.   
+The current GeneLab RNAseq consensus processing pipeline (RCP), [GL-DPPD-7101-G](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) to run all tools in containers. This workflow (NF_RCP-G) is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow.   
 
 ### Workflow & Subworkflows <!-- omit in toc -->
 
@@ -97,8 +97,8 @@ We recommend installing Singularity on a system wide level as per the associated
 
 ### 2. Download the Workflow Files
 
-All files required for utilizing the NF_RCP-F GeneLab workflow for processing RNAseq data are in the [workflow_code](workflow_code) directory. To get a 
-copy of latest NF_RCP-F version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
+All files required for utilizing the NF_RCP-G GeneLab workflow for processing RNAseq data are in the [workflow_code](workflow_code) directory. To get a 
+copy of latest NF_RCP-G version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
 
 ```bash
 wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/NF_RCP-G_2.0.0/NF_RCP-G_2.0.0.zip
@@ -134,7 +134,7 @@ export NXF_SINGULARITY_CACHEDIR=$(pwd)/singularity
 
 ### 4. Run the Workflow
 
-While in the location containing the `NF_RCP-G_2.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are three examples of how to run the NF_RCP-F workflow:
+While in the location containing the `NF_RCP-G_2.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are three examples of how to run the NF_RCP-G workflow:
 > Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --ensemblVersion) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
 
 <br>
@@ -180,7 +180,7 @@ nextflow run NF_RCP-G_2.0.0/main.nf \
 
 **Required Parameters For All Approaches:**
 
-* `NF_RCP-G_2.0.0/main.nf` - Instructs Nextflow to run the NF_RCP-F workflow 
+* `NF_RCP-G_2.0.0/main.nf` - Instructs Nextflow to run the NF_RCP-G workflow 
 
 * `-profile` - Specifies the configuration profile(s) to load, `singularity` instructs Nextflow to setup and use singularity for all software called in the workflow
 
@@ -242,7 +242,7 @@ See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nex
 ### 5. Additional Output Files
 
 The outputs from the Analysis Staging and V&V Pipeline Subworkflows are described below:
-> Note: The outputs from the RNAseq Consensus Pipeline Subworkflow are documented in the [GL-DPPD-7101-F](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md) processing protocol.
+> Note: The outputs from the RNAseq Consensus Pipeline Subworkflow are documented in the [GL-DPPD-7101-G](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md) processing protocol.
 
 **Analysis Staging Subworkflow**
 
