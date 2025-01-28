@@ -17,7 +17,7 @@ RNAseq (Prokaryotes):
 
   - Contains the current and previous GeneLab RNAseq consensus processing pipeline (RCP) versions documentation
 
-* [**Pipeline_GL-DPPD-7XXX_Versions**](Pipeline_GL-DPPD-7XXX_Versions)
+* [**Pipeline_GL-DPPD-7115_Versions**](Pipeline_GL-DPPD-7115_Versions)
 
   - Contains the current and previous GeneLab RNAseq (Prokaryotes) consensus processing pipeline (RCP) versions documentation
 

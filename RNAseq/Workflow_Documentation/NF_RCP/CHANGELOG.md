@@ -5,15 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-G_2.0.0/RNAseq/Workflow_Documentation/NF_RCP) - 2025-01-24
+## [2.0.0](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-G_2.0.0/RNAseq/Workflow_Documentation/NF_RCP) - 2025-01-28
 
 ### Added
 
-- Prokaryotes pipeline support via `--microbes` parameter
-  - In short, reads are aligned to a reference genome using Bowtie 2 rather than STAR, gene counts are quantified using featureCounts rather than RSEM. Other steps remain unchanged.
-- Unaligned reads FASTQ output from STAR
-- Variance-stabilizing transformation (VST) counts output
-- Parallel rRNA-removed DGE analysis and results. Additional 04-DESeq2_NormCounts_rRNArm/ and 05-DESeq2_DGE_rRNArm/ directories are created for rRNA-removed DGE results.
+- Prokaryotes pipeline support via `--microbes` parameter:  
+  - Reads are aligned to a reference genome using Bowtie 2 rather than STAR, and gene counts are quantified using featureCounts instead of RSEM. Other steps remain unchanged.  
+  - Added software versions:  
+    - Bowtie 2 2.5.4  
+    - subread 2.0.8  
+- Read alignment now outputs unaligned reads as FASTQ files.  
+- Added Variance-stabilizing transformation (VST) counts table.**  
+- Incorporated rRNA removal into gene counts and differential gene expression (DGE) analysis.  
+  - Separate results are generated for rRNA-removed DGE analysis, with new output directories:  
+    - `04-DESeq2_NormCounts_rRNArm/`  
+    - `05-DESeq2_DGE_rRNArm/`
 
 ### Changed
 
@@ -39,10 +45,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - matplotlib 3.8.3
   - numpy 1.26.4
   - scipy 1.14.1
-- Updated Ensembl reference files:
-  - Animals: release 111 → 112
-  - Plants: release 57 → 59
-  - Bacteria: release 57 → 59
+- Updated [Ensembl Reference Files](../../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) now use: 
+  - Animals: Ensembl release 112
+  - Plants: Ensembl plants release 59
+  - Bacteria: Ensembl bacteria release 59
 - Added "_GLbulkRNAseq" suffix to output files
 - RSeQC inner_distance minimum value now dynamically set based on read length
 - DESeq2 analysis now handles technical replicates

@@ -4,7 +4,7 @@
 
 ---
 
-**Date:** January 24, 2025  
+**Date:** January 28, 2025  
 **Revision:** G  
 **Document Number:** GL-DPPD-7101-G  
 
@@ -23,14 +23,14 @@ Lauren Sanders (GeneLab Project Scientist)
 
 ## Updates from previous version  
 
-Added separate pipeline document: [GL-DPPD-7XXX.md](../Pipeline_GL-DPPD-7XXX_Versions/GL-DPPD-7XXX.md) to document the pipeline steps for Bowtie2 alignment, used when the `--microbes` parameter is specified. In short, reads are aligned to a reference genome using Bowtie2 rather than STAR, gene counts are quantified using FeatureCounts rather than RSEM. Other steps remain unchanged.
+Added separate pipeline document: [GL-DPPD-7115.md](../Pipeline_GL-DPPD-7115_Versions/GL-DPPD-7115.md) to document the pipeline steps for Bowtie2 alignment, used when the `--microbes` parameter is specified. In short, reads are aligned to a reference genome using Bowtie2 rather than STAR, gene counts are quantified using FeatureCounts rather than RSEM. Other steps remain unchanged.
 
 Added "_GLbulkRNAseq" suffix to output files to prevent naming conflicts with files relevant to other assays.
 
-Updated [Ensembl Reference Files](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) to use:
-- Animals: Ensembl release 111 → 112
-- Plants: Ensembl plants release 57 → 59  
-- Bacteria: Ensembl bacteria release 57 → 59  
+Updated [Ensembl Reference Files](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) now use:
+- Animals: Ensembl release 112
+- Plants: Ensembl plants release 59
+- Bacteria: Ensembl bacteria release 59
 
 Software Updates:
 

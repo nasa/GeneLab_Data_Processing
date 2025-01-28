@@ -4,8 +4,8 @@
 
 ---
 
-**Date:** January 24, 2025  
-**Document Number:** GL-DPPD-7XXX  
+**Date:** January 28, 2025  
+**Document Number:** GL-DPPD-7115   
 
 **Submitted by:**  
 Alexis Torres (GeneLab Data Processing Team)  
@@ -93,6 +93,7 @@ Differences with default workflow:
 |Cutadapt|4.2|[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
 |TrimGalore!|0.6.10|[https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/)|
 |Bowtie 2|2.5.4|[https://github.com/BenLangmead/bowtie2](https://github.com/BenLangmead/bowtie2)|
+|subread|2.0.8|[https://subread.sourceforge.net/](https://subread.sourceforge.net/)|
 |Samtools|1.21|[http://www.htslib.org/](http://www.htslib.org/)|
 |infer_experiment|5.0.4|[http://rseqc.sourceforge.net/#infer-experiment-py](http://rseqc.sourceforge.net/#infer-experiment-py)|
 |geneBody_coverage|5.0.4|[http://rseqc.sourceforge.net/#genebody-coverage-py](http://rseqc.sourceforge.net/#genebody-coverage-py)|
