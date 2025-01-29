@@ -1,10 +1,10 @@
-# GeneLab bioinformatics processing pipeline for Illumina RNA-sequencing data
+# GeneLab bioinformatics processing pipeline for Illumina RNA-sequencing data from Eukaryotic organisms
 
-> **This page holds an overview and instructions for how GeneLab processes RNAseq datasets. Exact processing commands, GL-DPPD-7101 version used, and processed data output files for specific datasets are provided in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
+> **This page holds an overview and instructions for how GeneLab processes RNAseq datasets derived from Eukaryotic organisms. Exact processing commands, GL-DPPD-7101 version used, and processed data output files for specific datasets are provided in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 
 ---
 
-**Date:** January 28, 2025  
+**Date:** January 28, 2025 [CHANGE TO BASELINE DATE]  
 **Revision:** G  
 **Document Number:** GL-DPPD-7101-G  
 
@@ -15,19 +15,15 @@ Crystal Han (GeneLab Data Processing Team)
 **Approved by:**  
 Barbara Novak (GeneLab Data Processing Lead)  
 Amanda Saravia-Butler (GeneLab Science Lead)  
-Samrawit Gebre (GeneLab Project Manager)  
-Danielle Lopez (GeneLab Deputy Project Manager)  
-Lauren Sanders (GeneLab Project Scientist)
+Samrawit Gebre (OSDR Project Manager)  
+Danielle Lopez (OSDR Deputy Project Manager)  
+Lauren Sanders (OSDR Project Scientist)
 
 ---
 
 ## Updates from previous version  
 
-Added separate pipeline document: [GL-DPPD-7115.md](../Pipeline_GL-DPPD-7115_Versions/GL-DPPD-7115.md) to document the pipeline steps for Bowtie2 alignment, used when the `--microbes` parameter is specified. In short, reads are aligned to a reference genome using Bowtie2 rather than STAR, gene counts are quantified using FeatureCounts rather than RSEM. Other steps remain unchanged.
-
-Added "_GLbulkRNAseq" suffix to output files to prevent naming conflicts with files relevant to other assays.
-
-Updated [Ensembl Reference Files](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) now use:
+Updated [Ensembl Reference Files](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) to the following releases:
 - Animals: Ensembl release 112
 - Plants: Ensembl plants release 59
 - Bacteria: Ensembl bacteria release 59
@@ -58,9 +54,9 @@ Software Updates:
 | dp_tools          | 1.18*, 1.3.4* | 1.3.5   |
 | pandas            | 1.5.0         | 2.2.3   |
 | seaborn           | 0.12.0        | 0.13.2  |
-| matplotlib        | 3.6.0         | 3.8.3   |
-| numpy             | 1.23.3        | 1.26.4  |
-| scipy             | 1.9.1         | 1.14.1  |
+| matplotlib        | 3.6.0         | 3.8.3  - DOES NOT MATCH VERSION SPECIFIED IN SOFTWARE TABLE BELOW |
+| numpy             | 1.23.3        | 1.26.4 - DOES NOT MATCH VERSION SPECIFIED IN SOFTWARE TABLE BELOW |
+| scipy             | 1.9.1         | 1.14.1 - DOES NOT MATCH VERSION SPECIFIED IN SOFTWARE TABLE BELOW |
 
 STAR Alignment
 - Added unaligned reads FASTQ output file(s) via STAR `-outReadsUnmapped Fastq`:
@@ -70,17 +66,20 @@ STAR Alignment
 RSeQC Analysis
 - Updated inner_distance.py invocation to use a lower minimum value to account for longer read lengths
   - Previously used fixed -150 minimum value 
-  - Now uses minimum of -150 and -(max read length)
+  - Now uses -(max read length)
 
 DESeq2 Analysis Workflow  
 - Added variance-stabilizing transformation (VST) transformed counts output file, VST_Counts_GLbulkRNAseq.csv.
+  
 - Account for technical replicates
-  - For datasets with uniform technical replicates (all samples have same number):
+  - For datasets with uniform technical replicates (all samples have the same number of technical replicates):
     - Sum counts across technical replicates using DESeq2's collapseReplicates
   - For datasets with non-uniform technical replicates:
     - Keep only the first N technical replicates for each sample, where N is the smallest number of technical replicates among all samples
-    - Sum counts across the kept technical replicates  
-- Removed DGE and PCA output tables used for GeneLab visualization (visualization_output_table_GLbulkRNAseq.csv and visualization_PCA_table_GLbulkRNAseq.csv)
+    - Sum counts across the kept technical replicates
+      
+- Removed DGE and PCA output tables previously used for GeneLab visualization (visualization_output_table_GLbulkRNAseq.csv and visualization_PCA_table_GLbulkRNAseq.csv)
+  
 - ERCC-normalized DGE analysis was removed. The following output files were removed:
   - ERCC_Normalized_Counts_GLbulkRNAseq.csv
   - ERCCnorm_differential_expression_GLbulkRNAseq.csv
@@ -89,13 +88,11 @@ DESeq2 Analysis Workflow
   - visualization_PCA_table_ERCCnorm_GLbulkRNAseq.csv
 
 - Added parallel rRNA-removed DGE analysis:
-  - Createxsz filtered RSEM count files with rRNA features removed:
+  - Create filtered RSEM count files with rRNA features removed:
     - {sample}_rRNA_removed.genes.results
-  - Normalize counts
+  - Normalize rRNA-removed counts
   - Perform DGE analysis using rRNA-removed counts
-  - Output additional  counts and DGE results in:
-    - 04-DESeq2_NormCounts_rRNArm/
-    - 05-DESeq2_DGE_rRNArm/
+  - Output additional set of rRNA-removed counts and DGE results
   
 ---
 
@@ -135,8 +132,8 @@ DESeq2 Analysis Workflow
     - [8b. Compile RSEM Count Logs](#8b-compile-rsem-count-logs)
     - [8c. Calculate Total Number of Genes Expressed Per Sample in R](#8c-calculate-total-number-of-genes-expressed-per-sample-in-r)
     - [8d. Remove rRNA Genes from RSEM Genes Results](#8d-remove-rrna-genes-from-rsem-genes-results)
-      - [8d.1 Extract rRNA Gene IDs from GTF](#8d1-extract-rrna-gene-ids-from-gtf)
-      - [8d.2 Filter rRNA Genes from RSEM Genes Results](#8d2-filter-rrna-genes-from-rsem-genes-results)
+      - [8di. Extract rRNA Gene IDs from GTF](#8di-extract-rrna-gene-ids-from-gtf)
+      - [8dii. Filter rRNA Genes from RSEM Genes Results](#8dii-filter-rrna-genes-from-rsem-genes-results)
   - [**9. Normalize Read Counts and Perform Differential Gene Expression Analysis**](#9-normalize-read-counts-and-perform-differential-gene-expression-analysis)
     - [9a. Create Sample RunSheet](#9a-create-sample-runsheet)
     - [9b. Environment Set Up](#9b-environment-set-up)
@@ -180,10 +177,8 @@ DESeq2 Analysis Workflow
 |pandas|2.2.3|[https://github.com/pandas-dev/pandas](https://github.com/pandas-dev/pandas)|
 |seaborn|0.13.2|[https://seaborn.pydata.org/](https://seaborn.pydata.org/)|
 |matplotlib|3.10.0|[https://matplotlib.org/stable](https://matplotlib.org/stable)|
-|jupyter notebook|7.3.2|[https://jupyter-notebook.readthedocs.io/](https://jupyter-notebook.readthedocs.io/)|
 |numpy|2.2.1|[https://numpy.org/](https://numpy.org/)|
 |scipy|1.15.1|[https://scipy.org/](https://scipy.org/)|
-|singularity|3.9|[https://sylabs.io/](https://sylabs.io/)|
 
 ---
 
@@ -223,6 +218,7 @@ fastqc -o /path/to/raw_fastqc/output/directory *.fastq.gz
 
 ```bash
 multiqc --interactive -n raw_multiqc_GLbulkRNAseq -o /path/to/raw_multiqc/output/raw_multiqc_GLbulkRNAseq_report /path/to/directory/containing/raw_fastqc/files
+
 zip -r raw_multiqc_GLbulkRNAseq_report.zip raw_multiqc_GLbulkRNAseq_report
 ```
 
@@ -312,6 +308,7 @@ fastqc -o /path/to/trimmed_fastqc/output/directory *.fastq.gz
 
 ```bash
 multiqc --interactive -n trimmed_multiqc_GLbulkRNAseq -o /path/to/trimmed_multiqc/output/trimmed_multiqc_GLbulkRNAseq_report /path/to/directory/containing/trimmed_fastqc/files
+
 zip -r trimmed_multiqc_GLbulkRNAseq_report.zip /path/to/trimmed_multiqc/output/trimmed_multiqc_GLbulkRNAseq_report
 ```
 
@@ -363,8 +360,8 @@ STAR --runThreadN NumberOfThreads \
 
 **Input Data:**
 
-- *.fasta (genome sequence, this scRCP version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
-- *.gtf (genome annotation, this scRCP version uses the Ensembl gtf file indicated in the `gtf` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
+- *.fasta (genome sequence, this pipeline version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
+- *.gtf (genome annotation, this pipeline version uses the Ensembl gtf file indicated in the `gtf` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
 
 **Output Data:**
 
@@ -472,7 +469,7 @@ STAR --twopassMode Basic \
   - SJ.out.tab
 - *_STARtmp (directory containing the following:)
   - BAMsort (directory containing subdirectories that are empty – this was the location for temp files that were automatically removed after successful completion)
-- *Unmapped.out.mate1.fastq.gz, *Unmapped.out.mate2.fastq.gz (unmapped and partially mapped reads in fastq format)
+- **\*Unmapped.out.mate1.fastq.gz, \*Unmapped.out.mate2.fastq.gz** (unmapped and partially mapped reads in fastq format)
 
 <br>
 
@@ -480,6 +477,7 @@ STAR --twopassMode Basic \
 
 ```bash
 multiqc --interactive -n align_multiqc_GLbulkRNAseq -o /path/to/align_multiqc/output/align_multiqc_GLbulkRNAseq_report /path/to/*Log.final.out/files
+
 zip -r align_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/align_multiqc_GLbulkRNAseq_report
 ```
 
@@ -624,7 +622,7 @@ gtfToGenePred -geneNameAsName2 \
 
 **Input Data:**
 
-- *.gtf (genome annotation, this scRCP version uses the Ensembl gtf file indicated in the `gtf` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
+- *.gtf (genome annotation, this pipeline version uses the Ensembl gtf file indicated in the `gtf` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
 
 **Output Data:**
 
@@ -692,6 +690,7 @@ infer_experiment.py -r /path/to/annotation/BED/file \
 
 ```bash
 multiqc --interactive -n infer_exp_multiqc_GLbulkRNAseq -o /path/to/infer_exp_multiqc/output/infer_exp_multiqc_GLbulkRNAseq_report /path/to/*infer_expt.out/files
+
 zip -r infer_exp_multiqc_GLbulkRNAseq_report.zip /path/to/infer_exp_multiqc/output/infer_exp_multiqc_GLbulkRNAseq_report
 ```
 
@@ -747,6 +746,7 @@ geneBody_coverage.py -r /path/to/annotation/BED/file \
 
 ```bash
 multiqc --interactive -n genebody_cov_multiqc_GLbulkRNAseq -o /path/to/geneBody_cov_multiqc/output/geneBody_cov_multiqc_GLbulkRNAseq_report /path/to/geneBody_coverage/output/files
+
 zip -r genebody_cov_multiqc_GLbulkRNAseq_report.zip /path/to/genebody_cov_multiqc/output/genebody_cov_multiqc_GLbulkRNAseq_report
 ```
 
@@ -775,8 +775,8 @@ zip -r genebody_cov_multiqc_GLbulkRNAseq_report.zip /path/to/genebody_cov_multiq
 inner_distance.py -r /path/to/annotation/BED/file \
  -i /path/to/*Aligned.sortedByCoord_sorted.out.bam \
  -k 15000000 \
- -l -150 \
- -u 350 \
+ -l -(max read length) \
+ -u 350 \ [SHOULD WE INCREASE THIS VALUE?]
  -o  /path/to/inner_distance/output/directory
 ```
 
@@ -785,7 +785,7 @@ inner_distance.py -r /path/to/annotation/BED/file \
 - `-r` – specifies the path to the reference annotation BED file
 - `-i` – specifies the path to the input bam file(s)
 - `-k` – specifies the number of reads to be sampled from the input bam file(s), 15M reads are sampled
-- `-l` – specifies the lower bound of inner distance (bp), set to -150 or negative of maximum read length if read length is greater than 150
+- `-l` – specifies the lower bound of inner distance (bp), set to negative of the maximum read length
 - `-u` – specifies the upper bound of inner distance (bp)
 - `/path/to/inner_distance/output/directory` – specifies the location and name of the directory containing the inner_distance output files
 
@@ -808,6 +808,7 @@ inner_distance.py -r /path/to/annotation/BED/file \
 
 ```bash
 multiqc --interactive -n inner_dist_multiqc_GLbulkRNAseq /path/to/align_multiqc/output/inner_dist_multiqc_GLbulkRNAseq_report /path/to/inner_dist/output/files
+
 zip -r inner_dist_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/inner_dist_multiqc_GLbulkRNAseq_report
 ```
 
@@ -860,6 +861,7 @@ read_distribution.py -r /path/to/annotation/BED/file \
 
 ```bash
 multiqc --interactive -n read_dist_multiqc_GLbulkRNAseq -o /path/to/read_dist_multiqc/output/read_dist_multiqc_GLbulkRNAseq_report /path/to/*read_dist.out/files
+
 zip -r read_dist_multiqc_GLbulkRNAseq_report.zip /path/to/read_dist_multiqc/output/read_dist_multiqc_GLbulkRNAseq_report
 ```
 
@@ -900,8 +902,8 @@ rsem-prepare-reference --gtf /path/to/annotation/gtf/file \
 
 **Input Data:**
 
-- *.fasta (genome sequence, this scRCP version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
-- *.gtf (genome annotation, this scRCP version uses the Ensembl gtf file indicated in the `gtf` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
+- *.fasta (genome sequence, this pipeline version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
+- *.gtf (genome annotation, this pipeline version uses the Ensembl gtf file indicated in the `gtf` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
 
 **Output Data:**
 
@@ -975,6 +977,7 @@ rsem-calculate-expression --num-threads NumberOfThreads \
 
 ```bash
 multiqc --interactive -n RSEM_count_multiqc_GLbulkRNAseq -o /path/to/RSEM_count_multiqc/output/RSEM_count_multiqc_GLbulkRNAseq_report /path/to/*stat/files
+
 zip -r RSEM_count_multiqc_GLbulkRNAseq_report.zip /path/to/raw_multiqc/output/RSEM_count_multiqc_GLbulkRNAseq_report
 ```
 
@@ -983,14 +986,12 @@ zip -r RSEM_count_multiqc_GLbulkRNAseq_report.zip /path/to/raw_multiqc/output/RS
 - `--interactive` – force reports to use interactive plots
 - `-n` – prefix name for output files
 - `-o` – the output directory to store results
-- `/path/to/*stat/files` – the directories holding the *stat output files from the [RSEM Counts step](#8a-count-aligned-reads-with-rsem), provided as a positional argument
+- `/path/to/*stat/files` – the directories holding the *cnt file in the *stat output folder from the [RSEM Counts step](#8a-count-aligned-reads-with-rsem), provided as a positional argument
 
 **Input Data:**
 
 - *stat (directory containing the following stats files, output from [Step 8a](#8a-count-aligned-reads-with-rsem))
   - *cnt
-  - *model
-  - *theta
 
 **Output Data:**
 
@@ -1053,7 +1054,7 @@ sessionInfo()
 
 <br>
 
-#### 8d.1 Extract rRNA Gene IDs from GTF  
+#### 8di. Extract rRNA Gene IDs from GTF  
 
 ```bash
 ### Extract unique rRNA ENSEMBL gene IDs from GTF file ###
@@ -1063,17 +1064,15 @@ grep "rRNA" /path/to/annotation/gtf/file \
     | sort -u > *_rrna_ensembl_ids.txt
 ```
 
-**Parameter Definitions:**
-
 **Input Data:**
-- *.gtf (genome annotation)
+- *.gtf (genome annotation, this pipeline version uses the Ensembl gtf file indicated in the `gtf` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
 
 **Output Data:**
-- *rrna_ensembl_ids.txt (list of unique rRNA ENSEMBL gene IDs in a GTF file)
+- *rrna_ensembl_ids.txt (list of unique rRNA ENSEMBL gene IDs)
 
 <br>
 
-#### 8d.2 Filter rRNA Genes from RSEM Genes Results 
+#### 8dii. Filter rRNA Genes from RSEM Genes Results 
 
 ```bash
 ### Filter out rRNA entries ###
@@ -1090,10 +1089,10 @@ echo "*: ${rRNA_count} rRNA entries removed." > *_rRNA_counts.txt
 
 **Input Data:**
 - *genes.results (RSEM counts per gene, output from [Step 8a](#8a-count-aligned-reads-with-rsem))
-- *rrna_ensembl_ids.txt (file containing list of gene IDs with rRNA features, output from [Step 8d.1](#8d1-extract-rrna-gene-ids-from-gtf))
+- *rrna_ensembl_ids.txt (file containing list of gene IDs with rRNA features, output from [Step 8di](#8di-extract-rrna-gene-ids-from-gtf))
 
 **Output Data:**
-- *rRNA_removed.genes.results (RSEM counts with rRNA entries removed)
+- **\*rRNA_removed.genes.results** (RSEM gene counts with rRNA entries removed)
 - *rRNA_counts.txt (Summary of number of rRNA entries removed)
 
 <br>
@@ -1103,8 +1102,8 @@ echo "*: ${rRNA_count} rRNA entries removed." > *_rRNA_counts.txt
 ## 9. Normalize Read Counts and Perform Differential Gene Expression Analysis
 
 > **Note:** DGE Analysis is performed twice with different sets of input files:
-> 1. Using raw RSEM genes.results files
-> 2. Using rRNA-removed raw RSEM genes.results files
+> 1. Using RSEM genes.results files (*genes.results, output from [Step 8a](#8a-count-aligned-reads-with-rsem)))
+> 2. Using rRNA-removed RSEM genes.results files (*rRNA_removed.genes.results, output from [Step 8dii](#8dii-filter-rrna-genes-from-rsem-genes-results))
 
 <br>
 
@@ -1129,6 +1128,7 @@ dpt-isa-to-runsheet --accession GLDS-### \
 **Parameter Definitions:**
 
 - `--accession GLDS-###` – GLDS accession ID (replace ### with the GLDS number being processed), used to retrieve the urls for the ISA archive and raw reads hosted on the GeneLab Repository
+  > *Note: you can also use the OSD identifier, e.g. `--accession OSD-###`* 
 - `--config-type` – Instructs the script to extract the metadata required for `bulkRNAseq` processing from the ISA archive
 - `--config-version` – Specifies the `dp-tools` configuration version to use, a value of `Latest` will specify the most recent version
 - `--isa-archive` – Specifies the *ISA.zip file for the respective GLDS dataset, downloaded in the `dpt-get-isa-archive` command
@@ -1136,11 +1136,11 @@ dpt-isa-to-runsheet --accession GLDS-### \
 
 **Input Data:**
 
-- No input data required but the GLDS accession ID needs to be indicated, which is used to download the respective ISA archive 
+- No input data required but the GLDS (or OSD) accession ID needs to be indicated, which is used to download the respective ISA archive 
 
 **Output Data:**
 
-- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, used to define sample groups - the *ISA.zip file is located in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) under 'Study Files' -> 'metadata')
+- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, used to define sample groups - the *ISA.zip file is located in the [OSDR repository]([https://genelab-data.ndc.nasa.gov/genelab/projects](https://osdr.nasa.gov/bio/repo/)) under 'Files' -> 'Study Metadata Files')
 
 - **{GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv** (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
 
@@ -1179,7 +1179,7 @@ library(tximport)
 library(DESeq2)
 library(BiocParallel)
 
-### Define which organism is used in the study - this should be consistent with the name in the "name" column of the GL-DPPD-7110_annotations.csv file, which matches the abbreviations used in the Panther database for each organism ###
+### Define which organism is used in the study - this should be consistent with the species name in the "species" column of the GL-DPPD-7110-A_annotations.csv file ###
 
 organism <- "organism_that_samples_were_derived_from"
 
@@ -1193,7 +1193,7 @@ norm_output="/path/to/normalized/counts/output/directory"
 DGE_output="/path/to/DGE/output/directory"
 
 
-### Pull in the GeneLab annotation table (GL-DPPD-7110_annotations.csv) file ###
+### Pull in the GeneLab annotation table (GL-DPPD-7110-A_annotations.csv) file ###
 
 org_table_link <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv"
 
