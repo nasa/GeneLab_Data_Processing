@@ -180,8 +180,8 @@ if (params$microbes) {
     files <- files[reordering]
     names(files) <- samples
     txi.rsem <- tximport(files, type = "rsem", txIn = FALSE, txOut = FALSE)
-    if ((dim(txi.rsem$counts)[2] == nrow(study)) == FALSE) {
-        stop(sprintf("Assert statement: '%s' was False: Sample count mismatch after comparing imported gene results and runsheet", deparse(quote(dim(txi.rsem$counts)[2] == nrow(study)))))
+    if (dim(txi.rsem$counts)[2] != nrow(study)) {
+        stop("Sample count mismatch between imported gene results and runsheet")
     }
     ## Add 1 to genes with lengths of zero - needed to make DESeqDataSet object
     print(sprintf("DEBUG: %s: Converting %d zero length genes to 1-length of %d genes (%f %% total)", Sys.time(), length(txi.rsem$length[txi.rsem$length == 0]), length(txi.rsem$length), length(txi.rsem$length[txi.rsem$length == 0])/length(txi.rsem$length)))

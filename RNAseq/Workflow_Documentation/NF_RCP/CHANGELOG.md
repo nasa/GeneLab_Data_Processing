@@ -42,9 +42,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - dp_tools 1.3.5
   - pandas 2.2.3
   - seaborn 0.13.2
-  - matplotlib 3.8.3
-  - numpy 1.26.4
-  - scipy 1.14.1
+  - matplotlib 3.10.0
+  - numpy 2.2.1
+  - scipy 1.15.1
 - Updated [Ensembl Reference Files](../../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) now use: 
   - Animals: Ensembl release 112
   - Plants: Ensembl plants release 59

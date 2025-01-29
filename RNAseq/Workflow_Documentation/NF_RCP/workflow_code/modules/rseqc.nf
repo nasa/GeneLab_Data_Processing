@@ -64,10 +64,9 @@ process INNER_DISTANCE {
 
   script:
     def log_fname = "${ meta.id }.inner_distance_freq.txt" 
-    def max_length = Math.max(150, max_read_length)
     
     """    
-    inner_distance.py -r ${ genome_bed } -i ${ bam_file } -k ${ params.rseqc_sample_count } -l -${ max_length } -u 350 -o ${ meta.id } 
+    inner_distance.py -r ${ genome_bed } -i ${ bam_file } -k ${ params.rseqc_sample_count } -l -${ max_read_length } -u 350 -o ${ meta.id } 
 
     # VERSIONS
     echo '"${task.process}":' > versions.yml

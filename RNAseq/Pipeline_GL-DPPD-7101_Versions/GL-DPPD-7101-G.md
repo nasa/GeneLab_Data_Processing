@@ -54,9 +54,9 @@ Software Updates:
 | dp_tools          | 1.18*, 1.3.4* | 1.3.5   |
 | pandas            | 1.5.0         | 2.2.3   |
 | seaborn           | 0.12.0        | 0.13.2  |
-| matplotlib        | 3.6.0         | 3.8.3  - DOES NOT MATCH VERSION SPECIFIED IN SOFTWARE TABLE BELOW |
-| numpy             | 1.23.3        | 1.26.4 - DOES NOT MATCH VERSION SPECIFIED IN SOFTWARE TABLE BELOW |
-| scipy             | 1.9.1         | 1.14.1 - DOES NOT MATCH VERSION SPECIFIED IN SOFTWARE TABLE BELOW |
+| matplotlib        | 3.6.0         | 3.10.0  |
+| numpy             | 1.23.3        | 2.2.1   |
+| scipy             | 1.9.1         | 1.15.1  |
 
 STAR Alignment
 - Added unaligned reads FASTQ output file(s) via STAR `-outReadsUnmapped Fastq`:
@@ -227,7 +227,7 @@ zip -r raw_multiqc_GLbulkRNAseq_report.zip raw_multiqc_GLbulkRNAseq_report
 - `--interactive` – force reports to use interactive plots
 - `-n` – prefix name for output files
 - `-o` – the output directory to store results
-- `/path/to/directory/containing/raw_fastqc/files` – the directory holding the output data from the fastqc run, provided as a positional argument
+- `/path/to/directory/containing/raw_fastqc/files` – the directory holding the output data from the FastQC run, provided as a positional argument
 
 **Input Data:**
 
@@ -236,8 +236,8 @@ zip -r raw_multiqc_GLbulkRNAseq_report.zip raw_multiqc_GLbulkRNAseq_report
 **Output Data:**
 
 * **raw_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **raw_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **raw_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+  * **raw_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+  * **raw_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
 
 <br>
 
@@ -317,7 +317,7 @@ zip -r trimmed_multiqc_GLbulkRNAseq_report.zip /path/to/trimmed_multiqc/output/t
 - `--interactive` – force reports to use interactive plots
 - `-n` – prefix name for output files
 - `-o` – the output directory to store results
-- `/path/to/directory/containing/trimmed_fastqc/files` – the directory holding the output data from the fastqc run, provided as a positional argument
+- `/path/to/directory/containing/trimmed_fastqc/files` – the directory holding the output data from the FastQC run, provided as a positional argument
 
 **Input Data:**
 
@@ -326,8 +326,8 @@ zip -r trimmed_multiqc_GLbulkRNAseq_report.zip /path/to/trimmed_multiqc/output/t
 **Output Data:**
 
 * **trimmed_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **trimmed_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **trimmed_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+  * **trimmed_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+  * **trimmed_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
 
 <br>
 
@@ -495,8 +495,8 @@ zip -r align_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/align
 **Output Data:**
 
 * **align_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **align_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **align_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+  * **align_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+  * **align_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
 
 <br>
 
@@ -708,8 +708,8 @@ zip -r infer_exp_multiqc_GLbulkRNAseq_report.zip /path/to/infer_exp_multiqc/outp
 **Output Data:**
 
 * **infer_exp_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **infer_exp_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **infer_exp_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+  * **infer_exp_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+  * **infer_exp_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
 
 <br>
 
@@ -764,8 +764,8 @@ zip -r genebody_cov_multiqc_GLbulkRNAseq_report.zip /path/to/genebody_cov_multiq
 **Output Data:**
 
 * **genebody_cov_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **genebody_cov_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **genebody_cov_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+  * **genebody_cov_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+  * **genebody_cov_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
 
 <br>
 
@@ -776,7 +776,7 @@ inner_distance.py -r /path/to/annotation/BED/file \
  -i /path/to/*Aligned.sortedByCoord_sorted.out.bam \
  -k 15000000 \
  -l -(max read length) \
- -u 350 \ [SHOULD WE INCREASE THIS VALUE?]
+ -u 350 \ 
  -o  /path/to/inner_distance/output/directory
 ```
 
@@ -826,8 +826,8 @@ zip -r inner_dist_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/
 **Output Data:**
 
 * **inner_dist_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **inner_dist_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **inner_dist_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+  * **inner_dist_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+  * **inner_dist_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
 
 <br>
 
@@ -879,8 +879,8 @@ zip -r read_dist_multiqc_GLbulkRNAseq_report.zip /path/to/read_dist_multiqc/outp
 **Output Data:**
 
 * **read_dist_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **read_dist_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **read_dist_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+  * **read_dist_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+  * **read_dist_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
 
 <br>
 
@@ -996,8 +996,8 @@ zip -r RSEM_count_multiqc_GLbulkRNAseq_report.zip /path/to/raw_multiqc/output/RS
 **Output Data:**
 
 * **RSEM_count_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **RSEM_count_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **RSEM_count_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+  * **RSEM_count_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+  * **RSEM_count_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
 
 <br>
 
@@ -1101,7 +1101,7 @@ echo "*: ${rRNA_count} rRNA entries removed." > *_rRNA_counts.txt
 
 ## 9. Normalize Read Counts and Perform Differential Gene Expression Analysis
 
-> **Note:** DGE Analysis is performed twice with different sets of input files:
+> Note: DGE Analysis is performed twice with different sets of input files:
 > 1. Using RSEM genes.results files (*genes.results, output from [Step 8a](#8a-count-aligned-reads-with-rsem)))
 > 2. Using rRNA-removed RSEM genes.results files (*rRNA_removed.genes.results, output from [Step 8dii](#8dii-filter-rrna-genes-from-rsem-genes-results))
 
@@ -1219,11 +1219,13 @@ setwd(file.path(work_dir))
 ### Pull all factors for each sample in the study from the runsheet created in Step 9a ###
 
 compare_csv_from_runsheet <- function(runsheet_path) {
-    df = read.csv(runsheet_path)
-    # get only Factor Value columns
-    factors = as.data.frame(df[,grep("Factor.Value", colnames(df), ignore.case=TRUE)])
-    colnames(factors) = paste("factor",1:dim(factors)[2], sep= "_")
-    result = data.frame(sample_id = df[,c("Sample.Name")], factors)	
+    df <- read.csv(runsheet_path)
+    factors <- df %>%
+        select(matches("Factor.Value", ignore.case = TRUE)) %>%
+        rename_with(~ paste0("factor_", seq_along(.)))
+    result <- df %>%
+        select(sample_id = Sample.Name) %>%
+        bind_cols(factors)
     return(result)
 }
 
@@ -1235,20 +1237,19 @@ compare_csv <- compare_csv_from_runsheet(runsheet_path)
 
 ### Create data frame containing all samples and respective factors ###
 
-study <- as.data.frame(compare_csv[,2:dim(compare_csv)[2]])
-colnames(study) <- colnames(compare_csv)[2:dim(compare_csv)[2]]
-rownames(study) <- compare_csv[,1]
+study <- compare_csv[, -1, drop=FALSE] # Exclude sample_id
+rownames(study) <- compare_csv$sample_id
 
 
 ### Format groups and indicate the group that each sample belongs to ###
 
-if (dim(study) >= 2){
-    group<-apply(study,1,paste,collapse = " & ") ## concatenate multiple factors into one condition per sample
-} else{
-    group<-study[,1]
+group <- if (ncol(study) >= 2) {
+    apply(study, 1, paste, collapse = " & ")
+} else {
+    study[[1]]
 }
-group_names <- paste0("(",group,")",sep = "") ## human readable group names
-group <- sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", group))) # group naming compatible with R models, this maintains the default behaviour of make.names with the exception that 'X' is never prepended to group names
+group_names <- paste0("(", group, ")") ## human readable group names
+group <- sub("^BLOCKER_", "", make.names(paste0("BLOCKER_", group))) # group naming compatible with R models, this maintains the default behaviour of make.names with the exception that 'X' is never prepended to group names
 names(group) <- group_names
 rm(group_names)
 
@@ -1491,6 +1492,9 @@ write.csv(txi.rsem$counts,
 
 write.csv(normCounts,
     file.path(norm_output, "Normalized_Counts_GLbulkRNAseq.csv"))
+
+write.csv(VSTCounts,
+    file.path(norm_output, "VST_Counts_GLbulkRNAseq.csv"))
 
 ### Export sample grouping and contrasts tables ###
 write.csv(sampleTable,
