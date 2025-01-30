@@ -1102,7 +1102,7 @@ echo "*: ${rRNA_count} rRNA entries removed." > *_rRNA_counts.txt
 ## 9. Normalize Read Counts and Perform Differential Gene Expression Analysis
 
 > Note: DGE Analysis is performed twice with different sets of input files:
-> 1. Using RSEM genes.results files (*genes.results, output from [Step 8a](#8a-count-aligned-reads-with-rsem)))
+> 1. Using RSEM genes.results files (*genes.results, output from [Step 8a](#8a-count-aligned-reads-with-rsem))
 > 2. Using rRNA-removed RSEM genes.results files (*rRNA_removed.genes.results, output from [Step 8dii](#8dii-filter-rrna-genes-from-rsem-genes-results))
 
 <br>
@@ -1195,14 +1195,14 @@ DGE_output="/path/to/DGE/output/directory"
 
 ### Pull in the GeneLab annotation table (GL-DPPD-7110-A_annotations.csv) file ###
 
-org_table_link <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv"
+org_table_link <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
 
 org_table <- read.table(org_table_link, sep = ",", header = TRUE)
 
 
 ### Define the link to the GeneLab annotation table for the organism of interest ###
 
-annotations_link <- org_table[org_table$name == organism, "genelab_annots_link"]
+annotations_link <- org_table[org_table$species == organism, "genelab_annots_link"]
 
 
 ### Set your working directory to the directory where you will execute your DESeq2 script from ###
@@ -1210,6 +1210,17 @@ annotations_link <- org_table[org_table$name == organism, "genelab_annots_link"]
 setwd(file.path(work_dir))
 
 ```
+
+**Input Data:**
+
+
+* {GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv (runsheet, output from [Step 9a](#9a-create-sample-runsheet))
+* `organism` (name of organism samples were derived from, found in the species column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file)
+
+**Output Data:**
+
+* `runsheet_path` (variable containing path to runsheet created in [Step 9a](#9a-create-sample-runsheet)) 
+* `annotations_link` (variable containing URL to GeneLab gene annotation table for the organism)
 
 <br>
 
@@ -1265,6 +1276,16 @@ rm(contrast.names)
 
 ```
 
+**Input Data:**
+
+* `runsheet_path` (variable containing path to runsheet created in [Step 9a](#9a-create-sample-runsheet))
+
+**Output Data:**
+
+* `study` (data frame containing sample condition values)
+* `group` (named vector indicating group membership for each sample)
+* `contrasts` (matrix defining pairwise comparisons between groups)
+
 <br>
 
 ### 9d. Import RSEM GeneCounts
@@ -1296,8 +1317,16 @@ if (dim(txi.rsem$counts)[2] != nrow(study)) {
 
 ### Add 1 to genes with lengths of zero - needed to make DESeqDataSet object ###
 txi.rsem$length[txi.rsem$length == 0] <- 1
-
 ```
+
+**Input Data:**
+
+* `study` (data frame containing sample condition values, output from [Step 9c](#9c-create-study-group-and-contrasts))
+
+**Output Data:**
+
+* `txi.rsem` (list containing imported RSEM data including counts, transcript lengths, and gene lengths)
+* `samples` (vector of sample names from study data frame)
 
 <br>
 
@@ -1388,7 +1417,7 @@ if (length(grep("ERCC-", rownames(dds))) != 0) {
 }
 
 ### Perform DESeq analysis ###
-dds <- DESeq(dds, parallel = TRUE, BPPARAM = BPPARAM)
+dds <- DESeq(dds, parallel = TRUE, BPPARAM = MulticoreParam(workers = 4))
 
 ### Generate normalized counts ###
 normCounts <- as.data.frame(counts(dds, normalized = TRUE))
@@ -1402,6 +1431,20 @@ dds_lrt <- DESeq(dds, test = "LRT", reduced = ~1)
 res_lrt <- results(dds_lrt)
 
 ```
+
+**Input Data:**
+
+* `group` (named vector indicating group membership for each sample, output from [Step 9c](#9c-configure-metadata-sample-grouping-and-group-comparisons))
+* `txi.rsem` (imported RSEM data containing counts matrix, output from [Step 9d](#9d-import-rsem-genecounts))
+
+**Output Data:**
+
+* `dds` (DESeq2 data object containing normalized counts and experimental design)
+* `normCounts` (data frame of normalized count values + 1)
+* `VSTCounts` (data frame of variance stabilized transformed counts)
+* `dds_lrt` (DESeq2 data object from likelihood ratio test)
+* `res_lrt` (results object from likelihood ratio test)
+* `sampleTable` (data frame containing sample condition information, with technical replicates handled)
 
 <br>
 
@@ -1432,7 +1475,7 @@ compute_contrast <- function(i) {
 }
 
 ### Use bplapply to compute results in parallel ###
-res_list <- bplapply(1:dim(contrasts)[2], compute_contrast, BPPARAM = BPPARAM)
+res_list <- bplapply(1:dim(contrasts)[2], compute_contrast, BPPARAM = MulticoreParam(workers = 4))
 
 ### Combine the list of data frames into a single data frame ###
 res_df <- do.call(cbind, res_list)
@@ -1483,6 +1526,29 @@ output_table <- output_table %>%
 
 ```
 
+**Input Data:**
+
+* `normCounts` (data frame of normalized count values, output from [Step 9e](#9e-perform-dge-analysis))
+* `res_lrt` (results object from likelihood ratio test, output from [Step 9e](#9e-perform-dge-analysis))
+* `contrasts` (matrix defining pairwise comparisons, output from [Step 9c](#9c-configure-metadata-sample-grouping-and-group-comparisons))
+* `annotations_link` (variable containing URL to GeneLab annotation table, output from [Step 9b](#9b-environment-set-up))
+
+**Output Data:**
+
+* `output_table` (data frame containing the following columns:
+  - Gene identifier column (ENSEMBL or TAIR for plant studies)
+  - Normalized counts for each sample
+  - Log2 fold change, test statistic, p-value and adjusted p-value for each pairwise comparison
+  - All.mean (mean across all samples)
+  - All.stdev (standard deviation across all samples) 
+  - LRT.p.value (likelihood ratio test adjusted p-value)
+  - For each experimental group:
+    - Group.Mean_(group) (mean within group)
+    - Group.Stdev_(group) (standard deviation within group))
+  - Additional organism-specific gene annotations columns
+
+<br>
+
 ### 9g. Export DGE Tables
 
 ```R
@@ -1517,19 +1583,36 @@ sessionInfo()
 
 
 **Input Data:**
-
-- *runsheet.csv file (table containing metadata required for analysis, output from [step 9a](#9a-create-sample-runsheet))
-- [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) (csv file containing link to GeneLab annotations) 
-- *genes.results (RSEM counts per gene, output from [Step 8a](#8a-count-aligned-reads-with-rsem)) or *_rRNA_removed.genes.results (RSEM counts per gene with rRNA entries removed, output from [Step 8d](#8d-remove-rrna-from-rsem-counts))
+* `contrasts` (matrix defining pairwise comparisons between experimental groups from [Step 9c](#9c-create-study-group-and-contrasts))
+* `txi.rsem` (imported RSEM count data from [Step 9d](#9d-import-rsem-genecounts))
+* `normCounts` (normalized count values from [Step 9e](#9e-perform-dge-analysis))
+* `VSTCounts` (variance stabilized transformed counts from [Step 9e](#9e-perform-dge-analysis)) 
+* `sampleTable` (data frame mapping samples to experimental conditions from [Step 9e](#9e-perform-dge-analysis))
+* `output_table` (DGE output table from [Step 9f](#9f-add-statistics-and-gene-annotations-to-dge-results))
 
 **Output Data:**
 
-- **RSEM_Unnormalized_Counts_GLbulkRNAseq.csv** (table containing raw RSEM gene counts for each sample)
-- **Normalized_Counts_GLbulkRNAseq.csv** (table containing normalized gene counts for each sample)
-- **VST_Counts_GLbulkRNAseq.csv** (table containing VST normalized gene counts for each sample)
-- **SampleTable_GLbulkRNAseq.csv** (table containing samples and their respective groups)
-- **differential_expression_GLbulkRNAseq.csv** (table containing normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations) 
-- **contrasts_GLbulkRNAseq.csv** (table containing all pairwise comparisons)
+* **RSEM_Unnormalized_Counts_GLbulkRNAseq.csv** (raw RSEM gene counts for all samples and technical replicates)
+* **Normalized_Counts_GLbulkRNAseq.csv** (normalized gene counts)
+* **VST_Counts_GLbulkRNAseq.csv** (variance stabilized transformed counts)
+* **SampleTable_GLbulkRNAseq.csv** (1-column table defining sample-to-experimental-condition mapping:
+  - Row names: Sample names
+  - Column 'condition': Factor indicating experimental group/condition)
+* **contrasts_GLbulkRNAseq.csv** (2-row table defining pairwise group comparisons:
+  - Column names: One pairwise group comparison (e.g., "GroupAvGroupB")
+  - Row 1 contains the numerator group
+  - Row 2 contains the denominator group)
+* **differential_expression_GLbulkRNAseq.csv** (complete DGE results table containing the following columns:
+  - Gene identifier column (ENSEMBL or TAIR for plant studies)
+  - Normalized counts for each sample
+  - Log2 fold change, test statistic, p-value and adjusted p-value for each pairwise comparison
+  - All.mean (mean across all samples)
+  - All.stdev (standard deviation across all samples) 
+  - LRT.p.value (likelihood ratio test adjusted p-value)
+  - For each experimental group:
+    - Group.Mean_(group) (mean within group)
+    - Group.Stdev_(group) (standard deviation within group)
+  - Additional organism-specific gene annotations columns)
 
 > Note: Datasets with technical replicates are handled by collapsing them such that the minimum number of equal technical replicates is retained across all samples. Before normalization, the counts of technical replicates are summed to combine them into a single sample representing the biological replicate.
 
