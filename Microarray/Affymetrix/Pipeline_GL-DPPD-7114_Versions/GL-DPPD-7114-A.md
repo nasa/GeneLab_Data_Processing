@@ -21,6 +21,37 @@ Lauren Sanders (acting GeneLab Project Scientist)
 
 ---
 
+## Updates from previous version
+
+Updated [Ensembl Reference Files](../../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) to the following releases:
+- Animals: Ensembl release 112
+- Plants: Ensembl plants release 59
+- Bacteria: Ensembl bacteria release 59
+
+Software Updates:
+
+| Program | Previous Version | New Version    |
+|:--------|:-----------------|:---------------|
+|R|4.1.3|4.4.2|
+|DT|0.26|0.33|
+|dplyr|1.0.10|1.1.4|
+|tibble|3.1.8|3.2.1|
+|stringr|1.5.0|1.5.1|
+|R.utils|2.12.2|2.12.3|
+|oligo|1.58.0|1.70.0|
+|limma|3.50.3|3.62.2|
+|glue|1.6.2|1.8.0|
+|biomaRt|2.50.0|2.62.0|
+|matrixStats|0.63.0|1.5.0|
+|statmod|1.5.0|1.5.0|
+|dp_tools|1.3.4|1.3.5|
+|singularity|3.9|3.9|
+|Quarto|1.2.313|1.6.40|
+
+Added better support for custom annotations, see [specification](../Workflow_Documentation/NF_MAAffymetrix/examples/annotations/README.md).
+
+---
+
 # Table of contents <!-- omit in toc -->
 
 - [Software used](#software-used)
