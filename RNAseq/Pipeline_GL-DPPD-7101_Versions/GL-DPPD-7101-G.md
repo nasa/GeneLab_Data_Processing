@@ -1215,7 +1215,7 @@ setwd(file.path(work_dir))
 
 
 * {GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv (runsheet, output from [Step 9a](#9a-create-sample-runsheet))
-* `organism` (name of organism samples were derived from, found in the species column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file)
+* `organism` (name of organism samples were derived from, found in the species column of [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file)
 
 **Output Data:**
 
@@ -1282,8 +1282,8 @@ rm(contrast.names)
 
 **Output Data:**
 
-* `study` (data frame containing sample condition values)
-* `group` (named vector indicating group membership for each sample)
+* `study` (data frame specifying factor levels assigned to each sample)
+* `group` (named vector specifying the group or set of factor levels for each sample)
 * `contrasts` (matrix defining pairwise comparisons between groups)
 
 <br>
@@ -1434,17 +1434,18 @@ res_lrt <- results(dds_lrt)
 
 **Input Data:**
 
-* `group` (named vector indicating group membership for each sample, output from [Step 9c](#9c-configure-metadata-sample-grouping-and-group-comparisons))
+* `group` (named vector specifying the group or set of factor levels for each sample, output from [Step 9c](#9c-configure-metadata-sample-grouping-and-group-comparisons))
 * `txi.rsem` (imported RSEM data containing counts matrix, output from [Step 9d](#9d-import-rsem-genecounts))
 
 **Output Data:**
 
+* `sampleTable` (data frame mapping samples to groups)
 * `dds` (DESeq2 data object containing normalized counts and experimental design)
 * `normCounts` (data frame of normalized count values + 1)
 * `VSTCounts` (data frame of variance stabilized transformed counts)
 * `dds_lrt` (DESeq2 data object from likelihood ratio test)
 * `res_lrt` (results object from likelihood ratio test)
-* `sampleTable` (data frame containing sample condition information, with technical replicates handled)
+* `output_table` (data frame containing normalized counts, DGE results)
 
 <br>
 
@@ -1528,7 +1529,7 @@ output_table <- output_table %>%
 
 **Input Data:**
 
-* `normCounts` (data frame of normalized count values, output from [Step 9e](#9e-perform-dge-analysis))
+* `normCounts` (data frame of normalized counts, output from [Step 9e](#9e-perform-dge-analysis))
 * `res_lrt` (results object from likelihood ratio test, output from [Step 9e](#9e-perform-dge-analysis))
 * `contrasts` (matrix defining pairwise comparisons, output from [Step 9c](#9c-configure-metadata-sample-grouping-and-group-comparisons))
 * `annotations_link` (variable containing URL to GeneLab annotation table, output from [Step 9b](#9b-environment-set-up))
@@ -1538,7 +1539,11 @@ output_table <- output_table %>%
 * `output_table` (data frame containing the following columns:
   - Gene identifier column (ENSEMBL or TAIR for plant studies)
   - Normalized counts for each sample
-  - Log2 fold change, test statistic, p-value and adjusted p-value for each pairwise comparison
+  - For each pairwise comparison:
+    - Log2 fold change
+    - Test statistic
+    - P-value
+    - Adjusted p-value
   - All.mean (mean across all samples)
   - All.stdev (standard deviation across all samples) 
   - LRT.p.value (likelihood ratio test adjusted p-value)
@@ -1583,33 +1588,32 @@ sessionInfo()
 
 
 **Input Data:**
-* `contrasts` (matrix defining pairwise comparisons between experimental groups from [Step 9c](#9c-create-study-group-and-contrasts))
-* `txi.rsem` (imported RSEM count data from [Step 9d](#9d-import-rsem-genecounts))
-* `normCounts` (normalized count values from [Step 9e](#9e-perform-dge-analysis))
-* `VSTCounts` (variance stabilized transformed counts from [Step 9e](#9e-perform-dge-analysis)) 
-* `sampleTable` (data frame mapping samples to experimental conditions from [Step 9e](#9e-perform-dge-analysis))
-* `output_table` (DGE output table from [Step 9f](#9f-add-statistics-and-gene-annotations-to-dge-results))
+* `sampleTable` (data frame mapping samples to groups, output from [Step 9e](#9e-perform-dge-analysis))
+* `contrasts` (matrix defining pairwise comparisons between groups, output from [Step 9c](#9c-create-study-group-and-contrasts))
+* `txi.rsem` (imported RSEM count data, output from [Step 9d](#9d-import-rsem-genecounts))
+* `normCounts` (normalized counts, output from [Step 9e](#9e-perform-dge-analysis))
+* `VSTCounts` (variance stabilized transformed counts, output from [Step 9e](#9e-perform-dge-analysis)) 
+* `output_table` (DGE output table, output from [Step 9f](#9f-add-statistics-and-gene-annotations-to-dge-results))
 
 **Output Data:**
 
-* **RSEM_Unnormalized_Counts_GLbulkRNAseq.csv** (raw RSEM gene counts for all samples and technical replicates)
+* **RSEM_Unnormalized_Counts_GLbulkRNAseq.csv** (raw RSEM gene counts for all samples, including technical replicates)
 * **Normalized_Counts_GLbulkRNAseq.csv** (normalized gene counts)
 * **VST_Counts_GLbulkRNAseq.csv** (variance stabilized transformed counts)
-* **SampleTable_GLbulkRNAseq.csv** (1-column table defining sample-to-experimental-condition mapping:
-  - Row names: Sample names
-  - Column 'condition': Factor indicating experimental group/condition)
-* **contrasts_GLbulkRNAseq.csv** (2-row table defining pairwise group comparisons:
-  - Column names: One pairwise group comparison (e.g., "GroupAvGroupB")
-  - Row 1 contains the numerator group
-  - Row 2 contains the denominator group)
-* **differential_expression_GLbulkRNAseq.csv** (complete DGE results table containing the following columns:
+* **SampleTable_GLbulkRNAseq.csv** (table specifying the group or set of factor levels for each sample)
+* **contrasts_GLbulkRNAseq.csv** (table listing all pairwise group comparisons)
+* **differential_expression_GLbulkRNAseq.csv** (DGE results table containing the following columns:
   - Gene identifier column (ENSEMBL or TAIR for plant studies)
-  - Normalized counts for each sample
-  - Log2 fold change, test statistic, p-value and adjusted p-value for each pairwise comparison
+  - Normalized counts
+  - For each pairwise group comparison:
+    - Log2 fold change
+    - Test statistic
+    - P-value
+    - Adjusted p-value
   - All.mean (mean across all samples)
   - All.stdev (standard deviation across all samples) 
   - LRT.p.value (likelihood ratio test adjusted p-value)
-  - For each experimental group:
+  - For each group:
     - Group.Mean_(group) (mean within group)
     - Group.Stdev_(group) (standard deviation within group)
   - Additional organism-specific gene annotations columns)
