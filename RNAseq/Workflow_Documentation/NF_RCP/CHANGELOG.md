@@ -35,10 +35,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - RSeQC tools 5.0.4
   - R 4.4.2
   - Bioconductor 3.20
+  - BiocParallel 1.40.0
   - DESeq2 1.46.0
   - tximport 1.34.0
   - tidyverse 2.0.0
+  - dplyr 1.1.4
+  - knitr 1.49
   - stringr 1.5.1
+  - yaml 2.3.10
   - dp_tools 1.3.5
   - pandas 2.2.3
   - seaborn 0.13.2

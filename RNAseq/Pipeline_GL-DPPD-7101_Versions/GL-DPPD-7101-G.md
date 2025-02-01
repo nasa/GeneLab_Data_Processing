@@ -169,10 +169,14 @@ DESeq2 Analysis Workflow
 |read_distribution|5.0.4|[http://rseqc.sourceforge.net/#read-distribution-py](http://rseqc.sourceforge.net/#read-distribution-py)|
 |R|4.4.2|[https://www.r-project.org/](https://www.r-project.org/)|
 |Bioconductor|3.20|[https://bioconductor.org](https://bioconductor.org)|
+|BiocParallel|1.40.0|[https://bioconductor.org/packages/release/bioc/html/BiocParallel.html](https://bioconductor.org/packages/release/bioc/html/BiocParallel.html)|
 |DESeq2|1.46.0|[https://bioconductor.org/packages/release/bioc/html/DESeq2.html](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)|
 |tximport|1.34.0|[https://github.com/mikelove/tximport](https://github.com/mikelove/tximport)|
 |tidyverse|2.0.0|[https://www.tidyverse.org](https://www.tidyverse.org)|
+|dplyr|1.1.4|[https://dplyr.tidyverse.org/](https://dplyr.tidyverse.org/)|
+|knitr|1.49|[https://yihui.org/knitr/](https://yihui.org/knitr/)|
 |stringr|1.5.1|[https://github.com/tidyverse/stringr](https://github.com/tidyverse/stringr)|
+|yaml|2.3.10|[https://github.com/yaml/yaml](https://github.com/yaml/yaml)|
 |dp_tools|1.3.5|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |pandas|2.2.3|[https://github.com/pandas-dev/pandas](https://github.com/pandas-dev/pandas)|
 |seaborn|0.13.2|[https://seaborn.pydata.org/](https://seaborn.pydata.org/)|
@@ -1320,7 +1324,7 @@ txi.rsem$length[txi.rsem$length == 0] <- 1
 ```
 
 **Input Data:**
-
+* *genes.results (RSEM counts per gene, output from [Step 8a](#8a-count-aligned-reads-with-rsem) or from [Step 8dii](#8dii-filter-rrna-genes-from-rsem-genes-results) when using rRNA-removed count data)
 * `study` (data frame containing sample condition values, output from [Step 9c](#9c-create-study-group-and-contrasts))
 
 **Output Data:**
@@ -1440,7 +1444,7 @@ res_lrt <- results(dds_lrt)
 **Output Data:**
 
 * `sampleTable` (data frame mapping samples to groups)
-* `dds` (DESeq2 data object containing normalized counts and experimental design)
+* `dds` (DESeq2 data object containing normalized counts, experimental design, and differential expression results)
 * `normCounts` (data frame of normalized count values + 1)
 * `VSTCounts` (data frame of variance stabilized transformed counts)
 * `dds_lrt` (DESeq2 data object from likelihood ratio test)
@@ -1455,24 +1459,21 @@ res_lrt <- results(dds_lrt)
 ### Initialize output table with normalized counts ###
 output_table <- tibble::rownames_to_column(normCounts, var = "ENSEMBL")
 
-### Add LRT p-values ###
-output_table$LRT.p.value <- res_lrt@listData$padj
-
 ### Iterate through Wald Tests to generate pairwise comparisons of all groups ###
 compute_contrast <- function(i) {
-    res_1 <- results(
-        dds_1,
+    res <- results(
+        dds,
         contrast = c("condition", contrasts[1, i], contrasts[2, i]),
         parallel = FALSE  # Disable internal parallelization
     )
-    res_1_df <- as.data.frame(res_1@listData)[, c(2, 4, 5, 6)]
-    colnames(res_1_df) <- c(
+    res_df <- as.data.frame(res@listData)[, c(2, 4, 5, 6)]
+    colnames(res_df) <- c(
         paste0("Log2fc_", colnames(contrasts)[i]),
         paste0("Stat_", colnames(contrasts)[i]),
         paste0("P.value_", colnames(contrasts)[i]),
         paste0("Adj.p.value_", colnames(contrasts)[i])
     )
-    return(res_1_df)
+    return(res_df)
 }
 
 ### Use bplapply to compute results in parallel ###
@@ -1487,7 +1488,7 @@ output_table <- cbind(output_table, res_df)
 ### Add summary statistics ###
 output_table$All.mean <- rowMeans(normCounts, na.rm = TRUE)
 output_table$All.stdev <- rowSds(as.matrix(normCounts), na.rm = TRUE)
-output_table$LRT.p.value <- res_1_lrt@listData$padj
+output_table$LRT.p.value <- res_lrt@listData$padj
 
 ### Add group-wise statistics ###
 tcounts <- as.data.frame(t(normCounts))
@@ -1532,6 +1533,7 @@ output_table <- output_table %>%
 * `normCounts` (data frame of normalized counts, output from [Step 9e](#9e-perform-dge-analysis))
 * `res_lrt` (results object from likelihood ratio test, output from [Step 9e](#9e-perform-dge-analysis))
 * `contrasts` (matrix defining pairwise comparisons, output from [Step 9c](#9c-configure-metadata-sample-grouping-and-group-comparisons))
+* `dds` (DESeq2 data object containing normalized counts, experimental design, and differential expression results, output from [Step 9e](#9e-perform-dge-analysis))
 * `annotations_link` (variable containing URL to GeneLab annotation table, output from [Step 9b](#9b-environment-set-up))
 
 **Output Data:**
@@ -1604,6 +1606,7 @@ sessionInfo()
 * **contrasts_GLbulkRNAseq.csv** (table listing all pairwise group comparisons)
 * **differential_expression_GLbulkRNAseq.csv** (DGE results table containing the following columns:
   - Gene identifier column (ENSEMBL or TAIR for plant studies)
+  - Additional organism-specific gene annotations columns
   - Normalized counts
   - For each pairwise group comparison:
     - Log2 fold change
@@ -1615,8 +1618,7 @@ sessionInfo()
   - LRT.p.value (likelihood ratio test adjusted p-value)
   - For each group:
     - Group.Mean_(group) (mean within group)
-    - Group.Stdev_(group) (standard deviation within group)
-  - Additional organism-specific gene annotations columns)
+    - Group.Stdev_(group) (standard deviation within group))
 
 > Note: Datasets with technical replicates are handled by collapsing them such that the minimum number of equal technical replicates is retained across all samples. Before normalization, the counts of technical replicates are summed to combine them into a single sample representing the biological replicate.
 

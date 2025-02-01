@@ -302,12 +302,12 @@ dim(dds)
 if (length(grep("ERCC-", rownames(dds))) != 0) {
     dds <- dds[-c(grep("ERCC-", rownames(dds))), ]
 }
-dds_1 <- DESeq(dds, parallel = TRUE, BPPARAM = BPPARAM)
+dds <- DESeq(dds, parallel = TRUE, BPPARAM = BPPARAM)
 ```
 
 ```{r output-counts-related-files}
-normCounts <- as.data.frame(counts(dds_1, normalized = TRUE))
-VSTCounts <- as.data.frame(assay(vst(dds_1)))
+normCounts <- as.data.frame(counts(dds, normalized = TRUE))
+VSTCounts <- as.data.frame(assay(vst(dds)))
 unnormalized_counts_filename <- if (params$microbes) {
     "FeatureCounts_Unnormalized_Counts_GLbulkRNAseq.csv"
 } else {
@@ -351,28 +351,28 @@ output_table <- tibble::rownames_to_column(normCounts, var = params$gene_id_type
 ##### Generate F statistic p-value (similar to ANOVA p-value) using DESeq2 likelihood ratio test (LRT) design #####
 
 print(sprintf("DEBUG: %s: Generating Likelihood Ratio Test Based Statistics", Sys.time()))
-dds_1_lrt <- DESeq(dds_1, test = "LRT", reduced = ~1)
-res_1_lrt <- results(dds_1_lrt)
+dds_lrt <- DESeq(dds, test = "LRT", reduced = ~1)
+res_lrt <- results(dds_lrt)
 # Store LRT p-value (add after means and stdevs)
-lrt_pvalues <- res_1_lrt@listData$padj
+lrt_pvalues <- res_lrt@listData$padj
 ```
 
 ```{r wald-test-iteration}
 ## Iterate through Wald Tests to generate pairwise comparisons of all groups
 compute_contrast <- function(i) {
-    res_1 <- results(
-        dds_1,
+    res <- results(
+        dds,
         contrast = c("condition", contrasts[1, i], contrasts[2, i]),
         parallel = FALSE  # Disable internal parallelization
     )
-    res_1_df <- as.data.frame(res_1@listData)[, c(2, 4, 5, 6)]
-    colnames(res_1_df) <- c(
+    res_df <- as.data.frame(res@listData)[, c(2, 4, 5, 6)]
+    colnames(res_df) <- c(
         paste0("Log2fc_", colnames(contrasts)[i]),
         paste0("Stat_", colnames(contrasts)[i]),
         paste0("P.value_", colnames(contrasts)[i]),
         paste0("Adj.p.value_", colnames(contrasts)[i])
     )
-    return(res_1_df)
+    return(res_df)
 }
 
 # Use bplapply to compute results in parallel
