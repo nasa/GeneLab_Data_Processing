@@ -51,15 +51,20 @@ df <- read.csv(params$input_table_path,
 ```
 
 ```{r, add-annotations}
-### Combine annotations table and the (non-ERCC) normalized counts table
-df2 <- merge(
-                annot,
-                df,
-                by = params$gene_id_type,
-                # ensure all original dge rows are kept.
-                # If unmatched in the annotation database, then fill missing with NAN
-                all.y = TRUE
-            )
+### Check if gene ID column exists in both tables
+if (!(params$gene_id_type %in% colnames(annot)) || !(params$gene_id_type %in% colnames(df))) {
+    # If gene ID column is missing from either table, just write the original DGE table
+    df2 <- df
+    warning(paste("Gene ID column", params$gene_id_type, "not found in one or both tables."))
+} else {
+    ### Combine annotations with data
+    df2 <- annot %>%
+        merge(df,
+            by = params$gene_id_type,
+            all.y = TRUE 
+        ) %>%
+        select(all_of(params$gene_id_type), everything())  # Make sure main gene ID is first column
+}
 
 dir.create(dirname(paste0(params$output_directory)), recursive = TRUE)
 write.csv(

@@ -1521,10 +1521,12 @@ annot <- read.table(annotations_link,
 
 ### Combine annotations table and the DGE table ###
 output_table <- merge(annot, output_table, by='row.names', all.y=TRUE)
-output_table <- output_table %>% 
-  rename(
-    ENSEMBL = Row.names ## Change ENSEMBL to TAIR for plant studies ##
-  )
+output_table <- annot %>%
+    merge(output_table,
+        by = params$gene_id_type,
+        all.y = TRUE
+    ) %>%
+    select(all_of(params$gene_id_type), everything())
 
 ```
 
@@ -1540,6 +1542,7 @@ output_table <- output_table %>%
 
 * `output_table` (data frame containing the following columns:
   - Gene identifier column (ENSEMBL or TAIR for plant studies)
+  - Additional organism-specific gene annotations columns
   - Normalized counts for each sample
   - For each pairwise comparison:
     - Log2 fold change
@@ -1552,7 +1555,6 @@ output_table <- output_table %>%
   - For each experimental group:
     - Group.Mean_(group) (mean within group)
     - Group.Stdev_(group) (standard deviation within group))
-  - Additional organism-specific gene annotations columns
 
 <br>
 
