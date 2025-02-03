@@ -1,10 +1,14 @@
 # GeneLab bioinformatics processing pipeline for Illumina RNA-sequencing data
 
-> **The document [`GL-DPPD-7101-F.md`](Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md) holds an overview and example commands for how GeneLab processes RNAseq datasets. See the [Repository Links](#repository-links) descriptions below for more information. Processed data output files and a GeneLab data processing summary is provided for each GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
+> **The document [`GL-DPPD-7101-G.md`](Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md) holds an overview and example commands for how GeneLab processes RNAseq datasets. See the [Repository Links](#repository-links) descriptions below for more information. Processed data output files and a GeneLab data processing summary is provided for each GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 
 ---
+RNAseq:
+<img src="images/RNAseq_eukaryotes_pipeline_diagram.png" align="center" alt=""/> 
 
-<img src="images/RNAseq_pipeline_diagram.png" align="center" alt=""/>
+RNAseq (Prokaryotes):
+
+<img src="images/RNAseq_prokaryotes_pipeline_diagram.png" align="center" alt=""/>
 
 ---
 ## Repository Links
@@ -12,6 +16,10 @@
 * [**Pipeline_GL-DPPD-7101_Versions**](Pipeline_GL-DPPD-7101_Versions)
 
   - Contains the current and previous GeneLab RNAseq consensus processing pipeline (RCP) versions documentation
+
+* [**Pipeline_GL-DPPD-7115_Versions**](Pipeline_GL-DPPD-7115_Versions)
+
+  - Contains the current and previous GeneLab RNAseq (Prokaryotes) consensus processing pipeline (RCP) versions documentation
 
 * [**RNAseq_Tool_Install**](RNAseq_Tool_Install)
 
@@ -50,7 +58,7 @@ Licenses for the 3rd party open source software utilized in the RNAseq pipeline 
 
 ## Notices
 
-Copyright © 2023 United States Government as represented by the Administrator of the National Aeronautics and Space Administration.  All Rights Reserved. 
+Copyright © 2025 United States Government as represented by the Administrator of the National Aeronautics and Space Administration.  All Rights Reserved. 
 
 ### Disclaimers
 
@@ -63,6 +71,10 @@ The “GeneLab RNA Sequencing Processing Pipeline and Workflow” software also 
 <br>
 
 ---
-**Developed and maintained by:**  
-Amanda Saravia-Butler  
-Jonathan Oribello
+**Developed by:**  
+Amanda Saravia-Butler    
+Jonathan Oribello  
+
+**Maintained by:**  
+Alexis Torres  
+Crystal Han  

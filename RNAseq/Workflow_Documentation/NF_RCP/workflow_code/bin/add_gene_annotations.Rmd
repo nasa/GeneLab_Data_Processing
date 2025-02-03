@@ -1,0 +1,90 @@
+---
+title: Add Gene Annotations
+output: 
+    html_document:
+        pandoc_args: ["+RTS", "-K1024m", "-RTS"]
+
+params:
+    work_dir: "." # Directory where the script will run
+    output_directory: "." # directory for writing output files
+    input_table_path: "" # path to the input table file
+    annotation_file_path: "" # path to the annotation file
+    gene_id_type: "" # Denotes the name of the identifier column (e.g. ENSEMBL, TAIR)
+    table_sep: "," # delimiter for input tables
+    output_filename_suffix: "" # suffix for output file names
+---
+
+## Results {.tabset}
+
+### Setup
+```{r, setup, include=FALSE}
+knitr::opts_knit$set(root.dir = params$work_dir)
+```
+
+```{r}
+# allow more flexibility in download time
+# useful for slower connections where the default of 60 seconds might be exceeded
+options(timeout = 600)
+
+suppressMessages(library(dplyr))
+suppressMessages(library(tibble))
+```
+
+### Output
+```{r, load-annotation-table}
+### Read in annotation table for the appropriate organism ###
+
+annot <- read.table(
+            params$annotation_file_path,
+            sep = "\t",
+            header = TRUE,
+            quote = "",
+            comment.char = "",
+        )
+```
+
+```{r, load-table-to-annotate}
+df <- read.csv(params$input_table_path,
+                 sep = params$table_sep,
+                 check.names = FALSE # don't rename column names with check.names
+                 )
+```
+
+```{r, add-annotations}
+### Check if gene ID column exists in both tables
+if (!(params$gene_id_type %in% colnames(annot)) || !(params$gene_id_type %in% colnames(df))) {
+    # If gene ID column is missing from either table, just write the original DGE table
+    df2 <- df
+    warning(paste("Gene ID column", params$gene_id_type, "not found in one or both tables."))
+} else {
+    ### Combine annotations with data
+    df2 <- annot %>%
+        merge(df,
+            by = params$gene_id_type,
+            all.y = TRUE 
+        ) %>%
+        select(all_of(params$gene_id_type), everything())  # Make sure main gene ID is first column
+}
+
+dir.create(dirname(paste0(params$output_directory)), recursive = TRUE)
+write.csv(
+    df2, 
+    row.names = FALSE, 
+    file = file.path(params$output_directory, 
+        paste0("differential_expression", params$output_filename_suffix, ".csv")
+    )
+)
+```
+
+```{r verson-reporting}
+## print session info ##
+session_info_output <- capture.output(sessionInfo())
+
+# Write versions file
+cat(session_info_output,
+    "BioC_version_associated_with_R_version",
+    toString(BiocManager::version()),
+    file = file.path(params$output_directory, "versions.txt"),
+    append = TRUE,
+    sep = "\n")
+```
