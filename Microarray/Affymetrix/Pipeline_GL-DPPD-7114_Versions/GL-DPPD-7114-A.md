@@ -48,7 +48,13 @@ Software Updates:
 |singularity|3.9|3.9|
 |Quarto|1.2.313|1.6.40|
 
-Added better support for custom annotations, see [specification](../Workflow_Documentation/NF_MAAffymetrix/examples/annotations/README.md).
+MA Plots
+
+- Added support for plotting HTAFeatureSet data
+
+Custom Annotations
+
+- Added ability to use custom gene annotations when annotations are not available in Biomart or Ensembl FTP for Arabidopsis Thaliana
 
 ---
 
