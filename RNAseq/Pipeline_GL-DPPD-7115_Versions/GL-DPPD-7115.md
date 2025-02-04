@@ -4,7 +4,7 @@
 
 ---
 
-**Date:** January 28, 2025  
+**Date:** January 28, 2025 [CHANGE TO BASELINE DATE]  
 **Document Number:** GL-DPPD-7115   
 
 **Submitted by:**  
@@ -14,9 +14,9 @@ Crystal Han (GeneLab Data Processing Team)
 **Approved by:**  
 Barbara Novak (GeneLab Data Processing Lead)  
 Amanda Saravia-Butler (GeneLab Science Lead)  
-Samrawit Gebre (GeneLab Project Manager)  
-Danielle Lopez (GeneLab Deputy Project Manager)  
-Lauren Sanders (GeneLab Project Scientist)
+Samrawit Gebre (OSDR Project Manager)  
+Danielle Lopez (OSDR Deputy Project Manager)  
+Lauren Sanders (OSDR Project Scientist)
 
 ---
 
@@ -49,25 +49,24 @@ Differences with default workflow:
   - [**4. Align Reads to Reference Genome then Sort and Index**](#4-align-reads-to-reference-genome-then-sort-and-index)
     - [4a. Align Reads to Reference Genome with Bowtie 2](#4a-align-reads-to-reference-genome-with-bowtie-2)
     - [4b. Compile Alignment Logs](#4b-compile-alignment-logs)
-    - [4c. Sort Aligned Reads](#4c-sort-aligned-reads)
-    - [4d. Index Sorted Aligned Reads](#4d-index-sorted-aligned-reads)
+    - [4c. Convert SAM to BAM](#4c-convert-sam-to-bam)
+    - [4d. Sort Aligned Reads](#4d-sort-aligned-reads)
+    - [4e. Index Sorted Aligned Reads](#4d-index-sorted-aligned-reads)
   - [**5. Create Reference BED File**](#5-create-reference-bed-file)
-  - [**6. Assess Strandedness, GeneBody Coverage, Inner Distance, and Read Distribution with RSeQC**](#6-assess-strandedness-genebody-coverage-inner-distance-and-read-distribution-with-rseqc)
+  - [**6. Assess Alignment Quality with RSeQC and Samtools Stats**](#6-assess-alignment-quality-with-rseqc-and-samtools-stats)
     - [6a. Determine Read Strandedness](#6a-determine-read-strandedness)
     - [6b. Compile Strandedness Reports](#6b-compile-strandedness-reports)
     - [6c. Evaluate GeneBody Coverage](#6c-evaluate-genebody-coverage)
     - [6d. Compile GeneBody Coverage Reports](#6d-compile-genebody-coverage-reports)
-    - [6e. Determine Inner Distance (For Paired End Datasets)](#6e-determine-inner-distance-for-paired-end-datasets-only)
-    - [6f. Compile Inner Distance Reports](#6f-compile-inner-distance-reports)
-    - [6g. Assess Read Distribution](#6g-assess-read-distribution)
-    - [6h. Compile Read Distribution Reports](#6h-compile-read-distribution-reports)
+    - [6e. Generate Samtools Stats](#6e-generate-samtools-stats)
+    - [6f. Compile Samtools Stats Reports](#6f-compile-samtools-stats-reports)
   - [**7. Quantitate Aligned Reads**](#7-quantitate-aligned-reads)
     - [7a. Count Aligned Reads with FeatureCounts](#7a-count-aligned-reads-with-featurecounts)
     - [7b. Compile FeatureCounts Logs](#7b-compile-featurecounts-logs)
     - [7c. Calculate Total Number of Genes Expressed Per Sample in R](#7c-calculate-total-number-of-genes-expressed-per-sample-in-r)
-    - [7d. Remove rRNA Genes from FeatureCounts](#7d-remove-rrna-genes-from-featurecounts)
+    - [7d. Remove rRNA Genes from Gene Counts](#7d-remove-rrna-genes-from-gene-counts)
       - [7d.1 Extract rRNA Gene IDs from GTF](#7d1-extract-rrna-gene-ids-from-gtf)
-      - [7d.2 Filter rRNA Genes from FeatureCounts](#7d2-filter-rrna-genes-from-featurecounts)
+      - [7d.2 Filter rRNA Genes from Gene Counts](#7d2-filter-rrna-genes-from-gene-counts)
   - [**8. Normalize Read Counts and Perform Differential Gene Expression Analysis**](#8-normalize-read-counts-and-perform-differential-gene-expression-analysis)
     - [8a. Create Sample RunSheet](#8a-create-sample-runsheet)
     - [8b. Environment Set Up](#8b-environment-set-up)
@@ -97,13 +96,15 @@ Differences with default workflow:
 |Samtools|1.21|[http://www.htslib.org/](http://www.htslib.org/)|
 |infer_experiment|5.0.4|[http://rseqc.sourceforge.net/#infer-experiment-py](http://rseqc.sourceforge.net/#infer-experiment-py)|
 |geneBody_coverage|5.0.4|[http://rseqc.sourceforge.net/#genebody-coverage-py](http://rseqc.sourceforge.net/#genebody-coverage-py)|
-|inner_distance|5.0.4|[http://rseqc.sourceforge.net/#inner-distance-py](http://rseqc.sourceforge.net/#inner-distance-py)|
-|read_distribution|5.0.4|[http://rseqc.sourceforge.net/#read-distribution-py](http://rseqc.sourceforge.net/#read-distribution-py)|
 |R|4.4.2|[https://www.r-project.org/](https://www.r-project.org/)|
 |Bioconductor|3.20|[https://bioconductor.org](https://bioconductor.org)|
+|BiocParallel|1.40.0|[https://bioconductor.org/packages/release/bioc/html/BiocParallel.html](https://bioconductor.org/packages/release/bioc/html/BiocParallel.html)|
 |DESeq2|1.46.0|[https://bioconductor.org/packages/release/bioc/html/DESeq2.html](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)|
 |tidyverse|2.0.0|[https://www.tidyverse.org](https://www.tidyverse.org)|
+|dplyr|1.1.4|[https://dplyr.tidyverse.org/](https://dplyr.tidyverse.org/)|
+|knitr|1.49|[https://yihui.org/knitr/](https://yihui.org/knitr/)|
 |stringr|1.5.1|[https://github.com/tidyverse/stringr](https://github.com/tidyverse/stringr)|
+|yaml|2.3.10|[https://github.com/yaml/yaml](https://github.com/yaml/yaml)|
 |dp_tools|1.3.5|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |pandas|2.2.3|[https://github.com/pandas-dev/pandas](https://github.com/pandas-dev/pandas)|
 |seaborn|0.13.2|[https://seaborn.pydata.org/](https://seaborn.pydata.org/)|
@@ -280,7 +281,7 @@ bowtie2-build --threads NumberOfThreads \
 
 **Input Data:**
 
-- *.fasta (genome sequence, this scRCP version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
+- *.fasta (genome sequence, this pipeline version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
 
 
 **Output Data:**
@@ -312,7 +313,7 @@ bowtie2 -x /path/to/bowtie2/index \
  -k 1 \
  -1 /path/to/trimmed_forward_reads \
  -2 /path/to/trimmed_reverse_reads \
- --un /path/to/bowtie2/output/directory/<sample_id>.unmapped.fastq \
+ --un <sample_id>.unmapped.fastq \
  -S /path/to/bowtie2/output/directory/<sample_id>.sam \
  2> /path/to/bowtie2/output/directory/<sample_id>.bowtie2.log
 ```
@@ -369,13 +370,39 @@ zip -r align_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/align
 
 <br>
 
-### 4c. Sort Aligned Reads
+### 4c. Convert SAM to BAM
+
+```bash
+samtools view -bS -F 4 --threads NumberOfThreads /path/to/*.sam > /path/to/output/*.bam
+```
+
+**Parameter Definitions:**
+
+- `-b` - output in BAM format
+- `-S` - input is in SAM format
+- `-F 4` - exclude unmapped reads (flag 4)
+- `--threads` - number of threads available on server node to convert SAM files
+- `/path/to/*.sam` - path to input SAM files
+- `>` - redirect output to BAM file
+- `/path/to/output/*.bam` - path to output BAM file
+
+**Input Data:**
+
+- *.sam (alignments in SAM format, output from [Step 4a](#4a-align-reads-to-reference-genome-with-bowtie-2))
+
+**Output Data:**
+
+- **\*.bam** (alignments in compressed BAM format with unmapped reads removed)
+
+<br>
+
+### 4d. Sort Aligned Reads
 
 ```bash
 samtools sort -m 3G \
   --threads NumberOfThreads \
   -o /path/to/*_sorted.bam \
-  /path/to/*.sam
+  /path/to/*.bam
 ```
 
 **Parameter Definitions:**
@@ -387,15 +414,15 @@ samtools sort -m 3G \
 
 **Input Data:**
 
-- *.sam (alignments in SAM format, output from [Step 4a](#4a-align-reads-to-reference-genome-with-bowtie-2))
+- *.bam (alignments in BAM format, output from [Step 4c](#4c-convert-sam-to-bam))
 
 **Output Data:**
 
-- **\*_sorted.bam** (samtools sorted genome aligned bam file)
+- **\*_sorted.bam** (samtools sorted genome-aligned bam file)
 
 <br>
 
-### 4d. Index Sorted Aligned Reads
+### 4e. Index Sorted Aligned Reads
 
 ```bash
 samtools index -@ NumberOfThreads /path/to/*_sorted.bam
@@ -404,7 +431,7 @@ samtools index -@ NumberOfThreads /path/to/*_sorted.bam
 **Parameter Definitions:**
 
 - `-@` – number of threads available on server node to index the sorted alignment files
-- `/path/to/*_sorted.bam` – the path to the sorted BAM files from the [sorting step](#4c-sort-aligned-reads), provided as a positional argument
+- `/path/to/*_sorted.bam` – the path to the sorted BAM files from the [sorting step](#4d-sort-aligned-reads), provided as a positional argument
 
 **Input Data:**
 
@@ -434,7 +461,7 @@ gtf_to_bed.py \
 
 **Input Data:**
 
-- *.gtf (genome annotation, this scRCP version uses the Ensembl gtf file indicated in the `gtf` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
+- *.gtf (genome annotation, this pipeline version uses the Ensembl gtf file indicated in the `gtf` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
 
 **Output Data:**
 
@@ -444,7 +471,7 @@ gtf_to_bed.py \
 
 ---
 
-## 6. Assess Strandedness, GeneBody Coverage, Inner Distance, and Read Distribution with RSeQC
+## 6. Assess Alignment Quality with RSeQC and Samtools Stats
 
 <br>
 
@@ -467,8 +494,8 @@ infer_experiment.py -r /path/to/annotation/BED/file \
 **Input Data:**
 
 - *.bed (genome annotation in BED format, output from [Step 5](#5-create-reference-bed-file))
-- *_sorted.bam (sorted mapping to genome file, output from [Step 4c](#4c-sort-aligned-reads))
-- *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4d](#4d-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
+- *_sorted.bam (sorted mapping to genome file, output from [Step 4d](#4d-sort-aligned-reads))
+- *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4e](#4e-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
 
 **Output Data:**
 
@@ -557,46 +584,43 @@ zip -r genebody_cov_multiqc_GLbulkRNAseq_report.zip /path/to/genebody_cov_multiq
 
 <br>
 
-### 6e. Determine Inner Distance (For Paired End Datasets ONLY)
+### 6e. Generate Samtools Stats
 
 ```bash
-inner_distance.py -r /path/to/annotation/BED/file \
- -i /path/to/*_sorted.bam \
- -k 15000000 \
- -l -150 \
- -u 350 \
- -o  /path/to/inner_distance/output/directory
+samtools \
+    stats \
+    --threads NumberOfThreads \
+    --reference /path/to/genome/fasta/file \
+    --most-inserts 1.0 \
+    /path/to/_sorted.bam \
+    > /path/to/samtools_stats/output/directory/*_stats.txt
 ```
 
 **Parameter Definitions:**
 
-- `-r` – specifies the path to the reference annotation BED file
-- `-i` – specifies the path to the input bam file(s)
-- `-k` – specifies the number of reads to be sampled from the input bam file(s), 15M reads are sampled
-- `-l` – specifies the lower bound of inner distance (bp), set to -150 or negative of maximum read length if read length is greater than 150
-- `-u` – specifies the upper bound of inner distance (bp)
-- `/path/to/inner_distance/output/directory` – specifies the location and name of the directory containing the inner_distance output files
+- `--threads` - number of threads to use
+- `--reference` - specifies the path to the reference genome fasta file
+- `--most-inserts` - sets the maximum fraction of reads to use for insert size statistics (1.0 = use all reads)
+- `/path/to/*_sorted.bam` - path to input BAM file(s), provided as a positional argument
+- `>` - redirects standard output to specified file
+- `/path/to/*_stats.txt` - specifies the location and name of the output statistics file
 
 **Input Data:**
 
-- *.bed (genome annotation in BED format, output from [Step 5](#5-create-reference-bed-file))
-- *_sorted.bam (sorted mapping to genome file, output from [Step 4c](#4c-sort-aligned-reads))
-- *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4d](#4d-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
+- *.fasta (genome sequence, this pipeline version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
+- *_sorted.bam (sorted mapping to genome file, output from [Step 4d](#4d-sort-aligned-reads))
 
 **Output Data:**
 
-- *.inner_distance.txt (log of read-wise inner distance results)
-- *.inner_distance_freq.txt (tab delimited table of inner distances mapped to number of reads with that distance)
-- *.inner_distance_plot.pdf (histogram plot of inner distance distribution)
-- *.inner_distance_plot.r (R script that generates the histogram plot)
+- **\*_stats.txt** (text file containing alignment statistics including insert size average and standard deviation)
 
 <br>
 
-### 6f. Compile Inner Distance Reports
+### 6f. Compile Samtools Stats Reports
 
 ```bash
-multiqc --interactive -n inner_dist_multiqc_GLbulkRNAseq /path/to/align_multiqc/output/inner_dist_multiqc_GLbulkRNAseq_report /path/to/inner_dist/output/files
-zip -r inner_dist_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/inner_dist_multiqc_GLbulkRNAseq_report
+multiqc --interactive -n samtools_stats_multiqc_GLbulkRNAseq /path/to/samtools_stats/output/samtools_stats_multiqc_GLbulkRNAseq_report /path/to/samtools_stats/output/files
+zip -r samtools_stats_multiqc_GLbulkRNAseq_report.zip /path/to/samtools_stats/output/samtools_stats_multiqc_GLbulkRNAseq_report
 ```
 
 **Parameter Definitions:**
@@ -604,69 +628,17 @@ zip -r inner_dist_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/
 - `--interactive` – force reports to use interactive plots
 - `-n` – prefix name for output files
 - `-o` – the output directory to store results
-- `/path/to/inner_dist/output/files` – the directory holding the inner_distance output files from [Step 6e](#6e-determine-inner-distance-for-paired-end-datasets-only), provided as a positional argument
+- `/path/to/samtools_stats/output/files` – the directory holding the samtools_stats output files from [Step 6e](#6e-generate-samtools-stats), provided as a positional argument
 
 **Input Data:**
 
-- *.inner_distance_freq.txt (tab delimited table of inner distances from [step 6e](#6e-determine-inner-distance-for-paired-end-datasets-only))
+- **\*_stats.txt** (text file containing alignment statistics, output from [Step 6e](#6e-generate-samtools-stats))
 
 **Output Data:**
 
-* **inner_dist_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **inner_dist_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **inner_dist_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
-
-<br>
-
-### 6g. Assess Read Distribution
-
-```bash
-read_distribution.py -r /path/to/annotation/BED/file \
- -i /path/to/*Aligned.sortedByCoord_sorted.out.bam > /path/to/*read_dist.out
-```
-
-**Parameter Definitions:**
-
-- `-r` – specifies the path to the reference annotation BED file
-- `-i` – specifies the path to the input bam file(s)
-- `>` – redirects standard output to specified file
-- `/path/to/*read_dist.out` – specifies the location and name of the file containing the read_distribution standard output
-
-**Input Data:**
-
-- *.bed (genome annotation in BED format, output from [Step 5](#5-create-reference-bed-file))
-- *_sorted.bam (sorted mapping to genome file, output from [Step 4c](#4c-sort-aligned-reads))
-- *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4d](#4d-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
-
-**Output Data:**
-
-- *read_dist.out (file containing the read_distribution standard output)
-
-<br>
-
-### 6h. Compile Read Distribution Reports
-
-```bash
-multiqc --interactive -n read_dist_multiqc_GLbulkRNAseq -o /path/to/read_dist_multiqc/output/read_dist_multiqc_GLbulkRNAseq_report /path/to/*read_dist.out/files
-zip -r read_dist_multiqc_GLbulkRNAseq_report.zip /path/to/read_dist_multiqc/output/read_dist_multiqc_GLbulkRNAseq_report
-```
-
-**Parameter Definitions:**
-
-- `--interactive` - force reports to use interactive plots
-- `-n` - prefix name for output files
-- `-o` – the output directory to store results
-- `/path/to/*read_dist.out/files` – the directory holding the *read_dist.out output files from [Step 6g](#6g-assess-read-distribution) provided as a positional argument
-
-**Input Data:**
-
-- *read_dist.out (files containing the read_distribution standard output, output from [Step 6g](#6g-assess-read-distribution))
-
-**Output Data:**
-
-* **read_dist_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **read_dist_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **read_dist_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+* **samtools_stats_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  * **samtools_stats_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  * **samtools_stats_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -702,7 +674,7 @@ featureCounts -p \
 
 **Input Data:**
 
-- *.gtf (genome annotation, this version uses the Ensembl gtf file indicated in the `gtf` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
+- *.gtf (genome annotation, this pipeline version uses the Ensembl gtf file indicated in the `gtf` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
 - *_sorted.bam (sorted mapping to genome file, output from [Step 4c](#4c-sort-aligned-reads))
 - *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4d](#4d-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
 
@@ -791,7 +763,7 @@ sessionInfo()
 
 <br>
 
-### 7d. Remove rRNA Genes from FeatureCounts
+### 7d. Remove rRNA Genes from Gene Counts
 
 <br>
 
@@ -813,7 +785,7 @@ grep "rRNA" /path/to/annotation/gtf/file \
 
 <br>
 
-#### 7d.2 Filter rRNA Genes from FeatureCounts
+#### 7d.2 Filter rRNA Genes from Gene Counts
 
 ```bash
 ### Filter out rRNA entries ###
@@ -921,7 +893,7 @@ library(tximport)
 library(DESeq2)
 library(BiocParallel)
 
-### Define which organism is used in the study - this should be consistent with the name in the "name" column of the GL-DPPD-7110_annotations.csv file, which matches the abbreviations used in the Panther database for each organism ###
+### Define which organism is used in the study - this should be consistent with the species name in the "species" column of the GL-DPPD-7110-A_annotations.csv file ###
 
 organism <- "organism_that_samples_were_derived_from"
 
@@ -935,16 +907,16 @@ norm_output="/path/to/normalized/counts/output/directory"
 DGE_output="/path/to/DGE/output/directory"
 
 
-### Pull in the GeneLab annotation table (GL-DPPD-7110_annotations.csv) file ###
+### Pull in the GeneLab annotation table (GL-DPPD-7110-A_annotations.csv) file ###
 
-org_table_link <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv"
+org_table_link <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
 
 org_table <- read.table(org_table_link, sep = ",", header = TRUE)
 
 
 ### Define the link to the GeneLab annotation table for the organism of interest ###
 
-annotations_link <- org_table[org_table$name == organism, "genelab_annots_link"]
+annotations_link <- org_table[org_table$species == organism, "genelab_annots_link"]
 
 
 ### Set your working directory to the directory where you will execute your DESeq2 script from ###
@@ -1263,8 +1235,8 @@ sessionInfo()
 
 **Input Data:**
 
-- *runsheet.csv file (table containing metadata required for analysis, output from [step 9a](#9a-create-sample-runsheet))
-- [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) (csv file containing link to GeneLab annotations) 
+* {GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv (runsheet, output from [Step 8a](#8a-create-sample-runsheet))
+- [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) (csv file containing link to GeneLab annotations) 
 - FeatureCounts_GLbulkRNAseq.csv (table containing raw read counts per gene for each sample, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts))
 
 **Output Data:**
