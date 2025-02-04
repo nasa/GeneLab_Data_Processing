@@ -4,12 +4,12 @@ process QUALIMAP_BAM_QC {
 
     input:
     tuple val(meta), path(bam_file), path(bai_file)
-    path(feature_file) //gtf gff or bed
+    path(feature_file) // gtf, gff, or bed
     val(strandedness)
 
     output:
-    path("${meta.id}_qualimap_bam_qc"), emit: results
-    path  "versions.yml"       , emit: versions
+    path("${meta.id}_qualimap_bam_qc/"), emit: results
+    path  "versions.yml",                                  emit: versions
 
     script:
     strandedness_opt_map = ["sense":"strand-specific-forward","antisense":"strand-specific-reverse","unstranded":"non-strand-specific"]
@@ -17,19 +17,17 @@ process QUALIMAP_BAM_QC {
     def memory = (task.memory.mega*0.8).intValue() + 'M'
 
     """
-    unset DISPLAY
     mkdir -p tmp
-    qualimap \\
-        --java-mem-size=${memory} \\
-        bamqc \\
+    qualimap \
+        --java-mem-size=${memory} \
+        bamqc \
         -bam ${bam_file} \\
-        --feature-file ${feature_file} \\
-        -p ${strandedness_opt_map.get(strandedness)} \\
-        $collect_pairs \\
-        -outdir ${meta.id}_qualimap_bam_qc \\
+        --feature-file ${feature_file} \
+        -p ${strandedness_opt_map.get(strandedness)} \
+        $collect_pairs \
+        -outdir ${meta.id}_qualimap_bam_qc \
         -nt ${task.cpus}
 
-    # VERSIONS
     echo '"${task.process}":' > versions.yml
     echo "    qualimap: \$(qualimap 2>&1 | sed 's/^.*QualiMap v.//; s/Built.*\$//')" >> versions.yml
     """
@@ -44,8 +42,8 @@ process QUALIMAP_RNASEQ_QC {
     val(strandedness)
 
     output:
-    path("${meta.id}_qualimap_rnaseq_qc"), emit: results
-    path  "versions.yml"       , emit: versions
+    path("${meta.id}_qualimap_rnaseq_qc/"), emit: results
+    path  "versions.yml",                                        emit: versions
 
     script:
     strandedness_opt_map = ["sense":"strand-specific-forward","antisense":"strand-specific-reverse","unstranded":"non-strand-specific"]
@@ -53,19 +51,17 @@ process QUALIMAP_RNASEQ_QC {
     def memory = (task.memory.mega*0.8).intValue() + 'M'
 
     """
-    unset DISPLAY
     mkdir -p tmp
     qualimap \\
-        --java-mem-size=${memory} \\
-        rnaseq \\
-        -bam ${bam_file} \\
-        --gtf ${gtf} \\
-        -p ${strandedness_opt_map.get(strandedness)} \\
-        $paired_end \\
-        -outdir ${meta.id}_qualimap_rnaseq_qc \\
+        --java-mem-size=${memory} \
+        rnaseq \
+        -bam ${bam_file} \
+        --gtf ${gtf} \
+        -p ${strandedness_opt_map.get(strandedness)} \
+        $paired_end \
+        -outdir ${meta.id}_qualimap_rnaseq_qc \
         -s 
 
-    # VERSIONS
     echo '"${task.process}":' > versions.yml
     echo "    qualimap: \$(qualimap 2>&1 | sed 's/^.*QualiMap v.//; s/Built.*\$//')" >> versions.yml
     """

@@ -206,7 +206,7 @@ workflow RNASEQ {
         // STAR two-pass alignment
         ALIGN_STAR( trimmed_reads, star_index_dir )
         star_alignment_logs = ALIGN_STAR.out.alignment_logs | collect
-        transcriptome_aligned_bam = ALIGN_STAR.out.bam_to_transcriptome // STAR transcriptome-aligned BAM file used for transcript-level quantification & abundance estimation with RSEM
+        transcriptome_aligned_bam = ALIGN_STAR.out.bam_to_transcriptome // Transcriptome-aligned bam
         
         // Sort and index genome coordinate-aligned bam files
         SORT_AND_INDEX_BAM( ALIGN_STAR.out.bam_by_coord)

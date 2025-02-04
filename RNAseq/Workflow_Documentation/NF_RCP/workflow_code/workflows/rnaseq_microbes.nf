@@ -19,7 +19,13 @@ include { FASTQC as TRIMMED_FASTQC } from '../modules/fastqc.nf'
 
 include { BUILD_BOWTIE2_INDEX } from '../modules/build_bowtie2_index.nf'
 include { ALIGN_BOWTIE2 } from '../modules/align_bowtie2.nf'
-
+include { SAM_TO_BAM } from '../modules/sam_to_bam.nf'
+include { SORT_AND_INDEX_BAM } from '../modules/sort_and_index_bam.nf'
+include { INFER_EXPERIMENT } from '../modules/rseqc.nf'
+include { GENEBODY_COVERAGE } from '../modules/rseqc.nf'
+include { INNER_DISTANCE } from '../modules/rseqc.nf'
+include { READ_DISTRIBUTION } from '../modules/rseqc.nf'
+include { ASSESS_STRANDEDNESS } from '../modules/assess_strandedness.nf'
 
 
 include { MULTIQC as RAW_READS_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"raw")
@@ -30,11 +36,14 @@ include { MULTIQC as GENEBODY_COVERAGE_MULTIQC } from '../modules/multiqc.nf' ad
 include { MULTIQC as INFER_EXPERIMENT_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"infer_exp") //PublishTo: "RSeQC_Analyses/03_infer_experiment", 
 include { MULTIQC as INNER_DISTANCE_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"inner_dist") //PublishTo: "RSeQC_Analyses/04_inner_distance", 
 include { MULTIQC as READ_DISTRIBUTION_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"read_dist") //PublishTo: "RSeQC_Analyses/05_read_distribution",
-include { MULTIQC as COUNT_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"RSEM_count")
-include { MULTIQC as QUALIMAP_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"qualimap") 
+include { MULTIQC as COUNT_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"featureCounts")
 include { MULTIQC as ALL_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"all")
-//include { QUALIMAP_BAM_QC } from '../modules/qualimap.nf' not implemented
-//include { QUALIMAP_RNASEQ_QC } from '../modules/qualimap.nf' not implemented
+
+include { SAMTOOLS_STATS } from '../modules/samtools_stats.nf'
+include { MULTIQC as SAMTOOLS_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"samtools") 
+// include { QUALIMAP_BAM_QC } from '../modules/qualimap.nf'
+// include { QUALIMAP_RNASEQ_QC } from '../modules/qualimap.nf'
+include { FEATURECOUNTS } from '../modules/featurecounts.nf'
 
 include { DGE_DESEQ2 } from '../modules/dge_deseq2.nf'
 include { ADD_GENE_ANNOTATIONS } from '../modules/add_gene_annotations.nf'
@@ -175,30 +184,87 @@ workflow RNASEQ_MICROBES {
 
         // Run FastQC on trimmed reads
         TRIMMED_FASTQC( trimmed_reads )
-        TRIMMED_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] } \
-                              | flatten \
-                              | unique \
-                              | collect \
+        TRIMMED_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] } 
+                              | flatten 
+                              | unique 
+                              | collect 
                               | set { trimmed_fastqc_zip }
 
 
-        // // Build Bowtie 2 genome index
+        // Build Bowtie 2 genome index
         BUILD_BOWTIE2_INDEX(derived_store_path, organism_sci, reference_source, reference_version, genome_references, ch_meta)
         bowtie2_index_dir = BUILD_BOWTIE2_INDEX.out.index_dir
 
-        // Bowtie 2 alignment
+        // Align reads using Bowtie2
         ALIGN_BOWTIE2( trimmed_reads, bowtie2_index_dir )
         bowtie2_alignment_logs = ALIGN_BOWTIE2.out.alignment_logs | collect
+        
+        // Convert Bowtie2 SAM to BAM (query-name order, matching FASTQ input order)
+        SAM_TO_BAM( ALIGN_BOWTIE2.out.sam ) 
+        // Sort and index BAM files to convert from query-name order to genome coordinate order
+        SORT_AND_INDEX_BAM( SAM_TO_BAM.out.bam )
+        sorted_bam = SORT_AND_INDEX_BAM.out.sorted_bam
+        bams = sorted_bam.map { it[1] } | toSortedList()
+
+        // RSeQC modules
+        INFER_EXPERIMENT( sorted_bam, genome_bed )
+        GENEBODY_COVERAGE( sorted_bam, genome_bed )
+        // INNER_DISTANCE( sorted_bam, genome_bed, max_read_length )
+        READ_DISTRIBUTION( sorted_bam, genome_bed )
+        infer_expt_out = INFER_EXPERIMENT.out.log | map { it[1] }
+                               | collect
+        
+        // Combine RSeQC module logs
+        ch_rseqc_logs = Channel.empty()
+        ch_rseqc_logs | mix(INFER_EXPERIMENT.out.log_only,
+                         GENEBODY_COVERAGE.out.all_output)
+                   | collect
+                   | set{ ch_rseqc_logs }
+
+        // Parse RSeQC infer_experiment.py results using thresholds set in bin/assess_strandedness.py to determine the strandedness of the dataset
+        ASSESS_STRANDEDNESS( infer_expt_out )
+        strandedness = ASSESS_STRANDEDNESS.out | map { it.text.split(":")[0] }
+
+        // Generate gene counts table from genome-coordinate sorted Bowtie2-aligned BAMs using featureCounts
+        FEATURECOUNTS(ch_meta, genome_references, strandedness, bams)
+        counts = FEATURECOUNTS.out.counts
+
+        // Run Qualimap BAM QC and rnaseq
+        // QUALIMAP_BAM_QC( sorted_bam, genome_bed, strandedness )
+        // QUALIMAP_RNASEQ_QC( sorted_bam, genome_references | map { it[1] }, strandedness )
+        // qualimap_outputs = QUALIMAP_BAM_QC.out.results
+        //             // | concat(QUALIMAP_RNASEQ_QC.out.results)
+        //             | collect
 
 
 
         // MultiQC
         ch_multiqc_config = params.multiqc_config ? Channel.fromPath( params.multiqc_config ) : Channel.fromPath("NO_FILE")
         RAW_READS_MULTIQC( samples_txt, raw_fastqc_zip, ch_multiqc_config )
-        // TRIMMING_MULTIQC( samples_txt, trimgalore_reports, ch_multiqc_config )
-        // TRIMMED_READS_MULTIQC( samples_txt, trimmed_fastqc_zip, ch_multiqc_config )
-        // ALIGN_MULTIQC( samples_txt, bowtie2_alignment_logs, ch_multiqc_config )
+        TRIMMING_MULTIQC( samples_txt, trimgalore_reports, ch_multiqc_config )
+        TRIMMED_READS_MULTIQC( samples_txt, trimmed_fastqc_zip, ch_multiqc_config )
+        ALIGN_MULTIQC( samples_txt, bowtie2_alignment_logs, ch_multiqc_config )
+
+        INFER_EXPERIMENT_MULTIQC( samples_txt, INFER_EXPERIMENT.out.log | map { it[1] } | collect, ch_multiqc_config )
+        GENEBODY_COVERAGE_MULTIQC( samples_txt, GENEBODY_COVERAGE.out.log | map { it[1] } | collect, ch_multiqc_config )
+
+        SAMTOOLS_STATS( sorted_bam, genome_references )
+        SAMTOOLS_MULTIQC ( samples_txt, SAMTOOLS_STATS.out.stats | map { it[1] } | collect, ch_multiqc_config)
+
+        COUNT_MULTIQC( samples_txt, FEATURECOUNTS.out.summary, ch_multiqc_config )
+
+        all_multiqc_input = raw_fastqc_zip
+            | concat(trimgalore_reports)
+            | concat(trimmed_fastqc_zip)
+            | concat(bowtie2_alignment_logs)
+            | concat(INFER_EXPERIMENT.out.log | map { it[1] } | collect)
+            | concat(GENEBODY_COVERAGE.out.log | map { it[1] } | collect)
+            // | concat(qualimap_outputs)
+            | concat(SAMTOOLS_STATS.out.stats | map { it[1] } | collect)
+            | concat(FEATURECOUNTS.out.summary)
+            | collect
+        ALL_MULTIQC( samples_txt, all_multiqc_input, ch_multiqc_config )
 
     emit:
-        RAW_FASTQC.out.fastqc
+        FEATURECOUNTS.out.counts
 }
