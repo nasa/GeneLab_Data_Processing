@@ -96,8 +96,12 @@ Differences with default workflow:
 |Bowtie 2|2.5.4|[https://github.com/BenLangmead/bowtie2](https://github.com/BenLangmead/bowtie2)|
 |subread|2.0.8|[https://subread.sourceforge.net/](https://subread.sourceforge.net/)|
 |Samtools|1.21|[http://www.htslib.org/](http://www.htslib.org/)|
+|gtfToGenePred|469|[http://hgdownload.cse.ucsc.edu/admin/exe/](http://hgdownload.cse.ucsc.edu/admin/exe/)|
+|genePredToBed|469|[http://hgdownload.cse.ucsc.edu/admin/exe/](http://hgdownload.cse.ucsc.edu/admin/exe/)|
 |infer_experiment|5.0.4|[http://rseqc.sourceforge.net/#infer-experiment-py](http://rseqc.sourceforge.net/#infer-experiment-py)|
 |geneBody_coverage|5.0.4|[http://rseqc.sourceforge.net/#genebody-coverage-py](http://rseqc.sourceforge.net/#genebody-coverage-py)|
+|inner_distance|5.0.4|[http://rseqc.sourceforge.net/#inner-distance-py](http://rseqc.sourceforge.net/#inner-distance-py)|
+|read_distribution|5.0.4|[http://rseqc.sourceforge.net/#read-distribution-py](http://rseqc.sourceforge.net/#read-distribution-py)|
 |R|4.4.2|[https://www.r-project.org/](https://www.r-project.org/)|
 |Bioconductor|3.20|[https://bioconductor.org](https://bioconductor.org)|
 |BiocParallel|1.40.0|[https://bioconductor.org/packages/release/bioc/html/BiocParallel.html](https://bioconductor.org/packages/release/bioc/html/BiocParallel.html)|
@@ -111,10 +115,8 @@ Differences with default workflow:
 |pandas|2.2.3|[https://github.com/pandas-dev/pandas](https://github.com/pandas-dev/pandas)|
 |seaborn|0.13.2|[https://seaborn.pydata.org/](https://seaborn.pydata.org/)|
 |matplotlib|3.10.0|[https://matplotlib.org/stable](https://matplotlib.org/stable)|
-|jupyter notebook|7.3.2|[https://jupyter-notebook.readthedocs.io/](https://jupyter-notebook.readthedocs.io/)|
 |numpy|2.2.1|[https://numpy.org/](https://numpy.org/)|
 |scipy|1.15.1|[https://scipy.org/](https://scipy.org/)|
-|singularity|3.9|[https://sylabs.io/](https://sylabs.io/)|
 
 ---
 
