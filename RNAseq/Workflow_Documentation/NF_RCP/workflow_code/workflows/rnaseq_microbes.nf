@@ -1,4 +1,4 @@
-include { PARSE_RUNSHEET } from './parse_runsheet.nf'
+saveinclude { PARSE_RUNSHEET } from './parse_runsheet.nf'
 include { PARSE_ANNOTATIONS_TABLE } from '../modules/parse_annotations_table.nf'
 include { FETCH_ISA } from '../modules/fetch_isa.nf'
 include { ISA_TO_RUNSHEET } from '../modules/isa_to_runsheet.nf'
@@ -8,6 +8,9 @@ include { DOWNLOAD_REFERENCES } from '../modules/download_references.nf'
 include { SUBSAMPLE_GENOME } from '../modules/subsample_genome.nf'
 include { DOWNLOAD_ERCC } from '../modules/download_ercc.nf'
 include { CONCAT_ERCC } from '../modules/concat_ercc.nf'
+
+include { GTF_TO_PRED } from '../modules/gtf_to_pred.nf'
+include { PRED_TO_BED } from '../modules/pred_to_bed.nf'
 
 include { GTF_TO_BED } from '../modules/gtf_to_bed.nf'
 include { STAGE_RAW_READS } from './stage_raw_reads.nf'
@@ -39,8 +42,6 @@ include { MULTIQC as READ_DISTRIBUTION_MULTIQC } from '../modules/multiqc.nf' ad
 include { MULTIQC as COUNT_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"featureCounts")
 include { MULTIQC as ALL_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"all")
 
-include { SAMTOOLS_STATS } from '../modules/samtools_stats.nf'
-include { MULTIQC as SAMTOOLS_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"samtools") 
 // include { QUALIMAP_BAM_QC } from '../modules/qualimap.nf'
 // include { QUALIMAP_RNASEQ_QC } from '../modules/qualimap.nf'
 include { FEATURECOUNTS } from '../modules/featurecounts.nf'
@@ -148,13 +149,30 @@ workflow RNASEQ_MICROBES {
         .ifEmpty { genome_references_pre_ercc.value }  | set { genome_references }
         
         // Convert GTF file to RSeQC-compatible BED file
-        GTF_TO_BED( 
+        // GTF_TO_BED( 
+        //     derived_store_path,
+        //     organism_sci,
+        //     reference_source,
+        //     reference_version,
+        //     genome_references | map { it[1] } )
+        // genome_bed = GTF_TO_BED.out.genome_bed
+        
+        // Convert GTF file to RSeQC-compatible BED file
+        GTF_TO_PRED(
             derived_store_path,
             organism_sci,
             reference_source,
             reference_version,
-            genome_references | map { it[1] } )
-        genome_bed = GTF_TO_BED.out.genome_bed
+            genome_references | map { it[1] }
+        )
+        PRED_TO_BED( 
+            derived_store_path,
+            organism_sci,
+            reference_source,
+            reference_version,
+            GTF_TO_PRED.out.genome_pred
+        )
+        genome_bed = PRED_TO_BED.out.genome_bed
 
         // Metadata and reference files are ready. Stage the raw reads, find the max read length, and build the Bowtie 2 index.
 
@@ -209,7 +227,7 @@ workflow RNASEQ_MICROBES {
         // RSeQC modules
         INFER_EXPERIMENT( sorted_bam, genome_bed )
         GENEBODY_COVERAGE( sorted_bam, genome_bed )
-        // INNER_DISTANCE( sorted_bam, genome_bed, max_read_length )
+        INNER_DISTANCE( sorted_bam, genome_bed, max_read_length )
         READ_DISTRIBUTION( sorted_bam, genome_bed )
         infer_expt_out = INFER_EXPERIMENT.out.log | map { it[1] }
                                | collect
@@ -241,30 +259,20 @@ workflow RNASEQ_MICROBES {
         // MultiQC
         ch_multiqc_config = params.multiqc_config ? Channel.fromPath( params.multiqc_config ) : Channel.fromPath("NO_FILE")
         RAW_READS_MULTIQC( samples_txt, raw_fastqc_zip, ch_multiqc_config )
+
         TRIMMING_MULTIQC( samples_txt, trimgalore_reports, ch_multiqc_config )
         TRIMMED_READS_MULTIQC( samples_txt, trimmed_fastqc_zip, ch_multiqc_config )
+
         ALIGN_MULTIQC( samples_txt, bowtie2_alignment_logs, ch_multiqc_config )
 
         INFER_EXPERIMENT_MULTIQC( samples_txt, INFER_EXPERIMENT.out.log | map { it[1] } | collect, ch_multiqc_config )
         GENEBODY_COVERAGE_MULTIQC( samples_txt, GENEBODY_COVERAGE.out.log | map { it[1] } | collect, ch_multiqc_config )
-
-        SAMTOOLS_STATS( sorted_bam, genome_references )
-        SAMTOOLS_MULTIQC ( samples_txt, SAMTOOLS_STATS.out.stats | map { it[1] } | collect, ch_multiqc_config)
+        INNER_DISTANCE_MULTIQC( samples_txt, INNER_DISTANCE.out.log | map { it[1] } | collect, ch_multiqc_config )
+        READ_DISTRIBUTION_MULTIQC( samples_txt, READ_DISTRIBUTION.out.log | map { it[1] } | collect, ch_multiqc_config )
 
         COUNT_MULTIQC( samples_txt, FEATURECOUNTS.out.summary, ch_multiqc_config )
 
-        all_multiqc_input = raw_fastqc_zip
-            | concat(trimgalore_reports)
-            | concat(trimmed_fastqc_zip)
-            | concat(bowtie2_alignment_logs)
-            | concat(INFER_EXPERIMENT.out.log | map { it[1] } | collect)
-            | concat(GENEBODY_COVERAGE.out.log | map { it[1] } | collect)
-            // | concat(qualimap_outputs)
-            | concat(SAMTOOLS_STATS.out.stats | map { it[1] } | collect)
-            | concat(FEATURECOUNTS.out.summary)
-            | collect
-        ALL_MULTIQC( samples_txt, all_multiqc_input, ch_multiqc_config )
 
     emit:
-        FEATURECOUNTS.out.counts
+        COUNT_MULTIQC.out.data
 }
