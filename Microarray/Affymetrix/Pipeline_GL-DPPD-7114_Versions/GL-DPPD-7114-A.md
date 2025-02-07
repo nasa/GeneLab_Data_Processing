@@ -1,23 +1,23 @@
 # GeneLab bioinformatics processing pipeline for Affymetrix microarray data <!-- omit in toc -->
 
-> **This page holds an overview and instructions for how GeneLab processes Affymetrix microarray datasets. Exact processing commands and GL-DPPD-7114-A version used for specific GeneLab datasets (GLDS) are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo).**  
+> **This page holds an overview and instructions for how GeneLab processes Affymetrix microarray datasets. Exact processing commands and GL-DPPD-7114 version used for specific GeneLab datasets (GLDS) are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo).**  
 > 
-> \* The pipeline detailed below currently supports gene annotations for Arabidopsis Thaliana via Ensembl FTP, all animals available in Biomart, and custom annotations (see [Step 8a](#8a-get-probeset-annotations)).
+> \* The pipeline detailed below is currently used for animal and *Arabidopsis thaliana* studies only, it will be updated soon for processing microbe microarray data and other plant data.
 
 ---
 
-**Date:** March 31, 2023  
-**Revision:** -  
+**Date:** February XX, 2025  
+**Revision:** -A  
 **Document Number:** GL-DPPD-7114-A   
 
 **Submitted by:**  
-Jonathan Oribello (GeneLab Data Processing Team)
+Crystal Han (GeneLab Data Processing Team)  
 
 **Approved by:**  
-Sylvain Costes (GeneLab Project Manager)  
-Samrawit Gebre (GeneLab Deputy Project Manager)  
-Amanda Saravia-Butler (GeneLab Data Processing Lead)  
-Lauren Sanders (acting GeneLab Project Scientist)  
+Samrawit Gebre (OSDR Project Manager)  
+Lauren Sanders (OSDR Project Scientist)  
+Amanda Saravia-Butler (GeneLab Science Lead)  
+Barbara Novak (GeneLab Data Processing Lead)
 
 ---
 
@@ -43,9 +43,7 @@ Software Updates:
 |glue|1.6.2|1.8.0|
 |biomaRt|2.50.0|2.62.0|
 |matrixStats|0.63.0|1.5.0|
-|statmod|1.5.0|1.5.0|
 |dp_tools|1.3.4|1.3.5|
-|singularity|3.9|3.9|
 |Quarto|1.2.313|1.6.40|
 
 MA Plots
@@ -54,7 +52,7 @@ MA Plots
 
 Custom Annotations
 
-- Added ability to use custom gene annotations when annotations are not available in Biomart or Ensembl FTP for Arabidopsis Thaliana
+- Added ability to use custom gene annotations when annotations are not available in Biomart or Ensembl FTP for *Arabidopsis thaliana*, see [Step 8](#8-probeset-annotations)
 
 ---
 
@@ -82,11 +80,11 @@ Custom Annotations
   - [8. Probeset Annotations](#8-probeset-annotations)
     - [8a. Get Probeset Annotations](#8a-get-probeset-annotations)
     - [8b. Summarize Gene Mapping](#8b-summarize-gene-mapping)
-    - [8c. Save Annotated Tables](#8c-save-annotated-tables)
+    - [8c. Generate Annotated Raw and Normalized Expression Tables](#8c-generate-annotated-raw-and-normalized-expression-tables)
   - [9. Perform Probeset Differential Expression (DE)](#9-perform-probeset-differential-expression-de)
     - [9a. Generate Design Matrix](#9a-generate-design-matrix)
     - [9b. Perform Individual Probeset Level DE](#9b-perform-individual-probeset-level-de)
-    - [9c. Save DE Table](#9c-save-de-table)
+    - [9c. Add Annotation and Stats Columns and Format DE Table](#9c-add-annotation-and-stats-columns-and-format-de-table)
 
 ---
 
@@ -191,10 +189,6 @@ options(dplyr.summarise.inform = FALSE) # Don't print out '`summarise()` has gro
 
 # Define path to runsheet
 runsheet <- "/path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv"
-
-# If using custom annotation, local_annotation_dir is path to directory containing annotation file and annotation_config_path is path/url to config file
-local_annotation_dir <- NULL # <path/to/custom_annotation>
-annotation_config_path <- NULL # <path/to/config_file>
 
 ## Set up output structure
 
@@ -319,16 +313,9 @@ print(paste0("Number of Arrays: ", dim(raw_data)[2]))
 print(paste0("Number of Probes: ", dim(raw_data)[1]))
 ```
 
-**Parameter Definitions:**
+**Input Data:**
 
 - `runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
-- `local_annotation_dir` (Path to local annotation directory if using custom annotations, see [Step 8a](#8a-get-probeset-annotations))
-
-    > Note: If not using custom annotations, leave `local_annotation_dir` as `NULL`.
-
-- `annotation_config_path` (URL or path to annotation config file if using custom annotations, see [Step 8a](#8a-get-probeset-annotations))
-
-    > Note: If not using custom annotations, leave `annotation_config_path` as `NULL`.
 
 **Output Data:**
 
@@ -342,6 +329,10 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 ### 2b. Load Annotation Metadata
 
 ```R
+# If using custom annotation, local_annotation_dir is path to directory containing annotation file and annotation_config_path is path/url to config file
+local_annotation_dir <- NULL # <path/to/custom_annotation>
+annotation_config_path <- NULL # <path/to/config_file>
+
 ## Determines the organism specific annotation file to use based on the organism in the runsheet
 fetch_organism_specific_annotation_table <- function(organism) {
   # Uses the latest GeneLab annotations table to find the organism specific annotation file path and ensembl version
@@ -367,7 +358,15 @@ annotation_file_path <- annotation_table$genelab_annots_link
 ensembl_version <- as.character(annotation_table$ensemblVersion)
 ```
 
-**Parameter Definitions:**
+**Input Data:**
+
+- `local_annotation_dir` (Path to local annotation directory if using custom annotations, see [Step 8a](#8a-get-probeset-annotations))
+
+    > Note: If not using custom annotations, leave `local_annotation_dir` as `NULL`.
+
+- `annotation_config_path` (URL or path to annotation config file if using custom annotations, see [Step 8a](#8a-get-probeset-annotations))
+
+    > Note: If not using custom annotations, leave `annotation_config_path` as `NULL`.
 
 - `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - `annotation_table_link` (URL or path to latest GeneLab Annotations file, see [GL-DPPD-7110-A_annotations.csv](../../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv))
@@ -975,26 +974,24 @@ probeset_expression_matrix.gene_mapped <- probeset_expression_matrix %>%
   dplyr::mutate( gene_mapping_source := unique(unique_probe_ids$gene_mapping_source) )
 ```
 
-**Parameter Definitions:**
+**Input Data:**
 
 - `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - `df_rs$biomart_attribute` (array design biomart identifier specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - `annotation_file_path` (reference organism annotation file url indicated in the 'genelab_annots_link' column of the GeneLab Annotations file provided in `annotation_table_link`, output from [Step 2b](#2b-load-annotation-metadata))
 - `ensembl_version` (reference organism Ensembl version indicated in the 'ensemblVersion' column of the GeneLab Annotations file provided in `annotation_table_link`, output from [Step 2b](#2b-load-annotation-metadata))
-- `annot_key` (Keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL')
-- `local_annotation_dir` (Path to local annotation directory if using custom annotations, defined in [Step 2a](#2a-load-metadata-and-raw-data))
-- `annotation_config_path` (URL or path to annotation config file if using custom annotations, defined in [Step 2a](#2a-load-metadata-and-raw-data))
+- `annot_key` (keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL')
+- `local_annotation_dir` (path to local annotation directory if using custom annotations, output from [Step 2b](#2b-load-annotation-metadata))
+- `annotation_config_path` (URL or path to annotation config file if using custom annotations, output from [Step 2b](#2b-load-annotation-metadata))
 
   > Note: See [Affymetrix_array_annotations.csv](../Array_Annotations/Affymetrix_array_annotations.csv) for the latest config file used at GeneLab. This file can also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAffymetrix/examples/annotations/README.md).
-
-**Input Data:**
 
 - `probeset_level_data` (R object containing probeset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-probeset-summarization))
 
 **Output Data:**
 
-- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html) or custom annotations)
 - `unique_probe_ids` (R object containing probeset ID to gene annotation mappings)
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html) or custom annotations)
 
 <br>
 
@@ -1030,7 +1027,7 @@ print(glue::glue("Unique Mapping Count: {slices[['Unique Mapping']]}"))
 
 <br>
 
-### 8c. Save Annotated Tables
+### 8c. Generate Annotated Raw and Normalized Expression Tables
 
 ```R
 ## Reorder columns before saving to file
@@ -1112,16 +1109,13 @@ norm_data_matrix_annotated <- norm_data_matrix_annotated %>%
 write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe_GLmicroarray.csv"), row.names = FALSE)
 ```
 
-**Parameter Definitions:**
-
-- `df_rs[['Sample Name']]` (sample names specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
-- `annot_key` (Keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL', defined in [Step 8a](#8a-get-probeset-annotations))
-
 **Input Data:**
 
+- `df_rs` (R dataframe containing information from the runsheet, output from [Step 2a](#2a-load-metadata-and-raw-data))
+- `annot_key` (keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL', defined in [Step 8a](#8a-get-probeset-annotations))
 - `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
-- `background_corrected_data` (R object containing background-corrected microarray data created in [Step 4](#4-background-correction))
-- `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
+- `background_corrected_data` (R object containing background-corrected microarray data, output from [Step 4](#4-background-correction))
+- `norm_data` (R object containing background-corrected and normalized microarray data, output from [Step 5](#5-between-array-normalization))
 - `unique_probe_ids` (R object containing probeset ID to gene annotation mappings, output from [Step 8a](#8a-get-probeset-annotations))
 
 **Output Data:**
@@ -1132,7 +1126,7 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 
 ## 9. Perform Probeset Differential Expression (DE)
 
-> Note: Run differential expression analysis only if there is at least 1 replicate per factor group.
+> Note: Run differential expression analysis only if there is at least 2 replicates per factor group.
 
 <br>
 
@@ -1193,7 +1187,7 @@ write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts_GLmicroarray.csv"
 
 **Input Data:**
 
-- `runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
+- `runsheet` (path to runsheet, output from [Step 1](#1-create-sample-runsheet))
 
 **Output Data:**
 
@@ -1241,8 +1235,8 @@ write.csv(PCA_raw$x, file.path(DIR_DGE, "visualization_PCA_table_GLmicroarray.cs
 
 **Input Data:**
 
-- `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
-- `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to, created in [Step 9a](#9a-generate-design-matrix) above)
+- `norm_data` (R object containing background-corrected and normalized microarray data, output from [Step 5](#5-between-array-normalization))
+- `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to, output from [Step 9a](#9a-generate-design-matrix) above)
 - `probeset_level_data` (R object containing probeset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-probeset-summarization))
 
 **Output Data:**
@@ -1256,7 +1250,7 @@ write.csv(PCA_raw$x, file.path(DIR_DGE, "visualization_PCA_table_GLmicroarray.cs
 
 <br>
 
-### 9c. Save DE Table
+### 9c. Add Annotation and Stats Columns and Format DE Table
 
 ```R
 ## Reformat Table for consistency across DE analyses tables within GeneLab ##
