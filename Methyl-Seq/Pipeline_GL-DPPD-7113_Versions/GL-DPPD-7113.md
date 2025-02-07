@@ -1558,21 +1558,23 @@ write.csv(
 )
 
 ### Export differentially methylated bases ###
-write.csv(
+data.table::fwrite(
     bases_tab_with_features_and_annots,
     row.names = FALSE,
     file = file.path(myargs$methylkit_output_dir,
         paste0("differentially_methylated_bases", myargs$file_suffix, ".csv")
-    )
+    ),
+    quote = TRUE, na = "NA"
 )
 
 ### Export differentially methylated tiles ###
-write.csv(
+data.table::fwrite(
     tiles_tab_with_features_and_annots,
     row.names = FALSE,
     file = file.path(myargs$methylkit_output_dir,
         paste0("differentially_methylated_tiles", myargs$file_suffix, ".csv")
-    )
+    ),
+    quote = TRUE, na = "NA"
 )
 
 ### print session info ###
