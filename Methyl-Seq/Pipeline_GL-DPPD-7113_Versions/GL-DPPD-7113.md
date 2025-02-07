@@ -1578,7 +1578,7 @@ write.csv(
 ### print session info ###
 print("Session Info: ")
 sessionInfo()
-print(paste0("BioC_version_associated_with_R_version: ",BiocManager::version())
+print(paste0("BioC_version_associated_with_R_version: ",BiocManager::version()))
 
 ```
 
