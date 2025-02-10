@@ -789,7 +789,7 @@ print(glue::glue("Unique Mapping Count: {slices[['Unique Mapping']]}"))
 message(glue::glue("Unique Mapping Count: {slices[['Unique Mapping']]}")) # NON_DPPD
 ```
 
-### Save Annotated Tables
+### Generate Annotated Raw and Normalized Expression Tables
 
 ```{r save-tables}
 ## Reorder columns before saving to file
@@ -966,7 +966,7 @@ limma::write.fit(res, adjust = 'BH',
                 sep = ",")
 ```
 
-### Save DE Table
+### Add Annotation and Stats Columns and Format DE Table
 
 ``` {r save-de-table}
 #| message: false
