@@ -1370,27 +1370,22 @@ ALL_SAMPLE_STATS_COLUMNS_ORDER <- c(
   "F.p.value"
 )
 
-GROUP_MEAN_COLUMNS_ORDER <- generate_prefixed_column_order(
+GROUP_MEAN_STDEV_COLUMNS_ORDER <- generate_prefixed_column_order(
   subjects = unique(design_data$groups$group),
   prefixes = c(
-    "Group.Mean_"
-    )
-  )
-GROUP_STDEV_COLUMNS_ORDER <- generate_prefixed_column_order(
-  subjects = unique(design_data$groups$group),
-  prefixes = c(
+    "Group.Mean_",
     "Group.Stdev_"
-    )
   )
+)
+
 FINAL_COLUMN_ORDER <- c(
   ANNOTATIONS_COLUMN_ORDER, 
   PROBE_INFO_COLUMN_ORDER, 
   SAMPLE_COLUMN_ORDER, 
   STAT_COLUMNS_ORDER, 
   ALL_SAMPLE_STATS_COLUMNS_ORDER, 
-  GROUP_MEAN_COLUMNS_ORDER,
-  GROUP_STDEV_COLUMNS_ORDER
-  )
+  GROUP_MEAN_STDEV_COLUMNS_ORDER
+)
 
 ## Assert final column order includes all columns from original table
 if (!setequal(FINAL_COLUMN_ORDER, colnames(df_interim))) {
