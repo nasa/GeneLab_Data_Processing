@@ -1562,7 +1562,7 @@ data.table::fwrite(
     bases_tab_with_features_and_annots,
     row.names = FALSE,
     file = file.path(myargs$methylkit_output_dir,
-        paste0("differentially_methylated_bases", myargs$file_suffix, ".csv")
+        paste0("differential_methylation_bases", myargs$file_suffix, ".csv")
     ),
     quote = TRUE, na = "NA"
 )
@@ -1572,7 +1572,7 @@ data.table::fwrite(
     tiles_tab_with_features_and_annots,
     row.names = FALSE,
     file = file.path(myargs$methylkit_output_dir,
-        paste0("differentially_methylated_tiles", myargs$file_suffix, ".csv")
+        paste0("differential_methylation_tiles", myargs$file_suffix, ".csv")
     ),
     quote = TRUE, na = "NA"
 )
@@ -1594,7 +1594,7 @@ print(paste0("BioC_version_associated_with_R_version: ",BiocManager::version()))
 **Output data:**
 * **SampleTable_GLMethylSeq.csv** (table specifying the group or set of factor levels for each sample)
 * **contrasts_GLMethylSeq.csv** (table listing all pairwise group comparisons)
-* **differentially_methylated_bases_GLMethylSeq.csv** (Methylated bases table containing the following columns:
+* **differential_methylation_bases_GLMethylSeq.csv** (Methylated bases table containing the following columns:
   - Gene identifier column (ENSEMBL for non-plant or TAIR for plant studies) 
   - Additional organism-specific gene annotation columns
   - Feature.name (ID of feature that the annotation derives from)
@@ -1620,7 +1620,7 @@ print(paste0("BioC_version_associated_with_R_version: ",BiocManager::version()))
     - For each experimental group:
       - Group.Mean_(group) (mean within group)
       - Group.Stdev_(group) (standard deviation within group))
-* **differentially_methylated_tiles_GLMethylSeq.csv** (Methylated tiles table containing the following columns:
+* **differential_methylation_tiles_GLMethylSeq.csv** (Methylated tiles table containing the following columns:
   - Gene identifier column (ENSEMBL for non-plant or TAIR for plant studies) 
   - Additional organism-specific gene annotation columns
   - Feature.name (ID of feature that the annotation derives from)
