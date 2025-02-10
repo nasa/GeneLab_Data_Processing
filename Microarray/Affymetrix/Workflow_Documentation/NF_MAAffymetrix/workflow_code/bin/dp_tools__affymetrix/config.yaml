@@ -263,16 +263,6 @@ data assets:
             
     resource categories: *DGEAnalysisData
 
-  viz PCA table:
-    processed location: 
-      - *DGEDataDir
-      - "visualization_PCA_table_GLmicroarray.csv"
-
-    tags:
-      - processed
-            
-    resource categories: *neverPublished
-
 data asset sets:
   # These assets are not generated in the workflow, but are generated after the workflow
   PUTATIVE: []
