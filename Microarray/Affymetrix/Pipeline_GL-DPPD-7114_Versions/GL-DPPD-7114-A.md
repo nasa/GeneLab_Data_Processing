@@ -1227,10 +1227,6 @@ limma::write.fit(res, adjust = 'BH',
                 row.names = FALSE,
                 quote = TRUE,
                 sep = ",")
-
-### Generate and export PCA table for GeneLab visualization plots
-PCA_raw <- prcomp(t(exprs(probeset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
-write.csv(PCA_raw$x, file.path(DIR_DGE, "visualization_PCA_table_GLmicroarray.csv"))
 ```
 
 **Input Data:**
@@ -1246,7 +1242,6 @@ write.csv(PCA_raw$x, file.path(DIR_DGE, "visualization_PCA_table_GLmicroarray.cs
   - T statistic for all pairwise comparison tests
   - P value for all pairwise comparison tests
   - Adjusted P value for all pairwise comparison tests)
-- visualization_PCA_table_GLmicroarray.csv (file used to generate GeneLab PCA plots)
 
 <br>
 
