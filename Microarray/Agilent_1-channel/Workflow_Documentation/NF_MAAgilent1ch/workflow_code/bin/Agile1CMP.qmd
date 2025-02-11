@@ -18,7 +18,7 @@ params:
   id: NULL # str, used to name output files
   runsheet: NULL # str, path to runsheet
   biomart_attribute: NULL # str, used as a fallback value if 'Array Design REF' column is not found in the runsheet
-  annotation_file_path: NULL # str, Annotation file from 'genelab_annots_link' column of https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv
+  annotation_file_path: NULL # str, Annotation file from 'genelab_annots_link' column of GeneLab Annotations file
   ensembl_version: NULL # str, Used to determine ensembl version
   DEBUG_limit_biomart_query: NULL # int, If supplied, only the first n probeIDs are queried
   
@@ -56,26 +56,6 @@ dir.create(DIR_DGE)
 print("Loading Runsheet...") # NON_DPPD
 # fileEncoding removes strange characters from the column names
 df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM')
-
-## Determines the organism specific annotation file to use based on the organism in the runsheet
-fetch_organism_specific_annotation_file_path <- function(organism) {
-  # Uses the GeneLab GL-DPPD-7110_annotations.csv file to find the organism specific annotation file path
-  # Raises an exception if the organism does not have an associated annotation file yet
-  
-
-  all_organism_table <- read.csv("https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv")
-
-  annotation_file_path <- all_organism_table %>% dplyr::filter(species == organism) %>% dplyr::pull(genelab_annots_link)
-
-  # Guard clause: Ensure annotation_file_path populated
-  # Else: raise exception for unsupported organism
-  if (length(annotation_file_path) == 0) {
-    stop(glue::glue("Organism supplied '{organism}' is not supported. See the following url for supported organisms: https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv.  Supported organisms will correspond to a row based on the 'species' column and include a url in the 'genelab_annots_link' column of that row"))
-  }
-
-  return(annotation_file_path)
-}
-annotation_file_path <- fetch_organism_specific_annotation_file_path(unique(df_rs$organism))
 
 # NON_DPPD:START
 print("Here is the embedded runsheet")
@@ -176,6 +156,7 @@ DT::datatable(raw_data$targets, caption = "Sample to File Mapping")
 DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data file embedded probes to genes table")
 # NON_DPPD:END
 
+annotation_file_path <- params$annotation_file_path
 ensembl_version <- params$ensembl_version
 ```
 
@@ -805,7 +786,7 @@ df_interim <- df_interim %>% dplyr::select(-any_of(colnames_to_remove))
 ## Concatenate annotations for genes (for uniquely mapped probes) ##
 ### Read in annotation table for the appropriate organism ###
 annot <- read.table(
-            annotation_file_path,
+            as.character(annotation_file_path),
             sep = "\t",
             header = TRUE,
             quote = "",
