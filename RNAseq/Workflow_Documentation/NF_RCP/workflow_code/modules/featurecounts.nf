@@ -19,8 +19,6 @@ process FEATURECOUNTS {
     -T ${ task.cpus } \
     -a ${ genomeGtf } \
     -s ${strandOption} \
-    -t exon \
-    -g gene_id \
     -o "FeatureCounts_GLbulkRNAseq.csv" \
     ${bamList}
 
