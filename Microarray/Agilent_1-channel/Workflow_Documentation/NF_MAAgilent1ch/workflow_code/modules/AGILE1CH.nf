@@ -17,7 +17,6 @@ process AGILE1CH {
     tuple path("02-limma_DGE/contrasts_GLmicroarray.csv"),
           path("02-limma_DGE/SampleTable_GLmicroarray.csv"),
           path("02-limma_DGE/differential_expression_GLmicroarray.csv"),
-          path("02-limma_DGE/visualization_PCA_table_GLmicroarray.csv"),
           path("01-limma_NormExp/normalized_expression_GLmicroarray.csv"),
           path("00-RawData/raw_intensities_GLmicroarray.csv"), emit: de_all_files
 

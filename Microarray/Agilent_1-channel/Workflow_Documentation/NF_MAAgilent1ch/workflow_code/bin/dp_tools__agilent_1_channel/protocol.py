@@ -415,33 +415,6 @@ def validate(
                         """)
                     )
 
-            with vp.component_start(
-                name="Viz Tables",
-                description="Extended from the dge tables",
-            ):
-                with vp.payload(
-                    payloads=[
-                        {
-                            "samples": lambda: set(dataset.samples),
-                            "pca_table": lambda: dataset.data_assets[
-                                "viz PCA table"
-                            ].path,
-                        }
-                    ]
-                ):
-                    vp.add(
-                        bulkRNASeq.checks.check_viz_pca_table_index_and_columns_exist,
-                        full_description=textwrap.dedent(f"""
-                                - Check: Ensure all samples (row-indices) present and columns PC1, PC2 and PC3 are present
-                                    - Reason:
-                                        - PCA table should include all samples and PC1, PC2, PC3 (for 3D PCA viz)
-                                    - Potential Source of Problems:
-                                        - Bug in processing script
-                                    - Flag Condition:
-                                        - Green: All samples and all columns present
-                                        - Halt: At least one sample or column is missing
-                            """)
-                        )
         with vp.component_start(
             name="Processing Report",
             description="",
