@@ -296,7 +296,7 @@ if ( allTrue(stringr::str_ends(local_paths, ".gz")) ) {
                         )
 }
 
-df_local_paths <- data.frame(`Sample Name` = df_rs$`Original Sample Name`, `Local Paths` = local_paths, check.names = FALSE)
+df_local_paths <- data.frame(`Sample Name` = df_rs$`Sample Name`, `Local Paths` = local_paths, check.names = FALSE)
 
 
 # Load raw data into R object
@@ -1041,7 +1041,7 @@ ANNOTATIONS_COLUMN_ORDER = c(
   "GOSLIM_IDS"
 )
 
-SAMPLE_COLUMN_ORDER <- df_rs$`Original Sample Name`
+SAMPLE_COLUMN_ORDER <- df_rs$`Sample Name`
 
 probeset_expression_matrix.gene_mapped <- probeset_expression_matrix.gene_mapped %>% dplyr::rename( !!annot_key := ENSEMBL )
 
@@ -1141,7 +1141,7 @@ runsheetToDesignMatrix <- function(runsheet_path) {
     colnames(factors) = paste("factor",1:dim(factors)[2], sep= "_")
     
     # Load metadata from runsheet csv file
-    compare_csv = data.frame(sample_id = df[,c("Original Sample Name")], factors)
+    compare_csv = data.frame(sample_id = df[,c("Sample Name")], factors)
 
     # Create data frame containing all samples and respective factors
     study <- as.data.frame(compare_csv[,2:dim(compare_csv)[2]])
@@ -1165,13 +1165,13 @@ runsheetToDesignMatrix <- function(runsheet_path) {
     contrasts <- cbind(contrasts,contrasts[c(2,1),])
     colnames(contrasts) <- contrast.names
     sampleTable <- data.frame(condition=factor(group))
-    rownames(sampleTable) <- df[,c("Original Sample Name")]
+    rownames(sampleTable) <- df[,c("Sample Name")]
 
     condition <- sampleTable[,'condition']
     names_mapping <- as.data.frame(cbind(safe_name = as.character(condition), original_name = group_names))
 
     design <- model.matrix(~ 0 + condition)
-    design_data <- list( matrix = design, mapping = names_mapping, groups = as.data.frame( cbind(sample = df[,c("Original Sample Name")], group = group_names) ), contrasts = contrasts )
+    design_data <- list( matrix = design, mapping = names_mapping, groups = as.data.frame( cbind(sample = df[,c("Sample Name")], group = group_names) ), contrasts = contrasts )
     return(design_data)
 }
 
