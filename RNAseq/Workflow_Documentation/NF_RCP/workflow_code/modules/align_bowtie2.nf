@@ -24,9 +24,6 @@ process ALIGN_BOWTIE2 {
       --threads ${task.cpus} \\
       --minins 0 \\
       --maxins 500 \\
-      --very-sensitive \\
-      --no-mixed \\
-      --no-discordant \\
       --no-unal \\
       ${unaligned} \\ 
       -S ${meta.id}.sam \\

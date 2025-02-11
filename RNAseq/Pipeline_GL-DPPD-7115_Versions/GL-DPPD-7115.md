@@ -315,9 +315,6 @@ bowtie2 -x /path/to/bowtie2/index \
  --threads NumberOfThreads \
  --minins 0 \
  --maxins 500 \
- --very-sensitive \
- --no-mixed \
- --no-discordant \
  --no-unal \
  -1 /path/to/trimmed_forward_reads \
  -2 /path/to/trimmed_reverse_reads \
@@ -333,9 +330,6 @@ bowtie2 -x /path/to/bowtie2/index \
 - `--threads` – number of threads to use for alignment
 - `--minins` – minimum fragment length for valid paired-end alignments (0 for no minimum)
 - `--maxins` – maximum fragment length for valid paired-end alignments
-- `--very-sensitive` – preset Bowtie 2 configuration for higher sensitivity and accuracy at the cost of increased runtime (equivalent to: -D 20 -R 3 -N 0 -L 20 -i S,1,0.50)
-- `--no-mixed` – only report aligned pairs where both reads align successfully
-- `--no-discordant` – only report properly paired alignments
 - `--no-unal` – suppress SAM records for unaligned reads
 - `-1` – path to input forward reads (R1)
 - `-2` – path to input reverse reads (R2) (omit -1/-2 and use -U for single-end reads)
