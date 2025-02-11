@@ -346,7 +346,7 @@ bowtie2 -x /path/to/bowtie2/index \
 
 **Input Data:**
 
-- Bowtie2 genome reference (output from [Step 3](#3-build-bowtie-2-reference))
+- Bowtie 2 genome reference (output from [Step 3](#3-build-bowtie-2-reference))
 - *fastq.gz (trimmed reads, output from [Step 2a](#2a-trimfilter-raw-data))
 
 **Output Data:**
@@ -423,7 +423,7 @@ samtools sort -m 3G \
 - `-m` – memory available per thread, `3G` indicates 3 gigabytes, this can be changed based on user resources
 - `--threads` – number of threads available on server node to sort genome alignment files
 - `-o` – output file name (sorted BAM)
-- `/path/to/*.sam` – path to the SAM files output from the [Bowtie2 alignment step](#4a-align-reads-to-reference-genome-with-bowtie-2), provided as a positional argument
+- `/path/to/*.sam` – path to the SAM files output from the [Bowtie 2 alignment step](#4a-align-reads-to-reference-genome-with-bowtie-2), provided as a positional argument
 
 **Input Data:**
 
