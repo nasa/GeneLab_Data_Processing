@@ -160,7 +160,7 @@ annotation_file_path <- params$annotation_file_path
 ensembl_version <- params$ensembl_version
 ```
 
-## QA For Raw Data
+## Raw Data Quality Assessment
 
 ### Density Plot
 
@@ -368,12 +368,9 @@ boxplotExpressionSafeMargin(norm_data)
 ```
 
 
+## Probeset Annotations
 
-## Perform Probe Differential Expression
-
-### Probe Differential Expression (DE)
-
-#### Add Probe Annotations
+### Get Probeset Annotations
 
 ``` {r retrieve-probe-annotations}
 #| message: false
@@ -446,6 +443,7 @@ get_ensembl_genomes_mappings_from_ftp <- function(organism, ensembl_genomes_port
 
 
 organism <- shortenedOrganismName(unique(df_rs$organism))
+annot_key <- ifelse(organism %in% c("athaliana"), 'TAIR', 'ENSEMBL')
 
 if (organism %in% c("athaliana")) {
   ENSEMBL_VERSION = ensembl_version
@@ -523,6 +521,15 @@ if (organism %in% c("athaliana")) {
 }
 
 # At this point, we have df_mapping from either the biomart live service or the ensembl genomes ftp archive depending on the organism
+
+### Read in annotation table for the appropriate organism ###
+annot <- read.table(
+            as.character(annotation_file_path),
+            sep = "\t",
+            header = TRUE,
+            quote = "",
+            comment.char = "",
+        )
 ```
 
 ``` {r reformat-merge-probe-annotations}
@@ -550,7 +557,7 @@ norm_data$genes <- norm_data$genes %>%
   dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) )
 ```
 
-### Summarize Biomart Mapping vs. Manufacturer Mapping
+### Summarize Gene Mapping
 
 ``` {r summarize-remapping-vs-original-mapping}
 #| message = FALSE
@@ -576,6 +583,81 @@ print(glue::glue("Biomart Unique Mapping Count: {slices[['Unique Mapping']]}"))
 message(glue::glue("Original Manufacturer Reported Mapping Rate: {original_mapping_rate}")) # NON_DPPD
 message(glue::glue("Biomart Unique Mapping Rate: {slices[['Unique Mapping']]}")) # NON_DPPD
 ```
+
+### Generate Annotated Raw and Normalized Expression Tables
+
+```{r save-tables}
+## Reorder columns before saving to file
+ANNOTATIONS_COLUMN_ORDER = c(
+  annot_key,
+  "SYMBOL",
+  "GENENAME",
+  "REFSEQ",
+  "ENTREZID",
+  "STRING_id",
+  "GOSLIM_IDS"
+)
+
+PROBE_INFO_COLUMN_ORDER = c(
+  "ProbeUID",
+  "ProbeName",
+  "count_ENSEMBL_mappings"
+)
+SAMPLE_COLUMN_ORDER <- df_rs$`Sample Name`
+
+## Generate raw intensity matrix that includes annotations
+raw_data_matrix <- background_corrected_data$genes %>% 
+                    dplyr::select(ProbeUID, ProbeName) %>%
+                    dplyr::bind_cols(background_corrected_data$E) %>% 
+                    dplyr::left_join(unique_probe_ids, by = c("ProbeName" = expected_attribute_name ) ) %>%
+                    dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) )
+
+raw_data_matrix_annotated <- merge(
+                annot,
+                raw_data_matrix,
+                by.x = annot_key,
+                by.y = "ENSEMBL",
+                # ensure all original dge rows are kept.
+                # If unmatched in the annotation database, then fill missing with NAN
+                all.y = TRUE
+            )
+
+## Perform reordering
+FINAL_COLUMN_ORDER <- c(
+  ANNOTATIONS_COLUMN_ORDER, 
+  PROBE_INFO_COLUMN_ORDER, 
+  SAMPLE_COLUMN_ORDER
+  )
+
+raw_data_matrix_annotated <- raw_data_matrix_annotated %>% 
+  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
+
+write.csv(raw_data_matrix_annotated, file.path(DIR_RAW_DATA, "raw_intensities_GLmicroarray.csv"), row.names = FALSE)
+
+## Generate normalized expression matrix that includes annotations
+norm_data_matrix <- norm_data$genes %>% 
+                    dplyr::select(ProbeUID, ProbeName) %>%
+                    dplyr::bind_cols(norm_data$E) %>% 
+                    dplyr::left_join(unique_probe_ids, by = c("ProbeName" = expected_attribute_name ) ) %>%
+                    dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) )
+
+norm_data_matrix_annotated <- merge(
+                annot,
+                norm_data_matrix,
+                by.x = annot_key,
+                by.y = "ENSEMBL",
+                # ensure all original dge rows are kept.
+                # If unmatched in the annotation database, then fill missing with NAN
+                all.y = TRUE
+            )
+
+norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
+  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
+
+write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_GLmicroarray.csv"), row.names = FALSE)
+```
+
+## Perform Probeset Differential Expression (DE)
 
 ### Generate Design Matrix
 
@@ -664,9 +746,9 @@ limma::write.fit(res, adjust = 'BH',
                 sep = ",")
 ```
 
-### Add Additional Columns and Format DE Table 
+### Add Annotation and Stats Columns and Format DE Table
 
-``` {r add-additional-columns-and-format-de-table}
+``` {r save-de-table}
 #| warning: false
 #| message: false
 ## Reformat Table for consistency across DE analyses tables within GeneLab ##
@@ -755,11 +837,10 @@ for ( i in seq_along(unique_groups) ) {
 ## Compute all sample mean and standard deviation
 message(glue::glue("Computing mean and standard deviation for all samples"))
 # NON_DPPD:END
-all_samples <- design_data$group %>% dplyr::pull(sample)
 df_interim <- df_interim %>% 
   dplyr::mutate( 
-    "All.mean" := rowMeans(dplyr::select(., all_of(all_samples))),
-    "All.stdev" := matrixStats::rowSds(as.matrix(dplyr::select(., all_of(all_samples)))),
+    "All.mean" := rowMeans(dplyr::select(., all_of(SAMPLE_COLUMN_ORDER))),
+    "All.stdev" := matrixStats::rowSds(as.matrix(dplyr::select(., all_of(SAMPLE_COLUMN_ORDER)))),
     ) %>% 
   dplyr::ungroup() %>%
   as.data.frame()
@@ -783,57 +864,18 @@ colnames_to_remove = c(
 
 df_interim <- df_interim %>% dplyr::select(-any_of(colnames_to_remove))
 
-## Concatenate annotations for genes (for uniquely mapped probes) ##
-### Read in annotation table for the appropriate organism ###
-annot <- read.table(
-            as.character(annotation_file_path),
-            sep = "\t",
-            header = TRUE,
-            quote = "",
-            comment.char = "",
-        )
-
 # Join annotation table and uniquely mapped data
-
-# Determine appropriate keytype
-map_primary_keytypes <- c(
-  'Caenorhabditis elegans' = 'ENSEMBL',
-  'Danio rerio' = 'ENSEMBL',
-  'Drosophila melanogaster' = 'ENSEMBL',
-  'Rattus norvegicus' = 'ENSEMBL',
-  'Saccharomyces cerevisiae' = 'ENSEMBL',
-  'Homo sapiens' = 'ENSEMBL',
-  'Mus musculus' = 'ENSEMBL',
-  'Arabidopsis thaliana' = 'TAIR'
-)
 
 df_interim <- merge(
                 annot,
                 df_interim,
-                by.x = map_primary_keytypes[[unique(df_rs$organism)]],
+                by.x = annot_key,
                 by.y = "ENSEMBL",
                 # ensure all original dge rows are kept.
                 # If unmatched in the annotation database, then fill missing with NAN
                 all.y = TRUE
             )
 
-## Reorder columns before saving to file
-ANNOTATIONS_COLUMN_ORDER = c(
-  map_primary_keytypes[[unique(df_rs$organism)]],
-  "SYMBOL",
-  "GENENAME",
-  "REFSEQ",
-  "ENTREZID",
-  "STRING_id",
-  "GOSLIM_IDS"
-)
-
-PROBE_INFO_COLUMN_ORDER = c(
-  "ProbeUID",
-  "ProbeName",
-  "count_ENSEMBL_mappings"
-)
-SAMPLE_COLUMN_ORDER <- all_samples
 generate_prefixed_column_order <- function(subjects, prefixes) {
   #' Return a vector of columns based on subject and given prefixes
   #'  Used for both contrasts and groups column name generation
@@ -901,65 +943,6 @@ df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 
 # Save to file
 write.csv(df_interim, file.path(DIR_DGE, "differential_expression_GLmicroarray.csv"), row.names = FALSE)
-
-## Generate raw intensity matrix that includes annotations
-raw_data_matrix <- background_corrected_data$genes %>% 
-                    dplyr::select(ProbeUID, ProbeName) %>%
-                    dplyr::bind_cols(background_corrected_data$E) %>% 
-                    dplyr::left_join(unique_probe_ids, by = c("ProbeName" = expected_attribute_name ) ) %>%
-                    dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) )
-
-raw_data_matrix_annotated <- merge(
-                annot,
-                raw_data_matrix,
-                by.x = map_primary_keytypes[[unique(df_rs$organism)]],
-                by.y = "ENSEMBL",
-                # ensure all original dge rows are kept.
-                # If unmatched in the annotation database, then fill missing with NAN
-                all.y = TRUE
-            )
-
-## Perform reordering
-FINAL_COLUMN_ORDER <- c(
-  ANNOTATIONS_COLUMN_ORDER, 
-  PROBE_INFO_COLUMN_ORDER, 
-  SAMPLE_COLUMN_ORDER
-  )
-
-raw_data_matrix_annotated <- raw_data_matrix_annotated %>% 
-  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
-
-write.csv(raw_data_matrix_annotated, file.path(DIR_RAW_DATA, "raw_intensities_GLmicroarray.csv"), row.names = FALSE)
-
-## Generate normalized expression matrix that includes annotations
-norm_data_matrix <- norm_data$genes %>% 
-                    dplyr::select(ProbeUID, ProbeName) %>%
-                    dplyr::bind_cols(norm_data$E) %>% 
-                    dplyr::left_join(unique_probe_ids, by = c("ProbeName" = expected_attribute_name ) ) %>%
-                    dplyr::mutate( count_ENSEMBL_mappings = ifelse(is.na(ENSEMBL), 0, count_ENSEMBL_mappings) )
-
-norm_data_matrix_annotated <- merge(
-                annot,
-                norm_data_matrix,
-                by.x = map_primary_keytypes[[unique(df_rs$organism)]],
-                by.y = "ENSEMBL",
-                # ensure all original dge rows are kept.
-                # If unmatched in the annotation database, then fill missing with NAN
-                all.y = TRUE
-            )
-
-
-## Perform reordering
-FINAL_COLUMN_ORDER <- c(
-  ANNOTATIONS_COLUMN_ORDER, 
-  PROBE_INFO_COLUMN_ORDER, 
-  SAMPLE_COLUMN_ORDER
-  )
-
-norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
-  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
-
-write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_GLmicroarray.csv"), row.names = FALSE)
 ```
 
 ## Version Reporting <!-- non DPPD -->
