@@ -1261,7 +1261,7 @@ res_lrt <- results(dds_lrt)
 
 ```R
 ### Initialize output table with normalized counts ###
-output_table <- tibble::rownames_to_column(normCounts, var = "ENSEMBL")
+output_table <- tibble::rownames_to_column(normCounts, var = "gene_id")
 
 ### Iterate through Wald Tests to generate pairwise comparisons of all groups ###
 compute_contrast <- function(i) {
