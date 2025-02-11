@@ -1,6 +1,6 @@
 ---
 title: "Agilent 1 Channel Processing"
-subtitle: "Workflow Version: NF_MAAgilent1ch_1.0.4"
+subtitle: "`r paste0('Workflow Version: NF_MAAgilent1ch_', params$workflow_version)`"
 date: now
 title-block-banner: true
 format:
@@ -14,6 +14,7 @@ format:
         number-sections: true
 
 params:
+  workflow_version: NULL
   id: NULL # str, used to name output files
   runsheet: NULL # str, path to runsheet
   biomart_attribute: NULL # str, used as a fallback value if 'Array Design REF' column is not found in the runsheet
