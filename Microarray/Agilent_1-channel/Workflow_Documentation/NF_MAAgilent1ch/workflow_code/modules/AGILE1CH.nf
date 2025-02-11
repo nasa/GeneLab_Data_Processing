@@ -8,7 +8,7 @@ process AGILE1CH {
     path(qmd) // quarto qmd file to render
     path(runsheet_csv) // runsheet to supply as parameter
     path(annotation_file_path) // runsheet to supply as parameter
-    val(organism) // runsheet to supply as parameter
+    tuple val(ensemblVersion), val(ensemblSource)
     val(limit_biomart_query) // DEBUG option, limits biomart queries to the number specified if not set to false
 
   output:
@@ -36,7 +36,7 @@ process AGILE1CH {
             -P 'workflow_version:${workflow.manifest.version}' \
             -P 'runsheet:${runsheet_csv}' \
             -P 'annotation_file_path:${annotation_file_path}' \
-            -P 'organism:${organism}' \
+            -P 'ensembl_version:${ensemblVersion}' \
             ${limit_biomart_query_parameter}
 
         # Rename report

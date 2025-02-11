@@ -19,7 +19,7 @@ params:
   runsheet: NULL # str, path to runsheet
   biomart_attribute: NULL # str, used as a fallback value if 'Array Design REF' column is not found in the runsheet
   annotation_file_path: NULL # str, Annotation file from 'genelab_annots_link' column of https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv
-  organism: NULL # str, Used to determine primary keytype
+  ensembl_version: NULL # str, Used to determine ensembl version
   DEBUG_limit_biomart_query: NULL # int, If supplied, only the first n probeIDs are queried
   
 ---
@@ -175,6 +175,8 @@ message(paste0("Number of Probes: ", dim(raw_data)[1])) # NON_DPPD
 DT::datatable(raw_data$targets, caption = "Sample to File Mapping")
 DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data file embedded probes to genes table")
 # NON_DPPD:END
+
+ensembl_version <- params$ensembl_version
 ```
 
 ## QA For Raw Data
@@ -465,14 +467,14 @@ get_ensembl_genomes_mappings_from_ftp <- function(organism, ensembl_genomes_port
 organism <- shortenedOrganismName(unique(df_rs$organism))
 
 if (organism %in% c("athaliana")) {
-  ensembl_genomes_version = "54"
+  ENSEMBL_VERSION = ensembl_version
   ensembl_genomes_portal = "plants"
-  print(glue::glue("Using ensembl genomes ftp to get specific version of probe id mapping table. Ensembl genomes portal: {ensembl_genomes_portal}, version: {ensembl_genomes_version}"))
+  print(glue::glue("Using ensembl genomes ftp to get specific version of probe id mapping table. Ensembl genomes portal: {ensembl_genomes_portal}, version: {ENSEMBL_VERSION}"))
   expected_attribute_name <- getBioMartAttribute(df_rs)
   df_mapping <- get_ensembl_genomes_mappings_from_ftp(
     organism = organism,
     ensembl_genomes_portal = ensembl_genomes_portal,
-    ensembl_genomes_version = ensembl_genomes_version,
+    ensembl_genomes_version = ENSEMBL_VERSION,
     biomart_attribute = expected_attribute_name
     )
 
@@ -488,7 +490,7 @@ if (organism %in% c("athaliana")) {
 
 
   # Specify Ensembl version used in current GeneLab reference annotations
-  ENSEMBL_VERSION <- '107'
+  ENSEMBL_VERSION <- ensembl_version
   print(paste0("Searching for Ensembl Version: ", ENSEMBL_VERSION)) # NON_DPPD
 
   print(glue::glue("Using Ensembl biomart to get specific version of mapping table. Ensembl version: {ENSEMBL_VERSION}"))

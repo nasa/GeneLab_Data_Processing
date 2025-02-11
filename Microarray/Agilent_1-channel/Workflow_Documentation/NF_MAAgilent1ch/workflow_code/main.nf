@@ -76,7 +76,7 @@ workflow {
       channel.fromPath( "${ projectDir }/bin/Agile1CMP.qmd" ),
       ch_runsheet,
       PARSE_ANNOTATION_TABLE.out.annotations_db_url,
-      ch_meta | map { it.organism },
+      PARSE_ANNOTATION_TABLE.out.reference_version_and_source,
       params.limit_biomart_query
     )
 
