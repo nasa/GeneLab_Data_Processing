@@ -24,7 +24,6 @@ process ALIGN_BOWTIE2 {
       --threads ${task.cpus} \\
       --minins 0 \\
       --maxins 500 \\
-      --no-unal \\
       ${unaligned} \\ 
       -S ${meta.id}.sam \\
       2> ${meta.id}.bowtie2.log

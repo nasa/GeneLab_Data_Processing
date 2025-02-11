@@ -315,7 +315,6 @@ bowtie2 -x /path/to/bowtie2/index \
  --threads NumberOfThreads \
  --minins 0 \
  --maxins 500 \
- --no-unal \
  -1 /path/to/trimmed_forward_reads \
  -2 /path/to/trimmed_reverse_reads \
  --un-conc-gz <sample_id>.Unmapped.fastq.gz \  # For paired-end data
@@ -330,7 +329,6 @@ bowtie2 -x /path/to/bowtie2/index \
 - `--threads` – number of threads to use for alignment
 - `--minins` – minimum fragment length for valid paired-end alignments (0 for no minimum)
 - `--maxins` – maximum fragment length for valid paired-end alignments
-- `--no-unal` – suppress SAM records for unaligned reads
 - `-1` – path to input forward reads (R1)
 - `-2` – path to input reverse reads (R2) (omit -1/-2 and use -U for single-end reads)
 - `--un-conc-gz` – write paired-end unmapped reads to gzipped FASTQ file (use for paired-end data)
