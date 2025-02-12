@@ -1,5 +1,5 @@
 process QUANTIFY_RSEM_GENES {
-  tag "Dataset-wide"
+  // tag "Dataset-wide"
   // An R script that extracts gene counts by sample to a table
 
   input:

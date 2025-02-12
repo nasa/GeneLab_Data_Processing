@@ -3,7 +3,7 @@
  */
 
 process ADD_GENE_ANNOTATIONS {
-    tag "Dataset-wide"
+    // tag "Dataset-wide"
 
     input:
         val(meta)

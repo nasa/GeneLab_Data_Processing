@@ -3,7 +3,7 @@
  */
 
 process EXTEND_DGE_TABLE {
-    tag "Dataset-wide"
+    // tag "Dataset-wide"
 
     input:
         path(dge_table)

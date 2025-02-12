@@ -1,5 +1,5 @@
 process MULTIQC {
-    tag("Dataset-wide")
+    // tag("Dataset-wide")
     
     input:
     path(sample_names)

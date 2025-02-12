@@ -3,7 +3,7 @@
  */
 
 process GENERATE_PCA_TABLE {
-    tag "Dataset-wide"
+    // tag "Dataset-wide"
 
     input:
         path(normalized_counts)

@@ -1,5 +1,5 @@
 process QUANTIFY_STAR_GENES {
-  tag "Dataset-wide"
+  // tag "Dataset-wide"
   
   input:
     path("samples.txt")
