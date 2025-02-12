@@ -14,11 +14,11 @@
 Michael D. Lee and Barbara Novak (GeneLab Data Processing Team)  
 
 **Approved by:**  
-Barbara Novak (GeneLab Data Processing Lead)
-Amanda Saravia-Butler (GeneLab Science Lead)
-Samrawit Gebre (OSDR Project Manager)
-Danielle Lopez (OSDR Deputy Project Manager)
-Lauren Sanders (OSDR Project Scientist)
+Barbara Novak (GeneLab Data Processing Lead)  
+Amanda Saravia-Butler (GeneLab Science Lead)  
+Lauren Sanders (OSDR Project Scientist)  
+Danielle Lopez (OSDR Deputy Project Manager)  
+Samrawit Gebre (OSDR Project Manager)  
 
 ---
 
