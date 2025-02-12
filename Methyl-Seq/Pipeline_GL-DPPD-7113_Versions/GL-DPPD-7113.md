@@ -56,12 +56,13 @@ Samrawit Gebre (OSDR Project Manager)
     - [10a. GTF to BED conversion](#10a-gtf-to-bed-conversion)
     - [10b. Making a mapping file of genes to transcripts](#10b-making-a-mapping-file-of-genes-to-transcripts)
   - [**11. Differential methylation analysis**](#11-differential-methylation-analysis)
-    - [11a. Set up R environment](#11a-set-up-r-environment)
-    - [11b. Configure Metadata, Sample Grouping, and Group Comparisons](#11b-configure-metadata-sample-grouping-and-group-comparisons)
-    - [11c. Import Methylation Calls](#11c-import-methylation-calls)
-    - [11d. Individual-base analysis](#11d-individual-base-analysis)
-    - [11e. Tile analysis](#11e-tile-analysis)
-    - [11f. Export Tables](#11f-export-tables)
+    - [11a. Create Sample Runsheet](#11a-create-sample-runsheet)
+    - [11b. Set up R environment](#11b-set-up-r-environment)
+    - [11c. Configure Metadata, Sample Grouping, and Group Comparisons](#11c-configure-metadata-sample-grouping-and-group-comparisons)
+    - [11d. Import Methylation Calls](#11d-import-methylation-calls)
+    - [11e. Individual-base analysis](#11e-individual-base-analysis)
+    - [11f. Tile analysis](#11f-tile-analysis)
+    - [11g. Export Tables](#11g-export-tables)
 
 
 ---
@@ -1023,8 +1024,51 @@ The remainder of this document is performed in R.
 
 <br>
 
+### 11a. Create Sample Runsheet
 
-### 11a. Set up R environment
+> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be
+  created manually by following the [file specification](../Workflow_Documentation/runsheet_specification/README.md).
+
+```bash
+### Download the *ISA.zip file from the GeneLab Repository ###
+
+dpt-get-isa-archive --accession GLDS-###
+
+### Parse the metadata from the *ISA.zip file to create a sample runsheet ###
+
+dpt-isa-to-runsheet --accession GLDS-### \
+  --plugin-dir /path/to/dp_tools__methylseq_plugin \
+  --isa-archive *ISA.zip
+```
+
+**Parameter Definitions:**
+
+- `--accession GLDS-###` – GLDS accession ID (replace ### with the GLDS number being processed), used to retrieve the
+  urls for the ISA archive and raw reads hosted on the GeneLab Repository
+  > *Note: you can also use the OSD identifier, e.g. `--accession OSD-###`*
+- `--plugin-dir /path/to/dp_tools__methylseq_plugin` - specifies the path to the plugin directory defining the dp-tools
+  configuration for the desired assay type. Plugins for both DNA and RNA methylseq assays are provided in the Workflow_Documentation
+  folder: [../Workflow_Documentation/isa_to_runsheet_plugins](../Workflow_Documentation/isa_to_runsheet_plugins/).
+- `--isa-archive` – Specifies the *ISA.zip file for the respective GLDS dataset, downloaded in the `dpt-get-isa-archive` command
+
+
+**Input Data:**
+
+- No input data required but the GLDS (or OSD) accession ID needs to be indicated, which is used to download the
+  respective ISA archive
+
+**Output Data:**
+
+- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective
+  GLDS dataset, used to define sample groups - the *ISA.zip file is located in each [OSDR repository](https://osdr.nasa.gov/bio/repo/)
+  Study page under 'Files' -> 'Study Metadata Files')
+
+- **{GLDS-Accession-ID}_{methylseq_assay_type}_v{version}_runsheet.csv** (table containing metadata required for processing.
+  `{methylseq_assay_type}` and `{version}` are defined in the plugin yaml file.)
+
+<br>
+
+### 11b. Set up R environment
 
 ```R
 ### Install and load required packages ###
@@ -1107,8 +1151,7 @@ setwd(work_dir)
 
 **Input data:**
 
-* runsheet.csv (CSV formatted runsheet file containing unique sample IDs and factors as defined in the 
-  [file specification](../Workflow_Documentation/examples/runsheet/README.md))
+* runsheet.csv (CSV formatted runsheet file containing unique sample IDs and factors generated in [Step 11a](#11a-create-sample-runsheet))
 * `organism` (name of organism samples were derived from, found in the `species` column of 
   [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file)
 * /path/to/bismark-coverage-files/ (directory containing `*.bismark.cov.gz` (gzip-compressed bedGraph formatted files 
@@ -1119,8 +1162,7 @@ setwd(work_dir)
 
 **Output data:**
 
-* `runsheet_path` (variable containing path to runsheet file as defined in the 
-  [file specification](../Workflow_Documentation/examples/runsheet/README.md)) 
+* `runsheet_path` (variable containing path to runsheet file generated in [Step 11a](#11a-create-sample-runsheet))
 * `gene.obj` (a GRangesList object containing locations of exon/intron/promoter/TSS)
 * `gene_transcript_map` (DataFrame holding the gene-to-transcript mappings)
 * `annotations_tab_link` (variable containing URL to GeneLab gene annotation table for the organism of interest)
@@ -1129,7 +1171,7 @@ setwd(work_dir)
 
 <br>
 
-### 11b. Configure Metadata, Sample Grouping, and Group Comparisons
+### 11c. Configure Metadata, Sample Grouping, and Group Comparisons
 
 ```R
 ### Pull all factors for each sample in the study from the runsheet provided ###
@@ -1190,8 +1232,7 @@ sampleTable <- data.frame("sample_id" = rownames(study), "condition" = group)
 
 **Input Data:**
 
-* `runsheet_path` (variable containing path to runsheet file as defined in the 
-  [file specification](../Workflow_Documentation/examples/runsheet/README.md))
+* `runsheet_path` (variable containing path to runsheet file generated in [Step 11a](#11a-create-sample-runsheet))
 
 **Output Data:**
 
@@ -1203,7 +1244,7 @@ sampleTable <- data.frame("sample_id" = rownames(study), "condition" = group)
 
 <br>
 
-### 11c. Import Methylation Calls
+### 11d. Import Methylation Calls
 
 ```R
 ### Import methylation call data ###
@@ -1278,9 +1319,9 @@ meth_obj <- methRead(
 
 * `coverage_files_dir_path` (variable containing path to bismark coverage files (`*.bismark.cov.gz`) generated in 
   [Step7](#7-extract-methylation-calls))
-* `org_and_ensembl_version` (variable containing the organism name and ensembl version from [Step 11a](#11a-set-up-r-environment))
+* `org_and_ensembl_version` (variable containing the organism name and ensembl version from [Step 11b](#11b-set-up-r-environment))
 * `sampleTable` (data frame containing sample condition values, output from 
-  [Step 11b](#11b-configure-metadata-sample-grouping-and-group-comparisons))
+  [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
 
 **Output Data:**
 
@@ -1289,7 +1330,7 @@ meth_obj <- methRead(
 
 <br>
 
-### 11d. Individual-base analysis
+### 11e. Individual-base analysis
 
 ```R
 ### Function for computing differential methylation per base for each contrasts ###
@@ -1400,10 +1441,10 @@ rm(df_list)
 
 **Input data:**
 
-* `contrasts` (matrix defining pairwise comparisons between groups from [Step 11b](#11b-configure-metadata-sample-grouping-and-group-comparisons))
-* `group_name_lookup` (data frame mapping groups with R naming scheme to human-readable group names from [Step 11b](#11b-configure-metadata-sample-grouping-and-group-comparisons))
-* `meth_obj` (methylRawList object created in [Step 11c](#11c-import-methylation-calls)
-* `sample_meth_info_df` (data frame containing sample IDs mapped to conditions and coverage file paths from [Step 11c](#11c-import-methylation-calls))
+* `contrasts` (matrix defining pairwise comparisons between groups from [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
+* `group_name_lookup` (data frame mapping groups with R naming scheme to human-readable group names from [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
+* `meth_obj` (methylRawList object created in [Step 11d](#11d-import-methylation-calls)
+* `sample_meth_info_df` (data frame containing sample IDs mapped to conditions and coverage file paths from [Step 11d](#11d-import-methylation-calls))
 
 **Output data:**
 
@@ -1416,7 +1457,7 @@ rm(df_list)
     - Start
     - End
     - Strand (`*` if unstranded)
-  - dist.to.feature (distance between annotated feature and methylated base)
+  - dist.to.feature (distance between the methylated base and the feature TSS)
   - feature.strand (strand of the feature)
   - Gene part annotation (0 if false, 1 if true)
     - prom (promoter)
@@ -1437,7 +1478,7 @@ rm(df_list)
 
 <br>
 
-### 11e. Tile analysis
+### 11f. Tile analysis
 
 ```R
 ### Tile analysis ###
@@ -1505,10 +1546,10 @@ rm(df_list)
 
 **Input data:**
 
-* `contrasts` (matrix defining pairwise comparisons between groups from [Step 11b](#11b-configure-metadata-sample-grouping-and-group-comparisons))
-* `group_name_lookup` (data frame mapping groups with R naming scheme to human-readable group names from [Step 11b](#11b-configure-metadata-sample-grouping-and-group-comparisons))
-* `sample_meth_info_df` (data frame containing sample IDs mapped to conditions and coverage file paths from [Step 11c](#11c-import-methylation-calls))
-* `norm_meth_obj` (median-normalized methylRawList object created in [Step 11d](#11d-individual-base-analysis)
+* `contrasts` (matrix defining pairwise comparisons between groups from [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
+* `group_name_lookup` (data frame mapping groups with R naming scheme to human-readable group names from [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
+* `sample_meth_info_df` (data frame containing sample IDs mapped to conditions and coverage file paths from [Step 11d](#11d-import-methylation-calls))
+* `norm_meth_obj` (median-normalized methylRawList object created in [Step 11e](#11e-individual-base-analysis)
 
 **Output data:**
 
@@ -1521,7 +1562,7 @@ rm(df_list)
     - Start
     - End
     - Strand (`*` if unstranded)
-  - dist.to.feature (distance between annotated feature and methylated base)
+  - dist.to.feature (distance between the methylated region and the feature TSS)
   - feature.strand (strand of the feature)
   - Gene part annotation (0 if false, 1 if true)
     - prom (promoter)
@@ -1541,7 +1582,7 @@ rm(df_list)
 
 <br>
 
-### 11f. Export Tables
+### 11g. Export Tables
 
 ```R
 ### Output contrasts table ###
@@ -1588,10 +1629,10 @@ print(paste0("BioC_version_associated_with_R_version: ",BiocManager::version()))
 
 **Input data:**
 
-* `contrasts` (matrix defining pairwise comparisons between groups from [Step 11b](#11b-configure-metadata-sample-grouping-and-group-comparisons))
-* `sampleTable` (data frame mapping sample IDs to groups (conditions) from [Step 11b](#11b-configure-metadata-sample-grouping-and-group-comparisons))
-* `bases_tab_with_features_and_annots` (Methylated base output table from [Step 11d](#11d-individual-base-analysis))
-* `tiles_tab_with_features_and_annots` (Methylated tile output tables from [Step 11e](#11e-tile-analysis))
+* `contrasts` (matrix defining pairwise comparisons between groups from [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
+* `sampleTable` (data frame mapping sample IDs to groups (conditions) from [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
+* `bases_tab_with_features_and_annots` (Methylated base output table from [Step 11e](#11e-individual-base-analysis))
+* `tiles_tab_with_features_and_annots` (Methylated tile output tables from [Step 11f](#11f-tile-analysis))
 
 **Output data:**
 * **SampleTable_GLMethylSeq.csv** (table specifying the group or set of factor levels for each sample)
@@ -1605,7 +1646,7 @@ print(paste0("BioC_version_associated_with_R_version: ",BiocManager::version()))
     - Start
     - End
     - Strand (`*` if unstranded)
-  - dist.to.feature (distance between annotated feature and methylated base)
+  - dist.to.feature (distance between the methylated base and the feature TSS)
   - feature.strand (strand of the feature)
   - Gene part annotation (0 if false, 1 if true)
     - prom (promoter)
@@ -1631,7 +1672,7 @@ print(paste0("BioC_version_associated_with_R_version: ",BiocManager::version()))
     - Start
     - End
     - Strand (`*` if unstranded)
-  - dist.to.feature (distance between annotated feature and methylated base)
+  - dist.to.feature (distance between the methylated region and the feature TSS)
   - feature.strand (strand of the feature)
   - Gene part annotation (0 if false, 1 if true)
     - prom (promoter)
@@ -1649,6 +1690,10 @@ print(paste0("BioC_version_associated_with_R_version: ",BiocManager::version()))
       - Group.Mean_(group) (mean within group)
       - Group.Stdev_(group) (standard deviation within group))
 
+ > Note: the dist.to.feature specifies the distance of the base or region to the Transcription Start Site (TSS). A
+   negative distance indicates that the TSS is upstream of the methylated base or region and a positive distance
+   indicates that the TSS is downstream of the methylated base or region. 0 indicates that the TSS overlaps with the
+   methylated region. For regions, the distance is measured from the end of the region closest to the TSS.
 <br>
 
 ---
