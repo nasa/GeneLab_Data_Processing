@@ -1126,6 +1126,8 @@ ref_table <- read.csv(ref_table_link)
 annotations_tab_link <- ref_table %>% 
     filter(species == organism) %>% pull(genelab_annots_link)
 
+# Create data.frame object of annotations table
+functional_annots_tab <- read.table(annotations_tab_link, sep="\t", quote = "", header = TRUE)
 
 ### Pull in annotation data from Step 10 ###
 
@@ -1164,8 +1166,8 @@ setwd(work_dir)
 
 * `runsheet_path` (variable containing path to runsheet file generated in [Step 11a](#11a-create-sample-runsheet))
 * `gene.obj` (a GRangesList object containing locations of exon/intron/promoter/TSS)
+* `functional_annots_tab` (DataFrame holding GeneLab annotation table)
 * `gene_transcript_map` (DataFrame holding the gene-to-transcript mappings)
-* `annotations_tab_link` (variable containing URL to GeneLab gene annotation table for the organism of interest)
 * `org_and_ensembl_version` (variable containing the organism and ensembl version to use in methylKit input object generation)
 * `coverage_files_dir_path` (variable containing path to bismark coverage files (`*.bismark.cov.gz`) generated in [Step7](#7-extract-methylation-calls))
 
@@ -1443,6 +1445,8 @@ rm(df_list)
 
 * `contrasts` (matrix defining pairwise comparisons between groups from [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
 * `group_name_lookup` (data frame mapping groups with R naming scheme to human-readable group names from [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
+* `gene_transcript_map` (DataFrame holding the gene-to-transcript mappings from [Step 11b](#11b-set-up-r-environment))
+* `functional_annots_tab` (DataFrame holding GeneLab annotation table from [Step 11b](#11b-set-up-r-environment))
 * `meth_obj` (methylRawList object created in [Step 11d](#11d-import-methylation-calls)
 * `sample_meth_info_df` (data frame containing sample IDs mapped to conditions and coverage file paths from [Step 11d](#11d-import-methylation-calls))
 
@@ -1548,6 +1552,8 @@ rm(df_list)
 
 * `contrasts` (matrix defining pairwise comparisons between groups from [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
 * `group_name_lookup` (data frame mapping groups with R naming scheme to human-readable group names from [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
+* `gene_transcript_map` (DataFrame holding the gene-to-transcript mappings from [Step 11b](#11b-set-up-r-environment))
+* `functional_annots_tab` (DataFrame holding GeneLab annotation table from [Step 11b](#11b-set-up-r-environment))
 * `sample_meth_info_df` (data frame containing sample IDs mapped to conditions and coverage file paths from [Step 11d](#11d-import-methylation-calls))
 * `norm_meth_obj` (median-normalized methylRawList object created in [Step 11e](#11e-individual-base-analysis)
 
