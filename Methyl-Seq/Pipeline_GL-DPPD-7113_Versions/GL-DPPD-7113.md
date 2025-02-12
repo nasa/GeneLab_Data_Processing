@@ -6,18 +6,19 @@
 
 ---
 
-**Date:** February 13, 2023  
+**Date:** February 13, 2025  
 **Revision:** -  
 **Document Number:** GL-DPPD-7113  
 
 **Submitted by:**  
-Michael D. Lee (GeneLab Analysis Team)  
+Michael D. Lee and Barbara Novak (GeneLab Data Processing Team)  
 
 **Approved by:**  
-Sylvain Costes (GeneLab Project Manager)  
-Samrawit Gebre (GeneLab Deputy Project Manager)  
-Amanda Saravia-Butler (GeneLab Data Processing Lead)  
-Jonathan Galazka (GeneLab Project Scientist)  
+Barbara Novak (GeneLab Data Processing Lead)
+Amanda Saravia-Butler (GeneLab Science Lead)
+Samrawit Gebre (OSDR Project Manager)
+Danielle Lopez (OSDR Deputy Project Manager)
+Lauren Sanders (OSDR Project Scientist)
 
 ---
 
@@ -90,7 +91,7 @@ Jonathan Galazka (GeneLab Project Scientist)
 
 # General processing overview with example commands
 
-> Exact processing commands and output files listed in **bold** below are included with each RNAseq processed dataset in 
+> Exact processing commands and output files listed in **bold** below are included with each Methyl-Seq processed dataset in 
   the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 
 ---
@@ -149,7 +150,7 @@ multiqc --interactive \
 * **raw_multiqc_GLMethylSeq.html** (multiqc output html summary)
 * **raw_multiqc_GLMethylSeq_data.zip** (zipped directory containing multiqc output data)
 
-> If using RNA, file suffix will be **GLRNAMethylSeq** instead of **GLMethylSeq**
+> If processing RNA Methylation Sequencing data, file suffix will be **GLRNAMethylSeq** instead of **GLMethylSeq**
 
 <br>  
 
@@ -421,7 +422,7 @@ multiqc --interactive \
   -o trimmed_multiqc_GLmethylSeq_data/ \
   -n trimmed_multiqc_GLmethylSeq \
   -z \
-  trimmed_fastqc_output/ trimgalore_output/
+  trimmed_fastqc_output/ trimmed_reads_out_dir/
 ```
 
 **Parameter Definitions:**
@@ -431,18 +432,19 @@ multiqc --interactive \
 *	`-n` – the filename prefix for output files
 *	`-z` – specifies to zip the output data directory
 *	`trimmed_fastqc_output/` – the directory holding the output data from the fastqc run, provided as a positional argument
-* `trimgalore_output/` - the directory holding the trimgalore trimming reports, provided as a positional argument
+* `trimmed_reads_out_dir/` - the directory holding the trimgalore trimming reports, provided as a positional argument
 
 **Input data:**
 
 * trimmed_fastqc_output/*fastqc.zip (FastQC output data from [Step 3a](#3a-trimmed-data-qc))
+* trimmed_reads_out_dir/*trimming_report.txt (TrimGalore! trimming report, output from [Step 2](#2-adapter-trimmingquality-filtering))
 
 **Output data:**
 
 * **trimmed_multiqc_GLMethylSeq.html** (multiqc output html summary)
 * **trimmed_multiqc_GLMethylSeq_data.zip** (directory containing multiqc output data)
 
-> If using RNA, file suffix will be **GLRNAMethylSeq** instead of **GLMethylSeq**
+> If processing RNA Methylation Sequencing data, file suffix will be **GLRNAMethylSeq** instead of **GLMethylSeq**
 
 <br>
 
@@ -518,7 +520,7 @@ bam2nuc --genomic_composition_only \
 
 
 > **NOTE**  
-> If using RNA, the `--hisat2` flag is added instead of `--bowtie2`, which specifies using the splice-aware aligner 
+> If processing RNA Methylation Sequencing data, the `--hisat2` flag is added instead of `--bowtie2`, which specifies using the splice-aware aligner 
   [HISAT2](https://github.com/DaehwanKimLab/hisat2#hisat2), and the outputs will include 8 `*ht2` files in separate 
   sub-directories along with each reference-genome conversion.
 
@@ -590,8 +592,8 @@ mv sample-1_R1_trimmed_bismark_bt2_pe.bam sample-1_bismark_bt2_pe.bam
 
 
 **Input data:**
-* bismark_reference_genome/ (directory holding indexes of reference genome)
-* gzip-compressed fastq files (adapter-trimmed/quality-filtered reads)
+* bismark_reference_genome/ (directory holding indexes of reference genome, output from [Step 4a](#4a-generate-reference))
+* gzip-compressed fastq files (adapter-trimmed/quality-filtered reads, output from [Step 2](#2-adapter-trimmingquality-filtering))
 
 **Output data:**  
 
@@ -602,7 +604,7 @@ mv sample-1_R1_trimmed_bismark_bt2_pe.bam sample-1_bismark_bt2_pe.bam
 
 
 > **NOTE**  
-> If using RNA, command-line parameters `--hisat2` and `--path_to_hisat2` need to be added. Output file names will include 
+> If processing RNA Methylation Sequencing data, command-line parameters `--hisat2` and `--path_to_hisat2` need to be added. Output file names will include 
   "bismark_hisat2" instead of "bismark_bt2".
 
 <br>
@@ -627,7 +629,7 @@ samtools sort -@ NumberOfThreads \
 * sample-1_bismark_bt2*.bam (bismark alignment bam file, output from [Step 4b.](#4b-align) above)
 
 > **NOTE**  
-> If using RNA, file names will include "bismark_hisat2" instead of "bismark_bt2".
+> If processing RNA Methylation Sequencing data, file names will include "bismark_hisat2" instead of "bismark_bt2".
 
 **Output data:**
 
@@ -674,7 +676,7 @@ qualimap bamqc -bam sample-1_bismark_bt2_sorted.bam \
 * **\*sample-1_bismark_bt2_qualimap/** (subdirectory of many alignment QC output files and formatting files for presenting in an html file (see [qualimap documentation](http://qualimap.conesalab.org/doc_html/analysis.html#output))
 
 > **NOTE**  
-> If using RNA, file names will include "bismark_hisat2" instead of "bismark_bt2".
+> If processing RNA Methylation Sequencing data, file names will include "bismark_hisat2" instead of "bismark_bt2".
 
 <br>
 
@@ -700,7 +702,7 @@ deduplicate_bismark sample-1_bismark_bt2*.bam
 
 * sample-1_bismark_bt2*.bam (unsorted bismark bowtie2 alignment bam file, output from [Step 4b](#4b-align) above)
 > **NOTE**  
-> If using RNA, file names will include "bismark_hisat2" instead of "bismark_bt2".
+> If processing RNA Methylation Sequencing data, file names will include "bismark_hisat2" instead of "bismark_bt2".
 
 **Output data:**
 
@@ -729,7 +731,7 @@ samtools sort -@ NumberOfThreads \
 
 * sample-1_bismark_bt2*.deduplicated.bam (bismark bowtie2 alignment bam file, output from [Step 6a.](#6a-deduplicate-skip-if-data-are-rrbs) above)
 > **NOTE**  
-> If using RNA, file names will include "bismark_hisat2" instead of "bismark_bt2".
+> If processing RNA Methylation Sequencing data, file names will include "bismark_hisat2" instead of "bismark_bt2".
 
 **Output data:**
 
@@ -807,7 +809,7 @@ bismark_methylation_extractor --parallel NumberOfThreads \
   [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) 
   GeneLab Annotations file)
 > **NOTE**  
-> If using RNA, file names will include "bismark_hisat2" instead of "bismark_bt2".
+> If processing RNA Methylation Sequencing data, file names will include "bismark_hisat2" instead of "bismark_bt2".
 
 
 **Output data:**
@@ -863,7 +865,7 @@ bismark2report --dir sample-1_bismark_report_out_dir/ \
   output from [Step 7](#7-extract-methylation-calls) above)
 * sample-1_bismark_bt2*.deduplication_report.txt (optional deduplication report, output from [Step 6a.](#6a-deduplicate) if deduplication was run)
 > **NOTE**  
-> If using RNA, file names will include "bismark_hisat2" instead of "bismark_bt2".
+> If processing RNA Methylation Sequencing data, file names will include "bismark_hisat2" instead of "bismark_bt2".
 
 **Output data:**
 
@@ -899,7 +901,7 @@ mv bismark_summary_report.html bismark_summary_report_GLMethylSeq.html
     * sample-1_bismark_bt2*_splitting_report.txt from [Step 7](#7-extract-methylation-calls) above
     * sample-1_bismark_bt2*.deduplication_report.txt if deduplication was performed in [Step 6a.](#6a-deduplicate)
 > **NOTE**  
-> If using RNA, file names will include "bismark_hisat2" instead of "bismark_bt2".
+> If processing RNA Methylation Sequencing data, file names will include "bismark_hisat2" instead of "bismark_bt2".
 
 **Output data:**  
 
@@ -907,7 +909,7 @@ mv bismark_summary_report.html bismark_summary_report_GLMethylSeq.html
 * **bismark_summary_report_GLMethylSeq.html** (html summary of general information on all included samples)
 
 > **NOTE**
-> If using RNA, file suffix will be **GLRNAMethylSeq** instead of **GLMethylSeq**
+> If processing RNA Methylation Sequencing data, file suffix will be **GLRNAMethylSeq** instead of **GLMethylSeq**
 
 <br>
 
@@ -945,7 +947,7 @@ multiqc --interactive -o align_and_bismark_multiqc_data/ -n align_and_bismark_mu
 * **align_and_bismark_multiqc_GLmethylSeq.html** (multiqc output html summary)
 * **align_and_bismark_multiqc_GLmethylSeq_data** (directory containing multiqc output data)
 
-> If using RNA, file suffix will be **GLRNAMethylSeq** instead of **GLMethylSeq**
+> If processing RNA Methylation Sequencing data, file suffix will be **GLRNAMethylSeq** instead of **GLMethylSeq**
 
 <br>
 
@@ -997,7 +999,7 @@ awk ' $3 == "transcript" ' reference.gtf | cut -f 9 | tr -s ";" "\t" | \
 **Parameter Definitions:**
 
 * `reference.gtf` - genome annotation file in GTF format, provided as a positional argument
-* `reference-gene-to-transcript-map.tsv` - output file, provided as a positional argument
+* `> reference-gene-to-transcript-map.tsv` - re-directs output to the provided file name
 
 
 **Input data:**
@@ -1078,7 +1080,7 @@ ref_table <- read.csv(ref_table_link)
 
 # Set variable with link to appropriate annotations table
 annotations_tab_link <- ref_table %>% 
-    filter(name == organism) %>% pull(genelab_annots_link)
+    filter(species == organism) %>% pull(genelab_annots_link)
 
 
 ### Pull in annotation data from Step 10 ###
@@ -1095,7 +1097,7 @@ gene.obj <- readTranscriptFeatures(ref_bed_path, up.flank = 1000,
 
 ##### Set variable with organism and ensembl version number for methylKit #####
 ensembl_version <- ref_table %>% 
-    filter(name == organism) %>% pull(ensemblVersion)
+    filter(species == organism) %>% pull(ensemblVersion)
 
 org_and_ensembl_version <- paste(organism, ensembl_version, sep = "_")
 
@@ -1110,7 +1112,7 @@ setwd(work_dir)
 * `organism` (name of organism samples were derived from, found in the `species` column of 
   [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file)
 * /path/to/bismark-coverage-files/ (directory containing `*.bismark.cov.gz` (gzip-compressed bedGraph formatted files 
-  with two additional coverage columns generated in [Step 7](#7-extract-methylation-calls) 
+  with two additional coverage columns generated in [Step 7](#7-extract-methylation-calls)))
 * reference.bed (genome annotation file in BED format generated in [Step 10a](#10a-gtf-to-bed-conversion))
 * reference-gene-to-transcript-map.tsv (gene-to-transcript mapping file generated in 
   [Step 10b](#10b-making-a-mapping-file-of-genes-to-transcripts))
@@ -1121,7 +1123,7 @@ setwd(work_dir)
   [file specification](../Workflow_Documentation/examples/runsheet/README.md)) 
 * `gene.obj` (a GRangesList object containing locations of exon/intron/promoter/TSS)
 * `gene_transcript_map` (DataFrame holding the gene-to-transcript mappings)
-* `annotations_tab_link` (variable containing URL to GeneLab gene annotation table for the organism)
+* `annotations_tab_link` (variable containing URL to GeneLab gene annotation table for the organism of interest)
 * `org_and_ensembl_version` (variable containing the organism and ensembl version to use in methylKit input object generation)
 * `coverage_files_dir_path` (variable containing path to bismark coverage files (`*.bismark.cov.gz`) generated in [Step7](#7-extract-methylation-calls))
 
@@ -1399,7 +1401,7 @@ rm(df_list)
 **Input data:**
 
 * `contrasts` (matrix defining pairwise comparisons between groups from [Step 11b](#11b-configure-metadata-sample-grouping-and-group-comparisons))
-* `group_name_lookup`` (data frame mapping groups with R naming scheme to human-readable group names from [Step 11b](#11b-configure-metadata-sample-grouping-and-group-comparisons))
+* `group_name_lookup` (data frame mapping groups with R naming scheme to human-readable group names from [Step 11b](#11b-configure-metadata-sample-grouping-and-group-comparisons))
 * `meth_obj` (methylRawList object created in [Step 11c](#11c-import-methylation-calls)
 * `sample_meth_info_df` (data frame containing sample IDs mapped to conditions and coverage file paths from [Step 11c](#11c-import-methylation-calls))
 
@@ -1431,7 +1433,7 @@ rm(df_list)
     - For each experimental group:
       - Group.Mean_(group) (mean within group)
       - Group.Stdev_(group) (standard deviation within group))
-* norm_meth_obj (median-normalized methylRawList object)
+* `norm_meth_obj` (median-normalized methylRawList object)
 
 <br>
 
@@ -1589,7 +1591,7 @@ print(paste0("BioC_version_associated_with_R_version: ",BiocManager::version()))
 * `contrasts` (matrix defining pairwise comparisons between groups from [Step 11b](#11b-configure-metadata-sample-grouping-and-group-comparisons))
 * `sampleTable` (data frame mapping sample IDs to groups (conditions) from [Step 11b](#11b-configure-metadata-sample-grouping-and-group-comparisons))
 * `bases_tab_with_features_and_annots` (Methylated base output table from [Step 11d](#11d-individual-base-analysis))
-* `tiles_tab_with_features_and_annots` (Methylated tile output tables from [Step 11e](#11e-tile-analysis)
+* `tiles_tab_with_features_and_annots` (Methylated tile output tables from [Step 11e](#11e-tile-analysis))
 
 **Output data:**
 * **SampleTable_GLMethylSeq.csv** (table specifying the group or set of factor levels for each sample)
@@ -1646,7 +1648,6 @@ print(paste0("BioC_version_associated_with_R_version: ",BiocManager::version()))
     - For each experimental group:
       - Group.Mean_(group) (mean within group)
       - Group.Stdev_(group) (standard deviation within group))
-)
 
 <br>
 
