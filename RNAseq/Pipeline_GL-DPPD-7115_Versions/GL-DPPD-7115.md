@@ -939,7 +939,7 @@ dpt-isa-to-runsheet --accession GLDS-### \
 
 **Output Data:**
 
-- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, used to define sample groups - the *ISA.zip file is located in the [OSDR repository]([https://genelab-data.ndc.nasa.gov/genelab/projects](https://osdr.nasa.gov/bio/repo/)) under 'Files' -> 'Study Metadata Files')
+- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, used to define sample groups - the *ISA.zip file is located in the [OSDR repository](https://osdr.nasa.gov/bio/repo/) under 'Files' -> 'Study Metadata Files')
 
 - **{GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv** (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
 
