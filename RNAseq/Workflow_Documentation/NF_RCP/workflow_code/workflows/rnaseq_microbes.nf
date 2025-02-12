@@ -1,4 +1,4 @@
-saveinclude { PARSE_RUNSHEET } from './parse_runsheet.nf'
+include { PARSE_RUNSHEET } from './parse_runsheet.nf'
 include { PARSE_ANNOTATIONS_TABLE } from '../modules/parse_annotations_table.nf'
 include { FETCH_ISA } from '../modules/fetch_isa.nf'
 include { ISA_TO_RUNSHEET } from '../modules/isa_to_runsheet.nf'

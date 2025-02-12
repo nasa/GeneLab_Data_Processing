@@ -48,18 +48,19 @@ if ((params.accession) || params.runsheet_path || params.isa_archive_path) {
     // Proceed
 } else {
     log.error """
-        Missing Required Parameters: You must provide either both --osd and --glds, or --runsheet_path, or --glds and --isa_archive_path.
+        Missing Required Parameters: You must provide either --accession, or --runsheet_path, or --accession and--isa_archive_path.
         Examples:
           --accession [OSD-# or GLDS-#]
           --runsheet_path /path/to/runsheet.csv
-          --isa_archive_path /path/to/isa_archive.zip
+          --accession [OSD-# or GLDS-#] --isa_archive_path /path/to/isa_archive.zip
     """
     exit 0
 }
 
 include { RNASEQ } from './workflows/rnaseq.nf'
 include { RNASEQ_MICROBES } from './workflows/rnaseq_microbes.nf'
-// Validate accession format. Must be OSD-#. 
+
+// Validate accession format. Must be OSD-# or GLDS-#
 if (params.accession && !params.accession.matches(/^(OSD|GLDS)-\d+$/)) {
     log.error "Invalid accession format. Expected format: OSD-# or GLDS-#"
     exit 1
