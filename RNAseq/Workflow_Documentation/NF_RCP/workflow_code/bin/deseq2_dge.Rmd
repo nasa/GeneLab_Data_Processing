@@ -125,47 +125,44 @@ rm(contrast.names)
 ```{r load-gene-counts }
 ##### Import Bowtie2 or RSEM raw (gene) count data #####
 if (params$microbes) {
-    counts_file <- file.path(params$input_gene_results_dir)
+    # For microbes, look for FeatureCounts TSV file
+    counts_file <- list.files(params$input_gene_results_dir, pattern = "^FeatureCounts", full.names = TRUE)[1]
+    
     if (!file.exists(counts_file)) {
-        stop(paste("File not found:", counts_file))
+        stop(paste("FeatureCounts file not found at:", counts_file))
     }
     
-    # Load featureCounts data for microbes mode
-    featurecounts_data <- tryCatch({
-        read.csv(file = counts_file, header = TRUE, sep = "\t", skip = 1, stringsAsFactors = FALSE, check.names = FALSE)
-    }, error = function(e) {
-        print("Error reading the counts file:")
-        print(e)
-        NULL
-    })
-
-    if (is.null(featurecounts_data)) {
-        stop("FeatureCounts data could not be read.")
-    }
-
+    # Load featureCounts data with tab separator
+    featurecounts_data <- read.csv(counts_file, header = TRUE, sep = "\t", skip = 1)
+    
     # Identify metadata columns and sample columns
     metadata_cols <- c("Geneid", "Chr", "Start", "End", "Strand", "Length")
     sample_cols <- setdiff(colnames(featurecounts_data), metadata_cols)
-
-    # Remove the ".bam" suffix from the sample columns
-    sample_cols <- sub("\\.bam$", "", sample_cols)
-
-    # Reorder sample columns to match the sample order in the study
-    samples <- rownames(study)
-    sample_col_indices <- match(samples, sample_cols)
-
-    # Subset and reorder the featurecounts_data to keep only the reordered sample columns
-    counts <- featurecounts_data[, sample_col_indices, drop = FALSE]
-    counts <- as.data.frame(lapply(counts, function(x) {
-        num <- as.numeric(x)
-        num[is.na(num)] <- 0
-        return(num)
-    }))
-    colnames(counts) <- samples  # Rename the columns to match the sample names
-
-    rownames(counts) <- featurecounts_data$Geneid # Set Geneid as row names
-    txi.rsem <- list(counts = counts)
     
+    # Clean sample names
+    clean_sample_cols <- gsub("\\.bam$", "", sample_cols)
+    # Remove _sorted suffix
+    if (any(grepl("_sorted", clean_sample_cols)) && !any(grepl("_sorted", rownames(study)))) {
+        clean_sample_cols <- gsub("_sorted$", "", clean_sample_cols)
+    }
+    
+    # Create counts matrix
+    counts <- featurecounts_data[, sample_cols, drop = FALSE]
+    rownames(counts) <- featurecounts_data$Geneid
+    
+    # Reorder columns to match runsheet
+    samples <- rownames(study)
+    reordering <- match(samples, clean_sample_cols)
+    
+    if (any(is.na(reordering))) {
+        stop("Some samples in runsheet not found in counts file: ", 
+             paste(samples[is.na(reordering)], collapse=", "))
+    }
+    
+    counts <- counts[, reordering]
+    colnames(counts) <- samples
+    
+    txi.rsem <- list(counts = as.matrix(counts))
 } else {
     # Load RSEM data for default mode
     files <- list.files(

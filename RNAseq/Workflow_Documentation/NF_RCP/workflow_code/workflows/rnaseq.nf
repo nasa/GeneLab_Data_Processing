@@ -85,7 +85,7 @@ workflow RNASEQ {
         reference_store_path
         derived_store_path
     main:
-        publishdir = "results" // default path passed to publishDir, updated below to "GLDS-#" if processing and OSDR dataset
+        publishdir = "results" // default path passed to publishDir, updated below to "GLDS-#" if processing an OSDR dataset
 
         // Set up runsheet
         if ( runsheet_path == null ) {

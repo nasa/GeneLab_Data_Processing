@@ -1093,30 +1093,34 @@ rm(contrast.names)
 ### Import FeatureCounts data ###
 counts_file <- "/path/to/FeatureCounts_GLbulkRNAseq.csv"
 
-# Load featureCounts data
-featurecounts_data <- read.csv(file = counts_file, 
-                              header = TRUE, 
-                              sep = "\t", 
-                              skip = 1, 
-                              stringsAsFactors = FALSE, 
-                              check.names = FALSE)
-
-# Identify metadata columns and sample columns
-metadata_cols <- c("Geneid", "Chr", "Start", "End", "Strand", "Length")
-sample_cols <- setdiff(colnames(featurecounts_data), metadata_cols)
-
-# Remove the ".bam" suffix from sample columns
-sample_cols <- sub("\\.bam$", "", sample_cols)
-
-# Reorder sample columns to match the sample order in the study
-samples <- rownames(study)
-sample_col_indices <- match(samples, sample_cols)
-
-# Create counts matrix
-counts <- featurecounts_data[, sample_col_indices, drop = FALSE]
-counts <- as.data.frame(lapply(counts, as.numeric))
-colnames(counts) <- samples
-rownames(counts) <- featurecounts_data$Geneid 
+    # Load featureCounts data with tab separator
+    featurecounts_data <- read.csv(counts_file, header = TRUE, sep = "\t", skip = 1)
+    
+    # Identify metadata columns and sample columns
+    metadata_cols <- c("Geneid", "Chr", "Start", "End", "Strand", "Length")
+    sample_cols <- setdiff(colnames(featurecounts_data), metadata_cols)
+    
+    # Clean sample names
+    clean_sample_cols <- gsub("\\.bam$", "", sample_cols)
+    if (any(grepl("_sorted", clean_sample_cols)) && !any(grepl("_sorted", rownames(study)))) {
+        clean_sample_cols <- gsub("_sorted$", "", clean_sample_cols)
+    }
+    
+    # Create counts matrix
+    counts <- featurecounts_data[, sample_cols, drop = FALSE]
+    rownames(counts) <- featurecounts_data$Geneid
+    
+    # Reorder columns to match runsheet
+    samples <- rownames(study)
+    reordering <- match(samples, clean_sample_cols)
+    
+    if (any(is.na(reordering))) {
+        stop("Some samples in runsheet not found in counts file: ", 
+             paste(samples[is.na(reordering)], collapse=", "))
+    }
+    
+    counts <- counts[, reordering]
+    colnames(counts) <- samples
 ```
 
 **Input Data:**
