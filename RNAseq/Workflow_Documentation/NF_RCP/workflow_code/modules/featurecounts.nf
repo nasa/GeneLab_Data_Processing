@@ -7,7 +7,7 @@ process FEATURECOUNTS {
     path(bam_files)
 
   output:
-    tuple path("FeatureCounts_GLbulkRNAseq.csv"),   emit: counts
+    path("FeatureCounts_GLbulkRNAseq.csv"),   emit: counts
     path("FeatureCounts_GLbulkRNAseq.csv.summary"), emit: summary
     path("versions.yml"),                           emit: versions
   script:

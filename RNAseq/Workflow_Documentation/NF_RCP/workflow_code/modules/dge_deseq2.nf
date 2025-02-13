@@ -29,8 +29,8 @@ process DGE_DESEQ2 {
 
         """
         Rscript -e "rmarkdown::render('${dge_rmd_file}', 
-        output_file = 'DESeq2_DGE.html',
-        output_dir = '\${PWD}',
+            output_file = 'DESeq2_DGE.html',
+            output_dir = '\${PWD}',
             params = list(
                 cpus = ${task.cpus},
                 work_dir = '\${PWD}',

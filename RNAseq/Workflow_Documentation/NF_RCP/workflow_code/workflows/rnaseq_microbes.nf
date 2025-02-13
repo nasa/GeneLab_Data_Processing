@@ -273,6 +273,13 @@ workflow RNASEQ_MICROBES {
         COUNT_MULTIQC( samples_txt, FEATURECOUNTS.out.summary, ch_multiqc_config )
 
 
+        // Normalize counts, DGE 
+        DGE_DESEQ2( ch_meta, runsheet_path, counts )
+        dge_table = DGE_DESEQ2.out.dge_table
+        // Add annotations to DGE table
+        ADD_GENE_ANNOTATIONS( ch_meta, gene_annotations_url, dge_table )
+        annotated_dge_table = ADD_GENE_ANNOTATIONS.out.annotated_dge_table
+        
     emit:
-        COUNT_MULTIQC.out.data
+        annotated_dge_table
 }

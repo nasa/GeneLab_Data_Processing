@@ -125,7 +125,7 @@ rm(contrast.names)
 ```{r load-gene-counts }
 ##### Import Bowtie2 or RSEM raw (gene) count data #####
 if (params$microbes) {
-    counts_file <- params$input_gene_results_dir
+    counts_file <- file.path(params$input_gene_results_dir)
     if (!file.exists(counts_file)) {
         stop(paste("File not found:", counts_file))
     }
@@ -386,37 +386,25 @@ output_table <- cbind(output_table, res_df)
 ```
 
 ```{r}
-## Generate and add group mean and stdev columns to the (non-ERCC) normalized counts table
-print(sprintf("DEBUG: %s: Computing group mean and stdev", Sys.time()))
+## Calculate group statistics
 tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- names(group)
+tcounts$group <- unique(names(group))
 
-# Compute means and standard deviations
-group_means <- as.data.frame(t(aggregate(. ~ group, data = tcounts, mean)))
-group_stdev <- as.data.frame(t(aggregate(. ~ group, data = tcounts, sd)))
+# Compute group stats
+group_means <- aggregate(. ~ group, data = tcounts, mean)
+group_stdev <- aggregate(. ~ group, data = tcounts, sd)
 
-# Drop group name row from data rows
-group_means <- group_means[-c(1),]
-group_stdev <- group_stdev[-c(1),]
+# Transform data
+group_means <- t(group_means[-1])  # Remove group column and transpose
+group_stdev <- t(group_stdev[-1])  # Remove group column and transpose
+colnames(group_means) <- unique(names(group))
+colnames(group_stdev) <- unique(names(group))
 
-# Add means, stdevs, and LRT p-values columns
-output_table$All.mean <- rowMeans(normCounts, na.rm = TRUE, dims = 1)
-output_table$All.stdev <- rowSds(as.matrix(normCounts), na.rm = TRUE, dims = 1)
-output_table$LRT.p.value <- lrt_pvalues
-
-# For each group, add mean and stdev columns
-for (group_name in names(group)) {
-    # Add mean column for this group
-    mean_col <- paste0("Group.Mean_(", group_name, ")")
-    output_table[[mean_col]] <- group_means[, paste0("Group.Mean_", group_means['group',])]
-    
-    # Add stdev column for this group
-    stdev_col <- paste0("Group.Stdev_(", group_name, ")")
-    output_table[[stdev_col]] <- group_stdev[, paste0("Group.Stdev_", group_stdev['group',])]
+# Add stats to output table
+for (group_name in unique(names(group))) {
+    output_table[[paste0("Group.Mean_(", group_name, ")")]] <- group_means[, group_name]
+    output_table[[paste0("Group.Stdev_(", group_name, ")")]] <- group_stdev[, group_name]
 }
-
-print(sprintf("DEBUG: %s: Done Computing group mean and stdev", Sys.time()))
-rm(group_stdev, group_means, tcounts)
 ```
 
 ```{r output-dge-related-files}

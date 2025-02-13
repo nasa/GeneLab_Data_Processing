@@ -1281,29 +1281,24 @@ res_df <- do.call(cbind, res_list)
 ### Combine with the existing output_table ###
 output_table <- cbind(output_table, res_df)
 
-### Add summary statistics ###
-output_table$All.mean <- rowMeans(normCounts, na.rm = TRUE)
-output_table$All.stdev <- rowSds(as.matrix(normCounts), na.rm = TRUE)
-output_table$LRT.p.value <- res_lrt@listData$padj
-
-### Add group-wise statistics ###
+### Calculate group statistics ###
 tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- names(group)
+tcounts$group <- unique(names(group))
 
-# Calculate group means and standard deviations
-group_means <- as.data.frame(t(aggregate(. ~ group, data = tcounts, mean)))
-group_stdev <- as.data.frame(t(aggregate(. ~ group, data = tcounts, sd)))
+#### Compute group stats ###
+group_means <- aggregate(. ~ group, data = tcounts, mean)
+group_stdev <- aggregate(. ~ group, data = tcounts, sd)
 
-# Remove group name rows
-group_means <- group_means[-1,]
-group_stdev <- group_stdev[-1,]
+### Transform data ###
+group_means <- t(group_means[-1])  # Remove group column and transpose
+group_stdev <- t(group_stdev[-1])  # Remove group column and transpose
+colnames(group_means) <- unique(names(group))
+colnames(group_stdev) <- unique(names(group))
 
-# For each group, add mean and stdev columns
-for (group_name in names(group)) {
-    mean_col <- paste0("Group.Mean_(", group_name, ")")
-    stdev_col <- paste0("Group.Stdev_(", group_name, ")")
-    output_table[[mean_col]] <- group_means[, paste0("Group.Mean_", group_means['group',])]
-    output_table[[stdev_col]] <- group_stdev[, paste0("Group.Stdev_", group_stdev['group',])]
+### Add stats to output table ###
+for (group_name in unique(names(group))) {
+    output_table[[paste0("Group.Mean_(", group_name, ")")]] <- group_means[, group_name]
+    output_table[[paste0("Group.Stdev_(", group_name, ")")]] <- group_stdev[, group_name]
 }
 
 ### Read in GeneLab annotation table for the organism of interest ###
