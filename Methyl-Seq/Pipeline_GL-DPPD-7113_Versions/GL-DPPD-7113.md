@@ -1141,11 +1141,12 @@ gene.obj <- readTranscriptFeatures(ref_bed_path, up.flank = 1000,
                                    unique.prom = TRUE)
 
 
-##### Set variable with organism and ensembl version number for methylKit #####
+##### Set variable with organism (spaces removed) and ensembl version number for methylKit #####
 ensembl_version <- ref_table %>% 
-    filter(species == organism) %>% pull(ensemblVersion)
+    filter(species == organism) %>%
+    pull(ensemblVersion)
 
-org_and_ensembl_version <- paste(organism, ensembl_version, sep = "_")
+org_and_ensembl_version <- paste(make.names(organism), ensembl_version, sep = "_")
 
 setwd(work_dir)
 
