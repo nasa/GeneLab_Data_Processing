@@ -53,12 +53,12 @@ include { ADD_GENE_ANNOTATIONS } from '../modules/add_gene_annotations.nf'
 
 
 include { VV_RAW_READS;
-          VV_TRIMMED_READS;
-          VV_STAR_ALIGNMENTS;
-          VV_RSEQC;
-          VV_RSEM_COUNTS;
-          VV_DESEQ2_ANALYSIS;
-          VV_CONCAT_FILTER } from '../modules/vv.nf'
+    VV_TRIMMED_READS;
+    VV_STAR_ALIGNMENTS;
+    VV_RSEQC;
+    VV_RSEM_COUNTS;
+    VV_DESEQ2_ANALYSIS;
+    VV_CONCAT_FILTER } from '../modules/vv.nf'
 
 def colorCodes = [
     c_line: "┅" * 70,
@@ -89,15 +89,15 @@ workflow RNASEQ_MICROBES {
         publishdir = "results" // default path passed to publishDir, updated below to "GLDS-#" if processing and OSDR dataset
 
         // Set up runsheet
-        if (runsheet_path == null) {
+        if ( runsheet_path == null ) {
             GET_ACCESSIONS( accession, api_url ) //Get both OSD and GLDS accessions based on the input accession
             accessions_txt = GET_ACCESSIONS.out.accessions_txt // returns accessions.txt with line1 = osd_accession, line2 = glds_accession. 
             osd_accession = accessions_txt.map { it.readLines()[0].trim() }
             glds_accession = accessions_txt.map { it.readLines()[1].trim() }
             publishdir = accessions_txt.map { it.readLines()[1].trim() }
             //Fetch ISA archive if not provided
-            if (isa_archive_path == null) {
-                FETCH_ISA(osd_accession, glds_accession)
+            if ( isa_archive_path == null ) {
+                FETCH_ISA( osd_accession, glds_accession )
                 isa_archive = FETCH_ISA.out.isa_archive
             }
             //Convert ISA archive to runsheet
@@ -105,7 +105,7 @@ workflow RNASEQ_MICROBES {
             runsheet_path = ISA_TO_RUNSHEET.out.runsheet
         }
 
-        PARSE_RUNSHEET(runsheet_path)
+        PARSE_RUNSHEET( runsheet_path )
 
         samples = PARSE_RUNSHEET.out.samples
         //samples | view
@@ -118,18 +118,18 @@ workflow RNASEQ_MICROBES {
         ch_meta | map { meta -> meta.organism_sci }
         | set { organism_sci }
 
-        PARSE_ANNOTATIONS_TABLE(annotations_csv_url_string, organism_sci)
+        PARSE_ANNOTATIONS_TABLE( annotations_csv_url_string, organism_sci )
         gene_annotations_url = PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url
 
         // Use manually provided reference genome files if provided. Reference source and version are optional.
-        if (params.reference_fasta && params.reference_gtf) {
-            genome_references_pre_subsample = Channel.fromPath([params.reference_fasta, params.reference_gtf], checkIfExists: true).toList()
+        if ( params.reference_fasta && params.reference_gtf ) {
+            genome_references_pre_subsample = Channel.fromPath([params.reference_fasta, params.reference_gtf], checkIfExists: true ).toList()
             genome_references_pre_subsample | view
-            Channel.value(params.reference_source) | set { reference_source }
-            Channel.value(params.reference_version) | set { reference_version }
+            Channel.value( params.reference_source ) | set { reference_source }
+            Channel.value( params.reference_version ) | set { reference_version }
         } else{
             // Use annotations table to get genome reference files
-            DOWNLOAD_REFERENCES(reference_store_path, organism_sci, PARSE_ANNOTATIONS_TABLE.out.reference_source, PARSE_ANNOTATIONS_TABLE.out.reference_version, PARSE_ANNOTATIONS_TABLE.out.reference_fasta_url, PARSE_ANNOTATIONS_TABLE.out.reference_gtf_url)
+            DOWNLOAD_REFERENCES( reference_store_path, organism_sci, PARSE_ANNOTATIONS_TABLE.out.reference_source, PARSE_ANNOTATIONS_TABLE.out.reference_version, PARSE_ANNOTATIONS_TABLE.out.reference_fasta_url, PARSE_ANNOTATIONS_TABLE.out.reference_gtf_url )
             genome_references_pre_subsample = DOWNLOAD_REFERENCES.out.reference_files
             reference_source = PARSE_ANNOTATIONS_TABLE.out.reference_source
             reference_version = PARSE_ANNOTATIONS_TABLE.out.reference_version
@@ -144,18 +144,9 @@ workflow RNASEQ_MICROBES {
         }
 
         // Add ERCC Fasta and GTF to genome files
-        DOWNLOAD_ERCC(has_ercc, reference_store_path).ifEmpty([file("ERCC92.fa"), file("ERCC92.gtf")]) | set { ch_maybe_ercc_refs }
+        DOWNLOAD_ERCC( has_ercc, reference_store_path ).ifEmpty([file("ERCC92.fa"), file("ERCC92.gtf")]) | set { ch_maybe_ercc_refs }
         CONCAT_ERCC( reference_store_path, organism_sci, reference_source, reference_version, genome_references_pre_ercc, ch_maybe_ercc_refs, has_ercc )
         .ifEmpty { genome_references_pre_ercc.value }  | set { genome_references }
-        
-        // Convert GTF file to RSeQC-compatible BED file
-        // GTF_TO_BED( 
-        //     derived_store_path,
-        //     organism_sci,
-        //     reference_source,
-        //     reference_version,
-        //     genome_references | map { it[1] } )
-        // genome_bed = GTF_TO_BED.out.genome_bed
         
         // Convert GTF file to RSeQC-compatible BED file
         GTF_TO_PRED(
@@ -185,9 +176,9 @@ workflow RNASEQ_MICROBES {
         RAW_FASTQC( raw_reads )
 
         RAW_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] }
-                          | flatten
-                          | collect        // Collect all zip files into a single list
-                          | set { raw_fastqc_zip }     // Create a channel with all zip files
+        | flatten
+        | collect        // Collect all zip files into a single list
+        | set { raw_fastqc_zip }     // Create a channel with all zip files
         
         GET_MAX_READ_LENGTH( raw_fastqc_zip )
         GET_MAX_READ_LENGTH.out.length 
@@ -203,21 +194,20 @@ workflow RNASEQ_MICROBES {
         // Run FastQC on trimmed reads
         TRIMMED_FASTQC( trimmed_reads )
         TRIMMED_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] } 
-                              | flatten 
-                              | unique 
-                              | collect 
-                              | set { trimmed_fastqc_zip }
-
+        | flatten 
+        | unique 
+        | collect 
+        | set { trimmed_fastqc_zip }
 
         // Build Bowtie 2 genome index
-        BUILD_BOWTIE2_INDEX(derived_store_path, organism_sci, reference_source, reference_version, genome_references, ch_meta)
+        BUILD_BOWTIE2_INDEX( derived_store_path, organism_sci, reference_source, reference_version, genome_references, ch_meta )
         bowtie2_index_dir = BUILD_BOWTIE2_INDEX.out.index_dir
 
         // Align reads using Bowtie2
         ALIGN_BOWTIE2( trimmed_reads, bowtie2_index_dir )
         bowtie2_alignment_logs = ALIGN_BOWTIE2.out.alignment_logs | collect
         
-        // Convert Bowtie2 SAM to BAM (query-name order, matching FASTQ input order)
+        // Convert Bowtie2 SAM to BAM (query-name order, matching FASTQ input order )
         SAM_TO_BAM( ALIGN_BOWTIE2.out.sam ) 
         // Sort and index BAM files to convert from query-name order to genome coordinate order
         SORT_AND_INDEX_BAM( SAM_TO_BAM.out.bam )
@@ -230,39 +220,46 @@ workflow RNASEQ_MICROBES {
         INNER_DISTANCE( sorted_bam, genome_bed, max_read_length )
         READ_DISTRIBUTION( sorted_bam, genome_bed )
         infer_expt_out = INFER_EXPERIMENT.out.log | map { it[1] }
-                               | collect
+        | collect
         
         // Combine RSeQC module logs
         ch_rseqc_logs = Channel.empty()
-        ch_rseqc_logs | mix(INFER_EXPERIMENT.out.log_only,
-                         GENEBODY_COVERAGE.out.all_output)
-                   | collect
-                   | set{ ch_rseqc_logs }
+        ch_rseqc_logs 
+        | mix( INFER_EXPERIMENT.out.log_only,
+                GENEBODY_COVERAGE.out.all_output,
+                INNER_DISTANCE.out.all_output,
+                READ_DISTRIBUTION.out.log_only )
+                | collect
+                | set{ ch_rseqc_logs }
 
         // Parse RSeQC infer_experiment.py results using thresholds set in bin/assess_strandedness.py to determine the strandedness of the dataset
         ASSESS_STRANDEDNESS( infer_expt_out )
         strandedness = ASSESS_STRANDEDNESS.out | map { it.text.split(":")[0] }
 
         // Generate gene counts table from genome-coordinate sorted Bowtie2-aligned BAMs using featureCounts
-        FEATURECOUNTS(ch_meta, genome_references, strandedness, bams)
+        FEATURECOUNTS( ch_meta, genome_references, strandedness, bams )
         counts = FEATURECOUNTS.out.counts
 
         // Run Qualimap BAM QC and rnaseq
         // QUALIMAP_BAM_QC( sorted_bam, genome_bed, strandedness )
         // QUALIMAP_RNASEQ_QC( sorted_bam, genome_references | map { it[1] }, strandedness )
         // qualimap_outputs = QUALIMAP_BAM_QC.out.results
-        //             // | concat(QUALIMAP_RNASEQ_QC.out.results)
+        //             // | concat(QUALIMAP_RNASEQ_QC.out.results )
         //             | collect
 
 
+        // Normalize counts, DGE 
+        DGE_DESEQ2( ch_meta, runsheet_path, counts )
+        dge_table = DGE_DESEQ2.out.dge_table
+        // Add annotations to DGE table
+        ADD_GENE_ANNOTATIONS( ch_meta, gene_annotations_url, dge_table )
+        annotated_dge_table = ADD_GENE_ANNOTATIONS.out.annotated_dge_table
 
         // MultiQC
         ch_multiqc_config = params.multiqc_config ? Channel.fromPath( params.multiqc_config ) : Channel.fromPath("NO_FILE")
         RAW_READS_MULTIQC( samples_txt, raw_fastqc_zip, ch_multiqc_config )
-
         TRIMMING_MULTIQC( samples_txt, trimgalore_reports, ch_multiqc_config )
         TRIMMED_READS_MULTIQC( samples_txt, trimmed_fastqc_zip, ch_multiqc_config )
-
         ALIGN_MULTIQC( samples_txt, bowtie2_alignment_logs, ch_multiqc_config )
 
         INFER_EXPERIMENT_MULTIQC( samples_txt, INFER_EXPERIMENT.out.log | map { it[1] } | collect, ch_multiqc_config )
@@ -272,14 +269,18 @@ workflow RNASEQ_MICROBES {
 
         COUNT_MULTIQC( samples_txt, FEATURECOUNTS.out.summary, ch_multiqc_config )
 
-
-        // Normalize counts, DGE 
-        DGE_DESEQ2( ch_meta, runsheet_path, counts )
-        dge_table = DGE_DESEQ2.out.dge_table
-        // Add annotations to DGE table
-        ADD_GENE_ANNOTATIONS( ch_meta, gene_annotations_url, dge_table )
-        annotated_dge_table = ADD_GENE_ANNOTATIONS.out.annotated_dge_table
-        
+        all_multiqc_input = raw_fastqc_zip
+            | concat( trimgalore_reports )
+            | concat( trimmed_fastqc_zip )
+            | concat( bowtie2_alignment_logs )
+            | concat( INFER_EXPERIMENT.out.log | map { it[1] } | collect )
+            | concat( GENEBODY_COVERAGE.out.log | map { it[1] } | collect )
+            | concat( INNER_DISTANCE.out.log | map { it[1] } | collect )
+            | concat( READ_DISTRIBUTION.out.log | map { it[1] } | collect )
+            // | concat(qualimap_outputs )
+            | concat( FEATURECOUNTS.out.summary )
+            | collect
+        ALL_MULTIQC( samples_txt, all_multiqc_input, ch_multiqc_config )
     emit:
         annotated_dge_table
 }
