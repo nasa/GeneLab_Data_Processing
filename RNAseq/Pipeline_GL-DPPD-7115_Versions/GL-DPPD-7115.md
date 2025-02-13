@@ -754,6 +754,7 @@ featureCounts -p \
   -d 10 \
   -D 1000 \
   -T NumberOfThreads \
+  -G /path/to/genome/fasta/file \
   -a /path/to/annotation/gtf/file \
   -s 0|1|2 \
   -o /path/to/featurecounts/output/directory/FeatureCounts_GLbulkRNAseq.csv \
@@ -767,6 +768,7 @@ featureCounts -p \
 - `-d` – minimum fragment length (omit for single-end data)
 - `-D` – maximum fragment length (omit for single-end data)
 - `-T` – number of threads to use
+- `-G` – path to genome fasta file
 - `-a` – path to genome annotation GTF file
 - `-s` – specifies strandedness: 0=unstranded, 1=stranded (forward), 2=stranded (reverse); the `reverse` option is used if read strandedness (output from [step 6](#6a-determine-read-strandedness)) is antisense, `forward` is used with sense strandedness, and `none` is used if strandedness is half sense half antisense
 - `-o` – output file path and name
@@ -774,6 +776,7 @@ featureCounts -p \
 
 **Input Data:**
 
+- *.fasta (genome sequence, this pipeline version uses the fasta file indicated in the `fasta` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
 - *.gtf (genome annotation, this pipeline version uses the gtf file indicated in the `gtf` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
 - *_sorted.bam (sorted mapping to genome file, output from [Step 4c](#4c-sort-aligned-reads))
 - *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4d](#4d-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)

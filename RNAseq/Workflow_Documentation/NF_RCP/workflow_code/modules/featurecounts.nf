@@ -17,6 +17,7 @@ process FEATURECOUNTS {
     """
     featureCounts ${pairedOption} \
     -T ${ task.cpus } \
+    -G ${ genomeFasta } \
     -a ${ genomeGtf } \
     -s ${strandOption} \
     -o "FeatureCounts_GLbulkRNAseq.csv" \
