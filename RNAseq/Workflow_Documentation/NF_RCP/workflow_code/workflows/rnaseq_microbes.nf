@@ -51,6 +51,8 @@ include { ADD_GENE_ANNOTATIONS } from '../modules/add_gene_annotations.nf'
 //include { EXTEND_DGE_TABLE } from '../modules/extend_dge_table.nf'
 //include { GENERATE_PCA_TABLE } from '../modules/generate_pca_table.nf'
 
+include { SOFTWARE_VERSIONS } from '../modules/software_versions.nf'
+
 
 include { VV_RAW_READS;
     VV_TRIMMED_READS;
@@ -86,7 +88,7 @@ workflow RNASEQ_MICROBES {
         reference_store_path
         derived_store_path
     main:
-        publishdir = "results" // default path passed to publishDir, updated below to "GLDS-#" if processing and OSDR dataset
+        publishdir = "results" // default path passed to publishDir, updated below to "GLDS-#" if processing an OSDR dataset
 
         // Set up runsheet
         if ( runsheet_path == null ) {
@@ -281,6 +283,32 @@ workflow RNASEQ_MICROBES {
             | concat( FEATURECOUNTS.out.summary )
             | collect
         ALL_MULTIQC( samples_txt, all_multiqc_input, ch_multiqc_config )
+
+        // Software Version Capturing
+        nf_version = '"NEXTFLOW":\n    nextflow: '.concat("${nextflow.version}\n")
+        ch_nextflow_version = Channel.value(nf_version)
+        ch_software_versions = Channel.empty()
+
+        // Mix in versions from each process
+        ch_software_versions = ch_software_versions
+            | mix(ISA_TO_RUNSHEET.out.versions)
+            | mix(GTF_TO_PRED.out.versions)
+            | mix(PRED_TO_BED.out.versions)
+            | mix(RAW_FASTQC.out.versions)  // Remove .first(), let unique handle it
+
+        // Process the versions:
+        ch_software_versions 
+            | unique                          // Remove duplicates
+            | mix(ch_nextflow_version)        // Add Nextflow version
+            | collectFile(                    // Combine all into one file
+                name: "software_versions.txt", 
+                newLine: true, 
+                cache: false
+            )
+            | set { ch_final_software_versions }
+
+        SOFTWARE_VERSIONS(ch_final_software_versions)
+
     emit:
-        annotated_dge_table
+        SOFTWARE_VERSIONS.out.software_versions
 }

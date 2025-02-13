@@ -11,13 +11,13 @@ process PRED_TO_BED {
 
     output:
         path("${ genome_pred.baseName }.bed"), emit: genome_bed
-        //path("versions.yml")            , emit: versions
+        path("versions.yml")            , emit: versions
 
     script:
     """
     genePredToBed ${ genome_pred } ${ genome_pred.baseName }.bed
     
-    #echo '"${task.process}":' > versions.yml
-    #echo "    genePredToBed: 469" >> versions.yml
+    echo '"${task.process}":' > versions.yml
+    echo "    genePredToBed: 469" >> versions.yml
     """
 }
