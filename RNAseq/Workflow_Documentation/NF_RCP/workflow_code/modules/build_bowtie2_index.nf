@@ -19,6 +19,7 @@ process BUILD_BOWTIE2_INDEX {
     mkdir -p bowtie2
 
     bowtie2-build --threads ${task.cpus} \
+      --seed 1 \
       -f ${ genome_fasta } \
       bowtie2/${ genome_fasta.baseName }
 

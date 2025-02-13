@@ -22,8 +22,8 @@ process ALIGN_BOWTIE2 {
     bowtie2 -x "\$INDEX" \\
       ${readArgs} \\
       --threads ${task.cpus} \\
-      --minins 0 \\
-      --maxins 500 \\
+      --minins 10 \\
+      --maxins 1000 \\
       ${unaligned} \\
       -S ${meta.id}.sam \\
       2> ${meta.id}.bowtie2.log

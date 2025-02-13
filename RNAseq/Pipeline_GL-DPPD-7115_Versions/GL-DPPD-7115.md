@@ -278,6 +278,7 @@ zip -r trimmed_multiqc_GLbulkRNAseq_report.zip /path/to/trimmed_multiqc/output/t
 
 ```bash
 bowtie2-build --threads NumberOfThreads \
+    --seed 1 \
     -f /path/to/genome/fasta/file \
     bt2_base
 ```
@@ -285,6 +286,7 @@ bowtie2-build --threads NumberOfThreads \
 **Parameter Definitions:**
 
 - `--threads` – number of threads available on server node to create Bowtie 2 reference
+- `--seed` – sets the random number generator seed to ensure reproducibility
 - `-f` – specifies one or more fasta file(s) containing the genome reference sequences
 - `bt2_base` – specifies the basename of of the Bowtie 2 index files to write
 
@@ -317,8 +319,8 @@ Bowtie 2 genome reference, which consists of the following files:
 ```bash
 bowtie2 -x /path/to/bowtie2/index \
  --threads NumberOfThreads \
- --minins 0 \
- --maxins 500 \
+ --minins 10 \
+ --maxins 1000 \
  -1 /path/to/trimmed_forward_reads \
  -2 /path/to/trimmed_reverse_reads \
  --un-conc-gz <sample_id>.Unmapped.fastq.gz \  # For paired-end data
@@ -331,7 +333,7 @@ bowtie2 -x /path/to/bowtie2/index \
 
 - `-x` – specifies the path to the Bowtie2 index prefix
 - `--threads` – number of threads to use for alignment
-- `--minins` – minimum fragment length for valid paired-end alignments (0 for no minimum)
+- `--minins` – minimum fragment length for valid paired-end alignments
 - `--maxins` – maximum fragment length for valid paired-end alignments
 - `-1` – path to input forward reads (R1)
 - `-2` – path to input reverse reads (R2) (omit -1/-2 and use `-U` for single-end reads)
@@ -748,6 +750,9 @@ zip -r read_dist_multiqc_GLbulkRNAseq_report.zip /path/to/read_dist_multiqc/outp
 
 ```bash
 featureCounts -p \
+  --countReadPairs \
+  -d 10 \
+  -D 1000 \
   -T NumberOfThreads \
   -a /path/to/annotation/gtf/file \
   -s 0|1|2 \
@@ -758,6 +763,9 @@ featureCounts -p \
 **Parameter Definitions:**
 
 - `-p` – indicates paired-end reads (omit for single-end data)
+- `--countReadPairs` – specifies that fragments should be counted for paired-end data (omit for single-end data)
+- `-d` – minimum fragment length (omit for single-end data)
+- `-D` – maximum fragment length (omit for single-end data)
 - `-T` – number of threads to use
 - `-a` – path to genome annotation GTF file
 - `-s` – specifies strandedness: 0=unstranded, 1=stranded (forward), 2=stranded (reverse); the `reverse` option is used if read strandedness (output from [step 6](#6a-determine-read-strandedness)) is antisense, `forward` is used with sense strandedness, and `none` is used if strandedness is half sense half antisense
