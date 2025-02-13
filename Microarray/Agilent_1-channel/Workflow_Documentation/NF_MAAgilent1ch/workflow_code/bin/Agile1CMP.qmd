@@ -21,7 +21,7 @@ params:
   annotation_file_path: NULL # str, Annotation file from 'genelab_annots_link' column of GeneLab Annotations file
   ensembl_version: NULL # str, Used to determine ensembl version
   DEBUG_limit_biomart_query: NULL # int, If supplied, only the first n probeIDs are queried
-  
+  run_DE: 'true'
 ---
 
 ## Validate Parameters <!-- non DPPD -->
@@ -662,6 +662,9 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 ### Generate Design Matrix
 
 ``` {r generate-design-matrix}
+#| include: !expr params$run_DE
+#| eval: !expr params$run_DE
+
 runsheetToDesignMatrix <- function(runsheet_path) {
     df = read.csv(runsheet_path)
     # get only Factor Value columns
@@ -716,6 +719,9 @@ write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts_GLmicroarray.csv"
 ### Perform Individual Probe Level DE
 
 ``` {r perform-probe-differential-expression}
+#| include: !expr params$run_DE
+#| eval: !expr params$run_DE
+
 lmFitPairwise <- function(norm_data, design) {
     #' Perform all pairwise comparisons
 
@@ -749,8 +755,9 @@ limma::write.fit(res, adjust = 'BH',
 ### Add Annotation and Stats Columns and Format DE Table
 
 ``` {r save-de-table}
-#| warning: false
 #| message: false
+#| include: !expr params$run_DE
+#| eval: !expr params$run_DE
 ## Reformat Table for consistency across DE analyses tables within GeneLab ##
 
 # Read in DE table 

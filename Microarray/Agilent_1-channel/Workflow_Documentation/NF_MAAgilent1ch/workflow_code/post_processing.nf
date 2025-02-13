@@ -54,15 +54,16 @@ workflow {
     GENERATE_MD5SUMS(      
       ch_processed_directory, 
       ch_runsheet,       
-      "${ projectDir }/bin/dp_tools__agilent_1_channel" // dp_tools plugin
+      "${ projectDir }/bin/${ params.skipDE ? 'dp_tools__agilent_1_channel_skipDE' : 'dp_tools__agilent_1_channel' }" // dp_tools plugin
     )
     UPDATE_ISA_TABLES(
       ch_processed_directory, 
       ch_runsheet,       
-      "${ projectDir }/bin/dp_tools__agilent_1_channel" // dp_tools plugin
+      "${ projectDir }/bin/${ params.skipDE ? 'dp_tools__agilent_1_channel_skipDE' : 'dp_tools__agilent_1_channel' }" // dp_tools plugin
     )
     GENERATE_PROTOCOL(
       ch_software_versions,
-      ch_runsheet | splitCsv(header: true, quote: '"') | first | map{ row -> row['organism'] }
+      ch_runsheet | splitCsv(header: true, quote: '"') | first | map{ row -> row['organism'] },
+      params.skipDE
     )
 }
