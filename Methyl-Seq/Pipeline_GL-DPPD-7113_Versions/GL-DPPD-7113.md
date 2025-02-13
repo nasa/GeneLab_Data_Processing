@@ -1,65 +1,69 @@
 # Bioinformatics pipeline for Methylation Sequencing (Methyl-Seq) data
 
-> **This document holds an overview and some example commands of how GeneLab processes bisulfite sequencing (methylseq) datasets. Exact processing commands for specific datasets that have been released are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**
+> **This document holds an overview and some example commands of how GeneLab processes bisulfite sequencing (methylseq) 
+  datasets. Exact processing commands for specific datasets that have been released are provided with their processed 
+  data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**
 
 ---
 
-**Date:** February 13, 2023  
+**Date:** February 13, 2025  
 **Revision:** -  
 **Document Number:** GL-DPPD-7113  
 
 **Submitted by:**  
-Michael D. Lee (GeneLab Analysis Team)  
+Michael D. Lee and Barbara Novak (GeneLab Data Processing Team)  
 
 **Approved by:**  
-Sylvain Costes (GeneLab Project Manager)  
-Samrawit Gebre (GeneLab Deputy Project Manager)  
-Amanda Saravia-Butler (GeneLab Data Processing Lead)  
-Jonathan Galazka (GeneLab Project Scientist)  
+Barbara Novak (GeneLab Data Processing Lead)  
+Amanda Saravia-Butler (GeneLab Science Lead)  
+Lauren Sanders (OSDR Project Scientist)  
+Danielle Lopez (OSDR Deputy Project Manager)  
+Samrawit Gebre (OSDR Project Manager)  
 
 ---
 
 # Table of contents
 
-- [Software used](#software-used)
-- [General processing overview with example commands](#general-processing-overview-with-example-commands)
-  - [1. Raw Data QC](#1-raw-data-qc)
+- [**Software used**](#software-used)
+- [**General processing overview with example commands**](#general-processing-overview-with-example-commands)
+  - [**1. Raw Data QC**](#1-raw-data-qc)
     - [1a. Raw Data QC](#1a-raw-data-qc)
     - [1b. Compile Raw Data QC](#1b-compile-raw-data-qc)
-  - [2. Adapter trimming/quality filtering](#2-adapter-trimmingquality-filtering)
+  - [**2. Adapter trimming/quality filtering**](#2-adapter-trimmingquality-filtering)
     - [If not RRBS or if RRBS using MseI digestion](#if-not-rrbs-or-if-rrbs-using-msei-digestion)
     - [If using a random priming bisulfite method](#if-using-a-random-priming-post-bisulfite-method)
     - [If RRBS with MspI digestion](#if-rrbs-with-mspi-digestion)
     - [If RRBS with NuGEN ovation kit](#if-rrbs-with-nugen-ovation-kit)
       - [First adapter-trimming/quality-filtering with trimgalore](#first-adapter-trimmingquality-filtering-with-trimgalore)
       - [Now running NuGEN-specific script](#now-running-nugen-specific-script)
-  - [3. Filtered/Trimmed Data QC](#3-filteredtrimmed-data-qc)
+  - [**3. Filtered/Trimmed Data QC**](#3-filteredtrimmed-data-qc)
     - [3a. Trimmed Data QC](#3a-trimmed-data-qc)
     - [3b. Compile Trimmed Data QC](#3b-compile-trimmed-data-qc)
-  - [4. Alignment](#4-alignment)
+  - [**4. Alignment**](#4-alignment)
     - [4a. Generate reference](#4a-generate-reference)
     - [4b. Align](#4b-align)
     - [4c. Sort Alignment Files](#4c-sort-alignment-files)
-  - [5. Alignment QC](#5-alignment-qc)
-  - [6. Deduplicate (skip if data are RRBS)](#6-deduplicate-skip-if-data-are-rrbs)
+  - [**5. Alignment QC**](#5-alignment-qc)
+  - [**6. Deduplicate (skip if data are RRBS)**](#6-deduplicate-skip-if-data-are-rrbs)
     - [6a. Deduplicate](#6a-deduplicate)
     - [6b. Sort Deduplicated Alignment Files](#6b-sort-deduplicated-alignment-files)
-  - [7. Extract methylation calls](#7-extract-methylation-calls)
-  - [8. Generate individual sample report](#8-generate-individual-sample-report)
-  - [9. Generate combined summary reports](#9-generate-combined-summary-reports)
+  - [**7. Extract methylation calls**](#7-extract-methylation-calls)
+  - [**8. Generate individual sample report**](#8-generate-individual-sample-report)
+  - [**9. Generate combined summary reports**](#9-generate-combined-summary-reports)
     - [9a. Bismark summary report](#9a-bismark-summary-report)
     - [9b. Compile Alignment and Bismark QC](#9b-compile-alignment-and-bismark-qc)
-  - [10. Generate reference genome annotation information](#10-generate-reference-genome-annotation-information)
+  - [**10. Generate reference genome annotation information**](#10-generate-reference-genome-annotation-information)
     - [10a. GTF to BED conversion](#10a-gtf-to-bed-conversion)
     - [10b. Making a mapping file of genes to transcripts](#10b-making-a-mapping-file-of-genes-to-transcripts)
-  - [11. Differential methylation analysis](#11-differential-methylation-analysis)
-    - [11a. Set up R environment](#11a-set-up-r-environment)
-    - [11b. Individual-base analysis](#11b-individual-base-analysis)
-    - [11c. Tile-level analysis](#11c-tile-level-analysis)
-    - [11d. Add feature information](#11d-add-feature-information)
-    - [11e. Add functional annotations](#11e-add-functional-annotations)
-    - [11f. Make and write out tables of percent methylation levels](#11f-make-and-write-out-tables-of-percent-methylation-levels)
-    - [11g. Make overview figure of percent differential methylation across features](#11g-make-overview-figure-of-percent-differential-methylation-across-features)
+  - [**11. Differential methylation analysis**](#11-differential-methylation-analysis)
+    - [11a. Create Sample Runsheet](#11a-create-sample-runsheet)
+    - [11b. Set up R environment](#11b-set-up-r-environment)
+    - [11c. Configure Metadata, Sample Grouping, and Group Comparisons](#11c-configure-metadata-sample-grouping-and-group-comparisons)
+    - [11d. Import Methylation Calls](#11d-import-methylation-calls)
+    - [11e. Individual-base analysis](#11e-individual-base-analysis)
+    - [11f. Tile analysis](#11f-tile-analysis)
+    - [11g. Export Tables](#11g-export-tables)
+
 
 ---
 
@@ -68,27 +72,28 @@ Jonathan Galazka (GeneLab Project Scientist)
 |Program|Version|Relevant Links|
 |:------------|:------:|------:|
 |FastQC       | 0.12.1 |[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
-|MultiQC      | 1.22.1 |[https://multiqc.info/](https://multiqc.info/)|
+|MultiQC      | 1.26   |[https://multiqc.info/](https://multiqc.info/)|
 |Cutadapt     | 4.8    |[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
 |TrimGalore!  | 0.6.10 |[https://github.com/FelixKrueger/TrimGalore](https://github.com/FelixKrueger/TrimGalore)|
 |Bismark      | 0.24.2 |[https://github.com/FelixKrueger/Bismark](https://github.com/FelixKrueger/Bismark)|
 |bowtie2      | 2.5.4  |[https://github.com/BenLangmead/bowtie2#overview](https://github.com/BenLangmead/bowtie2#overview)|
 |hisat2       | 2.2.1  |[https://github.com/DaehwanKimLab/hisat2](https://github.com/DaehwanKimLab/hisat2)|
-|samtools     | 1.20   |[https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)|
+|samtools     | 1.21   |[https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)|
 |qualimap     | 2.3    |[http://qualimap.conesalab.org/](http://qualimap.conesalab.org/)|
-|gtfToGenePred| 447    |[http://hgdownload.cse.ucsc.edu/admin/exe/](http://hgdownload.cse.ucsc.edu/admin/exe/)|
-|genePredToBed| 447    |[http://hgdownload.cse.ucsc.edu/admin/exe/](http://hgdownload.cse.ucsc.edu/admin/exe/)
-|R            | 4.4.0  |[https://www.r-project.org](https://www.r-project.org)|
+|gtfToGenePred| 469    |[http://hgdownload.cse.ucsc.edu/admin/exe/](http://hgdownload.cse.ucsc.edu/admin/exe/)|
+|genePredToBed| 469    |[http://hgdownload.cse.ucsc.edu/admin/exe/](http://hgdownload.cse.ucsc.edu/admin/exe/)
+|R            | 4.4.2  |[https://www.r-project.org](https://www.r-project.org)|
 |tidyverse    | 2.0.0  |[https://tidyverse.tidyverse.org/](https://tidyverse.tidyverse.org/)|
-|Bioconductor | 3.19   |[https://bioconductor.org](https://bioconductor.org)
-|methylKit    | 1.30.0 |[https://bioconductor.org/packages/release/bioc/html/methylKit.html](https://bioconductor.org/packages/release/bioc/html/methylKit.html)|
-|genomation   | 1.36.0 |[https://bioconductor.org/packages/release/bioc/html/genomation.html](https://bioconductor.org/packages/release/bioc/html/genomation.html)|
+|Bioconductor | 3.20   |[https://bioconductor.org](https://bioconductor.org)
+|methylKit    | 1.32.0 |[https://bioconductor.org/packages/release/bioc/html/methylKit.html](https://bioconductor.org/packages/release/bioc/html/methylKit.html)|
+|genomation   | 1.38.0 |[https://bioconductor.org/packages/release/bioc/html/genomation.html](https://bioconductor.org/packages/release/bioc/html/genomation.html)|
 
 ---
 
 # General processing overview with example commands
 
-> Exact processing commands and output files listed in **bold** below are included with each RNAseq processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
+> Exact processing commands and output files listed in **bold** below are included with each Methyl-Seq processed dataset in 
+  the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 
 ---
 
@@ -105,7 +110,8 @@ fastqc -o raw_fastqc_output/ *raw.fastq.gz
 **Parameter Definitions:**
 
 * `-o` – the output directory to store results
-* `*raw.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces in between them
+* `*raw.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards, 
+    or as individual arguments with spaces in between them
 
 **Input data:**
 
@@ -145,19 +151,27 @@ multiqc --interactive \
 * **raw_multiqc_GLMethylSeq.html** (multiqc output html summary)
 * **raw_multiqc_GLMethylSeq_data.zip** (zipped directory containing multiqc output data)
 
+> If processing RNA Methylation Sequencing data, file suffix will be **GLRNAMethylSeq** instead of **GLMethylSeq**
+
 <br>  
 
 ---
 
 ## 2. Adapter trimming/quality filtering
-See `trim_galore --help` or [TrimGalore User Guide](https://github.com/FelixKrueger/TrimGalore/blob/0.6.10/Docs/Trim_Galore_User_Guide.md) for more info on any of the below.
+See `trim_galore --help` or [TrimGalore User Guide](https://github.com/FelixKrueger/TrimGalore/blob/0.6.10/Docs/Trim_Galore_User_Guide.md) 
+for more info on any of the below.
 
-Additionally, the Bismark documentation also includes guidelines for specific MethylSeq library types: [Bismark library type guide](http://felixkrueger.github.io/Bismark/bismark/library_types/). Some library types will require additional 5' and/or 3' hard trimming to remove the signature of the oligos used for random priming. Leaving these bases may cause misalignments and methylation biases.
+Additionally, the Bismark documentation also includes guidelines for specific MethylSeq library types: 
+[Bismark library type guide](http://felixkrueger.github.io/Bismark/bismark/library_types/). Some library types will 
+require additional 5' and/or 3' hard trimming to remove the signature of the oligos used for random priming. Leaving 
+these bases may cause misalignments and methylation biases.
 
 <br>
 
 ### If not RRBS or if RRBS using MseI digestion
-Note that the `--rrbs` option is **not** appropriate when RRBS (reduced representation bisulfite sequencing) libraries were prepared with MseI digestion (see the TrimGalore User Guide [Note for RRBS using MseI](https://github.com/FelixKrueger/TrimGalore/blob/0.6.10/Docs/Trim_Galore_User_Guide.md#rrbs-specific-options-mspi-digested-material).
+Note that the `--rrbs` option is **not** appropriate when RRBS (reduced representation bisulfite sequencing) libraries 
+were prepared with MseI digestion (see the TrimGalore User Guide 
+[Note for RRBS using MseI](https://github.com/FelixKrueger/TrimGalore/blob/0.6.10/Docs/Trim_Galore_User_Guide.md#rrbs-specific-options-mspi-digested-material).
 
 **Single-end example**  
 
@@ -191,7 +205,11 @@ mv sample-1_R2_raw_val_2.fq.gz sample-1_R2_trimmed.fastq.gz
 
 ### If using a random priming post-bisulfite method
 (such as TruSeq (formerly EpiGnome), PBAT, scBSSeq, Pico Methyl, Accel, etc.)
-Random priming is not truly random and the signature left at the ends of the reads can introduce errors, indels, and methylation biases. Add the optional clipping parameters (`--clip_r1`, `--clip_r2`, `--three_prime_clip_r1`, and `--three_prime_clip_r2`) to trim off the random priming signature on the 5' ends of each read and next to the 3' end after adapter trimming. See [Bismark library type guide](http://felixkrueger.github.io/Bismark/bismark/library_types/) for more detailed information. 
+Random priming is not truly random and the signature left at the ends of the reads can introduce errors, indels, and 
+methylation biases. Add the optional clipping parameters (`--clip_r1`, `--clip_r2`, `--three_prime_clip_r1`, and 
+`--three_prime_clip_r2`) to trim off the random priming signature on the 5' ends of each read and next to the 3' end 
+after adapter trimming. See [Bismark library type guide](http://felixkrueger.github.io/Bismark/bismark/library_types/) 
+for more detailed information. 
 
 **Paired-end example for TruSeq (EpiGnome) library prep**
 ```bash
@@ -214,7 +232,9 @@ mv sample-1_R2_raw_val_2.fq.gz sample-1_R2_trimmed.fastq.gz
 <br>
 
 ### If RRBS with MspI digestion
-Note that if the library preparation was non-directional, the `--non_directional` flag needs to be added to this command (whether single-end or paired-end; see [TrimGalore User Guide](https://github.com/FelixKrueger/TrimGalore/blob/0.6.10/Docs/Trim_Galore_User_Guide.md#rrbs-specific-options-mspi-digested-material)). 
+Note that if the library preparation was non-directional, the `--non_directional` flag needs to be added to this command 
+(whether single-end or paired-end; see 
+[TrimGalore User Guide](https://github.com/FelixKrueger/TrimGalore/blob/0.6.10/Docs/Trim_Galore_User_Guide.md#rrbs-specific-options-mspi-digested-material)). 
 
 **Single-end example**  
 
@@ -249,9 +269,13 @@ mv sample-1_R2_raw_val_2.fq.gz sample-1_R2_trimmed.fastq.gz
 <br>
 
 ### If RRBS with NuGEN ovation kit
-Libraries prepared with the NuGEN ovation kit need to be processed with an additional script provided by the company's [github](https://github.com/nugentechnologies/NuMetRRBS#analysis-guide-for-nugen-ovation-rrbs-methyl-seq). 
+Libraries prepared with the NuGEN ovation kit need to be processed with an additional script provided by the company's 
+[github](https://github.com/nugentechnologies/NuMetRRBS#analysis-guide-for-nugen-ovation-rrbs-methyl-seq). 
 
-Following their instructions, we first run an adapter-trimming/quality-filtering step with trimgalore. Note that the `--rrbs` option is not appropriate to pass to trimgalore when this kit is used (see Bismark documentation for [RRBS NuGEN Ovation Methyl-Seq System](http://felixkrueger.github.io/Bismark/bismark/library_types/#rrbs-nugen-ovation-methyl-seq-system). Then we utilize the company's script to remove the random diversity sequences added by the kit. 
+Following their instructions, we first run an adapter-trimming/quality-filtering step with trimgalore. Note that the 
+`--rrbs` option is not appropriate to pass to trimgalore when this kit is used (see Bismark documentation for 
+[RRBS NuGEN Ovation Methyl-Seq System](http://felixkrueger.github.io/Bismark/bismark/library_types/#rrbs-nugen-ovation-methyl-seq-system). 
+Then we utilize the company's script to remove the random diversity sequences added by the kit. 
 
 #### First adapter-trimming/quality-filtering with trimgalore
 
@@ -288,7 +312,9 @@ mv sample-1_R2_raw_val_2.fq.gz sample-1_R2_trimmed.fastq.gz
 
 #### Now running NuGEN-specific script
 
-The NuGEN-specific script can be downloaded from their [github](https://github.com/nugentechnologies/NuMetRRBS#analysis-guide-for-nugen-ovation-rrbs-methyl-seq) with the following:
+The NuGEN-specific script can be downloaded from their 
+[github](https://github.com/nugentechnologies/NuMetRRBS#analysis-guide-for-nugen-ovation-rrbs-methyl-seq) 
+with the following command:
 
 ```bash
 curl -LO \
@@ -322,24 +348,33 @@ mv sample-1_R2_trimmed.fastq_trimmed.fq.gz sample-1_R2_trimmed.fastq.gz
 **Parameter Definitions for `trim_galore`:**  
 
 * `--gzip` - gzip compress the output(s)
-* `--cores` - number of cores to use (this value is dependent on the number of threads available on the system running trim galore)
+* `--cores` - number of cores to use (this value is dependent on the number of threads available on the system 
+  running trim galore)
 * `--phred33` - instructs cutadapt to use ASCII+33 quality scores as Phred scores for quality trimming
 * `--rrbs` - specific trimming suitable for RRBS data generated with MspI digestion only
-* `-a` - specific adapter sequence to be trimmed off of forward or single reads (applicable for libraries prepared with the NuGEN ovation kit)
-* `-a2` - specific adapter sequence to be trimmed off of reverse reads (applicable for libraries prepared with the NuGEN ovation kit)
+* `-a` - specific adapter sequence to be trimmed off of forward or single reads (applicable for libraries prepared with 
+  the NuGEN ovation kit)
+* `-a2` - specific adapter sequence to be trimmed off of reverse reads (applicable for libraries prepared with the 
+  NuGEN ovation kit)
 * `--paired` - specifies data are paired-end
 * `--output_dir` - the output directory to store results
-* `--clip_R1` - number of bases to trim off the 5' end of each R1 read (optional, for use with library prep kits that use random priming, such as TruSeq(EpiGnome))
-* `--clip_R2` - number of bases to trim off the 5' end of each R2 read (optional, for use with library prep kits that use random priming, such as TruSeq(EpiGnome))
-* `--three_prime_clip_R1` - number of bases to trim off the 3' end of each R1 read AFTER adapter trimming. (optional, for use with library prep kits that use random priming, such as TruSeq(EpiGnome)) 
-* `--three_prime_clip_R2` - number of bases to trim off the 3' end of each R2 read AFTER adapter trimming. (optional, for use with library prep kits that use random priming, such as TruSeq(EpiGnome)) 
-* positional arguments represent the input read files, 2 of them if paired-end data
+* `--clip_R1` - number of bases to trim off the 5' end of each R1 read (optional, for use with library prep kits that 
+  use random priming, such as TruSeq(EpiGnome))
+* `--clip_R2` - number of bases to trim off the 5' end of each R2 read (optional, for use with library prep kits that use 
+  random priming, such as TruSeq(EpiGnome))
+* `--three_prime_clip_R1` - number of bases to trim off the 3' end of each R1 read AFTER adapter trimming. (optional, 
+  for use with library prep kits that use random priming, such as TruSeq(EpiGnome)) 
+* `--three_prime_clip_R2` - number of bases to trim off the 3' end of each R2 read AFTER adapter trimming. (optional, 
+  for use with library prep kits that use random priming, such as TruSeq(EpiGnome)) 
+* `sample-1_raw.fastq.gz` or `sample-1_R1_raw.fastq.gz sample-1_R2_raw.fastq.gz` – the input reads are specified as 
+  positional arguments, paired-end read files are listed pairwise such that the forward reads (\*R1_raw.fastq.gz) are 
+  immediately followed by the respective reverse reads (\*R2_raw.fastq.gz)
 
 
 **Parameter Definitions for `trimRRBSdiversityAdaptCustomers.py `:**  
 
-- `-1` - forward or single input reads
-- `-2` - reverse reads if paired-end data
+- `-1` - forward or single input read file
+- `-2` - reverse read file if data is paired-end
 
 **Input Data:**
 
@@ -348,7 +383,7 @@ mv sample-1_R2_trimmed.fastq_trimmed.fq.gz sample-1_R2_trimmed.fastq.gz
 **Output Data:**
 
 * **\*trimmed.fastq.gz** (adapter-trimmed/quality-filtered reads)
-* **\*trimming_report.txt** (trimming report)
+* \*trimming_report.txt (trimming report)
 
 <br>
 
@@ -367,7 +402,8 @@ fastqc -o trimmed_fastqc_output/ *trimmed.fastq.gz
 **Parameter Definitions:**
 
 *	`-o` – the output directory to store results  
-*	`*trimmed.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces in between them  
+*	`*trimmed.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with 
+  wildcards as in the example, or as individual arguments with spaces in between them  
 
 **Input data:**
 
@@ -387,7 +423,7 @@ multiqc --interactive \
   -o trimmed_multiqc_GLmethylSeq_data/ \
   -n trimmed_multiqc_GLmethylSeq \
   -z \
-  trimmed_fastqc_output/ trimgalore_output/
+  trimmed_fastqc_output/ trimmed_reads_out_dir/
 ```
 
 **Parameter Definitions:**
@@ -397,16 +433,19 @@ multiqc --interactive \
 *	`-n` – the filename prefix for output files
 *	`-z` – specifies to zip the output data directory
 *	`trimmed_fastqc_output/` – the directory holding the output data from the fastqc run, provided as a positional argument
-* `trimgalore_output/` - the directory holding the trimgalore trimming reports, provided as a positional argument
+* `trimmed_reads_out_dir/` - the directory holding the trimgalore trimming reports, provided as a positional argument
 
 **Input data:**
 
 * trimmed_fastqc_output/*fastqc.zip (FastQC output data from [Step 3a](#3a-trimmed-data-qc))
+* trimmed_reads_out_dir/*trimming_report.txt (TrimGalore! trimming report, output from [Step 2](#2-adapter-trimmingquality-filtering))
 
 **Output data:**
 
 * **trimmed_multiqc_GLMethylSeq.html** (multiqc output html summary)
 * **trimmed_multiqc_GLMethylSeq_data.zip** (directory containing multiqc output data)
+
+> If processing RNA Methylation Sequencing data, file suffix will be **GLRNAMethylSeq** instead of **GLMethylSeq**
 
 <br>
 
@@ -417,7 +456,8 @@ multiqc --interactive \
 <br>
 
 ### 4a. Generate reference
-The reference will need to be specific to the organism that was sequenced. Bismark operates on a directory holding the target reference genome in fasta format.
+The reference will need to be specific to the organism that was sequenced. Bismark operates on a directory holding the 
+target reference genome in fasta format.
 
 ```bash
 # creating directory to hold reference and moving it into there
@@ -437,20 +477,26 @@ bam2nuc --genomic_composition_only \
 *bismark_genome_preparation*
 *	`--bowtie2` - specify bismark to create bisulfite indexes for use with Bowtie2
 *	`--parallel` – specifies how many threads to use (note these will be doubled as it operates on both strands simultaneously)
-*  positional argument specifying the directory holding the reference genome (should end in ".fa" or ".fasta", can be gzipped and including ".gz")
+*  `bismark_reference_genome/` - positional argument specifying the directory holding the reference genome (should end 
+  in ".fa" or ".fasta", can be gzipped and including ".gz")
 
 *bam2nuc*
 * --genomic_composition_only - specifies creation of the (genome-specific) genomic_nucleotide_frequencies.txt report  
-* --genome_folder - specifies the directory holding the reference genome (should end in ".fa" or ".fasta", can be gzipped and including ".gz")
+* --genome_folder - specifies the directory holding the reference genome (should end in ".fa" or ".fasta", can be 
+  gzipped and including ".gz")
 
  
 **Input data:**
 
-* a directory holding the reference genome in fasta format (this pipeline version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file))
+* a directory holding the reference genome in fasta format (this pipeline version uses the Ensembl fasta file indicated 
+  in the `fasta` column of the 
+  [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) 
+  GeneLab Annotations file)
 
 **Output data:**
 
-* the reference genome directory that was provided as input will now hold indexes for the bisulfite-converted reference genome (all `*.bt2` files are indexes, all `*.fa` files are converted versions of the reference genome)
+* the reference genome directory that was provided as input will now hold indexes for the bisulfite-converted reference 
+  genome (all `*.bt2` files are indexes, all `*.fa` files are converted versions of the reference genome)
 * bismark_reference_genome/Bisulfite_Genome/
   * CT_converion/
     * BS_CT.1.bt2
@@ -469,18 +515,24 @@ bam2nuc --genomic_composition_only \
     * BS_GA.rev.2.bt2
     * genome_mfa.GA_conversion.fa
   * \*.txt (captured standard output from the command)
-* **bismark_reference_genome/genomic_nucleotide_frequencies.txt** (tab-delimited table of mono- and di-nucleotide frequencies in reference genome)
+* **bismark_reference_genome/genomic_nucleotide_frequencies.txt** (tab-delimited table of mono- and di-nucleotide 
+  frequencies in reference genome)
 
 
 
 > **NOTE**  
-> If using RNA, the `--hisat2` flag is added instead of `--bowtie2`, which specifies to use the splice-aware aligner [HISAT2](https://github.com/DaehwanKimLab/hisat2#hisat2), and the outputs would include 8 `*ht2` files in separate sub-directories along with each reference-genome conversion.
+> If processing RNA Methylation Sequencing data, the `--hisat2` flag is added instead of `--bowtie2`, which specifies using the splice-aware aligner 
+  [HISAT2](https://github.com/DaehwanKimLab/hisat2#hisat2), and the outputs will include 8 `*ht2` files in separate 
+  sub-directories along with each reference-genome conversion.
 
 <br>
 
 ### 4b. Align
 
-Note that if the library preparation was non-directional, the `--non_directional` flag needs to be added to this command (whether single-end or paired-end). For a full list of alignment option recommendations library type and/or commercially available kit, please see the library page in the [Bismark documentation](http://felixkrueger.github.io/Bismark/bismark/library_types/) 
+> **NOTE**  
+> If the library preparation was non-directional, the `--non_directional` flag needs to be added to this command 
+  (whether single-end or paired-end). For a full list of alignment option recommendations library type and/or commercially 
+  available kit, please see the library page in the [Bismark documentation](http://felixkrueger.github.io/Bismark/bismark/library_types/) 
 
 **Single-end example**  
 
@@ -519,7 +571,7 @@ bismark --bowtie2 \
 # renaming output files so they are cleaner and will work with sorted bam 
 # file/auto-detection of bismark2summary later
 mv sample-1_R1_trimmed_bismark_bt2_PE_report.txt sample-1_bismark_bt2_sorted_PE_report.txt
-mv sample-1_R1_trimmed_bismark_bt2.nucleotide_stats.txt sample-1_bismark_bt2.nucleotide_stats.txt
+mv sample-1_R1_trimmed_bismark_bt2_pe.nucleotide_stats.txt sample-1_bismark_bt2_pe.nucleotide_stats.txt
 mv sample-1_R1_trimmed_bismark_bt2_pe.bam sample-1_bismark_bt2_pe.bam
 ```
 
@@ -529,28 +581,32 @@ mv sample-1_R1_trimmed_bismark_bt2_pe.bam sample-1_bismark_bt2_pe.bam
 * `--bam` - specifies to convert the default output sam format into compressed bam format
 * `--parallel` - allows us to specify the number of threads to use (note: will consume 3-5X this value)
 * `--non_bs_mm` - outputs an extra column in the bam file specifying the number of non-bisulfite mismatches each read has
-* `--nucleotide_coverage` - outputs a table with mono- and di-nucleotide sequence compositions and coverage values compared to genomic compositions
+* `--nucleotide_coverage` - outputs a table with mono- and di-nucleotide sequence compositions and coverage values 
+    compared to genomic compositions
 * `--gzip` - write temporary bisulfite conversion files in gzip format to save disk space during alignment
 * `--output_dir` - the output directory to store results
-* `--genome_folder` - specifies the directory holding the reference genome indexes (the same that was provided in [Step 4a.](#4a-generate-reference) above)
-* input trimmed-reads are provided as a positional argument if they are single-end data
-* `-1` - where to specify the forward trimmed reads if paired-end data
-* `-2` - where to specify the reverse trimmed reads if paired-end data
+* `--genome_folder` - specifies the directory holding the reference genome indexes (the same that was provided in 
+    [Step 4a.](#4a-generate-reference) above)
+* `-1` - for paired-end data, the forward trimmed reads (not used for single-end data)
+* `-2` - for paired-end data, the reverse trimmed reads (not used for single-end data)
+* `sample-1_trimmed.fastq.gz` - for single-end data, input trimmed-reads are provided as a positional argument
 
 
 **Input data:**
-* bismark_reference_genome/ (directory holding indexes of reference genome)
-* gzip-compressed fastq files (adapter-trimmed/quality-filtered reads)
+* bismark_reference_genome/ (directory holding indexes of reference genome, output from [Step 4a](#4a-generate-reference))
+* gzip-compressed fastq files (adapter-trimmed/quality-filtered reads, output from [Step 2](#2-adapter-trimmingquality-filtering))
 
 **Output data:**  
 
-* sample-1_bismark_{bt2,bt2_pe,hisat2,hisat2_pe}.bam (mapping file) 
+* sample-1_bismark_bt2*.bam (mapping file) 
 * **\*_[SP]E_report.txt** (bismark mapping report file)
-* **\*.nucleotide_stats.txt** (tab-delimited table with sample-specific mono- and di-nucleotide sequence compositions and coverage values compared to genomic compositions)
+* **\*.nucleotide_stats.txt** (tab-delimited table with sample-specific mono- and di-nucleotide sequence compositions 
+  and coverage values compared to genomic compositions)
 
 
 > **NOTE**  
-> If using RNA, need to add the `--hisat2` and `--path_to_hisat2` flags. Output files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
+> If processing RNA Methylation Sequencing data, command-line parameters `--hisat2` and `--path_to_hisat2` need to be added. Output file names will include 
+  "bismark_hisat2" instead of "bismark_bt2".
 
 <br>
 
@@ -559,7 +615,7 @@ mv sample-1_R1_trimmed_bismark_bt2_pe.bam sample-1_bismark_bt2_pe.bam
 ```bash
 samtools sort -@ NumberOfThreads \
   -o sample-1_bismark_bt2_sorted.bam \
-  sample-1_bismark_{bt2,bt2_pe}.bam
+  sample-1_bismark_bt2*.bam
 ```
 
 **Parameter Definitions:**
@@ -567,13 +623,14 @@ samtools sort -@ NumberOfThreads \
 * `sort` - specifies to use the `sort` sub-program of `samtools`
 * `-@` - specifies the number of threads to use
 * `-o` - specifies the output file name
-* sample-1_bismark_{bt2,bt2_pe}.bam - the input bam file, provided as a positional argument
+* sample-1_bismark_bt2*.bam - the input bam file, provided as a positional argument
 
 **Input data:**
 
-* sample-1_bismark_bt2.bam (bismark alignment bam file, output from [Step 4b.](#4b-align) above)
+* sample-1_bismark_bt2*.bam (bismark alignment bam file, output from [Step 4b.](#4b-align) above)
+
 > **NOTE**  
-> If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
+> If processing RNA Methylation Sequencing data, file names will include "bismark_hisat2" instead of "bismark_bt2".
 
 **Output data:**
 
@@ -600,20 +657,27 @@ qualimap bamqc -bam sample-1_bismark_bt2_sorted.bam \
 * `-bam` - specifies the input bam file
 * `-gff` - specifies the feature file containing regions of interest for the reference genome (can be gff, gtf, or bed format)
 * `-outdir` - specifies the path to print the alignment QC output files to
-* `--collect-overlap-pairs` - instructs the program to output statistics of overlapping paired-end reads (if data were paired-end, no effect if single-end)
-* `--java-mem-size=6G` - specifies the amount of memory to use (here this is set to 6G; see [qualimap FAQ here](http://qualimap.conesalab.org/doc_html/faq.html?highlight=java-mem-size))
+* `--collect-overlap-pairs` - instructs the program to output statistics of overlapping paired-end reads (if data were 
+    paired-end, no effect if single-end)
+* `--java-mem-size=6G` - specifies the amount of memory to use (here this is set to 6G; see 
+    [qualimap FAQ here](http://qualimap.conesalab.org/doc_html/faq.html?highlight=java-mem-size))
 * `-nt` - specifies the number of threads to use
 
 **Input data:**
 
-* sample-1_bismark_{bt2,hisat2}_sorted.bam (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, output from [Step 4c](#4c-sort-alignment-files) above)
-* a feature file containing regions of interest for the reference genome in gtf format (this pipeline version uses the Ensembl fasta file indicated in the `gtf` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file))
-> **NOTE**  
-> If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
+* sample-1_bismark_bt2_sorted.bam (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, output from 
+  [Step 4c](#4c-sort-alignment-files) above)
+* a feature file containing regions of interest for the reference genome in gtf format (this pipeline version uses the 
+  Ensembl fasta file indicated in the `gtf` column of the 
+  [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) 
+  GeneLab Annotations file)
 
 **Output data:** 
 
-* **\*sample-1_bismark_{bt2,hisat2}_qualimap/** (subdirectory of many alignment QC output files and formatting files for presenting in an html file (see [qualimap documentation](http://qualimap.conesalab.org/doc_html/analysis.html#output))
+* **\*sample-1_bismark_bt2_qualimap/** (subdirectory of many alignment QC output files and formatting files for presenting in an html file (see [qualimap documentation](http://qualimap.conesalab.org/doc_html/analysis.html#output))
+
+> **NOTE**  
+> If processing RNA Methylation Sequencing data, file names will include "bismark_hisat2" instead of "bismark_bt2".
 
 <br>
 
@@ -628,18 +692,18 @@ qualimap bamqc -bam sample-1_bismark_bt2_sorted.bam \
 ### 6a. Deduplicate 
 
 ```bash
-deduplicate_bismark sample-1_bismark_{bt2,bt2_pe}.bam
+deduplicate_bismark sample-1_bismark_bt2*.bam
 ```
 
 **Parameter Definitions:**
 
-* sample-1_bismark_{bt2,bt2_pe}.bam - the input bam file, provided as a positional argument
+* `sample-1_bismark_bt2*.bam` - the input bam file, provided as a positional argument
 
 **Input data:**
 
-* sample-1_bismark_{bt2,bt2_pe}.bam (unsorted bismark bowtie2 alignment bam file, output from [Step 4b](#4b-align) above)
+* sample-1_bismark_bt2*.bam (unsorted bismark bowtie2 alignment bam file, output from [Step 4b](#4b-align) above)
 > **NOTE**  
-> If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
+> If processing RNA Methylation Sequencing data, file names will include "bismark_hisat2" instead of "bismark_bt2".
 
 **Output data:**
 
@@ -653,8 +717,8 @@ deduplicate_bismark sample-1_bismark_{bt2,bt2_pe}.bam
 
 ```bash
 samtools sort -@ NumberOfThreads \
-  -o sample-1_bismark_{bt2,bt2_pe}_sorted.deduplicated.bam \
-  sample-1_bismark_{bt2,bt2_pe}.deduplicated.bam
+  -o sample-1_bismark_bt2*.deduplicated_sorted.bam \
+  sample-1_bismark_bt2*.deduplicated.bam
 ```
 
 **Parameter Definitions:**
@@ -662,17 +726,17 @@ samtools sort -@ NumberOfThreads \
 * `sort` - specifies to use the `sort` sub-program of `samtools`
 * `-@` - specifies the number of threads to use
 * `-o` - specifies the output file name
-* sample-1_bismark_bt2.deduplicated.bam - the input bam file, provided as a positional argument
+* `sample-1_bismark_bt2*.deduplicated.bam` - the input bam file, provided as a positional argument
 
 **Input data:**
 
-* sample-1_bismark_{bt2,bt2_pe}.deduplicated.bam (bismark bowtie2 alignment bam file, output from [Step 6a.](#6a-deduplicate-skip-if-data-are-rrbs) above)
+* sample-1_bismark_bt2*.deduplicated.bam (bismark bowtie2 alignment bam file, output from [Step 6a.](#6a-deduplicate-skip-if-data-are-rrbs) above)
 > **NOTE**  
-> If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
+> If processing RNA Methylation Sequencing data, file names will include "bismark_hisat2" instead of "bismark_bt2".
 
 **Output data:**
 
-* **sample-1_bismark_{bt2,bt2_pe}_sorted.deduplicated.bam** (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, with duplicates removed)
+* **sample-1_bismark_bt2\*.deduplicated_sorted.bam** (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, with duplicates removed)
 
 <br>
 
@@ -691,10 +755,7 @@ bismark_methylation_extractor --parallel NumberOfThreads \
   --output_dir methylation_calls_out_dir/ \
   --cytosine_report \
   --genome_folder bismark_reference_genome/ \
-  sample-1_bismark_bt2.bam
-    # note, if *not working with RRBS data, input should be the deduplicated 
-    # version (sample-1_bismark_bt2*.deduplicated.bam) produced in 
-    # step 6a above 
+  sample-1_bismark_bt2*.bam
 ```
 
 **Paired-end example**  
@@ -709,41 +770,64 @@ bismark_methylation_extractor --parallel NumberOfThreads \
   --genome_folder bismark_reference_genome/ \
   --ignore_r2 2 \
   --ignore_3prime_r2 2 \
-  sample-1_bismark_bt2_pe.bam
-    # note, if *not working with RRBS data, input should be the deduplicated
-    # version (sample-1_bismark_bt2*.deduplicated.bam) produced in 
-    # [Step 6a.](#6a-deduplicate) above
+  sample-1_bismark_bt2*.bam
 ```
 
 
 **Parameter Definitions:**
 
-* `--parallel` - specifies the number of cores to use for methylation extraction, note: the program will utilize ~3X the number specified 
-* `--bedGraph` - instructs the program to generate a sorted bedGraph file that reports the position of a given cytosine and its methlyation state (by default, only methylated CpGs are reported - see bedgraph options in [bismark documentation](https://felixkrueger.github.io/Bismark/options/methylation_extraction/#bedgraph-specific-options) for more info)
+* `--parallel` - specifies the number of cores to use for methylation extraction, note: the program will utilize ~3X the 
+  number specified 
+* `--bedGraph` - instructs the program to generate a sorted bedGraph file that reports the position of a given cytosine 
+  and its methlyation state (by default, only methylated CpGs are reported - see bedgraph options in 
+  [bismark documentation](https://felixkrueger.github.io/Bismark/options/methylation_extraction/#bedgraph-specific-options) 
+  for more info)
 * `--gzip` - specifies to gzip-compress the methylation extractor output files
 * `--comprehensive` - specifies to merge all four possible strand-specific methylation info into context-dependent output files
 * `--output_dir` - the output directory to store results
 * `--cytosine_report` - instructions the program to produce a genome-wide methylation report for all cytosines in the genome
-* `--genome_folder` - a directory holding the reference genome in fasta format (this pipeline version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file))
-* `--ignore_r2` - specifies how many bases to ignore from the 5' end of the reverse reads (bismark docs recommend 2, see [bismark documentation](https://felixkrueger.github.io/Bismark/options/methylation_extraction/#options))
-  > Note: The first couple of bases in the reverse read of bisulfite sequence experiments show a severe bias towards non-methylation as a result of end-repairing sonicated fragments with unmethylated cytosines, so it is recommended to remove the first few basepairs
-* `--ignore_3prime_r2` - specifies how many bases to ignore from the 3' end of the reverse reads to remove unwanted biases from the end of reads (For specific recommnendations see Bismark documentation on [Library Types](https://felixkrueger.github.io/Bismark/bismark/library_types/)) 
-* sample-1_bismark_bt2_sorted.bam - the input bam file, provided as a positional argument
+* `--genome_folder` - a directory holding the reference genome in fasta format (this pipeline version uses the Ensembl 
+  fasta file indicated in the `fasta` column of the 
+  [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) 
+  GeneLab Annotations file)
+* `--ignore_r2` - specifies how many bases to ignore from the 5' end of the reverse reads (bismark docs recommend 2, see 
+  [bismark documentation](https://felixkrueger.github.io/Bismark/options/methylation_extraction/#options))
+  > **Note:** The first several bases in the reverse read of bisulfite sequence experiments show a severe bias towards 
+    non-methylation as a result of end-repairing sonicated fragments with unmethylated cytosines. It is 
+    recommended to remove the first few basepairs.
+* `--ignore_3prime_r2` - specifies how many bases to ignore from the 3' end of the reverse reads to remove unwanted biases 
+  from the end of reads (For specific recommendations see Bismark documentation on 
+  [Library Types](https://felixkrueger.github.io/Bismark/bismark/library_types/)) 
+* `sample-1_bismark_bt2*.bam` - the input bam file, provided as a positional argument
 
 **Input data:**
 
-* sample-1_bismark_bt2*.bam (bismark bowtie2 alignment bam file sorted by chromosomal coordinates, output from [Step 4b](#4b-align) above if data are RRBS, or deduplicated bam file from [step 6a](#6a-deduplicate) if data are not RRBS and the bam file was deduplicated (e.g., sample-1_bismark_bt2.deduplicated.bam from above))
-* a directory holding the reference genome in fasta format (this pipeline version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file))
+* sample-1_bismark_bt2*.bam (bismark bowtie2 alignment bam file, output from [Step 4b](#4b-align) above if data are RRBS, 
+  or deduplicated bam file from [step 6a](#6a-deduplicate) if data are not RRBS and the bam file was deduplicated 
+  (e.g., sample-1_bismark_bt2.deduplicated.bam))
+* a directory holding the reference genome in fasta format (this pipeline version uses the Ensembl fasta file indicated 
+  in the `fasta` column of the 
+  [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) 
+  GeneLab Annotations file)
 > **NOTE**  
-> If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
+> If processing RNA Methylation Sequencing data, file names will include "bismark_hisat2" instead of "bismark_bt2".
 
 
 **Output data:**
 
-* **\*\_context\_\*.txt.gz** (bismark methylation-call files for CpG, CHG, and CHH contexts that were detected; see [bismark documentation](https://felixkrueger.github.io/Bismark/), namely [methylation call](http://felixkrueger.github.io/Bismark/bismark/alignment/#methylation-call) for symbols, and [methylation extraction output](http://felixkrueger.github.io/Bismark/bismark/methylation_extraction/#the-methylation-extractor-output-looks-like-this-tab-separated) for file format)
-* **\*.bedGraph.gz** (gzip-compressed bedGraph-formatted file of methylation percentages of each CpG site; see [bismark documentation](https://felixkrueger.github.io/Bismark/options/methylation_extraction/#bedgraph-output))
-* **\*.bismark.cov.gz** (gzip-compressed bedGraph-formatted file like above "\*.bedGraph.gz", but also including 2 more columns of methylated and unmethylated counts at the specified position; see [bismark documentation](https://felixkrueger.github.io/Bismark/options/methylation_extraction/#bedgraph-specific-options))
-* **\*.M-bias.txt** (text file with methylation information in the context of the position in reads, helpful for investigating bias as a function of base position in the read; see [bismark documentation](http://felixkrueger.github.io/Bismark/bismark/methylation_extraction/#m-bias-plot))
+* **\*\_context\_\*.txt.gz** (bismark methylation-call files for CpG, CHG, and CHH contexts that were detected; see 
+  [bismark documentation](https://felixkrueger.github.io/Bismark/), namely 
+  [methylation call](http://felixkrueger.github.io/Bismark/bismark/alignment/#methylation-call) for symbols, and 
+  [methylation extraction output](http://felixkrueger.github.io/Bismark/bismark/methylation_extraction/#the-methylation-extractor-output-looks-like-this-tab-separated) 
+  for file format)
+* **\*.bedGraph.gz** (gzip-compressed bedGraph-formatted file of methylation percentages of each CpG site; see 
+  [bismark documentation](https://felixkrueger.github.io/Bismark/options/methylation_extraction/#bedgraph-output))
+* **\*.bismark.cov.gz** (gzip-compressed bedGraph-formatted file like above "\*.bedGraph.gz", but also including 2 more 
+  columns of methylated and unmethylated counts at the specified position; see 
+  [bismark documentation](https://felixkrueger.github.io/Bismark/options/methylation_extraction/#bedgraph-specific-options))
+* **\*.M-bias.txt** (text file with methylation information in the context of the position in reads, helpful for 
+  investigating bias as a function of base position in the read; see 
+  [bismark documentation](http://felixkrueger.github.io/Bismark/bismark/methylation_extraction/#m-bias-plot))
 * **\*_splitting_report.txt** (text file containing general methylation detection information)
 * **\*.cytosine_context_summary.txt** (tsv file of detected cytosine-methylation information summed by nucleotide context)
 * **\*.CpG_report.txt.gz** (a genome-wide methylation report for all CpG cytosines)
@@ -757,28 +841,32 @@ bismark_methylation_extractor --parallel NumberOfThreads \
 
 ```bash
 bismark2report --dir sample-1_bismark_report_out_dir/ \
-  --alignment_report sample-1_bismark_bt2_[SP]E_report.txt \
-  --splitting_report sample-1_bismark_{bt2,bt2_pe}_splitting_report.txt \
-  --mbias_report sample-1_bismark_{bt2,bt2_pe}.M-bias.txt
+  --alignment_report sample-1_bismark_bt2*_report.txt \
+  --nucleotide_report sample-1_bismark_bt2*.nucleotide_stats.txt \
+  --splitting_report sample-1_bismark_bt2*_splitting_report.txt \
+  --mbias_report sample-1_bismark_bt2*.M-bias.txt \
+  --dedup_report sample-1_bismark_bt2*.deduplication_report.txt
 ```
 
 **Parameter Definitions:**
 
 * `--dir` - the output directory to store results
 * `--alignment_report` - specifies the alignment report input file  
+* `--nucleotide_report` - specifies the nucleotide stats report input file
 * `--splitting_report` - specifies the splitting report input file  
 * `--mbias_report` - specifies the methylation bias report input file 
+* `--dedup_report` - specifies the deduplication report input file (optional, use only if deduplication was run)
 
 **Input data:**
 
-* sample-1_bismark_bt2_[SP]E_report.txt (bismark mapping report file, output from [Step 4b.](#4b-align))
-* sample-1_bismark_{bt2,bt2_pe}_splitting_report.txt (splitting report file, output from [Step 7](#7-extract-methylation-calls) above)
-* sample-1_bismark_{bt2,bt2_pe}.M-bias.txt (text file with methylation information in the context of the position in reads, output from [Step 7](#7-extract-methylation-calls) above)
+* sample-1_bismark_bt2*_report.txt (bismark mapping report file, output from [Step 4b.](#4b-align))
+* sample-1_bismark_bt2*.nucleotide_stats.txt (bismark nucleotide stats report file, output from [Step 4b.](#4b-align))
+* sample-1_bismark_bt2*_splitting_report.txt (splitting report file, output from [Step 7](#7-extract-methylation-calls) above)
+* sample-1_bismark_bt2*.M-bias.txt (text file with methylation information in the context of the position in reads, 
+  output from [Step 7](#7-extract-methylation-calls) above)
+* sample-1_bismark_bt2*.deduplication_report.txt (optional deduplication report, output from [Step 6a.](#6a-deduplicate) if deduplication was run)
 > **NOTE**  
-> If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
-
-> **NOTE**  
-> If data are **not** RRBS, the deduplication report from [Step 6a.](#6a-deduplicate) above should also be provided to the above command to the `--dedup_report` parameter
+> If processing RNA Methylation Sequencing data, file names will include "bismark_hisat2" instead of "bismark_bt2".
 
 **Output data:**
 
@@ -793,24 +881,36 @@ bismark2report --dir sample-1_bismark_report_out_dir/ \
 ### 9a. Bismark Summary Report
 
 ```bash
-bismark2summary sample-1_bismark_{bt2,bt2_pe}.bam
+bismark2summary sample-1_bismark_bt2*.bam
+
+#rename output files using standard GeneLab suffix
+mv bismark_summary_report.txt bismark_summary_report_GLMethylSeq.txt
+mv bismark_summary_report.html bismark_summary_report_GLMethylSeq.html
+
 ```
+
+**Parameter Definitions:**
+
+* `sample-1_bismark_bt2*.bam` - the input bam files are specified as a positional argument, and can be given all at once with wildcards, or as individual arguments with spaces in between them
 
 **Input data:**  
 
 * autodetects appropriate files based on the input bam files
   * the positional argument(s) can either be explicitly naming the bam file(s) as done above or can be the top-level directory holding the initial bam files and relevant report files
   * the autodetected files cannot be explicitly provided, but it looks for those named like these listed here and includes them if they exist for each individual starting bam file it is given or finds
-    * sample-1_bismark_bt2_[SP]E_report.txt generated from [Step 4b.](#4b-align) above
-    * sample-1_bismark_{bt2,bt2_pe}_splitting_report.txt from [Step 7](#7-extract-methylation-calls) above
-    * sample-1_bismark_{bt2,bt2_pe}.deduplication_report.txt if deduplication was performed in [Step 6a.](#6a-deduplicate)
+    * sample-1_bismark_bt2*_report.txt generated from [Step 4b.](#4b-align) above
+    * sample-1_bismark_bt2*_splitting_report.txt from [Step 7](#7-extract-methylation-calls) above
+    * sample-1_bismark_bt2*.deduplication_report.txt if deduplication was performed in [Step 6a.](#6a-deduplicate)
 > **NOTE**  
-> If using RNA, files will include "bismark_hisat2" instead of "bismark_bt2" in the name.
+> If processing RNA Methylation Sequencing data, file names will include "bismark_hisat2" instead of "bismark_bt2".
 
 **Output data:**  
 
-* **bismark_summary_report.txt** (summary table of general information on all included samples)
-* **bismark_summary_report.html** (html summary of general information on all included samples)
+* **bismark_summary_report_GLMethylSeq.txt** (summary table of general information on all included samples)
+* **bismark_summary_report_GLMethylSeq.html** (html summary of general information on all included samples)
+
+> **NOTE**
+> If processing RNA Methylation Sequencing data, file suffix will be **GLRNAMethylSeq** instead of **GLMethylSeq**
 
 <br>
 
@@ -848,6 +948,8 @@ multiqc --interactive -o align_and_bismark_multiqc_data/ -n align_and_bismark_mu
 * **align_and_bismark_multiqc_GLmethylSeq.html** (multiqc output html summary)
 * **align_and_bismark_multiqc_GLmethylSeq_data** (directory containing multiqc output data)
 
+> If processing RNA Methylation Sequencing data, file suffix will be **GLRNAMethylSeq** instead of **GLMethylSeq**
+
 <br>
 
 
@@ -856,16 +958,26 @@ multiqc --interactive -o align_and_bismark_multiqc_data/ -n align_and_bismark_mu
 ## 10. Generate reference genome annotation information
 
 ### 10a. GTF to BED conversion
-A bed-formatted annotation file is needed for adding annotation information to the output from the differential methylation analysis. We utilize gtf files from [Ensembl](https://www.ensembl.org/) and convert them to the bed format as follows:
+A bed-formatted annotation file is needed for adding annotation information to the output from the differential 
+methylation analysis. We utilize gtf files from [Ensembl](https://www.ensembl.org/) and convert them to the bed format 
+as follows:
 
 ```bash
 gtfToGenePred reference.gtf reference.genePred
 genePredToBed reference.genePred reference.bed
 ```
 
+**Parameter Definitions:**
+
+* `reference.gtf` - genome annotation file in GTF format, provided as a positional argument
+* `reference.genePred` - genome annotation file in genePred format, provided as a positional argument 
+* `reference.bed` - genome annotation file in BED format, provided as a positional argument
+
 **Input data:**
 
-* reference.gtf (genome annotation, this pipeline version uses the Ensembl gtf file indicated in the `gtf` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
+* reference.gtf (genome annotation, this pipeline version uses the Ensembl gtf file indicated in the `gtf` column of the 
+[GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) 
+GeneLab Annotations file)
 
 **Output data:**
 
@@ -885,13 +997,22 @@ awk ' $3 == "transcript" ' reference.gtf | cut -f 9 | tr -s ";" "\t" | \
     > reference-gene-to-transcript-map.tsv
 ```
 
+**Parameter Definitions:**
+
+* `reference.gtf` - genome annotation file in GTF format, provided as a positional argument
+* `> reference-gene-to-transcript-map.tsv` - re-directs output to the provided file name
+
+
 **Input data:**
 
-* reference.gtf (genome annotation, this pipeline version uses the Ensembl gtf file indicated in the `gtf` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
+* reference.gtf (genome annotation, this pipeline version uses the Ensembl gtf file indicated in the `gtf` column of the 
+[GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) 
+GeneLab Annotations file)
 
 **Output data:**
 
-* **reference-gene-to-transcript-map-GLmethylSeq.tsv** (a gene-to-transcript mapping file with gene IDs in the first column and transcript IDs in the second)
+* reference-gene-to-transcript-map.tsv (a gene-to-transcript mapping file with gene IDs in the first column and 
+  transcript IDs in the second)
 
 <br>
 
@@ -899,487 +1020,687 @@ awk ' $3 == "transcript" ' reference.gtf | cut -f 9 | tr -s ";" "\t" | \
 
 ## 11. Differential methylation analysis
 
-<!-- Example data for the R code below can be downloaded and unpacked with the following:
-
-```bash
-curl -L -o test-methylkit-files.zip https://figshare.com/ndownloader/files/38765340
-unzip test-methylkit-files.zip && rm test-methylkit-files.zip
-``` -->
-
 The remainder of this document is performed in R. 
 
 <br>
 
----
+### 11a. Create Sample Runsheet
 
-### 11a. Set up R environment
+> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be
+  created manually by following the [file specification](../Workflow_Documentation/runsheet_specification/README.md).
+
+```bash
+### Download the *ISA.zip file from the GeneLab Repository ###
+
+dpt-get-isa-archive --accession GLDS-###
+
+### Parse the metadata from the *ISA.zip file to create a sample runsheet ###
+
+dpt-isa-to-runsheet --accession GLDS-### \
+  --plugin-dir /path/to/dp_tools__methylseq_plugin \
+  --isa-archive *ISA.zip
+```
+
+**Parameter Definitions:**
+
+- `--accession GLDS-###` – GLDS accession ID (replace ### with the GLDS number being processed), used to retrieve the
+  urls for the ISA archive and raw reads hosted on the GeneLab Repository
+  > *Note: you can also use the OSD identifier, e.g. `--accession OSD-###`*
+- `--plugin-dir /path/to/dp_tools__methylseq_plugin` - specifies the path to the plugin directory defining the dp-tools
+  configuration for the desired assay type. Plugins for both DNA and RNA methylseq assays are provided in the Workflow_Documentation
+  folder: [../Workflow_Documentation/isa_to_runsheet_plugins](../Workflow_Documentation/isa_to_runsheet_plugins/).
+- `--isa-archive` – Specifies the *ISA.zip file for the respective GLDS dataset, downloaded in the `dpt-get-isa-archive` command
+
+
+**Input Data:**
+
+- No input data required but the GLDS (or OSD) accession ID needs to be indicated, which is used to download the
+  respective ISA archive
+
+**Output Data:**
+
+- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective
+  GLDS dataset, used to define sample groups - the *ISA.zip file is located in each [OSDR repository](https://osdr.nasa.gov/bio/repo/)
+  Study page under 'Files' -> 'Study Metadata Files')
+
+- **{GLDS-Accession-ID}_{methylseq_assay_type}_v{version}_runsheet.csv** (table containing metadata required for processing.
+  `{methylseq_assay_type}` and `{version}` are defined in the plugin yaml file.)
+
+<br>
+
+### 11b. Set up R environment
 
 ```R
-### Install R packages if not already installed ###
+### Install and load required packages ###
 
-install.packages("remotes")
-remotes::install_version("tidyverse", version = "2.0.0")
+# List of required packages
+cran_packages <- c("tidyverse")
+bioc_packages <- c("methylKit", "genomation")
 
-if (!require("BiocManager", quietly = TRUE)) 
-    install.packages("BiocManager")
-BiocManager::install(version = "3.19")
-BiocManager::install("methylKit", version = "3.19")
-BiocManager::install("genomation", version = "3.19")
+# Install missing packages
+for (pkg in cran_packages) {
+    if (!require(pkg, character.only = TRUE)) {
+        install.packages(pkg)
+    }
+}
+for (pkg in bioc_packages) {
+    if (!require(pkg, character.only = TRUE)) {
+        BiocManager::install(pkg)
+    }
+}
 
-
-### Import libraries (###
-
+# Load all packages
 library(tidyverse)
 library(methylKit)
 library(genomation)
 
-### Setting up variables and objects ###
 
-# Define which organism is used in the study 
-    # This should be consistent with the name in the "name" column of 
-    # the GL-DPPD-7110_annotations.csv file 
+### Set up working environment, variables, and object ###
+
+# Define which organism is used in the study - this should be consistent with the species name in 
+# the "species" column of the # GL-DPPD-7110-A_annotations.csv file
 organism <- "organism_that_samples_were_derived_from"
 
-# Set path to the directory holding bismark coverage files (*.bismark.cov.gz)
-coverage_files_dir_path <- file.path("bismark-coverage-files/")
+### Define the location of the input data and where the output data will be printed to ###
 
-# Set path to directory holding reference bed (reference.bed) and 
-# transcript-to-gene-map (reference-gene-to-transcript-map.tsv) files
-references_dir_path <- file.path("reference-files/")
+runsheet_path <- file.path("/path/to/directory/containing/runsheet.csv/file")
+work_dir <- file.path("/path/to/working/directory/where/script/is/executed/from")
 
-# Create a list of unique sample names
-sample.list <- list("sample-1", "sample-2", "sample-3",
-                    "sample-4", "sample-5", "sample-6")
+# define paths to annotation files produced in Step 10a (reference.bed) and Step 10b (reference-gene-to-transcript-map.tsv)
+ref_bed_path <- file.path("/path/to/reference-files/my_organism.bed")
+ref_gene_transcript_map_path <- file.path("path/to/reference-files/my_organism-gene-to-transcript-map.tsv")
 
-# Generate a vector holding input coverage files
-input_cov_files_vec <- list.files(coverage_files_dir_path, 
-                                  pattern = ".*.bismark.cov.gz$", 
-                                  full.names = TRUE)
+# path to bismark.cov.gz files from step 7 above
+coverage_files_dir_path <- file.path("/path/to/bismark-coverage-files/")  
 
-# Creating a list containing the detected input files and ensuring
-# they are in the same order as the sample names 
-file.list <- as.list(input_cov_files_vec[sapply(unlist(sample.list), 
-                           function(x) grep(paste0(x,"_bismark.*.bismark.cov.gz$"), 
-                                            input_cov_files_vec, value = FALSE))])
+# Reference annotation table link (GL-DPPD-7110-A_annotations.csv) file
+ref_table_link <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
 
-# Set variable for bed file
-reference_bed_file <- list.files(references_dir_path, 
-                                 pattern = ".*.bed$", full.names = TRUE)
 
-# Set variable for transcript-to-gene-map file
-gene_transcript_map_file <- list.files(references_dir_path, 
-                                       pattern = ".*-gene-to-transcript-map.tsv$", 
-                                       full.names = TRUE)
+### Pull in the GeneLab annotation table ###
 
-# Set variable for GL reference table
-base_GL_github_link <- 
-    "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/"
-ref_tab_location <-
-    "GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv"
-ref_tab_link <- paste0(base_GL_github_link, ref_tab_location)
-
-# Read in reference table
-ref_table <- read.csv(ref_tab_link)
-
-# Set variable with organism and ensembl version number
-ensembl_version <- ref_table %>% 
-    filter(name == organism) %>% pull(ensemblVersion)
-
-org_and_ensembl_version <- paste(organism, ensembl_version, sep = "_")
+# read in annotations.csv table
+ref_table <- read.csv(ref_table_link)
 
 # Set variable with link to appropriate annotations table
 annotations_tab_link <- ref_table %>% 
-    filter(name == organism) %>% pull(genelab_annots_link)
+    filter(species == organism) %>% pull(genelab_annots_link)
 
-# Read coverage files into R object and setting up contrast vector with the 'treatment' option
-myobj <- methRead(location = file.list,
-                  sample.id = sample.list,
-                  assembly = org_and_ensembl_version,
-                  pipeline = "bismarkCoverage",
-                  header = FALSE,
-                  treatment = c(1,1,1,0,0,0),
-                  mincov = 10)
+# Create data.frame object of annotations table
+functional_annots_tab <- read.table(annotations_tab_link, sep="\t", quote = "", header = TRUE)
 
-# Example of how to store as tables if memory requirements are too high
-# myobj_storage <- methRead(location = file.list,
-#                   sample.id = sample.list,
-#                   assembly = org_and_ensembl_version,
-#                   dbtype = "tabix",
-#                   pipeline = "bismarkCoverage",
-#                   header = FALSE,
-#                   treatment = c(1,1,1,0,0,0),
-#                   mincov = 10)
-    # then 'myobj_storage' would be used in place of 'myobj' below
-```
+### Pull in annotation data from Step 10 ###
 
-**Input data:**
+# Read in gene-to-transcript mapping file
+gene_transcript_map <- read.table(ref_gene_transcript_map_path, sep = "\t", 
+                                  col.names = c("gene_ID", "feature.name"))
 
-* \*.bismark.cov.gz (gzip-compressed bedGraph-formatted files generated in [Step 7](#7-extract-methylation-calls))
-* reference.bed (bed file generated in [Step 10a](#10a-gtf-to-bed-conversion))
-* reference-gene-to-transcript-map.tsv (gene-to-transcript mapping file generated in [Step 10b](#10b-making-a-mapping-file-of-genes-to-transcripts))
-
-**Output data:**
-
-* `reference_bed_file` (variable holding the path to the reference.bed file)
-* `gene_transcript_map_file` (variable holding the path to the \*gene-to-transcript-map.tsv file)
-* `annotations_tab_link` (variable holding the link to the GeneLab reference annotations table)
-* `myobj` (methylRawList object holding coverage information for all samples)
-
-<br>
-
----
-
-### 11b. Individual-base analysis
-
-```R
-# Merge samples
-meth <- unite(myobj)
-
-# Calculate differential methylation
-myDiff <- calculateDiffMeth(meth, mc.cores = 4)
-
-# Get all significantly different bases
-myDiff.all_sig <- getMethylDiff(myDiff, difference = 25, qvalue = 0.01)
-
-# Getting significantly hypermethylated bases
-myDiff.hyper <- getMethylDiff(myDiff, difference = 25, qvalue = 0.01, type = "hyper")
-
-# Get significantly hypomethylated bases
-myDiff.hypo <- getMethylDiff(myDiff, difference = 25, qvalue = 0.01, type = "hypo")
-```
-
-**Input data:**
-
-* `myobj` (methylRawList object created in [Step 11a](#11a-set-up-r-environment))
-
-**Output data:**
-
-* `meth` (methylBase object, at the base-level)
-* `myDiff.all_sig` (object containing all significantly differentially methylated bases, based on q-value < 0.01)
-* `myDiff.hyper` (object containing all significantly differentially hyper-methylated bases, based on q-value < 0.01)
-* `myDiff.hypo` (object containing all significantly differentially hypo-methylated bases, based on q-value < 0.01)
-
-<br>
-
----
-
-### 11c. Tile-level analysis
-
-```R
-# Create tiles object
-tiles_obj <- tileMethylCounts(myobj, win.size = 1000, step.size = 1000, cov.bases = 10)
-
-# Merge tiled samples
-tiles_meth <- unite(tiles_obj)
-
-# Calculate differential methylation on tiles
-tiles_diff <- calculateDiffMeth(tiles_meth, mc.cores = 4)
-
-# Getting all significantly different tiles
-tiles_myDiff.all_sig <- getMethylDiff(tiles_diff, difference = 25, qvalue = 0.01)
-
-# Get significantly hypermethylated tiles
-tiles_myDiff.hyper <- getMethylDiff(tiles_diff, difference = 25, qvalue = 0.01, type = "hyper")
-
-# Get significantly hypomethylated tiles
-tiles_myDiff.hypo <- getMethylDiff(tiles_diff, difference = 25, qvalue = 0.01, type = "hypo")
-```
-
-**Input data:**
-
-* `myobj` (methylRawList object created in [Step 11a](#11a-set-up-r-environment))
-
-**Output data:**
-
-* `tiles_meth` (methylBase object, at the tile level)
-* `tiles_myDiff.all_sig` (object containing all significantly differentially methylated titles, based on q-value < 0.01)
-* `tiles_myDiff.hyper` (object containing all significantly differentially hyper-methylated tiles, based on q-value < 0.01)
-* `tiles_myDiff.hypo` (object containing all significantly differentially hypo-methylated tiles, based on q-value < 0.01)
-
-<br>
-
----
-
-### 11d. Add feature information
-
-```R
 # Read in reference bed file
-gene.obj <- readTranscriptFeatures(reference_bed_file, up.flank = 1000, 
+gene.obj <- readTranscriptFeatures(ref_bed_path, up.flank = 1000, 
                                    down.flank = 1000, remove.unusual = TRUE, 
                                    unique.prom = TRUE)
 
-## Add features to individual-base objects
-diffAnn.all_sig <- annotateWithGeneParts(as(myDiff.all_sig, "GRanges"), gene.obj)
-diffAnn.hyper <- annotateWithGeneParts(as(myDiff.hyper, "GRanges"), gene.obj)
-diffAnn.hypo <- annotateWithGeneParts(as(myDiff.hypo, "GRanges"), gene.obj)
 
-# Make base-level significance table with features 
-sig_all_bases_tab_with_features <- cbind(data.frame(myDiff.all_sig), 
-                                         getAssociationWithTSS(diffAnn.all_sig), 
-                                         as.data.frame(getMembers(diffAnn.all_sig))) %>% 
-                                             .[, !names(.) %in% c("target.row")]
+##### Set variable with organism (spaces removed) and ensembl version number for methylKit #####
+ensembl_version <- ref_table %>% 
+    filter(species == organism) %>%
+    pull(ensemblVersion)
 
-# Make base-level significantly hyper-methylated table with features
-sig_bases_hyper_tab_with_features <- cbind(data.frame(myDiff.hyper), 
-                                           getAssociationWithTSS(diffAnn.hyper), 
-                                           as.data.frame(getMembers(diffAnn.hyper))) %>% 
-                                               .[, !names(.) %in% c("target.row")]
+org_and_ensembl_version <- paste(make.names(organism), ensembl_version, sep = "_")
 
-# Make base-level significantly hypo-methylated table with features
-sig_bases_hypo_tab_with_features <- cbind(data.frame(myDiff.hypo), 
-                                          getAssociationWithTSS(diffAnn.hypo), 
-                                          as.data.frame(getMembers(diffAnn.hypo))) %>% 
-                                              .[, !names(.) %in% c("target.row")]
+setwd(work_dir)
 
-
-## Add features to tile objects
-tiles_diffAnn.all_sig <- annotateWithGeneParts(as(tiles_myDiff.all_sig, "GRanges"), gene.obj)
-tiles_diffAnn.hyper <- annotateWithGeneParts(as(tiles_myDiff.hyper, "GRanges"), gene.obj)
-tiles_diffAnn.hypo <- annotateWithGeneParts(as(tiles_myDiff.hypo, "GRanges"), gene.obj)
-
-
-# Make tiles significance table with features 
-tiles_sig_all_out_tab_with_features <- cbind(data.frame(tiles_myDiff.all_sig), 
-                                             getAssociationWithTSS(tiles_diffAnn.all_sig), 
-                                             as.data.frame(getMembers(tiles_diffAnn.all_sig))) %>% 
-                                                 .[, !names(.) %in% c("target.row")]
-                                               
-# Make tiles significantly hyper-methylated table with features
-tiles_sig_hyper_tab_with_features <- cbind(data.frame(tiles_myDiff.hyper), 
-                                           getAssociationWithTSS(tiles_diffAnn.hyper), 
-                                           as.data.frame(getMembers(tiles_diffAnn.hyper))) %>% 
-                                               .[, !names(.) %in% c("target.row")]
-
-# Make tiles significantly hypo-methylated table with features
-tiles_sig_hypo_tab_with_features <- cbind(data.frame(tiles_myDiff.hypo), 
-                                          getAssociationWithTSS(tiles_diffAnn.hypo), 
-                                          as.data.frame(getMembers(tiles_diffAnn.hypo))) %>% 
-                                              .[, !names(.) %in% c("target.row")]
 ```
 
 **Input data:**
 
-* `reference_bed_file` (variable holding the path to the reference bed file created in [Step 11a](#11a-set-up-r-environment))
-* `myDiff.all_sig`, `myDiff.hyper`, `myDiff.hypo` (base-level methylDiff objects created in [Step 11b](#11b-individual-base-analysis))
-* `tiles_myDiff.all_sig`, `tiles_myDiff.hyper`, `tiles_myDiff.hypo` (tile-level methylDiff objects created in [Step 11c](#11c-tile-level-analysis))
+* runsheet.csv (CSV formatted runsheet file containing unique sample IDs and factors generated in [Step 11a](#11a-create-sample-runsheet))
+* `organism` (name of organism samples were derived from, found in the `species` column of 
+  [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file)
+* /path/to/bismark-coverage-files/ (directory containing `*.bismark.cov.gz` (gzip-compressed bedGraph formatted files 
+  with two additional coverage columns generated in [Step 7](#7-extract-methylation-calls)))
+* reference.bed (genome annotation file in BED format generated in [Step 10a](#10a-gtf-to-bed-conversion))
+* reference-gene-to-transcript-map.tsv (gene-to-transcript mapping file generated in 
+  [Step 10b](#10b-making-a-mapping-file-of-genes-to-transcripts))
 
 **Output data:**
 
-* `diffAnn.all_sig` (AnnotationByGeneParts object for all significantly differentially methylated bases)
-* `tiles_diffAnn.all_sig` (AnnotationByGeneParts object for significantly differentially methylated tiles)
-* `sig_all_bases_tab_with_features` (dataframe object holding all significantly differentially methylated bases and associated features)
-* `sig_bases_hyper_tab_with_features` (dataframe object holding all significantly differentially hyper-methylated bases and associated features)
-* `sig_bases_hypo_tab_with_features` (dataframe object holding all significantly differentially hypo-methylated bases and associated features)
-* `tiles_sig_all_out_tab_with_features` (dataframe object holding all significantly differentially methylated tiles and associated features)
-* `tiles_sig_hyper_tab_with_features` (dataframe object holding all significantly differentially hyper-methylated tiles and associated features)
-* `tiles_sig_hypo_tab_with_features` (dataframe object holding all significantly differentially hypo-methylated tiles and associated features)
+* `runsheet_path` (variable containing path to runsheet file generated in [Step 11a](#11a-create-sample-runsheet))
+* `gene.obj` (a GRangesList object containing locations of exon/intron/promoter/TSS)
+* `functional_annots_tab` (DataFrame holding GeneLab annotation table)
+* `gene_transcript_map` (DataFrame holding the gene-to-transcript mappings)
+* `org_and_ensembl_version` (variable containing the organism and ensembl version to use in methylKit input object generation)
+* `coverage_files_dir_path` (variable containing path to bismark coverage files (`*.bismark.cov.gz`) generated in [Step7](#7-extract-methylation-calls))
 
 <br>
 
----
-
-### 11e. Add functional annotations
+### 11c. Configure Metadata, Sample Grouping, and Group Comparisons
 
 ```R
-# Adjust time-out to enable downloading reference annotation table
-options(timeout = 600)
+### Pull all factors for each sample in the study from the runsheet provided ###
 
-# Read in annotations table
-functional_annots_tab <- read.table(annotations_tab_link, 
-                                    sep = "\t", quote = "", 
-                                    header = TRUE)
-
-# Read in gene-to-transcript mapping file
-gene_transcript_map <- read.table(gene_transcript_map_file, sep = "\t", 
-                                  col.names = c("gene_ID", "feature.name"))
-
-## Add annotations to individual-base objects ##
-    # Retrieving the corresponding gene ID for each transcript ID in the
-    # *_bases*tab_with_features tables, and adding it to the table
-
-sig_all_bases_tab_with_features_and_gene_IDs <- 
-    left_join(sig_all_bases_tab_with_features, gene_transcript_map)
-
-sig_hyper_bases_tab_with_features_and_gene_IDs <-
-    left_join(sig_bases_hyper_tab_with_features, gene_transcript_map)
-
-sig_hypo_bases_tab_with_features_and_gene_IDs <-
-    left_join(sig_bases_hypo_tab_with_features, gene_transcript_map)
-
-    # now adding functional annotations and renaming column of output tables 
-    # to be primary keytype instead of "gene_ID"
-sig_all_bases_tab_with_features_and_annots <- 
-    left_join(sig_all_bases_tab_with_features_and_gene_IDs, 
-              functional_annots_tab, by = c("gene_ID" = "ENSEMBL"))
-              
-sig_all_bases_tab_with_features_and_annots <- 
-    rename(sig_all_bases_tab_with_features_and_annots, "gene_ID" = "ENSEMBL")
+compare_csv_from_runsheet <- function(runsheet_path) {
+    df <- read.csv(runsheet_path)
+    factors <- df %>%
+        dplyr::select(starts_with("Factor.Value", ignore.case = TRUE)) %>%
+        rename_with(~ paste0("factor_", seq_along(.)))
+    result <- df %>%
+        dplyr::select(sample_id = "Sample.Name") %>%
+        bind_cols(factors)
+    return(result)
+}
 
 
-sig_hyper_bases_tab_with_features_and_annots <- 
-    left_join(sig_hyper_bases_tab_with_features_and_gene_IDs, 
-              functional_annots_tab, by = c("gene_ID" = "ENSEMBL"))
+### Load metadata from runsheet csv file and create data frame containing all samples and respective factors ###
+study <- compare_csv_from_runsheet(runsheet_path) %>% column_to_rownames(var = "sample_id")
 
-sig_hyper_bases_tab_with_features_and_annots <- 
-    rename(sig_hyper_bases_tab_with_features_and_annots, "gene_ID" = "ENSEMBL")
+##### Format groups and indicate the group that each sample belongs to #####
+group <- apply(study, 1, paste, collapse = " & ")
+group_names <- paste0("(", group, ")") ## human readable group names
+# generate group naming compatible with R models, maintains the default behaviour of make.names but ensures 'X' is never prepended
+group <- sub("^BLOCKER_", "", make.names(paste0("BLOCKER_", group)))  
+names(group) <- group_names
+rm(group_names)
 
-
-sig_hypo_bases_tab_with_features_and_annots <- 
-    left_join(sig_hypo_bases_tab_with_features_and_gene_IDs, 
-              functional_annots_tab, by = c("gene_ID" = "ENSEMBL"))
-
-sig_hypo_bases_tab_with_features_and_annots <- 
-    rename(sig_hypo_bases_tab_with_features_and_annots, "gene_ID" = "ENSEMBL")
-
-# Write out tables
-write.table(sig_all_bases_tab_with_features_and_annots, 
-            "sig-diff-methylated-bases.tsv", 
-            sep = "\t", quote = FALSE, row.names = FALSE)
-
-write.table(sig_hyper_bases_tab_with_features_and_annots, 
-            "sig-diff-hypermethylated-bases.tsv", 
-            sep = "\t", quote = FALSE, row.names = FALSE)
-
-write.table(sig_hypo_bases_tab_with_features_and_annots, 
-            "sig-diff-hypomethylated-bases.tsv", 
-            sep = "\t", quote = FALSE, row.names = FALSE)
-
-## Add annotations to tiles objects ##
-    # Retrieving the corresponding gene ID for each transcript ID in the
-    # *tiles*tab_with_features tables, and adding it to the table
-
-sig_all_tiles_tab_with_features_and_gene_IDs <- 
-    left_join(tiles_sig_all_out_tab_with_features, gene_transcript_map)
-
-sig_hyper_tiles_tab_with_features_and_gene_IDs <-
-    left_join(tiles_sig_hyper_tab_with_features, gene_transcript_map)
-
-sig_hypo_tiles_tab_with_features_and_gene_IDs <-
-    left_join(tiles_sig_hypo_tab_with_features, gene_transcript_map)
-
-    # now adding functional annotations and renaming column of output tables 
-    # to be primary keytype instead of "gene_ID"
-sig_all_tiles_tab_with_features_and_annots <- 
-    left_join(sig_all_tiles_tab_with_features_and_gene_IDs, 
-              functional_annots_tab, by = c("gene_ID" = "ENSEMBL"))
-
-sig_all_tiles_tab_with_features_and_annots <- 
-    rename(sig_all_tiles_tab_with_features_and_annots, "gene_ID" = "ENSEMBL")
+# create a lookup table to map back from R naming to human readable group names
+group_name_lookup <- data.frame(group = group, group_names = names(group)) %>%
+    distinct() %>%
+    column_to_rownames(var = "group")
 
 
-sig_hyper_tiles_tab_with_features_and_annots <- 
-    left_join(sig_hyper_tiles_tab_with_features_and_gene_IDs, 
-              functional_annots_tab, by = c("gene_ID" = "ENSEMBL"))
+##### Format contrasts table, defining pairwise comparisons for all groups, one-way contrasts #####
 
-sig_hyper_tiles_tab_with_features_and_annots <- 
-    rename(sig_hyper_tiles_tab_with_features_and_annots, "gene_ID" = "ENSEMBL")
+# generate matrix of pairwise group combinations for comparison
+contrast.names <- combn(levels(factor(names(group))), 2)
 
+# create computationally friendly contrast values
+contrasts <- apply(
+    contrast.names,
+    MARGIN = 2,
+    function(col) {
+        # limited make.names call for each group (also removes leading parentheses)
+        sub("^BLOCKER_", "", make.names(paste0("BLOCKER_", stringr::str_sub(col, 2, -2)))) 
+    }
+)
 
-sig_hypo_tiles_tab_with_features_and_annots <- 
-    left_join(sig_hypo_tiles_tab_with_features_and_gene_IDs, 
-              functional_annots_tab, by = c("gene_ID" = "ENSEMBL"))
+# format contrast combinations for output tables
+contrast.names <- paste(contrast.names[1, ], contrast.names[2, ], sep = "v") 
+colnames(contrasts) <- contrast.names
+rm(contrast.names)
 
-sig_hypo_tiles_tab_with_features_and_annots <- 
-    rename(sig_hypo_tiles_tab_with_features_and_annots, "gene_ID" = "ENSEMBL")
+# Create sampleTable
+sampleTable <- data.frame("sample_id" = rownames(study), "condition" = group)
 
-
-# Write out tables
-write.table(sig_all_tiles_tab_with_features_and_annots, 
-            "sig-diff-methylated-tiles.tsv", 
-            sep = "\t", quote = FALSE, row.names = FALSE)
-
-write.table(sig_hyper_tiles_tab_with_features_and_annots, 
-            "sig-diff-hypermethylated-tiles.tsv", 
-            sep = "\t", quote = FALSE, row.names = FALSE)
-
-write.table(sig_hypo_tiles_tab_with_features_and_annots, 
-            "sig-diff-hypomethylated-tiles.tsv", 
-            sep = "\t", quote = FALSE, row.names = FALSE)
 ```
-**Input data:**
 
+**Input Data:**
 
-* `annotations_tab_link` (variable holding the link to the GeneLab reference annotations table created in [Step 11a](#11a-set-up-r-environment))
-* `gene_transcript_map_file` (variable holding the path to the \*gene-to-transcript-map.tsv file created in [Step 11a](#11a-set-up-r-environment))
-* `sig_all_bases_tab_with_features`, `sig_bases_hyper_tab_with_features`, `sig_bases_hypo_tab_with_features` (dataframe objects holding significantly differentially methylated bases and associated features created in [Step 11d](#11d-add-feature-information))
-* `tiles_sig_all_out_tab_with_features`, `tiles_sig_hyper_tab_with_features`, `tiles_sig_hypo_tab_with_features` (dataframe objects holding significantly differentially methylated tiles and associated features created in [Step 11d](#11d-add-feature-information))
+* `runsheet_path` (variable containing path to runsheet file generated in [Step 11a](#11a-create-sample-runsheet))
 
-**Output data:**
+**Output Data:**
 
-* **\*sig-diff-methylated-bases.tsv** (table containing all significantly differentially methylated cytosines)
-* **\*sig-diff-hypermethylated-bases.tsv** (table containing all cytosines with significantly elevated methylation levels)
-* **\*sig-diff-hypomethylated-bases.tsv** (table containing all cytosines with significantly reduced methylation levels)
-* **\*sig-diff-methylated-tiles.tsv** (table containing all significantly differentially methylated tiles)
-* **\*sig-diff-hypermethylated-tiles.tsv** (table containing all tiles with significantly elevated methylation levels)
-* **\*sig-diff-hypomethylated-tiles.tsv** (table containing all tiles with significantly reduced methylation levels)
-
-> NOTE:  
-> In practice these will be based on a contrast listed in the filename, e.g., they will be something like "Flight_vs_Ground-sig-diff-methylated-bases.tsv".
+* `study` (data frame specifying factor levels assigned to each sample)
+* `group` (named vector specifying the group or set of factor levels for each sample)
+* `contrasts` (matrix defining pairwise comparisons between groups)
+* `sampleTable` (data frame mapping sample IDs to groups (conditions))
+* `group_name_lookup` (data frame mapping groups with R naming scheme to human-readable group names)
 
 <br>
 
----
-
-### 11f. Make and write out tables of percent methylation levels
+### 11d. Import Methylation Calls
 
 ```R
-# Make and write out a table of base-level percent methylated
-perc.meth <- percMethylation(meth, rowids = TRUE)
-perc.meth <- perc.meth %>% data.frame(check.names = FALSE) %>% rownames_to_column("location")
+### Import methylation call data ###
 
-write.table(perc.meth, "base-level-percent-methylated.tsv", sep = "\t", 
-            quote = FALSE, row.names = FALSE)
+order_input_files <- function(sample_names, paths) {
+    # this function takes in a vector of sample_names and
+    # a vector of paths to coverage files, and returns a vector
+    # of coverage files in the same order as the sample names
 
-# Make and write out a table of tile percent methylated
-tiles_perc.meth <- percMethylation(tiles_meth, rowids = TRUE)
-tiles_perc.meth <- tiles_perc.meth %>% data.frame(check.names = FALSE) %>% rownames_to_column("location")
+    ordered_paths <- c()
 
-write.table(tiles_perc.meth, "tile-level-percent-methylated.tsv", sep = "\t", 
-            quote = FALSE, row.names = FALSE)
+    for (sample in sample_names) {
+        search_pattern <- paste0(sample, "_bismark")
+        hits <- paths[grep(search_pattern, paths)]
+
+        # making sure there is exactly one match
+        if (length(hits) != 1) {
+            stop("\n  There was a problem matching up sample names with their coverage files.\nCannot proceed.\n\n", call. = FALSE)
+        }
+
+        ordered_paths <- c(ordered_paths, hits)
+    }
+
+    return(ordered_paths)
+}
+
+# Get list of *.bismark.cov.gz files
+bismark_cov_paths <- list.files(
+  path = coverage_files_dir_path,
+  pattern = ".*.bismark.cov.gz",
+  full.names = TRUE,
+  recursive = TRUE
+)
+
+# Make sure files list matches number of samples in runsheet
+if (dim(sampleTable)[1] != length(bismark_cov_paths)) {
+    error_message <- paste0(
+        "\n  The number of '*.bismark.cov.gz' files found in the ",
+        coverage_files_dir_path,
+        " directory\n  does not match the number of samples specified in the runsheet.\nCannot proceed.\n\n"
+    )
+
+    stop(error_message, call. = FALSE)
+}
+
+# Make sure coverage-file-paths vector is in the same order as the sample names
+bismark_cov_paths <- order_input_files(sampleTable$sample_id, bismark_cov_paths)
+
+# Make a single table with info needed for methylkit
+sample_meth_info_df <- full_join(
+    data.frame("sample_id" = sampleTable$sample_id, "coverage_file_path" = bismark_cov_paths),
+    sampleTable,
+    "sample_id")
+
+# Read in methylation counts
+# NOTE: treatment vector is composed of integers corresponding to the groups. 
+#       It is used during the min.per.group filtering in the unite command
+meth_obj <- methRead(
+    location = as.list(sample_meth_info_df %>% pull(coverage_file_path)),
+    sample.id = as.list(sample_meth_info_df %>% pull(sample_id)),
+    treatment = as.list(sample_meth_info_df %>% mutate(group_no = as.integer(factor(condition))) %>% pull(group_no)),
+    pipeline = "bismarkCoverage",
+    assembly = org_and_ensembl_version,
+    header = FALSE,
+    mincov = 10, # set minimum read coverage needed to include a base in the methylKit object.
+    dbtype = "NA"  # indicates where the object should be stored ("NA" == in memory, "tabix" == on the file system)
+)
+
 ```
 
-**Input data:**
-* `meth` (base-level methylBase object created in [Step 11b](#11b-individual-base-analysis))
-* `tiles_meth` (tile-level methylBase object created in [Step 11c](#11c-tile-level-analysis))
+**Input Data:**
 
-**Output data:**
+* `coverage_files_dir_path` (variable containing path to bismark coverage files (`*.bismark.cov.gz`) generated in 
+  [Step7](#7-extract-methylation-calls))
+* `org_and_ensembl_version` (variable containing the organism name and ensembl version from [Step 11b](#11b-set-up-r-environment))
+* `sampleTable` (data frame containing sample condition values, output from 
+  [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
 
-* **base-level-percent-methylated.tsv** (table containing the percent methylation levels of all cytosines across all samples)
-* **tile-level-percent-methylated.tsv** (table containing the percent methylation levels of all tiles across all samples)
+**Output Data:**
+
+* `meth_obj` (methylRawList object holding methylation and coverage information for all samples)
+* `sample_meth_info_df` (data frame containing sample IDs mapped to conditions and coverage file paths)
 
 <br>
 
----
-
-### 11g. Make overview figure of percent differential methylation across features
+### 11e. Individual-base analysis
 
 ```R
-# Based on individual bases
-pdf("sig-diff-methylated-bases-across-features.pdf")
-plotTargetAnnotation(diffAnn.all_sig, precedence = TRUE, 
-                     main = "% of sig. diff. methylated sites across features")
-dev.off()
+### Function for computing differential methylation per base for each contrasts ###
+compute_contrast_bases <- function(i) {
+    # Get current contrast
+    curr_contrasts_vec <- contrasts[, i]
 
-# Based on tiles
-pdf("sig-diff-methylated-tiles-across-features.pdf")
-plotTargetAnnotation(tiles_diffAnn.all_sig, precedence = TRUE, 
-                     main = "% of sig. diff. methylated tiles across features")
-dev.off()
+    # Get subset sample info table relevant to current contrast
+    curr_sample_info_df <- sample_meth_info_df %>% filter(condition %in% curr_contrasts_vec)
+
+    # Get which samples are relevant to current contrast
+    curr_samples_vec <- curr_sample_info_df %>% pull(sample_id)
+
+    # Make binary vector for treatment argument to methRead()
+    curr_treatment_vec <- c()
+    for (value in curr_sample_info_df$condition) {
+        if (value == curr_sample_info_df$condition[1]) {
+            curr_treatment_vec <- c(curr_treatment_vec, 1)
+        } else {
+            curr_treatment_vec <- c(curr_treatment_vec, 0)
+        }
+    }
+
+    # return methylation statistics for bases
+    return(
+        as.data.frame(getData(
+            calculateDiffMeth(
+                methylKit::unite(reorganize(
+                    meth_obj,
+                    sample.ids = as.list(curr_samples_vec),
+                    treatment = as.integer(factor(curr_sample_info_df$condition)) - 1
+                ),
+                min.per.group = 1L), # Keep only bases with coverage in at least one sample per group
+                mc.cores = myargs$mc_cores)
+            )
+        ) %>%
+        relocate("meth.diff", .before = "pvalue") %>% # move methyl diff value before stats values
+        rename_with(~ paste0(.x, "_", colnames(contrasts)[i]), any_of(c("pvalue", "qvalue", "meth.diff")))
+    )
+}
+
+
+### Normalize the data ###
+
+# First, filter samples by coverage to account for PCR bias or over-amplification
+meth_obj <- filterByCoverage(meth_obj, lo.count = 10, lo.perc = NULL, hi.count = NULL, hi.perc = 99.9)
+# Normalize coverage between samples using a scaling factor derived from the median coverage distributions
+norm_meth_obj <- normalizeCoverage(meth_obj, method = "median")
+
+
+### Base analysis ###
+
+# create initial output object at base resolution
+#   - compute pair-wise differential methylation for each contrast
+#   - add percent methylation values for all samples
+#   - add All.mean and All.stdev stats
+# NOTE: when retrieving percent methylation, keep all bases (min.per.group = 0L) to
+#       include bases that have coverage in some groups (and data for only some
+#       contrasts) but no coverage in others
+output_bases_df <- lapply(seq_len(dim(contrasts)[2]), compute_contrast_bases) %>%
+    purrr::reduce(full_join, by = c("chr", "start", "end", "strand")) %>%
+    left_join(as.data.frame(percMethylation(methylKit::unite(norm_meth_obj, min.per.group = 0L), rowids = TRUE)) %>%
+        rownames_to_column() %>%
+        separate_wider_regex(rowname, c(chr = ".*", "\\.", start = ".*", "\\.", end = ".*")) %>%
+        mutate_at(vars(start, end), as.integer) %>%
+        rowwise() %>%
+        mutate(
+            All.mean = mean(c_across(all_of(sample_meth_info_df$sample_id)), na.rm = TRUE),
+            All.stdev = sd(c_across(all_of(sample_meth_info_df$sample_id)), na.rm = TRUE)
+        ), by = c("chr", "start", "end"))
+
+# Add group mean and stdev
+for (g in rownames(group_name_lookup)) {
+    colnames_to_process <- sample_meth_info_df %>% filter(condition == g) %>% pull(sample_id)
+    output_bases_df <- output_bases_df %>%
+        rowwise() %>%
+        mutate(
+            gmean = mean(c_across(all_of(colnames_to_process)), na.rm = TRUE),
+            gstdev = sd(c_across(all_of(colnames_to_process)), na.rm = TRUE)
+        ) %>%
+        rename("gmean" = paste0("Group.Mean_", group_name_lookup[g, ]),
+               "gstdev" = paste0("Group.Stdev_", group_name_lookup[g, ]))
+}
+
+# Annotate with gene parts (promoter/exon/intron)
+suppressWarnings(output_ann_df <- annotateWithGeneParts(as(output_bases_df, "GRanges"), gene.obj))
+
+# Associate the nearest TSS annotations with gene parts
+# Add annotations to output bases dataframe
+df_list <- list(
+        as.tibble(getAssociationWithTSS(output_ann_df) %>% dplyr::rename(rowid = target.row)),
+        tibble::rowid_to_column(as.data.frame(genomation::getMembers(output_ann_df))),
+        tibble::rowid_to_column(output_bases_df))
+
+# Create one combined table with all annotations, methylation values, and statistics
+# reorder the columns to final expected format
+bases_tab_with_features_and_annots <- df_list %>%
+        purrr::reduce(full_join, by = "rowid") %>%
+        mutate(rowid = NULL) %>%
+    left_join(gene_transcript_map) %>%
+    left_join(functional_annots_tab, by = c("gene_ID" = myargs$primary_keytype)) %>%
+    rename("gene_ID" = myargs$primary_keytype) %>%
+    relocate(c("ENSEMBL", "SYMBOL", "GENENAME", "REFSEQ", "ENTREZID", "STRING_id", "GOSLIM_IDS", "feature.name", "chr", "start", "end", "strand")) %>%
+    relocate(sample_meth_info_df$sample_id, .after = "intron")
+rm(df_list)
+
 ```
 
 **Input data:**
 
-* `diffAnn.all_sig`, `tiles_diffAnn.all_sig` (AnnotationByGeneParts objects for all differentially methylated bases and tiles created in [Step 11d](#11d-add-feature-information))
+* `contrasts` (matrix defining pairwise comparisons between groups from [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
+* `group_name_lookup` (data frame mapping groups with R naming scheme to human-readable group names from [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
+* `gene_transcript_map` (DataFrame holding the gene-to-transcript mappings from [Step 11b](#11b-set-up-r-environment))
+* `functional_annots_tab` (DataFrame holding GeneLab annotation table from [Step 11b](#11b-set-up-r-environment))
+* `meth_obj` (methylRawList object created in [Step 11d](#11d-import-methylation-calls)
+* `sample_meth_info_df` (data frame containing sample IDs mapped to conditions and coverage file paths from [Step 11d](#11d-import-methylation-calls))
 
 **Output data:**
 
-* **\*sig-diff-methylated-bases-across-features.pdf** (overview figure of the percent of significantly differentially methylated cytosines identified in specific features (promoter, exon, intron))
-* **\*sig-diff-methylated-tiles-across-features.pdf** (overview figure of the percent of significantly differentially methylated tiles identified in specific features (promoter, exon, intron))
-
-> NOTE:  
-> In practice these will be based on a contrast listed in the filename, e.g., they will be something like "Flight_vs_Ground-sig-diff-methylated-bases-across-features.pdf".
+* `bases_tab_with_features_and_annots` (data frame containing the following columns:
+  - Gene identifier column (ENSEMBL for non-plant or TAIR for plant studies) 
+  - Additional organism-specific gene annotation columns
+  - Feature.name (ID of feature that the annotation derives from)
+  - Chromosomal coordinate (of the methylated base)
+    - Chr
+    - Start
+    - End
+    - Strand (`*` if unstranded)
+  - dist.to.feature (distance between the methylated base and the feature TSS)
+  - feature.strand (strand of the feature)
+  - Gene part annotation (0 if false, 1 if true)
+    - prom (promoter)
+    - exon
+    - intron
+  - Normalized percent methylation in this chromosomal coordinate for each sample
+  - For each pair-wise comparison:
+    - meth.diff (differential methylation value)
+    - pvalue
+    - qvalue
+  - Statistics for percent methylation values:
+    - All.mean (mean across all samples)
+    - All.stdev (standard deviation across all samples) 
+    - For each experimental group:
+      - Group.Mean_(group) (mean within group)
+      - Group.Stdev_(group) (standard deviation within group))
+* `norm_meth_obj` (median-normalized methylRawList object)
 
 <br>
 
----
+### 11f. Tile analysis
+
+```R
+### Tile analysis ###
+
+# Group bases into tiles
+meth_tiles_obj <- tileMethylCounts(norm_meth_obj,
+                                   win.size = 1000,
+                                   step.size = 1000,
+                                   cov.bases = 10)
+
+# create initial output object at tile resolution
+#   - compute pair-wise differential methylation for each contrast
+#   - add percent methylation values for all samples
+#   - add All.mean and All.stdev stats
+# NOTE: when retrieving percent methylation, keep all tiles (min.per.group = 0L) to
+#       include tiles that have coverage in some groups (and data for only some
+#       contrasts) but no coverage in others
+output_tiles_df <- lapply(seq_len(dim(contrasts)[2]), compute_contrast_tiles) %>%
+    purrr::reduce(full_join, by = c("chr", "start", "end", "strand")) %>%
+    left_join(as.data.frame(percMethylation(methylKit::unite(meth_tiles_obj, min.per.group = 0L), rowids = TRUE)) %>%
+        rownames_to_column() %>%
+        separate_wider_regex(rowname, c(chr = ".*", "\\.", start = ".*", "\\.", end = ".*")) %>%
+        mutate_at(vars(start, end), as.integer) %>%
+        rowwise() %>%
+        mutate(
+            All.mean = mean(c_across(all_of(sample_meth_info_df$sample_id)), na.rm = TRUE),
+            All.stdev = sd(c_across(all_of(sample_meth_info_df$sample_id)), na.rm = TRUE)
+        ), by = c("chr", "start", "end"))
+
+# Add group means and stdev
+for (g in rownames(group_name_lookup)) {
+    colnames_to_process <- sample_meth_info_df %>% filter(condition == g) %>% pull(sample_id)
+    output_tiles_df <- output_tiles_df %>%
+        rowwise() %>%
+        mutate(
+            gmean = mean(c_across(all_of(colnames_to_process)), na.rm = TRUE),
+            gstdev = sd(c_across(all_of(colnames_to_process)), na.rm = TRUE)
+        ) %>%
+        rename("gmean" = paste0("Group.Mean_", group_name_lookup[g, ]),
+               "gstdev" = paste0("Group.Stdev_", group_name_lookup[g, ]))
+}
+
+# Annotate with gene parts (promoter/exon/intron)
+suppressWarnings(output_tiles_ann_df <- annotateWithGeneParts(as(output_tiles_df, "GRanges"), gene.obj))
+
+# Associate the nearest TSS annotations with gene parts
+# Add annotations to output bases dataframe
+df_list <- list(
+        as.tibble(getAssociationWithTSS(output_tiles_ann_df)) %>% dplyr::rename(rowid = target.row),
+        tibble::rowid_to_column(as.data.frame(genomation::getMembers(output_tiles_ann_df))),
+        tibble::rowid_to_column(output_tiles_df))
+
+# Create one combined table with all annotations, methylation values, and statistics
+# reorder the columns to final expected format
+tiles_tab_with_features_and_annots <- df_list %>%
+        purrr::reduce(full_join, by = "rowid") %>%
+        mutate(rowid = NULL) %>%
+    left_join(gene_transcript_map) %>%
+    left_join(functional_annots_tab, by = c("gene_ID" = myargs$primary_keytype)) %>%
+    rename("gene_ID" = myargs$primary_keytype) %>%
+    relocate(c("ENSEMBL", "SYMBOL", "GENENAME", "REFSEQ", "ENTREZID", "STRING_id", "GOSLIM_IDS", "feature.name", "chr", "start", "end", "strand")) %>%
+    relocate(sample_meth_info_df$sample_id, .after = "intron")
+rm(df_list)
+```
+
+**Input data:**
+
+* `contrasts` (matrix defining pairwise comparisons between groups from [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
+* `group_name_lookup` (data frame mapping groups with R naming scheme to human-readable group names from [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
+* `gene_transcript_map` (DataFrame holding the gene-to-transcript mappings from [Step 11b](#11b-set-up-r-environment))
+* `functional_annots_tab` (DataFrame holding GeneLab annotation table from [Step 11b](#11b-set-up-r-environment))
+* `sample_meth_info_df` (data frame containing sample IDs mapped to conditions and coverage file paths from [Step 11d](#11d-import-methylation-calls))
+* `norm_meth_obj` (median-normalized methylRawList object created in [Step 11e](#11e-individual-base-analysis)
+
+**Output data:**
+
+* `tiles_tab_with_features_and_annots` (data frame containing the following columns:
+  - Gene identifier column (ENSEMBL for non-plant or TAIR for plant studies) 
+  - Additional organism-specific gene annotation columns
+  - Feature.name (ID of feature that the annotation derives from)
+  - Chromosomal coordinate (of the methylated region)
+    - Chr
+    - Start
+    - End
+    - Strand (`*` if unstranded)
+  - dist.to.feature (distance between the methylated region and the feature TSS)
+  - feature.strand (strand of the feature)
+  - Gene part annotation (0 if false, 1 if true)
+    - prom (promoter)
+    - exon
+    - intron
+  - Normalized percent methylation in this chromosomal coordinate for each sample
+  - For each pair-wise comparison:
+    - meth.diff (differential methylation value)
+    - pvalue
+    - qvalue
+  - Statistics for percent methylation values:
+    - All.mean (mean across all samples)
+    - All.stdev (standard deviation across all samples) 
+    - For each experimental group:
+      - Group.Mean_(group) (mean within group)
+      - Group.Stdev_(group) (standard deviation within group))
+
+<br>
+
+### 11g. Export Tables
+
+```R
+### Output contrasts table ###
+write.csv(
+    contrasts,
+    file = file.path(myargs$methylkit_output_dir,
+                     paste0("contrasts", myargs$file_suffix, ".csv"))
+)
+
+### Output Sample table ###
+write.csv(
+    sampleTable,
+    file = file.path(myargs$methylkit_output_dir,
+                     paste0("SampleTable", myargs$file_suffix, ".csv")),
+    row.names = FALSE
+)
+
+### Export differentially methylated bases ###
+data.table::fwrite(
+    bases_tab_with_features_and_annots,
+    row.names = FALSE,
+    file = file.path(myargs$methylkit_output_dir,
+        paste0("differential_methylation_bases", myargs$file_suffix, ".csv")
+    ),
+    quote = TRUE, na = "NA"
+)
+
+### Export differentially methylated tiles ###
+data.table::fwrite(
+    tiles_tab_with_features_and_annots,
+    row.names = FALSE,
+    file = file.path(myargs$methylkit_output_dir,
+        paste0("differential_methylation_tiles", myargs$file_suffix, ".csv")
+    ),
+    quote = TRUE, na = "NA"
+)
+
+### print session info ###
+print("Session Info: ")
+sessionInfo()
+print(paste0("BioC_version_associated_with_R_version: ",BiocManager::version()))
+
+```
+
+**Input data:**
+
+* `contrasts` (matrix defining pairwise comparisons between groups from [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
+* `sampleTable` (data frame mapping sample IDs to groups (conditions) from [Step 11c](#11c-configure-metadata-sample-grouping-and-group-comparisons))
+* `bases_tab_with_features_and_annots` (Methylated base output table from [Step 11e](#11e-individual-base-analysis))
+* `tiles_tab_with_features_and_annots` (Methylated tile output tables from [Step 11f](#11f-tile-analysis))
+
+**Output data:**
+* **SampleTable_GLMethylSeq.csv** (table specifying the group or set of factor levels for each sample)
+* **contrasts_GLMethylSeq.csv** (table listing all pairwise group comparisons)
+* **differential_methylation_bases_GLMethylSeq.csv** (Methylated bases table containing the following columns:
+  - Gene identifier column (ENSEMBL for non-plant or TAIR for plant studies) 
+  - Additional organism-specific gene annotation columns
+  - Feature.name (ID of feature that the annotation derives from)
+  - Chromosomal coordinate (of the methylated base)
+    - Chr
+    - Start
+    - End
+    - Strand (`*` if unstranded)
+  - dist.to.feature (distance between the methylated base and the feature TSS)
+  - feature.strand (strand of the feature)
+  - Gene part annotation (0 if false, 1 if true)
+    - prom (promoter)
+    - exon
+    - intron
+  - Normalized percent methylation in this chromosomal coordinate for each sample
+  - For each pair-wise comparison:
+    - meth.diff (differential methylation value)
+    - pvalue
+    - qvalue
+  - Statistics for percent methylation values:
+    - All.mean (mean across all samples)
+    - All.stdev (standard deviation across all samples) 
+    - For each experimental group:
+      - Group.Mean_(group) (mean within group)
+      - Group.Stdev_(group) (standard deviation within group))
+* **differential_methylation_tiles_GLMethylSeq.csv** (Methylated tiles table containing the following columns:
+  - Gene identifier column (ENSEMBL for non-plant or TAIR for plant studies) 
+  - Additional organism-specific gene annotation columns
+  - Feature.name (ID of feature that the annotation derives from)
+  - Chromosomal coordinate (of the methylated region)
+    - Chr
+    - Start
+    - End
+    - Strand (`*` if unstranded)
+  - dist.to.feature (distance between the methylated region and the feature TSS)
+  - feature.strand (strand of the feature)
+  - Gene part annotation (0 if false, 1 if true)
+    - prom (promoter)
+    - exon
+    - intron
+  - Normalized percent methylation in this chromosomal coordinate for each sample
+  - For each pair-wise comparison:
+    - meth.diff (differential methylation value)
+    - pvalue
+    - qvalue
+  - Statistics for percent methylation values:
+    - All.mean (mean across all samples)
+    - All.stdev (standard deviation across all samples) 
+    - For each experimental group:
+      - Group.Mean_(group) (mean within group)
+      - Group.Stdev_(group) (standard deviation within group))
+
+ > Note: the dist.to.feature specifies the distance of the base or region to the Transcription Start Site (TSS). A
+   negative distance indicates that the TSS is upstream of the methylated base or region and a positive distance
+   indicates that the TSS is downstream of the methylated base or region. 0 indicates that the TSS overlaps with the
+   methylated region. For regions, the distance is measured from the end of the region closest to the TSS.
+<br>
+
 ---
