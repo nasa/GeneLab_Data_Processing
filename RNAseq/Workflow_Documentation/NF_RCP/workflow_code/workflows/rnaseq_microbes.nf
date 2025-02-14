@@ -303,8 +303,16 @@ workflow RNASEQ_MICROBES {
             | mix(ISA_TO_RUNSHEET.out.versions)
             | mix(GTF_TO_PRED.out.versions)
             | mix(PRED_TO_BED.out.versions)
-            | mix(RAW_FASTQC.out.versions)  // Remove .first(), let unique handle it
-
+            | mix(RAW_FASTQC.out.versions)
+            | mix(TRIMGALORE.out.versions)
+            | mix(ALIGN_BOWTIE2.out.versions)
+            | mix(SAM_TO_BAM.out.versions)
+            | mix(INFER_EXPERIMENT.out.versions)
+            | mix(GENEBODY_COVERAGE.out.versions)
+            | mix(INNER_DISTANCE.out.versions)
+            | mix(READ_DISTRIBUTION.out.versions)
+            | mix(FEATURECOUNTS.out.versions)
+            | mix(RAW_READS_MULTIQC.out.versions)
         // Process the versions:
         ch_software_versions 
             | unique                          // Remove duplicates
