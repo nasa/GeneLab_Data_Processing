@@ -11,23 +11,31 @@ process FEATURECOUNTS {
     path("FeatureCounts_GLbulkRNAseq.csv"),   emit: counts
     path("FeatureCounts_GLbulkRNAseq.csv.summary"), emit: summary
     path("versions.yml"),                           emit: versions
+
   script:
     def pairedOption = meta.paired_end ? "-p --countReadPairs -d 10 -D 1000 -P -B" : ""
     def strandOption = (strandedness == "unstranded") ? 0 : (strandedness == "sense") ? 1 : 2
-    def bamList = bam_files.join(' ')
     """
-    featureCounts ${pairedOption} \
-    -T ${ task.cpus } \
-    -G ${ genomeFasta } \
-    -a ${ genomeGtf } \
-    -t ${gtf_features} \
-    -s ${strandOption} \
-    -o "FeatureCounts_GLbulkRNAseq.csv" \
-    ${bamList}
+    # Rename each BAM file to remove the '_sorted' substring
+    for bam in *.bam; do
+      new_bam=\$(echo \$bam | sed 's/_sorted//g')
+      mv \$bam \$new_bam
+    done
 
+    # Build a list of the renamed BAM files
+    bam_list=\$(ls *.bam | tr '\\n' ' ')
+
+    # Run featureCounts using the renamed files
+    featureCounts ${pairedOption} \
+      -T ${task.cpus} \
+      -G ${genomeFasta} \
+      -a ${genomeGtf} \
+      -t ${gtf_features} \
+      -s ${strandOption} \
+      -o "FeatureCounts_GLbulkRNAseq.csv" \
+      \$bam_list
 
     echo '"${task.process}":' > versions.yml
     echo "    featurecounts: \$(echo \$(featureCounts -v 2>&1) | sed 's/^.*featureCounts v//; s/ .*\$//')" >> versions.yml
     """
-
 }
