@@ -23,16 +23,19 @@ process FEATURECOUNTS {
     done
 
     # Build a list of the renamed BAM files
-    bam_list=\$(ls *.bam | tr '\\n' ' ')
+    bam_list=\$(ls *.bam | tr '\n' ' ')
+
+    # Get all unique feature types in the reference GTF file
+    GTF_FEATURES=\$(grep -v '^#' "${genomeGtf}" | cut -f3 | sort | uniq | tr '\n' ',' | sed 's/,\$//')
 
     # Run featureCounts using the renamed files
-    featureCounts ${pairedOption} \
-      -T ${task.cpus} \
-      -G ${genomeFasta} \
-      -a ${genomeGtf} \
-      -t ${gtf_features} \
-      -s ${strandOption} \
-      -o "FeatureCounts_GLbulkRNAseq.csv" \
+    featureCounts ${pairedOption} \\
+      -T ${task.cpus} \\
+      -G ${genomeFasta} \\
+      -a ${genomeGtf} \\
+      -t "\${GTF_FEATURES}" \\
+      -s ${strandOption} \\
+      -o "FeatureCounts_GLbulkRNAseq.csv" \\
       \$bam_list
 
     echo '"${task.process}":' > versions.yml

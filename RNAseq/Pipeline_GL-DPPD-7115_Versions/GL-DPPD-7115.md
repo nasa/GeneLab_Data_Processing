@@ -749,6 +749,10 @@ zip -r read_dist_multiqc_GLbulkRNAseq_report.zip /path/to/read_dist_multiqc/outp
 ### 7a. Count Aligned Reads with FeatureCounts
 
 ```bash
+
+# Get all unique feature types in the reference GTF file
+GTF_FEATURES=\$(grep -v '^#' /path/to/annotation/gtf/file | cut -f3 | sort | uniq | tr '\n' ',' | sed 's/,\$//')
+
 featureCounts -p \
   --countReadPairs \
   -d 10 \
@@ -758,6 +762,7 @@ featureCounts -p \
   -T NumberOfThreads \
   -G /path/to/genome/fasta/file \
   -a /path/to/annotation/gtf/file \
+  -t "${GTF_FEATURES}" \
   -s 1 \
   -o /path/to/featurecounts/output/directory/FeatureCounts_GLbulkRNAseq.csv \
   /path/to/*_sorted.bam
@@ -774,9 +779,10 @@ featureCounts -p \
 - `-T` – number of threads to use
 - `-G` – path to genome fasta file
 - `-a` – path to genome annotation GTF file
+- `-t` – specifies the feature types to be counted, e.g. gene, exon, intron, etc.
 - `-s` – specifies strandedness: 0=unstranded, 1=stranded (forward), 2=stranded (reverse); the `reverse` option is used if read strandedness (output from [step 6](#6a-determine-read-strandedness)) is antisense, `forward` is used with sense strandedness, and `none` is used if strandedness is half sense half antisense
 - `-o` – output file path and name
-- `/path/to/*_sorted.bam` – input sorted BAM files, can specify multiple files separated by spaces
+- `/path/to/*.bam` – input sorted BAM files, can specify multiple files separated by spaces
 
 **Input Data:**
 
