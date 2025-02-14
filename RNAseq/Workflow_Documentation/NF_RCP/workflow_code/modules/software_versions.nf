@@ -4,6 +4,7 @@ process SOFTWARE_VERSIONS {
     
     output:
         path "software_versions_GLbulkRNAseq.txt", emit: software_versions
+        path "software_versions_GLbulkRNAseq.yaml", emit: software_versions_yaml
 
     script:
     """

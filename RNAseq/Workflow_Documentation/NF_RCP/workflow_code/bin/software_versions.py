@@ -81,28 +81,15 @@ def main(versions_json_path: Path, output_path: Path, assay: str = 'rnaseq'):
     processed_versions = {}
     
     with versions_json_path.open() as f:
-        for line in f:
-            if not line.strip():
-                continue
-            try:
-                entry = yaml.safe_load(line)
-                if isinstance(entry, dict):
-                    if any(isinstance(v, (str, int, float)) for v in entry.values()):
-                        for software, ver in entry.items():
-                            normalized_name = normalize_name(software, known_names)
-                            if (normalized_name not in processed_versions or 
-                                compare_versions(ver, processed_versions[normalized_name])):
-                                processed_versions[normalized_name] = ver
-                    else:
-                        for value in entry.values():
-                            if isinstance(value, dict):
-                                for software, ver in value.items():
-                                    normalized_name = normalize_name(software, known_names)
-                                    if (normalized_name not in processed_versions or 
-                                        compare_versions(ver, processed_versions[normalized_name])):
-                                        processed_versions[normalized_name] = ver
-            except yaml.YAMLError:
-                continue
+        data = yaml.safe_load(f)
+        # Flatten nested structure
+        for task_info in data.values():
+            if isinstance(task_info, dict):
+                for software, ver in task_info.items():
+                    normalized_name = normalize_name(software, known_names)
+                    if (normalized_name not in processed_versions or 
+                        compare_versions(ver, processed_versions[normalized_name])):
+                        processed_versions[normalized_name] = ver
 
     results = []
     for program, ver in processed_versions.items():
@@ -114,19 +101,35 @@ def main(versions_json_path: Path, output_path: Path, assay: str = 'rnaseq'):
 
     df = pd.DataFrame(results)
     if not df.empty:
+        # Create YAML dict before setting index
+        versions_dict = {row["Program"]: row["Version"] for _, row in df.iterrows()}
+        
+        # Convert numeric strings to integers where possible
+        for prog, ver in versions_dict.items():
+            try:
+                versions_dict[prog] = int(ver)
+            except (ValueError, TypeError):
+                pass
+        
+        # Now set index for markdown output
         df = df.set_index(keys="Program")
         
         # Split known and unknown software
         config_order = [name for name, _ in CONFIG[assay]]
         known_software = [x for x in config_order if x in df.index]
         unknown_software = [x for x in df.index if x not in config_order]
-        unknown_software.sort()  # Sort alphabetically
+        unknown_software.sort()
         
-        # Reindex with known + unknown software
         df = df.reindex(known_software + unknown_software)
 
+        # Write outputs
         df.to_markdown(output_path, index=True)
-        print(f"Wrote {output_path}")
+        
+        yaml_output = output_path.with_suffix('.yaml')
+        with yaml_output.open('w') as f:
+            yaml.dump(versions_dict, f, sort_keys=False, default_flow_style=False)
+        
+        print(f"Wrote {output_path} and {yaml_output}")
     else:
         print("No software versions found to process")
 
