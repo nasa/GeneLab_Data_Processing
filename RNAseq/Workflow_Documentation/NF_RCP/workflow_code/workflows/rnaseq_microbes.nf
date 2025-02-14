@@ -44,6 +44,7 @@ include { MULTIQC as ALL_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLab
 
 // include { QUALIMAP_BAM_QC } from '../modules/qualimap.nf'
 // include { QUALIMAP_RNASEQ_QC } from '../modules/qualimap.nf'
+include { GET_GTF_FEATURES } from '../modules/get_gtf_features.nf'
 include { FEATURECOUNTS } from '../modules/featurecounts.nf'
 
 include { DGE_DESEQ2 } from '../modules/dge_deseq2.nf'
@@ -239,7 +240,9 @@ workflow RNASEQ_MICROBES {
         strandedness = ASSESS_STRANDEDNESS.out | map { it.text.split(":")[0] }
 
         // Generate gene counts table from genome-coordinate sorted Bowtie2-aligned BAMs using featureCounts
-        FEATURECOUNTS( ch_meta, genome_references, strandedness, bams )
+        GET_GTF_FEATURES( genome_references )
+        gtf_features = GET_GTF_FEATURES.out.gtf_features.map { it.text.trim() }
+        FEATURECOUNTS( ch_meta, genome_references, gtf_features, strandedness, bams )
         counts = FEATURECOUNTS.out.counts
 
         // Run Qualimap BAM QC and rnaseq

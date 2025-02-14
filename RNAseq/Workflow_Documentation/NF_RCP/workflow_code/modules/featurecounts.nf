@@ -3,6 +3,7 @@ process FEATURECOUNTS {
   input:
     val(meta)
     tuple path(genomeFasta), path(genomeGtf)
+    val(gtf_features)
     val(strandedness)
     path(bam_files)
 
@@ -19,6 +20,7 @@ process FEATURECOUNTS {
     -T ${ task.cpus } \
     -G ${ genomeFasta } \
     -a ${ genomeGtf } \
+    -t ${gtf_features} \
     -s ${strandOption} \
     -o "FeatureCounts_GLbulkRNAseq.csv" \
     ${bamList}
