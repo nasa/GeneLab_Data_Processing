@@ -47,6 +47,10 @@ include { MULTIQC as ALL_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLab
 include { GET_GTF_FEATURES } from '../modules/get_gtf_features.nf'
 include { FEATURECOUNTS } from '../modules/featurecounts.nf'
 
+
+include { EXTRACT_RRNA } from '../modules/extract_rrna.nf'
+include { REMOVE_RRNA_FEATURECOUNTS } from '../modules/remove_rrna_featurecounts.nf'
+
 include { DGE_DESEQ2 } from '../modules/dge_deseq2.nf'
 include { ADD_GENE_ANNOTATIONS } from '../modules/add_gene_annotations.nf'
 //include { EXTEND_DGE_TABLE } from '../modules/extend_dge_table.nf'
@@ -252,6 +256,8 @@ workflow RNASEQ_MICROBES {
         //             // | concat(QUALIMAP_RNASEQ_QC.out.results )
         //             | collect
 
+        EXTRACT_RRNA( organism_sci, genome_references | map { it[1] })
+        REMOVE_RRNA_FEATURECOUNTS ( counts, EXTRACT_RRNA.out.rrna_ids )
 
         // Normalize counts, DGE 
         DGE_DESEQ2( ch_meta, runsheet_path, counts )
@@ -313,5 +319,5 @@ workflow RNASEQ_MICROBES {
         SOFTWARE_VERSIONS(ch_final_software_versions)
 
     emit:
-        SOFTWARE_VERSIONS.out.software_versions
+        EXTRACT_RRNA.out.rrna_ids
 }

@@ -1,6 +1,6 @@
 process REMOVE_RRNA {
     /**
-     * Filters a RSEM `genes.results` file by removing rRNA ENSEMBL gene IDs
+     * Filters a RSEM `genes.results` file by removing rRNA gene IDs
      * and counts the number of rRNA genes removed.
      *
      * Inputs:

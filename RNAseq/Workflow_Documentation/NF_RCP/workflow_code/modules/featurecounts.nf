@@ -8,8 +8,8 @@ process FEATURECOUNTS {
     path(bam_files)
 
   output:
-    path("FeatureCounts_GLbulkRNAseq.csv"),   emit: counts
-    path("FeatureCounts_GLbulkRNAseq.csv.summary"), emit: summary
+    path("FeatureCounts_GLbulkRNAseq.tsv"),   emit: counts
+    path("FeatureCounts_GLbulkRNAseq.tsv.summary"), emit: summary
     path("versions.yml"),                           emit: versions
 
   script:
@@ -35,7 +35,7 @@ process FEATURECOUNTS {
       -a ${genomeGtf} \\
       -t "\${GTF_FEATURES}" \\
       -s ${strandOption} \\
-      -o "FeatureCounts_GLbulkRNAseq.csv" \\
+      -o "FeatureCounts_GLbulkRNAseq.tsv" \\
       \$bam_list
 
     echo '"${task.process}":' > versions.yml

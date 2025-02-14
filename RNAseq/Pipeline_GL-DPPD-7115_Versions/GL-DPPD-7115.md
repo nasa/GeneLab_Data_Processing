@@ -762,9 +762,9 @@ featureCounts -p \
   -T NumberOfThreads \
   -G /path/to/genome/fasta/file \
   -a /path/to/annotation/gtf/file \
-  -t "${GTF_FEATURES}" \
+  -t ${GTF_FEATURES} \
   -s 1 \
-  -o /path/to/featurecounts/output/directory/FeatureCounts_GLbulkRNAseq.csv \
+  -o /path/to/featurecounts/output/directory/FeatureCounts_GLbulkRNAseq.tsv \
   /path/to/*_sorted.bam
 ```
 
@@ -793,15 +793,15 @@ featureCounts -p \
 
 **Output Data:**
 
-- **FeatureCounts_GLbulkRNAseq.csv** (table containing raw read counts per gene for each sample)
-- **FeatureCounts_GLbulkRNAseq.csv.summary** (table containing counting statistics for each sample)
+- **FeatureCounts_GLbulkRNAseq.tsv** (table containing raw read counts per gene for each sample)
+- **FeatureCounts_GLbulkRNAseq.tsv.summary** (table containing counting statistics for each sample)
 
 <br>
 
 ### 7b. Compile FeatureCounts Logs
 
 ```bash
-multiqc --interactive -n FeatureCounts_GLbulkRNAseq -o /path/to/FeatureCounts_multiqc/output/FeatureCounts_multiqc_GLbulkRNAseq_report /path/to/FeatureCounts_GLbulkRNAseq.csv.summary
+multiqc --interactive -n FeatureCounts_GLbulkRNAseq -o /path/to/FeatureCounts_multiqc/output/FeatureCounts_multiqc_GLbulkRNAseq_report /path/to/FeatureCounts_GLbulkRNAseq.tsv.summary
 
 zip -r FeatureCounts_multiqc_GLbulkRNAseq_report.zip /path/to/FeatureCounts_multiqc/output/FeatureCounts_multiqc_GLbulkRNAseq_report
 ```
@@ -811,11 +811,11 @@ zip -r FeatureCounts_multiqc_GLbulkRNAseq_report.zip /path/to/FeatureCounts_mult
 - `--interactive` – force reports to use interactive plots
 - `-n` – prefix name for output files
 - `-o` – the output directory to store results
-- `/path/to/FeatureCounts_GLbulkRNAseq.csv.summary` – the summary file output from the FeatureCounts step, provided as a positional argument
+- `/path/to/FeatureCounts_GLbulkRNAseq.tsv.summary` – the summary file output from the FeatureCounts step, provided as a positional argument
 
 **Input Data:**
 
-- FeatureCounts_GLbulkRNAseq.csv.summary (FeatureCounts summary statistics file, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts))
+- FeatureCounts_GLbulkRNAseq.tsv.summary (FeatureCounts summary statistics file, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts))
 
 **Output Data:**
 
@@ -835,7 +835,7 @@ library(tidyverse)
 counts_dir="/path/to/directory/containing/featurecounts/output"
 
 ### Read FeatureCounts data, skipping the first line which contains command info
-data <- read.table(file.path(counts_dir, "FeatureCounts_GLbulkRNAseq.csv"), 
+data <- read.table(file.path(counts_dir, "FeatureCounts_GLbulkRNAseq.tsv"), 
                   header=TRUE, 
                   skip=1,
                   sep="\t",
@@ -866,7 +866,7 @@ sessionInfo()
 
 **Input Data:**
 
-- FeatureCounts_GLbulkRNAseq.csv (table containing raw read counts per gene for each sample, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts))
+- FeatureCounts_GLbulkRNAseq.tsv (table containing raw read counts per gene for each sample, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts))
 
 **Output Data:**
 
@@ -885,7 +885,7 @@ sessionInfo()
 grep "rRNA" /path/to/annotation/gtf/file \
     | grep -o 'gene_id "[^"]*"' \
     | sed 's/gene_id "\(.*\)"/\1/' \
-    | sort -u > *_rrna_gene_ids.txt
+    | sort -u > rrna_ids.txt
 ```
 
 **Input Data:**
@@ -894,36 +894,45 @@ grep "rRNA" /path/to/annotation/gtf/file \
 
 **Output Data:**
 
-- *rrna_gene_ids.txt (list of unique rRNA gene IDs in a GTF file)
+- rrna_ids.txt (list of unique rRNA gene IDs in a GTF file)
 
 <br>
 
 #### 7dii. Filter rRNA Genes from Gene Counts
 
-```bash
+```python
 ### Filter out rRNA entries ###
-awk 'NR==1; NR==2; NR==FNR {next} FNR==NR {ids[$1]=1; next} !($1 in ids)' \
-    FeatureCounts_GLbulkRNAseq.csv \
-    *rrna_gene_ids.txt \
-    FeatureCounts_GLbulkRNAseq.csv > FeatureCounts_rRNA_removed_GLbulkRNAseq.csv
 
-### Count removed rRNA entries ###
-rRNA_count=$(awk 'NR==1; NR==2 {next} NR==FNR {next} FNR==NR {ids[$1]=1; next} $1 in ids' \
-    FeatureCounts_GLbulkRNAseq.csv \
-    *rrna_gene_ids.txt \
-    FeatureCounts_GLbulkRNAseq.csv | wc -l)
-echo "FeatureCounts: ${rRNA_count} rRNA entries removed." > FeatureCounts_rRNA_counts.txt
+with open("/path/to/FeatureCounts_GLbulkRNAseq.tsv") as f:
+    df = pd.read_csv(f, sep='\t', comment='#')
+
+with open("/path/to/rrna_ids.txt") as f:
+    rrna_ids = set(line.strip() for line in f if line.strip())
+
+# Filter and summarize
+gene_id_col = df.columns[0]
+rna_mask = df[gene_id_col].isin(rrna_ids)
+sample_stats = {col.replace('.bam', ''): 
+                (df[rna_mask][col] >= 1).sum() 
+                for col in df.columns[6:]}
+
+# Write outputs
+with open(summary_output, 'w') as f:
+    f.write(f"Total entries listed: {len(df)}\n")
+    f.write(f"Total rRNA entries listed: {rna_mask.sum()}\n\n")
+    for sample, count in sample_stats.items():
+        f.write(f"{sample}: {count} rRNA entries removed\n")
+
+df[~rna_mask].to_csv(filtered_output, sep='\t', index=False)
 ```
 
 **Input Data:**
-
-- FeatureCounts_GLbulkRNAseq.csv (table containing raw read counts per gene for each sample, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts))
-- *rrna_gene_ids.txt (file containing list of gene IDs with rRNA features, output from [Step 7di](#7di-extract-rrna-gene-ids-from-gtf))
+- FeatureCounts_GLbulkRNAseq.tsv (table containing raw read counts per gene for each sample, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts))
+- rrna_ids.txt (file containing list of gene IDs with rRNA features, output from [Step 7di](#7di-extract-rrna-gene-ids-from-gtf))
 
 **Output Data:**
-
-- **FeatureCounts_rRNA_removed_GLbulkRNAseq.csv** (table containing raw read counts per gene for each sample with rRNA entries removed)
-- *rRNA_counts.txt (Summary of number of rRNA entries removed)
+- **FeatureCounts_rRNA_removed_GLbulkRNAseq.csv** (table containing raw read counts per gene for each sample with rRNA genes removed)
+- rRNA_counts.txt (Summary of number of rRNA genes removed from counts table)
 
 <br>
 
@@ -1122,7 +1131,7 @@ rm(contrast.names)
 
 ```R
 ### Import FeatureCounts data ###
-counts_file <- "/path/to/FeatureCounts_GLbulkRNAseq.csv"
+counts_file <- "/path/to/FeatureCounts_GLbulkRNAseq.tsv"
 
 # Load featureCounts data
 featurecounts_data <- read.csv(file = counts_file, 
@@ -1151,7 +1160,7 @@ rownames(counts) <- featurecounts_data$Geneid
 ```
 
 **Input Data:**
-- FeatureCounts_GLbulkRNAseq.csv (table containing raw read counts per gene for each sample, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts) or from [Step 7dii](#7dii-filter-rrna-genes-from-gene-counts) when using rRNA-removed count data)
+- FeatureCounts_GLbulkRNAseq.tsv (table containing raw read counts per gene for each sample, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts) or from [Step 7dii](#7dii-filter-rrna-genes-from-gene-counts) when using rRNA-removed count data)
 - `study` (data frame containing sample condition values, output from [Step 8c](#8c-configure-metadata-sample-grouping-and-group-comparisons))
 
 **Output Data:**
