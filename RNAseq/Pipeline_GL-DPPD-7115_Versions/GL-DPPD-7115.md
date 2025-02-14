@@ -774,8 +774,8 @@ featureCounts -p \
 - `--countReadPairs` – specifies that fragments should be counted for paired-end data (omit for single-end data)
 - `-d` – minimum fragment length (omit for single-end data)
 - `-D` – maximum fragment length (omit for single-end data)
-- `-P` – specifies that fragment length should be checked against minimum and maximum thresholds when counting reads
-- `-B` – specifies that only fragments with both ends successfully aligned should be considered for counting
+- `-P` – specifies that fragment length should be checked against minimum and maximum thresholds when counting reads (omit for single-end data)
+- `-B` – specifies that only fragments with both ends successfully aligned should be considered for counting (omit for single-end data)
 - `-T` – number of threads to use
 - `-G` – path to genome fasta file
 - `-a` – path to genome annotation GTF file
