@@ -16,6 +16,6 @@ process SAM_TO_BAM {
 
     # Capture versions
     echo '"${task.process}":' > versions.yml
-    echo "    samtools: \$(samtools --version | head -n1 | sed 's/^.*samtools //; s/Using.*\$//')" >> versions.yml
+    echo "    samtools: \$(samtools --version | head -n1 | awk '{print \$2}')" >> versions.yml
     """
 }

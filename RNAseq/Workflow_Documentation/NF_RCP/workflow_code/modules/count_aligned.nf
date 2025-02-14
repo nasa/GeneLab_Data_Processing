@@ -32,6 +32,6 @@ process COUNT_ALIGNED {
       ${ meta.id }
 
     echo '"${task.process}":' > versions.yml
-    echo "    rsem: \$(rsem-calculate-expression --version | sed -e 's/Current version: RSEM v//g')" >> versions.yml
+    echo "    rsem: \$(rsem-calculate-expression --version | sed 's/Current version: RSEM v//')" >> versions.yml
     """
 }

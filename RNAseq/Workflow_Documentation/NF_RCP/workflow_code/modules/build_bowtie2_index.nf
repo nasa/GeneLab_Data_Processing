@@ -24,6 +24,6 @@ process BUILD_BOWTIE2_INDEX {
       bowtie2/${ genome_fasta.baseName }
 
     echo '"${task.process}":' > versions.yml
-    echo "    bowtie2: \$(echo \$(bowtie2 --version 2>&1) | sed 's/^.*bowtie2-align-s version //; s/ .*\$//')" >> versions.yml
+    echo "    bowtie2: \$(bowtie2 --version | head -n1 | awk '{print \$3}')" >> versions.yml
     """
 }

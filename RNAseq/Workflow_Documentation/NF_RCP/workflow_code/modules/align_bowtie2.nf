@@ -29,6 +29,6 @@ process ALIGN_BOWTIE2 {
       2> ${meta.id}.bowtie2.log
 
     echo '"${task.process}":' > versions.yml
-    echo "    bowtie2: \$(bowtie2 --version | head -n1 | sed 's/^.*bowtie2-align-s version //; s/ .*\$//')" >> versions.yml
+    echo "    bowtie2: \$(bowtie2 --version | head -n1 | awk '{print \$3}')" >> versions.yml
     """
 }

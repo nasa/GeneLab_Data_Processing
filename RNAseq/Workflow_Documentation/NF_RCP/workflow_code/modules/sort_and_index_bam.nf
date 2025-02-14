@@ -7,7 +7,7 @@ process SORT_AND_INDEX_BAM {
   output:
     tuple val(meta), path(sorted_bam_fname), path("${ sorted_bam_fname }.bai"), emit: sorted_bam
     tuple path(sorted_bam_fname), path("${ sorted_bam_fname }.bai"), emit: bam_only_files
-    //path("versions.yaml"), emit: versions
+    path("versions.yml"), emit: versions
 
   script:
     sorted_bam_fname = bam_file.name.contains('.out.bam') ? 
@@ -22,7 +22,7 @@ process SORT_AND_INDEX_BAM {
 
     samtools index -@ ${ task.cpus } ${ sorted_bam_fname }
 
-    #echo '"${task.process}":' > versions.yml
-    #echo "    samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//')" >> versions.yml
+    echo '"${task.process}":' > versions.yml
+    echo "    samtools: \$(samtools --version | head -n1 | awk '{print \$2}')" >> versions.yml
     """
 }

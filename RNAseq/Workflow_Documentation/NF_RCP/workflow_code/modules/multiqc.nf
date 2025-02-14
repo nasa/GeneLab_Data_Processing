@@ -27,7 +27,7 @@ process MULTIQC {
         .
     zip -r '${ params.MQCLabel }_multiqc_GLbulkRNAseq_report.zip' '${ params.MQCLabel }_multiqc_GLbulkRNAseq_report'
 
-    echo "${task.process}:" > versions.yml
-    echo "    multiqc: \$(multiqc --version | sed -e "s/multiqc, version //g")" >> versions.yml
+    echo '"${task.process}":' > versions.yml
+    echo "    multiqc: \$(multiqc --version | sed "s/multiqc, version //")" >> versions.yml
     """
 }

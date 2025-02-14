@@ -39,6 +39,6 @@ process FEATURECOUNTS {
       \$bam_list
 
     echo '"${task.process}":' > versions.yml
-    echo "    subread: \$(echo \$(featureCounts -v 2>&1) | sed 's/^.*featureCounts v//; s/ .*\$//')" >> versions.yml
+    echo "    subread: \$(featureCounts -v 2>&1 | awk '{print \$2}' | sed 's/^v//' | tr -d '\n')" >> versions.yml
     """
 }

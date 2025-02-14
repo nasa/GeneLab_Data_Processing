@@ -29,7 +29,7 @@ process QUALIMAP_BAM_QC {
         -nt ${task.cpus}
 
     echo '"${task.process}":' > versions.yml
-    echo "    qualimap: \$(qualimap 2>&1 | sed 's/^.*QualiMap v.//; s/Built.*\$//')" >> versions.yml
+    echo "    qualimap: $(qualimap 2>&1 | awk -F'v.|Built' '{print $2}')" >> versions.yml
     """
 }
 
@@ -63,6 +63,6 @@ process QUALIMAP_RNASEQ_QC {
         -s 
 
     echo '"${task.process}":' > versions.yml
-    echo "    qualimap: \$(qualimap 2>&1 | sed 's/^.*QualiMap v.//; s/Built.*\$//')" >> versions.yml
+    echo "    qualimap: $(qualimap 2>&1 | awk -F'v.|Built' '{print $2}')" >> versions.yml
     """
 }
