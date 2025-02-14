@@ -19,7 +19,7 @@ process DGE_DESEQ2 {
         path("differential_expression_no_annotations${params.output_suffix}.csv"),        emit: dge_table
         path("VST_Normalized_Counts${params.output_suffix}.csv"),                         emit: vst_norm_counts
         path("summary.txt"),                                                              emit: summary
-        path("versions.txt"),                                                             emit: versions_txt
+        path("versions2.txt"),                                                             emit: versions
 
     script:
         def output_filename_suffix = params.output_suffix ?: ""
@@ -43,5 +43,16 @@ process DGE_DESEQ2 {
                 DEBUG_MODE_LIMIT_GENES = FALSE,
                 DEBUG_MODE_ADD_DUMMY_COUNTS = ${debug_dummy_counts}
             ))"
+
+        Rscript -e "versions <- c(); 
+                    versions['R'] <- gsub(' .*', '', gsub('R version ', '', R.version\\\$version.string));
+                    versions['BioConductor'] <- as.character(BiocManager::version()); 
+                    pkg_list <- c('BiocParallel', 'DESeq2', 'tidyverse', 'dplyr', 'knitr', 'stringr', 'yaml');
+                    for(pkg in pkg_list) {
+                        versions[pkg] <- as.character(packageVersion(pkg))
+                    };
+                    cat('RNASEQ_DGE_DESEQ2:\\n', 
+                        paste0('    ', names(versions), ': ', versions, collapse='\\n'), 
+                        '\\n', sep='', file='versions2.txt')"
         """
 }

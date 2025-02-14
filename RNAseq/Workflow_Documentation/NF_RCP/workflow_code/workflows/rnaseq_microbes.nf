@@ -313,6 +313,7 @@ workflow RNASEQ_MICROBES {
             | mix(READ_DISTRIBUTION.out.versions)
             | mix(FEATURECOUNTS.out.versions)
             | mix(RAW_READS_MULTIQC.out.versions)
+            | mix(DGE_DESEQ2.out.versions)
         // Process the versions:
         ch_software_versions 
             | unique                          // Remove duplicates

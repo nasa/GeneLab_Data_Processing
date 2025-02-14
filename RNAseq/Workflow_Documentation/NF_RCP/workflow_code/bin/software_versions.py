@@ -87,15 +87,17 @@ def main(versions_json_path: Path, output_path: Path, assay: str = 'rnaseq'):
             if isinstance(task_info, dict):
                 for software, ver in task_info.items():
                     normalized_name = normalize_name(software, known_names)
+                    # Strip quotes and convert to string
+                    ver_str = str(ver).strip("'\"")
                     if (normalized_name not in processed_versions or 
-                        compare_versions(ver, processed_versions[normalized_name])):
-                        processed_versions[normalized_name] = ver
+                        compare_versions(ver_str, processed_versions[normalized_name])):
+                        processed_versions[normalized_name] = ver_str
 
     results = []
     for program, ver in processed_versions.items():
         results.append({
             "Program": program,
-            "Version": str(ver),
+            "Version": ver,  # Already cleaned string
             "Relevant Links": software_urls.get(program, "")
         })
 
@@ -104,10 +106,13 @@ def main(versions_json_path: Path, output_path: Path, assay: str = 'rnaseq'):
         # Create YAML dict before setting index
         versions_dict = {row["Program"]: row["Version"] for _, row in df.iterrows()}
         
-        # Convert numeric strings to integers where possible
+        # Convert numeric strings to numbers where possible
         for prog, ver in versions_dict.items():
             try:
-                versions_dict[prog] = int(ver)
+                if '.' in ver:
+                    versions_dict[prog] = float(ver)
+                else:
+                    versions_dict[prog] = int(ver)
             except (ValueError, TypeError):
                 pass
         
