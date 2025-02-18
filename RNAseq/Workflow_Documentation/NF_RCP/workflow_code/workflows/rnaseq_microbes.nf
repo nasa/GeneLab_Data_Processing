@@ -58,6 +58,9 @@ include { ADD_GENE_ANNOTATIONS } from '../modules/add_gene_annotations.nf'
 
 include { SOFTWARE_VERSIONS } from '../modules/software_versions.nf'
 
+include { MD5SUM as RAW_MD5SUM } from '../modules/md5sum.nf' addParams(md5sumLabel:"raw")
+include { MD5SUM as PROCESSED_MD5SUM } from '../modules/md5sum.nf' addParams(md5sumLabel:"processed")
+
 
 include { VV_RAW_READS;
     VV_TRIMMED_READS;
@@ -314,10 +317,10 @@ workflow RNASEQ_MICROBES {
             | mix(FEATURECOUNTS.out.versions)
             | mix(RAW_READS_MULTIQC.out.versions)
             | mix(DGE_DESEQ2.out.versions)
+            | mix(ch_nextflow_version)
         // Process the versions:
         ch_software_versions 
             | unique                          // Remove duplicates
-            | mix(ch_nextflow_version)        // Add Nextflow version
             | collectFile(                    // Combine all into one file
                 name: "software_versions.txt", 
                 newLine: true, 
@@ -327,6 +330,17 @@ workflow RNASEQ_MICROBES {
 
         SOFTWARE_VERSIONS(ch_final_software_versions)
 
+
+        // Generate md5sums for raw and processed data
+        RAW_MD5SUM( STAGE_RAW_READS.out.ch_all_raw_reads
+        | concat (RAW_READS_MULTIQC.out.zipped_report) // to do: reimplement zip output w/ cleaned paths
+        | collect)
+
+        // PROCESSED_MD5SUM(x
+        // | concat(y)
+        // | collect 
+        // )
+
     emit:
-        EXTRACT_RRNA.out.rrna_ids
+        RAW_MD5SUM.out.md5sums
 }
