@@ -12,17 +12,18 @@ process MD5SUM {
 
     input:
         path files
+        val(md5sum_label)
 
     output:
-        path("${ params.md5sumLabel }_md5sum_GLbulkRNAseq.tsv"), emit: md5sums
+        path("${ md5sum_label }_md5sum_GLbulkRNAseq.tsv"), emit: md5sums
 
     script:
         """
         # Generate raw md5sums
         if [ -d "${ files }" ]; then
-            find "${ files }" -type f -exec md5sum {} \\; > ${ params.md5sumLabel }_md5sum_GLbulkRNAseq.tsv
+            find "${ files }" -type f -exec md5sum {} \\; > ${ md5sum_label }_md5sum_GLbulkRNAseq.tsv
         else
-            md5sum ${ files } > ${ params.md5sumLabel }_md5sum_GLbulkRNAseq.tsv
+            md5sum ${ files } > ${ md5sum_label }_md5sum_GLbulkRNAseq.tsv
         fi
 
         """

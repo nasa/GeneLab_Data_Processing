@@ -31,16 +31,16 @@ include { READ_DISTRIBUTION } from '../modules/rseqc.nf'
 include { ASSESS_STRANDEDNESS } from '../modules/assess_strandedness.nf'
 
 
-include { MULTIQC as RAW_READS_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"raw")
-include { MULTIQC as TRIMMED_READS_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"trimmed")
-include { MULTIQC as TRIMMING_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"trimming")
-include { MULTIQC as ALIGN_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"align")
-include { MULTIQC as GENEBODY_COVERAGE_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"geneBody_cov") //PublishTo: "RSeQC_Analyses/02_geneBody_coverage", 
-include { MULTIQC as INFER_EXPERIMENT_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"infer_exp") //PublishTo: "RSeQC_Analyses/03_infer_experiment", 
-include { MULTIQC as INNER_DISTANCE_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"inner_dist") //PublishTo: "RSeQC_Analyses/04_inner_distance", 
-include { MULTIQC as READ_DISTRIBUTION_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"read_dist") //PublishTo: "RSeQC_Analyses/05_read_distribution",
-include { MULTIQC as COUNT_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"featureCounts")
-include { MULTIQC as ALL_MULTIQC } from '../modules/multiqc.nf' addParams(MQCLabel:"all")
+include { MULTIQC as RAW_READS_MULTIQC } from '../modules/multiqc.nf'
+include { MULTIQC as TRIMMED_READS_MULTIQC } from '../modules/multiqc.nf'
+include { MULTIQC as TRIMMING_MULTIQC } from '../modules/multiqc.nf'
+include { MULTIQC as ALIGN_MULTIQC } from '../modules/multiqc.nf'
+include { MULTIQC as GENEBODY_COVERAGE_MULTIQC } from '../modules/multiqc.nf'
+include { MULTIQC as INFER_EXPERIMENT_MULTIQC } from '../modules/multiqc.nf'
+include { MULTIQC as INNER_DISTANCE_MULTIQC } from '../modules/multiqc.nf'
+include { MULTIQC as READ_DISTRIBUTION_MULTIQC } from '../modules/multiqc.nf'
+include { MULTIQC as COUNT_MULTIQC } from '../modules/multiqc.nf'
+include { MULTIQC as ALL_MULTIQC } from '../modules/multiqc.nf'
 
 // include { QUALIMAP_BAM_QC } from '../modules/qualimap.nf'
 // include { QUALIMAP_RNASEQ_QC } from '../modules/qualimap.nf'
@@ -58,8 +58,8 @@ include { ADD_GENE_ANNOTATIONS } from '../modules/add_gene_annotations.nf'
 
 include { SOFTWARE_VERSIONS } from '../modules/software_versions.nf'
 
-include { MD5SUM as RAW_MD5SUM } from '../modules/md5sum.nf' addParams(md5sumLabel:"raw")
-include { MD5SUM as PROCESSED_MD5SUM } from '../modules/md5sum.nf' addParams(md5sumLabel:"processed")
+include { MD5SUM as RAW_MD5SUM } from '../modules/md5sum.nf'
+include { MD5SUM as PROCESSED_MD5SUM } from '../modules/md5sum.nf'
 
 include { validateParameters; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
 
@@ -118,7 +118,7 @@ workflow RNASEQ_MICROBES {
             ch_isa_versions = ISA_TO_RUNSHEET.out.versions  // Capture version if ISA_TO_RUNSHEET runs
         }
 
-                // Validate input parameters
+        // Validate input parameters
         validateParameters()
 
         // Print summary of supplied parameters
@@ -127,7 +127,7 @@ workflow RNASEQ_MICROBES {
         // | concat(y)
         // | collect 
         // )
-        
+
         PARSE_RUNSHEET( runsheet_path )
 
         samples = PARSE_RUNSHEET.out.samples
@@ -284,30 +284,15 @@ workflow RNASEQ_MICROBES {
 
         // MultiQC
         ch_multiqc_config = params.multiqc_config ? Channel.fromPath( params.multiqc_config ) : Channel.fromPath("NO_FILE")
-        RAW_READS_MULTIQC( samples_txt, raw_fastqc_zip, ch_multiqc_config )
-        TRIMMING_MULTIQC( samples_txt, trimgalore_reports, ch_multiqc_config )
-        TRIMMED_READS_MULTIQC( samples_txt, trimmed_fastqc_zip, ch_multiqc_config )
-        ALIGN_MULTIQC( samples_txt, bowtie2_alignment_logs, ch_multiqc_config )
-
-        INFER_EXPERIMENT_MULTIQC( samples_txt, INFER_EXPERIMENT.out.log | map { it[1] } | collect, ch_multiqc_config )
-        GENEBODY_COVERAGE_MULTIQC( samples_txt, GENEBODY_COVERAGE.out.log | map { it[1] } | collect, ch_multiqc_config )
-        INNER_DISTANCE_MULTIQC( samples_txt, INNER_DISTANCE.out.log | map { it[1] } | collect, ch_multiqc_config )
-        READ_DISTRIBUTION_MULTIQC( samples_txt, READ_DISTRIBUTION.out.log | map { it[1] } | collect, ch_multiqc_config )
-
-        COUNT_MULTIQC( samples_txt, FEATURECOUNTS.out.summary, ch_multiqc_config )
-
-        all_multiqc_input = raw_fastqc_zip
-            | concat( trimgalore_reports )
-            | concat( trimmed_fastqc_zip )
-            | concat( bowtie2_alignment_logs )
-            | concat( INFER_EXPERIMENT.out.log | map { it[1] } | collect )
-            | concat( GENEBODY_COVERAGE.out.log | map { it[1] } | collect )
-            | concat( INNER_DISTANCE.out.log | map { it[1] } | collect )
-            | concat( READ_DISTRIBUTION.out.log | map { it[1] } | collect )
-            // | concat(qualimap_outputs )
-            | concat( FEATURECOUNTS.out.summary )
-            | collect
-        ALL_MULTIQC( samples_txt, all_multiqc_input, ch_multiqc_config )
+        RAW_READS_MULTIQC(samples_txt, raw_fastqc_zip, ch_multiqc_config, "raw")
+        TRIMMING_MULTIQC(samples_txt, trimgalore_reports, ch_multiqc_config, "trimming")
+        TRIMMED_READS_MULTIQC(samples_txt, trimmed_fastqc_zip, ch_multiqc_config, "trimmed")
+        ALIGN_MULTIQC(samples_txt, bowtie2_alignment_logs, ch_multiqc_config, "align")
+        INFER_EXPERIMENT_MULTIQC(samples_txt, INFER_EXPERIMENT.out.log | map { it[1] } | collect, ch_multiqc_config, "infer_exp")
+        GENEBODY_COVERAGE_MULTIQC(samples_txt, GENEBODY_COVERAGE.out.log | map { it[1] } | collect, ch_multiqc_config, "geneBody_cov")
+        INNER_DISTANCE_MULTIQC(samples_txt, INNER_DISTANCE.out.log | map { it[1] } | collect, ch_multiqc_config, "inner_dist")
+        READ_DISTRIBUTION_MULTIQC(samples_txt, READ_DISTRIBUTION.out.log | map { it[1] } | collect, ch_multiqc_config, "read_dist")
+        COUNT_MULTIQC(samples_txt, FEATURECOUNTS.out.summary, ch_multiqc_config, "featureCounts")
 
         // Software Version Capturing
         nf_version = '"NEXTFLOW":\n    nextflow: '.concat("${nextflow.version}\n")
@@ -345,9 +330,17 @@ workflow RNASEQ_MICROBES {
 
 
         // Generate md5sums for raw and processed data
-        RAW_MD5SUM( STAGE_RAW_READS.out.ch_all_raw_reads
-        | concat (RAW_READS_MULTIQC.out.zipped_report) // to do: reimplement zip output w/ cleaned paths
-        | collect)
+        RAW_MD5SUM( 
+            STAGE_RAW_READS.out.ch_all_raw_reads
+            | concat (RAW_READS_MULTIQC.out.zipped_report)
+            | collect,
+            "raw"
+        )
+
+        // PROCESSED_MD5SUM(
+        //     y,  // your processed files channel
+        //     "processed"
+        // )
 
 
 

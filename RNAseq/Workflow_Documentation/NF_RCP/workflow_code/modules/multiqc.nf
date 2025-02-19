@@ -5,14 +5,15 @@ process MULTIQC {
     path(sample_names)
     path("mqc_in/*") // any number of multiqc compatible files
     path(multiqc_config)
+    val(mqc_label)
     
 
     output:
-    // path("${ params.MQCLabel }_multiqc_GLbulkRNAseq_report.zip"), emit: zipped_report, to do: reimplement zip output w/ cleaned paths
-    path("${ params.MQCLabel }_multiqc_GLbulkRNAseq_report"), emit: unzipped_report
-    path("${ params.MQCLabel }_multiqc_GLbulkRNAseq_report.zip"), emit: zipped_report
-    path("${ params.MQCLabel }_multiqc_GLbulkRNAseq_report/${ params.MQCLabel }_multiqc_GLbulkRNAseq.html"), emit: html
-    path("${ params.MQCLabel }_multiqc_GLbulkRNAseq_report/${ params.MQCLabel }_multiqc_GLbulkRNAseq_data"), emit: data
+    // path("${ mqc_label }_multiqc_GLbulkRNAseq_report.zip"), emit: zipped_report, to do: reimplement zip output w/ cleaned paths
+    path("${ mqc_label }_multiqc_GLbulkRNAseq_report"), emit: unzipped_report
+    path("${ mqc_label }_multiqc_GLbulkRNAseq_report.zip"), emit: zipped_report
+    path("${ mqc_label }_multiqc_GLbulkRNAseq_report/${ mqc_label }_multiqc_GLbulkRNAseq.html"), emit: html
+    path("${ mqc_label }_multiqc_GLbulkRNAseq_report/${ mqc_label }_multiqc_GLbulkRNAseq_data"), emit: data
     path("versions.yml"), emit: versions
 
     script:
@@ -21,11 +22,11 @@ process MULTIQC {
     multiqc \\
         --force \\
         --interactive \\
-        -o ${ params.MQCLabel }_multiqc_GLbulkRNAseq_report \\
-        -n ${ params.MQCLabel }_multiqc_GLbulkRNAseq \\
+        -o ${ mqc_label }_multiqc_GLbulkRNAseq_report \\
+        -n ${ mqc_label }_multiqc_GLbulkRNAseq \\
         ${ config_arg } \\
         .
-    zip -r '${ params.MQCLabel }_multiqc_GLbulkRNAseq_report.zip' '${ params.MQCLabel }_multiqc_GLbulkRNAseq_report'
+    zip -r '${ mqc_label }_multiqc_GLbulkRNAseq_report.zip' '${ mqc_label }_multiqc_GLbulkRNAseq_report'
 
     echo '"${task.process}":' > versions.yml
     echo "    multiqc: \$(multiqc --version | sed "s/multiqc, version //")" >> versions.yml

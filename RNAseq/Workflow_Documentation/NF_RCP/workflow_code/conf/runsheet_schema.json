@@ -8,25 +8,30 @@
         "properties": {
             "Sample Name": {
                 "type": "string",
-                "description": "Sample Name, added as a prefix to sample-specific processed data output files. Should not include spaces or weird characters."
+                "description": "Sample Name, added as a prefix to sample-specific processed data output files. Should not include spaces or weird characters.",
+                "errorMessage": "'Sample Name' must be specified."
             },
             "has_ERCC": {
                 "type": "boolean",
-                "description": "Set to True if ERCC spike-ins are included in the samples. This ensures ERCC normalized DGE is performed in addition to standard DGE."
+                "description": "Set to True if ERCC spike-ins are included in the samples. This ensures ERCC normalized DGE is performed in addition to standard DGE.",
+                "errorMessage": "has_ERCC must be specified as true or false in the runsheet."
             },
             "paired_end": {
                 "type": "boolean",
-                "description": "Set to True if the samples were sequenced as paired-end. If set to False, samples are assumed to be single-end."
+                "description": "Set to True if the samples were sequenced as paired-end. If set to False, samples are assumed to be single-end.",
+                "errorMessage": "paired_end must be specified as true or false in the runsheet."
             },
             "organism": {
                 "type": "string",
-                "description": "The organism of the samples. This is used to select the appropriate annotation files."
+                "description": "The organism of the samples. This is used to select the appropriate annotation files.",
+                "errorMessage": "'organism' must be specified in the runsheet."
             },
             "read1_path": {
                 "type": "string",
                 "pattern": "^\\S+\\.f(ast)?q\\.gz$",
                 "format": "file-path",
-                "description": "Location of the raw reads file. For paired-end data, this specifies the forward reads fastq.gz file."
+                "description": "Location of the raw reads file. For paired-end data, this specifies the forward reads fastq.gz file.",
+                "errorMessage": "read1_path must be specified in the runsheet."
             },
             "read2_path": {
                 "type": "string",
