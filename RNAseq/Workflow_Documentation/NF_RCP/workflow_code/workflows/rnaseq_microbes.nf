@@ -61,6 +61,7 @@ include { SOFTWARE_VERSIONS } from '../modules/software_versions.nf'
 include { MD5SUM as RAW_MD5SUM } from '../modules/md5sum.nf' addParams(md5sumLabel:"raw")
 include { MD5SUM as PROCESSED_MD5SUM } from '../modules/md5sum.nf' addParams(md5sumLabel:"processed")
 
+include { validateParameters; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
 
 include { VV_RAW_READS;
     VV_TRIMMED_READS;
@@ -97,6 +98,7 @@ workflow RNASEQ_MICROBES {
         derived_store_path
     main:
         publishdir = "results" // default path passed to publishDir, updated below to "GLDS-#" if processing an OSDR dataset
+        ch_isa_versions = Channel.empty()  // Initialize empty channel for ISA versions
 
         // Set up runsheet
         if ( runsheet_path == null ) {
@@ -113,6 +115,7 @@ workflow RNASEQ_MICROBES {
             //Convert ISA archive to runsheet
             ISA_TO_RUNSHEET( osd_accession, glds_accession, isa_archive, dp_tools_plugin )
             runsheet_path = ISA_TO_RUNSHEET.out.runsheet
+            ch_isa_versions = ISA_TO_RUNSHEET.out.versions  // Capture version if ISA_TO_RUNSHEET runs
         }
 
         PARSE_RUNSHEET( runsheet_path )
@@ -303,7 +306,7 @@ workflow RNASEQ_MICROBES {
 
         // Mix in versions from each process
         ch_software_versions = ch_software_versions
-            | mix(ISA_TO_RUNSHEET.out.versions)
+            | mix(ch_isa_versions)  // Use the stored versions channel
             | mix(GTF_TO_PRED.out.versions)
             | mix(PRED_TO_BED.out.versions)
             | mix(RAW_FASTQC.out.versions)
@@ -336,6 +339,11 @@ workflow RNASEQ_MICROBES {
         | concat (RAW_READS_MULTIQC.out.zipped_report) // to do: reimplement zip output w/ cleaned paths
         | collect)
 
+        // Validate input parameters
+        validateParameters()
+
+        // Print summary of supplied parameters
+        log.info paramsSummaryLog(workflow)
         // PROCESSED_MD5SUM(x
         // | concat(y)
         // | collect 
