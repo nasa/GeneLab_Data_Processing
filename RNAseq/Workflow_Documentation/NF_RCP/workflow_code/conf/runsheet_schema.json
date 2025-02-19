@@ -1,0 +1,61 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "RNAseq Runsheet Schema",
+    "description": "Schema for validating RNAseq processing runsheets",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "Sample Name": {
+                "type": "string",
+                "description": "Sample Name, added as a prefix to sample-specific processed data output files. Should not include spaces or weird characters."
+            },
+            "has_ERCC": {
+                "type": "boolean",
+                "description": "Set to True if ERCC spike-ins are included in the samples. This ensures ERCC normalized DGE is performed in addition to standard DGE."
+            },
+            "paired_end": {
+                "type": "boolean",
+                "description": "Set to True if the samples were sequenced as paired-end. If set to False, samples are assumed to be single-end."
+            },
+            "organism": {
+                "type": "string",
+                "description": "The organism of the samples. This is used to select the appropriate annotation files."
+            },
+            "read1_path": {
+                "type": "string",
+                "description": "Location of the raw reads file. For paired-end data, this specifies the forward reads fastq.gz file."
+            },
+            "read2_path": {
+                "type": "string",
+                "description": "Location of the raw reads file. For paired-end data, this specifies the reverse reads fastq.gz file. For single-end data, this column should be omitted."
+            },
+            "Original Sample Name": {
+                "type": "string",
+                "description": "Used to map the sample name that will be used for processing to the original sample name. This is often identical except in cases where the original name includes spaces or weird characters."
+            }
+        },
+        "patternProperties": {
+            "^Factor Value\\[.*\\]$": {
+                "type": "string",
+                "description": "Experimental factor values. Column names should be 'Factor Value[factor_name]' where factor_name is the experimental factor (e.g., Spaceflight, Time, Treatment), and values are the corresponding conditions"
+            }
+        },
+        "required": [
+            "Sample Name",
+            "has_ERCC",
+            "paired_end",
+            "organism",
+            "read1_path"
+        ],
+        "if": {
+            "properties": {
+                "paired_end": { "const": true }
+            }
+        },
+        "then": {
+            "required": ["read2_path"]
+        },
+        "minItems": 2
+    }
+}

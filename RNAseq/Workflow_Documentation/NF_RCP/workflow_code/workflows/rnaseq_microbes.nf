@@ -118,6 +118,16 @@ workflow RNASEQ_MICROBES {
             ch_isa_versions = ISA_TO_RUNSHEET.out.versions  // Capture version if ISA_TO_RUNSHEET runs
         }
 
+                // Validate input parameters
+        validateParameters()
+
+        // Print summary of supplied parameters
+        log.info paramsSummaryLog(workflow)
+        // PROCESSED_MD5SUM(x
+        // | concat(y)
+        // | collect 
+        // )
+        
         PARSE_RUNSHEET( runsheet_path )
 
         samples = PARSE_RUNSHEET.out.samples
@@ -339,15 +349,7 @@ workflow RNASEQ_MICROBES {
         | concat (RAW_READS_MULTIQC.out.zipped_report) // to do: reimplement zip output w/ cleaned paths
         | collect)
 
-        // Validate input parameters
-        validateParameters()
 
-        // Print summary of supplied parameters
-        log.info paramsSummaryLog(workflow)
-        // PROCESSED_MD5SUM(x
-        // | concat(y)
-        // | collect 
-        // )
 
     emit:
         RAW_MD5SUM.out.md5sums

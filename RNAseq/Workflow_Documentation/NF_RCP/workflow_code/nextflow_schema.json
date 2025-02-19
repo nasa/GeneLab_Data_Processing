@@ -145,7 +145,8 @@
               "runsheet_path": {
                   "type": "string",
                   "description": "Path to the input runsheet.",
-                  "format": "file-path"
+                  "format": "file-path",
+                  "schema": "./conf/runsheet_schema.json"
               },
               "isa_archive_path": {
                   "type": "string",
