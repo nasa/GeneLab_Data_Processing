@@ -1192,7 +1192,7 @@ organism <- "organism_that_samples_were_derived_from"
 
 runsheet_path="/path/to/directory/containing/runsheet.csv/file" ## This is the runsheet created in Step 9a above
 work_dir="/path/to/working/directory/where/script/is/executed/from" 
-counts_dir="/path/to/directory/containing/RSEM/counts/files"
+input_counts="/path/to/directory/containing/RSEM/counts/files"
 norm_output="/path/to/normalized/counts/output/directory"
 DGE_output="/path/to/DGE/output/directory"
 
@@ -1297,7 +1297,7 @@ rm(contrast.names)
 ```R
 ### Import RSEM gene count data ###
 files <- list.files(
-    path = counts_dir, 
+    path = input_counts, 
     pattern = ".genes.results", 
     full.names = TRUE
 )

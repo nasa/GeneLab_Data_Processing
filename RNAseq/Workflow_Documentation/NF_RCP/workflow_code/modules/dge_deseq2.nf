@@ -39,7 +39,7 @@ process DGE_DESEQ2 {
                 runsheet_path = '${runsheet_path}',
                 microbes = ${microbes},
                 gene_id_type = '${meta.gene_id_type}',
-                input_gene_results_dir = '\${PWD}',
+                input_counts = '${gene_counts}',
                 DEBUG_MODE_LIMIT_GENES = FALSE,
                 DEBUG_MODE_ADD_DUMMY_COUNTS = ${debug_dummy_counts}
             ))"
@@ -51,7 +51,7 @@ process DGE_DESEQ2 {
                     for(pkg in pkg_list) {
                         versions[pkg] <- as.character(packageVersion(pkg))
                     };
-                    cat('RNASEQ_DGE_DESEQ2:\\n', 
+                    cat('"RNASEQ_DGE_DESEQ2":\\n', 
                         paste0('    ', names(versions), ': ', versions, collapse='\\n'), 
                         '\\n', sep='', file='versions2.txt')"
         """

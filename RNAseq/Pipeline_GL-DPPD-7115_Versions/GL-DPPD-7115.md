@@ -986,7 +986,6 @@ dpt-isa-to-runsheet --accession GLDS-### \
 
 ```R
 ### Install and load required packages ###
-
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
@@ -1016,33 +1015,22 @@ library(DESeq2)
 library(BiocParallel)
 
 ### Define which organism is used in the study - this should be consistent with the species name in the "species" column of the GL-DPPD-7110-A_annotations.csv file ###
-
 organism <- "organism_that_samples_were_derived_from"
 
-
 ### Define the location of the input data and where the output data will be printed to ###
-
-runsheet_path="/path/to/directory/containing/runsheet.csv/file" ## This is the runsheet created in Step 9a above
+runsheet_path="/path/to/directory/containing/runsheet.csv/file"
 work_dir="/path/to/working/directory/where/script/is/executed/from" 
-counts_dir="/path/to/directory/containing/FeatureCounts/counts/file"
 norm_output="/path/to/normalized/counts/output/directory"
 DGE_output="/path/to/DGE/output/directory"
 
-
 ### Pull in the GeneLab annotation table (GL-DPPD-7110-A_annotations.csv) file ###
-
 org_table_link <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
-
 org_table <- read.table(org_table_link, sep = ",", header = TRUE)
 
-
 ### Define the link to the GeneLab annotation table for the organism of interest ###
-
 annotations_link <- org_table[org_table$species == organism, "genelab_annots_link"]
 
-
 ### Set your working directory to the directory where you will execute your DESeq2 script from ###
-
 setwd(file.path(work_dir))
 
 ```
@@ -1064,7 +1052,6 @@ setwd(file.path(work_dir))
 
 ```R
 ### Pull all factors for each sample in the study from the runsheet created in Step 9a ###
-
 compare_csv_from_runsheet <- function(runsheet_path) {
     df <- read.csv(runsheet_path)
     factors <- df %>%
@@ -1076,20 +1063,14 @@ compare_csv_from_runsheet <- function(runsheet_path) {
     return(result)
 }
 
-
 ### Load metadata from runsheet csv file ###
-
 compare_csv <- compare_csv_from_runsheet(runsheet_path)
 
-
 ### Create data frame containing all samples and respective factors ###
-
 study <- compare_csv[, -1, drop=FALSE] # Exclude sample_id
 rownames(study) <- compare_csv$sample_id
 
-
 ### Format groups and indicate the group that each sample belongs to ###
-
 group <- if (ncol(study) >= 2) {
     apply(study, 1, paste, collapse = " & ")
 } else {
@@ -1100,16 +1081,13 @@ group <- sub("^BLOCKER_", "", make.names(paste0("BLOCKER_", group))) # group nam
 names(group) <- group_names
 rm(group_names)
 
-
 ### Format contrasts table, defining pairwise comparisons for all groups ###
-
 contrast.names <- combn(levels(factor(names(group))),2) ## generate matrix of pairwise group combinations for comparison
 contrasts <- apply(contrast.names, MARGIN=2, function(col) sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", stringr::str_sub(col, 2, -2))))) # limited make.names call for each group (also removes leading parentheses)
 contrast.names <- c(paste(contrast.names[1,],contrast.names[2,],sep = "v"),paste(contrast.names[2,],contrast.names[1,],sep = "v")) ## format combinations for output table files names
 contrasts <- cbind(contrasts,contrasts[c(2,1),])
 colnames(contrasts) <- contrast.names
 rm(contrast.names) 
-
 ```
 
 **Input Data:**
@@ -1128,32 +1106,18 @@ rm(contrast.names)
 
 ```R
 ### Import FeatureCounts data ###
-counts_file <- "/path/to/FeatureCounts_GLbulkRNAseq.tsv"
+input_counts <- "/path/to/FeatureCounts_GLbulkRNAseq.tsv"
 
-# Load featureCounts data
-featurecounts_data <- read.csv(file = counts_file, 
-                              header = TRUE, 
-                              sep = "\t", 
-                              skip = 1, 
-                              stringsAsFactors = FALSE, 
-                              check.names = FALSE)
+### Load featureCounts data ###
+featurecounts <- read.csv(params$input_counts, header = TRUE, sep = "\t", skip = 1)
 
-# Identify metadata columns and sample columns
-metadata_cols <- c("Geneid", "Chr", "Start", "End", "Strand", "Length")
-sample_cols <- setdiff(colnames(featurecounts_data), metadata_cols)
+### Create counts matrix: remove metadata columns from featurecounts table, remove bam file extension from column names ###
+row.names(featurecounts) <- gsub("-", ".", featurecounts$Geneid)
+counts <- featurecounts[,-c(1:6)]
+colnames(counts) <- gsub("\\.bam$", "", colnames(counts))
 
-# Remove the ".bam" suffix from sample columns
-sample_cols <- sub("\\.bam$", "", sample_cols)
-
-# Reorder sample columns to match the sample order in the study
-samples <- rownames(study)
-sample_col_indices <- match(samples, sample_cols)
-
-# Create counts matrix
-counts <- featurecounts_data[, sample_col_indices, drop = FALSE]
-counts <- as.data.frame(lapply(counts, as.numeric))
-colnames(counts) <- samples
-rownames(counts) <- featurecounts_data$Geneid 
+### Reorder counts columns to match runsheet ###
+counts <- counts[, rownames(study)]
 ```
 
 **Input Data:**
@@ -1224,10 +1188,10 @@ handle_technical_replicates <- function(sampleTable) {
     return(new_sampleTable)
 }
 
-# Apply the technical replicate handling
+### Apply the technical replicate handling to the sample table ###
 sampleTable <- handle_technical_replicates(sampleTable)
 
-# Update the counts matrix to match the new sample table
+### Remove columns from the counts matrix to match the sample table if necessary ###
 counts <- counts[, rownames(sampleTable)]
 
 ### Build dds object ###
