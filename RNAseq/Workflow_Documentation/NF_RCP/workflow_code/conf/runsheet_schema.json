@@ -24,10 +24,14 @@
             },
             "read1_path": {
                 "type": "string",
+                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
+                "format": "file-path",
                 "description": "Location of the raw reads file. For paired-end data, this specifies the forward reads fastq.gz file."
             },
             "read2_path": {
                 "type": "string",
+                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
+                "format": "file-path",
                 "description": "Location of the raw reads file. For paired-end data, this specifies the reverse reads fastq.gz file. For single-end data, this column should be omitted."
             },
             "Original Sample Name": {
