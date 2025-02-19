@@ -30,7 +30,7 @@ Differences from the [eukaryotic pipeline, GL-DPPD-7101-G](../Pipeline_GL-DPPD-7
 - Bowtie2 is used for alignment instead of STAR 
 - featureCounts is used for gene quantification instead of RSEM 
 - rRNA genes are removed from featureCounts results on a dataset-wide basis and rRNA removal logs are all reported in the same file
-- Raw counts data are imported into R with the read.csv() function instead of tximport, and the dds object is created with the DESeqDataSetFromMatrix() function instead of the DESeqDataSetFromTximport() function
+- Raw counts data are imported into R with the `read.csv()` function instead of tximport, and the dds object is created with the `DESeqDataSetFromMatrix()` function instead of the `DESeqDataSetFromTximport()` function
 
 
 ---
@@ -760,7 +760,6 @@ featureCounts -p \
   -P \
   -B \
   -T NumberOfThreads \
-  -G /path/to/genome/fasta/file \
   -a /path/to/annotation/gtf/file \
   -t ${GTF_FEATURES} \
   -s 1 \
@@ -774,10 +773,9 @@ featureCounts -p \
 - `--countReadPairs` – specifies that fragments should be counted for paired-end data (omit for single-end data)
 - `-d` – minimum fragment length (omit for single-end data)
 - `-D` – maximum fragment length (omit for single-end data)
-- `-P` – specifies that fragment length should be checked against minimum and maximum thresholds when counting reads (omit for single-end data)
+- `-P` – specifies that fragment length should be checked against minimum and maximum thresholds when counting fragments (omit for single-end data)
 - `-B` – specifies that only fragments with both ends successfully aligned should be considered for counting (omit for single-end data)
 - `-T` – number of threads to use
-- `-G` – path to genome fasta file
 - `-a` – path to genome annotation GTF file
 - `-t` – specifies the feature types to be counted, e.g. gene, exon, intron, etc.
 - `-s` – specifies strandedness: 0=unstranded, 1=stranded (forward), 2=stranded (reverse); the `reverse` option is used if read strandedness (output from [step 6](#6a-determine-read-strandedness)) is antisense, `forward` is used with sense strandedness, and `none` is used if strandedness is half sense half antisense
@@ -786,7 +784,6 @@ featureCounts -p \
 
 **Input Data:**
 
-- *.fasta (genome sequence, this pipeline version uses the fasta file indicated in the `fasta` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
 - *.gtf (genome annotation, this pipeline version uses the gtf file indicated in the `gtf` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
 - *_sorted.bam (sorted mapping to genome file, output from [Step 4c](#4c-sort-aligned-reads))
 - *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4d](#4d-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
