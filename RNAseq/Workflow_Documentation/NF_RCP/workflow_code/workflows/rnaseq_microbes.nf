@@ -123,10 +123,6 @@ workflow RNASEQ_MICROBES {
 
         // Print summary of supplied parameters
         log.info paramsSummaryLog(workflow)
-        // PROCESSED_MD5SUM(x
-        // | concat(y)
-        // | collect 
-        // )
 
         PARSE_RUNSHEET( runsheet_path )
 
@@ -204,9 +200,7 @@ workflow RNASEQ_MICROBES {
         | set { raw_fastqc_zip }     // Create a channel with all zip files
         
         GET_MAX_READ_LENGTH( raw_fastqc_zip )
-        GET_MAX_READ_LENGTH.out.length 
-        | map { it.toString().toInteger() }  // ensure it's an integer
-        | set { max_read_length }
+        max_read_length = GET_MAX_READ_LENGTH.out.length | map { it.toString().toInteger() }
         //max_read_length.view { "Max read length: $it" }
 
         // Trim raw reads
@@ -218,7 +212,6 @@ workflow RNASEQ_MICROBES {
         TRIMMED_FASTQC( trimmed_reads )
         TRIMMED_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] } 
         | flatten 
-        | unique 
         | collect 
         | set { trimmed_fastqc_zip }
 
@@ -301,7 +294,7 @@ workflow RNASEQ_MICROBES {
 
         // Mix in versions from each process
         ch_software_versions = ch_software_versions
-            | mix(ch_isa_versions)  // Use the stored versions channel
+            | mix(ch_isa_versions)  
             | mix(GTF_TO_PRED.out.versions)
             | mix(PRED_TO_BED.out.versions)
             | mix(RAW_FASTQC.out.versions)
@@ -318,8 +311,8 @@ workflow RNASEQ_MICROBES {
             | mix(ch_nextflow_version)
         // Process the versions:
         ch_software_versions 
-            | unique                          // Remove duplicates
-            | collectFile(                    // Combine all into one file
+            | unique  
+            | collectFile(
                 name: "software_versions.txt", 
                 newLine: true, 
                 cache: false
@@ -338,7 +331,7 @@ workflow RNASEQ_MICROBES {
         )
 
         // PROCESSED_MD5SUM(
-        //     y,  // your processed files channel
+        //     TRIMMED_READS_MULTIQC.out.zipped_report,
         //     "processed"
         // )
 

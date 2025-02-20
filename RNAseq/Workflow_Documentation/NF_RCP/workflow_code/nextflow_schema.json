@@ -66,10 +66,6 @@
           "description": "",
           "default": "",
           "properties": {
-              "help": {
-                  "type": "string",
-                  "description": "Display help menu and exit."
-              },
               "version": {
                   "type": "boolean",
                   "description": "Display version and exit.",
@@ -162,7 +158,7 @@
                       "microbes"
                   ]
               },
-              "output_suffix": {
+              "assay_suffix": {
                   "type": "string",
                   "default": "_GLbulkRNAseq",
                   "description": "Specifies a string that should be used to label the output file names."
@@ -170,7 +166,7 @@
           },
           "required": [
               "mode",
-              "output_suffix"
+              "assay_suffix"
           ]
       },
       "references": {
@@ -211,11 +207,6 @@
           "description": "Parameters used to reduce the size of inputs or reference data",
           "default": "",
           "properties": {
-              "stage_local": {
-                  "type": "boolean",
-                  "default": true,
-                  "description": "Break the workflow after pulling reads into channels."
-              },
               "limit_samples_to": {
                   "type": "string",
                   "description": "Only use the first n samples for the analysis"

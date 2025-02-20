@@ -11,11 +11,11 @@ process ADD_GENE_ANNOTATIONS {
         path(dge_no_annotations)
 
     output:
-        path("differential_expression${params.output_suffix}.csv"),  emit: annotated_dge_table
+        path("differential_expression${params.assay_suffix}.csv"),  emit: annotated_dge_table
         path("versions.txt"), emit: versions_txt
 
     script:
-        def output_filename_suffix = params.output_suffix ?: ""
+        def output_filename_suffix = params.assay_suffix ?: ""
         def annotations_rmd_file = "${projectDir}/bin/add_gene_annotations.Rmd"
 
         """

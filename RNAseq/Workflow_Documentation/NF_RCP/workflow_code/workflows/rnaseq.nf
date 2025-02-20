@@ -179,9 +179,7 @@ workflow RNASEQ {
         | set { raw_fastqc_zip }     // Create a channel with all zip files
         
         GET_MAX_READ_LENGTH( raw_fastqc_zip )
-        GET_MAX_READ_LENGTH.out.length 
-        | map { it.toString().toInteger() }  // ensure it's an integer
-        | set { max_read_length }
+        max_read_length = GET_MAX_READ_LENGTH.out.length | map { it.toString().toInteger() }
         //max_read_length.view { "Max read length: $it" }
 
         // Trim raw reads
@@ -191,10 +189,9 @@ workflow RNASEQ {
 
         // Run FastQC on trimmed reads
         TRIMMED_FASTQC( trimmed_reads )
-        TRIMMED_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] } \
-        | flatten \
-        | unique \
-        | collect \
+        TRIMMED_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] }
+        | flatten 
+        | collect
         | set { trimmed_fastqc_zip }
 
 

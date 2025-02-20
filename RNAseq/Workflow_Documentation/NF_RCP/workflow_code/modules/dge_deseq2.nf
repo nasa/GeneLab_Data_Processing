@@ -11,18 +11,18 @@ process DGE_DESEQ2 {
         path(gene_counts)
 
     output:
-        tuple path("Normalized_Counts${params.output_suffix}.csv"),
-              path(params.mode == "microbes" ? "FeatureCounts_Unnormalized_Counts${params.output_suffix}.csv" : 
-                   "RSEM_Unnormalized_Counts${params.output_suffix}.csv"),                emit: norm_counts
-        path("contrasts${params.output_suffix}.csv"),                                     emit: contrasts
-        path("SampleTable${params.output_suffix}.csv"),                                   emit: sample_table      
-        path("differential_expression_no_annotations${params.output_suffix}.csv"),        emit: dge_table
-        path("VST_Normalized_Counts${params.output_suffix}.csv"),                         emit: vst_norm_counts
+        tuple path("Normalized_Counts${params.assay_suffix}.csv"),
+              path(params.mode == "microbes" ? "FeatureCounts_Unnormalized_Counts${params.assay_suffix}.csv" : 
+                   "RSEM_Unnormalized_Counts${params.assay_suffix}.csv"),                emit: norm_counts
+        path("contrasts${params.assay_suffix}.csv"),                                     emit: contrasts
+        path("SampleTable${params.assay_suffix}.csv"),                                   emit: sample_table      
+        path("differential_expression_no_annotations${params.assay_suffix}.csv"),        emit: dge_table
+        path("VST_Normalized_Counts${params.assay_suffix}.csv"),                         emit: vst_norm_counts
         path("summary.txt"),                                                              emit: summary
         path("versions2.txt"),                                                             emit: versions
 
     script:
-        def output_filename_suffix = params.output_suffix ?: ""
+        def output_filename_suffix = params.assay_suffix ?: ""
         def microbes = params.mode == 'microbes' ? 'TRUE' : 'FALSE'
         def dge_rmd_file = "${projectDir}/bin/dge_deseq2.Rmd"
         def debug_dummy_counts = params.use_dummy_gene_counts ? 'TRUE'  : 'FALSE'
