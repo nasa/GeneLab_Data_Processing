@@ -70,6 +70,7 @@ def colorCodes = [
 
 workflow RNASEQ {
     take:
+        ch_outdir
         dp_tools_plugin
         annotations_csv_url_string
         accession

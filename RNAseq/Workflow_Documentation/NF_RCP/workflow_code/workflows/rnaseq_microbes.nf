@@ -82,6 +82,7 @@ def colorCodes = [
 
 workflow RNASEQ_MICROBES {
     take:
+        ch_outdir
         dp_tools_plugin
         annotations_csv_url_string
         accession
@@ -97,48 +98,50 @@ workflow RNASEQ_MICROBES {
         reference_store_path
         derived_store_path
     main:
-        publishdir = "results" // default path passed to publishDir, updated below to "GLDS-#" if processing an OSDR dataset
-        ch_isa_versions = Channel.empty()  // Initialize empty channel for ISA versions
-
-        // Set up runsheet
+        // Parse accession, structure output directory as:
+        // params.outdir/
+        //   ├── GLDS-#/results/   # Main pipeline results
+        //   └── nextflow_info/    # Pipeline execution metadata
+        if ( accession ) {
+            GET_ACCESSIONS( accession, api_url )
+            osd_accession = GET_ACCESSIONS.out.accessions_txt.map { it.readLines()[0].trim() }
+            glds_accession = GET_ACCESSIONS.out.accessions_txt.map { it.readLines()[1].trim() }
+            ch_outdir = ch_outdir.combine(glds_accession).map { outdir, glds -> outdir + "/" + glds }
+        }
+        else {
+            ch_outdir = ch_outdir.map { it + "/results" }
+        }
+        // if runsheet_path is not provided, set it up from ISA input
+        // If ISA input is not provided, use the accession to get the ISA
         if ( runsheet_path == null ) {
-            GET_ACCESSIONS( accession, api_url ) //Get both OSD and GLDS accessions based on the input accession
-            accessions_txt = GET_ACCESSIONS.out.accessions_txt // returns accessions.txt with line1 = osd_accession, line2 = glds_accession. 
-            osd_accession = accessions_txt.map { it.readLines()[0].trim() }
-            glds_accession = accessions_txt.map { it.readLines()[1].trim() }
-            publishdir = accessions_txt.map { it.readLines()[1].trim() }
-            //Fetch ISA archive if not provided
             if ( isa_archive_path == null ) {
                 FETCH_ISA( osd_accession, glds_accession )
                 isa_archive = FETCH_ISA.out.isa_archive
             }
-            //Convert ISA archive to runsheet
             ISA_TO_RUNSHEET( osd_accession, glds_accession, isa_archive, dp_tools_plugin )
             runsheet_path = ISA_TO_RUNSHEET.out.runsheet
-            ch_isa_versions = ISA_TO_RUNSHEET.out.versions  // Capture version if ISA_TO_RUNSHEET runs
         }
 
-        // Validate input parameters
+        // Validate input parameters and runsheet
         validateParameters()
 
         // Print summary of supplied parameters
         log.info paramsSummaryLog(workflow)
 
+        // Parse the runsheet
         PARSE_RUNSHEET( runsheet_path )
 
+        // Get samples from runsheet
         samples = PARSE_RUNSHEET.out.samples
         //samples | view
         samples | first 
                 | map { meta, reads -> meta }
                 | set { ch_meta }
-        
-        has_ercc = ch_meta.map { it.has_ercc }
 
         ch_meta | map { meta -> meta.organism_sci }
         | set { organism_sci }
 
         PARSE_ANNOTATIONS_TABLE( annotations_csv_url_string, organism_sci )
-        gene_annotations_url = PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url
 
         // Use manually provided reference genome files if provided. Reference source and version are optional.
         if ( params.reference_fasta && params.reference_gtf ) {
@@ -163,8 +166,8 @@ workflow RNASEQ_MICROBES {
         }
 
         // Add ERCC Fasta and GTF to genome files
-        DOWNLOAD_ERCC( has_ercc, reference_store_path ).ifEmpty([file("ERCC92.fa"), file("ERCC92.gtf")]) | set { ch_maybe_ercc_refs }
-        CONCAT_ERCC( reference_store_path, organism_sci, reference_source, reference_version, genome_references_pre_ercc, ch_maybe_ercc_refs, has_ercc )
+        DOWNLOAD_ERCC( ch_meta.map { it.has_ercc }, reference_store_path ).ifEmpty([file("ERCC92.fa"), file("ERCC92.gtf")]) | set { ch_maybe_ercc_refs }
+        CONCAT_ERCC( reference_store_path, organism_sci, reference_source, reference_version, genome_references_pre_ercc, ch_maybe_ercc_refs, ch_meta.map { it.has_ercc } )
         .ifEmpty { genome_references_pre_ercc.value }  | set { genome_references }
         
         // Convert GTF file to RSeQC-compatible BED file
@@ -272,7 +275,7 @@ workflow RNASEQ_MICROBES {
         DGE_DESEQ2( ch_meta, runsheet_path, counts )
         dge_table = DGE_DESEQ2.out.dge_table
         // Add annotations to DGE table
-        ADD_GENE_ANNOTATIONS( ch_meta, gene_annotations_url, dge_table )
+        ADD_GENE_ANNOTATIONS( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, dge_table )
         annotated_dge_table = ADD_GENE_ANNOTATIONS.out.annotated_dge_table
 
         // MultiQC
@@ -294,7 +297,7 @@ workflow RNASEQ_MICROBES {
 
         // Mix in versions from each process
         ch_software_versions = ch_software_versions
-            | mix(ch_isa_versions)  
+            | mix(ISA_TO_RUNSHEET.out.versions)  
             | mix(GTF_TO_PRED.out.versions)
             | mix(PRED_TO_BED.out.versions)
             | mix(RAW_FASTQC.out.versions)

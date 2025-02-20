@@ -9,7 +9,12 @@ def colorCodes = [
     c_yellow: "\u001b[33;1m",
     c_reset: "\033[0m"
 ]
+
 // Command for: 'run main.nf --version'
+if (params.version) {
+    println("${workflow.manifest.name} ${workflow.manifest.version}")
+    exit 0
+}
 
 // Print the pipeline version on start
 println """
@@ -17,10 +22,7 @@ ${colorCodes.c_bright_green}${colorCodes.c_line}
 ${workflow.manifest.name} ${workflow.manifest.version}
 ${colorCodes.c_line}${colorCodes.c_reset}
 """.stripIndent()
-if (params.version) {
-    println("${workflow.manifest.name} ${workflow.manifest.version}")
-    exit 0
-}
+
 // Debug warning
 println("${colorCodes.c_yellow}")
 if (params.limit_samples_to || params.truncate_to || params.force_single_end || params.genome_subsample) {
@@ -64,12 +66,13 @@ ch_reference_gtf = params.reference_gtf ? Channel.fromPath(params.reference_gtf)
 
 // Set outdir based on the presence of an accession input.. currently not implemented as nextflow.config's outdir is only used for nextflow run info
 //  and ch_outdir is used for all processes' publishDir in order to set either ./results or ./{accession}
-ch_outdir = params.accession ? "$projectDir/${params.accession}" : "$projectDir/results"
+ch_outdir = params.outdir ? channel.fromPath(params.outdir, checkIfExists: true) : null
 
 // Main workflows
 workflow {
     if (params.mode == 'microbes') {
         RNASEQ_MICROBES(
+            ch_outdir,
             ch_dp_tools_plugin,
             ch_reference_table,
             ch_accession,
@@ -87,6 +90,7 @@ workflow {
         )
     } else {
         RNASEQ(
+            ch_outdir,
             ch_dp_tools_plugin,
             ch_reference_table,
             ch_accession,
