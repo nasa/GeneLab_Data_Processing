@@ -115,8 +115,8 @@ rm(contrast.names)
 ```
 
 ### 4. Load Gene Counts
-```{r load-gene-counts }
-##### Import Bowtie 2 or RSEM raw (gene) count data #####
+```{r load-gene-counts}
+##### Import FeatureCounts or RSEM count data #####
 if (params$microbes) {
     # For microbes, look for FeatureCounts TSV file
     if (!file.exists(params$input_counts)) {
@@ -124,7 +124,7 @@ if (params$microbes) {
     }
     # Load featureCounts data with tab separator
     featurecounts <- read.csv(params$input_counts, header = TRUE, sep = "\t", skip = 1)
-    # Create counts matrix: remove metadata columns from featurecounts table, remove possible .bam from column names
+    # Create counts matrix: remove metadata columns, remove possible .bam from column names
     row.names(featurecounts) <- gsub("-", ".", featurecounts$Geneid)
     counts <- featurecounts[,-c(1:6)]
     colnames(counts) <- gsub("\\.bam$", "", colnames(counts))
@@ -138,7 +138,7 @@ if (params$microbes) {
         full.names = TRUE
     )
     samples = rownames(study)
-    # Reorder files based on sample names without specifying "Rsem_gene_counts/" folder
+    # Reorder files based on sample names
     reordering <- sapply(samples, function(x) grep(paste0(x, ".genes.results$"), files, value = FALSE))
     files <- files[reordering]
     names(files) <- samples
@@ -146,27 +146,36 @@ if (params$microbes) {
     if (dim(txi.rsem$counts)[2] != nrow(study)) {
         stop("Sample count mismatch between imported gene results and runsheet")
     }
-    ## Add 1 to genes with lengths of zero - needed to make DESeqDataSet object
-    print(sprintf("DEBUG: %s: Converting %d zero length genes to 1-length of %d genes (%f %% total)", Sys.time(), length(txi.rsem$length[txi.rsem$length == 0]), length(txi.rsem$length), length(txi.rsem$length[txi.rsem$length == 0])/length(txi.rsem$length)))
-    txi.rsem$length[txi.rsem$length == 0] <- 1
 }
+##### Apply debug options if enabled #####
 if (params$DEBUG_MODE_LIMIT_GENES) {
     if (params$microbes) {
-        counts <- counts[, 1:150]
-        print(sprintf("DEBUG: %s: Limiting analysis to last 150 genes", Sys.time()))
+        counts <- counts[1:150,]
     } else {
-        txi.rsem$counts <- txi.rsem$counts[, 1:150]
-        print(sprintf("DEBUG: %s: Limiting analysis to last 150 genes", Sys.time()))
+        txi.rsem$counts <- txi.rsem$counts[1:150,]
     }
+    print(sprintf("DEBUG: %s: Limiting analysis to first 150 genes", Sys.time()))
 }
 if (params$DEBUG_MODE_ADD_DUMMY_COUNTS) {
     set.seed(1)
     if (params$microbes) {
-        counts <- counts + matrix(sample( 0:5000, NROW(counts)*NCOL(counts), replace=TRUE),nrow=NROW(counts))
+        counts <- counts + matrix(
+            sample(0:5000, NROW(counts)*NCOL(counts), replace=TRUE),
+            nrow=NROW(counts)
+        )
     } else {
-        txi.rsem$counts <- txi.rsem$counts + matrix(sample( 0:5000, NROW(txi.rsem$counts)*NCOL(txi.rsem$counts), replace=TRUE),nrow=NROW(txi.rsem$counts))
+        txi.rsem$counts <- txi.rsem$counts + matrix(
+            sample(0:5000, NROW(txi.rsem$counts)*NCOL(txi.rsem$counts), replace=TRUE),
+            nrow=NROW(txi.rsem$counts)
+        )
     }
     print(sprintf("DEBUG: %s: Replacing original counts with random values from 0 to 5000", Sys.time()))
+}
+if (params$microbes) {
+} else {
+    ## Add 1 to genes with lengths of zero - needed to make DESeqDataSet object
+    print(sprintf("DEBUG: %s: Converting %d zero length genes to 1-length of %d genes (%f %% total)", Sys.time(), length(txi.rsem$length[txi.rsem$length == 0]), length(txi.rsem$length), length(txi.rsem$length[txi.rsem$length == 0])/length(txi.rsem$length)))
+    txi.rsem$length[txi.rsem$length == 0] <- 1
 }
 ```
 
@@ -281,12 +290,6 @@ dds <- DESeq(dds, parallel = TRUE, BPPARAM = BPPARAM)
 ```{r output-counts-related-files}
 normCounts <- as.data.frame(counts(dds, normalized = TRUE))
 VSTCounts <- as.data.frame(assay(vst(dds)))
-unnormalized_counts_filename <- if (params$microbes) {
-    "FeatureCounts_Unnormalized_Counts_GLbulkRNAseq.csv"
-} else {
-    "RSEM_Unnormalized_Counts_GLbulkRNAseq.csv"
-}
-normalized_counts_filename <- paste0("Normalized_Counts", params$output_filename_suffix, ".csv")
 write.csv(
     if (params$microbes) {
         counts
@@ -312,12 +315,7 @@ write.csv(
 
 ```{r prep-counts-for-dge}
 ## Add 1 to all counts to avoid issues with log transformation
-print(sprintf("DEBUG: %s Printing head of: '%s' below", Sys.time(), 'normCounts'))
-print(head(normCounts), quote = TRUE)
-print(sprintf("DEBUG: %s: Adding 1 to all normalized counts to avoid issues with log transformation", Sys.time()))
 normCounts <- normCounts + 1
-print(sprintf("DEBUG: %s Printing head of: '%s' below", Sys.time(), 'normCounts'))
-print(head(normCounts), quote = TRUE)
 ## output table 1 will be used to generate computer-readable DGE table,
 ## which is used to create GeneLab visualization plots
 output_table <- tibble::rownames_to_column(normCounts, var = params$gene_id_type)
@@ -334,7 +332,7 @@ lrt_pvalues <- res_lrt@listData$padj
 
 ```{r wald-test-iteration}
 ## Iterate through Wald Tests to generate pairwise comparisons of all groups
-compute_contrast <- function(i) {
+compute_contrast <- function(dds, i) {
     res <- results(
         dds,
         contrast = c("condition", contrasts[1, i], contrasts[2, i]),
@@ -349,8 +347,7 @@ compute_contrast <- function(i) {
     )
     return(res_df)
 }
-# Use bplapply to compute results in parallel
-res_list <- bplapply(1:dim(contrasts)[2], compute_contrast, BPPARAM = BPPARAM)
+res_list <- bplapply(1:dim(contrasts)[2], function(i) compute_contrast(dds, i), BPPARAM = BPPARAM)
 # Combine the list of data frames into a single data frame
 res_df <- do.call(cbind, res_list)
 # Combine with the existing output_table

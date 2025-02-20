@@ -24,12 +24,12 @@ process DGE_DESEQ2 {
     script:
         def output_filename_suffix = params.output_suffix ?: ""
         def microbes = params.mode == 'microbes' ? 'TRUE' : 'FALSE'
-        def dge_rmd_file = "${projectDir}/bin/deseq2_dge.Rmd"
-        def debug_dummy_counts = params.use_dummy_gene_counts ? 'TRUE' : 'FALSE'
+        def dge_rmd_file = "${projectDir}/bin/dge_deseq2.Rmd"
+        def debug_dummy_counts = params.use_dummy_gene_counts ? 'TRUE'  : 'FALSE'
 
         """
         Rscript -e "rmarkdown::render('${dge_rmd_file}', 
-            output_file = 'DESeq2_DGE.html',
+            output_file = 'DGE_DESeq2.html',
             output_dir = '\${PWD}',
             params = list(
                 cpus = ${task.cpus},
