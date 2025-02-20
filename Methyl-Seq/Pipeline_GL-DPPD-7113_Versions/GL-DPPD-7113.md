@@ -649,6 +649,8 @@ qualimap bamqc -bam sample-1_bismark_bt2_sorted.bam \
   --collect-overlap-pairs \
   --java-mem-size=6G \
   -nt NumberOfThreads
+
+zip -r sample-1_bismark_bt2_qualimap.zip sample-1_bismark_bt2_qualimap/
 ```
 
 **Parameter Definitions:**
@@ -674,7 +676,8 @@ qualimap bamqc -bam sample-1_bismark_bt2_sorted.bam \
 
 **Output data:** 
 
-* **\*sample-1_bismark_bt2_qualimap/** (subdirectory of many alignment QC output files and formatting files for presenting in an html file (see [qualimap documentation](http://qualimap.conesalab.org/doc_html/analysis.html#output))
+* \*sample-1_bismark_bt2_qualimap/ (subdirectory of many alignment QC output files and formatting files for presenting in an html file (see [qualimap documentation](http://qualimap.conesalab.org/doc_html/analysis.html#output))
+* **\*sample-1_bismark_bt2_qualimap.zip** (zip archive of the qualimap output)
 
 > **NOTE**  
 > If processing RNA Methylation Sequencing data, file names will include "bismark_hisat2" instead of "bismark_bt2".
