@@ -144,23 +144,23 @@ While in the location containing the `NF_RCP-G_2.0.0` directory that was downloa
 ```bash
 nextflow run NF_RCP-G_2.0.0/main.nf \ 
    -profile singularity \
-   --gldsAccession OSD-194 
+   --accession OSD-194 
 ```
 
 <br>
 
 #### 4b. Approach 2: Run the workflow on a GeneLab RNAseq dataset using local reference fasta and gtf files
 
-> Note: The `--ref_source` and `--ensemblVersion` parameters should match the reference source and version number of the local reference fasta and gtf files used
+> Note: The `--reference_source` and `--reference_version` parameters should match the reference source and version number of the local reference fasta and gtf files used
 
 ```bash
 nextflow run NF_RCP-G_2.0.0/main.nf \ 
    -profile singularity \
-   --gldsAccession OSD-194 \
-   --ensemblVersion 107 \
-   --ref_source ensembl \ 
-   --ref_fasta </path/to/fasta> \ 
-   --ref_gtf </path/to/gtf> 
+   --accession OSD-194 \
+   --reference_version 107 \
+   --reference_source ensembl \ 
+   --reference_fasta </path/to/fasta> \ 
+   --reference_gtf </path/to/gtf> 
 ```
 
 <br>
@@ -172,8 +172,8 @@ nextflow run NF_RCP-G_2.0.0/main.nf \
 ```bash
 nextflow run NF_RCP-G_2.0.0/main.nf \ 
    -profile singularity \
-   --gldsAccession output_directory \
-   --runsheetPath </path/to/runsheet> 
+   --accession output_directory \
+   --runsheet_path </path/to/runsheet> 
 ```
 
 <br>
@@ -184,43 +184,39 @@ nextflow run NF_RCP-G_2.0.0/main.nf \
 
 * `-profile` - Specifies the configuration profile(s) to load, `singularity` instructs Nextflow to setup and use singularity for all software called in the workflow
 
-* `--gldsAccession OSD-###` – specifies the OSD dataset to process through the RCP workflow (replace ### with the OSD number)  
-  > Note: The primary output directory will be titled "OSD-###"
-
-* `--gldsAccession output_directory` – specifies the output directory name to use when processing a non-OSD dataset, as indicated in [Approach 3 above](#4c-approach-3-run-the-workflow-on-a-non-glds-dataset-using-a-user-created-runsheet)
+* `--accession [OSD-###|GLDS-###]` – specifies the OSDR dataset to process through the RCP workflow (replace ### with the OSD or GLDS number)  
+  > Note: The primary output directory will be named after the accession input, e.g. "OSD-194" or "GLDS-194"
 
 
 <br>
 
 **Additional Required Parameters For [Approach 2](#4b-approach-2-run-the-workflow-on-a-genelab-rnaseq-dataset-using-local-ensembl-reference-fasta-and-gtf-files):**
 
-* `--ensemblVersion` - specifies the Ensembl version to use for the reference genome (Ensembl release `107` is used in this example) 
+* `--reference_version` - specifies the Ensembl version to use for the reference genome (Ensembl release `107` is used in this example) 
 
-* `--ref_source` - specifies the source of the reference files used (the source indicated in the Approach 2 example is `ensembl`) 
+* `--reference_source` - specifies the source of the reference files used (the source indicated in the Approach 2 example is `ensembl`) 
 
-* `--ref_fasta` - specifices the path to a local fasta file 
+* `--reference_fasta` - specifices the path to a local fasta file 
 
-* `--ref_gtf` - specifices the path to a local gtf file  
+* `--reference_gtf` - specifices the path to a local gtf file  
 
-  > Note: If the local reference files specified are different than the Ensembl reference files used to create the [GeneLab annotations table](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv), additional gene annotations associated with any Ensembl/TAIR IDs from the specified files that are not shared in the GeneLab annotations will not be added to the DGE output table(s). 
+  > Note: If the local reference files specified are different than the reference files used to create the [GeneLab annotations table](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv), additional gene annotations associated with any gene IDs from the specified files that are not shared in the GeneLab annotations will not be added to the DGE output table(s). 
 
 <br>
 
 **Optional Parameters:**
 
-* `--skipVV` - skip the automated V&V processes (Default: the automated V&V processes are active) 
+* `--skip_vv` - skip the automated V&V processes (Default: the automated V&V processes are active) 
 
-* `--outputDir` - specifies the directory to save the raw and processed data files (Default: files are saved in the launch directory)  
+* `--outdir` - specifies the directory to save the raw and processed data files (Default: files are saved in a folder named `results` created in the launch directory)  
 
 * `--force_single_end` - forces the analysis to use single end processing; for paired end datasets, this means only R1 is used; for single end datasets, this should have no effect  
 
-* `--stageLocal TRUE|FALSE` - TRUE = download the raw reads files for the OSD dataset indicated, FALSE = disable raw reads download and processing (Default: TRUE)  
+* `--reference_store_path` - specifies the directory to store the Ensembl fasta and gtf files (Default: within the directory structure created by default in the launch directory)  
 
-* `--referenceStorePath` - specifies the directory to store the Ensembl fasta and gtf files (Default: within the directory structure created by default in the launch directory)  
+* `--derived_store_path` - specifies the directory to store the tool-specific indices created during processing (Default: within the directory structure created by default in the launch directory) 
 
-* `--derivedStorePath` - specifies the directory to store the tool-specific indices created during processing (Default: within the directory structure created by default in the launch directory) 
-
-* `--runsheetPath` - specifies the path to a local runsheet (Default: a runsheet is automatically generated using the metadata on the GeneLab Repository for the OSD dataset being processed)
+* `--runsheet_path` - specifies the path to a local runsheet (Default: a runsheet is automatically generated using the metadata on the GeneLab Repository for the OSD dataset being processed)
   > This is required when prcessing a non-OSD dataset as indicated in [Approach 3 above](#4c-approach-3-run-the-workflow-on-a-non-glds-dataset-using-a-user-created-runsheet)
    
 <br>
@@ -272,8 +268,9 @@ Standard Nextflow resource usage logs are also produced as follows:
 **Nextflow Resource Usage Logs**
 
    - Output:
-     - Resource_Usage/execution_report_{timestamp}.html (an html report that includes metrics about the workflow execution including computational resources and exact workflow process commands)
-     - Resource_Usage/execution_timeline_{timestamp}.html (an html timeline for all processes executed in the workflow)
-     - Resource_Usage/execution_trace_{timestamp}.txt (an execution tracing file that contains information about each process executed in the workflow, including: submission time, start time, completion time, cpu and memory used, machine-readable output)
+     - nextflow_logs/execution_report_{timestamp}.html (an html report that includes metrics about the workflow execution including computational resources and exact workflow process commands)
+     - nextflow_logs/execution_timeline_{timestamp}.html (an html timeline for all processes executed in the workflow)
+     - nextflow_logs/execution_trace_{timestamp}.txt (an execution tracing file that contains information about each process executed in the workflow, including: submission time, start time, completion time, cpu and memory used, machine-readable output)
+     - nextflow_info/pipeline_dag_{timestamp}.html (a visualization of the workflow process DAG)
 
 <br>
