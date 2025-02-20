@@ -312,12 +312,12 @@ workflow RNASEQ_MICROBES {
             STAGE_RAW_READS.out.ch_all_raw_reads
             | concat (RAW_READS_MULTIQC.out.zipped_report)
             | collect,
-            "raw"
+            "raw_"
         )
 
         // PROCESSED_MD5SUM(
         //     TRIMMED_READS_MULTIQC.out.zipped_report,
-        //     "processed"
+        //     "processed_"
         // )
 
         // Run Qualimap BAM QC and rnaseq
