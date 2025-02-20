@@ -18,7 +18,7 @@ process REMOVE_RRNA_FEATURECOUNTS {
         path rrna_ids_file
 
     output:
-        path("rRNA_removed_FeatureCounts_GLbulkRNAseq.tsv"), emit: counts_rrnarm
+        path("rRNA_removed_FeatureCounts${params.assay_suffix}.tsv"), emit: counts_rrnarm
         path("rRNA_counts.txt"), emit: rrnarm_summary
 
     script:
@@ -26,7 +26,7 @@ process REMOVE_RRNA_FEATURECOUNTS {
         python $projectDir/bin/remove_rrna_featurecounts.py \
             ${counts_file} \
             ${rrna_ids_file} \
-            rRNA_removed_FeatureCounts_GLbulkRNAseq.tsv \
+            rRNA_removed_FeatureCounts${params.assay_suffix}.tsv \
             rRNA_counts.txt
         """
 }
