@@ -1291,16 +1291,23 @@ output_table$LRT.p.value <- res_lrt@listData$padj
 tcounts <- as.data.frame(t(normCounts))
 tcounts$group <- names(group)
 
-# Calculate group means and standard deviations
-group_means <- aggregate(. ~ group, data = tcounts, mean)
-group_stdev <- aggregate(. ~ group, data = tcounts, sd)
-group_means <- t(group_means[-1]) 
-group_stdev <- t(group_stdev[-1]) 
-colnames(group_means) <- names(group)
-colnames(group_stdev) <- names(group)
+# Aggregate group means and standard deviations
+agg_means <- aggregate(. ~ group, data = tcounts, mean)
+agg_stdev <- aggregate(. ~ group, data = tcounts, sd)
+
+# Save the unique group names before transposing
+group_names <- agg_means$group
+
+# Remove the 'group' column and transpose the data
+group_means <- t(agg_means[-1])
+group_stdev <- t(agg_stdev[-1])
+
+# Assign the unique group names to the columns
+colnames(group_means) <- group_names
+colnames(group_stdev) <- group_names
 
 # For each group, add mean and stdev columns
-for (group_name in unique(names(group))) {
+for (group_name in group_names) {
     mean_col <- paste0("Group.Mean_(", group_name, ")")
     stdev_col <- paste0("Group.Stdev_(", group_name, ")")
     output_table[[mean_col]] <- group_means[, paste0("Group.Mean_", group_means['group',])]
