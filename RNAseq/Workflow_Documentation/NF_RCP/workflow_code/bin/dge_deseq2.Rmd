@@ -125,7 +125,7 @@ if (params$microbes) {
     # Load featureCounts data with tab separator
     featurecounts <- read.csv(params$input_counts, header = TRUE, sep = "\t", skip = 1)
     # Create counts matrix: remove metadata columns, remove possible .bam from column names
-    row.names(featurecounts) <- gsub("-", ".", featurecounts$Geneid)
+    row.names(featurecounts) <- featurecounts$Geneid
     counts <- featurecounts[,-c(1:6)]
     colnames(counts) <- gsub("\\.bam$", "", colnames(counts))
     # Reorder counts columns to match runsheet
@@ -355,17 +355,20 @@ output_table <- cbind(output_table, res_df)
 ```
 
 ```{r calculate-group-statistics}
+### Add summary statistics ###
+output_table$All.mean <- rowMeans(normCounts, na.rm = TRUE)
+output_table$All.stdev <- matrixStats::rowSds(as.matrix(normCounts), na.rm = TRUE, useNames = FALSE)
+output_table$LRT.p.value <- res_lrt@listData$padj
 ## Calculate group statistics
 tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- unique(names(group))
-# Compute group stats
+tcounts$group <- names(group)
+# Calculate group means and standard deviations
 group_means <- aggregate(. ~ group, data = tcounts, mean)
 group_stdev <- aggregate(. ~ group, data = tcounts, sd)
-# Transform data
 group_means <- t(group_means[-1])  # Remove group column and transpose
 group_stdev <- t(group_stdev[-1])  # Remove group column and transpose
-colnames(group_means) <- unique(names(group))
-colnames(group_stdev) <- unique(names(group))
+colnames(group_means) <- names(group)
+colnames(group_stdev) <- names(group)
 # Add stats to output table
 for (group_name in unique(names(group))) {
     output_table[[paste0("Group.Mean_(", group_name, ")")]] <- group_means[, group_name]

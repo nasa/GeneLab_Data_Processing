@@ -1109,10 +1109,10 @@ rm(contrast.names)
 input_counts <- "/path/to/FeatureCounts_GLbulkRNAseq.tsv"
 
 ### Load featureCounts data ###
-featurecounts <- read.csv(params$input_counts, header = TRUE, sep = "\t", skip = 1)
+featurecounts <- read.csv(input_counts, header = TRUE, sep = "\t", skip = 1)
 
 ### Create counts matrix: remove metadata columns from featurecounts table, remove bam file extension from column names ###
-row.names(featurecounts) <- gsub("-", ".", featurecounts$Geneid)
+row.names(featurecounts) <- featurecounts$Geneid
 counts <- featurecounts[,-c(1:6)]
 colnames(counts) <- gsub("\\.bam$", "", colnames(counts))
 
@@ -1254,7 +1254,7 @@ res_lrt <- results(dds_lrt)
 
 ```R
 ### Initialize output table with normalized counts ###
-output_table <- tibble::rownames_to_column(normCounts, var = "gene_id")
+output_table <- tibble::rownames_to_column(normCounts, var = gene_id)
 
 ### Iterate through Wald Tests to generate pairwise comparisons of all groups ###
 compute_contrast <- function(i) {
@@ -1284,7 +1284,7 @@ output_table <- cbind(output_table, res_df)
 
 ### Add summary statistics ###
 output_table$All.mean <- rowMeans(normCounts, na.rm = TRUE)
-output_table$All.stdev <- rowSds(as.matrix(normCounts), na.rm = TRUE)
+output_table$All.stdev <- rowSds(as.matrix(normCounts), na.rm = TRUE, useNames = FALSE)
 output_table$LRT.p.value <- res_lrt@listData$padj
 
 ### Add group-wise statistics ###
@@ -1292,15 +1292,15 @@ tcounts <- as.data.frame(t(normCounts))
 tcounts$group <- names(group)
 
 # Calculate group means and standard deviations
-group_means <- as.data.frame(t(aggregate(. ~ group, data = tcounts, mean)))
-group_stdev <- as.data.frame(t(aggregate(. ~ group, data = tcounts, sd)))
-
-# Remove group name rows
-group_means <- group_means[-1,]
-group_stdev <- group_stdev[-1,]
+group_means <- aggregate(. ~ group, data = tcounts, mean)
+group_stdev <- aggregate(. ~ group, data = tcounts, sd)
+group_means <- t(group_means[-1]) 
+group_stdev <- t(group_stdev[-1]) 
+colnames(group_means) <- names(group)
+colnames(group_stdev) <- names(group)
 
 # For each group, add mean and stdev columns
-for (group_name in names(group)) {
+for (group_name in unique(names(group))) {
     mean_col <- paste0("Group.Mean_(", group_name, ")")
     stdev_col <- paste0("Group.Stdev_(", group_name, ")")
     output_table[[mean_col]] <- group_means[, paste0("Group.Mean_", group_means['group',])]
@@ -1320,10 +1320,24 @@ annot <- read.table(annotations_link,
 output_table <- merge(annot, output_table, by='row.names', all.y=TRUE)
 output_table <- annot %>%
     merge(output_table,
-        by = params$gene_id_type,
+        by = gene_id,
         all.y = TRUE
     ) %>%
-    select(all_of(params$gene_id_type), everything())
+    select(all_of(gene_id), everything())
+
+if (!(gene_id %in% colnames(annot)) || !(gene_id %in% colnames(output_table))) {
+  # If gene ID column is missing from either table, just write the original DGE table
+  output_table2 <- output_table
+  warning(paste("Gene ID column", gene_id, "not found in one or both tables."))
+} else {
+  ### Combine annotations with data
+  output_table <- annot %>%
+    merge(output_table,
+          by = gene_id,
+          all.y = TRUE 
+    ) %>%
+    select(all_of(gene_id), everything())  # Make sure main gene ID is first column
+}
 
 ```
 
@@ -1334,7 +1348,7 @@ output_table <- annot %>%
 - `contrasts` (matrix defining pairwise comparisons, output from [Step 8c](#8c-configure-metadata-sample-grouping-and-group-comparisons))
 - `dds` (DESeq2 data object containing normalized counts, experimental design, and differential expression results, output from [Step 8e](#8e-perform-dge-analysis))
 - `annotations_link` (variable containing URL to GeneLab gene annotation table, output from [Step 8b](#8b-environment-set-up))
-
+- `gene_id` (Gene id type, e.g. ENSEMBL, used to merge the annotations with the DGE results)
 **Output Data:**
 
 - `output_table` (data frame containing the following columns:
