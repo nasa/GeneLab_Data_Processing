@@ -1,10 +1,12 @@
 process ISA_TO_RUNSHEET {
     tag "${osd_accession}_${glds_accession}"
 
-    publishDir "${glds_accession}/Metadata",
-        mode: params.publish_dir_mode
+    publishDir "${ch_outdir}/Metadata",
+        mode: params.publish_dir_mode,
+        pattern: "*.csv"
 
     input: 
+    val(ch_outdir)
     val(osd_accession)
     val(glds_accession)
     path(isa_archive)

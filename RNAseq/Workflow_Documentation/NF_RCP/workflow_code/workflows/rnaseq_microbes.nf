@@ -92,7 +92,7 @@ workflow RNASEQ_MICROBES {
             GET_ACCESSIONS( accession, api_url )
             osd_accession = GET_ACCESSIONS.out.accessions_txt.map { it.readLines()[0].trim() }
             glds_accession = GET_ACCESSIONS.out.accessions_txt.map { it.readLines()[1].trim() }
-            ch_outdir = ch_outdir.combine(glds_accession).map { outdir, glds -> outdir + "/" + glds }
+            ch_outdir = ch_outdir.combine(glds_accession).map { outdir, glds -> "$outdir/$glds" }
         }
         else {
             ch_outdir = ch_outdir.map { it + "/results" }
@@ -102,10 +102,10 @@ workflow RNASEQ_MICROBES {
         // If ISA input is not provided, use the accession to get the ISA
         if ( runsheet_path == null ) {
             if ( isa_archive_path == null ) {
-                FETCH_ISA( osd_accession, glds_accession )
+                FETCH_ISA( ch_outdir, osd_accession, glds_accession )
                 isa_archive = FETCH_ISA.out.isa_archive
             }
-            ISA_TO_RUNSHEET( osd_accession, glds_accession, isa_archive, dp_tools_plugin )
+            ISA_TO_RUNSHEET( ch_outdir, osd_accession, glds_accession, isa_archive, dp_tools_plugin )
             runsheet_path = ISA_TO_RUNSHEET.out.runsheet
         }
 
@@ -326,6 +326,16 @@ workflow RNASEQ_MICROBES {
         // qualimap_outputs = QUALIMAP_BAM_QC.out.results
         //             // | concat(QUALIMAP_RNASEQ_QC.out.results )
         //             | collect
+
+        VV_RAW_READS(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            raw_reads | map{ it -> it[1] } | collect,
+            raw_fastqc_zip,
+            RAW_READS_MULTIQC.out.unzipped_report
+        )
     emit:
-        RAW_MD5SUM.out.md5sums
+        VV_RAW_READS.out.log
 }
