@@ -1291,14 +1291,14 @@ output_table$LRT.p.value <- res_lrt@listData$padj
 tcounts <- as.data.frame(t(normCounts))
 tcounts$group <- sampleTable$condition[match(rownames(tcounts), rownames(sampleTable))]
 
-# Aggregate group means and standard deviations
+### Aggregate group means and standard deviations ###
 agg_means <- aggregate(. ~ group, data = tcounts, FUN = mean, na.rm = TRUE)
 agg_stdev <- aggregate(. ~ group, data = tcounts, FUN = sd, na.rm = TRUE)
 
-# Save group names
+### Save group names ###
 group_names <- agg_means$group
 
-# Remove the 'group' column and transpose to match expected structure
+### Remove the 'group' column and transpose to match expected structure ###
 group_means <- as.data.frame(t(agg_means[-1]))
 group_stdev <- as.data.frame(t(agg_stdev[-1]))
 
@@ -1306,7 +1306,7 @@ group_stdev <- as.data.frame(t(agg_stdev[-1]))
 colnames(group_means) <- paste0("Group.Mean_(", group_names, ")")
 colnames(group_stdev) <- paste0("Group.Stdev_(", group_names, ")")
 
-# Add computed group means and standard deviations to output_table
+### Add computed group means and standard deviations to output_table ###
 output_table <- cbind(output_table, group_means, group_stdev)
 
 ### Read in GeneLab annotation table for the organism of interest ###

@@ -360,7 +360,6 @@ output_table$All.mean <- rowMeans(normCounts, na.rm = TRUE)
 output_table$All.stdev <- matrixStats::rowSds(as.matrix(normCounts), na.rm = TRUE, useNames = FALSE)
 output_table$LRT.p.value <- res_lrt@listData$padj
 # Calculate group means and standard deviations
-# Transpose normalized counts
 tcounts <- as.data.frame(t(normCounts))
 # Assign group labels based on `sampleTable`
 tcounts$group <- sampleTable$condition[match(rownames(tcounts), rownames(sampleTable))]
