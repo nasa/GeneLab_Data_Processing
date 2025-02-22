@@ -1289,30 +1289,25 @@ output_table$LRT.p.value <- res_lrt@listData$padj
 
 ### Add group-wise statistics ###
 tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- names(group)
+tcounts$group <- sampleTable$condition[match(rownames(tcounts), rownames(sampleTable))]
 
 # Aggregate group means and standard deviations
-agg_means <- aggregate(. ~ group, data = tcounts, mean)
-agg_stdev <- aggregate(. ~ group, data = tcounts, sd)
+agg_means <- aggregate(. ~ group, data = tcounts, FUN = mean, na.rm = TRUE)
+agg_stdev <- aggregate(. ~ group, data = tcounts, FUN = sd, na.rm = TRUE)
 
-# Save the unique group names before transposing
+# Save group names
 group_names <- agg_means$group
 
-# Remove the 'group' column and transpose the data
-group_means <- t(agg_means[-1])
-group_stdev <- t(agg_stdev[-1])
+# Remove the 'group' column and transpose to match expected structure
+group_means <- as.data.frame(t(agg_means[-1]))
+group_stdev <- as.data.frame(t(agg_stdev[-1]))
 
-# Assign the unique group names to the columns
-colnames(group_means) <- group_names
-colnames(group_stdev) <- group_names
+# Assign column names based on group names
+colnames(group_means) <- paste0("Group.Mean_(", group_names, ")")
+colnames(group_stdev) <- paste0("Group.Stdev_(", group_names, ")")
 
-# For each group, add mean and stdev columns
-for (group_name in group_names) {
-    mean_col <- paste0("Group.Mean_(", group_name, ")")
-    stdev_col <- paste0("Group.Stdev_(", group_name, ")")
-    output_table[[mean_col]] <- group_means[, paste0("Group.Mean_", group_means['group',])]
-    output_table[[stdev_col]] <- group_stdev[, paste0("Group.Stdev_", group_stdev['group',])]
-}
+# Add computed group means and standard deviations to output_table
+output_table <- cbind(output_table, group_means, group_stdev)
 
 ### Read in GeneLab annotation table for the organism of interest ###
 annot <- read.table(annotations_link, 

@@ -359,24 +359,24 @@ output_table <- cbind(output_table, res_df)
 output_table$All.mean <- rowMeans(normCounts, na.rm = TRUE)
 output_table$All.stdev <- matrixStats::rowSds(as.matrix(normCounts), na.rm = TRUE, useNames = FALSE)
 output_table$LRT.p.value <- res_lrt@listData$padj
-## Calculate group statistics
-tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- names(group)
 # Calculate group means and standard deviations
-agg_means <- aggregate(. ~ group, data = tcounts, mean)
-agg_stdev <- aggregate(. ~ group, data = tcounts, sd)
+# Transpose normalized counts
+tcounts <- as.data.frame(t(normCounts))
+# Assign group labels based on `sampleTable`
+tcounts$group <- sampleTable$condition[match(rownames(tcounts), rownames(sampleTable))]
+# Aggregate group means and standard deviations
+agg_means <- aggregate(. ~ group, data = tcounts, FUN = mean, na.rm = TRUE)
+agg_stdev <- aggregate(. ~ group, data = tcounts, FUN = sd, na.rm = TRUE)
+# Extract group names
 group_names <- agg_means$group
-# Remove the 'group' column and transpose the data
-group_means <- t(agg_means[-1])
-group_stdev <- t(agg_stdev[-1])
-# Assign the unique group names to the columns
-colnames(group_means) <- group_names
-colnames(group_stdev) <- group_names
-# Add stats to output table
-for (group_name in group_names) {
-    output_table[[paste0("Group.Mean_(", group_name, ")")]] <- group_means[, group_name]
-    output_table[[paste0("Group.Stdev_(", group_name, ")")]] <- group_stdev[, group_name]
-}
+# Remove the 'group' column and transpose to match expected structure
+group_means <- as.data.frame(t(agg_means[-1]))
+group_stdev <- as.data.frame(t(agg_stdev[-1]))
+# Assign column names based on group names
+colnames(group_means) <- paste0("Group.Mean_(", group_names, ")")
+colnames(group_stdev) <- paste0("Group.Stdev_(", group_names, ")")
+# Add computed group means and standard deviations to output_table
+output_table <- cbind(output_table, group_means, group_stdev)
 ```
 
 ```{r output-dge-related-files}
