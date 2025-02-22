@@ -1254,7 +1254,8 @@ res_lrt <- results(dds_lrt)
 
 ```R
 ### Initialize output table with normalized counts ###
-output_table <- tibble::rownames_to_column(normCounts, var = gene_id)
+gene_id_type <- "ENSEMBL"
+output_table <- tibble::rownames_to_column(normCounts, var = gene_id_type)
 
 ### Iterate through Wald Tests to generate pairwise comparisons of all groups ###
 compute_contrast <- function(i) {
@@ -1314,43 +1315,34 @@ annot <- read.table(annotations_link,
     sep = "\t", 
     header = TRUE, 
     quote = "", 
-    comment.char = "", 
-    row.names = 1
+    comment.char = ""
 )
 
 ### Combine annotations table and the DGE table ###
-output_table <- merge(annot, output_table, by='row.names', all.y=TRUE)
-output_table <- annot %>%
-    merge(output_table,
-        by = gene_id,
-        all.y = TRUE
-    ) %>%
-    select(all_of(gene_id), everything())
-
-if (!(gene_id %in% colnames(annot)) || !(gene_id %in% colnames(output_table))) {
-  # If gene ID column is missing from either table, just write the original DGE table
-  output_table2 <- output_table
-  warning(paste("Gene ID column", gene_id, "not found in one or both tables."))
+# If gene ID column is missing from either table, just write the original DGE table
+if (!(gene_id_type %in% colnames(annot)) || !(gene_id_type %in% colnames(output_table))) {
+  warning(paste("Gene ID column", gene_id_type, "not found in both tables."))
 } else {
   ### Combine annotations with data
   output_table <- annot %>%
     merge(output_table,
-          by = gene_id,
+          by = gene_id_type,
           all.y = TRUE 
     ) %>%
-    select(all_of(gene_id), everything())  # Make sure main gene ID is first column
+    select(all_of(gene_id_type), everything())  # Make sure main gene ID is first column
 }
 
 ```
 
 **Input Data:**
 
+- `gene_id_type` (Gene identifier type, e.g. ENSEMBL, used to merge the annotations with the DGE results)
 - `normCounts` (data frame of normalized counts, output from [Step 8e](#8e-perform-dge-analysis))
 - `res_lrt` (results object from likelihood ratio test, output from [Step 8e](#8e-perform-dge-analysis))
 - `contrasts` (matrix defining pairwise comparisons, output from [Step 8c](#8c-configure-metadata-sample-grouping-and-group-comparisons))
 - `dds` (DESeq2 data object containing normalized counts, experimental design, and differential expression results, output from [Step 8e](#8e-perform-dge-analysis))
 - `annotations_link` (variable containing URL to GeneLab gene annotation table, output from [Step 8b](#8b-environment-set-up))
-- `gene_id` (Gene id type, e.g. ENSEMBL, used to merge the annotations with the DGE results)
+
 **Output Data:**
 
 - `output_table` (data frame containing the following columns:
