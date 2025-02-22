@@ -7,6 +7,7 @@ c_bright_green = "\u001b[32;1m";
 c_blue = "\033[0;34m";
 c_reset = "\033[0m";
 
+
 params.help = false
 
 /**************************************************
@@ -69,6 +70,7 @@ if (params.help) {
   println("         --rarefaction_depth [INTEGER] The Minimum desired sample rarefaction depth for diversity analysis. Default: 500.")
   println("         --group [STRING] Column in input csv file with treatments to be compared. Default: 'groups' ")
   println("         --samples_column [STRING] Column in input csv file with sample names belonging to each treatment group. Default: 'sample_id' ")
+  println("         --remove_struc_zeros [BOOLEAN] Should structural zeros (a.k.a ASVs with zeros count in atleast one group) be removed? default is falsee i.e. structural zeros will be retained. Options are true or false. Default: false.")
   println("         --remove_rare [BOOLEAN] Should rare features be filtered out prior to analysis? If true, rare features will be removed. Options are true or false. Default: false.")
   println("         --prevalence_cutoff [FLOAT] If --remove_rare is true, a numerical fraction between 0 and 1. Taxa with prevalences(the proportion of samples in which the taxon is present) less than this will be excluded from diversity and diffrential abundance analysis. Default is 0 , i.e. do not exclude any taxa. For example, to exclude taxa that are not present in at least 15% of the samples set it to 0.15.")
   println("         --library_cutoff [INTEGER] If --remove-rare is true, a numerical threshold for filtering samples based on library sizes. Samples with library sizes less than this number will be excluded in the analysis. Default is 0 i.e do not remove any sample. For example, if you want to discard samples with library sizes less than 100, then set to 100.")
@@ -143,6 +145,7 @@ log.info """
          Diversity and Differential abundance Parameters:
          Method: ${params.diff_abund_method}
          Rarefaction Depth: ${params.rarefaction_depth}
+         Remove Structural Zeros: ${params.remove_struc_zeros}
          Remove Rare Taxa and Samples: ${params.remove_rare}
          Taxa Prevalence Cut Off: ${params.prevalence_cutoff}
          Sample Library Cut Off: ${params.library_cutoff}
@@ -189,7 +192,6 @@ include { ANCOMBC as ANCOMBC1 } from './modules/ancombc.nf'
 include { ANCOMBC as ANCOMBC2 } from './modules/ancombc.nf'
 include { DESEQ } from './modules/deseq.nf'
 include { SOFTWARE_VERSIONS } from './modules/utils.nf'
-
 
 
 // A function to delete white spaces from an input string and covert it to lower case
@@ -349,7 +351,7 @@ workflow {
 
     ZIP_BIOM.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
-    
+   
     // Diversity, differential abundance testing and their corresponding visualizations
     if(params.accession){
 
@@ -361,7 +363,8 @@ workflow {
               "target_region" : params.target_region,
               "library_cutoff" : params.library_cutoff,
               "prevalence_cutoff" : params.prevalence_cutoff,
-              "extra" : params.remove_rare ? "--remove-rare" : ""
+              "rare" : params.remove_rare ? "--remove-rare" : "",
+              "struc_zero": params.remove_struc_zeros ? "--remove-structural-zeros" : ""
               ]
 
     meta  = Channel.of(values)
@@ -378,7 +381,8 @@ workflow {
               "target_region" : params.target_region,
               "library_cutoff" : params.library_cutoff,
               "prevalence_cutoff" : params.prevalence_cutoff,
-              "extra" : params.remove_rare ? "--remove-rare" : ""
+              "rare" :  params.remove_rare ? "--remove-rare" : "",
+              "struc_zero": params.remove_struc_zeros ? "--remove-structural-zeros" : ""
              ]
 
     meta  = Channel.of(values)

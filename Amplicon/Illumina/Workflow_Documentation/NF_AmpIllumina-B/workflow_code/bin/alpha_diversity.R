@@ -395,7 +395,7 @@ rareplot <- ggplot(p, aes(x = Sample, y = Species,
         panel.grid.minor = element_blank(),
         plot.margin = margin(t = 10, r = 20, b = 10, l = 10, unit = "pt"))
 
-ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}rarefaction_curves{assay_suffix}.png"),
+ggsave(filename = glue("{alpha_diversity_out_dir}{output_prefix}rarefaction_curves{assay_suffix}.png"),
        plot=rareplot, width = 14, height = 8.33, dpi = 300)
 
 # ------------------  Richness and diversity estimates  ------------------#
@@ -423,7 +423,7 @@ diversity_stats <- map_dfr(.x = diversity_metrics, function(metric){
     rename(p=P.unadj, p.adj=P.adj) %>% 
     mutate(p.format=round(p,digits = 2))
   
-  add_significance(df, p.col='p', output.col = 'p.signif') %>% 
+  add_significance(df, p.col='p.adj', output.col = 'p.signif') %>% 
     select(Metric,group1, group2, Z, p, p.adj, p.format, p.signif) %>% 
     mutate(across(where(is.numeric), ~round(.x, digits = 2)))
   
@@ -432,7 +432,7 @@ diversity_stats <- map_dfr(.x = diversity_metrics, function(metric){
 
 
 write_csv(x = diversity_stats, 
-            file = glue("{alpha_diversity_out_dir}/{output_prefix}statistics_table{assay_suffix}.csv"))
+            file = glue("{alpha_diversity_out_dir}{output_prefix}statistics_table{assay_suffix}.csv"))
 
 
 comp_letters <- data.frame(group = group_levels)
@@ -441,7 +441,7 @@ colnames(comp_letters) <- groups_colname
 walk(.x = diversity_metrics, function(metric=.x){
   
   sub_comp <- diversity_stats %>% filter(Metric == metric)
-  p_values <- sub_comp$p
+  p_values <- sub_comp$p.adj # holm p adjusted values by default
   names(p_values) <- paste(sub_comp$group1,sub_comp$group2, sep = "-")
   
   letters_df <-  enframe(multcompView::multcompLetters(p_values)$Letters,
@@ -471,7 +471,7 @@ diversity_table <- metadata %>%
   select (-contains("_"))
 
 write_csv(x = diversity_table, 
-            file = glue("{alpha_diversity_out_dir}/{output_prefix}summary_table{assay_suffix}.csv"))
+            file = glue("{alpha_diversity_out_dir}{output_prefix}summary_table{assay_suffix}.csv"))
 
 
 # ------------------ Make richness by sample dot plots ---------------------- #
@@ -576,9 +576,13 @@ p <- map(.x = metrics2plot, .f = function(metric){
 
 })
 
-richness_by_group <- wrap_plots(p, ncol = 2, guides =  'collect')
+richness_by_group <- wrap_plots(p, ncol = 2, guides =  'collect') + 
+                     plot_annotation(caption = "If letters are shared between two groups, then they are not significantly different (q-value > 0.05)",
+                                     theme = theme(plot.caption = element_text(face = 'bold.italic')) 
+                                     )
 
 width <- 3.6 * length(group_levels)
-ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}richness_and_diversity_estimates_by_group{assay_suffix}.png"),
-       plot=richness_by_group, width = width, height = 8.33, dpi = 300, units = "in")
-
+ggsave(filename = glue("{output_prefix}richness_and_diversity_estimates_by_group{assay_suffix}.png"),
+       plot=richness_by_group, width = width, 
+       height = 8.33, dpi = 300, units = "in",
+       path = {alpha_diversity_out_dir})

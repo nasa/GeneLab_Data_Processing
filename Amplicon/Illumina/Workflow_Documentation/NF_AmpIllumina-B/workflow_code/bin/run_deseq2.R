@@ -145,6 +145,7 @@ library(DESeq2)
 library(taxize)
 library(ggrepel)
 library(tidyverse)
+library(scales)
 
 # --------------------------- Functions -------------------------------------#
 
@@ -262,6 +263,18 @@ get_ncbi_ids <- function(taxonomy, target_region){
   
 }
 
+
+# A function to expand a plots y-limit
+expandy <- function(vec, ymin=NULL) {
+  
+  max.val = max(vec, na.rm=TRUE)
+  min.log = floor(log10(max.val))
+  
+  expand_limits(y=c(ymin, ceiling(max.val/10^min.log)*10^min.log))
+}
+
+
+
 # ------ Collecting the required input variables ---------- #
 
 # Group in metadata to analyze
@@ -287,6 +300,11 @@ if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir, recursive = T
 metadata <- read_csv(metadata_file)  %>% as.data.frame()
 rownames(metadata) <- metadata[[samples_column]]
 
+
+
+# Write out Sample Table
+write_csv(x = metadata %>% select(!!sym(samples_column), !!sym(group)),
+          file = glue("{diff_abund_out_dir}{output_prefix}SampleTable{assay_suffix}.csv"))
 
 
 # -------------------------- Read Feature table  -------------------------- #
@@ -355,7 +373,7 @@ taxonomy_table <- taxonomy_table[!(rownames(taxonomy_table) %in% asvs2drop),]
 # Get long asv taxonomy names and clean
 species <- taxonomy_table %>%
   unite(species,domain:species,sep = ";") %>% # Generalize this line -------- 
-pull %>% str_replace_all("Other", "_")
+  pull %>% str_replace_all("Other", "_")
 
 taxonomy_table <- fix_names(taxonomy_table, "Other", ";_")
 
@@ -420,6 +438,11 @@ colnames(pairwise_comp_df) <- map_chr(pairwise_comp_df,
                                       \(col) str_c(col, collapse = "v"))
 comparisons <- colnames(pairwise_comp_df)
 names(comparisons) <- comparisons
+
+# Write out contrasts table
+write_csv(x = pairwise_comp_df,
+          file =  glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"),
+          col_names = FALSE)
 
 # Retrieve statistics table
 merged_stats_df <-  data.frame(ASV=rownames(feature_table))
@@ -513,12 +536,14 @@ walk(group_levels, function(group_level){
 
 # Append Mean and standard deviation
 normalized_table <- normalized_table %>%
+  left_join(missing_df, by = feature) %>% 
+  select(!!feature, all_of(samples))
+
+All_mean_sd <- normalized_table %>%
   rowwise() %>%
   mutate(All.Mean=mean(c_across(where(is.numeric))),
-         All.Stdev=sd(c_across(where(is.numeric))) )%>% 
-  left_join(missing_df, by = feature) %>% 
-  select(!!feature, all_of(samples), All.Mean, All.Stdev)
-
+         All.Stdev=sd(c_across(where(is.numeric))) ) %>% 
+  select(!!feature, All.Mean, All.Stdev)
 
 # Add taxonomy
 merged_df <- df  %>%
@@ -531,15 +556,18 @@ merged_df <- df  %>%
 merged_df <- merged_df %>%
   select(!!sym(feature):NCBI_id) %>%
   left_join(normalized_table, by = feature) %>%
-  left_join(merged_df) %>% 
+  left_join(merged_df) %>%
+  left_join(All_mean_sd) %>%
   left_join(group_means_df, by = feature) %>% 
   mutate(across(where(is.numeric), ~round(.x, digits=3))) %>% 
   mutate(across(where(is.matrix), as.numeric))
 
 
-output_file <- glue("{diff_abund_out_dir}/{output_prefix}deseq2_differential_abundance{assay_suffix}.csv")
+output_file <- glue("{diff_abund_out_dir}{output_prefix}deseq2_differential_abundance{assay_suffix}.csv")
 message("Writing out results of differential abundance using DESeq2...")
-write_csv(merged_df,output_file)
+write_csv(merged_df %>%
+            select(-starts_with("baseMean_")),
+                   output_file)
 
 
 
@@ -561,47 +589,47 @@ walk(pairwise_comp_df, function(col){
   volcano_data$significant <- volcano_data$padj <= p_val #also logfc cutoff?
   
   ######Long x-axis label adjustments##########
-  x_label <- paste("Log2 Fold Change\n(",group1," vs ",group2,")")
+  x_label <- glue("Log2 Fold Change\n\n( {group1} vs {group2} )")
   label_length <- nchar(x_label)
   max_allowed_label_length <- plot_width_inches * 10
   
   # Construct x-axis label with new line breaks if was too long
   if (label_length > max_allowed_label_length){
-    x_label <- paste("Log2 Fold Change\n\n(", group1, "\n vs \n", group2, ")", sep="")
+    x_label <- glue("Log2 Fold Change\n\n( {group1} \n vs \n {group2} )")
   }
   #######################################
   
   # ASVs promoted in space on right, reduced on left
-  p <- ggplot(volcano_data, aes(x=log2FoldChange, y=-log10(padj), 
-                                color=significant)) +
+  p <- ggplot(volcano_data %>% 
+                as.data.frame() %>% 
+                rownames_to_column(feature),
+              aes(x = log2FoldChange, y = -log10(padj), 
+                  color = significant, label = !!sym(feature)) 
+              ) +
     geom_point(alpha=0.7, size=2) +
     geom_hline(yintercept = -log10(p_val), linetype = "dashed") +
     scale_color_manual(values=c("black", "red"), 
                        labels=c(paste0("padj > ", p_val), 
-                                paste0(" padj \u2264 ", p_val))) +
+                                paste0("padj \u2264 ", p_val))) +
+    ggrepel::geom_text_repel(show.legend = FALSE) + 
+    expandy(-log10(volcano_data$padj)) + # Expand plot y-limit
+    coord_cartesian(clip = 'off') +
+    scale_y_continuous(oob = scales::oob_squish_infinite) +
     theme_bw() +
-    labs(title="Volcano Plot",
-         x=x_label,
-         y="-Log10 P-value",
-         color=paste0("")) +
-    theme(legend.position="top")
+    labs(title = "Volcano Plot",
+         x = x_label,
+         y = "-Log10 P-value",
+         color = NULL,
+         caption = glue("dotted line: padj = {p_val}")) +
+    theme(legend.position="top", legend.key = element_rect(colour=NA),
+          plot.caption = element_text(face = 'bold.italic'))
   
-  # label points and plot
-  top_points <- volcano_data %>%
-    arrange(padj) %>%
-    filter(significant) %>%
-    head(10)
+
   
-  volcano_plot <- p + geom_text_repel(data=top_points, 
-                                      aes(label=row.names(top_points)),
-                                      size=3)
-  
-  
-  
-  
-  ggsave(filename=glue("{diff_abund_out_dir}{output_prefix}volcano_{group1}_vs_{group2}.png"),
-         plot=volcano_plot,
+  ggsave(filename = glue("{output_prefix}({group1})v({group2})_volcano.png"),
+         plot = p,
          width = plot_width_inches, 
          height = plot_height_inches, 
-         dpi = 300)
+         dpi = 300, 
+         path = diff_abund_out_dir)
 })

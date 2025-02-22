@@ -135,7 +135,6 @@ if(opt[["samples-column"]] == "Sample Name") {
 
 library(glue)
 library(tools)
-library(here)
 library(tidyverse)
 
 
@@ -516,7 +515,8 @@ walk2(.x = relAbundace_tbs_rare_grouped, .y = taxon_levels[-1],
                              
                           p <- ggplot(data =  df, mapping = aes(x= !!sym(x), y=!!sym(y) )) +
                                geom_col(aes(fill = !!sym(taxon_level) )) + 
-                               facet_wrap(facet_by, scales = "free", nrow = 1) +
+                               facet_wrap(facet_by, scales = "free",
+                                          nrow = 1, labeller = label_wrap_gen()) +
                                publication_format +
                                labs(x = x_lab , y = y_lab, fill= tools::toTitleCase(taxon_level)) + 
                                scale_fill_manual(values = custom_palette) +
@@ -582,16 +582,20 @@ group_relAbundace_tbs <- map2(.x = taxon_levels[-1], .y = taxon_tables[-1],
 y_lab <- "Relative abundance (%)"  
 y <- "relativeAbundance"
 number_of_groups <- length(group_levels)
-plot_width <- 2 * number_of_groups
+plot_width <- 2.5 * number_of_groups
 walk2(.x = group_relAbundace_tbs, .y = taxon_levels[-1], 
                            .f = function(relAbundace_tb=.x, taxon_level=.y){
                              
-                             p <- ggplot(data =  relAbundace_tb, mapping = aes(x= !!sym(groups_colname), y = !!sym(y)   )) +
+                             p <- ggplot(data =  relAbundace_tb %>%
+                                           mutate(X=str_wrap(!!sym(groups_colname),
+                                                             width = 10) # wrap long group names
+                                                  )
+                                           , mapping = aes(x= X, y = !!sym(y)   )) +
                                geom_col(aes(fill = !!sym(taxon_level))) + 
                                publication_format +
                                theme(axis.text.x=element_text(
                                  margin=margin(t=0.5,r=0,b=0,l=0,unit ="cm"),
-                                 angle = 90, 
+                                 angle = 0, 
                                  hjust = 0.5, vjust = 0.5)) + 
                                labs(x = NULL , y = y_lab, fill = tools::toTitleCase(taxon_level)) + 
                                scale_fill_manual(values = custom_palette)

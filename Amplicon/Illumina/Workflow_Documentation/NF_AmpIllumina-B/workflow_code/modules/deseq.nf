@@ -30,7 +30,7 @@ process DESEQ  {
                   --output-prefix  '${meta.output_prefix}' \\
                   --target-region  '${meta.target_region}' \\
                   --prevalence-cutoff ${meta.prevalence_cutoff} \\
-                  --library-cutoff  ${meta.library_cutoff} ${meta.extra}
+                  --library-cutoff  ${meta.library_cutoff} ${meta.rare}
 
         
         Rscript -e "VERSIONS=sprintf('DESeq2 %s\\n', packageVersion('DESeq2')); \\
@@ -50,7 +50,7 @@ workflow {
                         "target_region" : params.target_region,
                         "library_cutoff" : params.library_cutoff,
                         "prevalence_cutoff" : params.prevalence_cutoff,
-                        "extra" : params.remove_rare ? "--remove-rare" : ""
+                        "rare" : params.remove_rare ? "--remove-rare" : ""
                         ])
                             
                             

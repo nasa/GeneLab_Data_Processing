@@ -12,7 +12,7 @@ def create_config(target_region, raw_R1_suffix, raw_R2_suffix, trim_primers, inp
                   primer_trimmed_R1_suffix, primer_trimmed_R2_suffix, filtered_R1_suffix, filtered_R2_suffix, output_dir, diff_abund_method,
                   group, samples_column, rarefaction_depth, errorStrategy, queueSize, default_cpus, default_memory, cutadapt_memory, R_cpus,
                   R_memory, diversity_cpus, diversity_memory, container_genelab, container_fastqc, container_multiqc, container_cutadapt, 
-                  container_dada, container_ancom, container_diversity, singularity_cacheDir, remove_rare, prevalence_cutoff, library_cutoff):
+                  container_dada, container_ancom, container_diversity, singularity_cacheDir, remove_rare, prevalence_cutoff, library_cutoff, remove_struc_zeros):
     """ A function to create nextflow.config file by string interploation using the supplied arguements"""
 
     config =  \
@@ -90,6 +90,7 @@ params {{
     diff_abund_method = "{diff_abund_method}"
     group             = "{group}"
     samples_column    = "{samples_column}"
+    remove_struc_zeros = "{remove_struc_zeros}" == "TRUE" ? true : false // should structural zeros be removed when running ANCOMBC?
     // Should rare features and samples be discarded. Values are true or false. If set to true then set the cutoffs below
     remove_rare       = "{remove_rare}" == "TRUE" ? true : false
     prevalence_cutoff = {prevalence_cutoff}  // a fraction between 0 and 1 that represents the prevalance in percentage of taxa to be retained
@@ -134,7 +135,6 @@ profiles {{
     docker {{
         docker.enabled         = true
         docker.runOptions      = '-u $(id -u):$(id -g)'
-        docker.userEmulation   = true
         params.containerEngine = "docker"
     }}
 
@@ -480,6 +480,13 @@ def main():
                         help='If set to TRUE, rare features and samples with library size less than cutoff will be removed. Default: FALSE',
                         type=str)
 
+    parser.add_argument('--remove-structural-zeros',
+                        choices=['TRUE', 'FALSE'],
+                        default='FALSE',
+                        help='If set to TRUE, structural zeros (a.k.a ASVs with zeros count in at least one group) will be removed. Default: FALSE',
+                        type=str)
+
+
     parser.add_argument('--prevalence-cutoff',
                         default=0,
                         help='If --remove-rare is TRUE, a numerical fraction between 0 and 1. Taxa with prevalences(the proportion of samples in which the taxon is present) less than this will be excluded from diversity and differential abundance analysis. Default is 0 , i.e. do not exclude any taxa. For example, to exclude taxa that are not present in at least 15% of the samples set it to 0.15.',
@@ -704,7 +711,7 @@ def main():
                                 args.cutadapt_memory, args.R_cpus, args.R_memory, args.diversity_cpus, args.diversity_memory,
                                 args.container_genelab, args.container_fastqc, args.container_multiqc, args.container_cutadapt, 
                                 args.container_dada, args.container_ancom, args.container_diversity, args.singularity_cacheDir,
-                                args.remove_rare, args.prevalence_cutoff, args.library_cutoff)
+                                args.remove_rare, args.prevalence_cutoff, args.library_cutoff, args.remove_structural_zeros)
 
     with open("nextflow.config", "w") as file:
         print(config_file, file=file)

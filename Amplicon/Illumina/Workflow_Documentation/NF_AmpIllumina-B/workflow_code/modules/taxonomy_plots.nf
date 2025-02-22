@@ -57,7 +57,7 @@ workflow {
                          "target_region" : params.target_region,
                          "library_cutoff" : params.library_cutoff,
                          "prevalence_cutoff" : params.prevalence_cutoff,
-                         "extra" : params.remove_rare ? "--remove-rare" : ""
+                         "rare" : params.remove_rare ? "--remove-rare" : ""
                         ])
                             
      

@@ -37,7 +37,7 @@ process ALPHA_DIVERSITY {
                   --assay-suffix  '${meta.assay_suffix}' \\
                   --output-prefix  '${meta.output_prefix}' \\
                   --prevalence-cutoff ${meta.prevalence_cutoff} \\
-                  --library-cutoff  ${meta.library_cutoff} ${meta.extra}
+                  --library-cutoff  ${meta.library_cutoff} ${meta.rare}
 
                   
         Rscript -e "VERSIONS=sprintf('FSA %s\\nmultcompView %s\\nrstatix %s\\n',  \\
@@ -80,7 +80,7 @@ process BETA_DIVERSITY {
                   --assay-suffix  '${meta.assay_suffix}' \\
                   --output-prefix  '${meta.output_prefix}' \\
                   --prevalence-cutoff ${meta.prevalence_cutoff} \\
-                  --library-cutoff  ${meta.library_cutoff} ${meta.extra}
+                  --library-cutoff  ${meta.library_cutoff} ${meta.rare}
         
         Rscript -e "VERSIONS=sprintf('vegan %s\\nmia %s\\nphyloseq %s\\nggdendro %s\\nbroom %s\\nRColorBrewer %s\\ntaxize %s\\nDescTools %s\\npatchwork %s\\nggrepel %s\\n',  \\
                                     packageVersion('vegan'), \\
@@ -110,7 +110,7 @@ workflow{
                          "target_region" : params.target_region,
                          "library_cutoff" : params.library_cutoff,
                          "prevalence_cutoff" : params.prevalence_cutoff,
-                         "extra" : params.remove_rare ? "--remove-rare" : ""
+                         "rare" : params.remove_rare ? "--remove-rare" : ""
                         ])
                             
      

@@ -46,7 +46,7 @@ process ANCOMBC {
                   --cpus ${task.cpus} \\
                   --target-region  '${meta.target_region}' \\
                   --prevalence-cutoff ${meta.prevalence_cutoff} \\
-                  --library-cutoff  ${meta.library_cutoff}
+                  --library-cutoff  ${meta.library_cutoff} ${meta.struc_zero}
                     
         Rscript -e "VERSIONS=sprintf('ANCOMBC %s\\n', packageVersion('ANCOMBC'))
                     write(x=VERSIONS, file='versions.txt', append=TRUE)"
@@ -66,7 +66,8 @@ workflow {
                         "target_region" : params.target_region,
                         "library_cutoff" : params.library_cutoff,
                         "prevalence_cutoff" : params.prevalence_cutoff,
-                        "extra" : params.remove_rare ? "--remove-rare" : ""
+                        "rare" : params.remove_rare ? "--remove-rare" : "",
+                        "struc_zero" : params.remove_struc_zeros ? "--remove-structural-zeros" : ""
                         ])
                             
                             
