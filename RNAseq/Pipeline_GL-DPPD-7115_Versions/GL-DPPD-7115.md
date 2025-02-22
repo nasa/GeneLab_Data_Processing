@@ -1305,9 +1305,10 @@ group_stdev <- as.data.frame(t(agg_stdev[-1]))
 
 # Interleave means and stdevs for each group
 group_stats <- data.frame(matrix(ncol = 0, nrow = nrow(group_means)))
-for (group in group_names) {
-    group_stats[paste0("Group.Mean_(", group, ")")] <- group_means[,paste0("Group.Mean_(", group, ")")]
-    group_stats[paste0("Group.Stdev_(", group, ")")] <- group_stdev[,paste0("Group.Stdev_(", group, ")")]
+for (i in seq_along(group_names)) {
+    group <- group_names[i]
+    group_stats[paste0("Group.Mean_(", group, ")")] <- group_means[,i]
+    group_stats[paste0("Group.Stdev_(", group, ")")] <- group_stdev[,i]
 }
 
 ### Add computed group means and standard deviations to output_table ###
