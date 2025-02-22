@@ -1303,12 +1303,15 @@ group_names <- agg_means$group
 group_means <- as.data.frame(t(agg_means[-1]))
 group_stdev <- as.data.frame(t(agg_stdev[-1]))
 
-# Assign column names based on group names
-colnames(group_means) <- paste0("Group.Mean_(", group_names, ")")
-colnames(group_stdev) <- paste0("Group.Stdev_(", group_names, ")")
+# Interleave means and stdevs for each group
+group_stats <- data.frame(matrix(ncol = 0, nrow = nrow(group_means)))
+for (group in group_names) {
+    group_stats[paste0("Group.Mean_(", group, ")")] <- group_means[,paste0("Group.Mean_(", group, ")")]
+    group_stats[paste0("Group.Stdev_(", group, ")")] <- group_stdev[,paste0("Group.Stdev_(", group, ")")]
+}
 
 ### Add computed group means and standard deviations to output_table ###
-output_table <- cbind(output_table, group_means, group_stdev)
+output_table <- cbind(output_table, group_stats)
 
 ### Read in GeneLab annotation table for the organism of interest ###
 annot <- read.table(annotations_link, 
