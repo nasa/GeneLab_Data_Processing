@@ -624,8 +624,9 @@ walk(pairwise_comp_df, function(col){
     theme(legend.position="top", legend.key = element_rect(colour=NA),
           plot.caption = element_text(face = 'bold.italic'))
   
-
-  
+  # Replace space in group name with underscore 
+  group1 <- str_replace_all(group1, "[:space:]+", "_")
+  group2 <- str_replace_all(group2, "[:space:]+", "_")
   ggsave(filename = glue("{output_prefix}({group1})v({group2})_volcano.png"),
          plot = p,
          width = plot_width_inches, 

@@ -690,8 +690,8 @@ volcano_plots <- map(uniq_comps, function(comparison){
     theme(legend.position="top", legend.key = element_rect(colour=NA),
           plot.caption = element_text(face = 'bold.italic'))
 
-
-  ggsave(filename = glue("{output_prefix}{comparison}_volcano.png"),
+  file_name <-  glue("{output_prefix}{comparison %>% str_replace_all('[:space:]+','_')}_volcano.png")
+  ggsave(filename = file_name,
          plot = p, device = "png",
          width = plot_width_inches,
          height = plot_height_inches,
