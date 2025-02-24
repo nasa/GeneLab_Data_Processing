@@ -1,9 +1,9 @@
 process VV_RAW_READS {
   // Publish VV log
   publishDir "${ publishdir }",
-    pattern:  "VV_log.tsv" ,
+    pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.tsv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
   // Publish VVed data
   publishDir "${ publishdir }",
     pattern: '00-RawData/**',
@@ -23,9 +23,10 @@ process VV_RAW_READS {
   output:
     path("00-RawData/Fastq"),                                                        emit: VVed_raw_reads
     path("00-RawData/FastQC_Reports/*{_fastqc.html,_fastqc.zip}"),                   emit: VVed_raw_fastqc
-    path("00-RawData/FastQC_Reports/raw_multiqc${params.assay_suffix}_report"),      emit: VVed_raw_unzipped_multiqc_report
-    //path("00-RawData/FastQC_Reports/raw_multiqc${params.assay_suffix}_report.zip"), emit: VVed_raw_zipped_multiqc_report
-    path("VV_log.tsv"),                                                              optional: params.skipVV, emit: log
+    //path("00-RawData/FastQC_Reports/raw_multiqc${params.assay_suffix}_report"),      emit: VVed_raw_unzipped_multiqc_report
+    path("00-RawData/FastQC_Reports/raw_multiqc${params.assay_suffix}_report.zip"), emit: VVed_raw_zipped_multiqc_report
+    path("VV_log.csv"),                                                              optional: params.skipVV, emit: log
+    path("vv.log"),                                                                optional: params.skipVV, emit: log_txt
 
   script:
     """
@@ -46,9 +47,9 @@ process VV_RAW_READS {
 process VV_TRIMMED_READS {
   // Log publishing
   publishDir "${ publishdir }",
-    pattern:  "VV_log.tsv" ,
+    pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.tsv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
     pattern: '01-TG_Preproc/',
@@ -75,7 +76,7 @@ process VV_TRIMMED_READS {
     path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc_GLbulkRNAseq_report"),     emit: VVed_trimmed_unzipped_multiqc_report
     path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc_GLbulkRNAseq_report.zip"), emit: VVed_trimmed_zipped_multiqc_report
     path("01-TG_Preproc/Trimming_Reports"),                                       emit: VVed_trimming_reports_all
-    path("VV_log.tsv"),                                                           optional: params.skipVV, emit: log
+    path("VV_log.csv"),                                                           optional: params.skipVV, emit: log
 
   script:
     """
@@ -91,7 +92,7 @@ process VV_TRIMMED_READS {
                           --run-components \\
                             'Trim Reads,Trimmed Reads By Sample' \\
                           --max-flag-code ${ params.max_flag_code } \\
-                          --output VV_log.tsv
+                          --output VV_log.csv
     fi
     """
 }
@@ -99,9 +100,9 @@ process VV_TRIMMED_READS {
 process VV_STAR_ALIGNMENTS {
   // Log publishing
   publishDir "${ publishdir }",
-    pattern:  "VV_log.tsv" ,
+    pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.tsv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
     pattern: '02-STAR_Alignment/',
@@ -121,7 +122,7 @@ process VV_STAR_ALIGNMENTS {
 
   output:
     path("02-STAR_Alignment")
-    path("VV_log.tsv"), optional: params.skipVV, emit: log
+    path("VV_log.csv"), optional: params.skipVV, emit: log
 
   script:
     """
@@ -138,7 +139,7 @@ process VV_STAR_ALIGNMENTS {
                           --run-components \\
                             'STAR Alignments,STAR Alignments By Sample' \\
                           --max-flag-code ${ params.max_flag_code } \\
-                          --output VV_log.tsv
+                          --output VV_log.csv
     fi
     """
 
@@ -146,9 +147,9 @@ process VV_STAR_ALIGNMENTS {
 process VV_RSEQC {
   // Log publishing
   publishDir "${ publishdir }",
-    pattern:  "VV_log.tsv" ,
+    pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.tsv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
     pattern: 'RSeQC_Analyses/',
@@ -169,7 +170,7 @@ process VV_RSEQC {
 
   output:
     path("RSeQC_Analyses")
-    path("VV_log.tsv"), optional: params.skipVV, emit: log
+    path("VV_log.csv"), optional: params.skipVV, emit: log
 
   script:
     """
@@ -197,7 +198,7 @@ process VV_RSEQC {
                           --run-components \\
                             'RSeQC,RSeQC By Sample' \\
                           --max-flag-code ${ params.max_flag_code } \\
-                          --output VV_log.tsv
+                          --output VV_log.csv
     fi
 
     # Remove all placeholder files and empty directories to prevent publishing
@@ -211,9 +212,9 @@ process VV_RSEQC {
 process VV_RSEM_COUNTS {
   // Log publishing
   publishDir "${ publishdir }",
-    pattern:  "VV_log.tsv" ,
+    pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.tsv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
     pattern: '03-RSEM_Counts/',
@@ -233,7 +234,7 @@ process VV_RSEM_COUNTS {
 
   output:
     path("03-RSEM_Counts")
-    path("VV_log.tsv"), optional: params.skipVV, emit: log
+    path("VV_log.csv"), optional: params.skipVV, emit: log
   
   script:
     """
@@ -249,7 +250,7 @@ process VV_RSEM_COUNTS {
                           --run-components \\
                             'RSEM Counts' \\
                           --max-flag-code ${ params.max_flag_code } \\
-                          --output VV_log.tsv
+                          --output VV_log.csv
     fi
     """
 }
@@ -257,9 +258,9 @@ process VV_RSEM_COUNTS {
 process VV_DESEQ2_ANALYSIS {
   // Log publishing
   publishDir "${ publishdir }",
-    pattern:  "VV_log.tsv" ,
+    pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.tsv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
     pattern: '{04-DESeq2_NormCounts,05-DESeq2_DGE}',
@@ -283,7 +284,7 @@ process VV_DESEQ2_ANALYSIS {
   output:
     path("04-DESeq2_NormCounts")
     path("05-DESeq2_DGE")
-    path("VV_log.tsv"), optional: params.skipVV, emit: log
+    path("VV_log.csv"), optional: params.skipVV, emit: log
   
   script:
     """
@@ -299,7 +300,7 @@ process VV_DESEQ2_ANALYSIS {
                           --run-components \\
                             'DGE Metadata${ meta.has_ercc ? ",DGE Metadata ERCC" : '' },DGE Output${ meta.has_ercc ? ",DGE Output ERCC" : '' }' \\
                           --max-flag-code ${ params.max_flag_code } \\
-                          --output VV_log.tsv
+                          --output VV_log.csv
     fi
 
     # Remove all placeholder files and empty directories to prevent publishing
@@ -315,10 +316,10 @@ process VV_CONCAT_FILTER {
   label 'VV'
 
   input:
-    path("VV_in.tsv")
+    path("VV_in.csv")
 
   output:
-    tuple path("VV_log_final_GLbulkRNAseq.tsv"), path("VV_log_final_only_issues_GLbulkRNAseq.tsv")
+    tuple path("VV_log_final_GLbulkRNAseq.csv"), path("VV_log_final_only_issues_GLbulkRNAseq.csv")
 
   script:
     """

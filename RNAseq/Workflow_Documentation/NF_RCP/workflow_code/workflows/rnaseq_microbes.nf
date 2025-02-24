@@ -334,7 +334,7 @@ workflow RNASEQ_MICROBES {
             runsheet_path,
             raw_reads | map{ it -> it[1] } | collect,
             raw_fastqc_zip,
-            RAW_READS_MULTIQC.out.unzipped_report
+            RAW_READS_MULTIQC.out.zipped_report
         )
     emit:
         VV_RAW_READS.out.log
