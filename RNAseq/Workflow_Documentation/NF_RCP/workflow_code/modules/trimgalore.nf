@@ -28,7 +28,7 @@ process TRIMGALORE {
       "mv ${ meta.id }_raw_trimmed.fq.gz ${ meta.id }_trimmed.fastq.gz"}
 
     echo '"${task.process}":' > versions.yml
-    echo "    trimgalore: \$(trim_galore -v | sed -n 's/.*version //p' | head -n 1)" >> versions.yml
+    echo "    trimgalore: \$(trim_galore -v | awk '/version/{print \$2}' | head -n1)" >> versions.yml
     echo "    cutadapt: \$(cutadapt --version)" >> versions.yml
     """
 }

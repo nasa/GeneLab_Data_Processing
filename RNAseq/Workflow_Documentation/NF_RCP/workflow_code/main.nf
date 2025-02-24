@@ -1,5 +1,4 @@
 // main.nf
-
 nextflow.enable.dsl=2
 
 def colorCodes = [
@@ -11,19 +10,13 @@ def colorCodes = [
     c_reset: "\033[0m"
 ]
 
-// Include the showHelp function from help.nf
-include { showHelp } from './modules/help.nf'
-// Only display the help message if --help parameter is specified
-if (params.help) {
-    showHelp(workflow)
-}
-
+// Command for: 'run main.nf --version'
 if (params.version) {
     println("${workflow.manifest.name} ${workflow.manifest.version}")
     exit 0
 }
 
-// Print the pipeline version
+// Print the pipeline version on start
 println """
 ${colorCodes.c_bright_green}${colorCodes.c_line}
 ${workflow.manifest.name} ${workflow.manifest.version}
@@ -43,31 +36,9 @@ if (params.limit_samples_to || params.truncate_to || params.force_single_end || 
 }
 println("${colorCodes.c_reset}")
 
-// Check required parameters
-if ((params.accession) || params.runsheet_path || params.isa_archive_path) {
-    // Proceed
-} else {
-    log.error """
-        Missing Required Parameters: You must provide either both --osd and --glds, or --runsheet_path, or --glds and --isa_archive_path.
-        Examples:
-          --accession [OSD-# or GLDS-#]
-          --runsheet_path /path/to/runsheet.csv
-          --isa_archive_path /path/to/isa_archive.zip
-    """
-    exit 0
-}
-
 include { RNASEQ } from './workflows/rnaseq.nf'
 include { RNASEQ_MICROBES } from './workflows/rnaseq_microbes.nf'
-// Validate accession format. Must be OSD-#. 
-if (params.accession && !params.accession.matches(/^(OSD|GLDS)-\d+$/)) {
-    log.error "Invalid accession format. Expected format: OSD-# or GLDS-#"
-    exit 1
-}
 
-// Set up channels. This will be used to pass in parameters from initialization 
-// into the entire workflow or subworkflows run independently (e.g. rerunning a 
-// specific step for reprocessing a dataset after metadata updates)
 ch_dp_tools_plugin = params.dp_tools_plugin ? 
     Channel.value(file(params.dp_tools_plugin)) : 
     Channel.value(file(params.mode == 'microbes' ? 
@@ -87,22 +58,21 @@ ch_force_single_end = Channel.value(params.force_single_end)
 ch_reference_store_path = Channel.value(params.reference_store_path)
 ch_derived_store_path = Channel.value(params.derived_store_path)
 
-// Set outdir based on the presence of an accession input.. currently not implemented as nextflow.config's outdir is only used for nextflow run info
-//  and ch_outdir is used for all processes' publishDir in order to set either ./results or ./{accession}
-ch_outdir = params.accession ? "$projectDir/${params.accession}" : "$projectDir/results"
-
-
 // set reference params
 ch_reference_source = params.reference_source ? Channel.value(params.reference_source) : null
 ch_reference_version = params.reference_version ? Channel.value(params.reference_version) : null
 ch_reference_fasta = params.reference_fasta ? Channel.fromPath(params.reference_fasta) : null
 ch_reference_gtf = params.reference_gtf ? Channel.fromPath(params.reference_gtf) : null
 
+// Set outdir based on the presence of an accession input.. currently not implemented as nextflow.config's outdir is only used for nextflow run info
+//  and ch_outdir is used for all processes' publishDir in order to set either ./results or ./{accession}
+ch_outdir = params.outdir ? channel.fromPath(params.outdir, checkIfExists: true) : null
 
 // Main workflows
 workflow {
     if (params.mode == 'microbes') {
         RNASEQ_MICROBES(
+            ch_outdir,
             ch_dp_tools_plugin,
             ch_reference_table,
             ch_accession,
@@ -120,6 +90,7 @@ workflow {
         )
     } else {
         RNASEQ(
+            ch_outdir,
             ch_dp_tools_plugin,
             ch_reference_table,
             ch_accession,

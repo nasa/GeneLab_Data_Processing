@@ -23,6 +23,6 @@ process FASTQC {
         $reads
 
     echo '"${task.process}":' > versions.yml
-    echo "    fastqc: \$(fastqc --version | sed -e 's/FastQC v//g')" >> versions.yml
+    echo "    fastqc: \$(fastqc --version | sed 's/FastQC v//')" >> versions.yml
     """
 }

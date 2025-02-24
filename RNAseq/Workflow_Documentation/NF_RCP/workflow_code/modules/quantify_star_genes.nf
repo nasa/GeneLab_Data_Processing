@@ -1,5 +1,5 @@
 process QUANTIFY_STAR_GENES {
-  tag "Dataset-wide"
+  // tag "Dataset-wide"
   
   input:
     path("samples.txt")
@@ -7,7 +7,7 @@ process QUANTIFY_STAR_GENES {
     val(strandedness)
 
   output:
-    tuple path("STAR_Unnormalized_Counts_GLbulkRNAseq.csv"), path("STAR_NumNonZeroGenes_GLbulkRNAseq.csv"), emit: publishables
+    tuple path("STAR_Unnormalized_Counts${params.assay_suffix}.csv"), path("STAR_NumNonZeroGenes${params.assay_suffix}.csv"), emit: publishables
 
   script:
     """

@@ -11,7 +11,7 @@ process PARSE_QC_METRICS {
         path(rsem_counts)
 
     output:
-        path("qc_metrics_GLbulkRNAseq.csv"), emit: file
+        path("qc_metrics${params.assay_suffix}.csv"), emit: file
 
     script:
         """

@@ -3,17 +3,16 @@
  */
 
 process GENERATE_PCA_TABLE {
-    tag "Dataset-wide"
+    // tag "Dataset-wide"
 
     input:
         path(normalized_counts)
 
     output:
-        path("visualization_PCA_table${params.output_suffix}.csv"), emit: pca_table
+        path("visualization_PCA_table${params.assay_suffix}.csv"), emit: pca_table
         path("versions.txt"),    emit: versions_txt
 
     script:
-        def output_filename_suffix = params.output_suffix ?: ""
         def pca_rmd_file = "${projectDir}/bin/generate_pca_table.Rmd"
 
         """
@@ -23,7 +22,7 @@ process GENERATE_PCA_TABLE {
             params = list(
                 work_dir = '\${PWD}',
                 output_directory = '\${PWD}',
-                output_filename_suffix = '${output_filename_suffix}',
+                output_filename_suffix = '${params.assay_suffix}',
                 input_table_path = '${normalized_counts}'
             ))"
         """

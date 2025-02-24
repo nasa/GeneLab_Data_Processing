@@ -42,6 +42,6 @@ process ALIGN_STAR {
     --readFilesIn ${ reads }
 
     echo '"${task.process}":' > versions.yml
-    echo "    star: \$(STAR --version | sed -e "s/STAR_//g")" >> versions.yml
+    echo "    star: \$(STAR --version | sed 's/STAR_//')" >> versions.yml
     """
 }

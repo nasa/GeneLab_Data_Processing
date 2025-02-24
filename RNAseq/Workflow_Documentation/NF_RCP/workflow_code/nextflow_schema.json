@@ -1,0 +1,263 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "stub.json",
+  "title": "NASA GeneLab Data Processing RNA-Seq Pipeline pipeline parameters",
+  "description": "RNA-Seq Pipeline for Documents GL-DPPD-7101-G and GL-DPPD-7115.",
+  "type": "object",
+  "properties": {
+      "outdir": {
+          "type": "string",
+          "format": "directory-path",
+          "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
+          "fa_icon": "fas fa-folder-open",
+          "default": ".",
+          "hidden": true
+      },
+      "api_url": {
+          "type": "string",
+          "default": "https://osdr.nasa.gov/osdr/data/search?ffield=Study+Assay+Technology+Type&fvalue=RNA+Sequencing+%28RNA-Seq%29&size=2000",
+          "hidden": true
+      }
+  },
+  "$defs": {
+      "qc": {
+          "title": "QC",
+          "type": "object",
+          "description": "",
+          "default": "",
+          "properties": {
+              "validate_params": {
+                  "type": "boolean",
+                  "description": "Boolean whether to validate parameters against the schema at runtime",
+                  "default": true,
+                  "fa_icon": "fas fa-check-square",
+                  "hidden": true
+              },
+              "multiqc_config": {
+                  "type": "string",
+                  "default": "/home/alexis/git/NewRepo/GeneLab_Data_Processing/RNAseq/Workflow_Documentation/NF_RCP/workflow_code/conf/multiqc.config",
+                  "description": "Path to the MultiQC config file.",
+                  "format": "file-path"
+              },
+              "rseqc_sample_count": {
+                  "type": "integer",
+                  "default": 15000000,
+                  "description": "Number of read-pairs used for RSeQC infer_experiment.py and inner_distance.py"
+              },
+              "max_flag_code": {
+                  "type": "integer",
+                  "default": 80,
+                  "description": "TO DO: implement",
+                  "hidden": true
+              },
+              "skip_vv": {
+                  "type": "boolean",
+                  "description": "TO DO:  Skip VV modules.",
+                  "hidden": true
+              }
+          },
+          "required": [
+              "rseqc_sample_count"
+          ]
+      },
+      "boilerplate": {
+          "title": "Boilerplate",
+          "type": "object",
+          "description": "",
+          "default": "",
+          "properties": {
+              "version": {
+                  "type": "boolean",
+                  "description": "Display version and exit.",
+                  "fa_icon": "fas fa-question-circle",
+                  "hidden": true
+              },
+              "email": {
+                  "type": "string",
+                  "hidden": true,
+                  "description": "TO DO: implement"
+              }
+          }
+      },
+      "local_storage": {
+          "title": "Local Storage",
+          "type": "object",
+          "description": "",
+          "default": "",
+          "properties": {
+              "derived_store_path": {
+                  "type": "string",
+                  "default": "./DerivedReferences",
+                  "description": "Location where the derived reference files will be stored.",
+                  "format": "directory-path"
+              },
+              "reference_store_path": {
+                  "type": "string",
+                  "default": "./References",
+                  "description": "Location where the reference fasta and gtf will be stored.",
+                  "format": "directory-path"
+              }
+          },
+          "required": [
+              "derived_store_path",
+              "reference_store_path"
+          ]
+      },
+      "configs": {
+          "title": "Configs",
+          "type": "object",
+          "description": "",
+          "default": "",
+          "properties": {
+              "publish_dir_mode": {
+                  "type": "string",
+                  "default": "link",
+                  "enum": [
+                      "copy",
+                      "copyNoFollow",
+                      "link",
+                      "move",
+                      "relink",
+                      "symlink"
+                  ],
+                  "description": "Nextflow publishdir mode."
+              }
+          },
+          "required": [
+              "publish_dir_mode"
+          ]
+      },
+      "input": {
+          "title": "Input",
+          "type": "object",
+          "description": "",
+          "default": "",
+          "properties": {
+              "accession": {
+                  "type": "string",
+                  "description": "Input OSD or GLDS identifier as 'OSD-#' or 'GLDS-#' if processing an OSDR dataset.",
+                  "pattern": "^(OSD|GLDS)-[0-9]+$"
+              },
+              "runsheet_path": {
+                  "type": "string",
+                  "description": "Path to the input runsheet.",
+                  "format": "file-path",
+                  "schema": "./conf/runsheet_schema.json"
+              },
+              "isa_archive_path": {
+                  "type": "string",
+                  "description": "Path to the ISA.zip for an OSDR dataset. '--accession' must also be used.",
+                  "format": "file-path"
+              },
+              "mode": {
+                  "type": "string",
+                  "default": "default",
+                  "description": "Specifies whether to use the default Eukaryotes workflow or the Prokaryotes workflow with ' --mode microbes'.",
+                  "enum": [
+                      "default",
+                      "microbes"
+                  ]
+              },
+              "assay_suffix": {
+                  "type": "string",
+                  "default": "_GLbulkRNAseq",
+                  "description": "Specifies a string that should be used to label the output file names."
+              }
+          },
+          "required": [
+              "mode",
+              "assay_suffix"
+          ]
+      },
+      "references": {
+          "title": "References",
+          "type": "object",
+          "description": "By default, reference_table points to GeneLab Reference Annotations Table GL-DPPD-7110-A_annotations.csv which defines reference FASTA and GTF files and associated GeneLab-generated gene annotations.",
+          "default": "",
+          "properties": {
+              "reference_table": {
+                  "type": "string",
+                  "default": "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/refs/heads/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv",
+                  "description": "GL-DPPD-7110-A_annotations.csv"
+              },
+              "reference_fasta": {
+                  "type": "string",
+                  "description": "Specifies an alternative reference FASTA file to use in place of the one listed in GL-DPPD-7110-A_annotations.csv."
+              },
+              "reference_gtf": {
+                  "type": "string",
+                  "description": "Specifies an alternative reference GTF file to use in place of the one listed in GL-DPPD-7110-A_annotations.csv."
+              },
+              "reference_source": {
+                  "type": "string",
+                  "description": "Specifies the source of the alternative reference files. (e.g. \"NCBI\" or \"ENSEMBL\")."
+              },
+              "reference_version": {
+                  "type": "string",
+                  "description": "Specifies the version of the alternative reference files used, if available."
+              }
+          },
+          "required": [
+              "reference_table"
+          ]
+      },
+      "debugging_options": {
+          "title": "Debugging options",
+          "type": "object",
+          "description": "Parameters used to reduce the size of inputs or reference data",
+          "default": "",
+          "properties": {
+              "limit_samples_to": {
+                  "type": "string",
+                  "description": "Only use the first n samples for the analysis"
+              },
+              "genome_subsample": {
+                  "type": "string",
+                  "description": "Subsample the reference genome to the specified region / chromosome."
+              },
+              "force_single_end": {
+                  "type": "boolean",
+                  "description": "Only use Read 1 for each sample, even if the original data is paired-end."
+              },
+              "truncate_to": {
+                  "type": "integer",
+                  "description": "Only use the specified number of reads from each input file."
+              },
+              "use_dummy_gene_counts": {
+                  "type": "boolean",
+                  "description": "Generate random gene counts during DGE. This is should be enabled when using '--truncate_to'."
+              },
+              "dp_tools_plugin": {
+                  "type": "string",
+                  "description": "Alternative dp_tools plugin."
+              }
+          }
+      }
+  },
+  "allOf": [
+      {
+          "$ref": "#/$defs/qc"
+      },
+      {
+          "$ref": "#/$defs/boilerplate"
+      },
+      {
+          "$ref": "#/$defs/local_storage"
+      },
+      {
+          "$ref": "#/$defs/configs"
+      },
+      {
+          "$ref": "#/$defs/input"
+      },
+      {
+          "$ref": "#/$defs/references"
+      },
+      {
+          "$ref": "#/$defs/debugging_options"
+      }
+  ],
+  "required": [
+      "outdir"
+  ]
+}

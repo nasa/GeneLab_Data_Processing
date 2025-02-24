@@ -1,5 +1,5 @@
 process QUANTIFY_RSEM_GENES {
-  tag "Dataset-wide"
+  // tag "Dataset-wide"
   // An R script that extracts gene counts by sample to a table
 
   input:
@@ -7,7 +7,7 @@ process QUANTIFY_RSEM_GENES {
     path("03-RSEM_Counts/*")
 
   output:
-    tuple path("RSEM_Unnormalized_Counts_GLbulkRNAseq.csv"), path("RSEM_NumNonZeroGenes_GLbulkRNAseq.csv"), emit: publishables
+    tuple path("RSEM_Unnormalized_Counts${params.assay_suffix}.csv"), path("RSEM_NumNonZeroGenes${params.assay_suffix}.csv"), emit: publishables
 
   script:
     """

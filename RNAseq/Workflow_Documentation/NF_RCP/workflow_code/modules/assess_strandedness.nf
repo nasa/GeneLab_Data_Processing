@@ -1,5 +1,6 @@
 process ASSESS_STRANDEDNESS {
-  tag "Dataset-wide"
+  // tag "Dataset-wide"
+
   input:
     path("infer_out/*") // a collection of infer_experiment stdout files
 

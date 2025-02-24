@@ -6,9 +6,8 @@ workflow STAGE_RAW_READS {
         ch_samples
 
     main:
-        stage_local = params.stage_local
         truncate_to = params.truncate_to
-        if ( stage_local && truncate_to ) {
+        if ( truncate_to ) {
         // Download truncated raw reads
             ch_samples | map { it -> it[0].paired_end ? [it[0], it[1][0], it[1][1]] : [it[0], it[1][0]]}
                  | branch {
@@ -41,7 +40,7 @@ workflow STAGE_RAW_READS {
             COPY_READS.out.raw_reads | map { it[0].id }
                             | collectFile(name: "samples.txt", sort: true, newLine: true)
                             | set { samples_txt }
-        } else if ( stage_local && !truncate_to ) {
+        } else {
         // download full raw reads
             ch_samples | map { it -> it[0].paired_end ? [it[0], [ it[1][0], it[1][1] ]] : [it[0], [it[1][0]]]}
                          | set { ch_raw_reads }
@@ -53,14 +52,12 @@ workflow STAGE_RAW_READS {
             COPY_READS.out.raw_reads | map { it[0].id }
                             | collectFile(name: "samples.txt", sort: true, newLine: true)
                             | set { samples_txt }
-        } else {
-        // Don't download any raw reads
         }
 
 
     emit:
-        raw_reads = stage_local ? COPY_READS.out.raw_reads : null
-        ch_all_raw_reads = stage_local ? ch_all_raw_reads : null
-        samples_txt = stage_local ? samples_txt : null
+        raw_reads = COPY_READS.out.raw_reads 
+        ch_all_raw_reads = ch_all_raw_reads
+        samples_txt =  samples_txt
 }
 

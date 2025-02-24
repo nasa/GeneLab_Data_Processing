@@ -1,10 +1,11 @@
-# GeneLab bioinformatics processing pipeline for Illumina RNA-sequencing data
+# GeneLab bioinformatics processing pipeline for Illumina RNA-sequencing data from Prokaryotic organisms
 
-> **This page holds an overview and instructions for how GeneLab processes RNAseq datasets. Exact processing commands, GL-DPPD-7101 version used, and processed data output files for specific datasets are provided in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
+> **This page holds an overview and instructions for how GeneLab processes RNAseq datasets derived from Prokaryotic organisms. Exact processing commands, GL-DPPD-7115 version used, and processed data output files for specific datasets are provided in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 
 ---
 
-**Date:** January 28, 2025  
+**Date:** February 19, 2025  
+**Revision:** -
 **Document Number:** GL-DPPD-7115   
 
 **Submitted by:**  
@@ -14,22 +15,22 @@ Crystal Han (GeneLab Data Processing Team)
 **Approved by:**  
 Barbara Novak (GeneLab Data Processing Lead)  
 Amanda Saravia-Butler (GeneLab Science Lead)  
-Samrawit Gebre (GeneLab Project Manager)  
-Danielle Lopez (GeneLab Deputy Project Manager)  
-Lauren Sanders (GeneLab Project Scientist)
+Samrawit Gebre (OSDR Project Manager)  
+Danielle Lopez (OSDR Deputy Project Manager)  
+Lauren Sanders (OSDR Project Scientist)
 
 ---
 
-## Updates from previous version  
+## Initial Pipeline Release: General Info  
 
-This initial release of the RNAseq pipeline documentation details the workflow steps executed when the `--microbes` parameter is used. In this mode, Bowtie 2 is used for sequence alignment and featureCounts is used for gene-level quantification, replacing the default STAR and RSEM which are typically used for eukaryotic organisms.
+This is the initial release of the RNAseq pipeline documentation for prokaryotic organisms.  
+> Note: This pipeline has been wrapped into the RNAseq Nextflow workflow and is implemented when the `--microbes` parameter is used as indicated in the [workflow documentation](../Workflow_Documentation/NF_RCP/README.md)  
 
-Differences with default workflow:
-- STAR is replaced with Bowtie 2 for alignment
-- RSEM is replaced with featureCounts for gene quantification
-- kentUtils gtfToGenePred and genePredToBed are replaced with gtfToBed.py
-- rRNA genes are removed from featureCounts results on a dataset-wide basis. rRNA removal logs are all reported in the same file.
-- Rather than importing RSEM Genes.Results files for each sample using tximport, the entire FeatureCounts table is imported into R for normalization and DGE analysis.
+Differences from the [eukaryotic pipeline, GL-DPPD-7101-G](../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md):
+- Bowtie2 is used for alignment instead of STAR 
+- featureCounts is used for gene quantification instead of RSEM 
+- rRNA genes are removed from featureCounts results on a dataset-wide basis and rRNA removal logs are all reported in the same file
+- Raw counts data are imported into R with the `read.csv()` function instead of tximport, and the dds object is created with the `DESeqDataSetFromMatrix()` function instead of the `DESeqDataSetFromTximport()` function
 
 
 ---
@@ -49,9 +50,12 @@ Differences with default workflow:
   - [**4. Align Reads to Reference Genome then Sort and Index**](#4-align-reads-to-reference-genome-then-sort-and-index)
     - [4a. Align Reads to Reference Genome with Bowtie 2](#4a-align-reads-to-reference-genome-with-bowtie-2)
     - [4b. Compile Alignment Logs](#4b-compile-alignment-logs)
-    - [4c. Sort Aligned Reads](#4c-sort-aligned-reads)
-    - [4d. Index Sorted Aligned Reads](#4d-index-sorted-aligned-reads)
+    - [4c. Convert SAM to BAM](#4c-convert-sam-to-bam)
+    - [4d. Sort Aligned Reads](#4d-sort-aligned-reads)
+    - [4e. Index Sorted Aligned Reads](#4d-index-sorted-aligned-reads)
   - [**5. Create Reference BED File**](#5-create-reference-bed-file)
+    - [5a. Convert GTF to genePred File](#5a-convert-gtf-to-genePred-file)
+    - [5b. Convert genePred to BED File](#5b-convert-genePred-to-bed-file)
   - [**6. Assess Strandedness, GeneBody Coverage, Inner Distance, and Read Distribution with RSeQC**](#6-assess-strandedness-genebody-coverage-inner-distance-and-read-distribution-with-rseqc)
     - [6a. Determine Read Strandedness](#6a-determine-read-strandedness)
     - [6b. Compile Strandedness Reports](#6b-compile-strandedness-reports)
@@ -65,9 +69,9 @@ Differences with default workflow:
     - [7a. Count Aligned Reads with FeatureCounts](#7a-count-aligned-reads-with-featurecounts)
     - [7b. Compile FeatureCounts Logs](#7b-compile-featurecounts-logs)
     - [7c. Calculate Total Number of Genes Expressed Per Sample in R](#7c-calculate-total-number-of-genes-expressed-per-sample-in-r)
-    - [7d. Remove rRNA Genes from FeatureCounts](#7d-remove-rrna-genes-from-featurecounts)
-      - [7d.1 Extract rRNA Gene IDs from GTF](#7d1-extract-rrna-gene-ids-from-gtf)
-      - [7d.2 Filter rRNA Genes from FeatureCounts](#7d2-filter-rrna-genes-from-featurecounts)
+    - [7d. Remove rRNA Genes from Gene Counts](#7d-remove-rrna-genes-from-gene-counts)
+      - [7di. Extract rRNA Gene IDs from GTF](#7d1-extract-rrna-gene-ids-from-gtf)
+      - [7dii. Filter rRNA Genes from Gene Counts](#7d2-filter-rrna-genes-from-gene-counts)
   - [**8. Normalize Read Counts and Perform Differential Gene Expression Analysis**](#8-normalize-read-counts-and-perform-differential-gene-expression-analysis)
     - [8a. Create Sample RunSheet](#8a-create-sample-runsheet)
     - [8b. Environment Set Up](#8b-environment-set-up)
@@ -95,23 +99,27 @@ Differences with default workflow:
 |Bowtie 2|2.5.4|[https://github.com/BenLangmead/bowtie2](https://github.com/BenLangmead/bowtie2)|
 |subread|2.0.8|[https://subread.sourceforge.net/](https://subread.sourceforge.net/)|
 |Samtools|1.21|[http://www.htslib.org/](http://www.htslib.org/)|
+|gtfToGenePred|469|[http://hgdownload.cse.ucsc.edu/admin/exe/](http://hgdownload.cse.ucsc.edu/admin/exe/)|
+|genePredToBed|469|[http://hgdownload.cse.ucsc.edu/admin/exe/](http://hgdownload.cse.ucsc.edu/admin/exe/)|
 |infer_experiment|5.0.4|[http://rseqc.sourceforge.net/#infer-experiment-py](http://rseqc.sourceforge.net/#infer-experiment-py)|
 |geneBody_coverage|5.0.4|[http://rseqc.sourceforge.net/#genebody-coverage-py](http://rseqc.sourceforge.net/#genebody-coverage-py)|
 |inner_distance|5.0.4|[http://rseqc.sourceforge.net/#inner-distance-py](http://rseqc.sourceforge.net/#inner-distance-py)|
 |read_distribution|5.0.4|[http://rseqc.sourceforge.net/#read-distribution-py](http://rseqc.sourceforge.net/#read-distribution-py)|
 |R|4.4.2|[https://www.r-project.org/](https://www.r-project.org/)|
 |Bioconductor|3.20|[https://bioconductor.org](https://bioconductor.org)|
+|BiocParallel|1.40.0|[https://bioconductor.org/packages/release/bioc/html/BiocParallel.html](https://bioconductor.org/packages/release/bioc/html/BiocParallel.html)|
 |DESeq2|1.46.0|[https://bioconductor.org/packages/release/bioc/html/DESeq2.html](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)|
 |tidyverse|2.0.0|[https://www.tidyverse.org](https://www.tidyverse.org)|
+|dplyr|1.1.4|[https://dplyr.tidyverse.org/](https://dplyr.tidyverse.org/)|
+|knitr|1.49|[https://yihui.org/knitr/](https://yihui.org/knitr/)|
 |stringr|1.5.1|[https://github.com/tidyverse/stringr](https://github.com/tidyverse/stringr)|
+|yaml|2.3.10|[https://github.com/yaml/yaml](https://github.com/yaml/yaml)|
 |dp_tools|1.3.5|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 |pandas|2.2.3|[https://github.com/pandas-dev/pandas](https://github.com/pandas-dev/pandas)|
 |seaborn|0.13.2|[https://seaborn.pydata.org/](https://seaborn.pydata.org/)|
 |matplotlib|3.10.0|[https://matplotlib.org/stable](https://matplotlib.org/stable)|
-|jupyter notebook|7.3.2|[https://jupyter-notebook.readthedocs.io/](https://jupyter-notebook.readthedocs.io/)|
 |numpy|2.2.1|[https://numpy.org/](https://numpy.org/)|
 |scipy|1.15.1|[https://scipy.org/](https://scipy.org/)|
-|singularity|3.9|[https://sylabs.io/](https://sylabs.io/)|
 
 ---
 
@@ -151,6 +159,7 @@ fastqc -o /path/to/raw_fastqc/output/directory *.fastq.gz
 
 ```bash
 multiqc --interactive -n raw_multiqc_GLbulkRNAseq -o /path/to/raw_multiqc/output/raw_multiqc_GLbulkRNAseq_report /path/to/directory/containing/raw_fastqc/files
+
 zip -r raw_multiqc_GLbulkRNAseq_report.zip raw_multiqc_GLbulkRNAseq_report
 ```
 
@@ -167,9 +176,9 @@ zip -r raw_multiqc_GLbulkRNAseq_report.zip raw_multiqc_GLbulkRNAseq_report
 
 **Output Data:**
 
-* **raw_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **raw_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **raw_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+- **raw_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  - **raw_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  - **raw_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -240,6 +249,7 @@ fastqc -o /path/to/trimmed_fastqc/output/directory *.fastq.gz
 
 ```bash
 multiqc --interactive -n trimmed_multiqc_GLbulkRNAseq -o /path/to/trimmed_multiqc/output/trimmed_multiqc_GLbulkRNAseq_report /path/to/directory/containing/trimmed_fastqc/files
+
 zip -r trimmed_multiqc_GLbulkRNAseq_report.zip /path/to/trimmed_multiqc/output/trimmed_multiqc_GLbulkRNAseq_report
 ```
 
@@ -256,9 +266,9 @@ zip -r trimmed_multiqc_GLbulkRNAseq_report.zip /path/to/trimmed_multiqc/output/t
 
 **Output Data:**
 
-* **trimmed_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **trimmed_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **trimmed_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+- **trimmed_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  - **trimmed_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  - **trimmed_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -268,6 +278,7 @@ zip -r trimmed_multiqc_GLbulkRNAseq_report.zip /path/to/trimmed_multiqc/output/t
 
 ```bash
 bowtie2-build --threads NumberOfThreads \
+    --seed 1 \
     -f /path/to/genome/fasta/file \
     bt2_base
 ```
@@ -275,24 +286,25 @@ bowtie2-build --threads NumberOfThreads \
 **Parameter Definitions:**
 
 - `--threads` – number of threads available on server node to create Bowtie 2 reference
+- `--seed` – sets the random number generator seed to ensure reproducibility
 - `-f` – specifies one or more fasta file(s) containing the genome reference sequences
 - `bt2_base` – specifies the basename of of the Bowtie 2 index files to write
 
 **Input Data:**
 
-- *.fasta (genome sequence, this scRCP version uses the Ensembl fasta file indicated in the `fasta` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
+- *.fasta (genome sequence, this pipeline version uses the fasta file indicated in the `fasta` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
 
 
 **Output Data:**
 
 Bowtie 2 genome reference, which consists of the following files:
 
-- bt2_base.1.bt2 (contains half of the forward strand BWT)
-- bt2_base.2.bt2 (contains half of the forward strand BWT) 
-- bt2_base.3.bt2 (contains BWT ranks)
-- bt2_base.4.bt2 (contains BWT ranks)
-- bt2_base.rev.1.bt2 (contains half of the reverse strand BWT)
-- bt2_base.rev.2.bt2 (contains half of the reverse strand BWT)
+- bt2_base.1.bt2
+- bt2_base.2.bt2
+- bt2_base.3.bt2
+- bt2_base.4.bt2
+- bt2_base.rev.1.bt2
+- bt2_base.rev.2.bt2
 
 <br>
 
@@ -307,39 +319,39 @@ Bowtie 2 genome reference, which consists of the following files:
 ```bash
 bowtie2 -x /path/to/bowtie2/index \
  --threads NumberOfThreads \
- --minins 0 \
- --maxins 500 \
- -k 1 \
+ --minins 10 \
+ --maxins 1000 \
  -1 /path/to/trimmed_forward_reads \
  -2 /path/to/trimmed_reverse_reads \
- --un /path/to/bowtie2/output/directory/<sample_id>.unmapped.fastq \
+ --un-conc-gz <sample_id>.Unmapped.fastq.gz \  # For paired-end data
+ # --un-gz <sample_id>.Unmapped.fastq.gz \     # For single-end data
  -S /path/to/bowtie2/output/directory/<sample_id>.sam \
  2> /path/to/bowtie2/output/directory/<sample_id>.bowtie2.log
 ```
 
 **Parameter Definitions:**
 
-- `-x` - specifies the path to the Bowtie2 index prefix
-- `--threads` - number of threads to use for alignment
-- `--minins` - minimum fragment length for valid paired-end alignments (0 for no minimum)
-- `--maxins` - maximum fragment length for valid paired-end alignments
-- `-k` - report up to k alignments per read (1 for unique mapping only)
-- `-1` - path to input forward reads (R1)
-- `-2` - path to input reverse reads (R2) (omit -1/-2 and use -U for single-end reads)
-- `--un` - write unmapped reads to specified file
-- `-S` - write alignments to SAM format file
-- `2>` - redirect stderr containing alignment statistics to log file
+- `-x` – specifies the path to the Bowtie2 index prefix
+- `--threads` – number of threads to use for alignment
+- `--minins` – minimum fragment length for valid paired-end alignments
+- `--maxins` – maximum fragment length for valid paired-end alignments
+- `-1` – path to input forward reads (R1)
+- `-2` – path to input reverse reads (R2) (omit -1/-2 and use `-U` for single-end reads)
+- `--un-conc-gz` – write paired-end unmapped reads to gzipped FASTQ file (use for paired-end data)
+- `--un-gz` – write single-end unmapped reads to gzipped FASTQ file (use for single-end data)
+- `-S` – write alignments to SAM format file
+- `2>` – redirect stderr containing alignment statistics to log file
 
 **Input Data:**
 
-- Bowtie2 genome reference (output from [Step 3](#3-build-bowtie-2-reference))
+- Bowtie 2 genome reference (output from [Step 3](#3-build-bowtie-2-reference))
 - *fastq.gz (trimmed reads, output from [Step 2a](#2a-trimfilter-raw-data))
 
 **Output Data:**
 
-- **\*.sam** (alignments in SAM format)
+- *\.sam (alignments in SAM format)
 - **\*.bowtie2.log** (log file containing alignment statistics)
-- \*.unmapped.fastq (unmapped reads in FASTQ format)
+- **\*.Unmapped.fastq.gz** (unmapped reads in FASTQ format)
 
 <br>
 
@@ -347,6 +359,7 @@ bowtie2 -x /path/to/bowtie2/index \
 
 ```bash
 multiqc --interactive -n align_multiqc_GLbulkRNAseq -o /path/to/align_multiqc/output/align_multiqc_GLbulkRNAseq_report /path/to/*.bowtie2.log/files
+
 zip -r align_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/align_multiqc_GLbulkRNAseq_report
 ```
 
@@ -355,7 +368,7 @@ zip -r align_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/align
 - `--interactive` – force reports to use interactive plots
 - `-n` – prefix name for output files
 - `-o` – the output directory to store results
-- `/path/to/*.bowtie2.log/files` – the directory holding the *.bowtie2.log output files from the [Bowtie2 alignment step](#4a-align-reads-to-reference-genome-with-bowtie-2), provided as a positional argument
+- `/path/to/*.bowtie2.log/files` – the directory holding the *.bowtie2.log output files, provided as a positional argument
 
 **Input Data:**
 
@@ -363,27 +376,27 @@ zip -r align_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/align
 
 **Output Data:**
 
-* **align_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **align_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **align_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+- **align_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  - **align_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  - **align_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
-### 4c. Sort Aligned Reads
+### 4c. Convert SAM to BAM
 
 ```bash
-samtools sort -m 3G \
-  --threads NumberOfThreads \
-  -o /path/to/*_sorted.bam \
-  /path/to/*.sam
+samtools view -bS -F 4 --threads NumberOfThreads /path/to/*.sam > /path/to/output/*.bam
 ```
 
 **Parameter Definitions:**
 
-- `-m` – memory available per thread, `3G` indicates 3 gigabytes, this can be changed based on user resources
-- `--threads` – number of threads available on server node to sort genome alignment files
-- `-o` - output file name (sorted BAM)
-- `/path/to/*.sam` – path to the SAM files output from the [Bowtie2 alignment step](#4a-align-reads-to-reference-genome-with-bowtie-2), provided as a positional argument
+- `-b` – output in BAM format
+- `-S` – input is in SAM format
+- `-F 4` – exclude unmapped reads (flag 4)
+- `--threads` – number of threads available on server node to convert SAM files
+- `/path/to/*.sam` – path to input SAM files
+- `>` – redirect output to BAM file
+- `/path/to/output/*.bam` – path to output BAM file
 
 **Input Data:**
 
@@ -391,11 +404,37 @@ samtools sort -m 3G \
 
 **Output Data:**
 
-- **\*_sorted.bam** (samtools sorted genome aligned bam file)
+- \*.bam (alignments in compressed BAM format with unmapped reads removed)
 
 <br>
 
-### 4d. Index Sorted Aligned Reads
+### 4d. Sort Aligned Reads
+
+```bash
+samtools sort -m 3G \
+  --threads NumberOfThreads \
+  -o /path/to/*_sorted.bam \
+  /path/to/*.bam
+```
+
+**Parameter Definitions:**
+
+- `-m` – memory available per thread, `3G` indicates 3 gigabytes, this can be changed based on user resources
+- `--threads` – number of threads available on server node to sort genome alignment files
+- `-o` – output file name (sorted BAM)
+- `/path/to/*.sam` – path to the SAM file(s), provided as a positional argument
+
+**Input Data:**
+
+- *.bam (alignments in BAM format, output from [Step 4c](#4c-convert-sam-to-bam))
+
+**Output Data:**
+
+- **\*_sorted.bam** (samtools sorted genome-aligned bam file)
+
+<br>
+
+### 4e. Index Sorted Aligned Reads
 
 ```bash
 samtools index -@ NumberOfThreads /path/to/*_sorted.bam
@@ -404,7 +443,7 @@ samtools index -@ NumberOfThreads /path/to/*_sorted.bam
 **Parameter Definitions:**
 
 - `-@` – number of threads available on server node to index the sorted alignment files
-- `/path/to/*_sorted.bam` – the path to the sorted BAM files from the [sorting step](#4c-sort-aligned-reads), provided as a positional argument
+- `/path/to/*_sorted.bam` – the path to the sorted BAM files from the [sorting step](#4d-sort-aligned-reads), provided as a positional argument
 
 **Input Data:**
 
@@ -420,21 +459,48 @@ samtools index -@ NumberOfThreads /path/to/*_sorted.bam
 
 ## 5. Create Reference BED File
 
+<br>
+
+### 5a. Convert GTF to genePred File  
+
 ```bash
-gtf_to_bed.py \
+gtfToGenePred -geneNameAsName2 \
   /path/to/annotation/gtf/file \
-  /path/to/output/bed/file
+  /path/to/output/genePred/file
 
 ```
 
 **Parameter Definitions:**
 
+- `--geneNameAsName2` – specifies that gene_name should be used as the name2 field in the genePred file
 - `/path/to/annotation/gtf/file` – specifies the file(s) containing annotated reference transcripts in the standard gtf format, provided as a positional argument
-- `/path/to/output/bed/file` – specifies the location and name of the output BED file(s), provided as a positional argument
+- `/path/to/output/genePred/file` – specifies the location and name of the output genePred file(s), provided as a positional argument
 
 **Input Data:**
 
-- *.gtf (genome annotation, this scRCP version uses the Ensembl gtf file indicated in the `gtf` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
+- *.gtf (genome annotation, this pipeline version uses the gtf file indicated in the `gtf` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
+
+**Output Data:**
+
+- *.genePred (genome annotation in genePred format)
+
+<br>
+
+### 5b. Convert genePred to BED File  
+
+```bash
+genePredToBed /path/to/annotation/genePred/file \
+  /path/to/output/BED/file
+```
+
+**Parameter Definitions:**
+
+- `/path/to/annotation/genePred/file` – specifies the file(s) containing annotated reference transcripts in the genePred format, provided as a positional argument
+- `/path/to/output/BED/file` – specifies the location and name of the output BED file(s), provided as a positional argument
+
+**Input Data:**
+
+- *.genePred (genome annotation in genePred format, output from [Step 5a](#5a-convert-gtf-to-genepred-file))
 
 **Output Data:**
 
@@ -466,9 +532,9 @@ infer_experiment.py -r /path/to/annotation/BED/file \
 
 **Input Data:**
 
-- *.bed (genome annotation in BED format, output from [Step 5](#5-create-reference-bed-file))
-- *_sorted.bam (sorted mapping to genome file, output from [Step 4c](#4c-sort-aligned-reads))
-- *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4d](#4d-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
+- *.bed (genome annotation in BED format, output from [Step 5b](#5b-convert-genepred-to-bed-file))
+- *_sorted.bam (sorted mapping to genome file, output from [Step 4d](#4d-sort-aligned-reads))
+- *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4e](#4e-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
 
 **Output Data:**
 
@@ -480,6 +546,7 @@ infer_experiment.py -r /path/to/annotation/BED/file \
 
 ```bash
 multiqc --interactive -n infer_exp_multiqc_GLbulkRNAseq -o /path/to/infer_exp_multiqc/output/infer_exp_multiqc_GLbulkRNAseq_report /path/to/*infer_expt.out/files
+
 zip -r infer_exp_multiqc_GLbulkRNAseq_report.zip /path/to/infer_exp_multiqc/output/infer_exp_multiqc_GLbulkRNAseq_report
 ```
 
@@ -496,9 +563,9 @@ zip -r infer_exp_multiqc_GLbulkRNAseq_report.zip /path/to/infer_exp_multiqc/outp
 
 **Output Data:**
 
-* **infer_exp_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **infer_exp_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **infer_exp_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+- **infer_exp_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  - **infer_exp_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  - **infer_exp_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -519,7 +586,7 @@ geneBody_coverage.py -r /path/to/annotation/BED/file \
 
 **Input Data:**
 
-- *.bed (genome annotation in BED format, output from [Step 5](#5-create-reference-bed-file))
+- *.bed (genome annotation in BED format, output from [Step 5b](#5b-convert-genepred-to-bed-file))
 - *_sorted.bam (sorted mapping to genome file, output from [Step 4c](#4c-sort-aligned-reads))
 - *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4d](#4d-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
 
@@ -535,6 +602,7 @@ geneBody_coverage.py -r /path/to/annotation/BED/file \
 
 ```bash
 multiqc --interactive -n genebody_cov_multiqc_GLbulkRNAseq -o /path/to/geneBody_cov_multiqc/output/geneBody_cov_multiqc_GLbulkRNAseq_report /path/to/geneBody_coverage/output/files
+
 zip -r genebody_cov_multiqc_GLbulkRNAseq_report.zip /path/to/genebody_cov_multiqc/output/genebody_cov_multiqc_GLbulkRNAseq_report
 ```
 
@@ -551,9 +619,9 @@ zip -r genebody_cov_multiqc_GLbulkRNAseq_report.zip /path/to/genebody_cov_multiq
 
 **Output Data:**
 
-* **genebody_cov_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **genebody_cov_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **genebody_cov_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+- **genebody_cov_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  - **genebody_cov_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  - **genebody_cov_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -563,7 +631,7 @@ zip -r genebody_cov_multiqc_GLbulkRNAseq_report.zip /path/to/genebody_cov_multiq
 inner_distance.py -r /path/to/annotation/BED/file \
  -i /path/to/*_sorted.bam \
  -k 15000000 \
- -l -150 \
+ -l -(max read length) \
  -u 350 \
  -o  /path/to/inner_distance/output/directory
 ```
@@ -573,13 +641,13 @@ inner_distance.py -r /path/to/annotation/BED/file \
 - `-r` – specifies the path to the reference annotation BED file
 - `-i` – specifies the path to the input bam file(s)
 - `-k` – specifies the number of reads to be sampled from the input bam file(s), 15M reads are sampled
-- `-l` – specifies the lower bound of inner distance (bp), set to -150 or negative of maximum read length if read length is greater than 150
+- `-l` – specifies the lower bound of inner distance (bp), set to negative of the maximum read length 
 - `-u` – specifies the upper bound of inner distance (bp)
 - `/path/to/inner_distance/output/directory` – specifies the location and name of the directory containing the inner_distance output files
 
 **Input Data:**
 
-- *.bed (genome annotation in BED format, output from [Step 5](#5-create-reference-bed-file))
+- *.bed (genome annotation in BED format, output from [Step 5b](#5b-convert-genepred-to-bed-file))
 - *_sorted.bam (sorted mapping to genome file, output from [Step 4c](#4c-sort-aligned-reads))
 - *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4d](#4d-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
 
@@ -596,6 +664,7 @@ inner_distance.py -r /path/to/annotation/BED/file \
 
 ```bash
 multiqc --interactive -n inner_dist_multiqc_GLbulkRNAseq /path/to/align_multiqc/output/inner_dist_multiqc_GLbulkRNAseq_report /path/to/inner_dist/output/files
+
 zip -r inner_dist_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/inner_dist_multiqc_GLbulkRNAseq_report
 ```
 
@@ -612,9 +681,9 @@ zip -r inner_dist_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/
 
 **Output Data:**
 
-* **inner_dist_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **inner_dist_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **inner_dist_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+- **inner_dist_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  - **inner_dist_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  - **inner_dist_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -634,7 +703,7 @@ read_distribution.py -r /path/to/annotation/BED/file \
 
 **Input Data:**
 
-- *.bed (genome annotation in BED format, output from [Step 5](#5-create-reference-bed-file))
+- *.bed (genome annotation in BED format, output from [Step 5b](#5b-convert-genepred-to-bed-file))
 - *_sorted.bam (sorted mapping to genome file, output from [Step 4c](#4c-sort-aligned-reads))
 - *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4d](#4d-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
 
@@ -648,13 +717,14 @@ read_distribution.py -r /path/to/annotation/BED/file \
 
 ```bash
 multiqc --interactive -n read_dist_multiqc_GLbulkRNAseq -o /path/to/read_dist_multiqc/output/read_dist_multiqc_GLbulkRNAseq_report /path/to/*read_dist.out/files
+
 zip -r read_dist_multiqc_GLbulkRNAseq_report.zip /path/to/read_dist_multiqc/output/read_dist_multiqc_GLbulkRNAseq_report
 ```
 
 **Parameter Definitions:**
 
-- `--interactive` - force reports to use interactive plots
-- `-n` - prefix name for output files
+- `--interactive` – force reports to use interactive plots
+- `-n` – prefix name for output files
 - `-o` – the output directory to store results
 - `/path/to/*read_dist.out/files` – the directory holding the *read_dist.out output files from [Step 6g](#6g-assess-read-distribution) provided as a positional argument
 
@@ -664,9 +734,9 @@ zip -r read_dist_multiqc_GLbulkRNAseq_report.zip /path/to/read_dist_multiqc/outp
 
 **Output Data:**
 
-* **read_dist_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **read_dist_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **read_dist_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+- **read_dist_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  - **read_dist_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  - **read_dist_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -679,44 +749,57 @@ zip -r read_dist_multiqc_GLbulkRNAseq_report.zip /path/to/read_dist_multiqc/outp
 ### 7a. Count Aligned Reads with FeatureCounts
 
 ```bash
+
+# Get all unique feature types in the reference GTF file
+GTF_FEATURES=\$(grep -v '^#' /path/to/annotation/gtf/file | cut -f3 | sort | uniq | tr '\n' ',' | sed 's/,\$//')
+
 featureCounts -p \
+  --countReadPairs \
+  -d 10 \
+  -D 1000 \
+  -P \
+  -B \
   -T NumberOfThreads \
   -a /path/to/annotation/gtf/file \
-  -s 0|1|2 \
-  -t exon \
-  -g gene_id \
-  -o /path/to/featurecounts/output/directory/FeatureCounts_GLbulkRNAseq.csv \
+  -t ${GTF_FEATURES} \
+  -s 1 \
+  -o /path/to/featurecounts/output/directory/FeatureCounts_GLbulkRNAseq.tsv \
   /path/to/*_sorted.bam
 ```
 
 **Parameter Definitions:**
 
-- `-p` - indicates paired-end reads (omit for single-end data)
-- `-T` - number of threads to use
-- `-a` - path to genome annotation GTF file
-- `-s` - specifies strandedness: 0=unstranded, 1=stranded (forward), 2=stranded (reverse)
-- `-t` - specify feature type (default: exon)
-- `-g` - specify attribute type used to group features (default: gene_id)
-- `-o` - output file path and name
-- `/path/to/*_sorted.bam` - input sorted BAM files, can specify multiple files separated by spaces
+- `-p` – indicates paired-end reads (omit for single-end data)
+- `--countReadPairs` – specifies that fragments should be counted for paired-end data (omit for single-end data)
+- `-d` – minimum fragment length (omit for single-end data)
+- `-D` – maximum fragment length (omit for single-end data)
+- `-P` – specifies that fragment length should be checked against minimum and maximum thresholds when counting fragments (omit for single-end data)
+- `-B` – specifies that only fragments with both ends successfully aligned should be considered for counting (omit for single-end data)
+- `-T` – number of threads to use
+- `-a` – path to genome annotation GTF file
+- `-t` – specifies the feature types to be counted, e.g. gene, exon, intron, etc.
+- `-s` – specifies strandedness: 0=unstranded, 1=stranded (forward), 2=stranded (reverse); the `reverse` option is used if read strandedness (output from [step 6](#6a-determine-read-strandedness)) is antisense, `forward` is used with sense strandedness, and `none` is used if strandedness is half sense half antisense
+- `-o` – output file path and name
+- `/path/to/*.bam` – input sorted BAM files, can specify multiple files separated by spaces
 
 **Input Data:**
 
-- *.gtf (genome annotation, this version uses the Ensembl gtf file indicated in the `gtf` column of the [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) GeneLab Annotations file)
+- *.gtf (genome annotation, this pipeline version uses the gtf file indicated in the `gtf` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
 - *_sorted.bam (sorted mapping to genome file, output from [Step 4c](#4c-sort-aligned-reads))
 - *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4d](#4d-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
 
 **Output Data:**
 
-- **FeatureCounts_GLbulkRNAseq.csv** (table containing raw read counts per gene for each sample)
-- **FeatureCounts_GLbulkRNAseq.csv.summary** (table containing counting statistics for each sample)
+- **FeatureCounts_GLbulkRNAseq.tsv** (table containing raw read counts per gene for each sample)
+- **FeatureCounts_GLbulkRNAseq.tsv.summary** (table containing counting statistics for each sample)
 
 <br>
 
 ### 7b. Compile FeatureCounts Logs
 
 ```bash
-multiqc --interactive -n FeatureCounts_GLbulkRNAseq -o /path/to/FeatureCounts_multiqc/output/FeatureCounts_multiqc_GLbulkRNAseq_report /path/to/*stat/files
+multiqc --interactive -n FeatureCounts_GLbulkRNAseq -o /path/to/FeatureCounts_multiqc/output/FeatureCounts_multiqc_GLbulkRNAseq_report /path/to/FeatureCounts_GLbulkRNAseq.tsv.summary
+
 zip -r FeatureCounts_multiqc_GLbulkRNAseq_report.zip /path/to/FeatureCounts_multiqc/output/FeatureCounts_multiqc_GLbulkRNAseq_report
 ```
 
@@ -725,20 +808,17 @@ zip -r FeatureCounts_multiqc_GLbulkRNAseq_report.zip /path/to/FeatureCounts_mult
 - `--interactive` – force reports to use interactive plots
 - `-n` – prefix name for output files
 - `-o` – the output directory to store results
-- `/path/to/*stat/files` – the directories holding the *stat output files from the [RSEM Counts step](#8a-count-aligned-reads-with-rsem), provided as a positional argument
+- `/path/to/FeatureCounts_GLbulkRNAseq.tsv.summary` – the summary file output from the FeatureCounts step, provided as a positional argument
 
 **Input Data:**
 
-- *stat (directory containing the following stats files, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts))
-  - *cnt
-  - *model
-  - *theta
+- FeatureCounts_GLbulkRNAseq.tsv.summary (FeatureCounts summary statistics file, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts))
 
 **Output Data:**
 
-* **RSEM_count_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **FeatureCounts_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
-  * **FeatureCounts_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
+- **FeatureCounts_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
+  - **FeatureCounts_multiqc_GLbulkRNAseq.html** (multiqc output html summary)
+  - **FeatureCounts_multiqc_GLbulkRNAseq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -752,7 +832,7 @@ library(tidyverse)
 counts_dir="/path/to/directory/containing/featurecounts/output"
 
 ### Read FeatureCounts data, skipping the first line which contains command info
-data <- read.table(file.path(counts_dir, "FeatureCounts_GLbulkRNAseq.csv"), 
+data <- read.table(file.path(counts_dir, "FeatureCounts_GLbulkRNAseq.tsv"), 
                   header=TRUE, 
                   skip=1,
                   sep="\t",
@@ -783,60 +863,73 @@ sessionInfo()
 
 **Input Data:**
 
-- FeatureCounts_GLbulkRNAseq.csv (table containing raw read counts per gene for each sample, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts))
+- FeatureCounts_GLbulkRNAseq.tsv (table containing raw read counts per gene for each sample, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts))
 
 **Output Data:**
 
-- **NumNonZeroGenes_GLbulkRNAseq.csv** (A samplewise table of the number of genes expressed)
+- NumNonZeroGenes_GLbulkRNAseq.csv (A samplewise table of the number of genes expressed)
 
 <br>
 
-### 7d. Remove rRNA Genes from FeatureCounts
+### 7d. Remove rRNA Genes from Gene Counts
 
 <br>
 
-#### 7d.1 Extract rRNA Gene IDs from GTF
+#### 7di. Extract rRNA Gene IDs from GTF
 
 ```bash
-### Extract unique rRNA ENSEMBL gene IDs from GTF file ###
+### Extract unique rRNA gene IDs from GTF file ###
 grep "rRNA" /path/to/annotation/gtf/file \
     | grep -o 'gene_id "[^"]*"' \
     | sed 's/gene_id "\(.*\)"/\1/' \
-    | sort -u > *_rrna_ensembl_ids.txt
+    | sort -u > rrna_ids.txt
 ```
 
 **Input Data:**
-- *.gtf (genome annotation)
+
+- *.gtf (genome annotation, this pipeline version uses the gtf file indicated in the `gtf` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
 
 **Output Data:**
-- *rrna_ensembl_ids.txt (list of unique rRNA ENSEMBL gene IDs in a GTF file)
+
+- rrna_ids.txt (list of unique rRNA gene IDs in a GTF file)
 
 <br>
 
-#### 7d.2 Filter rRNA Genes from FeatureCounts
+#### 7dii. Filter rRNA Genes from Gene Counts
 
-```bash
+```python
 ### Filter out rRNA entries ###
-awk 'NR==1; NR==2; NR==FNR {next} FNR==NR {ids[$1]=1; next} !($1 in ids)' \
-    FeatureCounts_GLbulkRNAseq.csv \
-    *rrna_ensembl_ids.txt \
-    FeatureCounts_GLbulkRNAseq.csv > FeatureCounts_rRNA_removed_GLbulkRNAseq.csv
 
-### Count removed rRNA entries ###
-rRNA_count=$(awk 'NR==1; NR==2 {next} NR==FNR {next} FNR==NR {ids[$1]=1; next} $1 in ids' \
-    FeatureCounts_GLbulkRNAseq.csv \
-    *rrna_ensembl_ids.txt \
-    FeatureCounts_GLbulkRNAseq.csv | wc -l)
-echo "FeatureCounts: ${rRNA_count} rRNA entries removed." > FeatureCounts_rRNA_counts.txt
+with open("/path/to/FeatureCounts_GLbulkRNAseq.tsv") as f:
+    df = pd.read_csv(f, sep='\t', comment='#')
+
+with open("/path/to/rrna_ids.txt") as f:
+    rrna_ids = set(line.strip() for line in f if line.strip())
+
+# Filter and summarize
+gene_id_col = df.columns[0]
+rna_mask = df[gene_id_col].isin(rrna_ids)
+sample_stats = {col.replace('.bam', ''): 
+                (df[rna_mask][col] >= 1).sum() 
+                for col in df.columns[6:]}
+
+# Write outputs
+with open(summary_output, 'w') as f:
+    f.write(f"Total entries listed: {len(df)}\n")
+    f.write(f"Total rRNA entries listed: {rna_mask.sum()}\n\n")
+    for sample, count in sample_stats.items():
+        f.write(f"{sample}: {count} rRNA entries removed\n")
+
+df[~rna_mask].to_csv(filtered_output, sep='\t', index=False)
 ```
 
 **Input Data:**
-- FeatureCounts_GLbulkRNAseq.csv (table containing raw read counts per gene for each sample, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts))
-- *rrna_ensembl_ids.txt (file containing list of gene IDs with rRNA features, output from [Step 7d.1](#7d1-extract-rrna-gene-ids-from-gtf))
+- FeatureCounts_GLbulkRNAseq.tsv (table containing raw read counts per gene for each sample, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts))
+- rrna_ids.txt (file containing list of gene IDs with rRNA features, output from [Step 7di](#7di-extract-rrna-gene-ids-from-gtf))
 
 **Output Data:**
-- **FeatureCounts_rRNA_removed_GLbulkRNAseq.csv** (FeatureCounts output for all samples with rRNA entries removed)
-- *rRNA_counts.txt (Summary of number of rRNA entries removed)
+- **FeatureCounts_rRNA_removed_GLbulkRNAseq.csv** (table containing raw read counts per gene for each sample with rRNA genes removed)
+- rRNA_counts.txt (Summary of number of rRNA genes removed from counts table)
 
 <br>
 
@@ -845,17 +938,17 @@ echo "FeatureCounts: ${rRNA_count} rRNA entries removed." > FeatureCounts_rRNA_c
 ## 8. Normalize Read Counts and Perform Differential Gene Expression Analysis
 
 > **Note:** DGE Analysis is performed twice with different sets of input files:
-> 1. Using raw FeatureCounts output
-> 2. Using rRNA-removed FeatureCounts output
+> 1. Using raw FeatureCounts output from [Step 7a](#7a-count-aligned-reads-with-featurecounts)
+> 2. Using rRNA-removed FeatureCounts output from [Step 7dii](#7dii-filter-rrna-genes-from-gene-counts)
 
 <br>
 
 ### 8a. Create Sample RunSheet
 
-> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_RCP-F/examples/runsheet/README.md).
+> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_RCP/examples/runsheet/README.md).
 
 ```bash
-### Download the *ISA.zip file from the GeneLab Repository ###
+### Download the *ISA.zip file from the Open Science Data Repository ###
 
 dpt-get-isa-archive \
  --accession GLDS-###
@@ -871,6 +964,7 @@ dpt-isa-to-runsheet --accession GLDS-### \
 **Parameter Definitions:**
 
 - `--accession GLDS-###` – GLDS accession ID (replace ### with the GLDS number being processed), used to retrieve the urls for the ISA archive and raw reads hosted on the GeneLab Repository
+  > *Note: you can also use the OSD identifier, e.g. `--accession OSD-###`* 
 - `--config-type` – Instructs the script to extract the metadata required for `bulkRNAseq` processing from the ISA archive
 - `--config-version` – Specifies the `dp-tools` configuration version to use, a value of `Latest` will specify the most recent version
 - `--isa-archive` – Specifies the *ISA.zip file for the respective GLDS dataset, downloaded in the `dpt-get-isa-archive` command
@@ -878,11 +972,11 @@ dpt-isa-to-runsheet --accession GLDS-### \
 
 **Input Data:**
 
-- No input data required but the GLDS accession ID needs to be indicated, which is used to download the respective ISA archive 
+- No input data required but the GLDS (or OSD) accession ID needs to be indicated, which is used to download the respective ISA archive 
 
 **Output Data:**
 
-- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, used to define sample groups - the *ISA.zip file is located in the [GLDS repository](https://genelab-data.ndc.nasa.gov/genelab/projects) under 'Study Files' -> 'metadata')
+- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, used to define sample groups - the *ISA.zip file is located in the [OSDR repository](https://osdr.nasa.gov/bio/repo/) under 'Files' -> 'Study Metadata Files')
 
 - **{GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv** (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
 
@@ -892,7 +986,6 @@ dpt-isa-to-runsheet --accession GLDS-### \
 
 ```R
 ### Install and load required packages ###
-
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
@@ -921,37 +1014,37 @@ library(tximport)
 library(DESeq2)
 library(BiocParallel)
 
-### Define which organism is used in the study - this should be consistent with the name in the "name" column of the GL-DPPD-7110_annotations.csv file, which matches the abbreviations used in the Panther database for each organism ###
-
+### Define which organism is used in the study - this should be consistent with the species name in the "species" column of the GL-DPPD-7110-A_annotations.csv file ###
 organism <- "organism_that_samples_were_derived_from"
 
-
 ### Define the location of the input data and where the output data will be printed to ###
-
-runsheet_path="/path/to/directory/containing/runsheet.csv/file" ## This is the runsheet created in Step 9a above
+runsheet_path="/path/to/directory/containing/runsheet.csv/file"
 work_dir="/path/to/working/directory/where/script/is/executed/from" 
-counts_dir="/path/to/directory/containing/RSEM/counts/files"
 norm_output="/path/to/normalized/counts/output/directory"
 DGE_output="/path/to/DGE/output/directory"
 
-
-### Pull in the GeneLab annotation table (GL-DPPD-7110_annotations.csv) file ###
-
-org_table_link <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv"
-
+### Pull in the GeneLab annotation table (GL-DPPD-7110-A_annotations.csv) file ###
+org_table_link <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
 org_table <- read.table(org_table_link, sep = ",", header = TRUE)
 
-
 ### Define the link to the GeneLab annotation table for the organism of interest ###
-
-annotations_link <- org_table[org_table$name == organism, "genelab_annots_link"]
-
+annotations_link <- org_table[org_table$species == organism, "genelab_annots_link"]
 
 ### Set your working directory to the directory where you will execute your DESeq2 script from ###
-
 setwd(file.path(work_dir))
 
 ```
+
+**Input Data:**
+
+
+- {GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv (runsheet, output from [Step 8a](#8a-create-sample-runsheet))
+- `organism` (name of organism samples were derived from, found in the species column of [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file)
+
+**Output Data:**
+
+- `runsheet_path` (variable containing path to runsheet created in [Step 8a](#8a-create-sample-runsheet)) 
+- `annotations_link` (variable containing URL to GeneLab gene annotation table for the organism)
 
 <br>
 
@@ -959,52 +1052,53 @@ setwd(file.path(work_dir))
 
 ```R
 ### Pull all factors for each sample in the study from the runsheet created in Step 9a ###
-
 compare_csv_from_runsheet <- function(runsheet_path) {
-    df = read.csv(runsheet_path)
-    # get only Factor Value columns
-    factors = as.data.frame(df[,grep("Factor.Value", colnames(df), ignore.case=TRUE)])
-    colnames(factors) = paste("factor",1:dim(factors)[2], sep= "_")
-    result = data.frame(sample_id = df[,c("Sample.Name")], factors)	
+    df <- read.csv(runsheet_path)
+    factors <- df %>%
+        select(matches("Factor.Value", ignore.case = TRUE)) %>%
+        rename_with(~ paste0("factor_", seq_along(.)))
+    result <- df %>%
+        select(sample_id = Sample.Name) %>%
+        bind_cols(factors)
     return(result)
 }
 
-
 ### Load metadata from runsheet csv file ###
-
 compare_csv <- compare_csv_from_runsheet(runsheet_path)
 
-
 ### Create data frame containing all samples and respective factors ###
-
-study <- as.data.frame(compare_csv[,2:dim(compare_csv)[2]])
-colnames(study) <- colnames(compare_csv)[2:dim(compare_csv)[2]]
-rownames(study) <- compare_csv[,1]
-
+study <- compare_csv[, -1, drop=FALSE] # Exclude sample_id
+rownames(study) <- compare_csv$sample_id
 
 ### Format groups and indicate the group that each sample belongs to ###
-
-if (dim(study) >= 2){
-    group<-apply(study,1,paste,collapse = " & ") ## concatenate multiple factors into one condition per sample
-} else{
-    group<-study[,1]
+group <- if (ncol(study) >= 2) {
+    apply(study, 1, paste, collapse = " & ")
+} else {
+    study[[1]]
 }
-group_names <- paste0("(",group,")",sep = "") ## human readable group names
-group <- sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", group))) # group naming compatible with R models, this maintains the default behaviour of make.names with the exception that 'X' is never prepended to group names
+group_names <- paste0("(", group, ")") ## human readable group names
+group <- sub("^BLOCKER_", "", make.names(paste0("BLOCKER_", group))) # group naming compatible with R models, this maintains the default behaviour of make.names with the exception that 'X' is never prepended to group names
 names(group) <- group_names
 rm(group_names)
 
-
 ### Format contrasts table, defining pairwise comparisons for all groups ###
-
 contrast.names <- combn(levels(factor(names(group))),2) ## generate matrix of pairwise group combinations for comparison
 contrasts <- apply(contrast.names, MARGIN=2, function(col) sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", stringr::str_sub(col, 2, -2))))) # limited make.names call for each group (also removes leading parentheses)
 contrast.names <- c(paste(contrast.names[1,],contrast.names[2,],sep = "v"),paste(contrast.names[2,],contrast.names[1,],sep = "v")) ## format combinations for output table files names
 contrasts <- cbind(contrasts,contrasts[c(2,1),])
 colnames(contrasts) <- contrast.names
 rm(contrast.names) 
-
 ```
+
+**Input Data:**
+
+- `runsheet_path` (variable containing path to runsheet created in [Step 8a](#8a-create-sample-runsheet))
+
+**Output Data:**
+
+- `study` (data frame specifying factor levels assigned to each sample)
+- `group` (named vector specifying the group or set of factor levels for each sample)
+- `contrasts` (matrix defining pairwise comparisons between groups)
 
 <br>
 
@@ -1012,40 +1106,28 @@ rm(contrast.names)
 
 ```R
 ### Import FeatureCounts data ###
-counts_file <- "/path/to/FeatureCounts_GLbulkRNAseq.csv"
+input_counts <- "/path/to/FeatureCounts_GLbulkRNAseq.tsv"
 
-# Load featureCounts data
-featurecounts_data <- read.csv(file = counts_file, 
-                              header = TRUE, 
-                              sep = "\t", 
-                              skip = 1, 
-                              stringsAsFactors = FALSE, 
-                              check.names = FALSE)
+### Load featureCounts data ###
+featurecounts <- read.csv(input_counts, header = TRUE, sep = "\t", skip = 1)
 
-# Identify metadata columns and sample columns
-metadata_cols <- c("Geneid", "Chr", "Start", "End", "Strand", "Length")
-sample_cols <- setdiff(colnames(featurecounts_data), metadata_cols)
+### Create counts matrix: remove metadata columns from featurecounts table, remove bam file extension from column names ###
+row.names(featurecounts) <- featurecounts$Geneid
+counts <- featurecounts[,-c(1:6)]
+colnames(counts) <- gsub("\\.bam$", "", colnames(counts))
 
-# Remove the ".bam" suffix from sample columns
-sample_cols <- sub("\\.bam$", "", sample_cols)
-
-# Reorder sample columns to match the sample order in the study
-samples <- rownames(study)
-sample_col_indices <- match(samples, sample_cols)
-
-# Create counts matrix
-counts <- featurecounts_data[, sample_col_indices, drop = FALSE]
-counts <- as.data.frame(lapply(counts, as.numeric))
-colnames(counts) <- samples
-rownames(counts) <- featurecounts_data$Geneid
-
-# Create DESeq2 input object
-dds <- DESeqDataSetFromMatrix(
-    countData = counts,
-    colData = sampleTable,
-    design = ~condition
-)
+### Reorder counts columns to match runsheet ###
+counts <- counts[, rownames(study)]
 ```
+
+**Input Data:**
+- FeatureCounts_GLbulkRNAseq.tsv (table containing raw read counts per gene for each sample, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts) or from [Step 7dii](#7dii-filter-rrna-genes-from-gene-counts) when using rRNA-removed count data)
+- `study` (data frame containing sample condition values, output from [Step 8c](#8c-configure-metadata-sample-grouping-and-group-comparisons))
+
+**Output Data:**
+
+- `counts` (data frame of gene counts)
+- `samples` (vector of sample names from study data frame)
 
 <br>
 
@@ -1054,7 +1136,7 @@ dds <- DESeqDataSetFromMatrix(
 ```R
 ### Create sample table ###
 sampleTable <- data.frame(condition=factor(group))
-rownames(sampleTable) <- colnames(txi.rsem$counts)
+rownames(sampleTable) <- colnames(counts)
 
 ### Handle technical replicates in sample table ###
 # Replicates are identified by the presence of a "_techrepX" suffix in the sample name.
@@ -1106,15 +1188,15 @@ handle_technical_replicates <- function(sampleTable) {
     return(new_sampleTable)
 }
 
-# Apply the technical replicate handling
+### Apply the technical replicate handling to the sample table ###
 sampleTable <- handle_technical_replicates(sampleTable)
 
-# Update the counts matrix to match the new sample table
-txi.rsem$counts <- txi.rsem$counts[, rownames(sampleTable)]
+### Remove columns from the counts matrix to match the sample table if necessary ###
+counts <- counts[, rownames(sampleTable)]
 
 ### Build dds object ###
-dds <- DESeqDataSetFromTximport(
-    txi = txi.rsem,
+dds <- DESeqDataSetFromMatrix(
+    countData = counts,
     colData = sampleTable,
     design = ~condition
 )
@@ -1136,7 +1218,7 @@ if (length(grep("ERCC-", rownames(dds))) != 0) {
 }
 
 ### Perform DESeq analysis ###
-dds <- DESeq(dds, parallel = TRUE, BPPARAM = BPPARAM)
+dds <- DESeq(dds, parallel = TRUE, BPPARAM = MulticoreParam(workers = 4))
 
 ### Generate normalized counts ###
 normCounts <- as.data.frame(counts(dds, normalized = TRUE))
@@ -1151,36 +1233,49 @@ res_lrt <- results(dds_lrt)
 
 ```
 
+**Input Data:**
+
+- `group` (named vector specifying the group or set of factor levels for each sample, output from [Step 8c](#8c-configure-metadata-sample-grouping-and-group-comparisons))
+- `counts` (data frame of gene counts, output from [Step 8c](#8c-configure-metadata-sample-grouping-and-group-comparisons))
+
+**Output Data:**
+
+- `sampleTable` (data frame mapping samples to groups)
+- `dds` (DESeq2 data object containing normalized counts, experimental design, and differential expression results)
+- `normCounts` (data frame of normalized count values + 1)
+- `VSTCounts` (data frame of variance stabilized transformed counts)
+- `dds_lrt` (DESeq2 data object from likelihood ratio test)
+- `res_lrt` (results object from likelihood ratio test)
+- `output_table` (data frame containing normalized counts, DGE results)
+
 <br>
 
 ### 8f. Add Statistics and Gene Annotations to DGE Results
 
 ```R
 ### Initialize output table with normalized counts ###
-output_table <- tibble::rownames_to_column(normCounts, var = "ENSEMBL")
-
-### Add LRT p-values ###
-output_table$LRT.p.value <- res_lrt@listData$padj
+gene_id_type <- "ENSEMBL"
+output_table <- tibble::rownames_to_column(normCounts, var = gene_id_type)
 
 ### Iterate through Wald Tests to generate pairwise comparisons of all groups ###
 compute_contrast <- function(i) {
-    res_1 <- results(
-        dds_1,
+    res <- results(
+        dds,
         contrast = c("condition", contrasts[1, i], contrasts[2, i]),
         parallel = FALSE  # Disable internal parallelization
     )
-    res_1_df <- as.data.frame(res_1@listData)[, c(2, 4, 5, 6)]
-    colnames(res_1_df) <- c(
+    res_df <- as.data.frame(res@listData)[, c(2, 4, 5, 6)]
+    colnames(res_df) <- c(
         paste0("Log2fc_", colnames(contrasts)[i]),
         paste0("Stat_", colnames(contrasts)[i]),
         paste0("P.value_", colnames(contrasts)[i]),
         paste0("Adj.p.value_", colnames(contrasts)[i])
     )
-    return(res_1_df)
+    return(res_df)
 }
 
 ### Use bplapply to compute results in parallel ###
-res_list <- bplapply(1:dim(contrasts)[2], compute_contrast, BPPARAM = BPPARAM)
+res_list <- bplapply(1:dim(contrasts)[2], compute_contrast, BPPARAM = MulticoreParam(workers = 4))
 
 ### Combine the list of data frames into a single data frame ###
 res_df <- do.call(cbind, res_list)
@@ -1190,56 +1285,100 @@ output_table <- cbind(output_table, res_df)
 
 ### Add summary statistics ###
 output_table$All.mean <- rowMeans(normCounts, na.rm = TRUE)
-output_table$All.stdev <- rowSds(as.matrix(normCounts), na.rm = TRUE)
-output_table$LRT.p.value <- res_1_lrt@listData$padj
+output_table$All.stdev <- rowSds(as.matrix(normCounts), na.rm = TRUE, useNames = FALSE)
+output_table$LRT.p.value <- res_lrt@listData$padj
 
 ### Add group-wise statistics ###
 tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- names(group)
+tcounts$group <- sampleTable$condition[match(rownames(tcounts), rownames(sampleTable))]
 
-# Calculate group means and standard deviations
-group_means <- as.data.frame(t(aggregate(. ~ group, data = tcounts, mean)))
-group_stdev <- as.data.frame(t(aggregate(. ~ group, data = tcounts, sd)))
+### Aggregate group means and standard deviations ###
+agg_means <- aggregate(. ~ group, data = tcounts, FUN = mean, na.rm = TRUE)
+agg_stdev <- aggregate(. ~ group, data = tcounts, FUN = sd, na.rm = TRUE)
 
-# Remove group name rows
-group_means <- group_means[-1,]
-group_stdev <- group_stdev[-1,]
+### Save group names ###
+group_names <- agg_means$group
 
-# For each group, add mean and stdev columns
-for (group_name in names(group)) {
-    mean_col <- paste0("Group.Mean_(", group_name, ")")
-    stdev_col <- paste0("Group.Stdev_(", group_name, ")")
-    output_table[[mean_col]] <- group_means[, paste0("Group.Mean_", group_means['group',])]
-    output_table[[stdev_col]] <- group_stdev[, paste0("Group.Stdev_", group_stdev['group',])]
+### Remove the 'group' column and transpose to match expected structure ###
+group_means <- as.data.frame(t(agg_means[-1]))
+group_stdev <- as.data.frame(t(agg_stdev[-1]))
+
+# Interleave means and stdevs for each group
+group_stats <- data.frame(matrix(ncol = 0, nrow = nrow(group_means)))
+for (i in seq_along(group_names)) {
+    group <- group_names[i]
+    group_stats[paste0("Group.Mean_(", group, ")")] <- group_means[,i]
+    group_stats[paste0("Group.Stdev_(", group, ")")] <- group_stdev[,i]
 }
+
+### Add computed group means and standard deviations to output_table ###
+output_table <- cbind(output_table, group_stats)
 
 ### Read in GeneLab annotation table for the organism of interest ###
 annot <- read.table(annotations_link, 
     sep = "\t", 
     header = TRUE, 
     quote = "", 
-    comment.char = "", 
-    row.names = 1
+    comment.char = ""
 )
 
 ### Combine annotations table and the DGE table ###
-output_table <- merge(annot, output_table, by='row.names', all.y=TRUE)
-output_table <- output_table %>% 
-  rename(
-    ENSEMBL = Row.names ## Change ENSEMBL to TAIR for plant studies ##
-  )
+# If gene ID column is missing from either table, just write the original DGE table
+if (!(gene_id_type %in% colnames(annot)) || !(gene_id_type %in% colnames(output_table))) {
+  warning(paste("Gene ID column", gene_id_type, "not found in both tables."))
+} else {
+  ### Combine annotations with data
+  output_table <- annot %>%
+    merge(output_table,
+          by = gene_id_type,
+          all.y = TRUE 
+    ) %>%
+    select(all_of(gene_id_type), everything())  # Make sure main gene ID is first column
+}
 
 ```
+
+**Input Data:**
+
+- `gene_id_type` (Gene identifier type, e.g. ENSEMBL, used to merge the annotations with the DGE results)
+- `normCounts` (data frame of normalized counts, output from [Step 8e](#8e-perform-dge-analysis))
+- `res_lrt` (results object from likelihood ratio test, output from [Step 8e](#8e-perform-dge-analysis))
+- `contrasts` (matrix defining pairwise comparisons, output from [Step 8c](#8c-configure-metadata-sample-grouping-and-group-comparisons))
+- `dds` (DESeq2 data object containing normalized counts, experimental design, and differential expression results, output from [Step 8e](#8e-perform-dge-analysis))
+- `annotations_link` (variable containing URL to GeneLab gene annotation table, output from [Step 8b](#8b-environment-set-up))
+
+**Output Data:**
+
+- `output_table` (data frame containing the following columns:
+  - Gene identifier column
+  - Additional organism-specific gene annotations columns
+  - Normalized counts for each sample
+  - For each pairwise comparison:
+    - Log2 fold change
+    - Test statistic
+    - P-value
+    - Adjusted p-value
+  - All.mean (mean across all samples)
+  - All.stdev (standard deviation across all samples) 
+  - LRT.p.value (likelihood ratio test adjusted p-value)
+  - For each experimental group:
+    - Group.Mean_(group) (mean within group)
+    - Group.Stdev_(group) (standard deviation within group))
+
+<br>
 
 ### 8g. Export DGE Tables
 
 ```R
 ### Export unnormalized and normalized counts tables ###
-write.csv(txi.rsem$counts, 
-    file.path(norm_output, "RSEM_Unnormalized_Counts_GLbulkRNAseq.csv"))
+write.csv(counts, 
+    file.path(norm_output, "FeatureCounts_Unnormalized_Counts_GLbulkRNAseq.csv"))
 
 write.csv(normCounts,
     file.path(norm_output, "Normalized_Counts_GLbulkRNAseq.csv"))
+
+write.csv(VSTCounts,
+    file.path(norm_output, "VST_Counts_GLbulkRNAseq.csv"))
 
 ### Export sample grouping and contrasts tables ###
 write.csv(sampleTable,
@@ -1260,21 +1399,37 @@ sessionInfo()
 
 ```
 
-
 **Input Data:**
 
-- *runsheet.csv file (table containing metadata required for analysis, output from [step 9a](#9a-create-sample-runsheet))
-- [GL-DPPD-7110_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv) (csv file containing link to GeneLab annotations) 
-- FeatureCounts_GLbulkRNAseq.csv (table containing raw read counts per gene for each sample, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts))
+- `contrasts` (matrix defining pairwise comparisons between groups, output from [Step 8c](#8c-configure-metadata-sample-grouping-and-group-comparisons))
+- `counts` (data frame of gene counts, output from [Step 8d](#8d-import-featurecounts-data))
+- `sampleTable` (data frame mapping samples to groups, output from [Step 8e](#8e-perform-dge-analysis))
+- `normCounts` (normalized counts, output from [Step 8e](#8e-perform-dge-analysis))
+- `VSTCounts` (variance stabilized transformed counts, output from [Step 8e](#8e-perform-dge-analysis)) 
+- `output_table` (DGE output table, output from [Step 8f](#8f-add-statistics-and-gene-annotations-to-dge-results))
 
 **Output Data:**
 
-- **RSEM_Unnormalized_Counts_GLbulkRNAseq.csv** (table containing raw RSEM gene counts for each sample)
-- **Normalized_Counts_GLbulkRNAseq.csv** (table containing normalized gene counts for each sample)
-- **VST_Counts_GLbulkRNAseq.csv** (table containing VST normalized gene counts for each sample)
-- **SampleTable_GLbulkRNAseq.csv** (table containing samples and their respective groups)
-- **differential_expression_GLbulkRNAseq.csv** (table containing normalized counts for each sample, group statistics, DESeq2 DGE results for each pairwise comparison, and gene annotations) 
-- **contrasts_GLbulkRNAseq.csv** (table containing all pairwise comparisons)
+- **FeatureCounts_Unnormalized_Counts_GLbulkRNAseq.csv** (raw gene counts for all samples, including technical replicates)
+- **Normalized_Counts_GLbulkRNAseq.csv** (normalized gene counts)
+- **VST_Counts_GLbulkRNAseq.csv** (variance stabilized transformed counts)
+- **SampleTable_GLbulkRNAseq.csv** (table specifying the group or set of factor levels for each sample)
+- **contrasts_GLbulkRNAseq.csv** (table listing all pairwise group comparisons)
+- **differential_expression_GLbulkRNAseq.csv** (DGE results table containing the following columns:
+  - Gene identifier column
+  - Additional organism-specific gene annotations columns
+  - Normalized counts
+  - For each pairwise group comparison:
+    - Log2 fold change
+    - Test statistic
+    - P-value
+    - Adjusted p-value
+  - All.mean (mean across all samples)
+  - All.stdev (standard deviation across all samples) 
+  - LRT.p.value (likelihood ratio test adjusted p-value)
+  - For each group:
+    - Group.Mean_(group) (mean within group)
+    - Group.Stdev_(group) (standard deviation within group))
 
 > Note: Datasets with technical replicates are handled by collapsing them such that the minimum number of equal technical replicates is retained across all samples. Before normalization, the counts of technical replicates are summed to combine them into a single sample representing the biological replicate.
 
@@ -1311,11 +1466,11 @@ import matplotlib.pyplot as plt
 
 accession = 'GLDS-NNN' # Replace Ns with GLDS number
 isaPath = '/path/to/GLDS-NNN_metadata_GLDS-NNN-ISA.zip' # Replace with path to ISA archive file
-zip_file_object =  zipfile.ZipFile(isaPath, "r")
+zip_file_object = zipfile.ZipFile(isaPath, "r")
 list_of_ISA_files = zip_file_object.namelist() # Print contents of zip file. Pick relevant one from list
-UnnormalizedCountsPath = '/path/to/GLDS-NNN_rna_seq_RSEM_Unnormalized_Counts_GLbulkRNAseq.csv'
+UnnormalizedCountsPath = '/path/to/GLDS-NNN_rna_seq_FeatureCounts_Unnormalized_Counts_GLbulkRNAseq.csv'
 
-GENE_ID_PREFIX = "ENSMU" # change according to a common prefix for all Gene IDs associated with the subject organism
+GENE_ID_PREFIX = "BSU" # Defines the gene_id prefix from the reference GTF annotation file
 
 # Print contents of ISA zip file to view file order
 list_of_ISA_files
@@ -1774,8 +1929,8 @@ ERCCcounts.to_csv('ERCC_analysis/ERCCcounts_GLbulkRNAseq.csv')
 
 **Input Data:**
 
-- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, output from [Step 9a](#9a-create-sample-runsheet))
-- RSEM_Unnormalized_Counts.csv (RSEM raw counts table, output from [Step 9](#ERCCspikeOut))
+- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, output from [Step 8a](#8a-create-sample-runsheet))
+- FeatureCounts_Unnormalized_Counts_GLbulkRNAseq.csv (Raw gene counts table, output from [Step 8g](#8g-export-dge-tables))
 
 **Output Data:**
 
@@ -1847,8 +2002,8 @@ write.csv(normcounts, 'ERCC_analysis/ERCC_normcounts_GLbulkRNAseq.csv') #OUTPUT
 
 **Input Data:**
 
-- ERCC_analysis/ERCCmetadata_GLbulkRNAseq.csv (samplewise metadata table inlcuding ERCC mix number, output from [Step 10a](#10a-evaluate-ercc-count-data-in-python))
-- ERCC_analysis/ERCCcounts_GLbulkRNAseq.csv (samplewise ERCC counts table, output from [Step 10a](#10a-evaluate-ercc-count-data-in-python))
+- ERCC_analysis/ERCCmetadata_GLbulkRNAseq.csv (samplewise metadata table inlcuding ERCC mix number, output from [Step 9a](#9a-evaluate-ercc-count-data-in-python))
+- ERCC_analysis/ERCCcounts_GLbulkRNAseq.csv (samplewise ERCC counts table, output from [Step 9a](#9a-evaluate-ercc-count-data-in-python))
 
 **Output Data:**
 
@@ -1940,7 +2095,7 @@ ax.set_yscale("log");
 
 **Input Data:**
 
-- ERCC_analysis/ERCC_DESeq2_GLbulkRNAseq.csv (ERCC DESeq2 results table, output from [Step 10b](#10b-perform-deseq2-analysis-of-ercc-counts-in-r))
+- ERCC_analysis/ERCC_DESeq2_GLbulkRNAseq.csv (ERCC DESeq2 results table, output from [Step 9b](#9b-perform-deseq2-analysis-of-ercc-counts-in-r))
 
 **Output Data:**
 

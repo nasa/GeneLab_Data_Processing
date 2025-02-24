@@ -18,7 +18,7 @@ process GENEBODY_COVERAGE {
 
     # VERSIONS
     echo '"${task.process}":' > versions.yml
-    echo "    geneBody_coverage.py: \$(geneBody_coverage.py --version | sed -e "s/geneBody_coverage.py //g")" >> versions.yml
+    echo "    geneBody_coverage.py: \$(geneBody_coverage.py --version | sed "s/geneBody_coverage.py //")" >> versions.yml
     """
 }
 
@@ -41,7 +41,7 @@ process INFER_EXPERIMENT {
 
     # VERSIONS
     echo '"${task.process}":' > versions.yml
-    echo "    infer_experiment.py: \$(infer_experiment.py --version | sed -e 's/infer_experiment.py //g')" >> versions.yml
+    echo "    infer_experiment.py: \$(infer_experiment.py --version | sed 's/infer_experiment.py //')" >> versions.yml
     """
 }
 
@@ -70,7 +70,7 @@ process INNER_DISTANCE {
 
     # VERSIONS
     echo '"${task.process}":' > versions.yml
-    echo "    inner_distance.py: \$(inner_distance.py --version | sed -e 's/inner_distance.py //g')" >> versions.yml
+    echo "    inner_distance.py: \$(inner_distance.py --version | sed 's/inner_distance.py //')" >> versions.yml
     """
 }
 
@@ -93,6 +93,6 @@ process READ_DISTRIBUTION {
 
     # VERSIONS
     echo '"${task.process}":' > versions.yml
-    echo "    read_distribution.py: \$(read_distribution.py --version | sed -e 's/read_distribution.py //g')" >> versions.yml
+    echo "    read_distribution.py: \$(read_distribution.py --version | sed 's/read_distribution.py //')" >> versions.yml
     """
 }

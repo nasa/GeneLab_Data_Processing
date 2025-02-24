@@ -4,7 +4,7 @@
 
 ---
 
-**Date:** January 28, 2025 [CHANGE TO BASELINE DATE]  
+**Date:** February 19, 2025  
 **Revision:** G  
 **Document Number:** GL-DPPD-7101-G  
 
@@ -1113,10 +1113,10 @@ echo "*: ${rRNA_count} rRNA entries removed." > *_rRNA_counts.txt
 
 ### 9a. Create Sample RunSheet
 
-> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_RCP-F/examples/runsheet/README.md).
+> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_RCP/examples/runsheet/README.md).
 
 ```bash
-### Download the *ISA.zip file from the GeneLab Repository ###
+### Download the *ISA.zip file from the Open Science Data Repository ###
 
 dpt-get-isa-archive \
  --accession GLDS-###
@@ -1144,7 +1144,7 @@ dpt-isa-to-runsheet --accession GLDS-### \
 
 **Output Data:**
 
-- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, used to define sample groups - the *ISA.zip file is located in the [OSDR repository]([https://genelab-data.ndc.nasa.gov/genelab/projects](https://osdr.nasa.gov/bio/repo/)) under 'Files' -> 'Study Metadata Files')
+- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, used to define sample groups - the *ISA.zip file is located in the [OSDR repository](https://osdr.nasa.gov/bio/repo/) under 'Files' -> 'Study Metadata Files')
 
 - **{GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv** (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
 
@@ -1192,7 +1192,7 @@ organism <- "organism_that_samples_were_derived_from"
 
 runsheet_path="/path/to/directory/containing/runsheet.csv/file" ## This is the runsheet created in Step 9a above
 work_dir="/path/to/working/directory/where/script/is/executed/from" 
-counts_dir="/path/to/directory/containing/RSEM/counts/files"
+input_counts="/path/to/directory/containing/RSEM/counts/files"
 norm_output="/path/to/normalized/counts/output/directory"
 DGE_output="/path/to/DGE/output/directory"
 
@@ -1297,7 +1297,7 @@ rm(contrast.names)
 ```R
 ### Import RSEM gene count data ###
 files <- list.files(
-    path = counts_dir, 
+    path = input_counts, 
     pattern = ".genes.results", 
     full.names = TRUE
 )
@@ -1592,9 +1592,10 @@ sessionInfo()
 
 
 **Input Data:**
-* `sampleTable` (data frame mapping samples to groups, output from [Step 9e](#9e-perform-dge-analysis))
-* `contrasts` (matrix defining pairwise comparisons between groups, output from [Step 9c](#9c-create-study-group-and-contrasts))
+
+* `contrasts` (matrix defining pairwise comparisons between groups, output from [Step 9c](#9c-configure-metadata-sample-grouping-and-group-comparisons))
 * `txi.rsem` (imported RSEM count data, output from [Step 9d](#9d-import-rsem-genecounts))
+* `sampleTable` (data frame mapping samples to groups, output from [Step 9e](#9e-perform-dge-analysis))
 * `normCounts` (normalized counts, output from [Step 9e](#9e-perform-dge-analysis))
 * `VSTCounts` (variance stabilized transformed counts, output from [Step 9e](#9e-perform-dge-analysis)) 
 * `output_table` (DGE output table, output from [Step 9f](#9f-add-statistics-and-gene-annotations-to-dge-results))
