@@ -25,6 +25,7 @@ include { GENEBODY_COVERAGE } from '../modules/rseqc.nf'
 include { INNER_DISTANCE } from '../modules/rseqc.nf'
 include { READ_DISTRIBUTION } from '../modules/rseqc.nf'
 include { ASSESS_STRANDEDNESS } from '../modules/assess_strandedness.nf'
+
 include { MULTIQC as RAW_READS_MULTIQC } from '../modules/multiqc.nf'
 include { MULTIQC as TRIMMED_READS_MULTIQC } from '../modules/multiqc.nf'
 include { MULTIQC as TRIMMING_MULTIQC } from '../modules/multiqc.nf'
@@ -35,6 +36,18 @@ include { MULTIQC as INNER_DISTANCE_MULTIQC } from '../modules/multiqc.nf'
 include { MULTIQC as READ_DISTRIBUTION_MULTIQC } from '../modules/multiqc.nf'
 include { MULTIQC as COUNT_MULTIQC } from '../modules/multiqc.nf'
 include { MULTIQC as ALL_MULTIQC } from '../modules/multiqc.nf'
+
+include { CLEAN_MULTIQC_PATHS as CLEAN_RAW_READS_MULTIQC_PATHS } from '../modules/clean_multiqc_paths.nf'
+include { CLEAN_MULTIQC_PATHS as CLEAN_TRIMMED_READS_MULTIQC_PATHS } from '../modules/clean_multiqc_paths.nf'
+include { CLEAN_MULTIQC_PATHS as CLEAN_TRIMMING_MULTIQC_PATHS } from '../modules/clean_multiqc_paths.nf'
+include { CLEAN_MULTIQC_PATHS as CLEAN_ALIGN_MULTIQC_PATHS } from '../modules/clean_multiqc_paths.nf'
+include { CLEAN_MULTIQC_PATHS as CLEAN_GENEBODY_COVERAGE_MULTIQC_PATHS } from '../modules/clean_multiqc_paths.nf'
+include { CLEAN_MULTIQC_PATHS as CLEAN_INFER_EXPERIMENT_MULTIQC_PATHS } from '../modules/clean_multiqc_paths.nf'
+include { CLEAN_MULTIQC_PATHS as CLEAN_INNER_DISTANCE_MULTIQC_PATHS } from '../modules/clean_multiqc_paths.nf'
+include { CLEAN_MULTIQC_PATHS as CLEAN_READ_DISTRIBUTION_MULTIQC_PATHS } from '../modules/clean_multiqc_paths.nf'
+include { CLEAN_MULTIQC_PATHS as CLEAN_COUNT_MULTIQC_PATHS } from '../modules/clean_multiqc_paths.nf'
+include { CLEAN_MULTIQC_PATHS as CLEAN_ALL_MULTIQC_PATHS } from '../modules/clean_multiqc_paths.nf'
+
 // include { QUALIMAP_BAM_QC } from '../modules/qualimap.nf'
 // include { QUALIMAP_RNASEQ_QC } from '../modules/qualimap.nf'
 include { GET_GTF_FEATURES } from '../modules/get_gtf_features.nf'
@@ -274,6 +287,7 @@ workflow RNASEQ_MICROBES {
         INNER_DISTANCE_MULTIQC(samples_txt, INNER_DISTANCE.out.log | map { it[1] } | collect, ch_multiqc_config, "inner_dist")
         READ_DISTRIBUTION_MULTIQC(samples_txt, READ_DISTRIBUTION.out.log | map { it[1] } | collect, ch_multiqc_config, "read_dist")
         COUNT_MULTIQC(samples_txt, FEATURECOUNTS.out.summary, ch_multiqc_config, "featureCounts")
+        
 
         // Software Version Capturing
         nf_version = '"NEXTFLOW":\n    nextflow: '.concat("${nextflow.version}\n")
@@ -327,6 +341,16 @@ workflow RNASEQ_MICROBES {
         //             // | concat(QUALIMAP_RNASEQ_QC.out.results )
         //             | collect
 
+        // Clean paths in outputs before VVing & publishing
+        CLEAN_RAW_READS_MULTIQC_PATHS(RAW_READS_MULTIQC.out.zipped_report, "raw")
+        CLEAN_TRIMMED_READS_MULTIQC_PATHS(TRIMMED_READS_MULTIQC.out.zipped_report, "trimmed")
+        CLEAN_TRIMMING_MULTIQC_PATHS(TRIMMING_MULTIQC.out.zipped_report, "trimming")
+        CLEAN_ALIGN_MULTIQC_PATHS(ALIGN_MULTIQC.out.zipped_report, "align")
+        CLEAN_INFER_EXPERIMENT_MULTIQC_PATHS(INFER_EXPERIMENT_MULTIQC.out.zipped_report, "infer_exp")
+        CLEAN_GENEBODY_COVERAGE_MULTIQC_PATHS(GENEBODY_COVERAGE_MULTIQC.out.zipped_report, "geneBody_cov")
+        CLEAN_INNER_DISTANCE_MULTIQC_PATHS(INNER_DISTANCE_MULTIQC.out.zipped_report, "inner_dist")
+        CLEAN_READ_DISTRIBUTION_MULTIQC_PATHS(READ_DISTRIBUTION_MULTIQC.out.zipped_report, "read_dist")
+
         VV_RAW_READS(
             dp_tools_plugin,
             ch_outdir,
@@ -334,8 +358,8 @@ workflow RNASEQ_MICROBES {
             runsheet_path,
             raw_reads | map{ it -> it[1] } | collect,
             raw_fastqc_zip,
-            RAW_READS_MULTIQC.out.zipped_report
+            CLEAN_RAW_READS_MULTIQC_PATHS.out.zipped_report
         )
     emit:
-        VV_RAW_READS.out.log
+        CLEAN_READ_DISTRIBUTION_MULTIQC_PATHS.out.zipped_report
 }
