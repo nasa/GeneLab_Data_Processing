@@ -51,6 +51,7 @@ workflow {
     ch_processed_directory = Channel.fromPath("${ params.outputDir }/${ params.gldsAccession }", checkIfExists: true)
     ch_runsheet = Channel.fromPath("${ params.outputDir }/${ params.gldsAccession }/Metadata/*_runsheet.csv", checkIfExists: true)
     ch_software_versions = Channel.fromPath("${ params.outputDir }/${ params.gldsAccession }/GeneLab/software_versions_GLmicroarray.md", checkIfExists: true)
+    ch_processing_meta = Channel.fromPath("${ params.outputDir }/${ params.gldsAccession }/GeneLab/meta.sh", checkIfExists: true)
     GENERATE_MD5SUMS(      
       ch_processed_directory, 
       ch_runsheet,       
@@ -63,7 +64,7 @@ workflow {
     )
     GENERATE_PROTOCOL(
       ch_software_versions,
-      ch_runsheet | splitCsv(header: true, quote: '"') | first | map{ row -> row['organism'] },
+      ch_processing_meta,
       params.skipDE
     )
 }

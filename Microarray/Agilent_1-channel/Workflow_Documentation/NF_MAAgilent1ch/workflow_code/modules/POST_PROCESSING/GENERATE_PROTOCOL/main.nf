@@ -5,7 +5,7 @@ process GENERATE_PROTOCOL {
 
   input:
     path("software_versions_GLmicroarray.md")
-    val(organism)
+    path("meta.sh")
     val(skipDE)
   
   output:
@@ -13,6 +13,6 @@ process GENERATE_PROTOCOL {
   
   script:
   """
-  generate_protocol.sh $workflow.manifest.version \"$organism\" $skipDE
+  generate_protocol.sh $workflow.manifest.version $skipDE
   """
 }

@@ -10,6 +10,7 @@ include { VV_AGILE1CH } from './modules/VV_AGILE1CH.nf'
 include { AGILE1CH } from './modules/AGILE1CH.nf'
 include { RUNSHEET_FROM_GLDS } from './modules/RUNSHEET_FROM_GLDS.nf'
 include { GENERATE_SOFTWARE_TABLE } from './modules/GENERATE_SOFTWARE_TABLE'
+include { DUMP_META } from './modules/DUMP_META'
 
 /**************************************************
 * HELP MENU  **************************************
@@ -105,6 +106,9 @@ workflow {
       ch_runsheet | splitCsv(header: true, quote: '"') | first | map{ row -> row['Array Data File Name'] },
       params.skipDE
     )
+
+    // export meta for post processing usage
+    ch_meta | DUMP_META
 
     emit:
       meta = ch_meta 
