@@ -368,6 +368,18 @@ workflow RNASEQ_MICROBES {
             CLEAN_RAW_READS_MULTIQC_PATHS.out.zipped_report
         )
 
+        VV_TRIMMED_READS(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            trimmed_reads | map{ it -> it[1] } | collect,
+            trimmed_fastqc_zip,
+            CLEAN_TRIMMED_READS_MULTIQC_PATHS.out.zipped_report,
+            TRIMGALORE.out.reports | collect,
+            CLEAN_TRIMMING_MULTIQC_PATHS.out.zipped_report
+        )
+
     emit:
         CLEAN_READ_DISTRIBUTION_MULTIQC_PATHS.out.zipped_report
 }

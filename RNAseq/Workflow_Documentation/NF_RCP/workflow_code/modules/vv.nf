@@ -52,48 +52,45 @@ process VV_TRIMMED_READS {
     saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
-    pattern: '01-TG_Preproc/',
+    pattern: '01-TG_Preproc/**',
     mode: params.publish_dir_mode
 
   label 'VV'
 
   input:
+    path(dp_tools__NF_RCP)
     val(publishdir)
     val(meta)
-    path("VV_INPUT/Metadata/*")                       // runsheet
-    path("VV_INPUT/01-TG_Preproc/Fastq/*")            // trimmed reads
-    path("VV_INPUT/01-TG_Preproc/FastQC_Reports/*")   // trimmed reads fastqc
-    path("VV_INPUT/01-TG_Preproc/FastQC_Reports/*")   // trimmed reads multiqc unzipped report
-    path("VV_INPUT/01-TG_Preproc/FastQC_Reports/*")   // trimmed reads multiqc zipped report
-    path("VV_INPUT/01-TG_Preproc/Trimming_Reports/*") // trimming reports
-    path("VV_INPUT/01-TG_Preproc/Trimming_Reports/*") // trimming reports multiqc unzipped report
-    path("VV_INPUT/01-TG_Preproc/Trimming_Reports/*") // trimming reports multiqc zipped report
-    path(dp_tools__NF_RCP)
+    path(runsheet)              // Runsheet
+    path("INPUT/trimmed_fastq/*")   // Trimmed reads
+    path("INPUT/trimmed_fastqc/*")  // Trimmed FastQC reports
+    path("INPUT/trimmed_multiqc/*") // Trimmed reads multiqc zipped report
+    path("INPUT/trimming_reports/*") // Trimming reports
+    path("INPUT/trimming_multiqc/*") // Trimming multiqc zipped report
 
   output:
-    path("01-TG_Preproc/Fastq"),                                                  emit: VVed_trimmed_reads
-    path("01-TG_Preproc/FastQC_Reports/*{_fastqc.html,_fastqc.zip}"),             emit: VVed_trimmed_fastqc
-    path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc_GLbulkRNAseq_report"),     emit: VVed_trimmed_unzipped_multiqc_report
-    path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc_GLbulkRNAseq_report.zip"), emit: VVed_trimmed_zipped_multiqc_report
-    path("01-TG_Preproc/Trimming_Reports"),                                       emit: VVed_trimming_reports_all
-    path("VV_log.csv"),                                                           optional: params.skipVV, emit: log
+    path("01-TG_Preproc/Fastq"),                                                      emit: VVed_trimmed_reads
+    path("01-TG_Preproc/FastQC_Reports/*{_fastqc.html,_fastqc.zip}"),                 emit: VVed_trimmed_fastqc
+    path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc${params.assay_suffix}_report.zip"), emit: VVed_trimmed_zipped_multiqc_report
+    path("01-TG_Preproc/Trimming_Reports"),                                           emit: VVed_trimming_reports_all
+    path("VV_log.csv"),                                                               optional: params.skipVV, emit: log
+    path("vv.log"),                                                                   optional: params.skipVV, emit: log_txt
 
   script:
     """
-    # move from VV_INPUT to task directory
-    # This allows detection as output files for publishing
-    mv VV_INPUT/* . || true
-
-    # Run V&V unless user requests to skip V&V
-    if ${ !params.skipVV } ; then
-      dpt validation run ${dp_tools__NF_RCP} . Metadata/*_runsheet.csv \\
-                          --data-asset-key-sets  \\
-                            ${ meta.paired_end ? "'paired end trimmed reads,qc reports for paired end trimmed reads data'" : "'single end trimmed reads,qc reports for single end trimmed reads data'"} \\
-                          --run-components \\
-                            'Trim Reads,Trimmed Reads By Sample' \\
-                          --max-flag-code ${ params.max_flag_code } \\
-                          --output VV_log.csv
-    fi
+    mv INPUT/* . || true
+    vv.py --assay-type rnaseq \\
+    --assay-suffix ${params.assay_suffix} \\
+    --runsheet-path ${runsheet} \\
+    --outdir ${publishdir} \\
+    --paired-end ${meta.paired_end} \\
+    --mode microbes \\
+    --trimmed-fastq trimmed_fastq/ \\
+    --trimmed-fastqc trimmed_fastqc/ \\
+    --trimmed-multiqc trimmed_multiqc/ \\
+    --trimming-reports trimming_reports/ \\
+    --trimming-multiqc trimming_multiqc/ \\
+    --run-components trimmed_reads
     """
 }
 

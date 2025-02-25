@@ -8,6 +8,9 @@ import gzip
 import logging
 from datetime import datetime
 import csv
+import re  # Add regex for parsing reports
+import zipfile
+from io import TextIOWrapper
 
 # Setup logging
 def setup_logging():
@@ -50,7 +53,9 @@ STRUCTURE = {
                     "outputs": {
                         "fastq": "01-TG_Preproc/Fastq",
                         "fastqc": "01-TG_Preproc/FastQC_Reports",
-                        "trimming_reports": "01-TG_Preproc/Trimming_Reports"
+                        "trimmed_multiqc": "01-TG_Preproc/FastQC_Reports",
+                        "trimming_reports": "01-TG_Preproc/Trimming_Reports",
+                        "trimming_multiqc": "01-TG_Preproc/Trimming_Reports"
                     }
                 },
                 "alignments": {
@@ -166,7 +171,14 @@ class ValidationLogger:
 @click.option('--raw-fastq', type=click.Path(exists=True), help="Path to raw fastq directory")
 @click.option('--raw-fastqc', type=click.Path(exists=True), help="Path to raw fastqc directory")
 @click.option('--raw-multiqc', type=click.Path(exists=True), help="Path to raw multiqc directory")
-def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_components, raw_fastq, raw_fastqc, raw_multiqc):
+@click.option('--trimmed-fastq', type=click.Path(exists=True), help="Path to trimmed fastq directory")
+@click.option('--trimmed-fastqc', type=click.Path(exists=True), help="Path to trimmed fastqc directory")
+@click.option('--trimmed-multiqc', type=click.Path(exists=True), help="Path to trimmed multiqc directory")
+@click.option('--trimming-reports', type=click.Path(exists=True), help="Path to trimming reports directory") 
+@click.option('--trimming-multiqc', type=click.Path(exists=True), help="Path to trimming multiqc directory")
+def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_components, 
+       raw_fastq, raw_fastqc, raw_multiqc,
+       trimmed_fastq, trimmed_fastqc, trimmed_multiqc, trimming_reports, trimming_multiqc):
     """Organize pipeline outputs and optionally validate"""
     outdir = Path(outdir)
     
@@ -179,12 +191,23 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
         }
         stage_files(assay_type, 'raw_reads', **file_paths)
     
+    # Stage trimmed files if inputs provided
+    if any([trimmed_fastq, trimmed_fastqc, trimmed_multiqc, trimming_reports, trimming_multiqc]):
+        file_paths = {
+            'fastq': trimmed_fastq,
+            'fastqc': trimmed_fastqc,
+            'trimmed_multiqc': trimmed_multiqc,
+            'trimming_reports': trimming_reports,
+            'trimming_multiqc': trimming_multiqc
+        }
+        stage_files(assay_type, 'trimmed_reads', **file_paths)
+    
     # Run validation if component specified
     if run_components:
+        # Convert paired_end string to bool
+        is_paired = paired_end.lower() == 'true' if isinstance(paired_end, str) else paired_end
+        
         if 'raw_reads' in run_components:
-            # Convert paired_end string to bool
-            is_paired = paired_end.lower() == 'true' if isinstance(paired_end, str) else paired_end
-            
             # Run validation
             results = validate_raw_reads(
                 outdir=outdir,
@@ -192,13 +215,17 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
                 paired_end=is_paired,
                 assay_suffix=assay_suffix
             )
-            
-            # Create symlink from VV_log.csv to VV_log.tsv for Nextflow
-            if os.path.exists("VV_log.tsv"):
-                os.remove("VV_log.tsv")
-            os.symlink("VV_log.csv", "VV_log.tsv")
-            
-            return results
+        
+        elif 'trimmed_reads' in run_components:
+            # Run validation for trimmed reads
+            results = validate_trimmed_reads(
+                outdir=outdir,
+                samples_txt=Path(runsheet_path),
+                paired_end=is_paired,
+                assay_suffix=assay_suffix
+            )
+        
+        return results
 
 def stage_files(assay_type, section, **file_paths):
     """
@@ -430,16 +457,414 @@ def validate_raw_reads(outdir: Path,
                     if r["status"] in ["HALT", "RED"]}
     }
 
+def get_expected_trimmed_files(sample_id: str, paired_end: bool, assay_suffix: str) -> dict:
+    """
+    Get expected file patterns for trimmed reads of a sample
+    
+    Args:
+        sample_id: Sample name from runsheet
+        paired_end: Whether data is paired-end
+        assay_suffix: Assay suffix (e.g. "_GLbulkRNAseq")
+    """
+    expected = {
+        # Trimmed FastQ files
+        "fastq": [f"{sample_id}_trimmed.fastq.gz"] if not paired_end else [
+            f"{sample_id}_R1_trimmed.fastq.gz",
+            f"{sample_id}_R2_trimmed.fastq.gz"
+        ],
+        
+        # FastQC outputs
+        "fastqc": [f"{sample_id}_trimmed_fastqc.zip"] if not paired_end else [
+            f"{sample_id}_R1_trimmed_fastqc.zip",
+            f"{sample_id}_R2_trimmed_fastqc.zip"
+        ],
+        
+        # MultiQC report
+        "trimmed_multiqc": [f"trimmed_multiqc{assay_suffix}_report.zip"],
+        
+        # Trimming reports - Update to match TrimGalore's output format
+        "trimming_reports": [f"{sample_id}_raw.fastq.gz_trimming_report.txt"] if not paired_end else [
+            f"{sample_id}_R1_raw.fastq.gz_trimming_report.txt",
+            f"{sample_id}_R2_raw.fastq.gz_trimming_report.txt"
+        ],
+        
+        # Trimming MultiQC report
+        "trimming_multiqc": [f"trimming_multiqc{assay_suffix}_report.zip"]
+    }
+    logging.debug(f"Expected trimmed files for {sample_id}: {expected}")
+    return expected
+
+def parse_trimming_report(report_path: Path) -> dict:
+    """
+    Parse a TrimGalore trimming report to extract adapter trimming information
+    
+    Args:
+        report_path: Path to the trimming report
+        
+    Returns:
+        Dictionary with parsed information
+    """
+    stats = {
+        "total_processed_reads": 0,
+        "adapters_found": False,
+        "adapter_type": "unknown",
+        "adapter_sequence": "",
+        "reads_with_adapters": 0,
+        "adapter_trimmed_percentage": 0.0,
+        "quality_trimmed_reads": 0,
+        "quality_trimmed_percentage": 0.0
+    }
+    
+    try:
+        with open(report_path, 'r') as f:
+            content = f.read()
+            
+            # Extract total processed reads
+            processed_match = re.search(r'Processed reads:\s+(\d+)', content)
+            if processed_match:
+                stats["total_processed_reads"] = int(processed_match.group(1))
+                
+            # Check if adapter was detected and its sequence/type
+            adapter_match = re.search(r'Adapter sequence:\s+\'([ACGT]+)\'', content)
+            if adapter_match:
+                stats["adapters_found"] = True
+                stats["adapter_sequence"] = adapter_match.group(1)
+                # Try to identify adapter type from TrimGalore output
+                if "Illumina" in content:
+                    stats["adapter_type"] = "Illumina"
+                elif "Nextera" in content:
+                    stats["adapter_type"] = "Nextera"
+                elif "smallRNA" in content:
+                    stats["adapter_type"] = "smallRNA"
+                
+            # Extract reads with adapters (pattern may vary based on TrimGalore version)
+            adapter_count_match = re.search(r'Reads with adapters:\s+(\d+)\s+\(([0-9.]+)%\)', content)
+            if adapter_count_match:
+                stats["reads_with_adapters"] = int(adapter_count_match.group(1))
+                stats["adapter_trimmed_percentage"] = float(adapter_count_match.group(2))
+            # Alternative pattern
+            elif "adapters were trimmed" in content:
+                percentage_match = re.search(r'([0-9.]+)% of reads contained adapter', content)
+                if percentage_match:
+                    stats["adapter_trimmed_percentage"] = float(percentage_match.group(1))
+                    stats["adapters_found"] = True
+                
+            # Extract quality trimming info
+            quality_match = re.search(r'Quality-trimmed:\s+(\d+)\s+\(([0-9.]+)%\)', content)
+            if quality_match:
+                stats["quality_trimmed_reads"] = int(quality_match.group(1))
+                stats["quality_trimmed_percentage"] = float(quality_match.group(2))
+                
+    except Exception as e:
+        logging.error(f"Error parsing trimming report {report_path}: {e}")
+        
+    return stats
+
+def validate_trimmed_reads(outdir: Path,
+                       samples_txt: Path,
+                       paired_end: bool = True,
+                       assay_suffix: str = "_GLbulkRNAseq") -> dict:
+    """
+    Validation checks for trimmed reads and QC outputs
+    """
+    val_logger = ValidationLogger()
+    read_counts = {}  # Track read counts for paired-end validation
+    
+    # Log validation parameters
+    logging.info("Starting trimmed reads validation:")
+    logging.info(f"  Output directory: {outdir}")
+    logging.info(f"  Samples file: {samples_txt}")
+    logging.info(f"  Paired-end: {paired_end}")
+    logging.info(f"  Assay suffix: {assay_suffix}")
+
+    try:
+        # 1. Basic File Existence Checks
+        fastq_dir = outdir / "01-TG_Preproc/Fastq"
+        fastqc_dir = outdir / "01-TG_Preproc/FastQC_Reports"
+        trimming_dir = outdir / "01-TG_Preproc/Trimming_Reports"
+        raw_fastqc_dir = outdir / "00-RawData/FastQC_Reports"
+        
+        # Read samples from CSV, get Sample Name column
+        samples = []
+        with open(samples_txt) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if 'Sample Name' in row:
+                    sample_name = row['Sample Name'].strip()
+                    if sample_name:  # Only add non-empty sample names
+                        samples.append(sample_name)
+                        logging.debug(f"Added sample: {sample_name}")
+                else:
+                    raise ValueError("Runsheet missing required 'Sample Name' column")
+                    
+        logging.info(f"Found {len(samples)} samples to validate")
+
+        # 2. Check each sample's files
+        for sample in samples:
+            expected = get_expected_trimmed_files(sample, paired_end, assay_suffix)
+            logging.info(f"\nValidating trimmed sample: {sample}")
+            
+            # 2a. Check FASTQ files exist and validate
+            for fastq in expected["fastq"]:
+                fastq_path = fastq_dir / fastq
+                
+                # Check existence
+                if not fastq_path.exists():
+                    val_logger.log("trimmed_reads", sample, "file_exists", "HALT", 
+                             f"Missing trimmed FastQ file: {fastq}")
+                    continue
+                    
+                # Check GZIP integrity
+                try:
+                    output = subprocess.run(["gzip", "-t", str(fastq_path)], 
+                                          capture_output=True, check=True)
+                    if output.stdout:
+                        val_logger.log("trimmed_reads", sample, "gzip_integrity", "HALT",
+                                 f"GZIP integrity check failed", output.stdout.decode())
+                    else:
+                        val_logger.log("trimmed_reads", sample, "gzip_integrity", "GREEN",
+                                 "GZIP integrity check passed")
+                except subprocess.CalledProcessError as e:
+                    val_logger.log("trimmed_reads", sample, "gzip_integrity", "HALT",
+                             f"GZIP integrity check failed", e.stderr.decode())
+                
+                # Check FASTQ format with stats
+                try:
+                    issues = []
+                    total_reads = 0
+                    with gzip.open(fastq_path, "rt") as f:
+                        for i, line in enumerate(f):
+                            if i % 4 == 0:  # Header lines only
+                                total_reads += 1
+                                if not line.startswith('@'):
+                                    issues.append(i+1)
+                            if i % 2_000_000 == 0:  # Log progress
+                                logging.debug(f"Checked {i} lines in {fastq_path}")
+                                
+                    stats = {
+                        "total_reads": total_reads,
+                        "invalid_headers": len(issues),
+                        "checked_lines": i + 1
+                    }
+                                
+                    if issues:
+                        val_logger.log("trimmed_reads", sample, "fastq_format", "HALT",
+                                 f"Invalid FASTQ format - headers missing @ at lines: {issues[:10]}..." if len(issues) > 10 else f"Invalid FASTQ format - headers missing @ at lines: {issues}",
+                                 stats=stats)
+                    else:
+                        val_logger.log("trimmed_reads", sample, "fastq_format", "GREEN",
+                                 "FASTQ format check passed",
+                                 stats=stats)
+
+                    # Store read count for paired-end check later
+                    read_counts[fastq_path] = total_reads
+                                
+                except Exception as e:
+                    val_logger.log("trimmed_reads", sample, "fastq_format", "HALT",
+                             f"Error checking FASTQ format", str(e))
+            
+            # 2b. If paired-end, check read counts match with stats
+            if paired_end:
+                try:
+                    r1_path = fastq_dir / expected["fastq"][0]
+                    r2_path = fastq_dir / expected["fastq"][1]
+                    
+                    # Use counts from format checking
+                    r1_count = read_counts.get(r1_path, 0)
+                    r2_count = read_counts.get(r2_path, 0)
+                    
+                    stats = {
+                        "r1_reads": r1_count,
+                        "r2_reads": r2_count,
+                        "difference": abs(r1_count - r2_count)
+                    }
+                    
+                    if r1_count != r2_count:
+                        val_logger.log("trimmed_reads", sample, "paired_counts", "HALT",
+                                 f"Paired read counts don't match",
+                                 f"R1={r1_count}, R2={r2_count}",
+                                 stats=stats)
+                    else:
+                        val_logger.log("trimmed_reads", sample, "paired_counts", "GREEN",
+                                 f"Paired read counts match ({r1_count} reads)",
+                                 stats=stats)
+                except Exception as e:
+                    val_logger.log("trimmed_reads", sample, "paired_counts", "HALT",
+                             f"Error checking read counts", str(e))
+            
+            # 2c. Check FastQC outputs exist
+            for fastqc in expected["fastqc"]:
+                fastqc_path = fastqc_dir / fastqc
+                if not fastqc_path.exists():
+                    val_logger.log("trimmed_reads", sample, "fastqc_exists", "HALT",
+                             f"Missing FastQC output: {fastqc}")
+                else:
+                    val_logger.log("trimmed_reads", sample, "fastqc_exists", "GREEN",
+                             f"FastQC output found: {fastqc}")
+            
+            # 2d. Check trimming reports exist
+            for read_end_idx, report in enumerate(expected["trimming_reports"]):
+                report_path = trimming_dir / report
+                read_end = "R1" if read_end_idx == 0 else "R2"
+                
+                if not report_path.exists():
+                    val_logger.log("trimmed_reads", sample, f"trimming_report_exists_{read_end}", "HALT",
+                             f"Missing trimming report for {read_end}: {report}")
+                    continue
+                else:
+                    val_logger.log("trimmed_reads", sample, f"trimming_report_exists_{read_end}", "GREEN",
+                             f"Trimming report found for {read_end}: {report}")
+                
+                # Parse the trimming report to check for adapter trimming
+                trim_stats = parse_trimming_report(report_path)
+                
+                # Log adapter trimming information
+                if trim_stats["adapters_found"]:
+                    status = "GREEN"
+                    msg = f"{read_end}: Adapter trimming performed - {trim_stats['adapter_trimmed_percentage']}% of reads contained adapters"
+                    details = f"Adapter type: {trim_stats['adapter_type']}, Sequence: {trim_stats['adapter_sequence']}"
+                    
+                    # If very high adapter percentage (>90%), flag as potential issue
+                    if trim_stats["adapter_trimmed_percentage"] > 90:
+                        status = "YELLOW"
+                        msg += " (unusually high percentage - check library prep)"
+                else:
+                    # No adapters found could be fine (e.g., very clean library) or could indicate an issue
+                    status = "YELLOW"
+                    msg = f"{read_end}: No adapters found in reads - verify this is expected"
+                    details = "Some libraries should have adapter contamination; absence may indicate issues"
+                
+                val_logger.log("trimmed_reads", sample, f"adapter_trimming_{read_end}", status, msg, details, stats=trim_stats)
+                
+                # Only log quality trimming if it actually occurred
+                if "quality_trimmed_percentage" in trim_stats and trim_stats["quality_trimmed_percentage"] > 0:
+                    status = "GREEN"
+                    msg = f"{read_end}: Quality trimming performed - {trim_stats['quality_trimmed_percentage']}% of reads were quality-trimmed"
+                    
+                    # If extremely high quality trimming (>50%), flag as potential issue
+                    if trim_stats["quality_trimmed_percentage"] > 50:
+                        status = "YELLOW"
+                        msg += " (unusually high percentage - check sequencing quality)"
+                    
+                    val_logger.log("trimmed_reads", sample, f"quality_trimming_{read_end}", status, msg, stats=trim_stats)
+            
+        # 3. Check MultiQC reports exist
+        # 3a. Trimmed reads MultiQC
+        trimmed_multiqc = expected["trimmed_multiqc"][0]
+        trimmed_multiqc_path = fastqc_dir / trimmed_multiqc
+        if not trimmed_multiqc_path.exists():
+            val_logger.log("trimmed_reads", "ALL", "trimmed_multiqc_exists", "HALT",
+                      f"Missing trimmed reads MultiQC report: {trimmed_multiqc}")
+        else:
+            val_logger.log("trimmed_reads", "ALL", "trimmed_multiqc_exists", "GREEN",
+                      f"Trimmed reads MultiQC report found: {trimmed_multiqc}")
+        
+        # 3b. Trimming reports MultiQC
+        trimming_multiqc = expected["trimming_multiqc"][0]
+        trimming_multiqc_path = trimming_dir / trimming_multiqc
+        if not trimming_multiqc_path.exists():
+            val_logger.log("trimmed_reads", "ALL", "trimming_multiqc_exists", "HALT",
+                      f"Missing trimming MultiQC report: {trimming_multiqc}")
+        else:
+            val_logger.log("trimmed_reads", "ALL", "trimming_multiqc_exists", "GREEN",
+                      f"Trimming MultiQC report found: {trimming_multiqc}")
+            
+    except Exception as e:
+        val_logger.log("trimmed_reads", "ALL", "validation", "HALT",
+                  f"Validation error", str(e))
+        
+    return {
+        "status": val_logger.get_status(),
+        "messages": [r["message"] for r in val_logger.results],
+        "failures": {r["check_name"]: r["message"] 
+                    for r in val_logger.results 
+                    if r["status"] in ["HALT", "RED"]}
+    }
+
+def extract_adapter_content_from_fastqc(fastqc_zip_path):
+    """
+    Extract adapter content information from a FastQC zip file
+    
+    Args:
+        fastqc_zip_path: Path to FastQC zip file
+        
+    Returns:
+        Dictionary with adapter content information
+    """
+    adapter_stats = {
+        "adapter_found": False,
+        "adapter_percentage": 0.0,
+        "adapter_details": {}
+    }
+    
+    try:
+        with zipfile.ZipFile(fastqc_zip_path, 'r') as zip_ref:
+            # Find the adapter content data file
+            data_file = None
+            for file in zip_ref.namelist():
+                if file.endswith('fastqc_data.txt'):
+                    data_file = file
+                    break
+            
+            if not data_file:
+                logging.warning(f"Could not find fastqc_data.txt in {fastqc_zip_path}")
+                return adapter_stats
+            
+            # Parse the file
+            with zip_ref.open(data_file) as f:
+                text_f = TextIOWrapper(f)
+                in_adapter_section = False
+                for line in text_f:
+                    line = line.strip()
+                    
+                    # Find adapter content section
+                    if line == ">>Adapter Content":
+                        in_adapter_section = True
+                        continue
+                    
+                    if in_adapter_section:
+                        if line.startswith('>>END_MODULE'):
+                            break
+                        
+                        if line.startswith('#'):
+                            continue  # Skip header line
+                        
+                        # Parse adapter content data
+                        parts = line.split('\t')
+                        if len(parts) > 2:
+                            position = parts[0]
+                            # Get maximum adapter percentage from any adapter type
+                            max_pct = max([float(x.strip()) for x in parts[1:]])
+                            
+                            adapter_stats["adapter_details"][position] = max_pct
+                            
+                            # If any position has >0.1% adapter, consider it found
+                            if max_pct > 0.1:
+                                adapter_stats["adapter_found"] = True
+                                
+                                # Use the maximum percentage found at any position
+                                adapter_stats["adapter_percentage"] = max(adapter_stats["adapter_percentage"], max_pct)
+    
+    except Exception as e:
+        logging.error(f"Error extracting adapter content from {fastqc_zip_path}: {e}")
+    
+    return adapter_stats
+
 if __name__ == '__main__':
     vv()
 
-# Component based:
-stage_files('rnaseq', 'raw_reads', 
-           components=['raw_reads'],
-           raw_fastq='path/to/fastq',
-           raw_fastqc='path/to/fastqc')
+# Component based testing examples:
 
-# Direct path based:
-stage_files('rnaseq', 'raw_reads',
-           raw_fastq='path/to/fastq',
-           raw_fastqc='path/to/fastqc')
+# Raw reads example:
+# stage_files('rnaseq', 'raw_reads', 
+#            raw_fastq='path/to/fastq',
+#            raw_fastqc='path/to/fastqc',
+#            raw_multiqc='path/to/multiqc')
+
+# Trimmed reads example:
+# stage_files('rnaseq', 'trimmed_reads',
+#            fastq='path/to/trimmed_fastq',
+#            fastqc='path/to/trimmed_fastqc',
+#            trimmed_multiqc='path/to/trimmed_multiqc',
+#            trimming_reports='path/to/trimming_reports',
+#            trimming_multiqc='path/to/trimming_multiqc')
