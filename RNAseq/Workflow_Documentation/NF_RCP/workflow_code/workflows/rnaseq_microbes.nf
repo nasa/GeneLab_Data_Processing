@@ -55,7 +55,9 @@ include { FEATURECOUNTS } from '../modules/featurecounts.nf'
 include { EXTRACT_RRNA } from '../modules/extract_rrna.nf'
 include { REMOVE_RRNA_FEATURECOUNTS } from '../modules/remove_rrna_featurecounts.nf'
 include { DGE_DESEQ2 } from '../modules/dge_deseq2.nf'
+include { DGE_DESEQ2 as DGE_DESEQ2_RRNA_RM } from '../modules/dge_deseq2.nf'
 include { ADD_GENE_ANNOTATIONS } from '../modules/add_gene_annotations.nf'
+include { ADD_GENE_ANNOTATIONS as ADD_GENE_ANNOTATIONS_RRNA_RM } from '../modules/add_gene_annotations.nf'
 //include { EXTEND_DGE_TABLE } from '../modules/extend_dge_table.nf'
 //include { GENERATE_PCA_TABLE } from '../modules/generate_pca_table.nf'
 include { SOFTWARE_VERSIONS } from '../modules/software_versions.nf'
@@ -270,11 +272,16 @@ workflow RNASEQ_MICROBES {
         REMOVE_RRNA_FEATURECOUNTS ( counts, EXTRACT_RRNA.out.rrna_ids )
 
         // Normalize counts, DGE 
-        DGE_DESEQ2( ch_meta, runsheet_path, counts )
+        DGE_DESEQ2( ch_meta, runsheet_path, counts, "")
+        DGE_DESEQ2_RRNA_RM( ch_meta, runsheet_path, REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm, "rRNArm_")
 
         // Add annotations to DGE table
-        ADD_GENE_ANNOTATIONS( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2.out.dge_table )
+        ADD_GENE_ANNOTATIONS( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2.out.dge_table, "" )
         annotated_dge_table = ADD_GENE_ANNOTATIONS.out.annotated_dge_table
+        
+        // Add annotations to rRNA-removed DGE table
+        ADD_GENE_ANNOTATIONS_RRNA_RM( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2_RRNA_RM.out.dge_table, "rRNArm_" )
+        annotated_dge_table_rrna_rm = ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
 
         // MultiQC
         ch_multiqc_config = params.multiqc_config ? Channel.fromPath( params.multiqc_config ) : Channel.fromPath("NO_FILE")
@@ -360,6 +367,7 @@ workflow RNASEQ_MICROBES {
             raw_fastqc_zip,
             CLEAN_RAW_READS_MULTIQC_PATHS.out.zipped_report
         )
+
     emit:
         CLEAN_READ_DISTRIBUTION_MULTIQC_PATHS.out.zipped_report
 }

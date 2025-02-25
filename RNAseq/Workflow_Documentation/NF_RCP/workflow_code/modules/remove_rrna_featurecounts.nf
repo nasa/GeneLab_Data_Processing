@@ -12,21 +12,18 @@ process REMOVE_RRNA_FEATURECOUNTS {
      *   rRNA count summary file containing the number of rRNA genes removed for each sample.
      */
 
+    tag "${counts.simpleName}"
 
     input:
-        path counts_file
-        path rrna_ids_file
+        path(counts)
+        path(rrna_ids)
 
     output:
-        path("rRNA_removed_FeatureCounts${params.assay_suffix}.tsv"), emit: counts_rrnarm
-        path("rRNA_counts.txt"), emit: rrnarm_summary
+        path("filtered_counts.tsv"), emit: counts_rrnarm
+        path("rRNA_counts.txt"), emit: summary
 
     script:
         """
-        python $projectDir/bin/remove_rrna_featurecounts.py \
-            ${counts_file} \
-            ${rrna_ids_file} \
-            rRNA_removed_FeatureCounts${params.assay_suffix}.tsv \
-            rRNA_counts.txt
+        python $projectDir/bin/remove_rrna_featurecounts.py ${counts} ${rrna_ids} filtered_counts.tsv
         """
 }

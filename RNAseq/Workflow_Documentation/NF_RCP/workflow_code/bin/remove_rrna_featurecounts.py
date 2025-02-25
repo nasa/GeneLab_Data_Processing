@@ -3,11 +3,21 @@ import sys
 import pandas as pd
 
 def main(counts_file, rrna_ids_file, filtered_output, summary_output="rRNA_counts.txt"):
-        # Load files
+    # Load rRNA IDs
     with open(rrna_ids_file) as f:
         rrna_ids = set(line.strip() for line in f if line.strip())
+    
+    # Extract header lines
+    header_lines = []
     with open(counts_file) as f:
-        df = pd.read_csv(f, sep='\t', comment='#')
+        for line in f:
+            if line.startswith('#'):
+                header_lines.append(line)
+            else:
+                break
+    
+    # Load data (skip header lines)
+    df = pd.read_csv(counts_file, sep='\t', comment='#')
     
     # Filter and summarize
     gene_id_col = df.columns[0]
@@ -23,7 +33,13 @@ def main(counts_file, rrna_ids_file, filtered_output, summary_output="rRNA_count
         for sample, count in sample_stats.items():
             f.write(f"{sample}: {count} rRNA entries removed\n")
     
-    df[~rna_mask].to_csv(filtered_output, sep='\t', index=False)
+    # Write filtered output with original header
+    with open(filtered_output, 'w') as f:
+        # Write header lines first
+        for line in header_lines:
+            f.write(line)
+        # Then write the filtered data
+        df[~rna_mask].to_csv(f, sep='\t', index=False)
 
 if __name__ == '__main__':
     if len(sys.argv) not in [4, 5]:

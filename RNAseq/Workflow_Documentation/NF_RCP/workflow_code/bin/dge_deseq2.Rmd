@@ -8,6 +8,7 @@ params:
   cpus: 1
   work_dir: "." # directory where the script will run
   output_directory: "." # directory for output files
+  output_filename_prefix: "" # prefix for output file names
   output_filename_suffix: "" # suffix for output file names
   runsheet_path: NULL # path to the runsheet file
   input_counts: NULL # directory containing RSEM gene results OR FeatureCounts table for microbes mode

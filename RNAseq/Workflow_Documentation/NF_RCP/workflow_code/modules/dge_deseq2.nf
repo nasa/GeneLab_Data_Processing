@@ -9,19 +9,21 @@ process DGE_DESEQ2 {
         val(meta)
         path(runsheet_path)
         path(gene_counts)
+        val(output_prefix)
 
     output:
         tuple path("Normalized_Counts${params.assay_suffix}.csv"),
               path(params.mode == "microbes" ? "FeatureCounts_Unnormalized_Counts${params.assay_suffix}.csv" : 
                    "RSEM_Unnormalized_Counts${params.assay_suffix}.csv"),                emit: norm_counts
-        path("contrasts${params.assay_suffix}.csv"),                                     emit: contrasts
-        path("SampleTable${params.assay_suffix}.csv"),                                   emit: sample_table      
+        path("contrasts${params.assay_suffix}.csv"),                                                     emit: contrasts
+        path("SampleTable${params.assay_suffix}.csv"),                                                   emit: sample_table      
         path("differential_expression_no_annotations${params.assay_suffix}.csv"),        emit: dge_table
         path("VST_Normalized_Counts${params.assay_suffix}.csv"),                         emit: vst_norm_counts
-        path("summary.txt"),                                                              emit: summary
-        path("versions2.txt"),                                                             emit: versions
+        path("summary.txt"),                                                                             emit: summary
+        path("versions2.txt"),                                                                           emit: versions
 
     script:
+        def output_filename_prefix = output_prefix ?: ""
         def output_filename_suffix = params.assay_suffix ?: ""
         def microbes = params.mode == 'microbes' ? 'TRUE' : 'FALSE'
         def dge_rmd_file = "${projectDir}/bin/dge_deseq2.Rmd"
@@ -35,6 +37,7 @@ process DGE_DESEQ2 {
                 cpus = ${task.cpus},
                 work_dir = '\${PWD}',
                 output_directory = '\${PWD}',
+                output_filename_prefix = '${output_filename_prefix}',
                 output_filename_suffix = '${output_filename_suffix}',
                 runsheet_path = '${runsheet_path}',
                 microbes = ${microbes},
