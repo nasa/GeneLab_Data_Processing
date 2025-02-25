@@ -101,7 +101,7 @@ workflow RNASEQ_MICROBES {
     main:
         // Parse accession, structure output directory as:
         // params.outdir/
-        //   ├── GLDS-#/results/   # Main pipeline results
+        //   ├── [GLDS-#|results]/ # Main pipeline results
         //   └── nextflow_info/    # Pipeline execution metadata
         if ( accession ) {
             GET_ACCESSIONS( accession, api_url )
@@ -285,15 +285,15 @@ workflow RNASEQ_MICROBES {
 
         // MultiQC
         ch_multiqc_config = params.multiqc_config ? Channel.fromPath( params.multiqc_config ) : Channel.fromPath("NO_FILE")
-        RAW_READS_MULTIQC(samples_txt, raw_fastqc_zip, ch_multiqc_config, "raw")
-        TRIMMING_MULTIQC(samples_txt, trimgalore_reports, ch_multiqc_config, "trimming")
-        TRIMMED_READS_MULTIQC(samples_txt, trimmed_fastqc_zip, ch_multiqc_config, "trimmed")
-        ALIGN_MULTIQC(samples_txt, bowtie2_alignment_logs, ch_multiqc_config, "align")
-        INFER_EXPERIMENT_MULTIQC(samples_txt, INFER_EXPERIMENT.out.log | map { it[1] } | collect, ch_multiqc_config, "infer_exp")
-        GENEBODY_COVERAGE_MULTIQC(samples_txt, GENEBODY_COVERAGE.out.log | map { it[1] } | collect, ch_multiqc_config, "geneBody_cov")
-        INNER_DISTANCE_MULTIQC(samples_txt, INNER_DISTANCE.out.log | map { it[1] } | collect, ch_multiqc_config, "inner_dist")
-        READ_DISTRIBUTION_MULTIQC(samples_txt, READ_DISTRIBUTION.out.log | map { it[1] } | collect, ch_multiqc_config, "read_dist")
-        COUNT_MULTIQC(samples_txt, FEATURECOUNTS.out.summary, ch_multiqc_config, "featureCounts")
+        RAW_READS_MULTIQC(samples_txt, raw_fastqc_zip, ch_multiqc_config, "raw_")
+        TRIMMING_MULTIQC(samples_txt, trimgalore_reports, ch_multiqc_config, "trimming_")
+        TRIMMED_READS_MULTIQC(samples_txt, trimmed_fastqc_zip, ch_multiqc_config, "trimmed_")
+        ALIGN_MULTIQC(samples_txt, bowtie2_alignment_logs, ch_multiqc_config, "align_")
+        INFER_EXPERIMENT_MULTIQC(samples_txt, INFER_EXPERIMENT.out.log | map { it[1] } | collect, ch_multiqc_config, "infer_exp_")
+        GENEBODY_COVERAGE_MULTIQC(samples_txt, GENEBODY_COVERAGE.out.log | map { it[1] } | collect, ch_multiqc_config, "geneBody_cov_")
+        INNER_DISTANCE_MULTIQC(samples_txt, INNER_DISTANCE.out.log | map { it[1] } | collect, ch_multiqc_config, "inner_dist_")
+        READ_DISTRIBUTION_MULTIQC(samples_txt, READ_DISTRIBUTION.out.log | map { it[1] } | collect, ch_multiqc_config, "read_dist_")
+        COUNT_MULTIQC(samples_txt, FEATURECOUNTS.out.summary, ch_multiqc_config, "featureCounts_")
         
 
         // Software Version Capturing
