@@ -12,65 +12,75 @@
 Olabiyi Obayomi, Alexis Torres, and Michael D. Lee (GeneLab Data Processing Team)
 
 **Approved by:**  
-Samrawit Gebre (OSDR Project Manager)
-Danielle Lopez (OSDR Deputy Project Manager)
-Lauren Sanders (OSDR Project Scientist)
-Amanda Saravia-Butler (GeneLab Science Lead)
-Barbara Novak (GeneLab Data Processing Lead)
+Samrawit Gebre (OSDR Project Manager)  
+Danielle Lopez (OSDR Deputy Project Manager)  
+Lauren Sanders (OSDR Project Scientist)  
+Amanda Saravia-Butler (GeneLab Science Lead)  
+Barbara Novak (GeneLab Data Processing Lead)  
 
 ---
 
 ## Updates from previous version
 
+Updated reference files:
+- ITS UNITE: "UNITE_v2023_July2023.RData" from [DECIPHER](http://www2.decipher.codes/Classification/TrainingSets/)
 
-- Additional software (R packages) used:
-  - ANCOMBC
-  - broom
-  - DESeq2
-  - DescTools
-  - FSA
-  - ggdendro
-  - glue
-  - ggrepel
-  - mia
-  - multcompView
-  - optparse
-  - patchwork
-  - phyloseq
-  - RColorBrewer
-  - rstatix
-  - taxize
-  - tidyverse
-  - tools
-  - utils  
-  - vegan
+Software Updates and Changes:
 
+| Program      | Previous Version | New Version   |
+|:-------------|:-----------------|:--------------|
+| FastQC       | 0.11.9           | 0.12.1        |
+| MultiQC      | 1.9              | 1.19          |
+| Cutadapt     | 2.3              | 4.6           |
+| R-base       | 4.1.1            | 4.4.1         |
+| DADA2        | 1.20.0           | 1.30.0        |
+| DECIPHER     | 2.20.0           | 2.30.0        |
+| biomformat   | 1.20.0           | 1.30.0        |
+| ANCOMBC      | N/A              | 2.6.0         |
+| broom        | N/A              | 1.0.7         |
+| DescTools    | N/A              | 0.99.57       |
+| DESeq2       | N/A              | 1.42.0        |
+| FSA          | N/A              | 0.9.5         |
+| ggdendro     | N/A              | 0.2.0         |
+| ggrepel      | N/A              | 0.9.6         |
+| glue         | N/A              | 1.8.0         |
+| mia          | N/A              | 1.12.0        |
+| phyloseq     | N/A              | 1.46.0        |
+| rcolorbrewer | N/A              | 1.1_3         |
+| taxize       | N/A              | 0.9.100.1     |
+| tidyverse    | N/A              | 2.0.0         |
+| vegan        | N/A              | 2.6.4         |
 
+- Added new processing steps in R to generate processed data outputs for alpha and beta diversity, 
+  taxonomic summary plots, and differential abundance
+  - Alpha Diversity Analysis ([Step 7](#7-alpha-diversity-analysis)).
+  - Beta Diversity Analysis ([Step 8](#8-beta-diversity-analysis)).
+  - Groupwise and Samplewise Taxonomic Summary Plots ([Step 9](#9-taxonomy-plots)).
+  - Differential Abundance Testing ([Step 10](#9-differential-abundance-analysis)) with 
+    ANCOMBC 1 ([Step 10a](#10a-ancombc-1)), ANCOMBC 2 ([Step 10b](#10b-ancombc-2)), and Deseq2 ([Step 10c](#10c-deseq2)).
+- Assay-specific suffixes were added where needed for OSDR ("_GLAmpSeq")
+- Added persistent reference links to DECIPHER databases on Figshare and replaced reference links to 
+  DECIPHER [website](http://www2.decipher.codes/Classification/TrainingSets/) 
+  - [SILVA SSU r138](https://figshare.com/ndownloader/files/46245217)
+  - [UNITE v2023](https://figshare.com/ndownloader/files/49181545)
+  - [PR2 v4.13](https://figshare.com/ndownloader/files/46241917)
 
-- Inclusion of additional steps and outputs starting from ([step 6](#6-amplicon-seq-data-analysis-set-up)):
-  - Alpha Diversity Analysis ([step 7](#7-alpha-diversity-analysis)).
-  - Beta Diversity Analysis ([step 8](#8-beta-diversity-analysis)).
-  - Groupwise and Samplewise Taxonomic Summary Plots ([step 9](#9-taxonomy-plots)).
-  - Differential Abundance Testing ([step 10](#9-differential-abundance-analysis)) with ANCOMBC 1 ([10a](#10a-ancombc-1)), ANCOMBC 2 ([10b](#10b-ancombc-2)) and Deseq2 ([10c](#10c-deseq2)).
-
-<!-- Included R packages -->
-- Assay-specific suffixes were added where needed for GeneLab repo ("_GLAmpSeq")
-- The ITS UNITE reference database used was updated to "UNITE_v2023_July2023.RData", from http://www2.decipher.codes/Classification/TrainingSets/
-- Persistent Reference links to RDATA databases on Figshare replaced reference links on DECIPHER's [website](http://www2.decipher.codes/Classification/TrainingSets/) for [SILVA SSU r138](https://figshare.com/ndownloader/files/46245217), [UNITE v2023](https://figshare.com/ndownloader/files/49181545) and [PR2 v4.13](https://figshare.com/ndownloader/files/46241917)
-- Several program versions were updated (all versions listed in [Software used](#software-used) below)
+---
 
 # Table of contents  
 
-- [Software used](#software-used)
-- [Reference databases used](#reference-databases-used)
-- [General processing overview with example commands](#general-processing-overview-with-example-commands)
-  - [1. Raw Data QC](#1-raw-data-qc)
-    - [1a. Compile Raw Data QC](#1a-compile-raw-data-qc)
-  - [2. Trim Primers](#2-trim-primers)
-  - [3. Quality Filtering](#3-quality-filtering)
-  - [4. Filtered Data QC](#4-filtered-data-qc)
-    - [4a. Compile Filtered Data QC](#4a-compile-filtered-data-qc)
-  - [5. Calculate Error model, Apply DADA2 Algorithm, Assign Taxonomy, and Create Output Tables](#5-calculate-error-model-apply-dada2-algorithm-assign-taxonomy-and-create-output-tables)
+- [**Software used**](#software-used)
+- [**Reference databases used**](#reference-databases-used)
+- [**General processing overview with example commands**](#general-processing-overview-with-example-commands)
+  - [**1. Raw Data QC**](#1-raw-data-qc)
+    - [1a. Raw Data QC](#1a-raw-data-qc)
+    - [1b. Compile Raw Data QC](#1b-compile-raw-data-qc)
+  - [**2. Trim Primers**](#2-trim-primers)
+  - [**3. Quality Filtering**](#3-quality-filtering)
+  - [**4. Filtered Data QC**](#4-filtered-data-qc)
+    - [4a. Filtered Data QC](#4a-filtered-data-qc)
+    - [4b. Compile Filtered Data QC](#4b-compile-filtered-data-qc)
+  - [**5. Calculate Error model, Apply DADA2 Algorithm, Assign Taxonomy, and Create Output Tables**](#5-calculate-error-model-apply-dada2-algorithm-assign-taxonomy-and-create-output-tables)
     - [5a. Learning the Error Rates](#5a-learning-the-error-rates)
     - [5b. Inferring Sequences](#5b-inferring-sequences)
     - [5c. Merging Forward and Reverse Reads; Not Needed if Data are Single-End](#5c-merging-forward-and-reverse-reads-not-needed-if-data-are-single-end)
@@ -78,7 +88,7 @@ Barbara Novak (GeneLab Data Processing Lead)
     - [5e. Removing Putative Chimeras](#5e-removing-putative-chimeras)
     - [5f. Assigning Taxonomy](#5f-assigning-taxonomy)
     - [5g. Generating and Writing Standard Outputs](#5g-generating-and-writing-standard-outputs)
-  - [6. Amplicon Seq Data Analysis Set Up](#6-amplicon-seq-data-analysis-set-up)
+  - [**6. Amplicon Seq Data Analysis Set Up**](#6-amplicon-seq-data-analysis-set-up)
     - [6a. Create Sample Runsheet](#6a-create-sample-runsheet)
     - [6b. R Environment Set Up](#6b-r-environment-set-up)
       - [Load Libraries](#load-libraries)
@@ -86,10 +96,10 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [Set Variables](#set-variables)
       - [Read-in Input Tables](#read-in-input-tables)
       - [Preprocessing](#preprocessing)
-  - [7. Alpha Diversity Analysis](#7-alpha-diversity-analysis)
-  - [8. Beta Diversity Analysis](#8-beta-diversity-analysis)
-  - [9. Taxonomy Plots](#9-taxonomy-plots)
-  - [10. Differential Abundance Testing](#10-differential-abundance-testing)
+  - [**7. Alpha Diversity Analysis**](#7-alpha-diversity-analysis)
+  - [**8. Beta Diversity Analysis**](#8-beta-diversity-analysis)
+  - [**9. Taxonomy Plots**](#9-taxonomy-plots)
+  - [**10. Differential Abundance Testing**](#10-differential-abundance-testing)
     - [10a. ANCOMBC 1](#10a-ancombc-1)
     - [10b. ANCOMBC 2](#10b-ancombc-2)
     - [10c. DESeq2 ](#10c-deseq2)
@@ -98,31 +108,29 @@ Barbara Novak (GeneLab Data Processing Lead)
 
 # Software used  
 
-|Program|Version*|Relevant Links|
+|Program|Version|Relevant Links|
 |:------|:------:|:-------------|
-|FastQC|`0.12.1`|[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
-|MultiQC|`1.19`|[https://multiqc.info/](https://multiqc.info/)|
-|Cutadapt|`4.6`|[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
-|R-base|`4.4.1`|[https://www.r-project.org/](https://www.r-project.org/)|
-|DADA2|`1.30.0`|[https://www.bioconductor.org/packages/release/bioc/html/dada2.html](https://www.bioconductor.org/packages/release/bioc/html/dada2.html)|
-|DECIPHER|`2.30.0`|[https://bioconductor.org/packages/release/bioc/html/DECIPHER.html](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html)|
-|biomformat|`1.30.0`|[https://github.com/joey711/biomformat](https://github.com/joey711/biomformat)|
-|ANCOMBC|`2.6.0`|[https://github.com/FrederickHuangLin/ANCOMBC](https://github.com/FrederickHuangLin/ANCOMBC)|
-|broom|`1.0.7`|[https://CRAN.R-project.org/package=broom](https://CRAN.R-project.org/package=broom)|
-|DescTools|`0.99.57`|[https://andrisignorell.github.io/DescTools/](https://andrisignorell.github.io/DescTools/)|
-|DESeq2|`1.42.0`|[https://bioconductor.org/packages/release/bioc/html/DESeq2.html](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)|
-|FSA|`0.9.5`|[https://CRAN.R-project.org/package=FSA](https://CRAN.R-project.org/package=FSA)|
-|ggdendro|`0.2.0`|[https://CRAN.R-project.org/package=ggdendro](https://CRAN.R-project.org/package=ggdendro)|
-|ggrepel|`0.9.6`|[https://CRAN.R-project.org/package=ggrepel](https://CRAN.R-project.org/package=ggrepel)|
-|glue|`1.8.0`|[https://glue.tidyverse.org/](https://glue.tidyverse.org/)|
-|mia|`1.12.0`|[https://github.com/microbiome/mia](https://github.com/microbiome/mia)|
-|phyloseq|`1.46.0`|[https://bioconductor.org/packages/release/bioc/html/phyloseq.html](https://bioconductor.org/packages/release/bioc/html/phyloseq.html)|
-|rcolorbrewer|`1.1_3`|[https://CRAN.R-project.org/package=RColorBrewer](https://CRAN.R-project.org/package=RColorBrewer)|
-|taxize|`0.9.100.1`|[https://docs.ropensci.org/taxize/](https://docs.ropensci.org/taxize/)|
-|tidyverse|`2.0.0`|[https://CRAN.R-project.org/package=tidyverse](https://CRAN.R-project.org/package=tidyverse)|
-|tools|`4.4.1`|[https://www.R-project.org/](https://www.R-project.org/)|
-|utils|`4.4.1`|[https://www.R-project.org/](https://www.R-project.org/)|
-|vegan|`2.6.4`|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
+|FastQC|0.12.1|[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
+|MultiQC|1.19|[https://multiqc.info/](https://multiqc.info/)|
+|Cutadapt|4.6|[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
+|R-base|4.4.1|[https://www.r-project.org/](https://www.r-project.org/)|
+|DADA2|1.30.0|[https://www.bioconductor.org/packages/release/bioc/html/dada2.html](https://www.bioconductor.org/packages/release/bioc/html/dada2.html)|
+|DECIPHER|2.30.0|[https://bioconductor.org/packages/release/bioc/html/DECIPHER.html](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html)|
+|biomformat|1.30.0|[https://github.com/joey711/biomformat](https://github.com/joey711/biomformat)|
+|ANCOMBC|2.6.0|[https://github.com/FrederickHuangLin/ANCOMBC](https://github.com/FrederickHuangLin/ANCOMBC)|
+|broom|1.0.7|[https://CRAN.R-project.org/package=broom](https://CRAN.R-project.org/package=broom)|
+|DescTools|0.99.57|[https://andrisignorell.github.io/DescTools/](https://andrisignorell.github.io/DescTools/)|
+|DESeq2|1.42.0|[https://bioconductor.org/packages/release/bioc/html/DESeq2.html](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)|
+|FSA|0.9.5|[https://CRAN.R-project.org/package=FSA](https://CRAN.R-project.org/package=FSA)|
+|ggdendro|0.2.0|[https://CRAN.R-project.org/package=ggdendro](https://CRAN.R-project.org/package=ggdendro)|
+|ggrepel|0.9.6|[https://CRAN.R-project.org/package=ggrepel](https://CRAN.R-project.org/package=ggrepel)|
+|glue|1.8.0|[https://glue.tidyverse.org/](https://glue.tidyverse.org/)|
+|mia|1.12.0|[https://github.com/microbiome/mia](https://github.com/microbiome/mia)|
+|phyloseq|1.46.0|[https://bioconductor.org/packages/release/bioc/html/phyloseq.html](https://bioconductor.org/packages/release/bioc/html/phyloseq.html)|
+|rcolorbrewer|1.1_3|[https://CRAN.R-project.org/package=RColorBrewer](https://CRAN.R-project.org/package=RColorBrewer)|
+|taxize|0.9.100.1|[https://docs.ropensci.org/taxize/](https://docs.ropensci.org/taxize/)|
+|tidyverse|2.0.0|[https://CRAN.R-project.org/package=tidyverse](https://CRAN.R-project.org/package=tidyverse)|
+|vegan|2.6.4|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
 
 # Reference databases used
 
@@ -143,6 +151,10 @@ Barbara Novak (GeneLab Data Processing Lead)
 
 ## 1. Raw Data QC  
 
+<br>
+
+### 1a. Raw Data QC  
+
 ```
 fastqc -o raw_fastqc_output *.fastq.gz
 ```
@@ -154,21 +166,21 @@ fastqc -o raw_fastqc_output *.fastq.gz
 
 **Input Data:**
 
-* fastq, compressed or uncompressed
+* \*fastq.gz (raw reads)
 
 **Output Data:**
 
-* fastqc.html (FastQC output html summary)
-* fastqc.zip (FastQC output data)
+* \*fastqc.html (FastQC output html summary)
+* \*fastqc.zip (FastQC output data)
 
 
 <br>  
 
-### 1a. Compile Raw Data QC  
+### 1b. Compile Raw Data QC  
 
 ```
 multiqc -o raw_multiqc_output raw_fastqc_output
-# this is how it's packaged with our workflow outputs
+
 zip -r raw_multiqc_GLAmpSeq_report.zip raw_multiqc_output
 ```
 
@@ -179,7 +191,7 @@ zip -r raw_multiqc_GLAmpSeq_report.zip raw_multiqc_output
 
 **Input Data:**
 
-* fastqc.zip (FastQC output data)
+* \*fastqc.zip (FastQC output data, output from [Step 1a](#1a-raw-data-qc))
 
 **Output Data:**
 
@@ -193,7 +205,7 @@ zip -r raw_multiqc_GLAmpSeq_report.zip raw_multiqc_output
 
 ## 2. Trim Primers  
 
-The location and orientation of primers in the data is important to understand in deciding how to do this step. `cutadapt` has many options for primer identification and removal. They are described in detail on their documentation page here: [https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types](https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types)  
+The location and orientation of primers in the data is important to understand in deciding how to do this step. `cutadapt` has many options for primer identification and removal, which are described in detail in the [cutadapt adapter type documentation](https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types)  
 
 The following example commands show how it was done for some samples of [GLDS-200](https://osdr.nasa.gov/bio/repo/data/studies/OSD-200), which was 2x250 sequencing of the 16S gene using these primers:  
 * forward: 5’-GTGCCAGCMGCCGCGGTAA-3’  
@@ -206,31 +218,26 @@ The following website is useful for reverse complementing primers and dealing wi
 ```
 cutadapt -a ^GTGCCAGCMGCCGCGGTAA...ATTAGATACCCSBGTAGTCC -A ^GGACTACVSGGGTATCTAAT...TTACCGCGGCKGCTGGCAC \
          ## Define what B represents; and define what K represents ##
-         -o Primer-trimmed-R1.fq.gz -p Primer-trimmed-R2.fq.gz Input_R1_raw.fastq.gz Input_R2_raw.fastq.gz \
+         -o sample1_R1_trimmed.fastq.gz -p sample1_R2_trimmed.fastq.gz sample1_R1_raw.fastq.gz sample1_R2_raw.fastq.gz \
          --discard-untrimmed
 ```
 
 **Parameter Definitions:**
 
 *	`-a` – specifies the primers and orientations expected on the forward reads (when primers are linked as noted above)
-
 *	`-A` – specifies the primers and orientations expected on the reverse reads (when primers are linked as noted above)
-
-*	`-o` – specifies output of forward, primer-trimmed reads
-
-*	`-p` – specifies output of reverse, primer-trimmed reads
-
--	`Input_R1_raw.fastq.gz` – this and following “R2” version are positional arguments specifying the forward and reverse reads, respectively, for input
-
--	`--discard-untrimmed` – this filters out those reads? where the primers were not found as expected
+*	`-o` – specifies file path/name of forward, primer-trimmed reads
+*	`-p` – specifies file path/name of reverse, primer-trimmed reads
+*	`sample1_R1_raw.fastq.gz` – this and following “R2” version are positional arguments specifying the forward and reverse reads, respectively, for input
+*	`--discard-untrimmed` – this filters out those reads where the primers were not found as expected
 
 **Input Data:**
 
-* fastq, compressed or uncompressed (original reads)
+* \*fastq.gz (raw reads)
 
 **Output Data:**
 
-* **trimmed.fastq.gz**, compressed or uncompressed (trimmed reads)
+* **\*trimmed.fastq.gz** (trimmed reads)
 * **trimmed-read-counts_GLAmpSeq.tsv** (per sample read counts before and after trimming)
 * **cutadapt_GLAmpSeq.log** (log file of standard output and error from cutadapt)
 
@@ -251,8 +258,8 @@ The following is an example from a [GLDS-200](https://osdr.nasa.gov/bio/repo/dat
 * reverse: 5’- GGACTACVSGGGTATCTAAT-3’
 
 ```
-filtered_out <- filterAndTrim(fwd=“Primer-trimmed-R1.fq.gz”, filt=“Filtered-R1.fq.gz”,
-                              rev=“Primer-trimmed-R2.fq.gz”, filt.rev=“Filtered-R2.fq.gz”,
+filtered_out <- filterAndTrim(fwd=“sample1_R1_trimmed.fastq.gz”, filt=“sample1_R1_filtered.fastq.gz”,
+                              rev=“sample1_R2_trimmed.fastq.gz”, filt.rev=“sample1_R1_filtered.fastq.gz”,
                               truncLen=c(220, 160), maxN=0, maxEE=c(2,2),
                               truncQ=2, rm.phix=TRUE, compress=TRUE, multithread=TRUE)
 ```
@@ -260,38 +267,26 @@ filtered_out <- filterAndTrim(fwd=“Primer-trimmed-R1.fq.gz”, filt=“Filtere
 **Parameter Definitions:**
 
 *	`filtered_out <-` – specifies the variable that will store the summary results within in our R environment
-
 *	`filterAndTrim()` – the DADA2 function we are calling, with the following parameters set within it
-
-*	`fwd=` – specifying the path to the forward reads, here “Primer-trimmed-R1.fq.gz”
-
+*	`fwd=` – specifying the path to the forward reads, here “sample1_R1_trimmed.fastq.gz”
 *	`filt=` – specifying the path to where the output forward reads will be written
-
-*	`rev=` – specifying the path to the reverse reads, here “Primer-trimmed-R2.fq.gz”; only applicable if paired-end
-
+*	`rev=` – specifying the path to the reverse reads, here “sample1_R2_trimmed.fastq.gz”; only applicable if paired-end
 *	`filt.rev=` – specifying the path to where the output reverse reads will be written; only applicable if paired-end
-
 *	`truncLen=c(220, 160)` – specifying the forward reads to be truncated at 220 bp, and the reverse to be truncated at 160 bps (note that this parameter also functions as a minimum-length filter); would only have 1 value if not paired-end
-
 *	`maxN=0` – setting the maximum allowed Ns to 0, any reads with an N will be filtered out
-
 *	`maxEE=c(2,2)` – setting maximum expected error allowed to 2 for each forward and reverse read; would only have 1 value if not paired-end
-
 *	`truncQ=2` – looking from the lower-quality end of each read, truncate at the first base with a quality score lower than 2
-
 *	`rm.phix=TRUE` – filter out reads with exact kmers matching the PhiX genome
-
 *	`compress=TRUE` – gzip-compress the output filtered reads
-
 *	`multithread=TRUE` – determine number of cores available and run in parallel when possible (can also take an integer specifying the number to run)
 
 **Input Data:**
 
-* fastq, compressed or uncompressed (primer-trimmed reads)
+* \*.trimmed.fastq.gz (primer-trimmed reads, output from [Step 2](#2-trim-primers))
 
 **Output Data:**
 
-* **filtered.fastq.gz**, compressed or uncompressed (filtered reads)
+* **\*filtered.fastq.gz** (filtered reads)
 * **filtered-read-counts_GLAmpSeq.tsv** (per sample read counts before and after filtering)
 
 <br>
@@ -299,41 +294,45 @@ filtered_out <- filterAndTrim(fwd=“Primer-trimmed-R1.fq.gz”, filt=“Filtere
 ---
 
 ## 4. Filtered Data QC
+
+<br>
+
+### 4a. Filtered Data QC
 ```
-fastqc -o filtered_fastqc_output/ filtered*.fastq.gz
+fastqc -o filtered_fastqc_output/ *filtered.fastq.gz
 ```
 
 **Parameter Definitions:**
 
 *	`-o` – the output directory to store results  
-*	`filtered*.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces in between them  
+*	`*filtered.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces in between them  
 
 **Input Data:**
 
-* fastq, compressed or uncompressed (filtered reads)
+* \*fastq.gz (filtered reads)
 
 **Output Data:**
 
-* fastqc.html (FastQC output html summary)
-* fastqc.zip (FastQC output data)
+* \*fastqc.html (FastQC output html summary)
+* \*fastqc.zip (FastQC output data)
 
 <br>
 
-### 4a. Compile Filtered Data QC
+### 4b. Compile Filtered Data QC
 ```
 multiqc -o filtered_multiqc_output  filtered_fastqc_output
-# this is how it's packaged with our workflow outputs
+
 zip -r filtered_multiqc_GLAmpSeq_report.zip filtered_multiqc_output
 ```
 
 **Parameter Definitions:**
 
-*	`-o` – the output directory to store results
-*	`filtered_fastqc_output` – the directory holding the output data from the fastqc run, provided as a positional argument
+* `-o` – the output directory to store results
+* `filtered_fastqc_output` – the directory holding the output data from the fastqc run, provided as a positional argument
 
 **Input Data:**
 
-* fastqc.zip (FastQC output data)
+* \*fastqc.zip (FastQC output data, output from [Step 4a](#4a-filtered-data-qc))
 
 **Output Data:**
 
@@ -348,84 +347,89 @@ zip -r filtered_multiqc_GLAmpSeq_report.zip filtered_multiqc_output
 ## 5. Calculate Error Mdel, Apply DADA2 Algorithm, Assign Taxonomy, and Create Output Tables
 > The following is run in an R environment.  
 
-These example commands as written assumes paired-end data, with notes included on what would be different if working with single-end data. The taxonomy reference database used below is as an example only, suitable for the example 16S dataset ([GLDS-200](https://osdr.nasa.gov/bio/repo/data/studies/OSD-200)) used here. But others designed for DECIPHER can be found here: [http://www2.decipher.codes/Downloads.html](http://www2.decipher.codes/Downloads.html)  
+These example commands as written assume paired-end data, with notes included on what would be different if working with single-end data. The taxonomy reference database used below is an example only, suitable for the example 16S dataset ([GLDS-200](https://osdr.nasa.gov/bio/repo/data/studies/OSD-200)) used here. Other taxonomy references databases designed for DECIPHER can be found here: [http://www2.decipher.codes/Downloads.html](http://www2.decipher.codes/Downloads.html)  
 
 <br>
 
 ### 5a. Learning the Error Rates
 ```R
-forward_errors <- learnErrors(fls=“Filtered-R1.fq.gz”, multithread=TRUE)
+## Forward error rates ##
+forward_errors <- learnErrors(fls=“sample1_R1_filtered.fastq.gz”, multithread=TRUE)
+
+## Reverse error rates (skip if single-end data) ##
+reverse_errors <- learnErrors(fls=“sample1_R2_filtered.fastq.gz”, multithread=TRUE)
 ```
 
 **Parameter Definitions:**  
-
-*	`forward_errors <-` – specifies the variable that will store the results within in our R environment
 
 *	`learnErrors()` – the DADA2 function we are calling, with the following parameters set within it
+*	`fls=` – specifies the path to the filtered reads (either forward or reverse)
+*	`multithread=TRUE` – determine number of cores available and run in parallel when possible (can also take an integer specifying the number of cores to use)
 
-*	`fls=` – the path to the forward filtered reads
+**Input Data:**
 
-*	`multithread=TRUE` – determine number of cores available and run in parallel when possible (can also take an integer specifying the number to run)
+* \*filtered.fastq.gz (filtered reads, output from [Step 3](#3-quality-filtering))
 
-```R
-reverse_errors <- learnErrors(fls=“Filtered-R2.fq.gz”, multithread=TRUE)
-```
+**Output Data:**
 
-**Parameter Definitions:**  
-
-*	same as above, but providing reverse filtered reads; not needed if data are single-end
+* `forward_errors` (named list storing a numeric matrix with the forward error rates)
+* `reverse_errors` (named list storing a numeric matrix with the reverse error rates (only for paired-end data))
 
 <br>
 
 ### 5b. Inferring Sequences
 ```R
-forward_seqs <- dada(derep=“Filtered-R1.fq.gz”, err=forward_errors, pool=“pseudo”, multithread=TRUE)
+## Inferring forward sequences ##
+forward_seqs <- dada(derep=“sample1_R1_filtered.fastq.gz”, err=forward_errors, pool=“pseudo”, multithread=TRUE)
+
+## Inferring reverse sequences (skip if single-end)##
+reverse_seqs <- dada(derep=“sample1_R2_filtered.fastq.gz”, err=reverse_errors, pool=“pseudo”, multithread=TRUE)
 ```
 
 **Parameter Definitions:**  
 
-*	`forward_seqs <-` – specifies the variable that will store the results within in our R environment
+* `dada()` – the DADA2 function we are calling, with the following parameters set within it
+* `derep=` – the path to the filtered reads (either forward or reverse)
+* `err=` – the object holding the error profile for the inferred reads (either forward or reverse)
+* `pool=“pseudo”` – setting the method of incorporating information from multiple samples
+* `multithread=TRUE` – determine number of cores available and run in parallel when possible (can also take an integer specifying the number of cores to use)
 
-*	`dada()` – the DADA2 function we are calling, with the following parameters set within it
+**Input Data:**
 
-*	`derep=` – the path to the forward filtered reads
+* \*filtered.fastq.gz (filtered reads, output from [Step 3](#3-quality-filtering))
+* `forward_errors` (forward error rates, output from [Step 5a](#5a-learning-the-error-rates))
+* `reverse_errors` (reverse error rates, output from [Step 5a](#5a-learning-the-error-rates) (only for paired-end))
 
-*	`err=` – the object holding the error profile for the forward reads created in above step, if not paired-end data, this would be the error-profile object created and the following “reverse_seqs” object would not be created
+**Output Data:**
 
-*	`pool=“pseudo”` – setting the method of incorporating information from multiple samples
-
-*	`multithread=TRUE` – determine number of cores available and run in parallel when possible (can also take an integer specifying the number to run)
-
-<br>
-
-```R
-reverse_seqs <- dada(derep=“Filtered-R2.fq.gz”, err=reverse_errors, pool=“pseudo”, multithread=TRUE)
-```
-
-**Parameter Definitions:**  
-
-*	same as above, but providing reverse filtered reads and reverse error-profile object; not needed if data are single-end
+* `forward_seqs` (dada-class object the forward-read inferred sequences)
+* `reverse_seqs` (dada-class object storing the reverse-read inferred sequences (only for paired-end))
 
 <br>
 
-### 5c. Merging Forward and Reverse Reads; Not Needed if Data are Single-End
+### 5c. Merging Forward and Reverse Reads; Skip if Data are Single-End
 ```R
-merged_contigs <- mergePairs(dadaF=forward_seqs, derepF=“Filtered-R1.fq.gz”, dadaR=reverse_seqs, derepR=“Filtered-R2.fq.gz”)
+merged_contigs <- mergePairs(dadaF=forward_seqs, derepF=“sample1_R1_filtered.fastq.gz”, dadaR=reverse_seqs, derepR=“sample1_R2_filtered.fastq.gz”)
 ```
 
 **Parameter Definitions:** 
 
-*	`merged_contigs <-` – specifies the variable that will store the results within in our R environment
+* `merged_contigs <-` – specifies the variable that will store the results within in our R environment
+* `mergePairs()` – the DADA2 function we are calling, with the following parameters set within it
+* `dadaF=` – specifying the object holding the forward-read inferred sequences
+* `derepF=` – specifying the path to the filtered forward reads
+* `dadaR=` – specifying the object holding the reverse-read inferred sequences
+* `derepR=` – specifying the path to the filtered reverse reads
 
-*	`mergePairs()` – the DADA2 function we are calling, with the following parameters set within it
+**Input Data:**
 
-*	`dadaF=` – specifying the object holding the forward-read inferred sequences
+* \*filtered.fastq.gz (filtered reads, output from [Step 3](#3-quality-filtering))
+* `forward_seqs` (forward-read inferred sequences, output from [Step 5b](#5b-inferring-sequences))
+* `reverse_seqs` (reverse-read inferred sequences, output from [Step 5b](#5b-inferring-sequences))
 
-*	`derepF=` – specifying the path to the filtered forward reads
+**Output Data:**
 
-*	`dadaR=` – specifying the object holding the reverse-read inferred sequences
-
-*	`derepR=` – specifying the path to the filtered reverse reads
+* `merged_contigs` (data.frame storing the merged contigs)
 
 <br>
 
@@ -436,7 +440,15 @@ seqtab <- makeSequenceTable(merged_contigs)
 
 **Parameter Definitions:**  
 
-*	If single-end data, instead of “merged_contigs”, the forward_seqs object would be provided to the `makeSequenceTable()` function here
+* If single-end data, instead of “merged_contigs”, the forward_seqs object would be provided to the `makeSequenceTable()` function here
+
+**Input Data:**
+
+* `merged_contigs` or `forward_seqs` (for paired-end data, the merged contigs, output from [Step 5d](#5d-generating-sequence-table-with-counts-per-sample), for single-end data, the `forward_seqs` object, output from [Step 5b](#5b-inferring-sequences))
+
+**Output Data:**
+
+* `seqtab` (named integer matrix containing sequence table)
 
 <br>
 
@@ -447,94 +459,76 @@ seqtab.nochim <- removeBimeraDenovo(unqs=seqtab, method=“consensus”, multith
 
 **Parameter Definitions:**  
 
-*	`seqtab.nochim <-` – specifies the variable that will store the results within in our R environment
+* `seqtab.nochim <-` – specifies the variable that will store the results within in our R environment
+* `removeBimeraDenovo()` – the DADA2 function we are calling, with the following parameters set within it
+* `unqs=` – specifying the “seqtab” object created above
+* `method=` – specifying the method for putative-chimera identification and removal
+* `multithread=TRUE` – determine number of cores available and run in parallel when possible (can also take an integer specifying the number to run)
 
-*	`removeBimeraDenovo()` – the DADA2 function we are calling, with the following parameters set within it
+**Input Data:**
 
-*	`unqs=` – specifying the “seqtab” object created above
+* `seqtab` (sequence table, output from [Step 5d](#5d-generating-sequence-table-with-counts-per-sample))
 
-*	`method=` – specifying the method for putative-chimera identification and removal
+**Ouptut Data:**
 
-*	`multithread=TRUE` – determine number of cores available and run in parallel when possible (can also take an integer specifying the number to run)
+* `seqtab.nochim` (named integer matrix containing sequence table without putative chimeras)
 
 <br>
 
 ### 5f. Assigning Taxonomy
 
-Creating a DNAStringSet object from the ASVs:
 ```R
+## Creating a DNAStringSet object from the ASVs: ##
 dna <- DNAStringSet(getSequences(seqtab.nochim))
-```
 
-Downloading the reference R taxonomy object:
-```R
+## Downloading the reference R taxonomy object: ##
+# url - reference database URL address to download
+# destfile - local path/name for the downloaded file
 download.file( url=“http://www2.decipher.codes/Classification/TrainingSets/SILVA_SSU_r138_2019.RData”, destfile=“SILVA_SSU_r138_2019.RData”)
-```
 
-**Parameter Definitions:**  
-
-*	`download.file()` – the function we are calling, with the following parameters set within it
-
-*	`url=` – specifying the url address of the file to download
-
-*	`destfile=` – specifying the path/name of the file after downloading
-
-<br>
-
-Loading taxonomy object:
-```R
+## Loading taxonomy object: ##
 load(“SILVA_SSU_r138_2019.RData”)
-```
 
-Classifying sequences:
-```R
+## Classifying sequences:
+# strand="both" - check taxonomy assignment in both orientations
+# test=dna - DNAStringSet object holding sequences to classify from above
+# trainingSet=trainingSet - the reference database downloaded and loaded above
+# processors=NULL - number of processors to use, `NULL` to use all available cores or an integer to manually specify the number to use.
 tax_info <- IdTaxa(test=dna, trainingSet=trainingSet, strand=“both”, processors=NULL)
 ```
 
-**Parameter Definitions:**  
+**Input Data:**
 
-*	`tax_info <-` – specifies the variable that will store the results within in our R environment
+* `seqtab.nochim` (sequence table, output from [Step 5e](#5e-removing-putative-chimeras))
 
-*	`IdTaxa()` – the DECIPHER function we are calling, with the following parameters set within it
+**Output Data:**
 
-*	`test=` – specifying the “dna” object created above holding the sequences we want to classify
-
-*	`trainingSet=` – specifying the reference database we downloaded and loaded above
-
-*	`strand=“both”` – specifying to check taxonomy assignment in both orientations 
-
-*	`processors=NULL` – determine number of cores available and run in parallel when possible (can also take an integer specifying the number to run)
+* `tax_info` (DECIPHER Taxa object containing assigned taxons)
 
 <br>
 
 ### 5g. Generating and Writing Standard Outputs
 
-Giving sequences more manageable names (e.g. ASV_1, ASV_2, …,):
 ```R
+## Giving sequences more manageable names (e.g. ASV_1, ASV_2, …,): ##
 asv_seqs <- colnames(seqtab.nochim)
 asv_headers <- vector(dim(seqtab.nochim)[2], mode="character")
 
 for (i in 1:dim(seqtab.nochim)[2]) {
   asv_headers[i] <- paste(">ASV", i, sep="_")
 }
-```
 
-Making then writing a fasta of final ASV seqs:
-```R
+## Making then writing a fasta of final ASV seqs: ##
 asv_fasta <- c(rbind(asv_headers, asv_seqs))
 write(asv_fasta, "ASVs_GLAmpSeq.fasta")
-```
 
-Making then writing a count table:
-```R
+## Making then writing a count table: ##
 asv_tab <- t(seqtab.nochim)
 row.names(asv_tab) <- sub(">", "", asv_headers)
 
 write.table(asv_tab, "counts_GLAmpSeq.tsv", sep="\t", quote=F, col.names=NA)
-```
 
-Creating table of taxonomy and setting any that are unclassified as "NA":
-```R
+## Creating table of taxonomy and setting any that are unclassified as "NA": ##
 ranks <- c("domain", "phylum", "class", "order", "family", "genus", "species")
 tax_tab <- t(sapply(tax_info, function(x) {
   m <- match(ranks, x$rank)
@@ -546,27 +540,23 @@ colnames(tax_tab) <- ranks
 rownames(tax_tab) <- gsub(pattern=">", replacement="", x=asv_headers)
 
 write.table(tax_tab, "taxonomy_GLAmpSeq.tsv", sep = "\t", quote=F, col.names=NA)
-```
 
-Generating then writing biom file format:
-```R
+## Generating then writing biom file format: ##
 biom_object <- make_biom(data=asv_tab, observation_metadata=tax_tab)
 write_biom(biom_object, "taxonomy-and-counts_GLAmpSeq.biom")
-```
 
-Making a combined taxonomy and count table
-```R
+## Making a combined taxonomy and count table ##
 tax_and_count_tab <- merge(tax_tab, asv_tab)
 write.table(tax_and_count_tab, "taxonomy-and-counts_GLAmpSeq.tsv", sep="\t", quote=FALSE, row.names=FALSE)
 ```
 
 **Input Data:**
 
-* fastq, compressed or uncompressed (filtered reads)
+* `seqtab.nochim` (sequence table without chimeras, output from [Step 5e](#5e-removing-putative-chimeras))
+* `tax_info` (DECIPHER Taxa object, output from [Step 5f](#5f-assigning-taxonomy))
 
 **Output Data:**
 
-* `tax_tab` (variable containing the taxonomy table)
 * **ASVs_GLAmpSeq.fasta** (inferred sequences)
 * **counts_GLAmpSeq.tsv** (count table)
 * **taxonomy_GLAmpSeq.tsv** (taxonomy table)
@@ -605,25 +595,23 @@ dpt-isa-to-runsheet --accession OSD-### \
 
 **Parameter Definitions:**
 
-- `--accession OSD-###` - OSD accession ID (replace ### with the OSD number being processed), used to retrieve the urls for the ISA archive and raw reads hosted on the OSDR
-- `--config-type` - instructs the script to extract the metadata required for Amplicon Sequencing data processing from the ISA archive
-- `--config-version` - specifies the `dp-tools` configuration version to use, a value of `Latest` will specify the most recent version
-- `--isa-archive` - specifies the *ISA.zip file for the respective OSD dataset, downloaded in the `dpt-get-isa-archive` command
+* `--accession OSD-###` - OSD accession ID (replace ### with the OSD number being processed), used to retrieve the urls for the ISA archive and raw reads hosted on the OSDR
+* `--config-type` - instructs the script to extract the metadata required for Amplicon Sequencing data processing from the ISA archive
+* `--config-version` - specifies the `dp-tools` configuration version to use, a value of `Latest` will specify the most recent version
+* `--isa-archive` - specifies the *ISA.zip file for the respective OSD dataset, downloaded in the `dpt-get-isa-archive` command
 
 
 **Input Data:**
 
-- No input data required but the OSD accession ID needs to be indicated, which is used to download the respective ISA archive 
+* No input data required but the OSD accession ID needs to be indicated, which is used to download the respective ISA archive 
 
 **Output Data:**
 
-- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective OSD dataset, used to define sample groups - the *ISA.zip file is located in the [OSDR](https://osdr.nasa.gov/bio/repo/) under 'Files' -> 'Study Metadata Files')
+* *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective OSD dataset, used to define sample groups - the *ISA.zip file is located in the [OSDR](https://osdr.nasa.gov/bio/repo/) under 'Files' -> 'Study Metadata Files')
 
-- **{OSD-Accession-ID}_AmpSeq_v{version}_runsheet.csv** (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
+* **{OSD-Accession-ID}_AmpSeq_v{version}_runsheet.csv** (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
 
 <br>
-
-
 
 > The remainder of this document is performed in R.  
 
@@ -678,8 +666,8 @@ calculate_text_size <- function(num_samples, start_samples = 25, min_size = 3) {
 }
 
 # A function to create a phyloseq object with the appropriate
-# sample count transformation depending on the supplied transformation method
-# i.e. either 'rarefy' or  'vst'
+# sample count transformation depending on the supplied transformation method,
+# either 'rarefy' or  'vst'
 transform_phyloseq <- function( feature_table, metadata, method, rarefaction_depth=500){
   # feature_table  [DATAFRAME] - Feature / ASV count table with samples as columns and features as rows 
   # metadata [DATAFRAME] -  Samples metadata with samples as row names
@@ -1216,9 +1204,13 @@ publication_format <- theme_bw() +
         legend.text = element_text(size = 14,face ='bold', color = 'black'),
         strip.text =  element_text(size = 14,face ='bold', color = 'black'))
 ```
-**Output Variables:**
-* `custom_palette`     - custom color palette for coloring plots
-* `publication_format` - custom ggplot theme for plotting
+
+**Output Data:**
+
+* `custom_palette` (list defining a custom color palette for coloring plots)
+* `publication_format` (custom ggplot theme for plotting)
+
+<br>
 
 #### Read-in Input Tables
 
@@ -1282,23 +1274,29 @@ taxonomy_table <-  read.table(file = taxonomy_file, header = TRUE,
 
 **Parameter Definitions:**
 
-*	`metadata_table` – path to a comma separated samples metadata file with the group/treatment to be analyzed. [{OSD-Accession-ID}_AmpSeq_v{version}_runsheet.csv](#6a-create-sample-runsheet)
-*	`feature_table`  – path to a tab separated samples feature table i.e. ASV or OTU table [counts_GLAmpSeq.tsv](#5g-generating-and-writing-standard-outputs)
-*	`taxonomy_table` – path to a feature taxonomy table i.e. ASV taxonomy table [taxonomy_GLAmpSeq.tsv](#5g-generating-and-writing-standard-outputs)
-*	`groups_colname` – group column in metadata to be analyzed
-* `sample_colname` – column in metadata containing the sample names in the feature table
-* `custom_palette` - color palette defined in [Set Variables](#set-variables)
+*	`groups_colname` - name of group column in metadata to be analyzed
+* `sample_colname` - name of column in metadata containing the sample names in the feature table
 
-**Output Variables:**
-*	`metadata_table`      – samples metadata dataframe with the group/treatment to be analyzed
-*	`feature_table`       – samples feature table, i.e. ASV counts dataframe. 
-*	`taxonomy_table`      – feature taxonomy table i.e. ASV taxonomy dataframe.
-* `sample_info_tab`     - dataframe of sample information i.e. a subset of samples metadata
-* `values`              - character vector of unique color values.
-* `sample_names`        - character vector of sample names
-* `deseq2_sample_names` - character vector of sample names for deseq2
-* `group_colors`        - named character vector of colors for each group
-* `group_levels`        - unique group levels within `groups_colname` to be compared
+**Input Data:**
+
+* {OSD-Accession-ID}_AmpSeq_v{version}_runsheet.csv (path to the comma-separated sample metadata file with the group/treatment to be analyzed, output from [Step 6a](#6a-create-sample-runsheet))
+*	counts_GLAmpSeq.tsv (path to the tab separated samples feature table, i.e. ASV or OTU table, output from [Step 5g](#5g-generating-and-writing-standard-outputs))
+* taxonomy_GLAmpSeq.tsv (path to a feature taxonomy table, i.e. ASV taxonomy table, output from [Step 5g](#5g-generating-and-writing-standard-outputs))
+* `custom_palette` (a color palette, output from [Set Variables](#set-variables))
+
+**Output Data:**
+
+* `metadata` (tibble of sample metadata with the group/treatment to be analyzed)
+* `feature_table` (data.frame of sample features, i.e. ASV counts dataframe)
+* `taxonomy_table` (data.frame of the feature taxonomy table, i.e. ASV taxonomy dataframe)
+* `sample_info_tab` (data.frame of sample information, i.e. a subset of sample metadata)
+* `values` (character vector of unique color values)
+* `sample_names` (character vector of sample names)
+* `deseq2_sample_names` (character vector of sample names for deseq2)
+* `group_colors` (named character vector of colors for each group)
+* `group_levels` (unique group levels within `groups_colname` to be compared)
+
+<br>
 
 #### Preprocessing
 
@@ -1379,34 +1377,40 @@ taxonomy_table <- taxonomy_table[common_ids,]
 ```
 **Parameter Definitions:**
 
-* `remove_rare`       - should rare features and samples be filtered out prior to analysis? If true, rare features and samples will be removed
-                        according to the cutoffs set below.
+* `remove_rare`       - should rare features and samples be filtered out prior to analysis? If true, rare features and 
+                        samples will be removed according to the cutoffs set below.
 * `prevalence_cutoff` - If `remove_rare` is true, a numerical fraction between 0 and 1. 
-                        Taxa with prevalences(the proportion of samples in which the taxon is present) less than this will be excluded from the analysis. Default is 0, i.e. do not exclude any taxon / feature.
+                        Taxa with prevalences(the proportion of samples in which the taxon is present) less than this 
+                        will be excluded from the analysis. Default is 0, i.e. do not exclude any taxon / feature.
 * `library_cutoff`    - If `remove_rare` is true, a numerical threshold for filtering samples based on library sizes. 
-                        Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0 i.e. no sample will be dropped. if you want to discard samples with read counts less than or equal to 100 then set to 100.
-* `target_region`     - amplicon target region. Options are either 16S, 18S or ITS
+                        Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0, 
+                        i.e. no sample will be dropped. To discard samples with read counts less than or equal to 100, 
+                        set to 100.
+* `target_region`     - amplicon target region. Options are either "16S", "18S", or "ITS"
 * `feature_table`     - ASV count table varaiable from [Read-in Input Tables](#read-in-input-tables)
 * `taxonomy_table`    - ASV taxonomy table variable from [Read-in Input Tables](#read-in-input-tables)
 
-**Output Variables:**
-*	`metadata_table`      – samples metadata dataframe with the group/treatment to be analyzed
-*	`feature_table`       – samples feature table, i.e. ASV counts dataframe. 
-*	`taxonomy_table`      – feature taxonomy table i.e. ASV taxonomy dataframe.
-* `sample_info_tab`     - dataframe of sample information i.e. a subset of samples metadata
-* `values`              - unique color values.
-* `sample_names`        - character vector of sample names
-* `deseq2_sample_names` - character vector of sample names for deseq2
-* `group_colors`        - named character vector of colors for each group
-* `group_levels`        - unique group levels within `groups_colname` to be compared
+**Output Data:**
+* `feature_table` (data.frame of sample feature table containing only features in common with taxonomy_table, i.e. ASV counts data.frame)
+* `taxonomy_table` (data.frame taxonomy table subset containing features in common with feature_table, i.e. ASV taxonomy data.frame)
+* `sample_info_tab` (data.frame of sample information, i.e. a subset of sample metadata)
+
+<br>
+
+---
 
 ## 7. Alpha Diversity Analysis
 
-Alpha diversity examines the variety and abundance of taxa within individual samples. Rarefaction curves are utilized to visually represent this diversity, plotting the number of unique sequences (ASVs) identified against the total number of sequences sampled, offering a perspective on the saturation and completeness of sampling. Metrics like Chao1 richness estimates and Shannon diversity indices are employed to quantify the richness (total number of unique sequences) and diversity (combination of richness and evenness) within these samples.
+Alpha diversity examines the variety and abundance of taxa within individual samples. Rarefaction curves are utilized to 
+visually represent this diversity, plotting the number of unique sequences (ASVs) identified against the total number of 
+sequences sampled, offering a perspective on the saturation and completeness of sampling. Metrics like Chao1 richness 
+estimates and Shannon diversity indices are employed to quantify the richness (total number of unique sequences) and 
+diversity (combination of richness and evenness) within these samples.
 
 > Please note that if you'd like to run the code in this section, make sure that you [load the libraries](#load-libraries) 
 and [functions](#load-functions), [read-in input tables](#read-in-input-tables) and [preprocess](#preprocessing) them in R 
-by running the lines of code in [section 6](#6-amplicon-seq-data-analysis-set-up) sequentially, particularly those in [section 6b](#6b-r-environment-set-up).
+by running the lines of code in [section 6](#6-amplicon-seq-data-analysis-set-up) sequentially, particularly those 
+in [section 6b](#6b-r-environment-set-up).
 
 ```R
 # Create output directory if it doesn't already exist
@@ -1666,19 +1670,22 @@ width <- 3.6 * length(group_levels)
 ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}richness_and_diversity_estimates_by_group{assay_suffix}.png"),
        plot=richness_by_group, width = width, height = 8.33, dpi = 300, units = "in")
 ```
-**Input Data and Parameter Definitions:**
+**Parameter Definitions:**
 
-* `metadata`          - samples metadata dataframe with the group/treatment to be analyzed from  [Preprocessing](#preprocessing)
-* `sample_info_tab`   - dataframe of sample information i.e. a subset of samples metadata DATAFRAME} from [Preprocessing](#preprocessing)
-* `feature_table`     - ASV counts table dataframe from [Preprocessing](#preprocessing)
-* `taxonomy_table`    - taxonomy dataframe from [Preprocessing](#preprocessing)
 * `rarefaction_depth` – minimum rarefaction depth for alpha diversity estimation
-* `groups_colname`    - group column in metadata to be analyzed
-* `group_colors`      - named character vector of colors for each group 
+* `groups_colname`    - name of group column in metadata to be analyzed
 * `legend_title`      - legend title for plotting
 * `assay_suffix`      - Genelab assay suffix. Default : "_GLAmpSeq"
-* `output_prefix`     - additdional prefix to be added to output files. Default: ""
+* `output_prefix`     - additional prefix to be added to output files. Default: ""
 
+**Input Data:**
+* `metadata` (sample metadata with the group/treatment to be analyzed, output from [Preprocessing](#preprocessing))
+* `sample_info_tab` (sample information, output from [Preprocessing](#preprocessing))
+* `feature_table` (ASV counts table, output from [Preprocessing](#preprocessing))
+* `taxonomy_table` (taxonomy table, output from [Preprocessing](#preprocessing))
+* `publication_format` (custom ggplot theme, output from [Set Variables](#set-variables))
+* `group_levels` (group levels to compare, output from [Read-in Input Tables](#read-in-input-tables))
+* `group_colors` (colors for each group, output from [Read-in Input Tables](#read-in-input-tables))
 
 **Output Data:**
 
@@ -1767,18 +1774,22 @@ ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_
 
 })
 ```
-**Input Data and Parameter Definitions:**
+**Parameter Definitions:**
 
-* `metadata`              - samples metadata dataframe with the group/treatment to be analyzed from  [Preprocessing](#preprocessing)
-* `feature_table`         - ASV counts table dataframe from [Preprocessing](#preprocessing)
 * `rarefaction_depth`     – minimum rarefaction depth when using Bray Curtis distance
-* `groups_colname`        - group column in metadata to be analyzed
-* `group_colors`          - named character vector of colors for each group 
+* `groups_colname`        - name of group column in metadata to be analyzed
 * `legend_title`          - legend title for plotting
-* `assay_suffix`          - Genelab's amplicon assay suffix. Default : "_GLAmpSeq"
-* `output_prefix`         - additdional prefix to be added to output files. Default: ""
-* `distance_methods`      - method used to calculate the distance between samples. "euclidean" and "bray" for euclidean and Bray Curtis distance, respectively.
-* `normalization_methods` - method for normalizing sample counts. "vst" and "rarefy" variance stabilizing transformation and rarefaction, respectively.
+* `assay_suffix`          - Genelab assay suffix. Default : "_GLAmpSeq"
+* `output_prefix`         - additional prefix to be added to output files, Default: ""
+* `distance_methods`      - method used to calculate the distance between samples, either "euclidean" and "bray" for 
+                            euclidean and Bray Curtis distance, respectively
+* `normalization_methods` - method for normalizing sample counts, either "vst" and "rarefy" for variance stabilizing 
+                            transformation and rarefaction, respectively
+
+**Input Data:**
+* `metadata` (sample metadata with the group/treatment to be analyzed, output from [Preprocessing](#preprocessing))
+* `feature_table` (ASV counts table, output from [Preprocessing](#preprocessing))
+* `group_colors` (colors for each group, output from [Read-in Input Tables](#read-in-input-tables))
 
 **Output Data:**
 
@@ -1786,8 +1797,6 @@ ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_
 * **beta_diversity/<output_prefix><distance_method>_adonis_table_GLAmpSeq.csv** (Adonis Stats Table)
 * **beta_diversity/<output_prefix><distance_method>_PCoA_without_labels_GLAmpSeq.png** (Unlabeled PCoA)
 * **beta_diversity/<output_prefix><distance_method>_PCoA_w_labels_GLAmpSeq.png** (Labeled PCoA)
-
-Were distance_method is either bray or euclidean for Bray Curtis and Euclidean distance, respectively.
 
 <br>
 
@@ -1964,25 +1973,29 @@ walk2(.x = group_relAbundace_tbs, .y = taxon_levels[-1],
                                     plot=p, width = plot_width, height = 10, dpi = 300)
                            })
 ```
-**Input Data and Parameters Definitions:**
+**Parameter Definitions:**
 
-* `metadata`           - samples metadata dataframe with the group/treatment to be analyzed from  [Preprocessing](#preprocessing)
-* `feature_table`      - ASV counts table dataframe from [Preprocessing](#preprocessing)
-* `taxonomy_table`     - taxonomy dataframe from [Preprocessing](#preprocessing)
 * `groups_colname`     - group column in metadata to be analyzed
-* `assay_suffix`       - Genelab assay suffix, default : "_GLAmpSeq"
-* `output_prefix`      - additdional prefix to be added to output files . Default: ""
-* `custom_palette`     - color palette defined in [Set Variables](#set-variables)
-* `publication_format` - ggplot theme defined in [Set Variables](#set-variables)
+* `assay_suffix`       - GeneLab assay suffix, default : "_GLAmpSeq"
+* `output_prefix`      - additional prefix to be added to output files . Default: ""
+
+**Input Data:**
+
+* `metadata` (sample metadata with the group/treatment to be analyzed, output from [Preprocessing](#preprocessing))
+* `feature_table` (ASV counts table, output from [Preprocessing](#preprocessing))
+* `taxonomy_table` (taxonomy information, output from [Preprocessing](#preprocessing))
+* `publication_format` (custom ggplot theme, output from [Set Variables](#set-variables))
+* `custom_palette` (custom color palette, output from [Set Variables](#set-variables))
+
 
 **Output Data:**
 
 * **taxonomy_plots/<output_prefix>samples_<taxon_level>_GLAmpSeq.png** (samples barplots)
 * **taxonomy_plots/<output_prefix>groups_<taxon_level>_GLAmpSeq.png** (groups barplots)
 
-Where taxon_level is all of phylum, class, order, family, genus and species.
+Where `taxon_level` is all of phylum, class, order, family, genus and species.
 
-> please note that species plot should only be taken with a grain of salt as short amplicon sequences can't be used to accurately predict species.
+> Please note that the species plot can be misleading as short amplicon sequences can't be used to accurately predict species.
 
 <br>
 
@@ -1991,7 +2004,7 @@ Where taxon_level is all of phylum, class, order, family, genus and species.
 
 ## 10. Differential Abundance Testing
 
-Using ANCOMBC 1, ANCOMBC 2, and DESeq2, we aim to uncover specific taxa that exhibit notable variations across different conditions, complemented by visualizations like volcano plots to illustrate these disparities and their implications on ASV expression and overall microbial community dynamics.
+Differential abundance testing aims to uncover specific taxa that exhibit notable variations across different conditions, complemented by visualizations like volcano plots to illustrate these disparities and their implications on ASV expression and overall microbial community dynamics. ANCOMBC 1, ANCOMBC 2, and DESeq2 provide 3 different methods for calculating differential abundance.
 
 > Please note that if you'd like to run the code in this section, make sure that you [load the libraries](#load-libraries) 
 and [functions](#load-functions), [read-in input tables](#read-in-input-tables) and [preprocess](#preprocessing) them in R 
@@ -2233,7 +2246,7 @@ ggsave(filename = glue("{output_prefix}{feature}_volcano{assay_suffix}.png"), pl
        path = diff_abund_out_dir, limitsize = FALSE)
 )
 
-# ------------------- Add NCBI id to feature i.e. ASV -------------- #
+# ------------------- Add NCBI id to feature, i.e. ASV -------------- #
 # Get the best/least possible taxonomy name for the ASVs
 tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","")  %>%
                        str_split(";"),
@@ -2372,23 +2385,29 @@ ggsave(filename = glue("{output_prefix}{feature}_boxplots{assay_suffix}.png"), p
 
 ```
 
-**Input Data and Parameter Definitions:**
+**Parameter Definitions:**
 
-* `metadata`           - samples metadata dataframe with the group/treatment to be analyzed from  [Preprocessing](#preprocessing)
-* `feature_table`      - ASV counts table dataframe from [Preprocessing](#preprocessing)
-* `feature`            - feature type i.e. ASV or OTU.
-* `taxonomy_table`     - taxonomy dataframe from [Preprocessing](#preprocessing)
+* `feature`            - feature type, i.e. ASV or OTU.
 * `groups_colname`     - group column in metadata to be analyzed
-* `samples_column`     – specifies the column in metadata containing the sample names in the feature table
-* `assay_suffix`       - Genelab assay suffix, default : "_GLAmpSeq"
-* `output_prefix`      - additdional prefix to be added to output files . Default: ""
-* `threads`            - specifies the number of cpus to use for parallel processing.
-* `prevalence_cutoff`  - If `remove_rare` is true, a numerical fraction between 0 and 1. 
-                         Taxa with prevalences(the proportion of samples in which the taxon is present) less than this will be excluded from the analysis. Default is 0, i.e. do not exclude any taxa / features.
+* `samples_column`     - specifies the column in metadata containing the sample names in the feature table
+* `assay_suffix`       - GeneLab assay suffix, default : "_GLAmpSeq"
+* `output_prefix`      - additional prefix to be added to output files . Default: ""
+* `threads`            - specifies the number of cpus to use for parallel processing
+* `prevalence_cutoff`  - If `remove_rare` is true, a numerical fraction between 0 and 1. Taxa with prevalences (the 
+                         proportion of samples in which the taxon is present) less than this will be excluded from 
+                         the analysis. Default is 0, i.e. do not exclude any taxa / features.
 * `library_cutoff`     - If `remove_rare` is true, a numerical threshold for filtering samples based on library sizes. 
-                         Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0 i.e. no sample will be dropped. if you want to discard samples with read counts less than or equal to 100 then set to 100.
-* `publication_format` - ggplot theme defined in [Set Variables](#set-variables)
-* `target_region`      - amplicon target region. Options are either 16S, 18S or ITS
+                         Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0, 
+                         i.e. no sample will be dropped. To discard samples with read counts less than or equal to 100, 
+                         set to 100.
+* `target_region`      - amplicon target region. Options are either "16S", "18S", or "ITS".
+
+**Input Data:**
+
+* `metadata` (sample metadata with the group/treatment to be analyzed, output from [Preprocessing](#preprocessing))
+* `feature_table` (ASV counts table, output from [Preprocessing](#preprocessing))
+* `taxonomy_table` (taxonomy information, output from [Preprocessing](#preprocessing))
+* `publication_format` (custom ggplot theme, output from [Set Variables](#set-variables))
 
 **Output Data:**
 
@@ -2446,7 +2465,7 @@ tse[[groups_colname]] <- factor(tse[[groups_colname]] , levels = group_levels)
   # lib_cut - a numerical threshold for filtering samples based on library sizes.
   # p_adj_method - p-value adjustment method for multiple comparisons
   # struc_zero - should group-wise rare taxa be detected
-  # neg_lb - whether to classify a taxon as a structural zero using its asymptotic lower bound. i.e.the best the algorithm can possibly achieve 
+  # neg_lb - whether to classify a taxon as a structural zero using its asymptotic lower bound, i.e.the best the algorithm can possibly achieve 
   # group - name of the group variable in metadata. Only important you'd like to perform global test  can be set to NULL.
   # alpha - significance level
   # n_cl - number of processes to run in parallel
@@ -2720,24 +2739,29 @@ ggsave(filename = glue("{output_prefix}{feature}_boxplots{assay_suffix}.png"), p
 )
 ```
 
-**Input Data and Parameter Definitions:**
+**Parameter Definitions:**
 
-* `metadata`           - samples metadata dataframe with the group/treatment to be analyzed from  [Preprocessing](#preprocessing)
-* `feature_table`      - ASV counts table dataframe from [Preprocessing](#preprocessing)
-* `feature`            - feature type i.e. ASV or OTU.
-* `taxonomy_table`     - taxonomy dataframe from [Preprocessing](#preprocessing)
+* `feature`            - feature type, i.e. ASV or OTU.
 * `samples_column`     – column in metadata containing the sample names in the feature table
 * `groups_colname`     - group column in metadata to be analyzed
-* `assay_suffix`       - Genelab assay suffix, default : "_GLAmpSeq"
-* `output_prefix`      - additdional prefix to be added to output files . Default: ""
+* `assay_suffix`       - GeneLab assay suffix, default : "_GLAmpSeq"
+* `output_prefix`      - additional prefix to be added to output files . Default: ""
 * `threads`            - specifies the number of cpus to use for parallel processing.
-* `prevalence_cutoff`  - If `remove_rare` is true, a numerical fraction between 0 and 1. 
-                         Taxa with prevalences(the proportion of samples in which the taxon is present) less than this will be excluded from the analysis. Default is 0, i.e. do not exclude any taxa / features.
+* `prevalence_cutoff`  - If `remove_rare` is true, a numerical fraction between 0 and 1. Taxa with prevalences (the 
+                         proportion of samples in which the taxon is present) less than this will be excluded from 
+                         the analysis. Default is 0, i.e. do not exclude any taxa / features.
 * `library_cutoff`     - If `remove_rare` is true, a numerical threshold for filtering samples based on library sizes. 
-                         Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0 i.e. no sample will be dropped. if you want to discard samples with read counts less than or equal to 100 then set to 100.
-* `publication_format` - ggplot theme defined in [Set Variables](#set-variables)
-* `target_region`      - amplicon target region. Options are either 16S, 18S or ITS
+                         Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0, 
+                         i.e. no sample will be dropped. To discard samples with read counts less than or equal to 100, 
+                         set to 100.
+* `target_region`      - amplicon target region. Options are either "16S", "18S", or "ITS"
 
+**Input Data:**
+
+* `metadata` (sample metadata with the group/treatment to be analyzed, output from [Preprocessing](#preprocessing))
+* `feature_table` (ASV counts table, output from [Preprocessing](#preprocessing))
+* `taxonomy_table` (taxonomy information, output from [Preprocessing](#preprocessing))
+* `publication_format` (custom ggplot theme, output from [Set Variables](#set-variables))
 
 **Output Data:**
 
@@ -2847,9 +2871,9 @@ df <- results(deseq_modeled, contrast = c(groups_colname, group1, group2)) %>% #
                           dplyr::left_join(df, join_by("ASV"))
 })
 
-# ---------------------- Add NCBI id to feature i.e. ASV
+# ---------------------- Add NCBI id to feature, i.e. ASV
 
-# Get the best / lowest possible taxonomy assignment for the features i.e. ASVs
+# Get the best / lowest possible taxonomy assignment for the features, i.e. ASVs
 tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","")  %>%
                        str_split(";"),
                      function(row) row[length(row)])
@@ -3005,22 +3029,29 @@ walk(pairwise_comp_df, function(col){
 })
 ```
 
-**Input Data and Parameter Definitions:**
+**Parameter Definitions:**
 
-* `metadata`           - samples metadata dataframe with the group/treatment to be analyzed from  [Preprocessing](#preprocessing)
-* `feature_table`      - ASV counts table dataframe from [Preprocessing](#preprocessing)
-* `feature`            - feature type i.e. ASV or OTU.
-* `taxonomy_table`     - taxonomy dataframe from [Preprocessing](#preprocessing)
+* `feature`            - feature type, i.e. ASV or OTU.
 * `samples_column`     – column in metadata containing the sample names in the feature table
 * `groups_colname`     - group column in metadata to be analyzed
-* `assay_suffix`       - Genelab assay suffix, default : "_GLAmpSeq"
-* `output_prefix`      - additdional prefix to be added to output files . Default: ""
-* `prevalence_cutoff`  - If `remove_rare` is true, a numerical fraction between 0 and 1. 
-                         Taxa with prevalences(the proportion of samples in which the taxon is present) less than this will be excluded from the analysis. Default is 0, i.e. do not exclude any taxa / features.
+* `assay_suffix`       - GeneLab assay suffix, default : "_GLAmpSeq"
+* `output_prefix`      - additional prefix to be added to output files . Default: ""
+* `prevalence_cutoff`  - If `remove_rare` is true, a numerical fraction between 0 and 1. Taxa with prevalences (the 
+                         proportion of samples in which the taxon is present) less than this will be excluded from 
+                         the analysis. Default is 0, i.e. do not exclude any taxa / features.
 * `library_cutoff`     - If `remove_rare` is true, a numerical threshold for filtering samples based on library sizes. 
-                         Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0 i.e. no sample will be dropped. if you want to discard samples with read counts less than or equal to 100 then set to 100.
-* `publication_format` - ggplot theme defined in [Set Variables](#set-variables)
-* `target_region`      - amplicon target region. Options are either 16S, 18S or ITS
+                         Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0, 
+                         i.e. no sample will be dropped. To discard samples with read counts less than or equal to 100, 
+                         set to 100.
+* `target_region`      - amplicon target region. Options are "16S", "18S", or "ITS".
+
+**Input Data:**
+
+* `metadata` (sample metadata with the group/treatment to be analyzed, output from [Preprocessing](#preprocessing))
+* `feature_table` (ASV counts table, output from [Preprocessing](#preprocessing))
+* `taxonomy_table` (taxonomy information, output from [Preprocessing](#preprocessing))
+* `publication_format` (custom ggplot theme, output from [Set Variables](#set-variables))
+
 
 **Output Data:**
 
