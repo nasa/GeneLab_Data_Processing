@@ -8,12 +8,12 @@ process ALIGN_BOWTIE2 {
 
   output:
     tuple val(meta), path("${meta.id}.sam"), emit: sam
-    path("${ meta.id }.Unmapped.fastq*"), emit: unmapped_reads, optional: true
+    path("${ meta.id }.unmapped.fastq*"), emit: unmapped_reads, optional: true
     path("${ meta.id }.bowtie2.log"), emit: alignment_logs
     path("versions.yml"), emit: versions
 
   script:
-    def unaligned = meta.paired_end ? "--un-conc-gz ${meta.id}.Unmapped.fastq.gz" : "--un-gz ${meta.id}.Unmapped.fastq.gz"
+    def unaligned = meta.paired_end ? "--un-conc-gz ${meta.id}.unmapped.fastq.gz" : "--un-gz ${meta.id}.unmapped.fastq.gz"
     def readArgs = meta.paired_end ? "-1 ${reads[0]} -2 ${reads[1]}" : "-U ${reads}"
 
     """

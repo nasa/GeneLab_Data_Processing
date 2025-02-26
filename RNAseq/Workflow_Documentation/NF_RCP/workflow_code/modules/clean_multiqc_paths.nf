@@ -25,6 +25,6 @@ process CLEAN_MULTIQC_PATHS {
         done
         
         cd ../..
-        zip -r ${multiqc_report_zip} . -i "*_data" "*.html"
+        zip -r ${multiqc_report_zip} ./*
         """
 }

@@ -44,6 +44,54 @@ process VV_RAW_READS {
     """
 }
 
+process VV_BOWTIE2_ALIGNMENT {
+  // Log publishing
+  publishDir "${ publishdir }",
+    pattern:  "VV_log.csv" ,
+    mode: params.publish_dir_mode,
+    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
+  // V&V'ed data publishing
+  publishDir "${ publishdir }",
+    pattern: '02-Bowtie2_Alignment/',
+    mode: params.publish_dir_mode
+
+  label 'VV'
+
+  input:
+    path(dp_tools__NF_RCP)
+    val(publishdir)
+    val(meta)
+    path(runsheet)                       // Runsheet
+    path("INPUT/bowtie2-alignment-log/*") // (log files *.bowtie2.log)
+    path("INPUT/bowtie2-alignment-unmapped/*") // (unmapped reads *.Unmapped.fastq.gz)
+    path("INPUT/bowtie2-alignment-multiqc/*") // (zipped multiqc report)
+    path("INPUT/bowtie2-alignment-sorted/*") // (sorted BAMs *_sorted.bam)
+    path("INPUT/alignment-sorted-index/*") // (sorted BAM index files *_sorted.bam.bai)
+    
+
+  output:
+    path("02-Bowtie2_Alignment/")
+    path("VV_log.csv"), optional: params.skipVV, emit: log
+
+  script:
+    """
+    mv INPUT/* . || true
+    vv.py --assay-type rnaseq \
+    --assay-suffix ${params.assay_suffix} \
+    --runsheet-path ${runsheet} \
+    --outdir ${publishdir} \
+    --paired-end ${meta.paired_end} \
+    --mode microbes \
+    --bowtie2-alignment-log bowtie2-alignment-log/ \
+    --bowtie2-alignment-unmapped bowtie2-alignment-unmapped/ \
+    --bowtie2-alignment-multiqc bowtie2-alignment-multiqc/ \
+    --bowtie2-alignment-sorted bowtie2-alignment-sorted/ \
+    --bowtie2-alignment-sorted-index alignment-sorted-index/ \
+    --run-components bowtie2_alignment
+    """
+} 
+
+
 process VV_TRIMMED_READS {
   // Log publishing
   publishDir "${ publishdir }",

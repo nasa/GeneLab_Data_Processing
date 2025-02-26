@@ -11,6 +11,7 @@ import csv
 import re  # Add regex for parsing reports
 import zipfile
 from io import TextIOWrapper
+import statistics
 
 # Setup logging
 def setup_logging():
@@ -176,9 +177,16 @@ class ValidationLogger:
 @click.option('--trimmed-multiqc', type=click.Path(exists=True), help="Path to trimmed multiqc directory")
 @click.option('--trimming-reports', type=click.Path(exists=True), help="Path to trimming reports directory") 
 @click.option('--trimming-multiqc', type=click.Path(exists=True), help="Path to trimming multiqc directory")
+@click.option('--bowtie2-alignment-log', type=click.Path(exists=True), help="Path to bowtie2 alignment log directory")
+@click.option('--bowtie2-alignment-unmapped', type=click.Path(exists=True), help="Path to bowtie2 unmapped reads directory")
+@click.option('--bowtie2-alignment-multiqc', type=click.Path(exists=True), help="Path to bowtie2 alignment multiqc directory")
+@click.option('--bowtie2-alignment-sorted', type=click.Path(exists=True), help="Path to sorted BAM files directory")
+@click.option('--bowtie2-alignment-sorted-index', type=click.Path(exists=True), help="Path to sorted BAM index files directory")
 def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_components, 
        raw_fastq, raw_fastqc, raw_multiqc,
-       trimmed_fastq, trimmed_fastqc, trimmed_multiqc, trimming_reports, trimming_multiqc):
+       trimmed_fastq, trimmed_fastqc, trimmed_multiqc, trimming_reports, trimming_multiqc,
+       bowtie2_alignment_log, bowtie2_alignment_unmapped, bowtie2_alignment_multiqc, 
+       bowtie2_alignment_sorted, bowtie2_alignment_sorted_index):
     """Organize pipeline outputs and optionally validate"""
     outdir = Path(outdir)
     
@@ -202,6 +210,128 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
         }
         stage_files(assay_type, 'trimmed_reads', **file_paths)
     
+    # Stage Bowtie2 alignment files if inputs provided
+    if any([bowtie2_alignment_log, bowtie2_alignment_unmapped, bowtie2_alignment_multiqc, 
+            bowtie2_alignment_sorted, bowtie2_alignment_sorted_index]):
+        
+        # Create 02-Bowtie2_Alignment directory in CURRENT WORKING DIRECTORY for Nextflow
+        work_alignment_dir = Path("02-Bowtie2_Alignment")
+        os.makedirs(work_alignment_dir, exist_ok=True)
+        
+        # Keep track of all sample names to create directories
+        sample_names = set()
+        
+        # Get sample names from all files
+        # From sorted BAM files (these have the most reliable pattern)
+        if bowtie2_alignment_sorted:
+            for file in os.listdir(bowtie2_alignment_sorted):
+                if file.endswith('_sorted.bam'):
+                    # Extract sample name from file name (e.g., "Sample1_sorted.bam" -> "Sample1")
+                    sample_name = file.replace('_sorted.bam', '')
+                    sample_names.add(sample_name)
+        
+        # Create sample directories in working directory
+        for sample in sample_names:
+            # Create in working directory for Nextflow
+            work_sample_dir = work_alignment_dir / sample
+            os.makedirs(work_sample_dir, exist_ok=True)
+        
+        # Stage alignment logs
+        if bowtie2_alignment_log:
+            for file in os.listdir(bowtie2_alignment_log):
+                src = os.path.realpath(os.path.join(bowtie2_alignment_log, file))
+                
+                # Special handling for sample-specific files
+                if any(sample in file for sample in sample_names):
+                    # Find which sample this file belongs to
+                    for sample in sample_names:
+                        if sample in file:
+                            # Link to work directory for Nextflow
+                            work_sample_dir = work_alignment_dir / sample
+                            work_dst = os.path.join(work_sample_dir, file)
+                            if not os.path.exists(work_dst) and not os.path.islink(work_dst):
+                                os.symlink(src, work_dst)
+                            break
+                else:
+                    # Handle non-sample specific files (keep at root level)
+                    # Link to work directory for Nextflow
+                    work_dst = os.path.join(work_alignment_dir, file)
+                    if not os.path.exists(work_dst) and not os.path.islink(work_dst):
+                        os.symlink(src, work_dst)
+        
+        # Stage unmapped reads
+        if bowtie2_alignment_unmapped:
+            for file in os.listdir(bowtie2_alignment_unmapped):
+                src = os.path.realpath(os.path.join(bowtie2_alignment_unmapped, file))
+                
+                # Find which sample this file belongs to
+                for sample in sample_names:
+                    if sample in file:
+                        # Link to work directory for Nextflow
+                        work_sample_dir = work_alignment_dir / sample
+                        work_dst = os.path.join(work_sample_dir, file)
+                        if not os.path.exists(work_dst) and not os.path.islink(work_dst):
+                            os.symlink(src, work_dst)
+                        break
+                else:
+                    # If no sample match found, place at root level
+                    # Link to work directory for Nextflow
+                    work_dst = os.path.join(work_alignment_dir, file)
+                    if not os.path.exists(work_dst) and not os.path.islink(work_dst):
+                        os.symlink(src, work_dst)
+        
+        # Stage alignment MultiQC report (at root level since it's not sample-specific)
+        if bowtie2_alignment_multiqc:
+            for file in os.listdir(bowtie2_alignment_multiqc):
+                src = os.path.realpath(os.path.join(bowtie2_alignment_multiqc, file))
+                
+                # Link to work directory for Nextflow
+                work_dst = os.path.join(work_alignment_dir, file)
+                if not os.path.exists(work_dst) and not os.path.islink(work_dst):
+                    os.symlink(src, work_dst)
+        
+        # Stage sorted BAM files
+        if bowtie2_alignment_sorted:
+            for file in os.listdir(bowtie2_alignment_sorted):
+                src = os.path.realpath(os.path.join(bowtie2_alignment_sorted, file))
+                
+                # Find which sample this file belongs to
+                for sample in sample_names:
+                    if sample in file:
+                        # Link to work directory for Nextflow
+                        work_sample_dir = work_alignment_dir / sample
+                        work_dst = os.path.join(work_sample_dir, file)
+                        if not os.path.exists(work_dst) and not os.path.islink(work_dst):
+                            os.symlink(src, work_dst)
+                        break
+                else:
+                    # If no sample match found, place at root level
+                    # Link to work directory for Nextflow
+                    work_dst = os.path.join(work_alignment_dir, file)
+                    if not os.path.exists(work_dst) and not os.path.islink(work_dst):
+                        os.symlink(src, work_dst)
+        
+        # Stage sorted BAM index files
+        if bowtie2_alignment_sorted_index:
+            for file in os.listdir(bowtie2_alignment_sorted_index):
+                src = os.path.realpath(os.path.join(bowtie2_alignment_sorted_index, file))
+                
+                # Find which sample this file belongs to
+                for sample in sample_names:
+                    if sample in file:
+                        # Link to work directory for Nextflow
+                        work_sample_dir = work_alignment_dir / sample
+                        work_dst = os.path.join(work_sample_dir, file)
+                        if not os.path.exists(work_dst) and not os.path.islink(work_dst):
+                            os.symlink(src, work_dst)
+                        break
+                else:
+                    # If no sample match found, place at root level
+                    # Link to work directory for Nextflow
+                    work_dst = os.path.join(work_alignment_dir, file)
+                    if not os.path.exists(work_dst) and not os.path.islink(work_dst):
+                        os.symlink(src, work_dst)
+    
     # Run validation if component specified
     if run_components:
         # Convert paired_end string to bool
@@ -219,6 +349,18 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
         elif 'trimmed_reads' in run_components:
             # Run validation for trimmed reads
             results = validate_trimmed_reads(
+                outdir=outdir,
+                samples_txt=Path(runsheet_path),
+                paired_end=is_paired,
+                assay_suffix=assay_suffix
+            )
+        
+        elif 'bowtie2_alignment' in run_components or 'alignments' in run_components:
+            # Run validation for Bowtie2 alignments
+            if mode != 'microbes':
+                logger.warning(f"Bowtie2 alignment validation is only supported for microbes mode, current mode: {mode}")
+            
+            results = validate_bowtie2_alignments(
                 outdir=outdir,
                 samples_txt=Path(runsheet_path),
                 paired_end=is_paired,
@@ -773,6 +915,234 @@ def validate_trimmed_reads(outdir: Path,
         val_logger.log("trimmed_reads", "ALL", "validation", "HALT",
                   f"Validation error", str(e))
         
+    return {
+        "status": val_logger.get_status(),
+        "messages": [r["message"] for r in val_logger.results],
+        "failures": {r["check_name"]: r["message"] 
+                    for r in val_logger.results 
+                    if r["status"] in ["HALT", "RED"]}
+    }
+
+def calculate_outliers(values, stdev_threshold=2):
+    """Calculate outliers based on standard deviation from median.
+    
+    Args:
+        values (list): List of numeric values
+        stdev_threshold (float): Number of standard deviations to consider as outlier threshold
+        
+    Returns:
+        list: Indices of outlier values
+    """
+    if not values:
+        return []
+        
+    median = statistics.median(values)
+    stdev = statistics.stdev(values) if len(values) > 1 else 0
+    
+    outliers = []
+    for i, value in enumerate(values):
+        if abs(value - median) > stdev_threshold * stdev:
+            outliers.append(i)
+            
+    return outliers
+
+def validate_bowtie2_alignments(outdir, samples_txt, paired_end, assay_suffix):
+    """
+    Validate Bowtie2 alignment outputs in the work directory
+    
+    Args:
+        outdir (Path): Output directory (main GLDS directory) - NOT USED, validation happens in work dir
+        samples_txt (Path): Path to samples.txt file
+        paired_end (bool): Whether data is paired-end
+        assay_suffix (str): Suffix for output files (e.g., '_GLbulkRNAseq')
+        
+    Returns:
+        dict: Validation log
+    """
+    logger.info(f"Validating Bowtie2 alignments with params: samples_txt={samples_txt}, paired_end={paired_end}")
+    
+    # Initialize validation logger
+    val_logger = ValidationLogger()
+    
+    # Calculate directory paths - use work directory
+    alignment_dir = Path("02-Bowtie2_Alignment")
+    if not alignment_dir.exists():
+        logger.error(f"Work directory {alignment_dir} does not exist")
+        return {
+            "status": "failed",
+            "messages": [f"Work directory {alignment_dir} does not exist"],
+            "failures": {"directory_exists": f"Work directory {alignment_dir} does not exist"}
+        }
+    
+    # Get sample names from runsheet (assumes CSV format for now)
+    samples = []
+    with open(samples_txt, "r") as f:
+        reader = csv.reader(f)
+        header = next(reader)  # Skip header
+        for row in reader:
+            if row:  # Skip empty rows
+                samples.append(row[-1].strip())  # Assume last column is sample name
+    
+    # Track alignment rates across samples for outlier detection
+    alignment_rates = []
+    sample_names = []  # Track sample names in same order as metrics
+    
+    # Validate each sample's alignment outputs
+    for sample in samples:
+        sample_dir = alignment_dir / sample
+        
+        # Check sorted BAM file exists
+        sorted_bam = sample_dir / f"{sample}_sorted.bam"
+        if not sorted_bam.exists():
+            val_logger.log("alignments", sample, "sorted_bam_exists", "HALT", 
+                        f"Missing sorted BAM file: {sorted_bam.name}")
+        else:
+            val_logger.log("alignments", sample, "sorted_bam_exists", "GREEN",
+                        f"Found sorted BAM file: {sorted_bam.name}")
+            
+            # Check BAM file integrity with samtools
+            try:
+                subprocess.run(["samtools", "quickcheck", str(sorted_bam)], check=True)
+                val_logger.log("alignments", sample, "bam_integrity", "GREEN",
+                            "BAM integrity check passed")
+            except subprocess.CalledProcessError:
+                val_logger.log("alignments", sample, "bam_integrity", "HALT",
+                            "BAM integrity check failed")
+        
+        # Check BAM index exists
+        bam_index = sample_dir / f"{sample}_sorted.bam.bai"
+        if not bam_index.exists():
+            val_logger.log("alignments", sample, "bam_index_exists", "HALT",
+                        f"Missing BAM index file: {bam_index.name}")
+        else:
+            val_logger.log("alignments", sample, "bam_index_exists", "GREEN",
+                        f"Found BAM index file: {bam_index.name}")
+        
+        # Check bowtie2 log file for alignment rate
+        bowtie2_log = sample_dir / f"{sample}.bowtie2.log"
+        if not bowtie2_log.exists():
+            val_logger.log("alignments", sample, "alignment_rate", "HALT", 
+                        f"Missing Bowtie2 log file: {bowtie2_log.name}")
+        else:
+            # Parse alignment rate from log
+            try:
+                with open(bowtie2_log, "r") as f:
+                    log_content = f.read()
+                    
+                # Parse overall alignment rate
+                match = re.search(r"(\d+\.\d+)% overall alignment rate", log_content)
+                if match:
+                    value = float(match.group(1))
+                    alignment_rates.append(value)
+                    sample_names.append(sample)
+                    
+                    # Log the alignment rate without threshold judgments
+                    val_logger.log("alignments", sample, "alignment_rate", "GREEN", 
+                                f"Alignment rate: {value}%")
+                    
+            except Exception as e:
+                val_logger.log("alignments", sample, "alignment_rate", "HALT", 
+                            f"Error parsing Bowtie2 log: {str(e)}")
+        
+        # Check unmapped reads files exist
+        if paired_end:
+            unmapped_1 = sample_dir / f"{sample}.unmapped.fastq.1.gz"
+            unmapped_2 = sample_dir / f"{sample}.unmapped.fastq.2.gz"
+            if not unmapped_1.exists() or not unmapped_2.exists():
+                val_logger.log("alignments", sample, "unmapped_reads_exist", "HALT",
+                            f"Missing unmapped reads files: {unmapped_1.name} and/or {unmapped_2.name}")
+            else:
+                val_logger.log("alignments", sample, "unmapped_reads_exist", "GREEN",
+                            f"Found unmapped reads files: {unmapped_1.name} and {unmapped_2.name}")
+        else:
+            unmapped = sample_dir / f"{sample}.unmapped.fastq.gz"
+            if not unmapped.exists():
+                val_logger.log("alignments", sample, "unmapped_reads_exist", "HALT",
+                            f"Missing unmapped reads file: {unmapped.name}")
+            else:
+                val_logger.log("alignments", sample, "unmapped_reads_exist", "GREEN",
+                            f"Found unmapped reads file: {unmapped.name}")
+    
+    # Check for outliers in alignment rate
+    if len(alignment_rates) >= 2:
+        median = statistics.median(alignment_rates)
+        
+        # Find outliers at 2 and 4 standard deviations
+        # Using statistical outlier detection instead of arbitrary thresholds
+        # as it adapts to the specific dataset characteristics
+        yellow_outliers = calculate_outliers(alignment_rates, 2)  # Moderate outliers
+        red_outliers = calculate_outliers(alignment_rates, 4)     # Extreme outliers
+        
+        # Log yellow outliers (excluding those that are also red)
+        for idx in yellow_outliers:
+            if idx not in red_outliers:
+                sample = sample_names[idx]
+                val_logger.log("alignments", sample, "alignment_rate", "YELLOW",
+                            f"Alignment rate {alignment_rates[idx]}% is an outlier",
+                            f"Value deviates >2 standard deviations from median ({median}%)")
+                
+        # Log red outliers
+        for idx in red_outliers:
+            sample = sample_names[idx]
+            val_logger.log("alignments", sample, "alignment_rate", "RED",
+                        f"Alignment rate {alignment_rates[idx]}% is an extreme outlier",
+                        f"Value deviates >4 standard deviations from median ({median}%)")
+    
+    # Check MultiQC report for alignments (always in root directory as it's global)
+    multiqc_path = alignment_dir / f"align_multiqc{assay_suffix}_report.zip"
+    logger.debug(f"Looking for MultiQC zip at: {multiqc_path}")
+    
+    if not multiqc_path.exists():
+        val_logger.log("alignments", "ALL", "align_multiqc_exists", "HALT", 
+                    f"Missing alignment MultiQC report: {multiqc_path.name}")
+    else:
+        val_logger.log("alignments", "ALL", "align_multiqc_exists", "GREEN", 
+                    f"Alignment MultiQC report found: {multiqc_path.name}")
+        
+        # Check all samples are present in MultiQC report
+        try:
+            with zipfile.ZipFile(multiqc_path, 'r') as zip_ref:
+                # Debug: List all files in zip
+                all_files = zip_ref.namelist()
+                logger.debug(f"Files in MultiQC zip: {all_files}")
+                
+                # Try to find the data directory and json file directly
+                json_path = None
+                for file in all_files:
+                    if file.endswith('multiqc_data.json'):
+                        json_path = file
+                        break
+                
+                if json_path:
+                    with zip_ref.open(json_path) as f:
+                        multiqc_data = json.loads(TextIOWrapper(f).read())
+                    
+                    # Extract sample names from MultiQC data
+                    multiqc_samples = set()
+                    if 'bowtie2' in multiqc_data:
+                        multiqc_samples.update(multiqc_data['bowtie2'].keys())
+                    if 'report_data_sources' in multiqc_data and 'Bowtie 2 / HiSAT2' in multiqc_data['report_data_sources']:
+                        multiqc_samples.update(multiqc_data['report_data_sources']['Bowtie 2 / HiSAT2']['all_sections'].keys())
+                    
+                    if multiqc_samples:
+                        missing_samples = set(samples) - multiqc_samples
+                        
+                        if missing_samples:
+                            val_logger.log("alignments", "ALL", "samples_in_multiqc", "HALT",
+                                        f"Samples missing from MultiQC report: {', '.join(missing_samples)}")
+                        else:
+                            val_logger.log("alignments", "ALL", "samples_in_multiqc", "GREEN",
+                                        "All samples found in MultiQC report")
+                    else:
+                        val_logger.log("alignments", "ALL", "samples_in_multiqc", "HALT",
+                                    "No Bowtie2 data found in MultiQC report")
+                else:
+                    val_logger.log("alignments", "ALL", "samples_in_multiqc", "HALT",
+                                "Could not find multiqc_data.json in MultiQC report")
+        except Exception as e:
+            val_logger.log("alignments", "ALL", "samples_in_multiqc", "HALT",
+                        f"Error checking samples in MultiQC report: {str(e)}")
+    
     return {
         "status": val_logger.get_status(),
         "messages": [r["message"] for r in val_logger.results],

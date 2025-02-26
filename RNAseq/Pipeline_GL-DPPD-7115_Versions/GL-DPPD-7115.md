@@ -323,8 +323,8 @@ bowtie2 -x /path/to/bowtie2/index \
  --maxins 1000 \
  -1 /path/to/trimmed_forward_reads \
  -2 /path/to/trimmed_reverse_reads \
- --un-conc-gz <sample_id>.Unmapped.fastq.gz \  # For paired-end data
- # --un-gz <sample_id>.Unmapped.fastq.gz \     # For single-end data
+ --un-conc-gz <sample_id>.unmapped.fastq.gz \  # For paired-end data
+ # --un-gz <sample_id>.unmapped.fastq.gz \     # For single-end data
  -S /path/to/bowtie2/output/directory/<sample_id>.sam \
  2> /path/to/bowtie2/output/directory/<sample_id>.bowtie2.log
 ```
@@ -351,7 +351,7 @@ bowtie2 -x /path/to/bowtie2/index \
 
 - *\.sam (alignments in SAM format)
 - **\*.bowtie2.log** (log file containing alignment statistics)
-- **\*.Unmapped.fastq.gz** (unmapped reads in FASTQ format)
+- **\*.unmapped.fastq.gz** (unmapped reads in FASTQ format)
 
 <br>
 

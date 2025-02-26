@@ -67,6 +67,7 @@ include { validateParameters; paramsSummaryLog; samplesheetToList } from 'plugin
 include { VV_RAW_READS;
     VV_TRIMMED_READS;
     VV_STAR_ALIGNMENTS;
+    VV_BOWTIE2_ALIGNMENT;
     VV_RSEQC;
     VV_RSEM_COUNTS;
     VV_DESEQ2_ANALYSIS;
@@ -365,7 +366,7 @@ workflow RNASEQ_MICROBES {
             runsheet_path,
             raw_reads | map{ it -> it[1] } | collect,
             raw_fastqc_zip,
-            CLEAN_RAW_READS_MULTIQC_PATHS.out.zipped_report
+            RAW_READS_MULTIQC.out.zipped_report
         )
 
         VV_TRIMMED_READS(
@@ -375,9 +376,21 @@ workflow RNASEQ_MICROBES {
             runsheet_path,
             trimmed_reads | map{ it -> it[1] } | collect,
             trimmed_fastqc_zip,
-            CLEAN_TRIMMED_READS_MULTIQC_PATHS.out.zipped_report,
+            TRIMMED_READS_MULTIQC.out.zipped_report,
             TRIMGALORE.out.reports | collect,
-            CLEAN_TRIMMING_MULTIQC_PATHS.out.zipped_report
+            TRIMMING_MULTIQC.out.zipped_report
+        )
+
+        VV_BOWTIE2_ALIGNMENT(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            ALIGN_BOWTIE2.out.alignment_logs | collect,       // log files
+            ALIGN_BOWTIE2.out.unmapped_reads | collect,       // unmapped reads
+            ALIGN_MULTIQC.out.zipped_report,      // MultiQC report
+            SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[1] } | collect,        // sorted BAM files
+            SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[2] } | collect // BAM index files
         )
 
     emit:
