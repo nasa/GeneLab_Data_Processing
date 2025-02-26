@@ -519,7 +519,7 @@ genePredToBed /path/to/annotation/genePred/file \
 ```bash
 infer_experiment.py -r /path/to/annotation/BED/file \
  -i /path/to/*_sorted.bam \
- -s 15000000 > /path/to/*infer_expt.out
+ -s 15000000 > /path/to/*.infer_expt.out
 ```
 
 **Parameter Definitions:**
@@ -528,7 +528,7 @@ infer_experiment.py -r /path/to/annotation/BED/file \
 - `-i` – specifies the path to the input bam file(s)
 - `-s` – specifies the number of reads to be sampled from the input bam file(s), 15M reads are sampled
 - `>` – redirects standard output to specified file
-- `/path/to/*infer_expt.out` – specifies the location and name of the file containing the infer_experiment standard output
+- `/path/to/*.infer_expt.out` – specifies the location and name of the file containing the infer_experiment standard output
 
 **Input Data:**
 
@@ -538,14 +538,14 @@ infer_experiment.py -r /path/to/annotation/BED/file \
 
 **Output Data:**
 
-- *infer_expt.out (file containing the infer_experiment standard output)
+- *.infer_expt.out (file containing the infer_experiment standard output)
 
 <br>
 
 ### 6b. Compile Strandedness Reports
 
 ```bash
-multiqc --interactive -n infer_exp_multiqc_GLbulkRNAseq -o /path/to/infer_exp_multiqc/output/infer_exp_multiqc_GLbulkRNAseq_report /path/to/*infer_expt.out/files
+multiqc --interactive -n infer_exp_multiqc_GLbulkRNAseq -o /path/to/infer_exp_multiqc/output/infer_exp_multiqc_GLbulkRNAseq_report /path/to/*.infer_expt.out/files
 
 zip -r infer_exp_multiqc_GLbulkRNAseq_report.zip /path/to/infer_exp_multiqc/output/infer_exp_multiqc_GLbulkRNAseq_report
 ```
@@ -555,11 +555,11 @@ zip -r infer_exp_multiqc_GLbulkRNAseq_report.zip /path/to/infer_exp_multiqc/outp
 - `--interactive` – force reports to use interactive plots
 - `-n` – prefix name for output files
 - `-o` – the output directory to store results
-- `/path/to/*infer_expt.out/files` – the directory holding the *infer_expt.out output files from the [read strandedness step](#6a-determine-read-strandedness), provided as a positional argument
+- `/path/to/*.infer_expt.out/files` – the directory holding the *.infer_expt.out output files from the [read strandedness step](#6a-determine-read-strandedness), provided as a positional argument
 
 **Input Data:**
 
-- *infer_expt.out (file containing the infer_experiment standard output, output from [Step 6a](#6a-determine-read-strandedness))
+- *.infer_expt.out (file containing the infer_experiment standard output, output from [Step 6a](#6a-determine-read-strandedness))
 
 **Output Data:**
 
@@ -691,7 +691,7 @@ zip -r inner_dist_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/
 
 ```bash
 read_distribution.py -r /path/to/annotation/BED/file \
- -i /path/to/*Aligned.sortedByCoord_sorted.out.bam > /path/to/*read_dist.out
+ -i /path/to/*Aligned.sortedByCoord_sorted.out.bam > /path/to/*.read_dist.out
 ```
 
 **Parameter Definitions:**
@@ -699,7 +699,7 @@ read_distribution.py -r /path/to/annotation/BED/file \
 - `-r` – specifies the path to the reference annotation BED file
 - `-i` – specifies the path to the input bam file(s)
 - `>` – redirects standard output to specified file
-- `/path/to/*read_dist.out` – specifies the location and name of the file containing the read_distribution standard output
+- `/path/to/*.read_dist.out` – specifies the location and name of the file containing the read_distribution standard output
 
 **Input Data:**
 
@@ -709,14 +709,14 @@ read_distribution.py -r /path/to/annotation/BED/file \
 
 **Output Data:**
 
-- *read_dist.out (file containing the read_distribution standard output)
+- *.read_dist.out (file containing the read_distribution standard output)
 
 <br>
 
 ### 6h. Compile Read Distribution Reports
 
 ```bash
-multiqc --interactive -n read_dist_multiqc_GLbulkRNAseq -o /path/to/read_dist_multiqc/output/read_dist_multiqc_GLbulkRNAseq_report /path/to/*read_dist.out/files
+multiqc --interactive -n read_dist_multiqc_GLbulkRNAseq -o /path/to/read_dist_multiqc/output/read_dist_multiqc_GLbulkRNAseq_report /path/to/*.read_dist.out/files
 
 zip -r read_dist_multiqc_GLbulkRNAseq_report.zip /path/to/read_dist_multiqc/output/read_dist_multiqc_GLbulkRNAseq_report
 ```
@@ -726,11 +726,11 @@ zip -r read_dist_multiqc_GLbulkRNAseq_report.zip /path/to/read_dist_multiqc/outp
 - `--interactive` – force reports to use interactive plots
 - `-n` – prefix name for output files
 - `-o` – the output directory to store results
-- `/path/to/*read_dist.out/files` – the directory holding the *read_dist.out output files from [Step 6g](#6g-assess-read-distribution) provided as a positional argument
+- `/path/to/*.read_dist.out/files` – the directory holding the *.read_dist.out output files from [Step 6g](#6g-assess-read-distribution) provided as a positional argument
 
 **Input Data:**
 
-- *read_dist.out (files containing the read_distribution standard output, output from [Step 6g](#6g-assess-read-distribution))
+- *.read_dist.out (files containing the read_distribution standard output, output from [Step 6g](#6g-assess-read-distribution))
 
 **Output Data:**
 

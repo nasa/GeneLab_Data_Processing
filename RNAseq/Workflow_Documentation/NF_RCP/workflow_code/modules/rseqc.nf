@@ -30,12 +30,12 @@ process INFER_EXPERIMENT {
     path(genome_bed)
 
   output:
-    path("${meta.id}_infer_expt.out"), emit: log_only
-    tuple val(meta), path("${meta.id}_infer_expt.out"), emit: log
+    path("${meta.id}.infer_expt.out"), emit: log_only
+    tuple val(meta), path("${meta.id}.infer_expt.out"), emit: log
     path("versions.yml"), emit: versions
 
   script:
-    def log_fname = "${meta.id}_infer_expt.out"
+    def log_fname = "${meta.id}.infer_expt.out"
     """    
     infer_experiment.py -r ${genome_bed} -i ${bam_file} -s ${params.rseqc_sample_count} > ${log_fname}
 
@@ -82,14 +82,14 @@ process READ_DISTRIBUTION {
     path(genome_bed)
 
   output:
-    path("${ meta.id }_read_dist.out"), emit: log_only
-    tuple val(meta), path("${ meta.id }_read_dist.out"), emit: log
+    path("${ meta.id }.read_dist.out"), emit: log_only
+    tuple val(meta), path("${ meta.id }.read_dist.out"), emit: log
     path("versions.yml"), emit: versions
 
   script:
-    def log_fname = "${ meta.id }_read_dist.out"
+    def log_fname = "${ meta.id }.read_dist.out"
     """    
-    read_distribution.py -r ${ genome_bed } -i ${ bam_file } > ${ meta.id }_read_dist.out
+    read_distribution.py -r ${ genome_bed } -i ${ bam_file } > ${ meta.id }.read_dist.out
 
     # VERSIONS
     echo '"${task.process}":' > versions.yml
