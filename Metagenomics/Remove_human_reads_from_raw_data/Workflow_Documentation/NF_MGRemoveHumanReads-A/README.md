@@ -137,15 +137,14 @@ Sample-2
 
 ### 4. Run the workflow
 
-While in the directory holding the NextFlow file, nextflow.config file, and other workflow files that you downloaded in [step 2](#2-download-the-workflow-template-files), here is one example command of how to run the workflow:
+While in the workflow_code directory containing the NextFlow file and nextflow.config file you downloaded in [step 2](#2-download-the-workflow-template-files), here is one example command of how to run the workflow:
 
 ```bash
-nextflow run *path/to/Remove_Human_Reads.nf* -resume -ansi-log false --DL_kraken false
+nextflow run *path/to/Remove_Human_Reads.nf* -resume --DL_kraken false
 ```
 
 
 * `-resume` – continues to run the workflow using cached data from the previous run
-* `-ansi-log false` – specifies to print out each command being run to the screen instead of dynamically updating the log
 * `--specify_reads false` - processes all reads in the working directory, without requiring a sample ID list
 * `--single_end true` – indicates reads are single-ended
 * `--DL_kraken true` – runs a process before the rest of the workflow to download and install the necessary database.
