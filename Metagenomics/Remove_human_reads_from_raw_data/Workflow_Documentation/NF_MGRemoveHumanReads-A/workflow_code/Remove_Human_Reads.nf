@@ -6,7 +6,7 @@ log.info """\
     Download DB:        ${params.DL_kraken}
     Single end reads:   ${params.single_end}
     Use SampleID file:  ${params.specify_reads}
-    Outputs:            ${params.human_db_path}
+    Outputs:            ${params.kraken_output_dir}
     """
     .stripIndent()
 
