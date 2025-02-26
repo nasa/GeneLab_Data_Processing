@@ -3,7 +3,7 @@ process VV_RAW_READS {
   publishDir "${ publishdir }",
     pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
   // Publish VVed data
   publishDir "${ publishdir }",
     pattern: '00-RawData/**',
@@ -49,7 +49,7 @@ process VV_TRIMMED_READS {
   publishDir "${ publishdir }",
     pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
     pattern: '01-TG_Preproc/**',
@@ -99,7 +99,7 @@ process VV_BOWTIE2_ALIGNMENT {
   publishDir "${ publishdir }",
     pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
     pattern: '02-Bowtie2_Alignment/',
@@ -146,7 +146,7 @@ process VV_RSEQC {
   publishDir "${ publishdir }",
     pattern: "VV_log.csv",
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
     pattern: 'RSeQC_Analyses/**',
@@ -199,7 +199,7 @@ process VV_STAR_ALIGNMENTS {
   publishDir "${ publishdir }",
     pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
     pattern: '02-STAR_Alignment/',
@@ -249,7 +249,7 @@ process VV_RSEM_COUNTS {
   publishDir "${ publishdir }",
     pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
     pattern: '03-RSEM_Counts/',
@@ -295,7 +295,7 @@ process VV_DESEQ2_ANALYSIS {
   publishDir "${ publishdir }",
     pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
+    saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
     pattern: '{04-DESeq2_NormCounts,05-DESeq2_DGE}',
