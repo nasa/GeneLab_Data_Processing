@@ -67,9 +67,9 @@ def get_runsheet_paths(LinkedHashMap row) {
 }
 
 def mutate_to_single_end(it) {
-  new_meta = it[0]
-  new_meta["paired_end"] = false
-  return [new_meta, it[1]]
+    def new_meta = it[0].clone()  // Create a copy of the meta map
+    new_meta.paired_end = false   // Set paired_end to false
+    return [new_meta, [it[1][0]]] // Return only first read
 }
 
 workflow PARSE_RUNSHEET {
@@ -85,9 +85,8 @@ workflow PARSE_RUNSHEET {
             | map{ it -> params.force_single_end ? mutate_to_single_end(it) : it }
             | take( sample_limit )
 
-        // Discard paired-end read 2 & keep only read 1 for forced single-end analysis if force_single_end is true
-        ch_samples | map { it -> it[0].paired_end ? [it[0], [ it[1][0], it[1][1] ]] : [it[0], [it[1][0]]]}
-                 | set { ch_samples }
+        // Remove the redundant paired-end handling since mutate_to_single_end now handles it
+        ch_samples | set { ch_samples }
 
         // ch_samples | view
 
