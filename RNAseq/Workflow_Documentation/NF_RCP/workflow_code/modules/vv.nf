@@ -44,54 +44,6 @@ process VV_RAW_READS {
     """
 }
 
-process VV_BOWTIE2_ALIGNMENT {
-  // Log publishing
-  publishDir "${ publishdir }",
-    pattern:  "VV_log.csv" ,
-    mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
-  // V&V'ed data publishing
-  publishDir "${ publishdir }",
-    pattern: '02-Bowtie2_Alignment/',
-    mode: params.publish_dir_mode
-
-  label 'VV'
-
-  input:
-    path(dp_tools__NF_RCP)
-    val(publishdir)
-    val(meta)
-    path(runsheet)                       // Runsheet
-    path("INPUT/bowtie2-alignment-log/*") // (log files *.bowtie2.log)
-    path("INPUT/bowtie2-alignment-unmapped/*") // (unmapped reads *.Unmapped.fastq.gz)
-    path("INPUT/bowtie2-alignment-multiqc/*") // (zipped multiqc report)
-    path("INPUT/bowtie2-alignment-sorted/*") // (sorted BAMs *_sorted.bam)
-    path("INPUT/alignment-sorted-index/*") // (sorted BAM index files *_sorted.bam.bai)
-    
-
-  output:
-    path("02-Bowtie2_Alignment/")
-    path("VV_log.csv"), optional: params.skipVV, emit: log
-
-  script:
-    """
-    mv INPUT/* . || true
-    vv.py --assay-type rnaseq \
-    --assay-suffix ${params.assay_suffix} \
-    --runsheet-path ${runsheet} \
-    --outdir ${publishdir} \
-    --paired-end ${meta.paired_end} \
-    --mode microbes \
-    --bowtie2-alignment-log bowtie2-alignment-log/ \
-    --bowtie2-alignment-unmapped bowtie2-alignment-unmapped/ \
-    --bowtie2-alignment-multiqc bowtie2-alignment-multiqc/ \
-    --bowtie2-alignment-sorted bowtie2-alignment-sorted/ \
-    --bowtie2-alignment-sorted-index alignment-sorted-index/ \
-    --run-components bowtie2_alignment
-    """
-} 
-
-
 process VV_TRIMMED_READS {
   // Log publishing
   publishDir "${ publishdir }",
@@ -142,6 +94,106 @@ process VV_TRIMMED_READS {
     """
 }
 
+process VV_BOWTIE2_ALIGNMENT {
+  // Log publishing
+  publishDir "${ publishdir }",
+    pattern:  "VV_log.csv" ,
+    mode: params.publish_dir_mode,
+    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
+  // V&V'ed data publishing
+  publishDir "${ publishdir }",
+    pattern: '02-Bowtie2_Alignment/',
+    mode: params.publish_dir_mode
+
+  label 'VV'
+
+  input:
+    path(dp_tools__NF_RCP)
+    val(publishdir)
+    val(meta)
+    path(runsheet)                       // Runsheet
+    path("INPUT/bowtie2-alignment-log/*") // (log files *.bowtie2.log)
+    path("INPUT/bowtie2-alignment-unmapped/*") // (unmapped reads *.Unmapped.fastq.gz)
+    path("INPUT/bowtie2-alignment-multiqc/*") // (zipped multiqc report)
+    path("INPUT/bowtie2-alignment-sorted/*") // (sorted BAMs *_sorted.bam)
+    path("INPUT/alignment-sorted-index/*") // (sorted BAM index files *_sorted.bam.bai)
+    
+
+  output:
+    path("02-Bowtie2_Alignment/")
+    path("VV_log.csv"), optional: params.skipVV, emit: log
+
+  script:
+    """
+    mv INPUT/* . || true
+    vv.py --assay-type rnaseq \
+    --assay-suffix ${params.assay_suffix} \
+    --runsheet-path ${runsheet} \
+    --outdir ${publishdir} \
+    --paired-end ${meta.paired_end} \
+    --mode microbes \
+    --bowtie2-alignment-log bowtie2-alignment-log/ \
+    --bowtie2-alignment-unmapped bowtie2-alignment-unmapped/ \
+    --bowtie2-alignment-multiqc bowtie2-alignment-multiqc/ \
+    --bowtie2-alignment-sorted bowtie2-alignment-sorted/ \
+    --bowtie2-alignment-sorted-index alignment-sorted-index/ \
+    --run-components bowtie2_alignment
+    """
+} 
+
+process VV_RSEQC {
+  // Log publishing
+  publishDir "${ publishdir }",
+    pattern: "VV_log.csv",
+    mode: params.publish_dir_mode,
+    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
+  // V&V'ed data publishing
+  publishDir "${ publishdir }",
+    pattern: 'RSeQC_Analyses/**',
+    mode: params.publish_dir_mode
+
+  label 'VV'
+
+  input:
+      path(dp_tools__NF_RCP)
+      val(publishdir)
+      val(meta)
+      path(runsheet)
+      path("INPUT/rseqc-logs/*") 
+      path("INPUT/genebody-coverage/*")
+      path("INPUT/infer-experiment/*")
+      path("INPUT/inner-distance/*")
+      path("INPUT/read-distribution/*")
+
+  output:
+      path("RSeQC_Analyses/**"), emit: rseqc_outputs
+      path("VV_log.csv"), emit: log
+      path("vv.log"), optional: params.skipVV, emit: log_txt
+
+  script:
+  def inner_distance = meta.paired_end ? "--inner-distance inner-distance/" : ""
+  """
+  # If single-end data, remove inner-distance directory since it's not applicable
+  if [ "${meta.paired_end}" == "false" ]; then
+    rm -rf INPUT/inner-distance
+  fi
+  
+  mv INPUT/* . || true
+  
+  vv.py --assay-type rnaseq \
+  --assay-suffix ${params.assay_suffix} \
+  --runsheet-path ${runsheet} \
+  --outdir ${publishdir} \
+  --paired-end ${meta.paired_end} \
+  --mode microbes \
+  --run-components rseqc \
+  --genebody-coverage genebody-coverage/ \
+  --infer-experiment infer-experiment/ \
+  ${inner_distance} \
+  --read-distribution read-distribution/
+  """
+}
+
 process VV_STAR_ALIGNMENTS {
   // Log publishing
   publishDir "${ publishdir }",
@@ -189,69 +241,7 @@ process VV_STAR_ALIGNMENTS {
     """
 
 }
-process VV_RSEQC {
-  // Log publishing
-  publishDir "${ publishdir }",
-    pattern:  "VV_log.csv" ,
-    mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }${ params.assay_suffix }.csv" }
-  // V&V'ed data publishing
-  publishDir "${ publishdir }",
-    pattern: 'RSeQC_Analyses/',
-    mode: params.publish_dir_mode
 
-  label 'VV'
-
-  input:
-    val(publishdir)
-    val(meta)
-    path("VV_INPUT/Metadata/*")
-    path("VV_INPUT/RSeQC_Analyses/*") // direct logs
-    path("VV_INPUT/RSeQC_Analyses/02_geneBody_coverage/*") // genebody multiqc
-    path("VV_INPUT/RSeQC_Analyses/03_infer_experiment/*") // genebody multiqc
-    path("VV_INPUT/RSeQC_Analyses/04_inner_distance/*") // genebody multiqc
-    path("VV_INPUT/RSeQC_Analyses/05_read_distribution/*") // genebody multiqc
-    path(dp_tools__NF_RCP)
-
-  output:
-    path("RSeQC_Analyses")
-    path("VV_log.csv"), optional: params.skipVV, emit: log
-
-  script:
-    """
-    # move from VV_INPUT to task directory
-    # This allows detection as output files for publishing
-    mv VV_INPUT/* . || true
-    sort_into_subdirectories_by_sample.py RSeQC_Analyses RSeQC_Analyses/02_geneBody_coverage '.geneBodyCoverage.txt'
-    sort_into_subdirectories_by_sample.py RSeQC_Analyses RSeQC_Analyses/02_geneBody_coverage '.geneBodyCoverage.curves.pdf'
-    sort_into_subdirectories_by_sample.py RSeQC_Analyses RSeQC_Analyses/02_geneBody_coverage '.geneBodyCoverage.r'
-    # These are not in sub directories: sort_into_subdirectories_by_sample.py RSeQC_Analyses RSeQC_Analyses/03_infer_experiment '_infer_expt.out'
-    mv RSeQC_Analyses/*_infer_expt.out RSeQC_Analyses/03_infer_experiment
-    ${ meta.paired_end ? '' : '# Only for Paired end datasets: '} sort_into_subdirectories_by_sample.py RSeQC_Analyses RSeQC_Analyses/04_inner_distance '.inner_distance_freq.txt'
-    ${ meta.paired_end ? '' : '# Only for Paired end datasets: '} sort_into_subdirectories_by_sample.py RSeQC_Analyses RSeQC_Analyses/04_inner_distance '.inner_distance_plot.pdf'
-    ${ meta.paired_end ? '' : '# Only for Paired end datasets: '} sort_into_subdirectories_by_sample.py RSeQC_Analyses RSeQC_Analyses/04_inner_distance '.inner_distance_plot.r'
-    ${ meta.paired_end ? '' : '# Only for Paired end datasets: '} sort_into_subdirectories_by_sample.py RSeQC_Analyses RSeQC_Analyses/04_inner_distance '.inner_distance.txt'
-    # These are not in sub directories: sort_into_subdirectories_by_sample.py RSeQC_Analyses/05_read_distribution RSeQC_Analyses/05_read_distribution '_read_dist.out'
-    mv RSeQC_Analyses/*_read_dist.out RSeQC_Analyses/05_read_distribution
-
-
-    # Run V&V unless user requests to skip V&V
-    if ${ !params.skipVV } ; then
-      dpt validation run ${dp_tools__NF_RCP} . Metadata/*_runsheet.csv \\
-                          --data-asset-key-sets  \\
-                            ${ meta.paired_end ? "'RSeQC output for paired end data'" : "'RSeQC output for single end data'"} \\
-                          --run-components \\
-                            'RSeQC,RSeQC By Sample' \\
-                          --max-flag-code ${ params.max_flag_code } \\
-                          --output VV_log.csv
-    fi
-
-    # Remove all placeholder files and empty directories to prevent publishing
-    find RSeQC_Analyses -type f,l -name *.placeholder -delete
-    find RSeQC_Analyses -empty -type d -delete
-    """
-
-}
 
 
 process VV_RSEM_COUNTS {

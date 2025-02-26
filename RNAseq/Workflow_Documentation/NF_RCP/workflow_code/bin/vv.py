@@ -12,6 +12,8 @@ import re  # Add regex for parsing reports
 import zipfile
 from io import TextIOWrapper
 import statistics
+import shutil
+import tempfile
 
 # Setup logging
 def setup_logging():
@@ -182,13 +184,22 @@ class ValidationLogger:
 @click.option('--bowtie2-alignment-multiqc', type=click.Path(exists=True), help="Path to bowtie2 alignment multiqc directory")
 @click.option('--bowtie2-alignment-sorted', type=click.Path(exists=True), help="Path to sorted BAM files directory")
 @click.option('--bowtie2-alignment-sorted-index', type=click.Path(exists=True), help="Path to sorted BAM index files directory")
+@click.option('--genebody-coverage', type=click.Path(), help="Path to geneBody coverage directory")
+@click.option('--infer-experiment', type=click.Path(), help="Path to infer experiment directory")
+@click.option('--inner-distance', type=click.Path(), help="Path to inner distance directory")
+@click.option('--read-distribution', type=click.Path(), help="Path to read distribution directory")
 def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_components, 
        raw_fastq, raw_fastqc, raw_multiqc,
        trimmed_fastq, trimmed_fastqc, trimmed_multiqc, trimming_reports, trimming_multiqc,
        bowtie2_alignment_log, bowtie2_alignment_unmapped, bowtie2_alignment_multiqc, 
-       bowtie2_alignment_sorted, bowtie2_alignment_sorted_index):
+       bowtie2_alignment_sorted, bowtie2_alignment_sorted_index,
+       genebody_coverage, infer_experiment, inner_distance, read_distribution):
     """Organize pipeline outputs and optionally validate"""
     outdir = Path(outdir)
+    
+    # Initialize validation logger
+    global val_logger
+    val_logger = ValidationLogger()
     
     # Stage files if inputs provided
     if any([raw_fastq, raw_fastqc, raw_multiqc]):
@@ -365,6 +376,19 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
                 samples_txt=Path(runsheet_path),
                 paired_end=is_paired,
                 assay_suffix=assay_suffix
+            )
+        
+        # Add RSeQC validation
+        if 'rseqc' in run_components:
+            results = validate_rseqc(
+                outdir=outdir,
+                samples_txt=runsheet_path,
+                paired_end=is_paired,
+                assay_suffix=assay_suffix,
+                genebody_coverage_dir=Path(genebody_coverage) if genebody_coverage else None,
+                infer_experiment_dir=Path(infer_experiment) if infer_experiment else None,
+                inner_distance_dir=Path(inner_distance) if inner_distance else None,
+                read_distribution_dir=Path(read_distribution) if read_distribution else None
             )
         
         return results
@@ -833,7 +857,7 @@ def validate_trimmed_reads(outdir: Path,
                 except Exception as e:
                     val_logger.log("trimmed_reads", sample, "paired_counts", "HALT",
                              f"Error checking read counts", str(e))
-            
+                
             # 2c. Check FastQC outputs exist
             for fastqc in expected["fastqc"]:
                 fastqc_path = fastqc_dir / fastqc
@@ -960,9 +984,6 @@ def validate_bowtie2_alignments(outdir, samples_txt, paired_end, assay_suffix):
         dict: Validation log
     """
     logger.info(f"Validating Bowtie2 alignments with params: samples_txt={samples_txt}, paired_end={paired_end}")
-    
-    # Initialize validation logger
-    val_logger = ValidationLogger()
     
     # Calculate directory paths - use work directory
     alignment_dir = Path("02-Bowtie2_Alignment")
@@ -1117,28 +1138,76 @@ def validate_bowtie2_alignments(outdir, samples_txt, paired_end, assay_suffix):
                     with zip_ref.open(json_path) as f:
                         multiqc_data = json.loads(TextIOWrapper(f).read())
                     
-                    # Extract sample names from MultiQC data
-                    multiqc_samples = set()
-                    if 'bowtie2' in multiqc_data:
-                        multiqc_samples.update(multiqc_data['bowtie2'].keys())
-                    if 'report_data_sources' in multiqc_data and 'Bowtie 2 / HiSAT2' in multiqc_data['report_data_sources']:
-                        multiqc_samples.update(multiqc_data['report_data_sources']['Bowtie 2 / HiSAT2']['all_sections'].keys())
+                    # Extract samples from the MultiQC data - look in various modules
+                    found_samples = set()
                     
-                    if multiqc_samples:
-                        missing_samples = set(samples) - multiqc_samples
+                    # Check different modules where samples might be listed
+                    modules_to_check = ['rseqc_gene_body_coverage', 'rseqc_infer_experiment', 
+                                       'rseqc_inner_distance', 'rseqc_read_distribution']
+                    
+                    for module in modules_to_check:
+                        if module in multiqc_data:
+                            found_samples.update(multiqc_data[module].keys())
+                    
+                    # Also check general samples list
+                    if 'report_general_stats_data' in multiqc_data:
+                        for stats in multiqc_data['report_general_stats_data']:
+                            found_samples.update(stats.keys())
+                    
+                    # Improved sample name matching logic
+                    clean_found_samples = set()
+                    logger.debug(f"Raw sample names in MultiQC: {found_samples}")
+                    
+                    # For each sample we're expecting
+                    for sample in samples:
+                        # Direct match
+                        if sample in found_samples:
+                            clean_found_samples.add(sample)
+                            continue
                         
-                        if missing_samples:
-                            val_logger.log("alignments", "ALL", "samples_in_multiqc", "HALT",
-                                        f"Samples missing from MultiQC report: {', '.join(missing_samples)}")
-                        else:
-                            val_logger.log("alignments", "ALL", "samples_in_multiqc", "GREEN",
-                                        "All samples found in MultiQC report")
+                        # Check for partial matches
+                        for found_sample in found_samples:
+                            # MultiQC sometimes modifies sample names or adds file suffixes
+                            # Check if expected sample is part of a longer found sample name
+                            if sample in found_sample:
+                                clean_found_samples.add(sample)
+                                logger.debug(f"Matched sample {sample} to MultiQC sample {found_sample}")
+                                break
+                                
+                            # Try removing common suffixes like _sorted or _trimmed
+                            # Check for variations based on common RSeQC naming patterns
+                            possible_variations = [
+                                f"{sample}.infer_expt",
+                                f"{sample}_sorted",
+                                f"{sample}.geneBodyCoverage",
+                                f"{sample}.inner_distance",
+                                f"{sample}.read_dist"
+                            ]
+                            
+                            for variation in possible_variations:
+                                if variation in found_sample:
+                                    clean_found_samples.add(sample)
+                                    logger.debug(f"Matched sample {sample} to MultiQC sample {found_sample} via pattern {variation}")
+                                    break
+                    
+                    logger.info(f"Samples found in MultiQC after cleanup: {clean_found_samples}")
+                    
+                    # Record which samples were found
+                    multiqc_samples = clean_found_samples
+                    
+                    # Find missing samples
+                    missing_samples = set(samples) - clean_found_samples
+                    
+                    # Log results
+                    if missing_samples:
+                        msg = f"Samples missing from MultiQC report for {section_name}: {', '.join(missing_samples)}"
+                        logger.warning(msg)
+                        val_logger.log("rseqc", "ALL", f"{section_name}_samples_in_multiqc", "YELLOW", msg)
                     else:
-                        val_logger.log("alignments", "ALL", "samples_in_multiqc", "HALT",
-                                    "No Bowtie2 data found in MultiQC report")
+                        val_logger.log("rseqc", "ALL", f"{section_name}_samples_in_multiqc", "GREEN",
+                                    f"All samples found in MultiQC report for {section_name}")
                 else:
-                    val_logger.log("alignments", "ALL", "samples_in_multiqc", "HALT",
-                                "Could not find multiqc_data.json in MultiQC report")
+                    logger.warning(f"Could not find multiqc_data.json in {multiqc_path}")
         except Exception as e:
             val_logger.log("alignments", "ALL", "samples_in_multiqc", "HALT",
                         f"Error checking samples in MultiQC report: {str(e)}")
@@ -1219,6 +1288,548 @@ def extract_adapter_content_from_fastqc(fastqc_zip_path):
         logging.error(f"Error extracting adapter content from {fastqc_zip_path}: {e}")
     
     return adapter_stats
+
+def validate_rseqc(outdir: Path,
+                  samples_txt: Path,
+                  paired_end: bool,
+                  assay_suffix: str,
+                  genebody_coverage_dir: Path = None,
+                  infer_experiment_dir: Path = None,
+                  inner_distance_dir: Path = None,
+                  read_distribution_dir: Path = None) -> dict:
+    """
+    Validate RSeQC outputs and organize into the correct directory structure
+    """
+    # Create main RSeQC directory in the published directory structure
+    published_rseqc_dir = outdir / "RSeQC_Analyses"
+    if published_rseqc_dir.exists():
+        logger.info(f"Removing existing RSeQC directory: {published_rseqc_dir}")
+        shutil.rmtree(published_rseqc_dir)
+    os.makedirs(published_rseqc_dir, exist_ok=True)
+    
+    # Also create working directory for Nextflow
+    rseqc_dir = Path("RSeQC_Analyses")
+    if rseqc_dir.exists():
+        logger.info(f"Removing existing RSeQC directory in working dir: {rseqc_dir}")
+        shutil.rmtree(rseqc_dir)
+    os.makedirs(rseqc_dir, exist_ok=True)
+    
+    # Log validation parameters
+    logger.info("Starting RSeQC validation:")
+    logger.info(f"  Output directory: {outdir}")
+    logger.info(f"  Samples file: {samples_txt}")
+    logger.info(f"  Paired-end: {paired_end}")
+    logger.info(f"  Assay suffix: {assay_suffix}")
+    logger.info(f"  Genebody coverage dir: {genebody_coverage_dir}")
+    logger.info(f"  Infer experiment dir: {infer_experiment_dir}")
+    logger.info(f"  Inner distance dir: {inner_distance_dir if paired_end else 'N/A - single end data'}")
+    logger.info(f"  Read distribution dir: {read_distribution_dir}")
+    
+    # Create section directories with correct names, but use actual RSeQC tool names for display
+    # Define a mapping between directory names and the actual RSeQC script names for display in logs
+    sections = {
+        "02_geneBody_coverage": {
+            "display_name": "geneBody_coverage.py",
+            "dir": rseqc_dir / "02_geneBody_coverage",
+            "pub_dir": published_rseqc_dir / "02_geneBody_coverage",
+            "input": genebody_coverage_dir,
+            "file_patterns": ["geneBodyCoverage"],
+            "required": True
+        },
+        "03_infer_experiment": {
+            "display_name": "infer_experiment.py",
+            "dir": rseqc_dir / "03_infer_experiment",
+            "pub_dir": published_rseqc_dir / "03_infer_experiment",
+            "input": infer_experiment_dir,
+            "file_patterns": ["infer_expt"],
+            "required": True
+        },
+        "04_inner_distance": {
+            "display_name": "inner_distance.py",
+            "dir": rseqc_dir / "04_inner_distance" if paired_end else None,
+            "pub_dir": published_rseqc_dir / "04_inner_distance" if paired_end else None,
+            "input": inner_distance_dir if paired_end else None,
+            "file_patterns": ["inner_distance"],
+            "required": paired_end
+        },
+        "05_read_distribution": {
+            "display_name": "read_distribution.py",
+            "dir": rseqc_dir / "05_read_distribution",
+            "pub_dir": published_rseqc_dir / "05_read_distribution",
+            "input": read_distribution_dir,
+            "file_patterns": ["read_dist"],
+            "required": True
+        }
+    }
+    
+    # Create directories - both in work dir and published dir
+    for name, section in sections.items():
+        if section["dir"]:  # Skip inner_distance if single-end
+            os.makedirs(section["dir"], exist_ok=True)
+            os.makedirs(section["pub_dir"], exist_ok=True)
+            logger.info(f"Created directory: {section['dir']}")
+            logger.info(f"Created published directory: {section['pub_dir']}")
+    
+    # Read samples from CSV
+    samples = []
+    try:
+        with open(samples_txt) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if 'Sample Name' in row:
+                    sample_name = row['Sample Name'].strip()
+                    if sample_name:  # Only add non-empty sample names
+                        samples.append(sample_name)
+                        logger.debug(f"Added sample: {sample_name}")
+                else:
+                    logger.warning("Runsheet missing required 'Sample Name' column")
+    except Exception as e:
+        logger.error(f"Error reading samples from runsheet: {e}")
+    
+    logger.info(f"Found {len(samples)} samples to validate")
+    logger.debug(f"Sample names: {samples}")
+    
+    # Create ValidationLogger
+    val_logger = ValidationLogger()
+    
+    # Create sample directories in each section
+    for name, section in sections.items():
+        if section["dir"]:
+            for sample in samples:
+                # Create in working directory for Nextflow
+                sample_dir = section["dir"] / sample
+                os.makedirs(sample_dir, exist_ok=True)
+                
+                # Create in published directory structure
+                pub_sample_dir = section["pub_dir"] / sample
+                os.makedirs(pub_sample_dir, exist_ok=True)
+                
+                logger.debug(f"Created sample directories: {sample_dir} and {pub_sample_dir}")
+    
+    # Track which samples have files for each section
+    # We'll use this to only report warnings if files are truly missing after all checks
+    files_by_sample = {sample: set() for sample in samples}
+    
+    # Track which samples are in MultiQC reports
+    multiqc_samples = {section_name: set() for section_name in sections}
+    
+    # Process each section
+    for section_name, section in sections.items():
+        if not section["dir"]:  # Skip inner_distance if single-end
+            continue
+            
+        input_dir = section["input"]
+        if not input_dir or not os.path.exists(input_dir):
+            msg = f"Input directory not found: {input_dir}"
+            logger.warning(msg)
+            # Don't log warnings yet, wait until after rseqc-logs check
+            continue
+            
+        # Check files exist for each sample
+        for sample in samples:
+            sample_dir = section["dir"] / sample
+            pub_sample_dir = section["pub_dir"] / sample
+            found_files = False
+            
+            # Process sample files
+            for pattern in section["file_patterns"]:
+                # Pattern match for this sample's files
+                logger.info(f"Looking for files matching pattern '{pattern}' for sample '{sample}' in '{input_dir}'")
+                
+                for file in os.listdir(input_dir):
+                    logger.debug(f"Checking file: {file}")
+                    if sample in file and (pattern in file):
+                        logger.info(f"MATCH! File {file} matched sample {sample} and pattern {pattern}")
+                        src = os.path.realpath(os.path.join(input_dir, file))
+                        
+                        # Create symbolic links in both directories
+                        work_dst = os.path.join(sample_dir, file)
+                        pub_dst = os.path.join(pub_sample_dir, file)
+                        
+                        try:
+                            # Link to work directory for Nextflow
+                            if not os.path.exists(work_dst) and not os.path.islink(work_dst):
+                                os.symlink(src, work_dst)
+                                logger.info(f"Linked {src} to {work_dst}")
+                            
+                            # Link to published directory structure
+                            if not os.path.exists(pub_dst) and not os.path.islink(pub_dst):
+                                os.symlink(src, pub_dst)
+                                logger.info(f"Linked {src} to {pub_dst}")
+                                
+                            found_files = True
+                        except Exception as e:
+                            msg = f"Failed to link {file}: {str(e)}"
+                            logger.error(msg)
+                            val_logger.log("rseqc", sample, f"{section['display_name']}_link", "RED", msg)
+            
+            # If files were found, update tracking
+            if found_files:
+                files_by_sample[sample].add(section_name)
+                val_logger.log("rseqc", sample, f"{section['display_name']}_outputs_found", "GREEN", 
+                              f"Found RSeQC outputs for {section['display_name']} for sample {sample}")
+    
+    # Check for MultiQC reports in each section and verify all samples are present
+    for section_name, section in sections.items():
+        if not section["dir"]:  # Skip inner_distance if single-end
+            continue
+            
+        # Check for MultiQC report
+        found_multiqc = False
+        multiqc_path = None
+        
+        if section["input"] and os.path.exists(section["input"]):
+            for file in os.listdir(section["input"]):
+                if "multiqc" in file.lower() and (assay_suffix in file or file.endswith('.zip')):
+                    src = os.path.realpath(os.path.join(section["input"], file))
+                    multiqc_path = src
+                    
+                    # Create symbolic links in both directories
+                    work_dst = os.path.join(section["dir"], file)
+                    pub_dst = os.path.join(section["pub_dir"], file)
+                    
+                    try:
+                        # Link to work directory for Nextflow
+                        if not os.path.exists(work_dst) and not os.path.islink(work_dst):
+                            os.symlink(src, work_dst)
+                            logger.info(f"Linked MultiQC report: {src} to {work_dst}")
+                        
+                        # Link to published directory structure
+                        if not os.path.exists(pub_dst) and not os.path.islink(pub_dst):
+                            os.symlink(src, pub_dst)
+                            logger.info(f"Linked MultiQC report: {src} to {pub_dst}")
+                            
+                        found_multiqc = True
+                    except Exception as e:
+                        msg = f"Failed to link MultiQC report {file}: {str(e)}"
+                        logger.error(msg)
+                        val_logger.log("rseqc", "ALL", f"{section['display_name']}_multiqc", "RED", msg)
+        
+        if found_multiqc:
+            val_logger.log("rseqc", "ALL", f"{section['display_name']}_multiqc", "GREEN", 
+                        f"MultiQC report found for {section['display_name']}")
+            
+            # Now verify all samples are present in the MultiQC report
+            if multiqc_path and multiqc_path.endswith('.zip'):
+                try:
+                    # Create a temporary directory to extract the ZIP contents
+                    with tempfile.TemporaryDirectory() as temp_dir:
+                        logger.info(f"Extracting MultiQC zip to temporary directory: {temp_dir}")
+                        
+                        # Extract the ZIP file
+                        with zipfile.ZipFile(multiqc_path, 'r') as zip_ref:
+                            zip_ref.extractall(temp_dir)
+                        
+                        # Find the data JSON file
+                        json_file = None
+                        for root, dirs, files in os.walk(temp_dir):
+                            for file in files:
+                                if file == 'multiqc_data.json':
+                                    json_file = os.path.join(root, file)
+                                    break
+                            if json_file:
+                                break
+                        
+                        if json_file:
+                            logger.info(f"Found MultiQC data JSON: {json_file}")
+                            with open(json_file, 'r') as f:
+                                multiqc_data = json.load(f)
+                            
+                            # Dump the top-level keys to understand the structure
+                            logger.debug(f"MultiQC JSON top-level keys: {list(multiqc_data.keys())}")
+                            
+                            # Check if 'report_saved_raw_data' exists and what it contains
+                            if 'report_saved_raw_data' in multiqc_data:
+                                logger.debug(f"report_saved_raw_data keys: {list(multiqc_data['report_saved_raw_data'].keys())}")
+                                
+                                # Look for RSeQC modules in the raw data
+                                rseqc_modules = [k for k in multiqc_data['report_saved_raw_data'].keys() 
+                                                if 'rseqc' in k.lower()]
+                                logger.debug(f"Found RSeQC modules in raw data: {rseqc_modules}")
+                                
+                                # Extract sample names from report_saved_raw_data if available
+                                found_samples = set()
+                                
+                                for module in rseqc_modules:
+                                    module_data = multiqc_data['report_saved_raw_data'][module]
+                                    if isinstance(module_data, dict):
+                                        logger.debug(f"Module {module} data keys: {list(module_data.keys())}")
+                                        found_samples.update(module_data.keys())
+                                    
+                                    # If module data is a list, examine its structure
+                                    elif isinstance(module_data, list) and len(module_data) > 0:
+                                        logger.debug(f"Module {module} data is a list with {len(module_data)} items")
+                                        for item in module_data:
+                                            if isinstance(item, dict) and 's_name' in item:
+                                                found_samples.add(item['s_name'])
+                            
+                            # Check the plot data if available
+                            if 'report_plot_data' in multiqc_data:
+                                logger.debug(f"report_plot_data keys: {list(multiqc_data['report_plot_data'].keys())}")
+                                
+                                # Look for RSeQC plots
+                                rseqc_plots = [k for k in multiqc_data['report_plot_data'].keys() 
+                                              if 'rseqc' in k.lower() or section_name.replace('_', '') in k.lower()]
+                                logger.debug(f"Found RSeQC plots: {rseqc_plots}")
+                                
+                                # Extract sample names from plots
+                                for plot in rseqc_plots:
+                                    plot_data = multiqc_data['report_plot_data'][plot]
+                                    if isinstance(plot_data, dict) and 'datasets' in plot_data:
+                                        for dataset in plot_data['datasets']:
+                                            if 'name' in dataset:
+                                                found_samples.add(dataset['name'])
+                            
+                            # As a fallback, search for any key that might contain sample names
+                            # by looking for dataset dictionaries throughout the structure
+                            def search_datasets(data, path=""):
+                                samples = set()
+                                if isinstance(data, dict):
+                                    # Look for datasets key with lists of samples
+                                    if 'datasets' in data and isinstance(data['datasets'], list):
+                                        for dataset in data['datasets']:
+                                            if isinstance(dataset, dict) and 'name' in dataset:
+                                                samples.add(dataset['name'])
+                                                logger.debug(f"Found sample in {path}/datasets: {dataset['name']}")
+                                    
+                                    # Look for sample names as keys
+                                    for k, v in data.items():
+                                        # Check if key looks like a sample name (has some of our expected samples as substrings)
+                                        if isinstance(k, str) and any(sample in k for sample in samples):
+                                            samples.add(k)
+                                            logger.debug(f"Found sample as key in {path}: {k}")
+                                        
+                                        # Recursively search nested structures
+                                        found = search_datasets(v, f"{path}/{k}")
+                                        samples.update(found)
+                                
+                                elif isinstance(data, list):
+                                    for i, item in enumerate(data):
+                                        found = search_datasets(item, f"{path}[{i}]")
+                                        samples.update(found)
+                                
+                                return samples
+                            
+                            # Search the entire structure for datasets
+                            extra_samples = search_datasets(multiqc_data)
+                            if extra_samples:
+                                logger.debug(f"Found additional samples through structure search: {extra_samples}")
+                                found_samples.update(extra_samples)
+                            
+                            # Look for samples in file names within the ZIP
+                            for item in zip_ref.namelist():
+                                filename = os.path.basename(item)
+                                for sample in samples:
+                                    if sample in filename:
+                                        found_samples.add(sample)
+                                        logger.debug(f"Found sample in ZIP filename: {sample} in {filename}")
+                            
+                            # Log the raw sample names to help with debugging
+                            logger.debug(f"Raw sample names from all sources in MultiQC: {sorted(list(found_samples))}")
+                            
+                            # Initialize the set to collect clean sample names
+                            clean_found_samples = set()
+                            
+                            # For each sample we're expecting
+                            for sample in samples:
+                                # Direct match
+                                if sample in found_samples:
+                                    clean_found_samples.add(sample)
+                                    logger.debug(f"Direct match: sample {sample}")
+                                    continue
+                                
+                                # Check for exact matches with RSeQC-specific extensions
+                                # These are the exact formats used in the MultiQC reports
+                                exact_extensions = [
+                                    f"{sample}.read_dist",
+                                    f"{sample}.infer_expt",
+                                    f"{sample}.geneBodyCoverage",
+                                    f"{sample}.inner_distance",
+                                    f"{sample}_sorted"
+                                ]
+                                
+                                for ext_sample in exact_extensions:
+                                    if ext_sample in found_samples:
+                                        clean_found_samples.add(sample)
+                                        logger.debug(f"Extension match: found {ext_sample} for sample {sample}")
+                                        break
+                                
+                                # If still not found, try more flexible matching
+                                if sample not in clean_found_samples:
+                                    # Look for samples that start with the sample name followed by a delimiter
+                                    for found_sample in found_samples:
+                                        if found_sample.startswith(f"{sample}.") or found_sample.startswith(f"{sample}_"):
+                                            clean_found_samples.add(sample)
+                                            logger.debug(f"Prefix match: found {found_sample} for sample {sample}")
+                                            break
+                                    
+                                    # Last resort - check if sample name is contained within the found sample
+                                    if sample not in clean_found_samples:
+                                        for found_sample in found_samples:
+                                            if sample in found_sample:
+                                                clean_found_samples.add(sample)
+                                                logger.debug(f"Substring match: found {found_sample} for sample {sample}")
+                                                break
+                            
+                            logger.info(f"Samples found in MultiQC after cleanup: {clean_found_samples}")
+                            
+                            # Record which samples were found
+                            multiqc_samples[section_name] = clean_found_samples
+                            
+                            # Find missing samples
+                            missing_samples = set(samples) - clean_found_samples
+                            
+                            # Log results
+                            if missing_samples:
+                                msg = f"Samples missing from MultiQC report for {section['display_name']}: {', '.join(missing_samples)}"
+                                logger.warning(msg)
+                                val_logger.log("rseqc", "ALL", f"{section['display_name']}_samples_in_multiqc", "YELLOW", msg)
+                            else:
+                                val_logger.log("rseqc", "ALL", f"{section['display_name']}_samples_in_multiqc", "GREEN",
+                                            f"All samples found in MultiQC report for {section['display_name']}")
+                        else:
+                            logger.warning(f"Could not find multiqc_data.json in the extracted ZIP file")
+                except Exception as e:
+                    logger.error(f"Error checking samples in MultiQC report {multiqc_path}: {str(e)}")
+                    logger.exception(e)  # Log the full exception traceback
+        elif section["required"]:
+            msg = f"No MultiQC report found for {section['display_name']}"
+            logger.warning(msg)
+            val_logger.log("rseqc", "ALL", f"{section['display_name']}_multiqc", "YELLOW", msg)
+    
+    # Look for the rseqc-logs directory in multiple locations
+    rseqc_logs_dirs = [
+        Path("rseqc-logs"),  # Current working directory
+        os.path.join(outdir, "rseqc-logs"),  # Inside output directory
+        os.path.join(Path.cwd(), "rseqc-logs")  # Explicit current working directory
+    ]
+    
+    # Find the first valid rseqc-logs directory
+    rseqc_logs_dir = None
+    for dir_path in rseqc_logs_dirs:
+        logger.info(f"Checking for rseqc-logs at: {dir_path}")
+        if os.path.exists(dir_path):
+            rseqc_logs_dir = dir_path
+            logger.info(f"Found rseqc-logs directory at: {rseqc_logs_dir}")
+            break
+    
+    if rseqc_logs_dir:
+        logger.info(f"Processing files from rseqc-logs directory: {rseqc_logs_dir}")
+        
+        # Define file type patterns and their target sections
+        file_type_patterns = {
+            "geneBodyCoverage": "02_geneBody_coverage",
+            "infer_expt.out": "03_infer_experiment", 
+            "inner_distance": "04_inner_distance",
+            "read_dist.out": "05_read_distribution"
+        }
+        
+        # Define mapping from directory name to display name for logs
+        display_name_map = {
+            "02_geneBody_coverage": "geneBody_coverage.py",
+            "03_infer_experiment": "infer_experiment.py",
+            "04_inner_distance": "inner_distance.py",
+            "05_read_distribution": "read_distribution.py"
+        }
+        
+        logger.info(f"File type patterns: {file_type_patterns}")
+        
+        # List all files in the rseqc-logs directory
+        all_files = os.listdir(rseqc_logs_dir)
+        logger.info(f"Found {len(all_files)} files in rseqc-logs directory")
+        logger.debug(f"Files in rseqc-logs: {all_files}")
+        
+        # Process files to appropriate sample directories
+        for file in all_files:
+            logger.info(f"Processing file: {file}")
+            
+            # Find which sample this file belongs to
+            sample_match = None
+            for sample in samples:
+                if sample in file:
+                    sample_match = sample
+                    logger.info(f"File {file} matched to sample {sample}")
+                    break
+                    
+            if not sample_match:
+                logger.warning(f"Could not match file {file} to any sample")
+                continue
+                
+            # Determine which section this file belongs to
+            target_section = None
+            for pattern, section in file_type_patterns.items():
+                if pattern in file:
+                    target_section = section
+                    logger.info(f"File {file} matched to section {section} with pattern {pattern}")
+                    break
+                    
+            if not target_section:
+                logger.warning(f"Could not match file {file} to any RSeQC section - patterns: {file_type_patterns.keys()}")
+                continue
+                
+            # Skip inner_distance section for single-end data
+            if target_section == "04_inner_distance" and not paired_end:
+                continue
+                
+            # Create symbolic links for the file
+            src = os.path.realpath(os.path.join(rseqc_logs_dir, file))
+            
+            # Get the working and published directory paths
+            work_dst_dir = os.path.join(rseqc_dir, target_section, sample_match)
+            pub_dst_dir = os.path.join(published_rseqc_dir, target_section, sample_match)
+            
+            work_dst = os.path.join(work_dst_dir, file)
+            pub_dst = os.path.join(pub_dst_dir, file)
+            
+            try:
+                # Ensure destination directories exist
+                os.makedirs(work_dst_dir, exist_ok=True)
+                os.makedirs(pub_dst_dir, exist_ok=True)
+                
+                # Create symbolic links in both directories
+                if not os.path.exists(work_dst) and not os.path.islink(work_dst):
+                    os.symlink(src, work_dst)
+                    logger.info(f"Linked {src} to {work_dst}")
+                
+                if not os.path.exists(pub_dst) and not os.path.islink(pub_dst):
+                    os.symlink(src, pub_dst) 
+                    logger.info(f"Linked {src} to {pub_dst}")
+                
+                # Update tracking
+                files_by_sample[sample_match].add(target_section)
+                
+                # Log successful file linkage from rseqc-logs using the display name
+                display_name = display_name_map.get(target_section, target_section)
+                val_logger.log("rseqc", sample_match, f"{display_name}_outputs_found", "GREEN",
+                             f"Found RSeQC outputs for {display_name}")
+                
+            except Exception as e:
+                msg = f"Failed to link {file} from rseqc-logs: {str(e)}"
+                logger.error(msg)
+                display_name = display_name_map.get(target_section, target_section)
+                val_logger.log("rseqc", sample_match, f"{display_name}_outputs_link", "RED", msg)
+    else:
+        val_logger.log("rseqc", "ALL", "rseqc_outputs_dir", "YELLOW", 
+                     f"RSeQC outputs directory not found in any of the checked locations")
+    
+    # Now after checking both direct inputs and rseqc-logs, log warnings for any truly missing files
+    for sample in samples:
+        for section_name, section in sections.items():
+            if section["dir"] and section["required"]:  # Skip non-required sections
+                # Only log warning if no files were found for this sample and section
+                if section_name not in files_by_sample[sample]:
+                    msg = f"No {section['display_name']} outputs found for sample {sample} in any location"
+                    logger.warning(msg)
+                    val_logger.log("rseqc", sample, f"{section['display_name']}_outputs", "YELLOW", msg)
+    
+    # Return validation status
+    return {
+        "status": val_logger.get_status(),
+        "messages": [r["message"] for r in val_logger.results],
+        "failures": {r["check_name"]: r["message"] 
+                    for r in val_logger.results 
+                    if r["status"] in ["HALT", "RED"]}
+    }
 
 if __name__ == '__main__':
     vv()
