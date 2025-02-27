@@ -2445,7 +2445,7 @@ write_csv(merged_df %>%
 
 **Output Data:**
 
-* **differential_abundance/ancombc1/<output_prefix>(<group1>)v(<group2>)_volcano.png** (Comparion Volcano Plot)
+* **differential_abundance/ancombc1/<output_prefix>(\<group1\>)v(\<group2\>)_volcano.png** (Comparion Volcano Plot)
 * **differential_abundance/ancombc1/<output_prefix>ancombc1_differential_abundance_GLAmpSeq.csv** (Statistics Table)
 <br>
 
@@ -2807,7 +2807,7 @@ volcano_plots <- map(uniq_comps, function(comparison){
 
 **Output Data:**
 
-* **differential_abundance/ancombc2/<output_prefix>(<group1>)v(<group2>)_volcano.png** (Comparion Volcano Plot)
+* **differential_abundance/ancombc2/<output_prefix>(\<group1\>)v(\<group2\>)_volcano.png** (Comparion Volcano Plot)
 * **differential_abundance/ancombc2/<output_prefix>ancombc2_differential_abundance_GLAmpSeq.csv** (Statistics Table)
 
 
@@ -3113,7 +3113,7 @@ walk(pairwise_comp_df, function(col){
 
 **Output Data:**
 
-* **differential_abundance/deseq2/<output_prefix>volcano_(<group1>)v(<group2>).png** (Comparion Volcano Plot)
+* **differential_abundance/deseq2/<output_prefix>volcano_(\<group1\>)v(\<group2\>).png** (Comparion Volcano Plot)
 * **differential_abundance/deseq2/<output_prefix>deseq2_differential_abundance_GLAmpSeq.csv** (Statistics Table)
 <br>
 
