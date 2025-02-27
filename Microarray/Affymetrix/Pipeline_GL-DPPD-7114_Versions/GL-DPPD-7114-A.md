@@ -819,16 +819,26 @@ if (organism %in% c("athaliana")) {
   expected_dataset_name <- shortenedOrganismName(unique(df_rs$organism)) %>% stringr::str_c("_gene_ensembl")
   print(paste0("Expected dataset name: '", expected_dataset_name, "'"))
 
+  expected_attribute_name <- getBioMartAttribute(df_rs)
+  print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
 
   # Specify Ensembl version used in current GeneLab reference annotations
   ENSEMBL_VERSION <- ensembl_version
 
   print(glue::glue("Using Ensembl biomart to get specific version of mapping table. Ensembl version: {ENSEMBL_VERSION}"))
 
-  # Check if organism in supported in biomart
-  ensembl <- biomaRt::useEnsembl(biomart = "genes")
+  # Check if organism/array design is supported in biomart
+  use_custom_annot <- TRUE
+
+  ensembl <- biomaRt::useEnsembl(biomart = "genes", version = ENSEMBL_VERSION)
   ensembl_datasets <- biomaRt::listDatasets(ensembl)
-  use_custom_annot <- !expected_dataset_name %in% ensembl_datasets$dataset
+  if (expected_dataset_name %in% ensembl_datasets$dataset) {
+    ensembl <- biomaRt::useEnsembl(biomart = "genes", dataset = expected_dataset_name, version = ENSEMBL_VERSION)
+    ensembl_attributes <- biomaRt::listAttributes(ensembl)
+    if (expected_attribute_name %in% ensembl_attributes$name) {
+      use_custom_annot <- FALSE
+    }
+  }
 
   if (use_custom_annot) {
     unloadNamespace("biomaRt")
@@ -838,9 +848,6 @@ if (organism %in% c("athaliana")) {
                                   dataset = expected_dataset_name,
                                   version = ENSEMBL_VERSION)
     print(ensembl)
-
-    expected_attribute_name <- getBioMartAttribute(df_rs)
-    print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
 
     # Some probe_ids for affy_hta_2_0 may end in .hg.1 instead of .hg (how it is in biomaRt), leading to 0 results returned
     if (expected_attribute_name == 'affy_hta_2_0') {
@@ -923,7 +930,7 @@ if (use_custom_annot) {
     if (sum(!is.na(unique_probe_ids$ENTREZID)) > sum(!is.na(unique_probe_ids$ENSEMBL))) {
       gene_col <- 'ENTREZID'
     }
-    if (sum(!is.na(unique_probe_ids$SYMBOL)) > sum(!is.na(unique_probe_ids$ENTREZID))) {
+    if (sum(!is.na(unique_probe_ids$SYMBOL)) > max(sum(!is.na(unique_probe_ids$ENTREZID)), sum(!is.na(unique_probe_ids$ENSEMBL)))) {
       gene_col <- 'SYMBOL'
     }
 
@@ -1126,7 +1133,7 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 
 ## 9. Perform Probeset Differential Expression (DE)
 
-> Note: Run differential expression analysis only if there is at least 2 replicates per factor group.
+> Note: Run differential expression analysis only if there are at least 2 replicates per factor group.
 
 <br>
 
