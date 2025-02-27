@@ -467,7 +467,7 @@ df <- results(deseq_modeled, contrast = c(group, group1, group2)) %>%
 
             
   merged_stats_df <<- merged_stats_df %>% 
-                          dplyr::left_join(df, join_by("ASV"))
+                          dplyr::left_join(df, join_by(!!feature))
 })
 
 
@@ -478,6 +478,7 @@ tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","")  %>%
                      function(row) row[length(row)])
 
 df <- data.frame(ASV=rownames(taxonomy_table), best_taxonomy=tax_names)
+colnames(df) <- c(feature, "best_taxonomy")
 
 # Pull NCBI IDS for unique taxonomy names
 df2 <- data.frame(best_taxonomy = df$best_taxonomy %>%

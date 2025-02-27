@@ -14,7 +14,7 @@ Olabiyi Obayomi, Alexis Torres, and Michael D. Lee (GeneLab Data Processing Team
 **Approved by:**  
 Samrawit Gebre (OSDR Project Manager)  
 Danielle Lopez (OSDR Deputy Project Manager)  
-Lauren Sanders (OSDR Project Scientist)  
+Jonathan Galazka (OSDR Project Scientist)  
 Amanda Saravia-Butler (GeneLab Science Lead)  
 Barbara Novak (GeneLab Data Processing Lead)  
 
@@ -23,7 +23,7 @@ Barbara Novak (GeneLab Data Processing Lead)
 ## Updates from previous version
 
 Updated reference files:
-- ITS UNITE: "UNITE_v2023_July2023.RData" from [DECIPHER](http://www2.decipher.codes/Classification/TrainingSets/)
+- ITS UNITE: "UNITE\_v2023\_July2023.RData" from [DECIPHER](http://www2.decipher.codes/Classification/TrainingSets/)
 
 Software Updates and Changes:
 
@@ -402,7 +402,7 @@ reverse_seqs <- dada(derep=“sample1_R2_filtered.fastq.gz”, err=reverse_error
 
 **Output Data:**
 
-* `forward_seqs` (dada-class object the forward-read inferred sequences)
+* `forward_seqs` (dada-class object storing the forward-read inferred sequences)
 * `reverse_seqs` (dada-class object storing the reverse-read inferred sequences (only for paired-end))
 
 <br>
@@ -484,7 +484,7 @@ dna <- DNAStringSet(getSequences(seqtab.nochim))
 ## Downloading the reference R taxonomy object: ##
 # url - reference database URL address to download
 # destfile - local path/name for the downloaded file
-download.file( url=“http://www2.decipher.codes/Classification/TrainingSets/SILVA_SSU_r138_2019.RData”, destfile=“SILVA_SSU_r138_2019.RData”)
+download.file( url="https://figshare.com/ndownloader/files/46245217", destfile=“SILVA_SSU_r138_2019.RData”)
 
 ## Loading taxonomy object: ##
 load(“SILVA_SSU_r138_2019.RData”)
@@ -640,6 +640,7 @@ library(DescTools)
 library(taxize)
 library(mia)
 library(utils)
+library(scales)
 library(tidyverse)
 ```
 
@@ -664,6 +665,18 @@ calculate_text_size <- function(num_samples, start_samples = 25, min_size = 3) {
     return(max(current_size, min_size))
   }
 }
+
+# A function to expand a plot's y-limit
+expandy <- function(vec, ymin=NULL) {
+  # vec [NUMERIC] - a numeric vector of y valuesx.
+
+  max.val <- max(vec, na.rm=TRUE) + 0.1
+  min.log <- floor(log10(max.val))
+  
+  # expand_limits(y=c(ymin, ceiling(max.val/10^min.log)*10^min.log))
+  expand_limits(y=c(ymin, max.val))
+}
+
 
 # A function to create a phyloseq object with the appropriate
 # sample count transformation depending on the supplied transformation method,
@@ -1133,7 +1146,7 @@ find_bad_taxa <- function(cnd){
   return(bad_taxa)
 }
 
-# A function to run ANCOMBC2 while handlixnxg commxon 
+# A function to run ANCOMBC2 while handling common errors 
 ancombc2 <- function(data, ...) {
 
   # data [treeSummarizedExperiment] - a treeSummarizedExperiment containing the feature, 
@@ -1152,7 +1165,7 @@ ancombc2 <- function(data, ...) {
         bad_taxa <- res # renaming for readability
       }
       
-      # Second error catcher in case it fails in first one 
+      # Second error catcher in case it fails the first one 
       tryCatch(
         ANCOMBC::ancombc2(data = data[!rownames(data) %in% bad_taxa, ], ...),
         
@@ -1207,7 +1220,7 @@ publication_format <- theme_bw() +
 
 **Output Data:**
 
-* `custom_palette` (list defining a custom color palette for coloring plots)
+* `custom_palette` (character vector defining a custom color palette for coloring plots)
 * `publication_format` (custom ggplot theme for plotting)
 
 <br>
@@ -1226,7 +1239,11 @@ taxonomy_file <- file.path("taxonomy_GLAmpSeq.tsv")
 metadata <- read_csv(file = metadata_file) %>% as.data.frame()
 # Set row names
 row.names(metadata) <- metadata[[sample_colname]]
-# Delet sample column since the rownames now contain sample names
+# Write out Sample Table
+write_csv(x = metadata %>% select(!!sym(samples_column), !!sym(groups_colname)),
+          file = glue("{diff_abund_out_dir}{output_prefix}SampleTable{assay_suffix}.csv"))
+
+# Delete sample column since the rownames now contain sample names
 metadata[,sample_colname] <- NULL
 # Get unique group names
 group_column_values <- metadata %>% pull(!!sym(groups_colname))
@@ -1383,11 +1400,11 @@ taxonomy_table <- taxonomy_table[common_ids,]
                         Taxa with prevalences(the proportion of samples in which the taxon is present) less than this 
                         will be excluded from the analysis. Default is 0, i.e. do not exclude any taxon / feature.
 * `library_cutoff`    - If `remove_rare` is true, a numerical threshold for filtering samples based on library sizes. 
-                        Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0, 
+                        Samples with library sizes less than lib_cutoff will be excluded in the analysis. Default is 0, 
                         i.e. no sample will be dropped. To discard samples with read counts less than or equal to 100, 
                         set to 100.
 * `target_region`     - amplicon target region. Options are either "16S", "18S", or "ITS"
-* `feature_table`     - ASV count table varaiable from [Read-in Input Tables](#read-in-input-tables)
+* `feature_table`     - ASV count table variable from [Read-in Input Tables](#read-in-input-tables)
 * `taxonomy_table`    - ASV taxonomy table variable from [Read-in Input Tables](#read-in-input-tables)
 
 **Output Data:**
@@ -1403,7 +1420,7 @@ taxonomy_table <- taxonomy_table[common_ids,]
 
 Alpha diversity examines the variety and abundance of taxa within individual samples. Rarefaction curves are utilized to 
 visually represent this diversity, plotting the number of unique sequences (ASVs) identified against the total number of 
-sequences sampled, offering a perspective on the saturation and completeness of sampling. Metrics like Chao1 richness 
+sequences sampled, offering a perspective on the saturation and completeness of sampling. Metrics like Observed features 
 estimates and Shannon diversity indices are employed to quantify the richness (total number of unique sequences) and 
 diversity (combination of richness and evenness) within these samples.
 
@@ -1518,7 +1535,7 @@ diversity_stats <- map_dfr(.x = diversity_metrics, function(metric){
     rename(p=P.unadj, p.adj=P.adj) %>% 
     mutate(p.format=round(p,digits = 2))
   
-  add_significance(df, p.col='p', output.col = 'p.signif') %>% 
+  add_significance(df, p.col='p.adj', output.col = 'p.signif') %>% 
     select(Metric,group1, group2, Z, p, p.adj, p.format, p.signif) %>% 
     mutate(across(where(is.numeric), ~round(.x, digits = 2)))
   
@@ -1536,7 +1553,7 @@ colnames(comp_letters) <- groups_colname
 walk(.x = diversity_metrics, function(metric=.x){
   
   sub_comp <- diversity_stats %>% filter(Metric == metric)
-  p_values <- sub_comp$p
+  p_values <- sub_comp$p.adj # holm p adjusted values by default
   names(p_values) <- paste(sub_comp$group1,sub_comp$group2, sep = "-")
   
   letters_df <-  enframe(multcompView::multcompLetters(p_values)$Letters,
@@ -1645,7 +1662,7 @@ p <- map(.x = metrics2plot, .f = function(metric){
     group_by(!!sym(groups_colname)) %>%
     summarise(max=max(value), range=max(value)-min(value)) %>%
     left_join(comp_letters %>%
-                select(groups, label= !!sym( glue("{metric}_letter") ) 
+                select(!!sym(groups_colname), label= !!sym( glue("{metric}_letter") ) 
                        ) 
               )
   text_size <- 6
@@ -1663,12 +1680,18 @@ p <- map(.x = metrics2plot, .f = function(metric){
                 size = text_size)
 })
 
-richness_by_group <- wrap_plots(p, ncol = 2, guides =  'collect')
+richness_by_group <- wrap_plots(p, ncol = 2, guides =  'collect')  + 
+                     plot_annotation(caption = "If letters are shared between two groups, then they are not significantly different (q-value > 0.05)",
+                                     theme = theme(plot.caption = element_text(face = 'bold.italic')) 
+                                     )
 
 # Save group plot
 width <- 3.6 * length(group_levels)
-ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}richness_and_diversity_estimates_by_group{assay_suffix}.png"),
-       plot=richness_by_group, width = width, height = 8.33, dpi = 300, units = "in")
+ggsave(filename = glue("{output_prefix}richness_and_diversity_estimates_by_group{assay_suffix}.png"),
+       plot=richness_by_group, width = width, 
+       height = 8.33, dpi = 300, units = "in",
+       path = alpha_diversity_out_dir)
+
 ```
 **Parameter Definitions:**
 
@@ -1745,8 +1768,10 @@ dendogram <- make_dendogram(dist_obj, metadata, groups_colname,
                             group_colors, legend_title)
 
 # Save dendogram
-ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_dendrogram{assay_suffix}.png"),
-       plot = dendogram, width = 14, height = 10, dpi = 300, units = "in")
+ggsave(filename = glue("{output_prefix}{distance_method}_dendrogram{assay_suffix}.png"),
+       plot = dendogram, width = 14, 
+       height = 10, dpi = 300,
+      units = "in", path = beta_diversity_out_dir)
 
 #---------------------------- Run stats
 # Checking homogeneity of variance and comparing groups using adonis test
@@ -1805,7 +1830,7 @@ ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_
 
 ## 9. Taxonomy Plots
 
-Taxonomic summaries provide insights into the composition of microbial communities at various taxonomic levels.
+Taxonomy summaries provide insights into the composition of microbial communities at various taxonomic levels.
 
 
 > Please note that if you'd like to run the code in this section, make sure that you [load the libraries](#load-libraries) 
@@ -1818,7 +1843,7 @@ if(!dir.exists(taxonomy_plots_out_dir)) dir.create(taxonomy_plots_out_dir)
 metadata  <-  {DATAFRAME} 
 feature_table <- {DATAFRAME}
 taxonomy_table <- {DATAFRAME}
-custom_palette  <-{COLOR_VECTOR}
+custom_palette  <- {COLOR_VECTOR}
 publication_format <- {GGPLOT_THEME}
 groups_colname <- "groups"
 assay_suffix  <- "_GLAmpSeq"
@@ -1874,7 +1899,7 @@ relAbundace_tbs_rare_grouped <- map2(.x = taxon_levels[-1],
                                      })
 
 
-x_lab <- "Samples"
+x_lab <- "Samples"/
 y_lab <- "Relative abundance (%)"  
 x <-  'samples'  
 y <- "relativeAbundance"
@@ -1891,7 +1916,8 @@ walk2(.x = relAbundace_tbs_rare_grouped, .y = taxon_levels[-1],
                              
                           p <- ggplot(data =  df, mapping = aes(x= !!sym(x), y=!!sym(y) )) +
                                geom_col(aes(fill = !!sym(taxon_level) )) + 
-                               facet_wrap(facet_by, scales = "free", nrow = 1) +
+                               facet_wrap(facet_by, scales = "free", 
+                               nrow = 1, labeller = label_wrap_gen()) +
                                publication_format +
                                labs(x = x_lab , y = y_lab, fill= tools::toTitleCase(taxon_level)) + 
                                scale_fill_manual(values = custom_palette) +
@@ -1956,16 +1982,20 @@ group_relAbundace_tbs <- map2(.x = taxon_levels[-1], .y = taxon_tables[-1],
 y_lab <- "Relative abundance (%)"  
 y <- "relativeAbundance"
 number_of_groups <- length(group_levels)
-plot_width <- 2 * number_of_groups
+plot_width <- 2.5 * number_of_groups
 walk2(.x = group_relAbundace_tbs, .y = taxon_levels[-1], 
                            .f = function(relAbundace_tb=.x, taxon_level=.y){
                              
-                             p <- ggplot(data =  relAbundace_tb, mapping = aes(x= !!sym(groups_colname), y = !!sym(y)   )) +
+                             p <- ggplot(data =  relAbundace_tb %>%
+                                           mutate(X = str_wrap(!!sym(groups_colname),
+                                                             width = 10) # wrap long group names
+                                                  ), 
+                                        mapping = aes(x = X , y = !!sym(y)   )) +
                                geom_col(aes(fill = !!sym(taxon_level))) + 
                                publication_format +
                                theme(axis.text.x=element_text(
                                  margin=margin(t=0.5,r=0,b=0,l=0,unit ="cm"),
-                                 angle = 90, 
+                                 angle = 0, 
                                  hjust = 0.5, vjust = 0.5)) + 
                                labs(x = NULL , y = y_lab, fill = tools::toTitleCase(taxon_level)) + 
                                scale_fill_manual(values = custom_palette)
@@ -2028,6 +2058,7 @@ target_region <- "16S" # "16S", "18S" or "ITS"
 output_prefix  <- ""
 prevalence_cutoff <- 0
 library_cutoff <- 0
+remove_struc_zero <- FALSE
 threads <- 5
 
 
@@ -2048,6 +2079,11 @@ colnames(pairwise_comp_df) <- map_chr(pairwise_comp_df,
                                       \(col) str_c(col, collapse = "v"))
 comparisons <- colnames(pairwise_comp_df)
 names(comparisons) <- comparisons
+
+# Write out contrasts table
+write_csv(x = pairwise_comp_df,
+          file =  glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"),
+          col_names = FALSE)
 
 
 # Running ANCOMBC 1
@@ -2089,7 +2125,8 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
                   formula = groups_colname, 
                   p_adj_method = "fdr", prv_cut = prevalence_cutoff,
                   lib_cut = library_cutoff, 
-                  group = groups_colname , struc_zero = TRUE, neg_lb = TRUE, tol = 1e-5, 
+                  group = groups_colname , struc_zero = remove_struc_zero,
+                  neg_lb = TRUE, tol = 1e-5, 
                   max_iter = 100, conserve = TRUE, alpha = 0.05, global = FALSE,
                   n_cl = threads, verbose = TRUE)
   
@@ -2100,7 +2137,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     select(-contains("Intercept")) %>% 
     set_names(
       c("taxon",
-        glue("logFC_({group2})v({group1})"))
+        glue("LnFC_({group2})v({group1})"))
     )
   
   # SE
@@ -2189,12 +2226,12 @@ merged_stats_df <- merged_stats_df %>%
 
 
 # ------ Get comparison names
-# Since all column groups i.e. logFC, pval, W, etc. have the same
+# Since all column groups i.e. LnFC, pval, W, etc. have the same
 # suffixes as comparison names, we only need to extract the comparion names
-# from one of them. Here we extract them from the "logFC" prefixed columns
+# from one of them. Here we extract them from the "LnFC" prefixed columns
 comp_names <- merged_stats_df %>% 
-  select(starts_with("logFC")) %>%
-  colnames() %>% str_remove_all("logFC_")
+  select(starts_with("LnFC")) %>%
+  colnames() %>% str_remove_all("LnFC_")
 names(comp_names) <- comp_names
 
 
@@ -2203,7 +2240,7 @@ volcano_plots <- map(comp_names, function(comparison){
   
   # Construct column names for columns to be selected
   comp_col  <- c(
-    glue("logFC_{comparison}"),
+    glue("LnFC_{comparison}"),
     glue("lfcSE_{comparison}"),
     glue("Wstat_{comparison}"),
     glue("pvalue_{comparison}"),
@@ -2211,40 +2248,66 @@ volcano_plots <- map(comp_names, function(comparison){
     glue("diff_{comparison}")
   )
 
-  # Subset the statistics table for the current comparison  
   sub_res_df <- merged_stats_df %>% 
     select(!!feature, all_of(comp_col)) %>% drop_na()
   colnames(sub_res_df) <- str_replace_all(colnames(sub_res_df),
                                           pattern = "(.+)_.+", 
                                           replacement = "\\1")
+
+  # Set default pvalue and plot dimensions
+  p_val <- 0.1
+  plot_width_inches <- 11.1
+  plot_height_inches <- 8.33
+  
+  # Retrieve a vector of the 2 groups being compared
+  groups_vec <- comparison %>%
+    str_replace_all("\\)v\\(", ").vs.(") %>%  # replace ')v(' with ').vs.(' to enhance accurate groups splitting 
+    str_remove_all("\\(|\\)") %>% # remove brackets
+    str_split(".vs.") %>% unlist # split groups to list then convert to a vector
+  
+  group1 <- groups_vec[1]
+  group2 <- groups_vec[2]
+  
+  ###### Long x-axis label adjustments ##########
+  x_label <- glue("Ln Fold Change\n\n( {group1} vs {group2} )")
+  label_length <- nchar(x_label)
+  max_allowed_label_length <- plot_width_inches * 10
+  
+  # Construct x-axis label with new line breaks if was too long
+  if (label_length > max_allowed_label_length){
+    x_label <- glue("Ln Fold Change\n\n( {group1} \n vs \n {group2} )")
+  }
+
   
   # Make plot
-  p <- ggplot(sub_res_df, aes(x=logFC, y=-log10(pvalue), color=diff, label=!!sym(feature))) +
-    geom_point(size=4) +
-    scale_color_manual(values=c("TRUE"="red", "FALSE"="black")) +
-    geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
-    ggrepel::geom_text_repel() + 
-    labs(x="logFC", y="-log10(Pvalue)", 
-         title = comparison, color="Significant") + publication_format
-  # Save the volcano plot
-  ggsave(filename = glue("{output_prefix}{comparison}_volcano{assay_suffix}.png"), plot = p, device = "png",
-         width = 6, height = 8, units = "in", dpi = 300, path = diff_abund_out_dir)
+  p <- ggplot(sub_res_df %>% mutate(diff = qvalue <= p_val), 
+              aes(x=LnFC, y=-log10(qvalue), 
+                  color=diff, label=!!sym(feature))) +
+    geom_point(alpha=0.7, size=2) +
+    scale_color_manual(values=c("TRUE"="red", "FALSE"="black"),
+                       labels=c(paste0("qval > ", p_val), 
+                                paste0("qval \u2264 ", p_val))) +
+    geom_hline(yintercept = -log10(p_val), linetype = "dashed") +
+    ggrepel::geom_text_repel(show.legend = FALSE) +
+    expandy(-log10(sub_res_df$qvalue)) + # Expand plot y-limit
+    coord_cartesian(clip = 'off') +
+    scale_y_continuous(oob = scales::oob_squish_infinite) + # prevent clipping of infinite values
+    labs(x= x_label, y="-log10(Q-value)", 
+         title = "Volcano Plot", color=NULL,
+         caption = glue("dotted line: q-value = {p_val}")) + 
+    theme_bw() +
+    theme(legend.position="top", legend.key = element_rect(colour=NA),
+          plot.caption = element_text(face = 'bold.italic'))
+  # Save plot
+  ggsave(filename = glue("{output_prefix}{comparison}_volcano.png"),
+         plot = p, device = "png", width = plot_width_inches,
+         height = plot_height_inches, units = "in",
+         dpi = 300, path = diff_abund_out_dir)
+  
   
   return(p)
 })
 
-# Set dimensions for saving faceted plot
-number_of_columns <- 2
-number_of_rows <- ceiling(length(comp_names) / number_of_columns)
-fig_height <- 7.5 * number_of_rows
-
-p <- wrap_plots(volcano_plots, ncol = 2)
-#  Try to combine all the volcano plots in one figure
-try(
-ggsave(filename = glue("{output_prefix}{feature}_volcano{assay_suffix}.png"), plot = p, device = "png",
-       width = 16, height = fig_height, units = "in", dpi = 300,
-       path = diff_abund_out_dir, limitsize = FALSE)
-)
 
 # ------------------- Add NCBI id to feature, i.e. ASV -------------- #
 # Get the best/least possible taxonomy name for the ASVs
@@ -2271,7 +2334,9 @@ normalized_table <- as.data.frame(feature_table + 1) %>%
   rownames_to_column(feature) %>%
   mutate(across( where(is.numeric), log ) )
 
-
+# Create a missing values / NAs dataframe of samples that were dropped
+# due to prefiltering steps (prevalence and library cut offs filtering)
+# proir to running ANCOMBC
 samples <- metadata[[samples_column]]
 samplesdropped <- setdiff(x = samples, y = colnames(normalized_table)[-1])
 missing_df <- data.frame(ASV=normalized_table[[feature]],
@@ -2299,24 +2364,31 @@ walk(group_levels, function(group_level){
   # Samples that belong to the current group that are in the normalized table
   Samples <- intersect(colnames(normalized_table), Samples)
   
+  # Calculate means and standard deviations for the current comparison
   temp_df <- normalized_table %>% select(!!feature, all_of(Samples)) %>% 
     rowwise() %>%
     mutate(!!mean_col := mean(c_across(where(is.numeric))),
            !!std_col := sd(c_across(where(is.numeric))) ) %>% 
     select(!!feature,!!sym(mean_col), !!sym(std_col))
   
+  # Merge the current comparison's means and stdandard deviations
+  # to previous ones
   group_means_df <<- group_means_df %>% left_join(temp_df)
   
 })
 
 
-# Append Mean and standard deviation to normalized table
+# Append missing sample columns to the normalized table
 normalized_table <- normalized_table %>%
+  left_join(missing_df, by = feature) %>%
+  select(!!feature, all_of(samples))
+
+# Compute globally/ASV normalized means and standard deviations 
+All_mean_sd <- normalized_table %>%
   rowwise() %>%
   mutate(All.Mean=mean(c_across(where(is.numeric))),
-         All.Stdev=sd(c_across(where(is.numeric))) )%>% 
-  left_join(missing_df, by = feature) %>% 
-  select(!!feature, all_of(samples), All.Mean, All.Stdev)
+         All.Stdev=sd(c_across(where(is.numeric))) ) %>%
+  select(!!feature, All.Mean, All.Stdev)
 
 # Merge the taxonomy table to the stats table
 merged_df <- df  %>%
@@ -2325,63 +2397,23 @@ merged_df <- df  %>%
               rownames_to_column(feature)) %>% 
   select(!!feature, domain:species,everything())
 
-# Merge all the pre-combined dataframes
+# Merge all the pre-combined dataframes in the desired order
 merged_df <- merged_df %>%
   select(!!sym(feature):NCBI_id) %>%
   left_join(normalized_table, by = feature) %>%
-  left_join(merged_df) %>% 
-  left_join(group_means_df, by = feature) %>% 
-  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>% 
+  left_join(merged_df) %>%
+  left_join(All_mean_sd) %>%
+  left_join(group_means_df, by = feature) %>%
+  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>%
   mutate(across(where(is.matrix), as.numeric))
 
-# Writing out results of differential abundance using ANCOMBC 1
+# Write out results of differential abundance using ANCOMBC 1
 output_file <- glue("{diff_abund_out_dir}/{output_prefix}ancombc1_differential_abundance{assay_suffix}.csv")
-write_csv(merged_df, output_file)
-
-
-#  --------------- Make log abundance box plots ------------------ #
-
-# Merge the metadata with the feature table
-df2 <- (metadata %>% select(!!samples_column, !!groups_colname)) %>% 
-  left_join(feature_table %>%
-              t %>%
-              as.data.frame %>%
-              rownames_to_column(samples_column))
-
-# Making abundance box plots
-boxplots <- map( merged_stats_df[[feature]], function(feature){
-  
-  p <- ggplot(df2, aes(x=!!sym(groups_colname), y=log(!!sym(feature)+1), fill=!!sym(groups_colname) )) +
-    geom_boxplot() + 
-    labs(x=NULL, y="Log Abundance", fill=tools::toTitleCase(groups_colname), title = feature) +
-    theme_light() +
-    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
-          axis.title.y = element_text(face = "bold", size=12),
-          legend.text = element_text(face = "bold", size=10), 
-          legend.title = element_text(face = "bold", size=12))
-  
-  # Save feature boxplot as separate figures
-  ggsave(plot = p, filename = glue("{output_prefix}{feature}_boxplot{assay_suffix}.png"), device = "png", 
-         width = 8, height = 5, units = "in", dpi = 300, path = diff_abund_out_dir)
-  
-  return(p)
-})
-
-# Make faceted plot
-p <- wrap_plots(boxplots, ncol = 2, guides = 'collect')
-
-number_of_features <- merged_stats_df[[feature]] %>% length
-number_of_columns <- 2
-number_of_rows = ceiling(number_of_features / number_of_columns)
-fig_height = 5 * number_of_rows
-
-# Try to Plot all features / ASVs in one figure
-try(
-ggsave(filename = glue("{output_prefix}{feature}_boxplots{assay_suffix}.png"), plot = p, device = "png",
-       width = 14, height = fig_height, units = "in", dpi = 300,
-       limitsize = FALSE, path = diff_abund_out_dir)  # There may be too many things to plot
-
-)
+# Write combined table to file but before that drop
+# all columns of inferred differential abundance by ANCOMBC 
+write_csv(merged_df %>%
+            select(-starts_with("diff_")),
+          output_file)
 
 ```
 
@@ -2401,6 +2433,8 @@ ggsave(filename = glue("{output_prefix}{feature}_boxplots{assay_suffix}.png"), p
                          i.e. no sample will be dropped. To discard samples with read counts less than or equal to 100, 
                          set to 100.
 * `target_region`      - amplicon target region. Options are either "16S", "18S", or "ITS".
+* `remove_struc_zero`  - Should structural zeros (a.k.a ASVs with zero count in at least one group) be removed ?
+                         Default is FALSE i.e. structural zeros won't be removed.
 
 **Input Data:**
 
@@ -2411,12 +2445,8 @@ ggsave(filename = glue("{output_prefix}{feature}_boxplots{assay_suffix}.png"), p
 
 **Output Data:**
 
-* **differential_abundance/ancombc1/<output_prefix><comparison>_volcano_GLAmpSeq.png** (Comparion Volcano Plot)
-* **differential_abundance/ancombc1/<output_prefix><feature>_volcano_GLAmpSeq.png** (optional - Combined Volcano Plots)
+* **differential_abundance/ancombc1/<output_prefix>(<group1>)v(<group2>)_volcano.png** (Comparion Volcano Plot)
 * **differential_abundance/ancombc1/<output_prefix>ancombc1_differential_abundance_GLAmpSeq.csv** (Statistics Table)
-* **differential_abundance/ancombc1/<output_prefix><feature>_boxplot_GLAmpSeq.png** (ASV Boxplots)
-* **differential_abundance/ancombc1/<output_prefix><feature>_boxplots_GLAmpSeq.png** (Combined Boxplots)
-
 <br>
 
 ---
@@ -2438,6 +2468,7 @@ assay_suffix  <- "_GLAmpSeq"
 output_prefix  <- ""
 prevalence_cutoff <- 0
 library_cutoff <- 0
+remove_struc_zero <- FALSE
 threads <- 5
 
 
@@ -2452,7 +2483,7 @@ tse <-  mia::makeTreeSummarizedExperimentFromPhyloseq(ps)
 # Getting the reference group and making sure that it is the reference 
 # used in the analysis
 group_levels <- metadata[, groups_colname] %>% unique() %>% sort()
-ref_group <- group_levels[1]
+ref_group <- group_levels[1] # the first group is used as the reference group by default
 tse[[groups_colname]] <- factor(tse[[groups_colname]] , levels = group_levels)
 
 # Running ANCOMBC2....
@@ -2481,8 +2512,8 @@ output <- ancombc2(data = tse, assay_name = "counts", tax_level = NULL,
                    p_adj_method = "fdr", pseudo_sens = TRUE,
                    prv_cut = prevalence_cutoff, 
                    lib_cut = library_cutoff, s0_perc = 0.05,
-                   group = groups_colname, struc_zero = TRUE, neg_lb = FALSE,
-                   alpha = 0.05, n_cl = threads, verbose = TRUE,
+                   group = groups_colname, struc_zero = remove_struc_zero,
+                   neg_lb = FALSE, alpha = 0.05, n_cl = threads, verbose = TRUE,
                    global = TRUE, pairwise = TRUE, 
                    dunnet = TRUE, trend = FALSE,
                    iter_control = list(tol = 1e-5, max_iter = 20,
@@ -2498,23 +2529,23 @@ output <- ancombc2(data = tse, assay_name = "counts", tax_level = NULL,
 new_colnames <- map_chr(output$res_pair  %>% colnames, 
                         function(colname) {
                           # Columns comparing a group to the reference group
-                          if(str_count(colname, groups_colname) == 1){
+                          if(str_count(colname,groups_colname) == 1){
                             str_replace_all(string=colname, 
                                             pattern=glue("(.+)_{groups_colname}(.+)"),
                                             replacement=glue("\\1_(\\2)v({ref_group})")) %>% 
-                            str_replace(pattern = "^lfc_", replacement = "logFC_") %>% 
+                            str_replace(pattern = "^lfc_", replacement = "LnFC_") %>% 
                             str_replace(pattern = "^se_", replacement = "lfcSE_") %>% 
                             str_replace(pattern = "^W_", replacement = "Wstat_") %>%
                             str_replace(pattern = "^p_", replacement = "pvalue_") %>%
                             str_replace(pattern = "^q_", replacement = "qvalue_")
                             
                           # Columns with normal two groups comparison
-                          } else if(str_count(colname, groups_colname) == 2){
+                          } else if(str_count(colname,groups_colname) == 2){
                             
                             str_replace_all(string=colname, 
                                             pattern=glue("(.+)_{groups_colname}(.+)_{groups_colname}(.+)"),
                                             replacement=glue("\\1_(\\2)v(\\3)")) %>% 
-                            str_replace(pattern = "^lfc_", replacement = "logFC_") %>% 
+                            str_replace(pattern = "^lfc_", replacement = "LnFC_") %>% 
                             str_replace(pattern = "^se_", replacement = "lfcSE_") %>% 
                             str_replace(pattern = "^W_", replacement = "Wstat_") %>%
                             str_replace(pattern = "^p_", replacement = "pvalue_") %>%
@@ -2526,6 +2557,7 @@ new_colnames <- map_chr(output$res_pair  %>% colnames,
                             return(colname)
                           }
                         } )
+
 
 
 # Change the column named taxon to the feature name e.g. ASV
@@ -2540,6 +2572,15 @@ paired_stats_df <- output$res_pair  %>%
 # Get the unique comparison names 
 uniq_comps <- str_replace_all(new_colnames, ".+_(\\(.+\\))", "\\1") %>% unique()
 uniq_comps <- uniq_comps[-match(feature, uniq_comps)]
+
+# Write out contrasts table
+uniq_comps %>%
+  str_replace_all("\\((.+)\\)v\\((.+)\\)", "\\1.vs.\\2") %>% 
+  str_split(".vs.") %>% 
+  map(.f = function(comparison) data.frame(comparison)) %>% 
+  list_cbind() %>% 
+  write_csv(file = glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"),
+            col_names = FALSE)
 
 
 # ------ Sort columns by group comparisons --------#
@@ -2580,7 +2621,9 @@ normalized_table <- output$bias_correct_log_table  %>%
   rownames_to_column(feature) %>%
   mutate(across(where(is.numeric), ~replace_na(.x, replace=0)))
 
-
+# Create a missing values / NAs dataframe of samples that were dropped
+# due to prefiltering steps (prevalence and library cut offs filtering)
+# proir to running ANCOMBC
 samples <- metadata[[samples_column]]
 samplesdropped <- setdiff(x = samples, y = colnames(normalized_table)[-1])
 missing_df <- data.frame(ASV=normalized_table[[feature]],
@@ -2617,13 +2660,18 @@ walk(group_levels, function(group_level){
 })
 
 
-# Calculate global mean and standard deviation
+# Append missing samples columns to normalized table
 normalized_table <- normalized_table %>%
+  left_join(missing_df, by = feature) %>% 
+  select(!!feature, all_of(samples))
+
+# Calculate global mean and standard deviation
+All_mean_sd <- normalized_table %>%
   rowwise() %>%
   mutate(All.Mean=mean(c_across(where(is.numeric))),
          All.Stdev=sd(c_across(where(is.numeric))) ) %>% 
-  left_join(missing_df, by = feature) %>% 
-  select(!!feature, all_of(samples), All.Mean, All.Stdev)
+  select(!!feature, All.Mean, All.Stdev)
+
 
 # Append the taxonomy table to the ncbi and stats table
 merged_df <- df  %>%
@@ -2632,17 +2680,24 @@ merged_df <- df  %>%
               rownames_to_column(feature)) %>% 
   select(!!feature,domain:species,everything())
 
-# Add group means and normalized table
+# Combine tables in the desired order
 merged_df <- merged_df %>%
   select(!!sym(feature):NCBI_id) %>%
   left_join(normalized_table, by = feature) %>%
   left_join(merged_df) %>% 
+  left_join(All_mean_sd) %>% 
   left_join(group_means_df, by = feature) %>% 
   mutate(across(where(is.numeric), ~round(.x, digits=3)))
 
+
 # Writing out results of differential abundance using ANCOMBC2...
-output_file <- glue("{diff_abund_out_dir}/{output_prefix}ancombc2_differential_abundance{assay_suffix}.csv")
-write_csv(merged_df, output_file)
+output_file <- glue("{diff_abund_out_dir}{output_prefix}ancombc2_differential_abundance{assay_suffix}.csv")
+# Write out merged stats table but before that 
+# drop ANCOMBC inferred diffrential abundance columns
+write_csv(merged_df %>%
+            select(-starts_with("diff_")),
+          output_file)
+
 
 
 # ---------------------- Visualization --------------------------------------- #
@@ -2651,7 +2706,7 @@ write_csv(merged_df, output_file)
 volcano_plots <- map(uniq_comps, function(comparison){
   
   comp_col  <- c(
-    glue("logFC_{comparison}"),
+    glue("LnFC_{comparison}"),
     glue("lfcSE_{comparison}"),
     glue("Wstat_{comparison}"),
     glue("pvalue_{comparison}"),
@@ -2666,77 +2721,62 @@ volcano_plots <- map(uniq_comps, function(comparison){
   colnames(sub_res_df) <- str_replace_all(colnames(sub_res_df),
                                           pattern = "(.+)_.+", 
                                           replacement = "\\1")
+  # Set default qvalue and plot dimensions.
+  p_val <- 0.1
+  plot_width_inches <- 11.1
+  plot_height_inches <- 8.33
   
-  p <- ggplot(sub_res_df, aes(x=logFC, y=-log10(pvalue), color=diff, label=!!sym(feature))) +
-    geom_point(size=4) + geom_point(size=4) +
-    scale_color_manual(values=c("TRUE"="red", "FALSE"="black")) +
-    geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
-    ggrepel::geom_text_repel() + 
-    labs(x="logFC", y="-log10(Pvalue)", 
-         title = comparison, color="Significant") + publication_format
+  groups_vec <- comparison %>%
+    str_replace_all("\\)v\\(", ").vs.(") %>% 
+    str_remove_all("\\(|\\)") %>%
+    str_split(".vs.") %>% unlist
+  
+  group1 <- groups_vec[1]
+  group2 <- groups_vec[2]
+  
+  ######Long x-axis label adjustments##########
+  x_label <- glue("Ln Fold Change\n\n( {group1} vs {group2} )")
+  label_length <- nchar(x_label)
+  max_allowed_label_length <- plot_width_inches * 10
+  
+  # Construct x-axis label with new line breaks if was too long
+  if (label_length > max_allowed_label_length){
+    x_label <- glue("Ln Fold Change\n\n( {group1} \n vs \n {group2} )")
+  }
+  #######################################
+  
+  
+  
+  p <- ggplot(sub_res_df %>% mutate(diff = qvalue <= p_val),
+              aes(x=LnFC, y=-log10(qvalue), color=diff, label=!!sym(feature))) +
+    geom_point(alpha=0.7, size=2) +
+    scale_color_manual(values=c("TRUE"="red", "FALSE"="black"),
+                       labels=c(paste0("qval > ", p_val), 
+                                paste0("qval \u2264 ", p_val))) +
+    geom_hline(yintercept = -log10(p_val), linetype = "dashed") +
+    ggrepel::geom_text_repel(show.legend = FALSE) + 
+    expandy(-log10(sub_res_df$qvalue)) + # Expand plot y-limit
+    coord_cartesian(clip = 'off') +
+    scale_y_continuous(oob = scales::oob_squish_infinite) + # prevent clipping of infinite values
+    labs(x= x_label, y="-log10(Q-value)", 
+         title = "Volcano Plot", color=NULL,
+         caption = glue("dotted line: q-value = {p_val}")) + 
+    theme_bw() +
+    theme(legend.position="top", legend.key = element_rect(colour=NA),
+          plot.caption = element_text(face = 'bold.italic'))
 
-
-  ggsave(filename = glue("{output_prefix}{comparison}_volcano{assay_suffix}.png"), plot = p, device = "png",
-         width = 6, height = 8, units = "in", dpi = 300, path = diff_abund_out_dir)
+  # Save plot
+  ggsave(filename = glue("{output_prefix}{comparison}_volcano.png"),
+         plot = p, device = "png",
+         width = plot_width_inches,
+         height = plot_height_inches,
+         units = "in", dpi = 300, path = diff_abund_out_dir)
+ 
   
   return(p)
   
 })
 
-p <- wrap_plots(volcano_plots, ncol = 2)
-
-
-number_of_columns <- 2
-number_of_rows  <- ceiling(length(uniq_comps) / number_of_columns)
-fig_height <- 7.5 * number_of_rows
-
-#  Try to combine all the volcano plots in one figure
-try(
-ggsave(filename = glue("{output_prefix}{feature}_volcano{assay_suffix}.png"), plot = p, device = "png", 
-       width = 16, height = fig_height, units = "in",
-       dpi = 300, limitsize = FALSE, path=diff_abund_out_dir)
-)
-
-# ------------- Box plots ---------------- #
-
-df2 <- (metadata %>% select(!!samples_column, !!groups_colname)) %>% 
-  left_join(feature_table %>%
-              t %>%
-              as.data.frame %>%
-              rownames_to_column(samples_column))
-
-# Making abundance box plots...
-boxplots <- map(res_df[[feature]], function(feature){
-  
-  p <- ggplot(df2, aes(x=!!sym(groups_colname), y=log(!!sym(feature)+1), fill=!!sym(groups_colname) )) +
-    geom_boxplot() + 
-    labs(x=NULL, y="Log Abundance", fill=tools::toTitleCase(groups_colname), title = feature) +
-    theme_light() +
-    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
-          axis.title.y = element_text(face = "bold", size=12),
-          legend.text = element_text(face = "bold", size=10), 
-          legend.title = element_text(face = "bold", size=12))
-  
-  ggsave(filename = glue("{output_prefix}{feature}_boxplot{assay_suffix}.png"), plot = p, device = "png",
-         width = 8, height = 5, units = "in", dpi = 300, path = diff_abund_out_dir)
-  
-  return(p)
-})
-
-
-p <- wrap_plots(boxplots, ncol = 2, guides = 'collect')
-
-number_of_features <- res_df[[feature]] %>% length
-number_of_columns <- 2
-number_of_rows <- ceiling(number_of_features / number_of_columns)
-fig_height <- 5 * number_of_rows
-
-# Try to Plot all features / ASVs in one figure
-try(
-ggsave(filename = glue("{output_prefix}{feature}_boxplots{assay_suffix}.png"), plot = p, device = "png",
-       width = 14, height = fig_height, units = "in", dpi = 300,
-       path = diff_abund_out_dir, limitsize = FALSE)
-)
 ```
 
 **Parameter Definitions:**
@@ -2755,6 +2795,8 @@ ggsave(filename = glue("{output_prefix}{feature}_boxplots{assay_suffix}.png"), p
                          i.e. no sample will be dropped. To discard samples with read counts less than or equal to 100, 
                          set to 100.
 * `target_region`      - amplicon target region. Options are either "16S", "18S", or "ITS"
+* `remove_struc_zero`  - Should structural zeros (a.k.a ASVs with zero count in at least one group) be removed ?
+                         Default is FALSE i.e. structural zeros won't be removed.
 
 **Input Data:**
 
@@ -2765,11 +2807,8 @@ ggsave(filename = glue("{output_prefix}{feature}_boxplots{assay_suffix}.png"), p
 
 **Output Data:**
 
-* **differential_abundance/ancombc2/<output_prefix><comparison>_volcano_GLAmpSeq.png** (Comparion Volcano Plot)
-* **differential_abundance/ancombc2/<output_prefix><feature>_volcano_GLAmpSeq.png** (optional - Combined Volcano Plots)
+* **differential_abundance/ancombc2/<output_prefix>(<group1>)v(<group2>)_volcano.png** (Comparion Volcano Plot)
 * **differential_abundance/ancombc2/<output_prefix>ancombc2_differential_abundance_GLAmpSeq.csv** (Statistics Table)
-* **differential_abundance/ancombc2/<output_prefix><feature>_boxplot_GLAmpSeq.png** (ASV Boxplots)
-* **differential_abundance/ancombc2/<output_prefix><feature>_boxplots_GLAmpSeq.png** (Combined Boxplots)
 
 
 <br>
@@ -2844,6 +2883,12 @@ colnames(pairwise_comp_df) <- map_chr(pairwise_comp_df,
 comparisons <- colnames(pairwise_comp_df)
 names(comparisons) <- comparisons
 
+# Write out contrasts table
+write_csv(x = pairwise_comp_df,
+          file =  glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"),
+          col_names = FALSE)
+
+
 # Retrieve statistics table
 merged_stats_df <-  data.frame(ASV=rownames(feature_table))
 colnames(merged_stats_df) <- feature
@@ -2868,7 +2913,7 @@ df <- results(deseq_modeled, contrast = c(groups_colname, group1, group2)) %>% #
 
             
   merged_stats_df <<- merged_stats_df %>% 
-                          dplyr::left_join(df, join_by("ASV"))
+                          dplyr::left_join(df, join_by(!!feature))
 })
 
 # ---------------------- Add NCBI id to feature, i.e. ASV
@@ -2879,6 +2924,7 @@ tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","")  %>%
                      function(row) row[length(row)])
 
 df <- data.frame(ASV=rownames(taxonomy_table), best_taxonomy=tax_names)
+colnames(df) <- c(feature, "best_taxonomy")
 
 # Pull NCBI IDS for unique taxonomy names
 df2 <- data.frame(best_taxonomy = df$best_taxonomy %>%
@@ -2938,11 +2984,16 @@ walk(group_levels, function(group_level){
 
 # Append mean, standard deviation and missing samples to the normalized table
 normalized_table <- normalized_table %>%
+  left_join(missing_df, by = feature) %>% 
+  select(!!feature, all_of(samples))
+
+# Calculate mean global means and standard deviations
+All_mean_sd <- normalized_table %>%
   rowwise() %>%
   mutate(All.Mean=mean(c_across(where(is.numeric))),
-         All.Stdev=sd(c_across(where(is.numeric))) ) %>%  # calculate mean and std
-  left_join(missing_df, by = feature) %>% # append missing samples
-  select(!!feature, all_of(samples), All.Mean, All.Stdev) # select columns of interest
+         All.Stdev=sd(c_across(where(is.numeric))) ) %>% 
+  select(!!feature, All.Mean, All.Stdev)
+
 
 
 # Add taxonomy
@@ -2952,19 +3003,23 @@ merged_df <- df  %>% # statistics table
               rownames_to_column(feature)) %>% # append taxonomy table
   select(!!feature, domain:species,everything()) # select columns of interest
 
-# Merge all prepared tables 
+# Merge all prepared tables in the desired order
 merged_df <- merged_df %>%
-  select(!!sym(feature):NCBI_id) %>% # select on the features and NCBI ids
+  select(!!sym(feature):NCBI_id) %>%  # select only the features and NCBI ids
   left_join(normalized_table, by = feature) %>% # append the normalized table
   left_join(merged_df) %>% # append the stats table
-  left_join(group_means_df, by = feature) %>%  # append the group means and stds
-  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>% # round numeric columns
+  left_join(All_mean_sd) %>% # append the global/ASV means and stds
+  left_join(group_means_df, by = feature) %>% # append the group means and stds
+  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>%  # round numeric columns
   mutate(across(where(is.matrix), as.numeric)) # convert meatrix columns to numeric columns
 
 # Defining the output file
 output_file <- glue("{diff_abund_out_dir}/{output_prefix}deseq2_differential_abundance{assay_suffix}.csv")
 # Writing out results of differential abundance using DESeq2
-write_csv(merged_df, output_file)
+# after dropping baseMean columns
+write_csv(merged_df %>%
+            select(-starts_with("baseMean_")), 
+          output_file)
 
 # ------------------------- Make volcano plots ------------------------ #
 # Loop over group pairs and make a volcano comparing the pair 
@@ -2984,48 +3039,51 @@ walk(pairwise_comp_df, function(col){
   volcano_data <- volcano_data[!is.na(volcano_data$padj), ]
   volcano_data$significant <- volcano_data$padj <= p_val
   
-  # -------- Long x-axis label adjustments
-  x_label <- paste("Log2 Fold Change\n(",group1," vs ",group2,")")
+   ######Long x-axis label adjustments##########
+  x_label <- glue("Log2 Fold Change\n\n( {group1} vs {group2} )")
   label_length <- nchar(x_label)
   max_allowed_label_length <- plot_width_inches * 10
   
-  # Construct x-axis label with new line breaks if it is too long
+  # Construct x-axis label with new line breaks if was too long
   if (label_length > max_allowed_label_length){
-    x_label <- paste("Log2 Fold Change\n\n(", group1, "\n vs \n", group2, ")", sep="")
+    x_label <- glue("Log2 Fold Change\n\n( {group1} \n vs \n {group2} )")
   }
+  #######################################
   
-  # -------- Compose the plot
-  p <- ggplot(volcano_data, aes(x=log2FoldChange, y=-log10(padj), 
-                                color=significant)) +
+  # ASVs promoted in space on right, reduced on left
+  p <- ggplot(volcano_data %>% 
+                as.data.frame() %>% 
+                rownames_to_column(feature),
+              aes(x = log2FoldChange, y = -log10(padj), 
+                  color = significant, label = !!sym(feature)) 
+              ) +
     geom_point(alpha=0.7, size=2) +
     geom_hline(yintercept = -log10(p_val), linetype = "dashed") +
     scale_color_manual(values=c("black", "red"), 
                        labels=c(paste0("padj > ", p_val), 
-                                paste0(" padj \u2264 ", p_val))) +
+                                paste0("padj \u2264 ", p_val))) +
+    ggrepel::geom_text_repel(show.legend = FALSE) + 
+    expandy(-log10(volcano_data$padj)) + # Expand plot y-limit
+    coord_cartesian(clip = 'off') +
+    scale_y_continuous(oob = scales::oob_squish_infinite) +
     theme_bw() +
-    labs(title="Volcano Plot",
-         x=x_label,
-         y="-Log10 P-value",
-         color=paste0("")) +
-    theme(legend.position="top")
+    labs(title = "Volcano Plot",
+         x = x_label,
+         y = "-Log10 P-value",
+         color = NULL,
+         caption = glue("dotted line: padj = {p_val}")) +
+    theme(legend.position="top", legend.key = element_rect(colour=NA),
+          plot.caption = element_text(face = 'bold.italic'))
   
-  # Subset the 10 most significant asvs based on p adjusted values
-  top_points <- volcano_data %>%
-    arrange(padj) %>%
-    filter(significant) %>%
-    head(10)
+
   
-  # Add text of the top 10 ASVs to the volcano plot
-  volcano_plot <- p + geom_text_repel(data=top_points, 
-                                      aes(label=row.names(top_points)),
-                                      size=3)
-  
-  # Save volcano plot
-  ggsave(filename = glue("{diff_abund_out_dir}{output_prefix}volcano_{group1}_vs_{group2}.png"),
-         plot = volcano_plot,
+  ggsave(filename = glue("{output_prefix}({group1})v({group2})_volcano.png"),
+         plot = p,
          width = plot_width_inches, 
          height = plot_height_inches, 
-         dpi = 300)
+         dpi = 300, 
+         path = diff_abund_out_dir)
+
 })
 ```
 
@@ -3055,10 +3113,8 @@ walk(pairwise_comp_df, function(col){
 
 **Output Data:**
 
-* **differential_abundance/deseq2/<output_prefix>volcano_<group1>__vs__<group2>.png** (Comparion Volcano Plot)
+* **differential_abundance/deseq2/<output_prefix>volcano_(<group1>)v(<group2>).png** (Comparion Volcano Plot)
 * **differential_abundance/deseq2/<output_prefix>deseq2_differential_abundance_GLAmpSeq.csv** (Statistics Table)
-
-
 <br>
 
 ---

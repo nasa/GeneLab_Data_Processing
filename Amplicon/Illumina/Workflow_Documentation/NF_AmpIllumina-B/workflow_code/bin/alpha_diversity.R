@@ -554,7 +554,7 @@ p <- map(.x = metrics2plot, .f = function(metric){
     group_by(!!sym(groups_colname)) %>%
     summarise(max=max(value), range=max(value)-min(value)) %>%
     left_join(comp_letters %>%
-                select(groups, label= !!sym( glue("{metric}_letter") ) 
+                select(!!sym(groups_colname), label= !!sym( glue("{metric}_letter") ) 
                        ) 
               )
   text_size <- 6
