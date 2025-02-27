@@ -3113,7 +3113,7 @@ walk(pairwise_comp_df, function(col){
 
 **Output Data:**
 
-* **differential_abundance/deseq2/<output_prefix>volcano_(\<group1\>)v(\<group2\>).png** (Comparion Volcano Plot)
+* **differential_abundance/deseq2/<output_prefix>(\<group1\>)v(\<group2\>)_volcano.png** (Comparion Volcano Plot)
 * **differential_abundance/deseq2/<output_prefix>deseq2_differential_abundance_GLAmpSeq.csv** (Statistics Table)
 <br>
 
