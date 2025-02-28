@@ -84,7 +84,7 @@ process PACKAGE_PROCESSING_INFO {
 
 process GENERATE_README {
 
-    beforeScript "chmod +x ${baseDir}/bin/*"
+    beforeScript "chmod +x ${projectDir}/bin/*"
     tag "Generating README for ${OSD_accession}"
     input:
         tuple val(name), val(email), val(output_prefix),
@@ -185,7 +185,7 @@ process VALIDATE_PROCESSING {
 
 process GENERATE_CURATION_TABLE {
 
-    beforeScript "chmod +x ${baseDir}/bin/*"
+    beforeScript "chmod +x ${projectDir}/bin/*"
     tag "Generating a file association table for curation..."
 
     input:
@@ -268,7 +268,7 @@ process GENERATE_MD5SUMS {
 
 process GENERATE_PROTOCOL {
 
-    beforeScript "chmod +x ${baseDir}/bin/*"
+    beforeScript "chmod +x ${projectDir}/bin/*"
     tag "Generating your analysis protocol..."
 
     input:

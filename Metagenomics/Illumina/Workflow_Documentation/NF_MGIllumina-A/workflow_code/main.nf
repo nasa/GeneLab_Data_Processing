@@ -218,6 +218,7 @@ log.info """
 // Create GLDS runsheet
 include { GET_RUNSHEET } from "./modules/create_runsheet.nf"
 
+// Make Humann3 database
 include { make_humann_db } from "./modules/database_creation.nf"
 
 // Read quality check and filtering

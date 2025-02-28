@@ -6,7 +6,7 @@ nextflow.enable.dsl = 2
 
 process GET_RUNSHEET {
 
-    beforeScript "chmod +x ${baseDir}/bin/create_runsheet.sh" 
+    beforeScript "chmod +x ${projectDir}/bin/create_runsheet.sh" 
     tag "Downloading raw fastq files and runsheet for ${accession}..."
 
     input:
