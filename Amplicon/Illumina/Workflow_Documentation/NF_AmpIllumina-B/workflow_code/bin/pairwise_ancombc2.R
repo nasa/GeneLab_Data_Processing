@@ -401,7 +401,7 @@ if(all(is.na(taxonomy$domain))){
 # Removing Chloroplast and Mitochondria Organelle DNA contamination
 asvs2drop <- taxonomy_table %>%
   unite(col="taxonomy",domain:species) %>%
-  filter(str_detect(taxonomy, "[Cc]hloroplast|[Mn]itochondria")) %>%
+  filter(str_detect(taxonomy, "[Cc]hloroplast|[Mm]itochondria")) %>%
   row.names()
 taxonomy_table <- taxonomy_table[!(rownames(taxonomy_table) %in% asvs2drop),]
 
@@ -525,7 +525,7 @@ res_df <- paired_stats_df[1]
 walk(uniq_comps, function(comp){
   
   # Get the results for a comparison
-  temp_df <- paired_stats_df %>% select(ASV, contains(comp))
+  temp_df <- paired_stats_df %>% select(!!sym(feature), contains(comp))
   
   # Merge the current comparison to previous comparisons by feature/ASV id
   res_df <<- res_df %>% left_join(temp_df)
@@ -541,6 +541,7 @@ tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","")  %>%
                      function(row) row[length(row)])
 
 df <- data.frame(ASV=rownames(taxonomy_table), best_taxonomy=tax_names)
+colnames(df) <- c(feature, "best_taxonomy")
 
 message("Querying NCBI...")
 # Pull NCBI IDS for unique taxonomy names

@@ -346,7 +346,7 @@ if(all(is.na(taxonomy$domain))){
 # Removing Chloroplast and Mitochondria Organelle DNA contamination
 asvs2drop <- taxonomy_table %>%
   unite(col="taxonomy",domain:species) %>%
-  filter(str_detect(taxonomy, "[Cc]hloroplast|[Mn]itochondria")) %>%
+  filter(str_detect(taxonomy, "[Cc]hloroplast|[Mm]itochondria")) %>%
   row.names()
 taxonomy_table <- taxonomy_table[!(rownames(taxonomy_table) %in% asvs2drop),]
 
@@ -614,6 +614,7 @@ tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","")  %>%
                      function(row) row[length(row)])
 
 df <- data.frame(ASV=rownames(taxonomy_table), best_taxonomy=tax_names)
+colnames(df) <- c(feature, "best_taxonomy")
 
 # Pull NCBI IDS for unique taxonomy names
 df2 <- data.frame(best_taxonomy = df$best_taxonomy %>%
