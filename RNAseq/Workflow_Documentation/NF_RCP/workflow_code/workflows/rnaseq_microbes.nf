@@ -36,6 +36,7 @@ include { MULTIQC as INNER_DISTANCE_MULTIQC } from '../modules/multiqc.nf'
 include { MULTIQC as READ_DISTRIBUTION_MULTIQC } from '../modules/multiqc.nf'
 include { MULTIQC as COUNT_MULTIQC } from '../modules/multiqc.nf'
 include { MULTIQC as ALL_MULTIQC } from '../modules/multiqc.nf'
+include { PARSE_QC_METRICS } from '../modules/parse_qc_metrics.nf'
 
 include { CLEAN_MULTIQC_PATHS as CLEAN_RAW_READS_MULTIQC_PATHS } from '../modules/clean_multiqc_paths.nf'
 include { CLEAN_MULTIQC_PATHS as CLEAN_TRIMMED_READS_MULTIQC_PATHS } from '../modules/clean_multiqc_paths.nf'
@@ -113,6 +114,9 @@ workflow RNASEQ_MICROBES {
         else {
             ch_outdir = ch_outdir.map { it + "/results" }
         }
+
+        // Ensure ch_outdir is a proper value channel that can be reused multiple times
+        ch_outdir = ch_outdir.first()
 
         // if runsheet_path is not provided, set it up from ISA input
         // If ISA input is not provided, use the accession to get the ISA
@@ -195,6 +199,7 @@ workflow RNASEQ_MICROBES {
 
         // Stage the raw or truncated reads.
         STAGE_RAW_READS( samples )
+        //STAGE_RAW_READS( ch_outdir.map { it + "/00-RawData/Fastq" }, samples )
         raw_reads = STAGE_RAW_READS.out.raw_reads
         samples_txt = STAGE_RAW_READS.out.samples_txt
         //samples_txt | view
@@ -203,6 +208,7 @@ workflow RNASEQ_MICROBES {
         RAW_FASTQC( raw_reads )
         // Collect the raw read fastqc zip files
         RAW_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] }
+        //RAW_FASTQC( ch_outdir.map { it + "/00-RawData/FastQC_Reports" }, raw_reads )
         | flatten
         | collect        // Collect all zip files into a single list
         | set { raw_fastqc_zip }     // Create a channel with all zip files
@@ -220,6 +226,7 @@ workflow RNASEQ_MICROBES {
         // Run FastQC on trimmed reads
         TRIMMED_FASTQC( trimmed_reads )
         TRIMMED_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] } 
+        //TRIMMED_FASTQC( ch_outdir.map { it + "/01-TG_Preproc/FastQC_Reports" }, trimmed_reads )
         | flatten 
         | collect 
         | set { trimmed_fastqc_zip }
@@ -274,7 +281,7 @@ workflow RNASEQ_MICROBES {
 
         // Normalize counts, DGE 
         DGE_DESEQ2( ch_meta, runsheet_path, counts, "")
-        DGE_DESEQ2_RRNA_RM( ch_meta, runsheet_path, REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm, "rRNArm_")
+        DGE_DESEQ2_RRNA_RM( ch_meta, runsheet_path, REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm, "rRNArm_" )
 
         // Add annotations to DGE table
         ADD_GENE_ANNOTATIONS( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2.out.dge_table, "" )
@@ -342,12 +349,26 @@ workflow RNASEQ_MICROBES {
         //     "processed_"
         // )
 
-        // Run Qualimap BAM QC and rnaseq
-        // QUALIMAP_BAM_QC( sorted_bam, genome_bed, strandedness )
-        // QUALIMAP_RNASEQ_QC( sorted_bam, genome_references | map { it[1] }, strandedness )
-        // qualimap_outputs = QUALIMAP_BAM_QC.out.results
-        //             // | concat(QUALIMAP_RNASEQ_QC.out.results )
-        //             | collect
+        // Parse QC metrics
+        all_multiqc_output = RAW_READS_MULTIQC.out.data
+            | concat( TRIMMED_READS_MULTIQC.out.data )
+            | concat( ALIGN_MULTIQC.out.data )
+            | concat( GENEBODY_COVERAGE_MULTIQC.out.data )
+            | concat( INFER_EXPERIMENT_MULTIQC.out.data )
+            | concat( INNER_DISTANCE_MULTIQC.out.data )
+            | concat( READ_DISTRIBUTION_MULTIQC.out.data )
+            | concat( COUNT_MULTIQC.out.data )
+            | collect
+
+        // Generate QC metrics table
+        PARSE_QC_METRICS(
+            ch_outdir,
+            osd_accession,
+            ch_meta,
+            isa_archive,
+            all_multiqc_output,
+            DGE_DESEQ2.out.norm_counts | map{ it -> it[1] }
+        )
 
         // Clean paths in outputs before VVing & publishing
         CLEAN_RAW_READS_MULTIQC_PATHS(RAW_READS_MULTIQC.out.zipped_report, "raw")
@@ -359,52 +380,53 @@ workflow RNASEQ_MICROBES {
         CLEAN_INNER_DISTANCE_MULTIQC_PATHS(INNER_DISTANCE_MULTIQC.out.zipped_report, "inner_dist")
         CLEAN_READ_DISTRIBUTION_MULTIQC_PATHS(READ_DISTRIBUTION_MULTIQC.out.zipped_report, "read_dist")
 
-        VV_RAW_READS(
-            dp_tools_plugin,
-            ch_outdir,
-            ch_meta,
-            runsheet_path,
-            raw_reads | map{ it -> it[1] } | collect,
-            raw_fastqc_zip,
-            RAW_READS_MULTIQC.out.zipped_report
-        )
+        // VV_RAW_READS(
+        //     dp_tools_plugin,
+        //     ch_outdir,
+        //     ch_meta,
+        //     runsheet_path,
+        //     raw_reads | map{ it -> it[1] } | collect,
+        //     raw_fastqc_zip,
+        //     RAW_READS_MULTIQC.out.zipped_report
+        // )
 
-        VV_TRIMMED_READS(
-            dp_tools_plugin,
-            ch_outdir,
-            ch_meta,
-            runsheet_path,
-            trimmed_reads | map{ it -> it[1] } | collect,
-            trimmed_fastqc_zip,
-            TRIMMED_READS_MULTIQC.out.zipped_report,
-            TRIMGALORE.out.reports | collect,
-            TRIMMING_MULTIQC.out.zipped_report
-        )
+        // VV_TRIMMED_READS(
+        //     dp_tools_plugin,
+        //     ch_outdir,
+        //     ch_meta,
+        //     runsheet_path,
+        //     trimmed_reads | map{ it -> it[1] } | collect,
+        //     trimmed_fastqc_zip,
+        //     TRIMMED_READS_MULTIQC.out.zipped_report,
+        //     TRIMGALORE.out.reports | collect,
+        //     TRIMMING_MULTIQC.out.zipped_report
+        // )
 
-        VV_BOWTIE2_ALIGNMENT(
-            dp_tools_plugin,
-            ch_outdir,
-            ch_meta,
-            runsheet_path,
-            ALIGN_BOWTIE2.out.alignment_logs | collect,       // log files
-            ALIGN_BOWTIE2.out.unmapped_reads | collect,       // unmapped reads
-            ALIGN_MULTIQC.out.zipped_report,      // MultiQC report
-            SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[1] } | collect,        // sorted BAM files
-            SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[2] } | collect // BAM index files
-        )
+        // VV_BOWTIE2_ALIGNMENT(
+        //     dp_tools_plugin,
+        //     ch_outdir,
+        //     ch_meta,
+        //     runsheet_path,
+        //     ALIGN_BOWTIE2.out.alignment_logs | collect,       // log files
+        //     ALIGN_BOWTIE2.out.unmapped_reads | collect,       // unmapped reads
+        //     ALIGN_MULTIQC.out.zipped_report,      // MultiQC report
+        //     SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[1] } | collect,        // sorted BAM files
+        //     SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[2] } | collect // BAM index files
+        // )
 
-        VV_RSEQC(
-            dp_tools_plugin,
-            ch_outdir,
-            ch_meta,
-            runsheet_path,
-            ch_rseqc_logs,
-            GENEBODY_COVERAGE_MULTIQC.out.zipped_report,
-            INFER_EXPERIMENT_MULTIQC.out.zipped_report,
-            Channel.empty() | mix(INNER_DISTANCE_MULTIQC.out.zipped_report) | collect | ifEmpty({ file("PLACEHOLDER") }),
-            READ_DISTRIBUTION_MULTIQC.out.zipped_report
-        )
+        // VV_RSEQC(
+        //     dp_tools_plugin,
+        //     ch_outdir,
+        //     ch_meta,
+        //     runsheet_path,
+        //     ch_rseqc_logs,
+        //     GENEBODY_COVERAGE_MULTIQC.out.zipped_report,
+        //     INFER_EXPERIMENT_MULTIQC.out.zipped_report,
+        //     Channel.empty() | mix(INNER_DISTANCE_MULTIQC.out.zipped_report) | collect | ifEmpty({ file("PLACEHOLDER") }),
+        //     READ_DISTRIBUTION_MULTIQC.out.zipped_report
+        // )
 
     emit:
-        VV_RSEQC.out.log
+        //VV_RSEQC.out.log
+        SOFTWARE_VERSIONS.out.software_versions
 }
