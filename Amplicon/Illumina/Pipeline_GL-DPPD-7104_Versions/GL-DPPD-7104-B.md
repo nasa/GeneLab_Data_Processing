@@ -2299,7 +2299,8 @@ volcano_plots <- map(comp_names, function(comparison){
     theme(legend.position="top", legend.key = element_rect(colour=NA),
           plot.caption = element_text(face = 'bold.italic'))
   # Save plot
-  ggsave(filename = glue("{output_prefix}{comparison}_volcano.png"),
+  file_name <-  glue("{output_prefix}{comparison %>% str_replace_all('[:space:]+','_')}_volcano.png")
+  ggsave(filename = file_name,
          plot = p, device = "png", width = plot_width_inches,
          height = plot_height_inches, units = "in",
          dpi = 300, path = diff_abund_out_dir)
@@ -2766,7 +2767,8 @@ volcano_plots <- map(uniq_comps, function(comparison){
           plot.caption = element_text(face = 'bold.italic'))
 
   # Save plot
-  ggsave(filename = glue("{output_prefix}{comparison}_volcano.png"),
+  file_name <-  glue("{output_prefix}{comparison %>% str_replace_all('[:space:]+','_')}_volcano.png")
+  ggsave(filename = file_name,
          plot = p, device = "png",
          width = plot_width_inches,
          height = plot_height_inches,
@@ -3075,8 +3077,10 @@ walk(pairwise_comp_df, function(col){
     theme(legend.position="top", legend.key = element_rect(colour=NA),
           plot.caption = element_text(face = 'bold.italic'))
   
-
-  
+  # --- Save Plot
+  # Replace space in group name with underscore 
+  group1 <- str_replace_all(group1, "[:space:]+", "_")
+  group2 <- str_replace_all(group2, "[:space:]+", "_")  
   ggsave(filename = glue("{output_prefix}({group1})v({group2})_volcano.png"),
          plot = p,
          width = plot_width_inches, 
