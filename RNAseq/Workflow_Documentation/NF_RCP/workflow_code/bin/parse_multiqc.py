@@ -11,26 +11,39 @@ import json
 import csv
 import sys
 import re
+import os
 
 
-def main(osd_num, paired_end):
+def main(osd_num, paired_end, assay_suffix, mode):
 
     osd_num = osd_num.split('-')[1]
 
+    # Create the multiqc_data list with conditionally selected parsers based on mode
     multiqc_data = [
         parse_isa(),
-        parse_fastqc('raw'),
-        parse_fastqc('trimmed'),
-        parse_star(),
-        parse_rsem(),
-        parse_genebody_cov(),
-        parse_infer_exp(),
-        parse_read_dist(),
-        get_genecount()
+        #parse_fastqc('raw', assay_suffix),
+        #parse_fastqc('trimmed', assay_suffix)
     ]
+    
+    # Add the appropriate parsers based on mode
+    if mode == 'microbes':
+        #multiqc_data.append(parse_bowtie2(assay_suffix))
+        #multiqc_data.append(parse_featurecounts(assay_suffix))
+        pass
+    else:
+        multiqc_data.append(parse_star(assay_suffix))
+        multiqc_data.append(parse_rsem(assay_suffix))
+    
+    # Add the remaining common parsers
+    multiqc_data.extend([
+        parse_genebody_cov(assay_suffix),
+        parse_infer_exp(assay_suffix),
+        parse_read_dist(assay_suffix),
+        get_genecount(assay_suffix)
+    ])
 
     if paired_end:
-        multiqc_data.append(parse_inner_dist())
+        multiqc_data.append(parse_inner_dist(assay_suffix))
 
     samples = set([s for ss in multiqc_data for s in ss])
 
@@ -67,7 +80,8 @@ def main(osd_num, paired_end):
         'num_uniquely_aligned', 'pct_uniquely_aligned', 'pct_multi_aligned', 'pct_filtered', 'pct_unalignable'
     ]
 
-    with open('qc_metrics_GLbulkRNAseq.csv', mode='w', newline='') as f:
+    output_filename = f'qc_metrics{assay_suffix}.csv'
+    with open(output_filename, mode='w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
 
@@ -143,8 +157,8 @@ def parse_isa():
     return data
 
 
-def parse_fastqc(prefix):
-    with open(f'{prefix}_multiqc_GLbulkRNAseq_data/multiqc_data.json') as f:
+def parse_fastqc(prefix, assay_suffix):
+    with open(f'{prefix}_multiqc{assay_suffix}_data/multiqc_data.json') as f:
         j = json.loads(f.read())
 
     data = {}
@@ -182,36 +196,73 @@ def parse_fastqc(prefix):
     # Remove '_raw' or '_trimmed' suffix from sample names
     data = {s.replace('_' + prefix, ''):{prefix + '_' + k:v for k, v in d.items()} for s, d in data.items()}
 
-    # Collapse by sample
-    samples = [k[:-3] for k in data.keys() if k.endswith('_R2')]
-    if not samples:  # single-end (some may have '_R1' suffix)
+    # After suffix removal, check sample names
+    print(f"DEBUG: Data keys after suffix removal: {sorted(data.keys())[:5]}")
+
+    # Collapse by sample - need to handle both "_R2" and " Read 2" formats
+    r2_samples = [k[:-3] for k in data.keys() if k.endswith('_R2')]
+    read2_samples = [k.replace(' Read 2', '') for k in data.keys() if ' Read 2' in k]
+    
+    # Combine both types of sample names
+    all_paired_samples = set(r2_samples + read2_samples)
+    if not all_paired_samples:  # single-end (some may have '_R1' suffix)
+        print(f"DEBUG: No R2 samples found, treating as single-end")
         return {s.rsplit('_R1', 1)[0]:{k + '_f':v for k, v in d.items()} for s, d in data.items()}
 
+    print(f"DEBUG: Found {len(all_paired_samples)} paired-end samples: {list(all_paired_samples)[:3]}")
+    
     data_collapsed = {}
-    for sample in samples:  # paired-end
-        data_f = {k + '_f':v for k, v in data[sample + '_R1'].items()}
-        data_r = {k + '_r':v for k, v in data[sample + '_R2'].items()}
+    for sample in all_paired_samples:  # paired-end
+        # Check various name formats
+        r1_name = sample + '_R1'
+        r2_name = sample + '_R2'
+        read1_name = sample + ' Read 1'
+        read2_name = sample + ' Read 2'
+        
+        # Get forward data - try both formats
+        if r1_name in data:
+            data_f = {k + '_f':v for k, v in data[r1_name].items()}
+        elif read1_name in data:
+            data_f = {k + '_f':v for k, v in data[read1_name].items()}
+        else:
+            print(f"DEBUG: ERROR - can't find forward read for sample '{sample}'")
+            continue
+            
+        # Get reverse data - try both formats
+        if r2_name in data:
+            data_r = {k + '_r':v for k, v in data[r2_name].items()}
+        elif read2_name in data:
+            data_r = {k + '_r':v for k, v in data[read2_name].items()}
+        else:
+            print(f"DEBUG: ERROR - can't find reverse read for sample '{sample}'")
+            continue
+        
         data_collapsed[sample] = {**data_f, **data_r}
 
+    print(f"DEBUG: Final collapsed samples: {len(data_collapsed)}")
     return data_collapsed
 
 
-def parse_star():
-    with open(f'align_multiqc_GLbulkRNAseq_data/multiqc_data.json') as f:
-        j = json.loads(f.read())
+def parse_star(assay_suffix):
+    try:
+        with open(f'align_multiqc{assay_suffix}_data/multiqc_data.json') as f:
+            j = json.loads(f.read())
 
-    data = {}
+        data = {}
 
-    align_fields = ['uniquely_mapped_percent', 'multimapped_percent', 'multimapped_toomany_percent', 'unmapped_tooshort_percent', 'unmapped_other_percent']
+        align_fields = ['uniquely_mapped_percent', 'multimapped_percent', 'multimapped_toomany_percent', 'unmapped_tooshort_percent', 'unmapped_other_percent']
 
-    for sample in j['report_general_stats_data'][0].keys():
-        data[sample] = {k:v for k, v in j['report_general_stats_data'][0][sample].items() if k in align_fields}
+        for sample in j['report_general_stats_data'][0].keys():
+            data[sample] = {k:v for k, v in j['report_general_stats_data'][0][sample].items() if k in align_fields}
 
-    return data
+        return data
+    except (FileNotFoundError, KeyError, IndexError):
+        return {}
 
 
-def parse_genebody_cov():
-    with open(f'geneBody_cov_multiqc_GLbulkRNAseq_data/multiqc_data.json') as f:
+
+def parse_genebody_cov(assay_suffix):
+    with open(f'geneBody_cov_multiqc{assay_suffix}_data/multiqc_data.json') as f:
         j = json.loads(f.read())
 
     data = {}
@@ -230,8 +281,8 @@ def parse_genebody_cov():
     return data
 
 
-def parse_infer_exp():
-    with open(f'infer_exp_multiqc_GLbulkRNAseq_data/multiqc_data.json') as f:
+def parse_infer_exp(assay_suffix):
+    with open(f'infer_exp_multiqc{assay_suffix}_data/multiqc_data.json') as f:
         j = json.loads(f.read())
 
     key_dict = {
@@ -247,8 +298,8 @@ def parse_infer_exp():
     return data
 
 
-def parse_inner_dist():
-    with open(f'inner_dist_multiqc_GLbulkRNAseq_data/multiqc_data.json') as f:
+def parse_inner_dist(assay_suffix):
+    with open(f'inner_dist_multiqc{assay_suffix}_data/multiqc_data.json') as f:
         j = json.loads(f.read())
 
     data = {}
@@ -265,8 +316,8 @@ def parse_inner_dist():
     return data
 
 
-def parse_read_dist():
-    with open(f'read_dist_multiqc_GLbulkRNAseq_data/multiqc_data.json') as f:
+def parse_read_dist(assay_suffix):
+    with open(f'read_dist_multiqc{assay_suffix}_data/multiqc_data.json') as f:
         j = json.loads(f.read())
 
     data = {}
@@ -286,8 +337,8 @@ def parse_read_dist():
     return data
 
 
-def parse_rsem():
-    with open(f'RSEM_count_multiqc_GLbulkRNAseq_data/multiqc_data.json') as f:
+def parse_rsem(assay_suffix):
+    with open(f'RSEM_count_multiqc{assay_suffix}_data/multiqc_data.json') as f:
         j = json.loads(f.read())
 
     data = {}
@@ -306,8 +357,16 @@ def parse_rsem():
     return data
 
 
-def get_genecount():
-    df = pd.read_csv('RSEM_Unnormalized_Counts_GLbulkRNAseq.csv', index_col=0)
+def get_genecount(assay_suffix):
+    # Try to use RSEM counts first, fall back to FeatureCounts
+    if os.path.exists(f'RSEM_Unnormalized_Counts{assay_suffix}.csv'):
+        count_file = f'RSEM_Unnormalized_Counts{assay_suffix}.csv'
+    elif os.path.exists(f'FeatureCounts_Unnormalized_Counts{assay_suffix}.csv'):
+        count_file = f'FeatureCounts_Unnormalized_Counts{assay_suffix}.csv'
+    else:
+        return {}  # No counts file found
+        
+    df = pd.read_csv(count_file, index_col=0)
     df = df[~df.index.str.contains('^ERCC-')]
 
     data = (df > 10).sum().to_frame(name='gene_detected_gt10')
@@ -322,7 +381,8 @@ if __name__ == '__main__':
     
     parser.add_argument('--osd-num')
     parser.add_argument('--paired', action='store_true')
-
+    parser.add_argument('--assay_suffix', default='_GLbulkRNAseq')
+    parser.add_argument('--mode', default='default')
     args = parser.parse_args()
 
-    main(args.osd_num, args.paired)
+    main(args.osd_num, args.paired, args.assay_suffix, args.mode)
