@@ -27,7 +27,7 @@ def main(osd_num, paired_end, assay_suffix, mode):
     
     # Add the appropriate parsers based on mode
     if mode == 'microbes':
-        #multiqc_data.append(parse_bowtie2(assay_suffix))
+        multiqc_data.append(parse_bowtie2(assay_suffix))
         #multiqc_data.append(parse_featurecounts(assay_suffix))
         pass
     else:
@@ -69,6 +69,9 @@ def main(osd_num, paired_end, assay_suffix, mode):
 
         # STAR
         'uniquely_mapped_percent', 'multimapped_percent', 'multimapped_toomany_percent', 'unmapped_tooshort_percent', 'unmapped_other_percent',
+
+        # Bowtie2
+        'total_reads', 'overall_alignment_rate', 'aligned_none_pct', 'aligned_one_pct', 'aligned_multi_pct', 'unaligned_pct',
 
         # RSeQC
         'mean_genebody_cov_5_20', 'mean_genebody_cov_40_60', 'mean_genebody_cov_80_95', 'ratio_genebody_cov_3_to_5',
@@ -274,6 +277,121 @@ def parse_star(assay_suffix):
     except (FileNotFoundError, KeyError, IndexError):
         return {}
 
+
+def parse_bowtie2(assay_suffix):
+    """
+    Parse Bowtie2 alignment statistics from MultiQC report
+    
+    Args:
+        assay_suffix (str): Suffix for the assay type
+        
+    Returns:
+        dict: Dictionary with sample names as keys and alignment stats as values
+    """
+    print(f"Parsing Bowtie2 alignment statistics...")
+    
+    try:
+        # Open the data file using the same pattern as other modules
+        with open(f'align_multiqc{assay_suffix}_data/multiqc_data.json') as f:
+            data = json.load(f)
+        
+        # Create a dictionary to hold sample data
+        samples_data = {}
+        
+        # Extract the alignment statistics
+        if 'report_general_stats_data' in data and len(data['report_general_stats_data']) > 0:
+            # Check if we have paired-end data
+            is_paired_end = False
+            for sample_data in data['report_general_stats_data']:
+                for sample, stats in sample_data.items():
+                    if 'paired_total' in stats:
+                        is_paired_end = True
+                        break
+                if is_paired_end:
+                    break
+            
+            # Extract the stats for each sample
+            for section in data['report_general_stats_data']:
+                for sample, stats in section.items():
+                    # Clean up sample name to remove read identifiers
+                    base_sample = re.sub(r'_R[12]$', '', sample)
+                    
+                    if base_sample not in samples_data:
+                        samples_data[base_sample] = {}
+                    
+                    if 'total_reads' in stats:
+                        samples_data[base_sample]['total_reads'] = stats['total_reads']
+                    
+                    if 'overall_alignment_rate' in stats:
+                        samples_data[base_sample]['overall_alignment_rate'] = stats['overall_alignment_rate']
+                    
+                    if is_paired_end:
+                        if 'paired_total' in stats:
+                            total = stats['paired_total']
+                            aligned_none = stats.get('paired_aligned_none', 0)
+                            aligned_one = stats.get('paired_aligned_one', 0)
+                            aligned_multi = stats.get('paired_aligned_multi', 0)
+                            
+                            if total > 0:
+                                samples_data[base_sample]['aligned_none_pct'] = round((aligned_none / total) * 100, 2)
+                                samples_data[base_sample]['aligned_one_pct'] = round((aligned_one / total) * 100, 2)
+                                samples_data[base_sample]['aligned_multi_pct'] = round((aligned_multi / total) * 100, 2)
+                    else:
+                        if 'unpaired_total' in stats:
+                            total = stats['unpaired_total']
+                            aligned_none = stats.get('unpaired_aligned_none', 0)
+                            aligned_one = stats.get('unpaired_aligned_one', 0)
+                            aligned_multi = stats.get('unpaired_aligned_multi', 0)
+                            
+                            if total > 0:
+                                samples_data[base_sample]['unaligned_pct'] = round((aligned_none / total) * 100, 2)
+                                samples_data[base_sample]['aligned_one_pct'] = round((aligned_one / total) * 100, 2)
+                                samples_data[base_sample]['aligned_multi_pct'] = round((aligned_multi / total) * 100, 2)
+            
+            # Write out the bowtie2 alignment stats for reference
+            output_file = "alignment_stats.csv"
+            with open(output_file, 'w', newline='') as csvfile:
+                if is_paired_end:
+                    fieldnames = ['Sample', 'Total Reads', 'Overall Alignment Rate (%)', 
+                                'Aligned None (%)', 'Aligned One (%)', 'Aligned Multi (%)']
+                else:
+                    fieldnames = ['Sample', 'Total Reads', 'Overall Alignment Rate (%)', 
+                                'Unaligned (%)', 'Aligned One (%)', 'Aligned Multi (%)']
+                
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writeheader()
+                
+                for sample, stats in samples_data.items():
+                    if 'total_reads' in stats and 'overall_alignment_rate' in stats:
+                        row = {
+                            'Sample': sample,
+                            'Total Reads': stats['total_reads'],
+                            'Overall Alignment Rate (%)': stats['overall_alignment_rate']
+                        }
+                        
+                        if is_paired_end:
+                            if 'aligned_none_pct' in stats:
+                                row['Aligned None (%)'] = stats['aligned_none_pct']
+                                row['Aligned One (%)'] = stats['aligned_one_pct']
+                                row['Aligned Multi (%)'] = stats['aligned_multi_pct']
+                        else:
+                            if 'unaligned_pct' in stats:
+                                row['Unaligned (%)'] = stats['unaligned_pct']
+                                row['Aligned One (%)'] = stats['aligned_one_pct']
+                                row['Aligned Multi (%)'] = stats['aligned_multi_pct']
+                        
+                        writer.writerow(row)
+            
+            print(f"Successfully wrote Bowtie2 alignment statistics to {output_file}")
+        
+        return samples_data
+    
+    except FileNotFoundError:
+        print(f"WARNING: Could not find Bowtie2 MultiQC data file")
+        return {}
+    except Exception as e:
+        print(f"ERROR parsing Bowtie2 data: {str(e)}")
+        return {}
 
 
 def parse_genebody_cov(assay_suffix):
