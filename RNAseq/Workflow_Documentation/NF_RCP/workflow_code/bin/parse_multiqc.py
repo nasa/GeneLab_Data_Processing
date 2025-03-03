@@ -29,7 +29,7 @@ def main(osd_num, paired_end, assay_suffix, mode):
     if mode == 'microbes':
         multiqc_data.append(parse_bowtie2(assay_suffix))
         #multiqc_data.append(parse_featurecounts(assay_suffix))
-        pass
+        multiqc_data.append(parse_featurecounts(assay_suffix))
     else:
         multiqc_data.append(parse_star(assay_suffix))
         multiqc_data.append(parse_rsem(assay_suffix))
@@ -39,7 +39,7 @@ def main(osd_num, paired_end, assay_suffix, mode):
         parse_genebody_cov(assay_suffix),
         parse_infer_exp(assay_suffix),
         parse_read_dist(assay_suffix),
-        get_genecount(assay_suffix)
+        get_genecount(assay_suffix, mode)
     ])
 
     if paired_end:
@@ -71,8 +71,11 @@ def main(osd_num, paired_end, assay_suffix, mode):
         'uniquely_mapped_percent', 'multimapped_percent', 'multimapped_toomany_percent', 'unmapped_tooshort_percent', 'unmapped_other_percent',
 
         # Bowtie2
-        'total_reads', 'overall_alignment_rate', 'aligned_none_pct', 'aligned_one_pct', 'aligned_multi_pct', 'unaligned_pct',
+        'total_reads', 'overall_alignment_rate', 'aligned_none', 'aligned_one', 'aligned_multi',
 
+        # FeatureCounts
+        'total_count', 'num_assigned', 'pct_assigned', 'num_unassigned_nofeatures', 'num_unassigned_ambiguity', 'pct_unassigned_nofeatures', 'pct_unassigned_ambiguity',
+        
         # RSeQC
         'mean_genebody_cov_5_20', 'mean_genebody_cov_40_60', 'mean_genebody_cov_80_95', 'ratio_genebody_cov_3_to_5',
         'pct_sense', 'pct_antisense', 'pct_undetermined',
@@ -281,108 +284,43 @@ def parse_star(assay_suffix):
 def parse_bowtie2(assay_suffix):
     """
     Parse Bowtie2 alignment statistics from MultiQC report
-    
-    Args:
-        assay_suffix (str): Suffix for the assay type
-        
-    Returns:
-        dict: Dictionary with sample names as keys and alignment stats as values
     """
-    print(f"Parsing Bowtie2 alignment statistics...")
-    
     try:
-        # Open the data file using the same pattern as other modules
+        # Open the data file
         with open(f'align_multiqc{assay_suffix}_data/multiqc_data.json') as f:
             data = json.load(f)
         
         # Create a dictionary to hold sample data
         samples_data = {}
         
-        # Extract the alignment statistics
-        if 'report_general_stats_data' in data and len(data['report_general_stats_data']) > 0:
-            # Check if we have paired-end data
-            is_paired_end = False
-            for sample_data in data['report_general_stats_data']:
-                for sample, stats in sample_data.items():
-                    if 'paired_total' in stats:
-                        is_paired_end = True
-                        break
-                if is_paired_end:
-                    break
-            
-            # Extract the stats for each sample
-            for section in data['report_general_stats_data']:
-                for sample, stats in section.items():
-                    # Clean up sample name to remove read identifiers
-                    base_sample = re.sub(r'_R[12]$', '', sample)
-                    
-                    if base_sample not in samples_data:
-                        samples_data[base_sample] = {}
-                    
-                    if 'total_reads' in stats:
-                        samples_data[base_sample]['total_reads'] = stats['total_reads']
-                    
-                    if 'overall_alignment_rate' in stats:
-                        samples_data[base_sample]['overall_alignment_rate'] = stats['overall_alignment_rate']
-                    
-                    if is_paired_end:
-                        if 'paired_total' in stats:
-                            total = stats['paired_total']
-                            aligned_none = stats.get('paired_aligned_none', 0)
-                            aligned_one = stats.get('paired_aligned_one', 0)
-                            aligned_multi = stats.get('paired_aligned_multi', 0)
-                            
-                            if total > 0:
-                                samples_data[base_sample]['aligned_none_pct'] = round((aligned_none / total) * 100, 2)
-                                samples_data[base_sample]['aligned_one_pct'] = round((aligned_one / total) * 100, 2)
-                                samples_data[base_sample]['aligned_multi_pct'] = round((aligned_multi / total) * 100, 2)
-                    else:
-                        if 'unpaired_total' in stats:
-                            total = stats['unpaired_total']
-                            aligned_none = stats.get('unpaired_aligned_none', 0)
-                            aligned_one = stats.get('unpaired_aligned_one', 0)
-                            aligned_multi = stats.get('unpaired_aligned_multi', 0)
-                            
-                            if total > 0:
-                                samples_data[base_sample]['unaligned_pct'] = round((aligned_none / total) * 100, 2)
-                                samples_data[base_sample]['aligned_one_pct'] = round((aligned_one / total) * 100, 2)
-                                samples_data[base_sample]['aligned_multi_pct'] = round((aligned_multi / total) * 100, 2)
-            
-            # Write out the bowtie2 alignment stats for reference
-            output_file = "alignment_stats.csv"
-            with open(output_file, 'w', newline='') as csvfile:
-                if is_paired_end:
-                    fieldnames = ['Sample', 'Total Reads', 'Overall Alignment Rate (%)', 
-                                'Aligned None (%)', 'Aligned One (%)', 'Aligned Multi (%)']
-                else:
-                    fieldnames = ['Sample', 'Total Reads', 'Overall Alignment Rate (%)', 
-                                'Unaligned (%)', 'Aligned One (%)', 'Aligned Multi (%)']
+        # Extract the stats for each sample
+        for section in data['report_general_stats_data']:
+            for sample, stats in section.items():
+                # Clean up sample name to remove read identifiers
+                base_sample = re.sub(r'_R[12]$', '', sample)
                 
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                writer.writeheader()
+                if base_sample not in samples_data:
+                    samples_data[base_sample] = {}
                 
-                for sample, stats in samples_data.items():
-                    if 'total_reads' in stats and 'overall_alignment_rate' in stats:
-                        row = {
-                            'Sample': sample,
-                            'Total Reads': stats['total_reads'],
-                            'Overall Alignment Rate (%)': stats['overall_alignment_rate']
-                        }
-                        
-                        if is_paired_end:
-                            if 'aligned_none_pct' in stats:
-                                row['Aligned None (%)'] = stats['aligned_none_pct']
-                                row['Aligned One (%)'] = stats['aligned_one_pct']
-                                row['Aligned Multi (%)'] = stats['aligned_multi_pct']
-                        else:
-                            if 'unaligned_pct' in stats:
-                                row['Unaligned (%)'] = stats['unaligned_pct']
-                                row['Aligned One (%)'] = stats['aligned_one_pct']
-                                row['Aligned Multi (%)'] = stats['aligned_multi_pct']
-                        
-                        writer.writerow(row)
-            
-            print(f"Successfully wrote Bowtie2 alignment statistics to {output_file}")
+                # Report these 5 key metrics regardless of whether data is paired-end or single-end
+                if 'total_reads' in stats:
+                    samples_data[base_sample]['total_reads'] = stats['total_reads']
+                
+                if 'overall_alignment_rate' in stats:
+                    samples_data[base_sample]['overall_alignment_rate'] = stats['overall_alignment_rate']
+                
+                # Handle aligned none, one, and multi for both paired and unpaired data
+                # For paired data
+                if 'paired_aligned_none' in stats:
+                    samples_data[base_sample]['aligned_none'] = stats['paired_aligned_none']
+                    samples_data[base_sample]['aligned_one'] = stats['paired_aligned_one']
+                    samples_data[base_sample]['aligned_multi'] = stats['paired_aligned_multi']
+                
+                # For unpaired/single-end data
+                elif 'unpaired_aligned_none' in stats:
+                    samples_data[base_sample]['aligned_none'] = stats['unpaired_aligned_none']
+                    samples_data[base_sample]['aligned_one'] = stats['unpaired_aligned_one']
+                    samples_data[base_sample]['aligned_multi'] = stats['unpaired_aligned_multi']
         
         return samples_data
     
@@ -490,14 +428,43 @@ def parse_rsem(assay_suffix):
     return data
 
 
-def get_genecount(assay_suffix):
-    # Try to use RSEM counts first, fall back to FeatureCounts
-    if os.path.exists(f'RSEM_Unnormalized_Counts{assay_suffix}.csv'):
-        count_file = f'RSEM_Unnormalized_Counts{assay_suffix}.csv'
-    elif os.path.exists(f'FeatureCounts_Unnormalized_Counts{assay_suffix}.csv'):
-        count_file = f'FeatureCounts_Unnormalized_Counts{assay_suffix}.csv'
+def parse_featurecounts(assay_suffix):
+    with open(f'featureCounts_multiqc{assay_suffix}_data/multiqc_data.json') as f:
+        j = json.loads(f.read())
+
+    data = {}
+
+    for sample, count_data in j['report_saved_raw_data']['multiqc_featurecounts'].items():
+        data[sample] = {
+            'total_count': count_data['Total'],
+            'num_assigned': count_data['Assigned'],
+            'pct_assigned': count_data['percent_assigned'],
+            'num_unassigned_nofeatures': count_data['Unassigned_NoFeatures'],
+            'num_unassigned_ambiguity': count_data['Unassigned_Ambiguity'],
+            'pct_unassigned_nofeatures': count_data['Unassigned_NoFeatures'] / count_data['Total'] * 100 if count_data['Total'] > 0 else 0,
+            'pct_unassigned_ambiguity': count_data['Unassigned_Ambiguity'] / count_data['Total'] * 100 if count_data['Total'] > 0 else 0
+        }
+
+    return data
+
+
+def get_genecount(assay_suffix, mode):
+    # For microbes mode, prioritize FeatureCounts, otherwise prioritize RSEM
+    if mode == 'microbes':
+        if os.path.exists(f'FeatureCounts_Unnormalized_Counts{assay_suffix}.csv'):
+            count_file = f'FeatureCounts_Unnormalized_Counts{assay_suffix}.csv'
+        elif os.path.exists(f'RSEM_Unnormalized_Counts{assay_suffix}.csv'):
+            count_file = f'RSEM_Unnormalized_Counts{assay_suffix}.csv'
+        else:
+            return {}  # No counts file found
     else:
-        return {}  # No counts file found
+        # Default behavior - RSEM first, then FeatureCounts
+        if os.path.exists(f'RSEM_Unnormalized_Counts{assay_suffix}.csv'):
+            count_file = f'RSEM_Unnormalized_Counts{assay_suffix}.csv'
+        elif os.path.exists(f'FeatureCounts_Unnormalized_Counts{assay_suffix}.csv'):
+            count_file = f'FeatureCounts_Unnormalized_Counts{assay_suffix}.csv'
+        else:
+            return {}  # No counts file found
         
     df = pd.read_csv(count_file, index_col=0)
     df = df[~df.index.str.contains('^ERCC-')]
