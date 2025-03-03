@@ -380,27 +380,27 @@ workflow RNASEQ_MICROBES {
         CLEAN_INNER_DISTANCE_MULTIQC_PATHS(INNER_DISTANCE_MULTIQC.out.zipped_report, "inner_dist")
         CLEAN_READ_DISTRIBUTION_MULTIQC_PATHS(READ_DISTRIBUTION_MULTIQC.out.zipped_report, "read_dist")
 
-        // VV_RAW_READS(
-        //     dp_tools_plugin,
-        //     ch_outdir,
-        //     ch_meta,
-        //     runsheet_path,
-        //     raw_reads | map{ it -> it[1] } | collect,
-        //     raw_fastqc_zip,
-        //     RAW_READS_MULTIQC.out.zipped_report
-        // )
+        VV_RAW_READS(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            raw_reads | map{ it -> it[1] } | collect,
+            raw_fastqc_zip,
+            RAW_READS_MULTIQC.out.zipped_report
+        )
 
-        // VV_TRIMMED_READS(
-        //     dp_tools_plugin,
-        //     ch_outdir,
-        //     ch_meta,
-        //     runsheet_path,
-        //     trimmed_reads | map{ it -> it[1] } | collect,
-        //     trimmed_fastqc_zip,
-        //     TRIMMED_READS_MULTIQC.out.zipped_report,
-        //     TRIMGALORE.out.reports | collect,
-        //     TRIMMING_MULTIQC.out.zipped_report
-        // )
+        VV_TRIMMED_READS(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            trimmed_reads | map{ it -> it[1] } | collect,
+            trimmed_fastqc_zip,
+            TRIMMED_READS_MULTIQC.out.zipped_report,
+            TRIMGALORE.out.reports | collect,
+            TRIMMING_MULTIQC.out.zipped_report
+        )
 
         // VV_BOWTIE2_ALIGNMENT(
         //     dp_tools_plugin,
@@ -427,6 +427,5 @@ workflow RNASEQ_MICROBES {
         // )
 
     emit:
-        //VV_RSEQC.out.log
-        SOFTWARE_VERSIONS.out.software_versions
+        VV_TRIMMED_READS.out.log
 }

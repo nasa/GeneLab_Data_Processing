@@ -21,8 +21,8 @@ def main(osd_num, paired_end, assay_suffix, mode):
     # Create the multiqc_data list with conditionally selected parsers based on mode
     multiqc_data = [
         parse_isa(),
-        #parse_fastqc('raw', assay_suffix),
-        #parse_fastqc('trimmed', assay_suffix)
+        parse_fastqc('raw', assay_suffix),
+        parse_fastqc('trimmed', assay_suffix)
     ]
     
     # Add the appropriate parsers based on mode
@@ -161,86 +161,101 @@ def parse_fastqc(prefix, assay_suffix):
     with open(f'{prefix}_multiqc{assay_suffix}_data/multiqc_data.json') as f:
         j = json.loads(f.read())
 
-    data = {}
-
-    # General stats
+    # Group the samples by base name for paired end data
+    sample_groups = {}
     for sample in j['report_general_stats_data'][-1].keys():
-        data[sample] = {k:v for k, v in j['report_general_stats_data'][-1][sample].items() if k != 'percent_fails'}
-    
-    # Quality scores
-    for qc_data in j['report_plot_data']['fastqc_per_base_sequence_quality_plot']['datasets'][0]['lines']:
-        sample = qc_data['name']
-        
-        data[sample]['quality_score_mean'] = mean([i[1] for i in qc_data['pairs']])
-        data[sample]['quality_score_median'] = median([i[1] for i in qc_data['pairs']])
-
-    # GC content
-    for gc_data in j['report_plot_data']['fastqc_per_sequence_gc_content_plot']['datasets'][0]['lines']:
-        sample = gc_data['name']
-
-        gc_data_1pct = [i[0] for i in gc_data['pairs'] if i[1] >= 1]
-        data[sample]['gc_min_1pct'] = gc_data_1pct[0]
-        data[sample]['gc_max_1pct'] = gc_data_1pct[-1]
-
-        gc_data_cum = list(np.cumsum([i[1] for i in gc_data['pairs']]))
-        data[sample]['gc_auc_25pct'] = list(i >= 25 for i in gc_data_cum).index(True)
-        data[sample]['gc_auc_50pct'] = list(i >= 50 for i in gc_data_cum).index(True)
-        data[sample]['gc_auc_75pct'] = list(i >= 75 for i in gc_data_cum).index(True)
-
-    # N content
-    for n_data in j['report_plot_data']['fastqc_per_base_n_content_plot']['datasets'][0]['lines']:
-        sample = n_data['name']
-
-        data[sample]['n_content_sum'] = sum([i[1] for i in n_data['pairs']])
-
-    # Remove '_raw' or '_trimmed' suffix from sample names
-    data = {s.replace('_' + prefix, ''):{prefix + '_' + k:v for k, v in d.items()} for s, d in data.items()}
-
-    # After suffix removal, check sample names
-    print(f"DEBUG: Data keys after suffix removal: {sorted(data.keys())[:5]}")
-
-    # Collapse by sample - need to handle both "_R2" and " Read 2" formats
-    r2_samples = [k[:-3] for k in data.keys() if k.endswith('_R2')]
-    read2_samples = [k.replace(' Read 2', '') for k in data.keys() if ' Read 2' in k]
-    
-    # Combine both types of sample names
-    all_paired_samples = set(r2_samples + read2_samples)
-    if not all_paired_samples:  # single-end (some may have '_R1' suffix)
-        print(f"DEBUG: No R2 samples found, treating as single-end")
-        return {s.rsplit('_R1', 1)[0]:{k + '_f':v for k, v in d.items()} for s, d in data.items()}
-
-    print(f"DEBUG: Found {len(all_paired_samples)} paired-end samples: {list(all_paired_samples)[:3]}")
-    
-    data_collapsed = {}
-    for sample in all_paired_samples:  # paired-end
-        # Check various name formats
-        r1_name = sample + '_R1'
-        r2_name = sample + '_R2'
-        read1_name = sample + ' Read 1'
-        read2_name = sample + ' Read 2'
-        
-        # Get forward data - try both formats
-        if r1_name in data:
-            data_f = {k + '_f':v for k, v in data[r1_name].items()}
-        elif read1_name in data:
-            data_f = {k + '_f':v for k, v in data[read1_name].items()}
+        # Handle various naming patterns
+        if ' Read 1' in sample:
+            base_name = sample.replace(' Read 1', '')
+            if base_name not in sample_groups:
+                sample_groups[base_name] = {'f': None, 'r': None}
+            sample_groups[base_name]['f'] = sample
+        elif ' Read 2' in sample:
+            base_name = sample.replace(' Read 2', '')
+            if base_name not in sample_groups:
+                sample_groups[base_name] = {'f': None, 'r': None}
+            sample_groups[base_name]['r'] = sample
+        elif '_R1' in sample:
+            base_name = sample.replace('_R1', '')
+            if base_name not in sample_groups:
+                sample_groups[base_name] = {'f': None, 'r': None}
+            sample_groups[base_name]['f'] = sample
+        elif '_R2' in sample:
+            base_name = sample.replace('_R2', '')
+            if base_name not in sample_groups:
+                sample_groups[base_name] = {'f': None, 'r': None}
+            sample_groups[base_name]['r'] = sample
         else:
-            print(f"DEBUG: ERROR - can't find forward read for sample '{sample}'")
-            continue
-            
-        # Get reverse data - try both formats
-        if r2_name in data:
-            data_r = {k + '_r':v for k, v in data[r2_name].items()}
-        elif read2_name in data:
-            data_r = {k + '_r':v for k, v in data[read2_name].items()}
-        else:
-            print(f"DEBUG: ERROR - can't find reverse read for sample '{sample}'")
-            continue
-        
-        data_collapsed[sample] = {**data_f, **data_r}
+            # For single-end or non-paired samples
+            base_name = sample
+            if base_name not in sample_groups:
+                sample_groups[base_name] = {'f': None, 'r': None}
+            sample_groups[base_name]['f'] = sample
 
-    print(f"DEBUG: Final collapsed samples: {len(data_collapsed)}")
-    return data_collapsed
+    data = {}
+    # Process each sample group
+    for base_name, reads in sample_groups.items():
+        data[base_name] = {}
+        
+        # Process forward read
+        if reads['f']:
+            for k, v in j['report_general_stats_data'][-1][reads['f']].items():
+                if k != 'percent_fails':
+                    data[base_name][prefix + '_' + k + '_f'] = v
+                    
+        # Process reverse read
+        if reads['r']:
+            for k, v in j['report_general_stats_data'][-1][reads['r']].items():
+                if k != 'percent_fails':
+                    data[base_name][prefix + '_' + k + '_r'] = v
+
+    # Process other stats sections (quality, GC, etc)
+    for section, suffix in [
+        ('fastqc_per_base_sequence_quality_plot', 'quality_score'),
+        ('fastqc_per_sequence_gc_content_plot', 'gc'),
+        ('fastqc_per_base_n_content_plot', 'n_content')
+    ]:
+        if section in j['report_plot_data']:
+            for data_item in j['report_plot_data'][section]['datasets'][0]['lines']:
+                sample = data_item['name']
+                
+                # Determine if it's forward or reverse read
+                read_suffix = '_f'  # Default to forward
+                base_name = sample
+                
+                if ' Read 2' in sample:
+                    read_suffix = '_r'
+                    base_name = sample.replace(' Read 2', '')
+                elif ' Read 1' in sample:
+                    base_name = sample.replace(' Read 1', '')
+                elif '_R2' in sample:
+                    read_suffix = '_r'
+                    base_name = sample.replace('_R2', '')
+                elif '_R1' in sample:
+                    base_name = sample.replace('_R1', '')
+                    
+                # Skip if we don't have this sample
+                if base_name not in data:
+                    continue
+                    
+                # Process based on the section
+                if suffix == 'quality_score':
+                    data[base_name][prefix + '_quality_score_mean' + read_suffix] = mean([i[1] for i in data_item['pairs']])
+                    data[base_name][prefix + '_quality_score_median' + read_suffix] = median([i[1] for i in data_item['pairs']])
+                elif suffix == 'gc':
+                    gc_data_1pct = [i[0] for i in data_item['pairs'] if i[1] >= 1]
+                    if gc_data_1pct:
+                        data[base_name][prefix + '_gc_min_1pct' + read_suffix] = gc_data_1pct[0]
+                        data[base_name][prefix + '_gc_max_1pct' + read_suffix] = gc_data_1pct[-1]
+                        
+                        gc_data_cum = list(np.cumsum([i[1] for i in data_item['pairs']]))
+                        data[base_name][prefix + '_gc_auc_25pct' + read_suffix] = list(i >= 25 for i in gc_data_cum).index(True)
+                        data[base_name][prefix + '_gc_auc_50pct' + read_suffix] = list(i >= 50 for i in gc_data_cum).index(True)
+                        data[base_name][prefix + '_gc_auc_75pct' + read_suffix] = list(i >= 75 for i in gc_data_cum).index(True)
+                elif suffix == 'n_content':
+                    data[base_name][prefix + '_n_content_sum' + read_suffix] = sum([i[1] for i in data_item['pairs']])
+
+    return data
 
 
 def parse_star(assay_suffix):
