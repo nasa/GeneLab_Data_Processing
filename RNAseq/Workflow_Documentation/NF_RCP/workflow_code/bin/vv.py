@@ -1962,15 +1962,642 @@ def validate_bowtie2_alignments(outdir, samples_txt, paired_end, assay_suffix):
     }
 
 def validate_rseqc(outdir: Path,
-                 samples_txt: Path,
-                 paired_end: bool = True,
-                 assay_suffix: str = "_GLbulkRNAseq",
-                 genebody_coverage_dir: Path = None,
-                 infer_experiment_dir: Path = None,
-                 inner_distance_dir: Path = None,
-                 read_distribution_dir: Path = None) -> dict:
-    # Implementation of validate_rseqc function
-    pass
+                  samples_txt: Path,
+                  paired_end: bool,
+                  assay_suffix: str,
+                  genebody_coverage_dir: Path = None,
+                  infer_experiment_dir: Path = None,
+                  inner_distance_dir: Path = None,
+                  read_distribution_dir: Path = None) -> dict:
+    """
+    Validate RSeQC outputs in work directory.
+    
+    This function checks for the presence of RSeQC outputs (geneBody_coverage.py, infer_experiment.py,
+    inner_distance.py, read_distribution.py) for each sample, either directly or through staging.
+    
+    Args:
+        outdir (Path): Output directory path
+        samples_txt (Path): Path to samples.txt file
+        paired_end (bool): Whether data is paired-end
+        assay_suffix (str): Assay suffix, e.g. "_GLbulkRNAseq"
+        genebody_coverage_dir (Path, optional): Path to geneBody coverage directory
+        infer_experiment_dir (Path, optional): Path to infer experiment directory
+        inner_distance_dir (Path, optional): Path to inner distance directory
+        read_distribution_dir (Path, optional): Path to read distribution directory
+    
+    Returns:
+        dict: Validation status information
+    """
+    logger.info(f"Validating RSeQC outputs with params: samples_txt={samples_txt}, paired_end={paired_end}")
+    
+    # Create main RSeQC directory in the published directory structure
+    work_rseqc_dir = Path("RSeQC_Analyses")
+    if not work_rseqc_dir.exists():
+        os.makedirs(work_rseqc_dir, exist_ok=True)
+        logger.info(f"Created directory: {work_rseqc_dir}")
+    
+    # Prepare for MultiQC metrics outlier detection
+    rseqc_metrics_by_sample = {}
+    
+    # Get the expected sample IDs from the runsheet
+    samples = []
+    with open(samples_txt, "r") as f:
+        reader = csv.reader(f)
+        header = next(reader)  # Skip header
+        for row in reader:
+            if row:  # Skip empty rows
+                samples.append(row[-1].strip())  # Assume last column is sample name
+    
+    # Define RSeQC sections we're checking
+    sections = {
+        "geneBody_coverage.py": {
+            "dir": genebody_coverage_dir,
+            "display_name": "geneBody_coverage.py",
+            "required": True,
+            "multiqc_dir_pattern": f"geneBody_cov_multiqc{assay_suffix}_report",
+            "file_patterns": ["geneBodyCoverage", ".geneBodyCoverage.txt"],
+            "work_dir": work_rseqc_dir / "02_geneBody_coverage"
+        },
+        "infer_experiment.py": {
+            "dir": infer_experiment_dir,
+            "display_name": "infer_experiment.py",
+            "required": True,
+            "multiqc_dir_pattern": f"infer_exp_multiqc{assay_suffix}_report",
+            "file_patterns": ["infer_expt", ".infer_experiment.txt"],
+            "work_dir": work_rseqc_dir / "03_infer_experiment"
+        },
+        "inner_distance.py": {
+            "dir": inner_distance_dir,
+            "display_name": "inner_distance.py",
+            "required": True if paired_end else False,
+            "multiqc_dir_pattern": f"inner_dist_multiqc{assay_suffix}_report",
+            "file_patterns": ["inner_distance", ".inner_distance.txt"],
+            "work_dir": work_rseqc_dir / "04_inner_distance"
+        },
+        "read_distribution.py": {
+            "dir": read_distribution_dir,
+            "display_name": "read_distribution.py",
+            "required": True,
+            "multiqc_dir_pattern": f"read_dist_multiqc{assay_suffix}_report",
+            "file_patterns": ["read_dist", ".read_distribution.txt"],
+            "work_dir": work_rseqc_dir / "05_read_distribution"
+        }
+    }
+    
+    # Create section and sample directories in work directory
+    for section_name, section in sections.items():
+        if section["work_dir"] and (section_name != "inner_distance.py" or paired_end):
+            os.makedirs(section["work_dir"], exist_ok=True)
+            logger.info(f"Created section directory: {section['work_dir']}")
+            
+            # Create sample directories
+            for sample in samples:
+                sample_dir = section["work_dir"] / sample
+                if not sample_dir.exists():
+                    os.makedirs(sample_dir, exist_ok=True)
+                    logger.debug(f"Created sample directory: {sample_dir}")
+    
+    # Track files found for each sample and section
+    files_by_sample = {sample: {} for sample in samples}
+    
+    # Stage and track files from input directories to work directory
+    for section_name, section in sections.items():
+        if section["dir"] and os.path.exists(section["dir"]):
+            logger.info(f"Checking {section['display_name']} outputs in {section['dir']}")
+            
+            # Look for sample files in this directory and stage them
+            for sample in samples:
+                sample_dir = section["work_dir"] / sample
+                files_found = False
+                
+                # Check for each file pattern
+                for pattern in section["file_patterns"]:
+                    file_pattern = f"*{sample}*{pattern}*"
+                    matches = list(Path(section["dir"]).glob(file_pattern))
+                    
+                    if matches:
+                        # Initialize if needed
+                        if section_name not in files_by_sample[sample]:
+                            files_by_sample[sample][section_name] = []
+                        
+                        # Stage and track each file
+                        for src_file in matches:
+                            dst_file = sample_dir / src_file.name
+                            try:
+                                # Create symlink if it doesn't exist
+                                if not dst_file.exists() and not dst_file.is_symlink():
+                                    os.symlink(src_file, dst_file)
+                                    logger.info(f"Linked {src_file} to {dst_file}")
+                                
+                                # Track the file
+                                files_by_sample[sample][section_name].append(dst_file)
+                                files_found = True
+                            except Exception as e:
+                                logger.error(f"Failed to link {src_file} to {dst_file}: {str(e)}")
+                
+                # Log only once if any files were found for this sample/section
+                if files_found:
+                    val_logger.log("rseqc", sample, f"{section['display_name']}_outputs_found", "GREEN",
+                                f"Found RSeQC outputs for {section['display_name']}")
+    
+    # Also look for files in the rseqc-logs directory
+    rseqc_logs_dirs = [
+        Path("rseqc-logs"),  # Current working directory
+        os.path.join(outdir, "rseqc-logs"),  # Inside output directory
+        os.path.join(Path.cwd(), "rseqc-logs")  # Explicit current working directory
+    ]
+    
+    # Find the first valid rseqc-logs directory
+    rseqc_logs_dir = None
+    for dir_path in rseqc_logs_dirs:
+        logger.info(f"Checking for rseqc-logs at: {dir_path}")
+        if os.path.exists(dir_path):
+            rseqc_logs_dir = dir_path
+            logger.info(f"Found rseqc-logs directory at: {rseqc_logs_dir}")
+            break
+    
+    if rseqc_logs_dir:
+        logger.info(f"Processing files from rseqc-logs directory: {rseqc_logs_dir}")
+        
+        # Define file type patterns and their target sections
+        file_type_patterns = {
+            "geneBodyCoverage": "geneBody_coverage.py",
+            "infer_expt.out": "infer_experiment.py", 
+            "inner_distance": "inner_distance.py",
+            "read_dist.out": "read_distribution.py"
+        }
+        
+        logger.info(f"File type patterns: {file_type_patterns}")
+        
+        # List all files in the rseqc-logs directory
+        all_files = os.listdir(rseqc_logs_dir)
+        logger.info(f"Found {len(all_files)} files in rseqc-logs directory")
+        logger.debug(f"Files in rseqc-logs: {all_files}")
+        
+        # Process files to appropriate sample directories
+        for file in all_files:
+            logger.info(f"Processing file: {file}")
+            
+            # Find which sample this file belongs to
+            sample_match = None
+            for sample in samples:
+                if sample in file:
+                    sample_match = sample
+                    logger.info(f"File {file} matched to sample {sample}")
+                    break
+                    
+            if not sample_match:
+                logger.warning(f"Could not match file {file} to any sample")
+                continue
+                
+            # Determine which section this file belongs to
+            target_section = None
+            for pattern, section_name in file_type_patterns.items():
+                if pattern in file:
+                    target_section = section_name
+                    logger.info(f"File {file} matched to section {section_name} with pattern {pattern}")
+                    break
+                    
+            if not target_section:
+                logger.warning(f"Could not match file {file} to any RSeQC section - patterns: {file_type_patterns.keys()}")
+                continue
+                
+            # Skip inner_distance section for single-end data
+            if target_section == "inner_distance.py" and not paired_end:
+                continue
+                
+            # Create symbolic links for the file
+            src = os.path.realpath(os.path.join(rseqc_logs_dir, file))
+            
+            # Get the working directory path
+            section = sections[target_section]
+            sample_dir = section["work_dir"] / sample_match
+            
+            dst_file = sample_dir / file
+            
+            try:
+                # Ensure destination directories exist
+                os.makedirs(sample_dir, exist_ok=True)
+                
+                # Create symbolic links in directories
+                if not dst_file.exists() and not dst_file.is_symlink():
+                    os.symlink(src, dst_file)
+                    logger.info(f"Linked {src} to {dst_file}")
+                
+                # Update tracking
+                if target_section not in files_by_sample[sample_match]:
+                    files_by_sample[sample_match][target_section] = []
+                files_by_sample[sample_match][target_section].append(dst_file)
+                
+                # Log successful file linkage from rseqc-logs
+                val_logger.log("rseqc", sample_match, f"{section['display_name']}_outputs_found", "GREEN",
+                            f"Found RSeQC outputs for {section['display_name']}")
+                
+            except Exception as e:
+                msg = f"Failed to link {file} from rseqc-logs: {str(e)}"
+                logger.error(msg)
+                val_logger.log("rseqc", sample_match, f"{section['display_name']}_outputs_link", "RED", msg)
+    
+    # Look for MultiQC reports for each section and stage them
+    for section_name, section in sections.items():
+        if not section["required"]:
+            continue
+            
+        # Look for MultiQC zip files
+        if section["dir"] and os.path.exists(section["dir"]):
+            # Find all MultiQC zip files in the directory
+            multiqc_files = []
+            for file in os.listdir(section["dir"]):
+                if "multiqc" in file.lower() and file.endswith(".zip"):
+                    multiqc_files.append(os.path.join(section["dir"], file))
+            
+            if multiqc_files:
+                # Stage the first MultiQC zip file found
+                src_file = Path(multiqc_files[0])
+                # Create the destination path directly, not nested under the input directory
+                dst_file = section["work_dir"] / f"{section['multiqc_dir_pattern']}.zip"
+                if not os.path.exists(dst_file) and not os.path.islink(dst_file):
+                    try:
+                        # Use absolute paths for both source and destination to avoid nesting issues
+                        abs_src = os.path.abspath(src_file)
+                        abs_dst = os.path.abspath(dst_file)
+                        os.symlink(abs_src, abs_dst)
+                        logger.info(f"Linked MultiQC report {src_file} to {dst_file}")
+                    except Exception as e:
+                        logger.error(f"Failed to link MultiQC report {src_file} to {dst_file}: {str(e)}")
+                
+                val_logger.log("rseqc", "ALL", f"{section['display_name']}_multiqc", "GREEN",
+                            f"MultiQC report found for {section['display_name']}")
+    
+    # Now after checking and staging files, log warnings for any truly missing files
+    for sample in samples:
+        for section_name, section in sections.items():
+            if section["required"]:  # Skip non-required sections
+                # Only log warning if no files were found for this sample and section
+                if section_name not in files_by_sample[sample]:
+                    msg = f"No {section['display_name']} outputs found for sample {sample} in any location"
+                    logger.warning(msg)
+                    val_logger.log("rseqc", sample, f"{section['display_name']}_outputs", "YELLOW", msg)
+    
+    # Parse sample metrics from MultiQC data for outlier detection
+    rseqc_metrics_by_sample = {}
+    
+    # Parse the geneBody coverage 3'/5' ratios
+    try:
+        # First, directly use the MultiQC files from the input directories
+        input_multiqc_files = []
+        
+        # Look for MultiQC files in each input directory
+        if genebody_coverage_dir and os.path.exists(genebody_coverage_dir):
+            for file in os.listdir(genebody_coverage_dir):
+                if "multiqc" in file.lower() and file.endswith(".zip"):
+                    input_multiqc_files.append((os.path.join(genebody_coverage_dir, file), "geneBody_cov"))
+        
+        if infer_experiment_dir and os.path.exists(infer_experiment_dir):
+            for file in os.listdir(infer_experiment_dir):
+                if "multiqc" in file.lower() and file.endswith(".zip"):
+                    input_multiqc_files.append((os.path.join(infer_experiment_dir, file), "infer_exp"))
+        
+        if inner_distance_dir and paired_end and os.path.exists(inner_distance_dir):
+            for file in os.listdir(inner_distance_dir):
+                if "multiqc" in file.lower() and file.endswith(".zip"):
+                    input_multiqc_files.append((os.path.join(inner_distance_dir, file), "inner_dist"))
+        
+        if read_distribution_dir and os.path.exists(read_distribution_dir):
+            for file in os.listdir(read_distribution_dir):
+                if "multiqc" in file.lower() and file.endswith(".zip"):
+                    input_multiqc_files.append((os.path.join(read_distribution_dir, file), "read_dist"))
+        
+        logger.info(f"Found {len(input_multiqc_files)} MultiQC files for RSeQC metrics extraction")
+        
+        # Create a temporary directory to extract MultiQC data
+        with tempfile.TemporaryDirectory() as temp_extraction_dir:
+            temp_dir_path = Path(temp_extraction_dir)
+            
+            # Extract each MultiQC zip into the expected directories for parsing
+            extract_success = False
+            
+            # Process each input MultiQC file directly
+            for multiqc_file, prefix in input_multiqc_files:
+                try:
+                    # Extract to create the directory structure expected by parse_multiqc functions
+                    with zipfile.ZipFile(multiqc_file, 'r') as zip_ref:
+                        # Get the directory containing MultiQC data
+                        data_dir_in_zip = None
+                        for item in zip_ref.namelist():
+                            if "data" in item.lower() and item.endswith('/'):
+                                data_dir_in_zip = item
+                                break
+                        
+                        if data_dir_in_zip:
+                            # Create expected directory for the parsing functions
+                            # Handle the case where assay_suffix already has a leading underscore
+                            suffix = assay_suffix
+                            if suffix.startswith('_'):
+                                suffix = suffix[1:]  # Remove the leading underscore
+                            # Use the exact directory name expected by the parsing functions
+                            expected_dir = Path(os.getcwd()) / f"{prefix}_multiqc_{suffix}_data"
+                            os.makedirs(expected_dir, exist_ok=True)
+                            
+                            # Extract only the data directory
+                            for item in zip_ref.namelist():
+                                if item.startswith(data_dir_in_zip):
+                                    # Extract to the expected location but strip the prefix directory
+                                    extracted_name = item.replace(data_dir_in_zip, '')
+                                    if extracted_name:  # Skip the directory itself
+                                        extraction_target = expected_dir / extracted_name
+                                        # Create directory if needed
+                                        if item.endswith('/'):
+                                            os.makedirs(extraction_target, exist_ok=True)
+                                        else:
+                                            # Extract file
+                                            with zip_ref.open(item) as source, open(extraction_target, 'wb') as target:
+                                                shutil.copyfileobj(source, target)
+                            
+                            extract_success = True
+                            logger.info(f"Extracted MultiQC data from {multiqc_file} to {expected_dir}")
+                except Exception as e:
+                    logger.error(f"Error extracting MultiQC data from {multiqc_file}: {str(e)}")
+            
+            if not extract_success:
+                logger.warning("Failed to extract any MultiQC data for parsing")
+        
+        # Import parse module from this script's directory
+        import_path = os.path.dirname(os.path.abspath(__file__))
+        if import_path not in sys.path:
+            sys.path.insert(0, import_path)
+            
+        # Attempt to use parse_multiqc module to extract metrics
+        try:
+            from parse_multiqc import parse_genebody_cov, parse_infer_exp, parse_inner_dist, parse_read_dist
+            
+            # Try to parse genebody coverage data
+            genebody_metrics = parse_genebody_cov(assay_suffix)
+            if genebody_metrics:
+                logger.info(f"Extracted genebody coverage metrics for {len(genebody_metrics)} samples")
+                for sample, metrics in genebody_metrics.items():
+                    # Find matching sample from our list
+                    matched_sample = None
+                    if sample in samples:
+                        matched_sample = sample
+                    else:
+                        for s in samples:
+                            if s in sample or sample in s:
+                                matched_sample = s
+                                break
+                    
+                    if matched_sample:
+                        if matched_sample not in rseqc_metrics_by_sample:
+                            rseqc_metrics_by_sample[matched_sample] = {}
+                        
+                        # Add metrics with prefix for clarity
+                        for key, value in metrics.items():
+                            rseqc_metrics_by_sample[matched_sample][f"genebody_coverage_{key}"] = value
+            
+            # Try to parse infer experiment data
+            infer_metrics = parse_infer_exp(assay_suffix)
+            if infer_metrics:
+                logger.info(f"Extracted infer experiment metrics for {len(infer_metrics)} samples")
+                for sample, metrics in infer_metrics.items():
+                    # Find matching sample from our list
+                    matched_sample = None
+                    if sample in samples:
+                        matched_sample = sample
+                    else:
+                        for s in samples:
+                            if s in sample or sample in s:
+                                matched_sample = s
+                                break
+                    
+                    if matched_sample:
+                        if matched_sample not in rseqc_metrics_by_sample:
+                            rseqc_metrics_by_sample[matched_sample] = {}
+                        
+                        # Add metrics with prefix for clarity
+                        for key, value in metrics.items():
+                            rseqc_metrics_by_sample[matched_sample][f"infer_experiment_{key}"] = value
+            
+            # Try to parse inner distance data
+            if paired_end:
+                inner_metrics = parse_inner_dist(assay_suffix)
+                if inner_metrics:
+                    logger.info(f"Extracted inner distance metrics for {len(inner_metrics)} samples")
+                    for sample, metrics in inner_metrics.items():
+                        # Find matching sample from our list
+                        matched_sample = None
+                        if sample in samples:
+                            matched_sample = sample
+                        else:
+                            for s in samples:
+                                if s in sample or sample in s:
+                                    matched_sample = s
+                                    break
+                        
+                        if matched_sample:
+                            if matched_sample not in rseqc_metrics_by_sample:
+                                rseqc_metrics_by_sample[matched_sample] = {}
+                            
+                            # Add metrics with prefix for clarity
+                            for key, value in metrics.items():
+                                rseqc_metrics_by_sample[matched_sample][f"inner_distance_{key}"] = value
+            
+            # Try to parse read distribution data
+            read_dist_metrics = parse_read_dist(assay_suffix)
+            if read_dist_metrics:
+                logger.info(f"Extracted read distribution metrics for {len(read_dist_metrics)} samples")
+                for sample, metrics in read_dist_metrics.items():
+                    # Find matching sample from our list
+                    matched_sample = None
+                    if sample in samples:
+                        matched_sample = sample
+                    else:
+                        for s in samples:
+                            if s in sample or sample in s:
+                                matched_sample = s
+                                break
+                    
+                    if matched_sample:
+                        if matched_sample not in rseqc_metrics_by_sample:
+                            rseqc_metrics_by_sample[matched_sample] = {}
+                        
+                        # Add metrics with prefix for clarity
+                        for key, value in metrics.items():
+                            rseqc_metrics_by_sample[matched_sample][f"read_distribution_{key}"] = value
+        
+        except ImportError as e:
+            logger.warning(f"Could not import RSeQC parsing functions: {str(e)}")
+        except Exception as e:
+            logger.warning(f"Error parsing RSeQC metrics: {str(e)}")
+            logger.warning(traceback.format_exc())
+    except Exception as e:
+        logger.error(f"Error in RSeQC metrics import setup: {str(e)}")
+    
+    # Detect outliers in collected RSeQC metrics
+    if rseqc_metrics_by_sample:
+        logger.info(f"Detecting outliers in RSeQC metrics for {len(rseqc_metrics_by_sample)} samples")
+        
+        # Define metrics to check for outliers based on their importance
+        metrics_to_check = [
+            # Gene body coverage metrics
+            'genebody_coverage_ratio_genebody_cov_3_to_5',
+            'genebody_coverage_mean_genebody_cov_5_20',
+            'genebody_coverage_mean_genebody_cov_40_60',
+            'genebody_coverage_mean_genebody_cov_80_95',
+            
+            # Infer experiment metrics (strandedness)
+            'infer_experiment_pct_sense',
+            'infer_experiment_pct_antisense',
+            'infer_experiment_pct_undetermined',
+            
+            # Read distribution metrics
+            'read_distribution_cds_exons_pct',
+            'read_distribution_5_utr_exons_pct',
+            'read_distribution_3_utr_exons_pct',
+            'read_distribution_introns_pct',
+            'read_distribution_other_intergenic_pct',
+            
+            # Inner distance metrics (paired-end only)
+            'inner_distance_peak_inner_dist',
+            'inner_distance_peak_inner_dist_pct_reads'
+        ]
+        
+        # Log the metrics we have for each sample
+        for sample, metrics in rseqc_metrics_by_sample.items():
+            available_metrics = [m for m in metrics_to_check if m in metrics]
+            if available_metrics:
+                logger.debug(f"Sample {sample} has RSeQC metrics: {available_metrics}")
+            else:
+                logger.warning(f"Sample {sample} has no RSeQC metrics for outlier detection")
+        
+        # Print key metric values for each sample for debugging
+        key_debug_metrics = [
+            'genebody_coverage_ratio_genebody_cov_3_to_5',
+            'genebody_coverage_mean_genebody_cov_5_20',
+            'infer_experiment_pct_sense',
+            'read_distribution_cds_exons_pct'
+        ]
+        
+        for metric in key_debug_metrics:
+            logger.info(f"Values for {metric}:")
+            for sample in sorted(rseqc_metrics_by_sample.keys()):
+                if metric in rseqc_metrics_by_sample[sample]:
+                    logger.info(f"  {sample}: {rseqc_metrics_by_sample[sample][metric]:.2f}")
+        
+        # Detect outliers using our existing function
+        outliers, metric_stats = detect_outliers(rseqc_metrics_by_sample, metrics_to_check)
+        
+        # Print metric statistics for context
+        for metric in key_debug_metrics:
+            if metric in metric_stats:
+                logger.info(f"Stats for {metric}: mean={metric_stats[metric]['mean']:.2f}, std={metric_stats[metric]['std']:.2f}")
+        
+        # Add strandedness assessment using logic similar to assess_strandedness.py
+        STRANDEDNESS_THRESHOLD = 70.0  # Above this percent is considered stranded
+        UNSTRANDEDNESS_THRESHOLD_MIN = 40.0  # Between min and max is considered unstranded
+        UNSTRANDEDNESS_THRESHOLD_MAX = 60.0
+        
+        logger.info("Strandedness assessment:")
+        # Check strandedness for all samples at once
+        strandedness_results = {}
+        sample_strandedness = {}
+        
+        for sample_id, metrics in rseqc_metrics_by_sample.items():
+            sense_pct = metrics.get('infer_experiment_pct_sense', 0)
+            antisense_pct = metrics.get('infer_experiment_pct_antisense', 0)
+            undetermined_pct = 100 - (sense_pct + antisense_pct)
+            
+            if sense_pct >= STRANDEDNESS_THRESHOLD:
+                strandedness = "forward stranded"
+            elif antisense_pct >= STRANDEDNESS_THRESHOLD:
+                strandedness = "reverse stranded"
+            elif UNSTRANDEDNESS_THRESHOLD_MIN <= sense_pct <= UNSTRANDEDNESS_THRESHOLD_MAX and UNSTRANDEDNESS_THRESHOLD_MIN <= antisense_pct <= UNSTRANDEDNESS_THRESHOLD_MAX:
+                strandedness = "unstranded"
+            else:
+                strandedness = "undetermined"
+            
+            sample_strandedness[sample_id] = strandedness
+            if strandedness not in strandedness_results:
+                strandedness_results[strandedness] = 0
+            strandedness_results[strandedness] = strandedness_results[strandedness] + 1
+        
+        # Determine overall dataset strandedness
+        total_samples = len(rseqc_metrics_by_sample)
+        dataset_strandedness = "mixed"
+        for strand_type, count in strandedness_results.items():
+            if count == total_samples:
+                dataset_strandedness = strand_type
+                break
+        
+        # Calculate average metrics across all samples
+        avg_sense = sum(metrics.get('infer_experiment_pct_sense', 0) for metrics in rseqc_metrics_by_sample.values()) / len(rseqc_metrics_by_sample) if rseqc_metrics_by_sample else 0
+        avg_antisense = sum(metrics.get('infer_experiment_pct_antisense', 0) for metrics in rseqc_metrics_by_sample.values()) / len(rseqc_metrics_by_sample) if rseqc_metrics_by_sample else 0
+        avg_undetermined = 100 - avg_sense - avg_antisense
+        
+        # Format the strandedness summary with average metrics
+        strandedness_summary = f"Dataset strandedness: {dataset_strandedness} ({', '.join([f'{strand_type}: {count}/{total_samples}' for strand_type, count in strandedness_results.items()])})"
+        strandedness_details = f"mean sense: {avg_sense:.2f}%, mean antisense: {avg_antisense:.2f}%, mean undetermined: {avg_undetermined:.2f}%"
+        
+        # Log a single consolidated strandedness entry with average metrics
+        val_logger.log(
+            "rseqc",
+            "all_samples",
+            "strandedness",
+            "INFO",
+            strandedness_summary,
+            strandedness_details
+        )
+        
+        logger.info(f"Strandedness assessment complete: {strandedness_summary} ({strandedness_details})")
+        
+        # Log to regular logger as well
+        logger.info(f"  {sample}: {strandedness} (sense: {sense_pct:.2f}%, antisense: {antisense_pct:.2f}%, undetermined: {undetermined_pct:.2f}%)")
+        
+        # Log any outliers we've found
+        if outliers:
+            logger.info(f"Found outliers in RSeQC metrics: {len(outliers)} samples with outliers")
+            
+            for sample, sample_outliers in outliers.items():
+                for outlier in sample_outliers:
+                    metric = outlier['metric']
+                    value = outlier['value']
+                    mean = outlier['mean']
+                    std = outlier['std']
+                    z_score = outlier['z_score']
+                    
+                    # Determine severity by z-score
+                    status = "YELLOW"
+                    if abs(z_score) > 4:
+                        status = "RED"
+                    
+                    # Create user-friendly metric display name
+                    display_metric = metric
+                    if "genebody_coverage" in metric:
+                        display_metric = metric.replace('genebody_coverage_', 'GeneBody coverage: ')
+                    elif "infer_experiment" in metric:
+                        display_metric = metric.replace('infer_experiment_', 'Strandedness: ')
+                    elif "read_distribution" in metric:
+                        display_metric = metric.replace('read_distribution_', 'Read distribution: ')
+                    elif "inner_distance" in metric:
+                        display_metric = metric.replace('inner_distance_', 'Inner distance: ')
+                    
+                    val_logger.log("rseqc", sample, f"{metric}_outlier", status,
+                                f"{display_metric} value {value:.2f} is an outlier",
+                                f"Value deviates {abs(z_score):.2f} standard deviations from mean ({mean:.2f})")
+        else:
+            val_logger.log("rseqc", "ALL", "rseqc_metrics_outliers", "GREEN",
+                         "No outliers detected in RSeQC metrics")
+    else:
+        val_logger.log("rseqc", "ALL", "rseqc_metrics", "YELLOW",
+                     "No RSeQC metrics found for outlier detection")
+    
+    # Return validation status
+    return {
+        "status": val_logger.get_status(),
+        "messages": [r["message"] for r in val_logger.results],
+        "failures": {r["check_name"]: r["message"] 
+                    for r in val_logger.results 
+                    if r["status"] in ["HALT", "RED"]}
+    }
 
 def check_samples_in_multiqc(multiqc_zip_path: Path, samples: list, assay_type: str) -> dict:
     """

@@ -414,18 +414,18 @@ workflow RNASEQ_MICROBES {
             SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[2] } | collect // BAM index files
         )
 
-        // VV_RSEQC(
-        //     dp_tools_plugin,
-        //     ch_outdir,
-        //     ch_meta,
-        //     runsheet_path,
-        //     ch_rseqc_logs,
-        //     GENEBODY_COVERAGE_MULTIQC.out.zipped_report,
-        //     INFER_EXPERIMENT_MULTIQC.out.zipped_report,
-        //     Channel.empty() | mix(INNER_DISTANCE_MULTIQC.out.zipped_report) | collect | ifEmpty({ file("PLACEHOLDER") }),
-        //     READ_DISTRIBUTION_MULTIQC.out.zipped_report
-        // )
+        VV_RSEQC(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            ch_rseqc_logs,
+            GENEBODY_COVERAGE_MULTIQC.out.zipped_report,
+            INFER_EXPERIMENT_MULTIQC.out.zipped_report,
+            Channel.empty() | mix(INNER_DISTANCE_MULTIQC.out.zipped_report) | collect | ifEmpty({ file("PLACEHOLDER") }),
+            READ_DISTRIBUTION_MULTIQC.out.zipped_report
+        )
 
     emit:
-        VV_TRIMMED_READS.out.log
+        VV_RSEQC.out.log
 }
