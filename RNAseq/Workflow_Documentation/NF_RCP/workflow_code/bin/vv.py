@@ -285,6 +285,10 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
     # Parse run_components into list
     components = run_components.split(',') if run_components else []
     
+    # Convert paired_end string to boolean
+    is_paired_end = paired_end.lower() == 'true'
+    logging.info(f"  paired_end parsed as: {is_paired_end}")
+    
     # Stage files if inputs provided
     if any([raw_fastq, raw_fastqc, raw_multiqc]):
         logging.info("Staging raw read files...")
@@ -471,7 +475,7 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
         results = validate_raw_reads(
             validation_outdir,
             samples_txt=Path(runsheet_path),
-            paired_end=paired_end,
+            paired_end=is_paired_end,
             assay_suffix=assay_suffix
         )
     
@@ -480,7 +484,7 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
         results = validate_trimmed_reads(
             validation_outdir,
             samples_txt=Path(runsheet_path),
-            paired_end=paired_end,
+            paired_end=is_paired_end,
             assay_suffix=assay_suffix
         )
     
@@ -492,7 +496,7 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
         results = validate_bowtie2_alignments(
             validation_outdir,
             samples_txt=Path(runsheet_path),
-            paired_end=paired_end,
+            paired_end=is_paired_end,
             assay_suffix=assay_suffix
         )
     
@@ -501,7 +505,7 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
         results = validate_rseqc(
             validation_outdir,
             samples_txt=runsheet_path,
-            paired_end=paired_end,
+            paired_end=is_paired_end,
             assay_suffix=assay_suffix,
             genebody_coverage_dir=Path(genebody_coverage) if genebody_coverage else None,
             infer_experiment_dir=Path(infer_experiment) if infer_experiment else None,
