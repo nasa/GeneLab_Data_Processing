@@ -402,17 +402,17 @@ workflow RNASEQ_MICROBES {
             TRIMMING_MULTIQC.out.zipped_report
         )
 
-        // VV_BOWTIE2_ALIGNMENT(
-        //     dp_tools_plugin,
-        //     ch_outdir,
-        //     ch_meta,
-        //     runsheet_path,
-        //     ALIGN_BOWTIE2.out.alignment_logs | collect,       // log files
-        //     ALIGN_BOWTIE2.out.unmapped_reads | collect,       // unmapped reads
-        //     ALIGN_MULTIQC.out.zipped_report,      // MultiQC report
-        //     SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[1] } | collect,        // sorted BAM files
-        //     SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[2] } | collect // BAM index files
-        // )
+        VV_BOWTIE2_ALIGNMENT(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            ALIGN_BOWTIE2.out.alignment_logs | collect,       // log files
+            ALIGN_BOWTIE2.out.unmapped_reads | collect,       // unmapped reads
+            ALIGN_MULTIQC.out.zipped_report,      // MultiQC report
+            SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[1] } | collect,        // sorted BAM files
+            SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[2] } | collect // BAM index files
+        )
 
         // VV_RSEQC(
         //     dp_tools_plugin,

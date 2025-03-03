@@ -18,6 +18,7 @@ import numpy as np
 from statistics import mean, median
 from typing import Dict, List, Tuple, Union, Optional
 import traceback
+import sys
 
 # Setup logging
 def setup_logging():
@@ -347,7 +348,121 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
             work_sample_dir = work_alignment_dir / sample
             os.makedirs(work_sample_dir, exist_ok=True)
         
-        # Stage alignment logs
+        # Stage alignment files to sample directories
+        logging.info(f"Staging Bowtie2 alignment files...")
+        
+        # Stage sorted BAM files
+        if bowtie2_alignment_sorted:
+            logging.info(f"Staging sorted BAM files from {bowtie2_alignment_sorted}")
+            for file in os.listdir(bowtie2_alignment_sorted):
+                if file.endswith('_sorted.bam'):
+                    sample_name = file.replace('_sorted.bam', '')
+                    src = os.path.join(bowtie2_alignment_sorted, file)
+                    dst = os.path.join(work_alignment_dir, sample_name, file)
+                    
+                    # Remove destination if it already exists
+                    if os.path.exists(dst) or os.path.islink(dst):
+                        os.unlink(dst)
+                        
+                    # Create symlink
+                    logging.info(f"Creating symlink from {src} to {dst}")
+                    os.symlink(os.path.realpath(src), dst)
+        
+        # Stage BAM index files
+        if bowtie2_alignment_sorted_index:
+            logging.info(f"Staging BAM index files from {bowtie2_alignment_sorted_index}")
+            for file in os.listdir(bowtie2_alignment_sorted_index):
+                if file.endswith('.bam.bai'):
+                    sample_name = file.replace('_sorted.bam.bai', '')
+                    src = os.path.join(bowtie2_alignment_sorted_index, file)
+                    dst = os.path.join(work_alignment_dir, sample_name, file)
+                    
+                    # Remove destination if it already exists
+                    if os.path.exists(dst) or os.path.islink(dst):
+                        os.unlink(dst)
+                        
+                    # Create symlink
+                    logging.info(f"Creating symlink from {src} to {dst}")
+                    os.symlink(os.path.realpath(src), dst)
+        
+        # Stage Bowtie2 alignment log files
+        if bowtie2_alignment_log:
+            logging.info(f"Staging alignment log files from {bowtie2_alignment_log}")
+            for file in os.listdir(bowtie2_alignment_log):
+                if file.endswith('.bowtie2.log'):
+                    sample_name = file.replace('.bowtie2.log', '')
+                    src = os.path.join(bowtie2_alignment_log, file)
+                    dst = os.path.join(work_alignment_dir, sample_name, file)
+                    
+                    # Remove destination if it already exists
+                    if os.path.exists(dst) or os.path.islink(dst):
+                        os.unlink(dst)
+                        
+                    # Create symlink
+                    logging.info(f"Creating symlink from {src} to {dst}")
+                    os.symlink(os.path.realpath(src), dst)
+        
+        # Stage unmapped read files
+        if bowtie2_alignment_unmapped:
+            logging.info(f"Staging unmapped read files from {bowtie2_alignment_unmapped}")
+            for file in os.listdir(bowtie2_alignment_unmapped):
+                # Handle multiple possible filename patterns for unmapped reads
+                sample_name = None
+                
+                # Pattern 1: "Sample1.unmapped.fastq.1.gz" or "Sample1.unmapped.fastq.2.gz"
+                if '.unmapped.fastq.' in file:
+                    parts = file.split('.unmapped.fastq.')
+                    if len(parts) >= 2:
+                        sample_name = parts[0]
+                
+                # Pattern 2: "Sample1_R1.unmapped.fastq.gz" or "Sample1_R2.unmapped.fastq.gz"
+                elif '_R1.unmapped.fastq.gz' in file:
+                    sample_name = file.replace('_R1.unmapped.fastq.gz', '')
+                elif '_R2.unmapped.fastq.gz' in file:
+                    sample_name = file.replace('_R2.unmapped.fastq.gz', '')
+                
+                # If we identified a sample name, stage the file
+                if sample_name:
+                    # Skip if sample directory doesn't exist
+                    if not os.path.exists(os.path.join(work_alignment_dir, sample_name)):
+                        logging.warning(f"Sample directory for {sample_name} doesn't exist, creating it")
+                        os.makedirs(os.path.join(work_alignment_dir, sample_name), exist_ok=True)
+                        
+                    src = os.path.join(bowtie2_alignment_unmapped, file)
+                    dst = os.path.join(work_alignment_dir, sample_name, file)
+                    
+                    # Remove destination if it already exists
+                    if os.path.exists(dst) or os.path.islink(dst):
+                        os.unlink(dst)
+                        
+                    # Create symlink
+                    logging.info(f"Creating symlink from {src} to {dst}")
+                    os.symlink(os.path.realpath(src), dst)
+        
+        # Stage MultiQC report for alignments
+        if bowtie2_alignment_multiqc:
+            logging.info(f"Staging alignment MultiQC from {bowtie2_alignment_multiqc}")
+            for file in os.listdir(bowtie2_alignment_multiqc):
+                if file.endswith('_multiqc_report.zip') or file.endswith('_multiqc_GLbulkRNAseq_report.zip'):
+                    # Place MultiQC reports directly in alignment dir
+                    src = os.path.join(bowtie2_alignment_multiqc, file)
+                    dst = os.path.join(work_alignment_dir, f"align_multiqc{assay_suffix}_report.zip")
+                    
+                    # Remove destination if it already exists
+                    if os.path.exists(dst) or os.path.islink(dst):
+                        os.unlink(dst)
+                        
+                    # Create symlink
+                    logging.info(f"Creating symlink from {src} to {dst}")
+                    os.symlink(os.path.realpath(src), dst)
+                    
+                    # Extract the MultiQC report for processing
+                    extract_dir = dst.replace('.zip', '_data')
+                    if os.path.exists(extract_dir):
+                        shutil.rmtree(extract_dir)
+                    with zipfile.ZipFile(os.path.realpath(src), 'r') as zip_ref:
+                        os.makedirs(extract_dir, exist_ok=True)
+                        zip_ref.extractall(extract_dir)
         
     # Run validations if components specified
     results = {}
@@ -625,6 +740,29 @@ def detect_outliers(stats_by_sample, metrics_to_check=None):
             outliers[sample] = sample_outliers
     
     return outliers, metric_stats
+
+def calculate_outliers(values, stdev_threshold=2):
+    """Calculate outliers based on standard deviation from median.
+    
+    Args:
+        values (list): List of numeric values
+        stdev_threshold (float): Number of standard deviations to consider as outlier threshold
+        
+    Returns:
+        list: Indices of outlier values
+    """
+    if not values:
+        return []
+        
+    median = statistics.median(values)
+    stdev = statistics.stdev(values) if len(values) > 1 else 0
+    
+    outliers = []
+    for i, value in enumerate(values):
+        if abs(value - median) > stdev_threshold * stdev:
+            outliers.append(i)
+            
+    return outliers
 
 def validate_raw_reads(outdir: Path,
                       samples_txt: Path,
@@ -1074,7 +1212,7 @@ def validate_trimmed_reads(outdir: Path,
         fastq_dir = outdir / "01-TG_Preproc/Fastq"
         fastqc_dir = outdir / "01-TG_Preproc/FastQC_Reports"
         trimming_dir = outdir / "01-TG_Preproc/Trimming_Reports"
-        
+
         # Read samples from CSV, get Sample Name column
         samples = []
         with open(samples_txt) as f:
@@ -1157,7 +1295,7 @@ def validate_trimmed_reads(outdir: Path,
                             estimated_total = int(total_reads * (file_size / uncompressed_size))
                         else:
                             estimated_total = total_reads
-                    
+                                
                     stats = {
                         "total_reads": estimated_total,
                         "checked_reads": total_reads,
@@ -1183,7 +1321,7 @@ def validate_trimmed_reads(outdir: Path,
             
             # 2b. SKIP Paired-end read count comparison to improve performance
             # This is consistent with raw reads validation
-            
+                
             # 2c. Check FastQC outputs exist
             for fastqc in expected["fastqc"]:
                 fastqc_path = fastqc_dir / fastqc
@@ -1239,7 +1377,7 @@ def validate_trimmed_reads(outdir: Path,
                         msg += " (unusually high percentage - check sequencing quality)"
                     
                     val_logger.log("trimmed_reads", sample, f"quality_trimming_{read_end}", status, msg, stats=trim_stats)
-                
+            
         # 3. Check MultiQC reports exist
         expected = get_expected_trimmed_files("ALL", paired_end, assay_suffix)
         
@@ -1352,12 +1490,476 @@ def validate_trimmed_reads(outdir: Path,
                     if r["status"] in ["HALT", "RED"]}
     }
 
-def validate_bowtie2_alignments(outdir: Path,
-                              samples_txt: Path,
-                              paired_end: bool = True,
-                              assay_suffix: str = "_GLbulkRNAseq") -> dict:
-    # Implementation of validate_bowtie2_alignments function
-    pass
+def validate_bowtie2_alignments(outdir, samples_txt, paired_end, assay_suffix):
+    """
+    Validate Bowtie2 alignment outputs in the work directory
+    
+    Args:
+        outdir (Path): Output directory (main GLDS directory) - NOT USED, validation happens in work dir
+        samples_txt (Path): Path to samples.txt file
+        paired_end (bool): Whether data is paired-end
+        assay_suffix (str): Suffix for output files (e.g., '_GLbulkRNAseq')
+        
+    Returns:
+        dict: Validation log
+    """
+    logger.info(f"Validating Bowtie2 alignments with params: samples_txt={samples_txt}, paired_end={paired_end}")
+    
+    # Calculate directory paths - use work directory
+    alignment_dir = Path("02-Bowtie2_Alignment")
+    if not alignment_dir.exists():
+        logger.error(f"Work directory {alignment_dir} does not exist")
+        return {
+            "status": "failed",
+            "messages": [f"Work directory {alignment_dir} does not exist"],
+            "failures": {"directory_exists": f"Work directory {alignment_dir} does not exist"}
+        }
+    
+    # Get sample names from runsheet (assumes CSV format for now)
+    samples = []
+    with open(samples_txt, "r") as f:
+        reader = csv.reader(f)
+        header = next(reader)  # Skip header
+        for row in reader:
+            if row:  # Skip empty rows
+                samples.append(row[-1].strip())  # Assume last column is sample name
+    
+    # Track alignment rates across samples for outlier detection
+    alignment_rates = []
+    sample_names = []  # Track sample names in same order as metrics
+    
+    # Dictionary to store all metrics by sample for comprehensive outlier detection
+    alignment_stats_by_sample = {}
+    
+    # Validate each sample's alignment outputs
+    for sample in samples:
+        sample_dir = alignment_dir / sample
+        
+        # Check sorted BAM file exists
+        sorted_bam = sample_dir / f"{sample}_sorted.bam"
+        if not sorted_bam.exists():
+            val_logger.log("alignments", sample, "sorted_bam_exists", "HALT", 
+                        f"Missing sorted BAM file: {sorted_bam.name}")
+        else:
+            val_logger.log("alignments", sample, "sorted_bam_exists", "GREEN",
+                        f"Found sorted BAM file: {sorted_bam.name}")
+            
+            # Check BAM file integrity with samtools
+            try:
+                subprocess.run(["samtools", "quickcheck", str(sorted_bam)], check=True)
+                val_logger.log("alignments", sample, "bam_integrity", "GREEN",
+                            "BAM integrity check passed")
+            except subprocess.CalledProcessError:
+                val_logger.log("alignments", sample, "bam_integrity", "HALT",
+                            "BAM integrity check failed")
+        
+        # Check BAM index exists
+        bam_index = sample_dir / f"{sample}_sorted.bam.bai"
+        if not bam_index.exists():
+            val_logger.log("alignments", sample, "bam_index_exists", "HALT",
+                        f"Missing BAM index file: {bam_index.name}")
+        else:
+            val_logger.log("alignments", sample, "bam_index_exists", "GREEN",
+                        f"Found BAM index file: {bam_index.name}")
+        
+        # Check bowtie2 log file for alignment rate
+        bowtie2_log = sample_dir / f"{sample}.bowtie2.log"
+        if not bowtie2_log.exists():
+            val_logger.log("alignments", sample, "alignment_rate", "HALT", 
+                        f"Missing Bowtie2 log file: {bowtie2_log.name}")
+        else:
+            # Parse alignment rate from log
+            try:
+                with open(bowtie2_log, "r") as f:
+                    log_content = f.read()
+                    
+                # Parse overall alignment rate
+                match = re.search(r"(\d+\.\d+)% overall alignment rate", log_content)
+                if match:
+                    value = float(match.group(1))
+                    alignment_rates.append(value)
+                    sample_names.append(sample)
+                    
+                    # Store alignment rate in stats dictionary
+                    if sample not in alignment_stats_by_sample:
+                        alignment_stats_by_sample[sample] = {}
+                    alignment_stats_by_sample[sample]['overall_alignment_rate'] = value
+                    
+                    # Log the alignment rate without threshold judgments
+                    val_logger.log("alignments", sample, "alignment_rate", "GREEN", 
+                                f"Alignment rate: {value}%")
+                    
+            except Exception as e:
+                val_logger.log("alignments", sample, "alignment_rate", "HALT", 
+                            f"Error parsing Bowtie2 log: {str(e)}")
+        
+        # Check unmapped reads files exist
+        if paired_end:
+            # Check for both possible naming patterns
+            # Pattern 1: sample.unmapped.fastq.1.gz and sample.unmapped.fastq.2.gz
+            # Pattern 2: sample_R1.unmapped.fastq.gz and sample_R2.unmapped.fastq.gz
+            
+            # Pattern 1
+            unmapped_1 = sample_dir / f"{sample}.unmapped.fastq.1.gz"
+            unmapped_2 = sample_dir / f"{sample}.unmapped.fastq.2.gz"
+            
+            # Pattern 2
+            unmapped_r1 = sample_dir / f"{sample}_R1.unmapped.fastq.gz"
+            unmapped_r2 = sample_dir / f"{sample}_R2.unmapped.fastq.gz"
+            
+            # Check both patterns
+            if (not unmapped_1.exists() or not unmapped_2.exists()) and (not unmapped_r1.exists() or not unmapped_r2.exists()):
+                val_logger.log("alignments", sample, "unmapped_reads_exist", "HALT",
+                            f"Missing unmapped reads files: {unmapped_1.name} and/or {unmapped_2.name}")
+            else:
+                # Log which pattern was found
+                if unmapped_1.exists() and unmapped_2.exists():
+                    val_logger.log("alignments", sample, "unmapped_reads_exist", "GREEN",
+                                f"Found unmapped reads files: {unmapped_1.name} and {unmapped_2.name}")
+                elif unmapped_r1.exists() and unmapped_r2.exists():
+                    val_logger.log("alignments", sample, "unmapped_reads_exist", "GREEN",
+                                f"Found unmapped reads files: {unmapped_r1.name} and {unmapped_r2.name}")
+                else:
+                    # This shouldn't happen based on our check above, but just in case
+                    val_logger.log("alignments", sample, "unmapped_reads_exist", "YELLOW",
+                                f"Found only partial unmapped reads files - check for missing pairs")
+        else:
+            # Single-end - also check both possible patterns
+            unmapped = sample_dir / f"{sample}.unmapped.fastq.gz"
+            unmapped_alt = sample_dir / f"{sample}_R1.unmapped.fastq.gz"
+            
+            if not unmapped.exists() and not unmapped_alt.exists():
+                val_logger.log("alignments", sample, "unmapped_reads_exist", "HALT",
+                            f"Missing unmapped reads file: {unmapped.name}")
+            else:
+                if unmapped.exists():
+                    val_logger.log("alignments", sample, "unmapped_reads_exist", "GREEN",
+                                f"Found unmapped reads file: {unmapped.name}")
+                else:
+                    val_logger.log("alignments", sample, "unmapped_reads_exist", "GREEN",
+                                f"Found unmapped reads file: {unmapped_alt.name}")
+    
+    # Check for outliers in alignment rate from logs
+    if len(alignment_rates) >= 2:
+        median = statistics.median(alignment_rates)
+        
+        # Find outliers at 2 and 4 standard deviations
+        # Using statistical outlier detection instead of arbitrary thresholds
+        # as it adapts to the specific dataset characteristics
+        yellow_outliers = calculate_outliers(alignment_rates, 2)  # Moderate outliers
+        red_outliers = calculate_outliers(alignment_rates, 4)     # Extreme outliers
+        
+        # Log yellow outliers (excluding those that are also red)
+        for idx in yellow_outliers:
+            if idx not in red_outliers:
+                sample = sample_names[idx]
+                val_logger.log("alignments", sample, "alignment_rate", "YELLOW",
+                            f"Alignment rate {alignment_rates[idx]}% is an outlier",
+                            f"Value deviates >2 standard deviations from median ({median}%)")
+                
+        # Log red outliers
+        for idx in red_outliers:
+            sample = sample_names[idx]
+            val_logger.log("alignments", sample, "alignment_rate", "RED",
+                        f"Alignment rate {alignment_rates[idx]}% is an extreme outlier",
+                        f"Value deviates >4 standard deviations from median ({median}%)")
+    
+    # Check MultiQC report for alignments (always in root directory as it's global)
+    multiqc_path = alignment_dir / f"align_multiqc{assay_suffix}_report.zip"
+    logger.debug(f"Looking for MultiQC zip at: {multiqc_path}")
+    
+    if not multiqc_path.exists():
+        val_logger.log("alignments", "ALL", "align_multiqc_exists", "HALT", 
+                    f"Missing alignment MultiQC report: {multiqc_path.name}")
+    else:
+        val_logger.log("alignments", "ALL", "align_multiqc_exists", "GREEN", 
+                    f"Alignment MultiQC report found: {multiqc_path.name}")
+        
+        # Parse MultiQC for alignment metrics
+        try:
+            # Extract the MultiQC report to a temporary directory
+            with tempfile.TemporaryDirectory() as temp_dir:
+                temp_dir_path = Path(temp_dir)
+                logger.info(f"Extracting MultiQC zip to temporary directory: {temp_dir_path}")
+                
+                with zipfile.ZipFile(multiqc_path, 'r') as zip_ref:
+                    # List all files in the zip for debugging
+                    zip_contents = zip_ref.namelist()
+                    logger.debug(f"Files in MultiQC zip: {zip_contents}")
+                    
+                    # Extract all files
+                    zip_ref.extractall(temp_dir_path)
+                
+                # Find the extracted data directory (may have variable naming based on assay suffix)
+                multiqc_data_dir = None
+                
+                # Define a recursive function to find the data directory
+                def find_data_dir(path):
+                    # Check if this directory is the data directory
+                    if path.is_dir() and "multiqc" in path.name.lower() and "data" in path.name.lower():
+                        return path
+                    
+                    # Otherwise, check subdirectories
+                    if path.is_dir():
+                        for item in path.iterdir():
+                            if item.is_dir():
+                                result = find_data_dir(item)
+                                if result:
+                                    return result
+                    return None
+                
+                # Start the recursive search
+                multiqc_data_dir = find_data_dir(temp_dir_path)
+                
+                # If we still couldn't find it, try a more general search
+                if not multiqc_data_dir:
+                    logger.warning(f"Could not find MultiQC data directory with standard naming")
+                    
+                    # Try to find any directory that might contain the JSON file
+                    for root, dirs, files in os.walk(temp_dir_path):
+                        root_path = Path(root)
+                        # Check if this directory contains multiqc_data.json
+                        json_path = root_path / "multiqc_data.json"
+                        if json_path.exists():
+                            multiqc_data_dir = root_path
+                            logger.info(f"Found MultiQC data.json in: {multiqc_data_dir}")
+                            break
+                
+                # Log what we found
+                if multiqc_data_dir:
+                    logger.info(f"Found MultiQC data directory: {multiqc_data_dir}")
+                    # List files in the data directory
+                    data_files = list(multiqc_data_dir.iterdir())
+                    logger.debug(f"Files in MultiQC data directory: {data_files}")
+                    
+                    # Look for JSON data file
+                    json_file = multiqc_data_dir / "multiqc_data.json"
+                    if json_file.exists():
+                        logger.info(f"Found MultiQC data JSON: {json_file}")
+                        
+                        # Read the JSON data
+                        with open(json_file, 'r') as f:
+                            multiqc_data = json.load(f)
+                        
+                        # Extract samples from the MultiQC data
+                        bowtie2_stats = {}
+                        
+                        # Look for bowtie2 data in general stats
+                        if 'report_general_stats_data' in multiqc_data:
+                            for stats_section in multiqc_data['report_general_stats_data']:
+                                for sample, stats in stats_section.items():
+                                    # Clean up sample name to remove read identifiers
+                                    base_sample = re.sub(r'_R[12]$', '', sample)
+                                    
+                                    # Skip samples not in our list
+                                    if base_sample not in samples and not any(s == base_sample for s in samples):
+                                        continue
+                                        
+                                    # Initialize if needed
+                                    if base_sample not in bowtie2_stats:
+                                        bowtie2_stats[base_sample] = {}
+                                    
+                                    # Map the metrics from general stats
+                                    metric_map = {
+                                        'total_reads': 'total_reads',
+                                        'overall_alignment_rate': 'overall_alignment_rate',
+                                        'paired_aligned_none': 'aligned_none_pct',  # Will convert to pct
+                                        'paired_aligned_one': 'aligned_one_pct',    # Will convert to pct
+                                        'paired_aligned_multi': 'aligned_multi_pct',# Will convert to pct
+                                        'paired_total': 'total_reads'
+                                    }
+                                    
+                                    # Copy the metrics
+                                    for src_metric, dest_metric in metric_map.items():
+                                        if src_metric in stats:
+                                            # Special handling for percentage metrics
+                                            if src_metric.startswith('paired_aligned') and 'paired_total' in stats:
+                                                # Convert to percentage
+                                                total = stats['paired_total']
+                                                if total > 0:
+                                                    bowtie2_stats[base_sample][dest_metric] = (stats[src_metric] / total) * 100
+                                            else:
+                                                bowtie2_stats[base_sample][dest_metric] = stats[src_metric]
+                            
+                        # Log what we found
+                        logger.info(f"Extracted Bowtie2 metrics for {len(bowtie2_stats)} samples")
+                        for sample, metrics in bowtie2_stats.items():
+                            logger.debug(f"Sample {sample} metrics: {metrics}")
+                        
+                        # Update our alignment stats with the extracted metrics
+                        for sample, metrics in bowtie2_stats.items():
+                            # Find matching sample in our list
+                            matched_sample = None
+                            if sample in samples:
+                                matched_sample = sample
+                            else:
+                                for s in samples:
+                                    if s in sample or sample in s:
+                                        matched_sample = s
+                                        break
+                            
+                            if matched_sample:
+                                # Initialize stats if needed
+                                if matched_sample not in alignment_stats_by_sample:
+                                    alignment_stats_by_sample[matched_sample] = {}
+                                
+                                # Add all metrics
+                                for metric, value in metrics.items():
+                                    alignment_stats_by_sample[matched_sample][metric] = value
+                        
+                        # Detect outliers across different alignment metrics
+                        if alignment_stats_by_sample:
+                            # Define metrics to check for outliers
+                            metrics_to_check = [
+                                'total_reads', 
+                                'overall_alignment_rate', 
+                                'aligned_none_pct', 
+                                'aligned_one_pct', 
+                                'aligned_multi_pct'
+                            ]
+                            
+                            # Log what metrics we have per sample
+                            for sample, metrics in alignment_stats_by_sample.items():
+                                available_metrics = [m for m in metrics_to_check if m in metrics]
+                                if available_metrics:
+                                    logger.debug(f"Sample {sample} has metrics: {available_metrics}")
+                                else:
+                                    logger.warning(f"Sample {sample} has no alignment metrics for outlier detection")
+                            
+                            # Detect outliers
+                            outliers, metric_stats = detect_outliers(alignment_stats_by_sample, metrics_to_check)
+                            
+                            # Log outliers
+                            if outliers:
+                                for sample, sample_outliers in outliers.items():
+                                    for outlier in sample_outliers:
+                                        metric = outlier['metric']
+                                        value = outlier['value']
+                                        mean = outlier['mean']
+                                        std = outlier['std']
+                                        z_score = outlier['z_score']
+                                        
+                                        # Determine severity by z-score
+                                        status = "YELLOW"
+                                        if abs(z_score) > 4:
+                                            status = "RED"
+                                            
+                                        val_logger.log("alignments", sample, f"{metric}_outlier", status,
+                                                    f"{metric} value {value} is an outlier",
+                                                    f"Value deviates {abs(z_score):.2f} standard deviations from mean ({mean:.2f})")
+                            else:
+                                val_logger.log("alignments", "ALL", "alignment_metrics_outliers", "GREEN",
+                                            "No outliers detected in alignment metrics")
+                    else:
+                        logger.warning(f"MultiQC data JSON not found in data directory")
+                else:
+                    logger.warning(f"Could not find MultiQC data directory in extracted files")
+                    # List what was extracted
+                    logger.debug(f"Contents of temp directory: {list(temp_dir_path.iterdir())}")
+                
+            # Check all samples are present in MultiQC report
+            try:
+                with zipfile.ZipFile(multiqc_path, 'r') as zip_ref:
+                    # Debug: List all files in zip
+                    all_files = zip_ref.namelist()
+                    logger.debug(f"Files in MultiQC zip: {all_files}")
+                    
+                    # Try to find the data directory and json file directly
+                    json_path = None
+                    for file in all_files:
+                        if file.endswith('multiqc_data.json'):
+                            json_path = file
+                            break
+                    
+                    if json_path:
+                        with zip_ref.open(json_path) as f:
+                            multiqc_data = json.loads(TextIOWrapper(f).read())
+                        
+                        # Extract samples from the MultiQC data - look in various modules
+                        found_samples = set()
+                        
+                        # Check different modules where samples might be listed
+                        modules_to_check = ['rseqc_gene_body_coverage', 'rseqc_infer_experiment', 
+                                           'rseqc_inner_distance', 'rseqc_read_distribution']
+                        
+                        for module in modules_to_check:
+                            if module in multiqc_data:
+                                found_samples.update(multiqc_data[module].keys())
+                        
+                        # Also check general stats list
+                        if 'report_general_stats_data' in multiqc_data:
+                            for stats in multiqc_data['report_general_stats_data']:
+                                found_samples.update(stats.keys())
+                        
+                        # Improved sample name matching logic
+                        clean_found_samples = set()
+                        logger.debug(f"Raw sample names in MultiQC: {found_samples}")
+                        
+                        # For each sample we're expecting
+                        for sample in samples:
+                            # Direct match
+                            if sample in found_samples:
+                                clean_found_samples.add(sample)
+                                continue
+                            
+                            # Check for partial matches
+                            for found_sample in found_samples:
+                                # MultiQC sometimes modifies sample names or adds file suffixes
+                                # Check if expected sample is part of a longer found sample name
+                                if sample in found_sample:
+                                    clean_found_samples.add(sample)
+                                    logger.debug(f"Matched sample {sample} to MultiQC sample {found_sample}")
+                                    break
+                                    
+                                # Try removing common suffixes like _sorted or _trimmed
+                                # Check for variations based on common RSeQC naming patterns
+                                possible_variations = [
+                                    f"{sample}.infer_expt",
+                                    f"{sample}_sorted",
+                                    f"{sample}.geneBodyCoverage",
+                                    f"{sample}.inner_distance",
+                                    f"{sample}.read_dist"
+                                ]
+                                
+                                for variation in possible_variations:
+                                    if variation in found_sample:
+                                        clean_found_samples.add(sample)
+                                        logger.debug(f"Matched sample {sample} to MultiQC sample {found_sample} via pattern {variation}")
+                                        break
+                        
+                        logger.info(f"Samples found in MultiQC after cleanup: {clean_found_samples}")
+                        
+                        # Record which samples were found
+                        multiqc_samples = clean_found_samples
+                        
+                        # Find missing samples
+                        missing_samples = set(samples) - clean_found_samples
+                        
+                        # Log results
+                        if missing_samples:
+                            msg = f"Samples missing from alignment MultiQC report: {', '.join(missing_samples)}"
+                            logger.warning(msg)
+                            val_logger.log("alignments", "ALL", "samples_in_multiqc", "YELLOW", msg)
+                        else:
+                            val_logger.log("alignments", "ALL", "samples_in_multiqc", "GREEN",
+                                        f"All samples found in alignment MultiQC report")
+                    else:
+                        logger.warning(f"Could not find multiqc_data.json in {multiqc_path}")
+            except Exception as e:
+                val_logger.log("alignments", "ALL", "samples_in_multiqc", "HALT",
+                            f"Error checking samples in MultiQC report: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error processing MultiQC report: {str(e)}")
+            val_logger.log("alignments", "ALL", "process_multiqc", "HALT",
+                        f"Error processing MultiQC report: {str(e)}")
+    
+    return {
+        "status": val_logger.get_status(),
+        "messages": [r["message"] for r in val_logger.results],
+        "failures": {r["check_name"]: r["message"] 
+                    for r in val_logger.results 
+                    if r["status"] in ["HALT", "RED"]}
+    }
 
 def validate_rseqc(outdir: Path,
                  samples_txt: Path,
@@ -1547,7 +2149,7 @@ def parse_fastqc(prefix, assay_suffix):
     try:
         with open(multiqc_data_path) as f:
             j = json.loads(f.read())
-        
+            
         # Group the samples by base name for paired end data
         sample_groups = {}
         for sample in j['report_general_stats_data'][-1].keys():
