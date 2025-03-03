@@ -19,11 +19,11 @@ process REMOVE_RRNA_FEATURECOUNTS {
         path(rrna_ids)
 
     output:
-        path("filtered_counts.tsv"), emit: counts_rrnarm
-        path("rRNA_counts.txt"), emit: summary
+        path("FeatureCounts_rRNArm${params.assay_suffix}.tsv"), emit: counts_rrnarm
+        path("rRNA_counts.txt"), emit: rrnarm_summary
 
     script:
         """
-        python $projectDir/bin/remove_rrna_featurecounts.py ${counts} ${rrna_ids} filtered_counts.tsv
+        python $projectDir/bin/remove_rrna_featurecounts.py ${counts} ${rrna_ids} FeatureCounts_rRNArm${params.assay_suffix}.tsv
         """
 }

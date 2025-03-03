@@ -70,7 +70,7 @@ include { VV_RAW_READS;
     VV_STAR_ALIGNMENTS;
     VV_BOWTIE2_ALIGNMENT;
     VV_RSEQC;
-    VV_RSEM_COUNTS;
+    VV_FEATURECOUNTS;
     VV_DESEQ2_ANALYSIS;
     VV_CONCAT_FILTER } from '../modules/vv.nf'
 
@@ -426,6 +426,17 @@ workflow RNASEQ_MICROBES {
             READ_DISTRIBUTION_MULTIQC.out.zipped_report
         )
 
+        VV_FEATURECOUNTS(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            FEATURECOUNTS.out.counts,
+            FEATURECOUNTS.out.summary,
+            REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm,
+            COUNT_MULTIQC.out.zipped_report
+        )
+
     emit:
-        VV_RSEQC.out.log
+        VV_FEATURECOUNTS.out.log
 }

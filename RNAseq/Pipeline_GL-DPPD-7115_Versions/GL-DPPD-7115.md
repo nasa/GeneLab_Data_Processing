@@ -928,7 +928,7 @@ df[~rna_mask].to_csv(filtered_output, sep='\t', index=False)
 - rrna_ids.txt (file containing list of gene IDs with rRNA features, output from [Step 7di](#7di-extract-rrna-gene-ids-from-gtf))
 
 **Output Data:**
-- **FeatureCounts_rRNA_removed_GLbulkRNAseq.csv** (table containing raw read counts per gene for each sample with rRNA genes removed)
+- **FeatureCounts_rRNArm_GLbulkRNAseq.csv** (table containing raw read counts per gene for each sample with rRNA genes removed)
 - rRNA_counts.txt (Summary of number of rRNA genes removed from counts table)
 
 <br>

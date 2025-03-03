@@ -18,7 +18,7 @@ process VV_RAW_READS {
     path(runsheet)              // Runsheet
     path("INPUT/raw_fastq/*")   // Raw reads
     path("INPUT/raw_fastqc/*")  // Raw FastQC reports 
-    path("INPUT/raw_multiqc/*") // Unzipped Raw MultiQC report
+    path("INPUT/raw_multiqc/*") // Xipped Raw MultiQC report
 
   output:
     path("00-RawData/Fastq"),                                                        emit: VVed_raw_reads
@@ -102,7 +102,7 @@ process VV_BOWTIE2_ALIGNMENT {
     saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
-    pattern: '02-Bowtie2_Alignment/',
+    pattern: '02-Bowtie2_Alignment/**',
     mode: params.publish_dir_mode
 
   label 'VV'
@@ -120,7 +120,7 @@ process VV_BOWTIE2_ALIGNMENT {
     
 
   output:
-    path("02-Bowtie2_Alignment/")
+    path("02-Bowtie2_Alignment/**")
     path("VV_log.csv"), optional: params.skipVV, emit: log
 
   script:
@@ -193,6 +193,52 @@ process VV_RSEQC {
   --read-distribution read-distribution/
   """
 }
+
+
+process VV_FEATURECOUNTS {
+  // Log publishing
+  publishDir "${ publishdir }",
+    pattern: "VV_log.csv",
+    mode: params.publish_dir_mode,
+    saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
+  publishDir "${ publishdir }",
+    pattern: '03-FeatureCounts/**',
+    mode: params.publish_dir_mode
+
+  label 'VV'
+
+  input:
+    path(dp_tools__NF_RCP)
+    val(publishdir)
+    val(meta)
+    path(runsheet)
+    path("INPUT/fc-counts/*") // featurecounts counts
+    path("INPUT/fc-summary/*") // featurecounts summary
+    path("INPUT/fc-counts-rrnarm/*") // featurecounts counts_rrnarm
+    path("INPUT/fc-multiqc/*") // featurecounts multiqc zipped report
+
+  output:
+    path("03-FeatureCounts/**")
+    path("VV_log.csv"), optional: params.skipVV, emit: log
+
+  script:
+  """
+  mv INPUT/* . || true
+  
+  vv.py --assay-type rnaseq \
+  --assay-suffix ${params.assay_suffix} \
+  --runsheet-path ${runsheet} \
+  --outdir ${publishdir} \
+  --paired-end ${meta.paired_end} \
+  --mode microbes \
+  --run-components featurecounts \
+  --featurecounts-summary fc-summary/ \
+  --featurecounts-counts fc-counts/ \
+  --featurecounts-counts-rrnarm fc-counts-rrnarm/ \
+  --featurecounts-multiqc fc-multiqc/
+  """
+}
+
 
 process VV_STAR_ALIGNMENTS {
   // Log publishing

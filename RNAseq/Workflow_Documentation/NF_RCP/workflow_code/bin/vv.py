@@ -67,12 +67,21 @@ STRUCTURE = {
                     }
                 },
                 "alignments": {
-                    "02-Bowtie2_Alignment": {
-                        "{sample_name}": {}  # Sample-specific subdirectories
+                    "outputs": {
+                        "bowtie2_alignment_log": "02-Bowtie2_Alignment",
+                        "bowtie2_alignment_unmapped": "02-Bowtie2_Alignment",
+                        "bowtie2_alignment_multiqc": "02-Bowtie2_Alignment",
+                        "bowtie2_alignment_sorted": "02-Bowtie2_Alignment",
+                        "bowtie2_alignment_sorted_index": "02-Bowtie2_Alignment"
                     }
                 },
                 "counts": {
-                    "03-FeatureCounts": {
+                    "outputs": {
+                        "featurecounts_counts": "03-FeatureCounts",
+                        "featurecounts_summary": "03-FeatureCounts",
+                        "featurecounts_counts_rrnarm": "03-FeatureCounts",
+                        "featurecounts_counts_rrnarm_summary": "03-FeatureCounts",
+                        "featurecounts_multiqc": "03-FeatureCounts"
                     }
                 },
                 "dge": {
@@ -193,12 +202,19 @@ class ValidationLogger:
 @click.option('--infer-experiment', type=click.Path(), help="Path to infer experiment directory")
 @click.option('--inner-distance', type=click.Path(), help="Path to inner distance directory")
 @click.option('--read-distribution', type=click.Path(), help="Path to read distribution directory")
+@click.option('--featurecounts-counts', type=click.Path(), help="Path to featurecounts counts directory")
+@click.option('--featurecounts-summary', type=click.Path(), help="Path to featurecounts summary directory")
+@click.option('--featurecounts-counts-rrnarm', type=click.Path(), help="Path to featurecounts rRNA removed counts directory")
+@click.option('--featurecounts-counts-rrnarm-summary', type=click.Path(), help="Path to featurecounts rRNA removed summary directory")
+@click.option('--featurecounts-multiqc', type=click.Path(), help="Path to featurecounts multiqc directory")
 def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_components, 
        raw_fastq, raw_fastqc, raw_multiqc,
        trimmed_fastq, trimmed_fastqc, trimmed_multiqc, trimming_reports, trimming_multiqc,
        bowtie2_alignment_log, bowtie2_alignment_unmapped, bowtie2_alignment_multiqc, 
        bowtie2_alignment_sorted, bowtie2_alignment_sorted_index,
-       genebody_coverage, infer_experiment, inner_distance, read_distribution):
+       genebody_coverage, infer_experiment, inner_distance, read_distribution,
+       featurecounts_counts, featurecounts_summary, featurecounts_counts_rrnarm,
+       featurecounts_counts_rrnarm_summary, featurecounts_multiqc):
     """
     Main validation and verification (VV) function for GeneLab RNAseq pipeline.
     
@@ -251,6 +267,7 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
         trimmed_fastq, trimmed_fastqc, trimmed_multiqc, trimming_reports, trimming_multiqc: Paths to trimmed data directories
         bowtie2_alignment_log, bowtie2_alignment_unmapped, bowtie2_alignment_multiqc, bowtie2_alignment_sorted, bowtie2_alignment_sorted_index: Paths to alignment directories
         genebody_coverage, infer_experiment, inner_distance, read_distribution: Paths to RSeQC output directories
+        featurecounts_counts, featurecounts_summary, featurecounts_counts_rrnarm, featurecounts_counts_rrnarm_summary, featurecounts_multiqc: Paths to FeatureCounts-related directories
     
     Returns:
         None: Results are written to log files and returned as exit code
@@ -297,7 +314,7 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
             'raw_fastqc': raw_fastqc,
             'raw_multiqc': raw_multiqc
         }
-        stage_files(assay_type, 'raw_reads', **file_paths)
+        stage_files(assay_type, 'raw_reads', assay_suffix=assay_suffix, **file_paths)
     
     # Stage trimmed files if inputs provided
     if any([trimmed_fastq, trimmed_fastqc, trimmed_multiqc, trimming_reports, trimming_multiqc]):
@@ -315,7 +332,7 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
             'trimming_reports': trimming_reports,
             'trimming_multiqc': trimming_multiqc
         }
-        stage_files(assay_type, 'trimmed_reads', **file_paths)
+        stage_files(assay_type, 'trimmed_reads', assay_suffix=assay_suffix, **file_paths)
         
         # Check that files were staged properly
         fastq_dir = Path("01-TG_Preproc/Fastq")
@@ -330,144 +347,30 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
     if any([bowtie2_alignment_log, bowtie2_alignment_unmapped, bowtie2_alignment_multiqc, 
             bowtie2_alignment_sorted, bowtie2_alignment_sorted_index]):
         
-        # Create 02-Bowtie2_Alignment directory in CURRENT WORKING DIRECTORY for Nextflow
-        work_alignment_dir = Path("02-Bowtie2_Alignment")
-        os.makedirs(work_alignment_dir, exist_ok=True)
+        logging.info("Staging alignment files...")
+        file_paths = {
+            'bowtie2_alignment_log': bowtie2_alignment_log,
+            'bowtie2_alignment_unmapped': bowtie2_alignment_unmapped,
+            'bowtie2_alignment_multiqc': bowtie2_alignment_multiqc,
+            'bowtie2_alignment_sorted': bowtie2_alignment_sorted,
+            'bowtie2_alignment_sorted_index': bowtie2_alignment_sorted_index
+        }
+        stage_files(assay_type, 'alignments', assay_suffix=assay_suffix, **file_paths)
+    
+    # Stage FeatureCounts files if inputs provided
+    if any([featurecounts_counts, featurecounts_summary, featurecounts_counts_rrnarm, 
+            featurecounts_counts_rrnarm_summary, featurecounts_multiqc]):
         
-        # Keep track of all sample names to create directories
-        sample_names = set()
-        
-        # Get sample names from all files
-        # From sorted BAM files (these have the most reliable pattern)
-        if bowtie2_alignment_sorted:
-            for file in os.listdir(bowtie2_alignment_sorted):
-                if file.endswith('_sorted.bam'):
-                    # Extract sample name from file name (e.g., "Sample1_sorted.bam" -> "Sample1")
-                    sample_name = file.replace('_sorted.bam', '')
-                    sample_names.add(sample_name)
-        
-        # Create sample directories in working directory
-        for sample in sample_names:
-            # Create in working directory for Nextflow
-            work_sample_dir = work_alignment_dir / sample
-            os.makedirs(work_sample_dir, exist_ok=True)
-        
-        # Stage alignment files to sample directories
-        logging.info(f"Staging Bowtie2 alignment files...")
-        
-        # Stage sorted BAM files
-        if bowtie2_alignment_sorted:
-            logging.info(f"Staging sorted BAM files from {bowtie2_alignment_sorted}")
-            for file in os.listdir(bowtie2_alignment_sorted):
-                if file.endswith('_sorted.bam'):
-                    sample_name = file.replace('_sorted.bam', '')
-                    src = os.path.join(bowtie2_alignment_sorted, file)
-                    dst = os.path.join(work_alignment_dir, sample_name, file)
-                    
-                    # Remove destination if it already exists
-                    if os.path.exists(dst) or os.path.islink(dst):
-                        os.unlink(dst)
-                        
-                    # Create symlink
-                    logging.info(f"Creating symlink from {src} to {dst}")
-                    os.symlink(os.path.realpath(src), dst)
-        
-        # Stage BAM index files
-        if bowtie2_alignment_sorted_index:
-            logging.info(f"Staging BAM index files from {bowtie2_alignment_sorted_index}")
-            for file in os.listdir(bowtie2_alignment_sorted_index):
-                if file.endswith('.bam.bai'):
-                    sample_name = file.replace('_sorted.bam.bai', '')
-                    src = os.path.join(bowtie2_alignment_sorted_index, file)
-                    dst = os.path.join(work_alignment_dir, sample_name, file)
-                    
-                    # Remove destination if it already exists
-                    if os.path.exists(dst) or os.path.islink(dst):
-                        os.unlink(dst)
-                        
-                    # Create symlink
-                    logging.info(f"Creating symlink from {src} to {dst}")
-                    os.symlink(os.path.realpath(src), dst)
-        
-        # Stage Bowtie2 alignment log files
-        if bowtie2_alignment_log:
-            logging.info(f"Staging alignment log files from {bowtie2_alignment_log}")
-            for file in os.listdir(bowtie2_alignment_log):
-                if file.endswith('.bowtie2.log'):
-                    sample_name = file.replace('.bowtie2.log', '')
-                    src = os.path.join(bowtie2_alignment_log, file)
-                    dst = os.path.join(work_alignment_dir, sample_name, file)
-                    
-                    # Remove destination if it already exists
-                    if os.path.exists(dst) or os.path.islink(dst):
-                        os.unlink(dst)
-                        
-                    # Create symlink
-                    logging.info(f"Creating symlink from {src} to {dst}")
-                    os.symlink(os.path.realpath(src), dst)
-        
-        # Stage unmapped read files
-        if bowtie2_alignment_unmapped:
-            logging.info(f"Staging unmapped read files from {bowtie2_alignment_unmapped}")
-            for file in os.listdir(bowtie2_alignment_unmapped):
-                # Handle multiple possible filename patterns for unmapped reads
-                sample_name = None
-                
-                # Pattern 1: "Sample1.unmapped.fastq.1.gz" or "Sample1.unmapped.fastq.2.gz"
-                if '.unmapped.fastq.' in file:
-                    parts = file.split('.unmapped.fastq.')
-                    if len(parts) >= 2:
-                        sample_name = parts[0]
-                
-                # Pattern 2: "Sample1_R1.unmapped.fastq.gz" or "Sample1_R2.unmapped.fastq.gz"
-                elif '_R1.unmapped.fastq.gz' in file:
-                    sample_name = file.replace('_R1.unmapped.fastq.gz', '')
-                elif '_R2.unmapped.fastq.gz' in file:
-                    sample_name = file.replace('_R2.unmapped.fastq.gz', '')
-                
-                # If we identified a sample name, stage the file
-                if sample_name:
-                    # Skip if sample directory doesn't exist
-                    if not os.path.exists(os.path.join(work_alignment_dir, sample_name)):
-                        logging.warning(f"Sample directory for {sample_name} doesn't exist, creating it")
-                        os.makedirs(os.path.join(work_alignment_dir, sample_name), exist_ok=True)
-                        
-                    src = os.path.join(bowtie2_alignment_unmapped, file)
-                    dst = os.path.join(work_alignment_dir, sample_name, file)
-                    
-                    # Remove destination if it already exists
-                    if os.path.exists(dst) or os.path.islink(dst):
-                        os.unlink(dst)
-                        
-                    # Create symlink
-                    logging.info(f"Creating symlink from {src} to {dst}")
-                    os.symlink(os.path.realpath(src), dst)
-        
-        # Stage MultiQC report for alignments
-        if bowtie2_alignment_multiqc:
-            logging.info(f"Staging alignment MultiQC from {bowtie2_alignment_multiqc}")
-            for file in os.listdir(bowtie2_alignment_multiqc):
-                if file.endswith('_multiqc_report.zip') or file.endswith('_multiqc_GLbulkRNAseq_report.zip'):
-                    # Place MultiQC reports directly in alignment dir
-                    src = os.path.join(bowtie2_alignment_multiqc, file)
-                    dst = os.path.join(work_alignment_dir, f"align_multiqc{assay_suffix}_report.zip")
-                    
-                    # Remove destination if it already exists
-                    if os.path.exists(dst) or os.path.islink(dst):
-                        os.unlink(dst)
-                        
-                    # Create symlink
-                    logging.info(f"Creating symlink from {src} to {dst}")
-                    os.symlink(os.path.realpath(src), dst)
-                    
-                    # Extract the MultiQC report for processing
-                    extract_dir = dst.replace('.zip', '_data')
-                    if os.path.exists(extract_dir):
-                        shutil.rmtree(extract_dir)
-                    with zipfile.ZipFile(os.path.realpath(src), 'r') as zip_ref:
-                        os.makedirs(extract_dir, exist_ok=True)
-                        zip_ref.extractall(extract_dir)
-        
+        logging.info("Staging FeatureCounts files...")
+        file_paths = {
+            'featurecounts_counts': featurecounts_counts,
+            'featurecounts_summary': featurecounts_summary,
+            'featurecounts_counts_rrnarm': featurecounts_counts_rrnarm,
+            'featurecounts_counts_rrnarm_summary': featurecounts_counts_rrnarm_summary,
+            'featurecounts_multiqc': featurecounts_multiqc
+        }
+        stage_files(assay_type, 'counts', assay_suffix=assay_suffix, **file_paths)
+    
     # Run validations if components specified
     results = {}
     if 'raw_reads' in components:
@@ -513,20 +416,227 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
             read_distribution_dir=Path(read_distribution) if read_distribution else None
         )
     
+    # Add FeatureCounts validation
+    if 'featurecounts' in components:
+        results = validate_featurecounts(
+            validation_outdir,
+            samples_txt=runsheet_path,
+            paired_end=is_paired_end,
+            assay_suffix=assay_suffix,
+            featurecounts_counts_dir=Path(featurecounts_counts) if featurecounts_counts else None,
+            featurecounts_summary_dir=Path(featurecounts_summary) if featurecounts_summary else None,
+            featurecounts_counts_rrnarm_dir=Path(featurecounts_counts_rrnarm) if featurecounts_counts_rrnarm else None,
+            featurecounts_counts_rrnarm_summary_dir=Path(featurecounts_counts_rrnarm_summary) if featurecounts_counts_rrnarm_summary else None,
+            featurecounts_multiqc_dir=Path(featurecounts_multiqc) if featurecounts_multiqc else None
+        )
+    
     return results
 
-def stage_files(assay_type, section, **file_paths):
+def stage_files(assay_type, section, assay_suffix="_GLbulkRNAseq", **file_paths):
     """
     Stage files either by component or direct paths
     
     Args:
         assay_type (str): e.g. 'rnaseq'
         section (str): e.g. 'raw_reads'
+        assay_suffix (str): Suffix for output files (e.g., '_GLbulkRNAseq')
         **file_paths: Keyword args for direct file paths (raw_fastq, raw_fastqc, etc)
     """
-    structure = STRUCTURE[assay_type]['microbes']['components'][section]['outputs']
+    logging.info(f"Staging files for section {section} with assay_suffix={assay_suffix}")
     
-    # Direct path staging
+    structure = STRUCTURE[assay_type]['microbes']['components'][section]['outputs']
+    logging.info(f"Structure for {section}: {structure}")
+    
+    # Special handling for Bowtie2 alignments - they need a per-sample subdirectory structure
+    if section == 'alignments':
+        # Create base alignment directory
+        alignment_base_dir = "02-Bowtie2_Alignment"
+        os.makedirs(alignment_base_dir, exist_ok=True)
+        
+        # Collect all sample names from sorted BAM files (most reliable)
+        sample_names = set()
+        if file_paths.get('bowtie2_alignment_sorted'):
+            for file in os.listdir(file_paths['bowtie2_alignment_sorted']):
+                if file.endswith('_sorted.bam'):
+                    sample_name = file.replace('_sorted.bam', '')
+                    sample_names.add(sample_name)
+                    
+        # Create sample directories
+        for sample in sample_names:
+            os.makedirs(os.path.join(alignment_base_dir, sample), exist_ok=True)
+            
+        # Stage sorted BAM files
+        if file_paths.get('bowtie2_alignment_sorted'):
+            for file in os.listdir(file_paths['bowtie2_alignment_sorted']):
+                if file.endswith('_sorted.bam'):
+                    sample_name = file.replace('_sorted.bam', '')
+                    src = os.path.join(file_paths['bowtie2_alignment_sorted'], file)
+                    dst = os.path.join(alignment_base_dir, sample_name, file)
+                    
+                    if os.path.exists(dst) or os.path.islink(dst):
+                        os.unlink(dst)
+                    os.symlink(os.path.realpath(src), dst)
+                    
+        # Stage BAM index files
+        if file_paths.get('bowtie2_alignment_sorted_index'):
+            for file in os.listdir(file_paths['bowtie2_alignment_sorted_index']):
+                if file.endswith('.bam.bai'):
+                    sample_name = file.replace('_sorted.bam.bai', '')
+                    src = os.path.join(file_paths['bowtie2_alignment_sorted_index'], file)
+                    dst = os.path.join(alignment_base_dir, sample_name, file)
+                    
+                    if os.path.exists(dst) or os.path.islink(dst):
+                        os.unlink(dst)
+                    os.symlink(os.path.realpath(src), dst)
+                    
+        # Stage alignment log files
+        if file_paths.get('bowtie2_alignment_log'):
+            for file in os.listdir(file_paths['bowtie2_alignment_log']):
+                if file.endswith('.bowtie2.log'):
+                    sample_name = file.replace('.bowtie2.log', '')
+                    src = os.path.join(file_paths['bowtie2_alignment_log'], file)
+                    dst = os.path.join(alignment_base_dir, sample_name, file)
+                    
+                    if os.path.exists(dst) or os.path.islink(dst):
+                        os.unlink(dst)
+                    os.symlink(os.path.realpath(src), dst)
+                    
+        # Stage unmapped read files
+        if file_paths.get('bowtie2_alignment_unmapped'):
+            for file in os.listdir(file_paths['bowtie2_alignment_unmapped']):
+                # Handle multiple possible filename patterns for unmapped reads
+                sample_name = None
+                
+                # Pattern 1: "Sample1.unmapped.fastq.1.gz" or "Sample1.unmapped.fastq.2.gz"
+                if '.unmapped.fastq.' in file:
+                    parts = file.split('.unmapped.fastq.')
+                    if len(parts) >= 2:
+                        sample_name = parts[0]
+                
+                # Pattern 2: "Sample1_R1.unmapped.fastq.gz" or "Sample1_R2.unmapped.fastq.gz"
+                elif '_R1.unmapped.fastq.gz' in file:
+                    sample_name = file.replace('_R1.unmapped.fastq.gz', '')
+                elif '_R2.unmapped.fastq.gz' in file:
+                    sample_name = file.replace('_R2.unmapped.fastq.gz', '')
+                
+                # If we identified a sample name, stage the file
+                if sample_name:
+                    # Create dir if it doesn't exist
+                    if not os.path.exists(os.path.join(alignment_base_dir, sample_name)):
+                        os.makedirs(os.path.join(alignment_base_dir, sample_name), exist_ok=True)
+                        
+                    src = os.path.join(file_paths['bowtie2_alignment_unmapped'], file)
+                    dst = os.path.join(alignment_base_dir, sample_name, file)
+                    
+                    if os.path.exists(dst) or os.path.islink(dst):
+                        os.unlink(dst)
+                    os.symlink(os.path.realpath(src), dst)
+        
+        # Stage MultiQC report
+        if file_paths.get('bowtie2_alignment_multiqc'):
+            multiqc_found = False
+            for file in os.listdir(file_paths['bowtie2_alignment_multiqc']):
+                if '_multiqc' in file and file.endswith('.zip'):
+                    src = os.path.join(file_paths['bowtie2_alignment_multiqc'], file)
+                    dst = os.path.join(alignment_base_dir, f"align_multiqc{assay_suffix}_report.zip")
+                    
+                    logging.info(f"Staging alignment MultiQC from {src} to {dst}")
+                    
+                    if os.path.exists(dst) or os.path.islink(dst):
+                        os.unlink(dst)
+                    os.symlink(os.path.realpath(src), dst)
+                    
+                    # Don't extract the MultiQC report - only use the zip file
+                    multiqc_found = True
+                    break
+            
+            if not multiqc_found:
+                logging.warning(f"No MultiQC report found in {file_paths['bowtie2_alignment_multiqc']}")
+        
+        # Check what was actually staged
+        logging.info(f"Checking contents of 02-Bowtie2_Alignment after staging:")
+        for root, dirs, files in os.walk(alignment_base_dir):
+            for file in files:
+                logging.info(f"  {os.path.join(root, file)}")
+        
+        return  # Skip the standard staging for alignments
+    
+    # Special handling for FeatureCounts - needs consolidated files
+    elif section == 'counts':
+        # Create FeatureCounts directory
+        fc_dir = os.path.join("03-FeatureCounts")
+        os.makedirs(fc_dir, exist_ok=True)
+        
+        # Stage counts files
+        if file_paths.get('featurecounts_counts'):
+            for file in os.listdir(file_paths['featurecounts_counts']):
+                if file.endswith('.txt') or file.endswith('.tsv'):
+                    src = os.path.join(file_paths['featurecounts_counts'], file)
+                    dst = os.path.join(fc_dir, file)
+                    
+                    if os.path.exists(dst) or os.path.islink(dst):
+                        os.unlink(dst)
+                    os.symlink(os.path.realpath(src), dst)
+        
+        # Stage summary files
+        if file_paths.get('featurecounts_summary'):
+            for file in os.listdir(file_paths['featurecounts_summary']):
+                if file.endswith('.txt.summary') or file.endswith('.tsv.summary') or file.endswith('.summary'):
+                    src = os.path.join(file_paths['featurecounts_summary'], file)
+                    dst = os.path.join(fc_dir, file)
+                    
+                    if os.path.exists(dst) or os.path.islink(dst):
+                        os.unlink(dst)
+                    os.symlink(os.path.realpath(src), dst)
+        
+        # Stage rRNA-removed counts files
+        if file_paths.get('featurecounts_counts_rrnarm'):
+            for file in os.listdir(file_paths['featurecounts_counts_rrnarm']):
+                if file.endswith(".txt") or file.endswith(".tsv"):
+                    src = os.path.join(file_paths['featurecounts_counts_rrnarm'], file)
+                    dst = os.path.join(fc_dir, file)
+                    
+                    if os.path.exists(dst) or os.path.islink(dst):
+                        os.unlink(dst)
+                    os.symlink(os.path.realpath(src), dst)
+        
+        # Stage rRNA-removed summary files
+        if file_paths.get('featurecounts_counts_rrnarm_summary'):
+            for file in os.listdir(file_paths['featurecounts_counts_rrnarm_summary']):
+                if file.endswith(".txt.summary") or file.endswith(".tsv.summary") or file.endswith(".summary") or file.endswith(".txt"):
+                    src = os.path.join(file_paths['featurecounts_counts_rrnarm_summary'], file)
+                    dst = os.path.join(fc_dir, file)
+                    
+                    if os.path.exists(dst) or os.path.islink(dst):
+                        os.unlink(dst)
+                    os.symlink(os.path.realpath(src), dst)
+        
+        # Stage MultiQC report
+        if file_paths.get('featurecounts_multiqc'):
+            multiqc_found = False
+            for file in os.listdir(file_paths['featurecounts_multiqc']):
+                if file.endswith(f"_multiqc{assay_suffix}_report.zip") or file.endswith("_report.zip"):
+                    src = os.path.join(file_paths['featurecounts_multiqc'], file)
+                    dst = os.path.join(fc_dir, f"featureCounts_multiqc{assay_suffix}_report.zip")
+                    
+                    if os.path.exists(dst) or os.path.islink(dst):
+                        os.unlink(dst)
+                    os.symlink(os.path.realpath(src), dst)
+                    multiqc_found = True
+                    break
+            
+            if not multiqc_found:
+                logging.warning(f"No MultiQC report found in {file_paths['featurecounts_multiqc']}")
+        
+        # Check what was actually staged
+        logging.info(f"Checking contents of 03-FeatureCounts after staging:")
+        for root, dirs, files in os.walk(fc_dir):
+            for file in files:
+                logging.info(f"  {os.path.join(root, file)}")
+        
+        return  # Skip the standard staging for FeatureCounts
+    
+    # Direct path staging for other components
     for file_type, path in file_paths.items():
         if path:  # Only process if path was provided
             target_dir = structure[file_type]
@@ -945,71 +1055,70 @@ def validate_raw_reads(outdir: Path,
                 val_logger.log("raw_reads", "ALL", "raw_multiqc_samples", "GREEN",
                       f"All samples found in raw reads MultiQC report")
                 
-                # Extract the MultiQC zip file here to ensure data is available
-                multiqc_data_dir = str(multiqc_path).replace('.zip', '_data')
-                try:
-                    logging.info(f"Extracting MultiQC zip to {multiqc_data_dir}")
-                    if os.path.exists(multiqc_data_dir):
-                        shutil.rmtree(multiqc_data_dir)
-                    os.makedirs(multiqc_data_dir, exist_ok=True)
-                    
-                    # Make sure the zip file exists before attempting to extract
-                    if os.path.exists(multiqc_path):
-                        with zipfile.ZipFile(multiqc_path, 'r') as zip_ref:
-                            zip_ref.extractall(multiqc_data_dir)
-                        logging.info(f"Successfully extracted MultiQC zip to {multiqc_data_dir}")
+                # Use a temporary directory for multiqc extraction instead of persistent directory
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    try:
+                        logging.info(f"Extracting MultiQC zip to temporary directory: {temp_dir}")
                         
-                        # List the extracted contents for debugging
-                        logging.info(f"Extracted files in {multiqc_data_dir}:")
-                        for root, dirs, files in os.walk(multiqc_data_dir):
-                            for file in files:
-                                logging.info(f"  {os.path.join(root, file)}")
-                    else:
-                        logging.error(f"MultiQC zip file does not exist at {multiqc_path}")
-                except Exception as e:
-                    logging.error(f"Error extracting MultiQC zip: {str(e)}")
-                
-                # Add group statistics from parse_fastqc
-                try:
-                    # Parse the FastQC data from MultiQC report
-                    group_stats = parse_fastqc("raw", assay_suffix)
-                    
-                    if group_stats:
-                        # Collect all stats but don't log individual samples
-                        # This removes the redundant entries
-                        
-                        # After collecting all stats, check for outliers
-                        outliers, metric_stats = detect_outliers(group_stats)
-                        
-                        # Report outliers if any were found
-                        if outliers:
-                            for sample, outlier_metrics in outliers.items():
-                                if sample in samples:  # Only report for samples in our list
-                                    # Format outlier information
-                                    outlier_details = []
-                                    for o in outlier_metrics:
-                                        z_score = round(o['z_score'], 2)
-                                        direction = "higher" if z_score > 0 else "lower"
-                                        outlier_details.append(
-                                            f"{o['metric']}: {o['value']} ({abs(z_score)} std dev {direction} than mean of {round(o['mean'], 2)})"
-                                        )
-                                    
-                                    # Determine status based on severity
-                                    severe_outliers = any(abs(o['z_score']) > 3 for o in outlier_metrics)
-                                    status = "RED" if severe_outliers else "YELLOW"
-                                    
-                                    val_logger.log("raw_reads", sample, "raw_metrics_outliers", status,
-                                          f"Sample has {len(outlier_metrics)} metric outliers", 
-                                          details="; ".join(outlier_details))
+                        # Make sure the zip file exists before attempting to extract
+                        if os.path.exists(multiqc_path):
+                            with zipfile.ZipFile(multiqc_path, 'r') as zip_ref:
+                                zip_ref.extractall(temp_dir)
+                            logging.info(f"Successfully extracted MultiQC zip to temporary directory")
+                            
+                            # List the extracted contents for debugging
+                            logging.info(f"Extracted files in temp directory:")
+                            for root, dirs, files in os.walk(temp_dir):
+                                for file in files:
+                                    logging.info(f"  {os.path.join(root, file)}")
                         else:
-                            val_logger.log("raw_reads", "ALL", "raw_metrics_outliers", "GREEN",
-                                  f"No metric outliers detected across samples")
-                    else:
+                            logging.error(f"MultiQC zip file does not exist at {multiqc_path}")
+                    except Exception as e:
+                        logging.error(f"Error extracting MultiQC zip: {str(e)}")
+                    
+                    # Add group statistics from parse_fastqc
+                    try:
+                        # Set up environment for parse_fastqc to find the data
+                        multiqc_data_dir = temp_dir
+                        # Parse the FastQC data from MultiQC report
+                        group_stats = parse_fastqc("raw", assay_suffix)
+                        
+                        if group_stats:
+                            # Collect all stats but don't log individual samples
+                            # This removes the redundant entries
+                            
+                            # After collecting all stats, check for outliers
+                            outliers, metric_stats = detect_outliers(group_stats)
+                            
+                            # Report outliers if any were found
+                            if outliers:
+                                for sample, outlier_metrics in outliers.items():
+                                    if sample in samples:  # Only report for samples in our list
+                                        # Format outlier information
+                                        outlier_details = []
+                                        for o in outlier_metrics:
+                                            z_score = round(o['z_score'], 2)
+                                            direction = "higher" if z_score > 0 else "lower"
+                                            outlier_details.append(
+                                                f"{o['metric']}: {o['value']} ({abs(z_score)} std dev {direction} than mean of {round(o['mean'], 2)})"
+                                            )
+                                        
+                                        # Determine status based on severity
+                                        severe_outliers = any(abs(o['z_score']) > 3 for o in outlier_metrics)
+                                        status = "RED" if severe_outliers else "YELLOW"
+                                        
+                                        val_logger.log("raw_reads", sample, "raw_metrics_outliers", status,
+                                              f"Sample has {len(outlier_metrics)} metric outliers", 
+                                              details="; ".join(outlier_details))
+                            else:
+                                val_logger.log("raw_reads", "ALL", "raw_metrics_outliers", "GREEN",
+                                      f"No metric outliers detected across samples")
+                        else:
+                            val_logger.log("raw_reads", "ALL", "raw_group_stats", "WARNING",
+                                  f"No group statistics collected from MultiQC report")
+                    except Exception as e:
                         val_logger.log("raw_reads", "ALL", "raw_group_stats", "WARNING",
-                              f"No group statistics collected from MultiQC report")
-                except Exception as e:
-                    val_logger.log("raw_reads", "ALL", "raw_group_stats", "WARNING",
-                          f"Error collecting group statistics: {str(e)}")
+                              f"Error collecting group statistics: {str(e)}")
             else:
                 missing = ", ".join(multiqc_check["missing_samples"]) if multiqc_check["missing_samples"] else "None"
                 if "error" in multiqc_check:
@@ -1401,68 +1510,70 @@ def validate_trimmed_reads(outdir: Path,
                 val_logger.log("trimmed_reads", "ALL", "trimmed_multiqc_samples", "GREEN",
                       f"All samples found in trimmed reads MultiQC report")
                 
-                # Extract the MultiQC zip file here to ensure data is available
-                multiqc_data_dir = str(trimmed_multiqc_path).replace('.zip', '_data')
-                try:
-                    logging.info(f"Extracting MultiQC zip to {multiqc_data_dir}")
-                    if os.path.exists(multiqc_data_dir):
-                        shutil.rmtree(multiqc_data_dir)
-                    os.makedirs(multiqc_data_dir, exist_ok=True)
-                    
-                    # Make sure the zip file exists before attempting to extract
-                    if os.path.exists(trimmed_multiqc_path):
-                        with zipfile.ZipFile(trimmed_multiqc_path, 'r') as zip_ref:
-                            zip_ref.extractall(multiqc_data_dir)
-                        logging.info(f"Successfully extracted MultiQC zip to {multiqc_data_dir}")
+                # Use a temporary directory for multiqc extraction instead of persistent directory
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    try:
+                        logging.info(f"Extracting MultiQC zip to temporary directory: {temp_dir}")
                         
-                        # List the extracted contents for debugging
-                        logging.info(f"Extracted files in {multiqc_data_dir}:")
-                        for root, dirs, files in os.walk(multiqc_data_dir):
-                            for file in files:
-                                logging.info(f"  {os.path.join(root, file)}")
-                    else:
-                        logging.error(f"MultiQC zip file does not exist at {trimmed_multiqc_path}")
-                except Exception as e:
-                    logging.error(f"Error extracting MultiQC zip: {str(e)}")
-                
-                # Add group statistics from parse_fastqc
-                try:
-                    # Parse the FastQC data from MultiQC report
-                    group_stats = parse_fastqc("trimmed", assay_suffix)
-                    
-                    if group_stats:
-                        # After collecting all stats, check for outliers
-                        outliers, metric_stats = detect_outliers(group_stats)
-                        
-                        # Report outliers if any were found
-                        if outliers:
-                            for sample, outlier_metrics in outliers.items():
-                                if sample in samples:  # Only report for samples in our list
-                                    # Format outlier information
-                                    outlier_details = []
-                                    for o in outlier_metrics:
-                                        z_score = round(o['z_score'], 2)
-                                        direction = "higher" if z_score > 0 else "lower"
-                                        outlier_details.append(
-                                            f"{o['metric']}: {o['value']} ({abs(z_score)} std dev {direction} than mean of {round(o['mean'], 2)})"
-                                        )
-                                    
-                                    # Determine status based on severity
-                                    severe_outliers = any(abs(o['z_score']) > 3 for o in outlier_metrics)
-                                    status = "RED" if severe_outliers else "YELLOW"
-                                    
-                                    val_logger.log("trimmed_reads", sample, "trimmed_metrics_outliers", status,
-                                          f"Sample has {len(outlier_metrics)} metric outliers", 
-                                          details="; ".join(outlier_details))
+                        # Make sure the zip file exists before attempting to extract
+                        if os.path.exists(trimmed_multiqc_path):
+                            with zipfile.ZipFile(trimmed_multiqc_path, 'r') as zip_ref:
+                                zip_ref.extractall(temp_dir)
+                            logging.info(f"Successfully extracted MultiQC zip to temporary directory")
+                            
+                            # List the extracted contents for debugging
+                            logging.info(f"Extracted files in temp directory:")
+                            for root, dirs, files in os.walk(temp_dir):
+                                for file in files:
+                                    logging.info(f"  {os.path.join(root, file)}")
                         else:
-                            val_logger.log("trimmed_reads", "ALL", "trimmed_metrics_outliers", "GREEN",
-                                  f"No metric outliers detected across samples")
-                    else:
+                            logging.error(f"MultiQC zip file does not exist at {trimmed_multiqc_path}")
+                    except Exception as e:
+                        logging.error(f"Error extracting MultiQC zip: {str(e)}")
+                    
+                    # Add group statistics from parse_fastqc
+                    try:
+                        # Set up environment for parse_fastqc to find the data
+                        multiqc_data_dir = temp_dir
+                        # Parse the FastQC data from MultiQC report
+                        group_stats = parse_fastqc("trimmed", assay_suffix)
+                        
+                        if group_stats:
+                            # Collect all stats but don't log individual samples
+                            # This removes the redundant entries
+                            
+                            # After collecting all stats, check for outliers
+                            outliers, metric_stats = detect_outliers(group_stats)
+                            
+                            # Report outliers if any were found
+                            if outliers:
+                                for sample, outlier_metrics in outliers.items():
+                                    if sample in samples:  # Only report for samples in our list
+                                        # Format outlier information
+                                        outlier_details = []
+                                        for o in outlier_metrics:
+                                            z_score = round(o['z_score'], 2)
+                                            direction = "higher" if z_score > 0 else "lower"
+                                            outlier_details.append(
+                                                f"{o['metric']}: {o['value']} ({abs(z_score)} std dev {direction} than mean of {round(o['mean'], 2)})"
+                                            )
+                                        
+                                        # Determine status based on severity
+                                        severe_outliers = any(abs(o['z_score']) > 3 for o in outlier_metrics)
+                                        status = "RED" if severe_outliers else "YELLOW"
+                                        
+                                        val_logger.log("trimmed_reads", sample, "trimmed_metrics_outliers", status,
+                                              f"Sample has {len(outlier_metrics)} metric outliers", 
+                                              details="; ".join(outlier_details))
+                            else:
+                                val_logger.log("trimmed_reads", "ALL", "trimmed_metrics_outliers", "GREEN",
+                                      f"No metric outliers detected across samples")
+                        else:
+                            val_logger.log("trimmed_reads", "ALL", "trimmed_group_stats", "WARNING",
+                                  f"No group statistics collected from MultiQC report")
+                    except Exception as e:
                         val_logger.log("trimmed_reads", "ALL", "trimmed_group_stats", "WARNING",
-                              f"No group statistics collected from MultiQC report")
-                except Exception as e:
-                    val_logger.log("trimmed_reads", "ALL", "trimmed_group_stats", "WARNING",
-                          f"Error collecting group statistics: {str(e)}")
+                              f"Error collecting group statistics: {str(e)}")
             else:
                 missing = ", ".join(multiqc_check["missing_samples"]) if multiqc_check["missing_samples"] else "None"
                 if "error" in multiqc_check:
@@ -1509,24 +1620,33 @@ def validate_bowtie2_alignments(outdir, samples_txt, paired_end, assay_suffix):
     """
     logger.info(f"Validating Bowtie2 alignments with params: samples_txt={samples_txt}, paired_end={paired_end}")
     
-    # Calculate directory paths - use work directory
+    # Debug what files actually exist
     alignment_dir = Path("02-Bowtie2_Alignment")
-    if not alignment_dir.exists():
-        logger.error(f"Work directory {alignment_dir} does not exist")
-        return {
-            "status": "failed",
-            "messages": [f"Work directory {alignment_dir} does not exist"],
-            "failures": {"directory_exists": f"Work directory {alignment_dir} does not exist"}
-        }
+    if alignment_dir.exists():
+        logger.info(f"Files in {alignment_dir} before validation:")
+        for item in alignment_dir.glob("**/*"):
+            logger.info(f"  {item}")
+    else:
+        logger.warning(f"Alignment directory does not exist: {alignment_dir}")
     
-    # Get sample names from runsheet (assumes CSV format for now)
-    samples = []
+    # Sample management
+    sample_ids = []
     with open(samples_txt, "r") as f:
-        reader = csv.reader(f)
-        header = next(reader)  # Skip header
+        reader = csv.DictReader(f)
         for row in reader:
-            if row:  # Skip empty rows
-                samples.append(row[-1].strip())  # Assume last column is sample name
+            if 'Sample Name' in row:
+                sample_name = row['Sample Name'].strip()
+                if sample_name:  # Only add non-empty sample names
+                    sample_ids.append(sample_name)
+                    logging.debug(f"Added sample: {sample_name}")
+            else:
+                raise ValueError("Runsheet missing required 'Sample Name' column")
+            
+    logger.info(f"Found {len(sample_ids)} samples in runsheet: {sample_ids}")
+    
+    # Create a samples variable for MultiQC processing consistency with other functions
+    # This helps keep code consistent with functions that call check_samples_in_multiqc()
+    samples = sample_ids
     
     # Track alignment rates across samples for outlier detection
     alignment_rates = []
@@ -1536,7 +1656,7 @@ def validate_bowtie2_alignments(outdir, samples_txt, paired_end, assay_suffix):
     alignment_stats_by_sample = {}
     
     # Validate each sample's alignment outputs
-    for sample in samples:
+    for sample in sample_ids:
         sample_dir = alignment_dir / sample
         
         # Check sorted BAM file exists
@@ -1900,7 +2020,7 @@ def validate_bowtie2_alignments(outdir, samples_txt, paired_end, assay_suffix):
                         logger.debug(f"Raw sample names in MultiQC: {found_samples}")
                         
                         # For each sample we're expecting
-                        for sample in samples:
+                        for sample in sample_ids:
                             # Direct match
                             if sample in found_samples:
                                 clean_found_samples.add(sample)
@@ -2176,6 +2296,7 @@ def validate_rseqc(outdir: Path,
             # Get the working directory path
             section = sections[target_section]
             sample_dir = section["work_dir"] / sample_match
+            
             
             dst_file = sample_dir / file
             
@@ -2879,6 +3000,496 @@ def parse_fastqc(prefix, assay_suffix):
     except Exception as e:
         logging.error(f"Error parsing MultiQC data: {str(e)}")
         return {}
+
+def validate_featurecounts(outdir: Path,
+                       samples_txt: Path,
+                       paired_end: bool,
+                       assay_suffix: str,
+                       featurecounts_counts_dir: Path = None,
+                       featurecounts_summary_dir: Path = None,
+                       featurecounts_counts_rrnarm_dir: Path = None,
+                       featurecounts_counts_rrnarm_summary_dir: Path = None,
+                       featurecounts_multiqc_dir: Path = None) -> dict:
+    """
+    Perform validation checks on FeatureCounts results.
+    
+    This function validates the FeatureCounts outputs by performing:
+    1. File existence checks for counts files (.txt)
+    2. File existence checks for summary files (.txt.summary)
+    3. Content validation of counts files (proper format, gene IDs, counts)
+    4. Content validation of summary files (assignment rates)
+    5. Detection of outliers in assignment rates
+    6. Presence of MultiQC report
+    
+    Args:
+        outdir: Path to the output directory
+        samples_txt: Path to the runsheet file containing sample information
+        paired_end: Boolean indicating if data is paired-end (True) or single-end (False)
+        assay_suffix: Suffix for the assay (e.g., "_GLbulkRNAseq")
+        featurecounts_counts_dir: Path to directory with FeatureCounts counts files
+        featurecounts_summary_dir: Path to directory with FeatureCounts summary files
+        featurecounts_counts_rrnarm_dir: Path to directory with rRNA-removed counts files
+        featurecounts_counts_rrnarm_summary_dir: Path to directory with rRNA-removed summary files (UNUSED/REMOVED)
+        featurecounts_multiqc_dir: Path to directory with FeatureCounts MultiQC reports
+        
+    Returns:
+        dict: Dictionary with validation status, messages, and any failures
+    """
+    
+    logger.info("Starting FeatureCounts validation:")
+    logger.info(f"  Output directory: {outdir}")
+    logger.info(f"  Samples file: {samples_txt}")
+    logger.info(f"  Paired-end: {paired_end}")
+    logger.info(f"  FeatureCounts counts directory: {featurecounts_counts_dir}")
+    logger.info(f"  FeatureCounts summary directory: {featurecounts_summary_dir}")
+    logger.info(f"  FeatureCounts rRNA-removed counts directory: {featurecounts_counts_rrnarm_dir}")
+    logger.info(f"  FeatureCounts rRNA-removed summary directory: {featurecounts_counts_rrnarm_summary_dir} (UNUSED)")
+    logger.info(f"  FeatureCounts MultiQC directory: {featurecounts_multiqc_dir}")
+    
+    # Get sample IDs from runsheet
+    sample_ids = []
+    with open(samples_txt, 'r') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if 'Sample Name' in row:
+                sample_name = row['Sample Name'].strip()
+                if sample_name:  # Only add non-empty sample names
+                    sample_ids.append(sample_name)
+                    logging.debug(f"Added sample: {sample_name}")
+            else:
+                raise ValueError("Runsheet missing required 'Sample Name' column")
+    
+    logger.info(f"Found {len(sample_ids)} samples in runsheet: {', '.join(sample_ids)}")
+    
+    # Create 03-FeatureCounts directory structure
+    fc_dir = outdir / "03-FeatureCounts"
+    os.makedirs(fc_dir, exist_ok=True)
+    
+    # Stage files
+    staged_files = {
+        "counts": [],
+        "summary": [],
+        "counts_rrnarm": [],
+        "multiqc": []
+    }
+    
+    # Stage all files first
+    
+    # 1. Stage counts files
+    if featurecounts_counts_dir:
+        logger.info(f"Staging FeatureCounts counts files from {featurecounts_counts_dir}")
+        
+        for file in os.listdir(featurecounts_counts_dir):
+            if file.endswith(".txt") or file.endswith(".tsv"):
+                src = os.path.join(featurecounts_counts_dir, file)
+                dst = os.path.join(fc_dir, file)
+                
+                # Create symlink
+                if os.path.exists(dst) or os.path.islink(dst):
+                    os.unlink(dst)
+                os.symlink(os.path.realpath(src), dst)
+                staged_files["counts"].append(dst)
+    
+    # 2. Stage summary files
+    if featurecounts_summary_dir:
+        logger.info(f"Staging FeatureCounts summary files from {featurecounts_summary_dir}")
+        
+        for file in os.listdir(featurecounts_summary_dir):
+            if file.endswith(".txt.summary") or file.endswith(".tsv.summary") or file.endswith(".summary"):
+                src = os.path.join(featurecounts_summary_dir, file)
+                dst = os.path.join(fc_dir, file)
+                
+                # Create symlink
+                if os.path.exists(dst) or os.path.islink(dst):
+                    os.unlink(dst)
+                os.symlink(os.path.realpath(src), dst)
+                staged_files["summary"].append(dst)
+    
+    # 3. Stage rRNA-removed counts files
+    if featurecounts_counts_rrnarm_dir:
+        logger.info(f"Staging FeatureCounts rRNA-removed counts files from {featurecounts_counts_rrnarm_dir}")
+        
+        for file in os.listdir(featurecounts_counts_rrnarm_dir):
+            if file.endswith(".txt") or file.endswith(".tsv"):
+                src = os.path.join(featurecounts_counts_rrnarm_dir, file)
+                dst = os.path.join(fc_dir, file)
+                
+                # Create symlink
+                if os.path.exists(dst) or os.path.islink(dst):
+                    os.unlink(dst)
+                os.symlink(os.path.realpath(src), dst)
+                staged_files["counts_rrnarm"].append(dst)
+    
+    # 4. (REMOVED) Stage rRNA-removed summary files - no longer used
+    
+    # 5. Stage MultiQC report
+    multiqc_found = False
+    multiqc_data = None
+    if featurecounts_multiqc_dir:
+        logger.info(f"Staging FeatureCounts MultiQC report from {featurecounts_multiqc_dir}")
+        
+        for file in os.listdir(featurecounts_multiqc_dir):
+            if file.endswith(f"_multiqc{assay_suffix}_report.zip") or file.endswith("_report.zip"):
+                src = os.path.join(featurecounts_multiqc_dir, file)
+                dst = os.path.join(fc_dir, f"featureCounts_multiqc{assay_suffix}_report.zip")
+                
+                # Create symlink
+                if os.path.exists(dst) or os.path.islink(dst):
+                    os.unlink(dst)
+                os.symlink(os.path.realpath(src), dst)
+                staged_files["multiqc"].append(dst)
+                multiqc_found = True
+    
+    # STEP 1: Validate basic file existence
+    # Check if any counts files exist
+    if featurecounts_counts_dir and len(staged_files["counts"]) == 0:
+        val_logger.log("featurecounts", "ALL", "counts_file", "RED", 
+                     f"No FeatureCounts counts file found")
+    elif featurecounts_counts_dir:
+        # Log the consolidated count files
+        logger.info(f"Found FeatureCounts count files:")
+        for file in staged_files["counts"]:
+            logger.info(f"  - {os.path.basename(file)}")
+            val_logger.log("featurecounts", "ALL", "counts_file", "GREEN", 
+                         f"FeatureCounts counts file found: {os.path.basename(file)}")
+            
+    # Check if any counts summary files exist
+    if featurecounts_summary_dir and len(staged_files["summary"]) == 0:
+        val_logger.log("featurecounts", "ALL", "summary_file", "RED", 
+                     f"No FeatureCounts summary file found")
+    elif featurecounts_summary_dir:
+        # Log the consolidated summary files
+        logger.info(f"Found FeatureCounts summary files:")
+        for file in staged_files["summary"]:
+            logger.info(f"  - {os.path.basename(file)}")
+            val_logger.log("featurecounts", "ALL", "summary_file", "GREEN", 
+                         f"FeatureCounts summary file found: {os.path.basename(file)}")
+    
+    # Check if any rRNA-removed counts files exist
+    if featurecounts_counts_rrnarm_dir and len(staged_files["counts_rrnarm"]) == 0:
+        val_logger.log("featurecounts", "ALL", "counts_rrnarm_file", "RED", 
+                     f"No FeatureCounts rRNA-removed counts file found")
+    elif featurecounts_counts_rrnarm_dir:
+        # Log the consolidated rRNA-removed count files
+        logger.info(f"Found FeatureCounts rRNA-removed count files:")
+        for file in staged_files["counts_rrnarm"]:
+            logger.info(f"  - {os.path.basename(file)}")
+            val_logger.log("featurecounts", "ALL", "counts_rrnarm_file", "GREEN", 
+                         f"FeatureCounts rRNA-removed counts file found: {os.path.basename(file)}")
+            
+    # (REMOVED) Check if any rRNA-removed summary files exist
+    
+    # STEP 2: Check file formats
+    # Validate counts file content
+    for file_path in staged_files["counts"]:
+        try:
+            with open(file_path, 'r') as f:
+                lines = f.readlines()
+                # Check header (should have Geneid, Chr, Start, End, etc.)
+                header = lines[0].strip().split('\t')
+                if not "Geneid" in header[0] and not header[0].startswith("# Program:featureCounts"):
+                    val_logger.log("featurecounts", "ALL", "counts_file_format", "YELLOW", 
+                                 f"Counts file has unexpected header format: {header[0]}")
+                else:
+                    # Header format is acceptable (either contains "Geneid" or starts with the expected program header)
+                    val_logger.log("featurecounts", "ALL", "counts_file_format", "GREEN", 
+                                 f"Counts file has expected header format")
+                
+                # Check that file has content beyond header
+                if len(lines) < 2:
+                    val_logger.log("featurecounts", "ALL", "counts_file_content", "RED", 
+                                 "Counts file has no content beyond header")
+                else:
+                    # Log success - Use "ALL" as the sample_id instead of the filename
+                    val_logger.log("featurecounts", "ALL", "counts_file_exists", "GREEN", 
+                                 f"FeatureCounts counts file exists and has valid format")
+        except Exception as e:
+            val_logger.log("featurecounts", "ALL", "counts_file_read", "RED", 
+                         f"Error reading counts file: {str(e)}")
+            logger.error(f"Error reading counts file: {str(e)}")
+            
+    # Validate summary file content
+    for file_path in staged_files["summary"]:
+        try:
+            with open(file_path, 'r') as f:
+                if len(f.read().strip()) > 0:
+                    # File has some content
+                    val_logger.log("featurecounts", "ALL", "summary_file_format", "GREEN", 
+                                 f"Summary file has valid format")
+        except Exception as e:
+            val_logger.log("featurecounts", "ALL", "summary_file_read", "RED", 
+                         f"Error reading summary file: {str(e)}")
+            logger.error(f"Error reading summary file: {str(e)}")
+    
+    # Validate rRNA-removed counts file content
+    for file_path in staged_files["counts_rrnarm"]:
+        try:
+            with open(file_path, 'r') as f:
+                if len(f.read().strip()) > 0:
+                    # File has some content
+                    val_logger.log("featurecounts", "ALL", "counts_rrnarm_file_format", "GREEN", 
+                                 f"rRNA-removed counts file has valid format")
+        except Exception as e:
+            val_logger.log("featurecounts", "ALL", "counts_rrnarm_file_read", "RED", 
+                         f"Error reading rRNA-removed counts file: {str(e)}")
+            logger.error(f"Error reading rRNA-removed counts file: {str(e)}")
+    
+    # (REMOVED) Validate rRNA-removed summary file content
+    
+    # STEP 3: MultiQC validation and sample metrics
+    # Validate MultiQC report content and do outlier detection as the FINAL step
+    if multiqc_found:
+        # Get the first MultiQC file (should only be one)
+        multiqc_file = os.path.realpath(staged_files["multiqc"][0])
+        
+        # Try to get MultiQC data - first check if we have a directory structure instead of a zip
+        multiqc_data = None
+        try:
+            # First check if we have a directory with the MultiQC data unzipped
+            multiqc_dir_path = os.path.join(fc_dir, f"featureCounts_multiqc{assay_suffix}_report")
+            multiqc_data_path = os.path.join(multiqc_dir_path, f"featureCounts_multiqc{assay_suffix}_data", "multiqc_data.json")
+            
+            logger.info(f"Checking for unzipped MultiQC data at: {multiqc_data_path}")
+            
+            if os.path.exists(multiqc_data_path):
+                logger.info(f"Found unzipped MultiQC data at: {multiqc_data_path}")
+                with open(multiqc_data_path, 'r') as f:
+                    multiqc_data = json.load(f)
+                    logger.info(f"Successfully loaded MultiQC data from unzipped file")
+            else:
+                # Try to extract and unzip the file
+                try:
+                    logger.info(f"Unzipped file not found, looking for MultiQC data in zip: {multiqc_file}")
+                    with zipfile.ZipFile(multiqc_file, 'r') as zip_ref:
+                        # List all files in the zip for debugging
+                        zip_contents = zip_ref.namelist()
+                        logger.info(f"Zip contents: {zip_contents[:10]} ... (showing first 10 files)")
+                        
+                        # Look for featurecounts data
+                        fc_data_files = [f for f in zip_contents if 'featurecounts' in f.lower()]
+                        if fc_data_files:
+                            logger.info(f"Found FeatureCounts data files in zip: {fc_data_files[:5]}")
+                        
+                        # Look for multiqc_data.json in various possible locations
+                        possible_json_paths = [
+                            "multiqc_data.json",
+                            "featureCounts_multiqc_data/multiqc_data.json",
+                            f"featureCounts_multiqc{assay_suffix}_data/multiqc_data.json"
+                        ]
+                        
+                        json_path = None
+                        for path in possible_json_paths:
+                            if path in zip_contents:
+                                json_path = path
+                                break
+                        
+                        if json_path:
+                            logger.info(f"Found MultiQC data JSON at: {json_path}")
+                            with zip_ref.open(json_path) as f:
+                                multiqc_data = json.load(TextIOWrapper(f))
+                                logger.info(f"Successfully loaded MultiQC data from zip file")
+                        else:
+                            # Try to find any JSON file
+                            json_files = [f for f in zip_contents if f.endswith('.json')]
+                            if json_files:
+                                logger.info(f"Found other JSON files: {json_files}")
+                                
+                                # Try the first one
+                                with zip_ref.open(json_files[0]) as f:
+                                    multiqc_data = json.load(TextIOWrapper(f))
+                                    logger.info(f"Loaded MultiQC data from alternate JSON: {json_files[0]}")
+                except Exception as zip_error:
+                    logger.error(f"Error extracting MultiQC data from zip: {str(zip_error)}")
+                    logger.error(traceback.format_exc())
+            
+            # Verify we have the data
+            if multiqc_data:
+                # Log keys for debugging
+                top_level_keys = list(multiqc_data.keys())
+                logger.info(f"MultiQC data top-level keys: {top_level_keys}")
+                
+                # First check if data is in report_saved_raw_data
+                if 'report_saved_raw_data' in multiqc_data and 'multiqc_featurecounts' in multiqc_data['report_saved_raw_data']:
+                    logger.info("Found FeatureCounts data in report_saved_raw_data section")
+                    # Extract samples from MultiQC data
+                    stats_section = multiqc_data['report_saved_raw_data']['multiqc_featurecounts']
+                    
+                    # Log successful data extraction
+                    val_logger.log("featurecounts", "ALL", "multiqc_data", "GREEN", 
+                                 f"FeatureCounts MultiQC data successfully extracted")
+                    
+                # Check if data is in general stats section
+                elif 'report_general_stats_data' in multiqc_data and len(multiqc_data['report_general_stats_data']) > 0:
+                    # Get the first stats section (should contain featurecounts data)
+                    stats_section = multiqc_data['report_general_stats_data'][0]
+                    logger.info(f"Found FeatureCounts data in report_general_stats_data section")
+                    
+                    # Log successful data extraction
+                    val_logger.log("featurecounts", "ALL", "multiqc_data", "GREEN", 
+                                 f"FeatureCounts MultiQC data successfully extracted")
+                else:
+                    logger.warning("Could not find FeatureCounts data in expected MultiQC sections")
+                    val_logger.log("featurecounts", "ALL", "multiqc_content", "YELLOW", 
+                                 f"FeatureCounts MultiQC data found but couldn't locate metrics in expected sections")
+                    
+                    # Try to find any sections that might have sample data
+                    for key in top_level_keys:
+                        if isinstance(multiqc_data[key], dict):
+                            logger.info(f"Checking section {key} for potential sample data")
+                            potential_sample_data = False
+                            
+                            # Look at first few items to see if they might be sample data
+                            try:
+                                if key in ['report_saved_raw_data', 'report_general_stats_data']:
+                                    for subkey, value in list(multiqc_data[key].items())[:3]:
+                                        logger.info(f"  Subkey: {subkey}, Type: {type(value)}")
+                                        if isinstance(value, dict):
+                                            logger.info(f"    First few keys in value: {list(value.keys())[:5]}")
+                                            potential_sample_data = True
+                            except Exception as e:
+                                logger.info(f"  Error examining section: {str(e)}")
+                            
+                            if potential_sample_data:
+                                logger.info(f"Section {key} might contain sample data")
+                
+                # Process MultiQC data if we have stats
+                if 'stats_section' in locals() and stats_section:
+                    # Extract samples from MultiQC data
+                    multiqc_samples = list(stats_section.keys())
+                    logger.info(f"Found {len(multiqc_samples)} samples in MultiQC data: {multiqc_samples}")
+                    
+                    # Check if all expected samples are present
+                    missing_samples = []
+                    for sample_id in sample_ids:
+                        # Check if the sample matches any entry in multiqc_samples
+                        if not any(sample_id in s or s in sample_id for s in multiqc_samples):
+                            missing_samples.append(sample_id)
+                    
+                    if missing_samples:
+                        val_logger.log("featurecounts", "ALL", "samples_in_multiqc", "YELLOW", 
+                                     f"Missing samples in FeatureCounts MultiQC report: {', '.join(missing_samples)}")
+                    else:
+                        val_logger.log("featurecounts", "ALL", "samples_in_multiqc", "GREEN", 
+                                     f"All samples found in FeatureCounts MultiQC report")
+                    
+                    # Extract per-sample metrics for outlier detection
+                    featurecounts_stats = {}
+                    for sample, stats in stats_section.items():
+                        # Clean up sample name
+                        base_sample = sample.split('_featureCounts')[0]
+                        
+                        # Log what we're extracting for debugging
+                        logger.debug(f"Extracting metrics for sample {base_sample}")
+                        logger.debug(f"  Available keys: {list(stats.keys())}")
+                        
+                        # Handle different possible field names
+                        total_count = 0
+                        if 'Total' in stats:
+                            total_count = stats.get('Total', 0)
+                        
+                        assigned_pct = 0
+                        # Try different ways to get assigned percentage
+                        if 'percent_assigned' in stats:
+                            assigned_pct = stats.get('percent_assigned', 0)
+                        elif 'Assigned' in stats and total_count > 0:
+                            assigned_pct = (stats.get('Assigned', 0) / total_count) * 100
+                        
+                        # Initialize metrics for this sample
+                        featurecounts_stats[base_sample] = {
+                            'total_count': total_count,
+                            'assigned_pct': assigned_pct
+                        }
+                        
+                        # Add unassigned reason percentages if Total > 0
+                        if total_count > 0:
+                            total = total_count  # Avoid division by zero
+                            
+                            # Try to detect the right field names for unassigned reasons
+                            unassigned_fields = [k for k in stats.keys() if k.startswith('Unassigned_')]
+                            logger.debug(f"  Unassigned fields: {unassigned_fields}")
+                            
+                            # Common ones to look for
+                            for field in unassigned_fields:
+                                clean_name = field.lower() + '_pct'
+                                featurecounts_stats[base_sample][clean_name] = (stats.get(field, 0) / total) * 100
+                    
+                    # Detect outliers in key metrics
+                    if featurecounts_stats:
+                        # Get all metrics that are present in the first sample
+                        first_sample = list(featurecounts_stats.keys())[0]
+                        all_metrics = list(featurecounts_stats[first_sample].keys())
+                        
+                        logger.info(f"Sample metrics: {featurecounts_stats[first_sample]}")
+                        
+                        # Make sure all metrics exist for all samples
+                        metrics_to_check = []
+                        for metric in all_metrics:
+                            valid_for_all = True
+                            for sample in featurecounts_stats:
+                                if metric not in featurecounts_stats[sample]:
+                                    valid_for_all = False
+                                    break
+                            
+                            if valid_for_all:
+                                metrics_to_check.append(metric)
+                        
+                        logger.info(f"Checking for outliers in FeatureCounts metrics: {metrics_to_check}")
+                        
+                        try:
+                            outliers, metric_stats = detect_outliers(featurecounts_stats, metrics_to_check)
+                            
+                            # Log outliers
+                            if outliers:
+                                for sample, sample_outliers in outliers.items():
+                                    for outlier in sample_outliers:
+                                        metric = outlier['metric']
+                                        value = outlier['value']
+                                        mean = outlier['mean']
+                                        # Use 'std' instead of 'stdev'
+                                        std = outlier['std']
+                                        # Use 'z_score' instead of 'deviation'
+                                        z_score = outlier['z_score']
+                                        
+                                        # Determine status based on z-score (absolute value)
+                                        status = "YELLOW" if abs(z_score) < 3 else "RED"
+                                        
+                                        val_logger.log("featurecounts", sample, f"{metric}_outlier", status, 
+                                                    f"{metric} value {value} is an outlier", 
+                                                    f"Value deviates {abs(z_score):.2f} standard deviations from mean ({mean:.2f})")
+                            else:
+                                logger.info("No outliers detected in FeatureCounts metrics")
+                                val_logger.log("featurecounts", "ALL", "metrics_outliers", "GREEN", 
+                                            f"No outliers detected in FeatureCounts metrics")
+                        except Exception as e:
+                            logger.error(f"Error detecting outliers: {str(e)}")
+                            logger.error(traceback.format_exc())
+                            val_logger.log("featurecounts", "ALL", "metrics_outliers", "YELLOW", 
+                                        f"Error occurred while detecting outliers: {str(e)}")
+                else:
+                    val_logger.log("featurecounts", "ALL", "multiqc_content", "YELLOW", 
+                                f"FeatureCounts MultiQC data found but doesn't contain expected sections")
+            else:
+                val_logger.log("featurecounts", "ALL", "multiqc_content", "YELLOW", 
+                             f"FeatureCounts MultiQC report found but couldn't extract data")
+        except Exception as e:
+            val_logger.log("featurecounts", "ALL", "multiqc_read", "RED", 
+                         f"Error reading MultiQC report: {str(e)}")
+            logger.error(f"Error reading MultiQC report: {str(e)}")
+            logger.error(traceback.format_exc())
+    else:
+        if featurecounts_multiqc_dir:
+            val_logger.log("featurecounts", "ALL", "multiqc_exists", "RED", 
+                         "No FeatureCounts MultiQC report found")
+    
+    # Return validation status with expected format matching other validation functions
+    return {
+        "status": val_logger.get_status(),
+        "messages": [r["message"] for r in val_logger.results],
+        "failures": {r["check_name"]: r["message"] 
+                    for r in val_logger.results 
+                    if r["status"] in ["HALT", "RED"]}
+    }
+
 
 if __name__ == "__main__":
     vv()
