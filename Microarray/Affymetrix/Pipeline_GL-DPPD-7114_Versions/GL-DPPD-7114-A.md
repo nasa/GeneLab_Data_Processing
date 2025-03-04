@@ -479,7 +479,7 @@ if (inherits(raw_data, "GeneFeatureSet")) {
 
 **Output Data:**
 
-- M (log ratio of the subject array vs a pseudo-reference, the median of all other arrays) vs. A (average log expression) plot for each array before background correction and normalization
+- `MA_plot` (M (log ratio of the subject array vs a pseudo-reference, the median of all other arrays) vs. A (average log expression) plot for each array before background correction and normalization)
 
 <br>
 
@@ -514,7 +514,7 @@ par(original_par)
 
 **Output Data:**
 
-- Boxplot of raw expression data for each array before background correction and normalization
+- `boxplot` (Boxplot of raw expression data for each array before background correction and normalization)
 
 <br>
 
@@ -647,7 +647,7 @@ MA_plot <- oligo::MAplot(
 
 **Output Data:**
 
-- M (log ratio of the subject array vs a pseudo-reference, the median of all other arrays) vs. A (average log expression) plot for each array after background correction and normalization
+- `MA_plot` (M (log ratio of the subject array vs a pseudo-reference, the median of all other arrays) vs. A (average log expression) plot for each array after background correction and normalization)
 
 <br>
 
@@ -681,7 +681,7 @@ par(original_par)
 
 **Output Data:**
 
-- Boxplot of expression data for each array after background correction and normalization 
+- `boxplot` (Boxplot of expression data for each array after background correction and normalization)
 
 <br>
 
