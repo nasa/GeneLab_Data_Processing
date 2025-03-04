@@ -10,6 +10,7 @@ include { VV_AGILE1CH } from './modules/VV_AGILE1CH.nf'
 include { AGILE1CH } from './modules/AGILE1CH.nf'
 include { RUNSHEET_FROM_GLDS } from './modules/RUNSHEET_FROM_GLDS.nf'
 include { GENERATE_SOFTWARE_TABLE } from './modules/GENERATE_SOFTWARE_TABLE'
+include { DUMP_META } from './modules/DUMP_META'
 
 /**************************************************
 * HELP MENU  **************************************
@@ -33,6 +34,7 @@ if (params.help) {
   println("                        the GLDS accession id to process through the NF_MAAgilent1ch.")
   println("  --runsheetPath        Use a local runsheet instead one automatically generated from a GLDS ISA archive.")
   println("  --skipVV              Skip automated V&V. Default: false")
+  println("  --skipDE              Skip DE. Default: false")
   println("  --outputDir           Directory to save staged raw files and processed files. Default: <launch directory>")
   exit 0
   }
@@ -76,15 +78,16 @@ workflow {
       channel.fromPath( "${ projectDir }/bin/Agile1CMP.qmd" ),
       ch_runsheet,
       PARSE_ANNOTATION_TABLE.out.annotations_db_url,
-      ch_meta | map { it.organism },
-      params.limit_biomart_query
+      PARSE_ANNOTATION_TABLE.out.reference_version_and_source,
+      params.limit_biomart_query,
+      params.skipDE
     )
 
     VV_AGILE1CH( 
       ch_runsheet, 
       AGILE1CH.out.de,
       params.skipVV,
-      "${ projectDir }/bin/dp_tools__agilent_1_channel" // dp_tools plugin
+      "${ projectDir }/bin/${ params.skipDE ? 'dp_tools__agilent_1_channel_skipDE' : 'dp_tools__agilent_1_channel' }" // dp_tools plugin
       )
 
     // Software Version Capturing
@@ -100,8 +103,12 @@ workflow {
 
     GENERATE_SOFTWARE_TABLE(
       ch_software_versions | unique | collectFile(newLine: true, sort: true, cache: false),
-      ch_runsheet | splitCsv(header: true, quote: '"') | first | map{ row -> row['Array Data File Name'] }
+      ch_runsheet | splitCsv(header: true, quote: '"') | first | map{ row -> row['Array Data File Name'] },
+      params.skipDE
     )
+
+    // export meta for post processing usage
+    ch_meta | DUMP_META
 
     emit:
       meta = ch_meta 

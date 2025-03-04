@@ -195,31 +195,6 @@ data assets:
 
     resource categories: *neverPublished
 
-  sample table:
-    processed location: 
-      - *DGEDataDir
-      - "SampleTable_GLmicroarray.csv"
-
-    tags:
-      - processed
-            
-    resource categories: &DGEAnalysisData
-      subcategory: Differential Expression Analysis Data
-      subdirectory: ""
-      publish to repo: true
-      include subdirectory in table: false
-      table order: 14
-      
-  DE contrasts table:
-    processed location: 
-      - *DGEDataDir
-      - "contrasts_GLmicroarray.csv"
-
-    tags:
-      - processed
-            
-    resource categories: *DGEAnalysisData
-
   raw intensities table:
     processed location: 
       - *RawDataDir
@@ -249,16 +224,6 @@ data assets:
       publish to repo: true
       include subdirectory in table: false
       table order: 2
-
-  DE annotated table:
-    processed location: 
-      - *DGEDataDir
-      - "differential_expression_GLmicroarray.csv"
-
-    tags:
-      - processed
-            
-    resource categories: *DGEAnalysisData
 
 data asset sets:
   # These assets are not generated in the workflow, but are generated after the workflow

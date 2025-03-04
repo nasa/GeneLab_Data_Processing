@@ -42,7 +42,8 @@ HOMEPAGE_MAP = {
 @click.command()
 @click.argument("input_yaml", type=click.Path(exists=True))
 @click.argument("filename")
-def yamlToMarkdown(input_yaml: Path, filename: str):
+@click.argument("skip_de", type=click.BOOL)
+def yamlToMarkdown(input_yaml: Path, filename: str, skip_de: bool):
     """ Using a software versions """
     with open(input_yaml, "r") as f:
         data = yaml.safe_load(f)
@@ -53,6 +54,10 @@ def yamlToMarkdown(input_yaml: Path, filename: str):
     # If data files are not compressed, won't use R.utils to unzip them during processing
     if not filename.endswith('.gz'):
         AGILENT_SOFTWARE_DPPD.remove('r.utils')
+
+    if skip_de:
+        AGILENT_SOFTWARE_DPPD.remove('matrixstats')
+        AGILENT_SOFTWARE_DPPD.remove('statmod')
 
     # Filter to direct software used (i.e. exclude dependencies of the software)
     df = df.loc[df["name"].str.lower().isin(AGILENT_SOFTWARE_DPPD)]
