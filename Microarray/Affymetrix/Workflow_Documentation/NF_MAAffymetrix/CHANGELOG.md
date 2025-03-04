@@ -5,17 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [TBD](#) - YYYY-MM-DD
-
-### Changed
-
-- Better support for custom annotations, see [specification](examples/annotations/README.md) ([#113](https://github.com/nasa/GeneLab_Data_Processing/issues/113))
-
-## [1.0.5](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_MAAffymetrix_1.0.5/Microarray/Affymetrix/Workflow_Documentation/NF_MAAffymetrix) - 2024-08-30
+## [1.0.5](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_MAAffymetrix_1.0.5/Microarray/Affymetrix/Workflow_Documentation/NF_MAAffymetrix) - 2025-03-03
 
 ### Added
 
-- Add support for bacteria annotations using manufacturer annotations ([#113](https://github.com/nasa/GeneLab_Data_Processing/issues/113))
+- Support for custom annotations, see [specification](examples/annotations/README.md) ([#113](https://github.com/nasa/GeneLab_Data_Processing/issues/113))
 - Add option to skip differential expression analysis (`--skipDE`) ([#104](https://github.com/nasa/GeneLab_Data_Processing/issues/104))
 
 ### Changed
