@@ -1,58 +1,194 @@
----
-title: "Affymetrix Processing"
-subtitle: "`r paste0('Workflow Version: NF_MAAffymetrix_', params$workflow_version)`"
-date: now
-title-block-banner: true
-format:
-    html:
-        code-link: true
-        code-fold: true
-        embed-resources: true
-        toc: true
-        toc-location: left
-        toc-depth: 4
-        number-sections: true
+# GeneLab bioinformatics processing pipeline for Affymetrix microarray data <!-- omit in toc -->
 
-params:
-  workflow_version: NULL
-  id: NULL # str, used to name output files
-  runsheet: NULL # str, path to runsheet
-  biomart_attribute: NULL # str, used as a fallback value if 'Array Design REF' column is not found in the runsheet
-  annotation_file_path: NULL # str, Annotation file from 'genelab_annots_link' column of GeneLab Annotations file
-  ensembl_version: NULL # str, Used to determine ensembl version
-  local_annotation_dir: NULL
-  annotation_config_path: NULL
-  DEBUG_limit_biomart_query: NULL # int, If supplied, only the first n probeIDs are queried
-  run_DE: 'true'
+> **This page holds an overview and instructions for how GeneLab processes Affymetrix microarray datasets. Exact processing commands and GL-DPPD-7114 version used for specific GeneLab datasets (GLDS) are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo).**  
+> 
+> \* The pipeline detailed below is currently used for animal and *Arabidopsis thaliana* studies only, it will be updated soon for processing microbe microarray data and other plant data.
 
-# execute: # DEBUG
-#   cache: true
 ---
 
-## Validate Parameters <!-- non DPPD -->
-``` {r validate-parameters}
-#| cache: false
-#| message: false
+**Date:** February XX, 2025  
+**Revision:** -A  
+**Document Number:** GL-DPPD-7114-A   
 
-# Ensure requisite package downloads occur in task directory
-#   This is necessary since oligo attempts to install an annotations package when loading raw files.
-#   This prevent permissions issues for installing and prevents side effects of processing a given dataset. 
-#     (i.e. changes to more permanent package installations)
-.libPaths(c(getwd(), .libPaths()))
+**Submitted by:**  
+Crystal Han (GeneLab Data Processing Team)  
 
+**Approved by:**  
+Samrawit Gebre (OSDR Project Manager)  
+Lauren Sanders (OSDR Project Scientist)  
+Amanda Saravia-Butler (GeneLab Science Lead)  
+Barbara Novak (GeneLab Data Processing Lead)
+
+---
+
+## Updates from previous version
+
+Updated [Ensembl Reference Files](../../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) to the following releases:
+- Animals: Ensembl release 112
+- Plants: Ensembl plants release 59
+- Bacteria: Ensembl bacteria release 59
+
+Software Updates:
+
+| Program | Previous Version | New Version    |
+|:--------|:-----------------|:---------------|
+|R|4.1.3|4.4.2|
+|DT|0.26|0.33|
+|dplyr|1.0.10|1.1.4|
+|tibble|3.1.8|3.2.1|
+|stringr|1.5.0|1.5.1|
+|R.utils|2.12.2|2.12.3|
+|oligo|1.58.0|1.70.0|
+|limma|3.50.3|3.62.2|
+|glue|1.6.2|1.8.0|
+|biomaRt|2.50.0|2.62.0|
+|matrixStats|0.63.0|1.5.0|
+|dp_tools|1.3.4|1.3.5|
+|Quarto|1.2.313|1.6.40|
+
+MA Plots
+
+- Added support for plotting HTAFeatureSet data
+
+Custom Annotations
+
+- Added ability to use custom gene annotations when annotations are not available in Biomart or Ensembl FTP for *Arabidopsis thaliana*, see [Step 8](#8-probeset-annotations)
+
+---
+
+# Table of contents <!-- omit in toc -->
+
+- [Software used](#software-used)
+- [General processing overview with example commands](#general-processing-overview-with-example-commands)
+  - [1. Create Sample RunSheet](#1-create-sample-runsheet)
+  - [2. Load Data](#2-load-data)
+    - [2a. Load Metadata and Raw Data](#2a-load-metadata-and-raw-data)
+    - [2b. Load Annotation Metadata](#2b-load-annotation-metadata)
+  - [3. Raw Data Quality Assessment](#3-raw-data-quality-assessment)
+    - [3a. Density Plot](#3a-density-plot)
+    - [3b. Pseudo Image Plots](#3b-pseudo-image-plots)
+    - [3c. MA Plots](#3c-ma-plots)
+    - [3d. Boxplots](#3d-boxplots)
+  - [4. Background Correction](#4-background-correction)
+  - [5. Between Array Normalization](#5-between-array-normalization)
+  - [6. Normalized Data Quality Assessment](#6-normalized-data-quality-assessment)
+    - [6a. Density Plot](#6a-density-plot)
+    - [6b. Pseudo Image Plots](#6b-pseudo-image-plots)
+    - [6c. MA Plots](#6c-ma-plots)
+    - [6d. Boxplots](#6d-boxplots)
+  - [7. Probeset Summarization](#7-probeset-summarization)
+  - [8. Probeset Annotations](#8-probeset-annotations)
+    - [8a. Get Probeset Annotations](#8a-get-probeset-annotations)
+    - [8b. Summarize Gene Mapping](#8b-summarize-gene-mapping)
+    - [8c. Generate Annotated Raw and Normalized Expression Tables](#8c-generate-annotated-raw-and-normalized-expression-tables)
+  - [9. Perform Probeset Differential Expression (DE)](#9-perform-probeset-differential-expression-de)
+    - [9a. Generate Design Matrix](#9a-generate-design-matrix)
+    - [9b. Perform Individual Probeset Level DE](#9b-perform-individual-probeset-level-de)
+    - [9c. Add Annotation and Stats Columns and Format DE Table](#9c-add-annotation-and-stats-columns-and-format-de-table)
+
+---
+
+# Software used  
+
+|Program|Version|Relevant Links|
+|:------|:------:|:-------------|
+|R|4.4.2|[https://www.r-project.org/](https://www.r-project.org/)|
+|DT|0.33|[https://github.com/rstudio/DT](https://github.com/rstudio/DT)|
+|dplyr|1.1.4|[https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)|
+|tibble|3.2.1|[https://tibble.tidyverse.org](https://tibble.tidyverse.org)|
+|stringr|1.5.1|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
+|R.utils|2.12.3|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
+|oligo|1.70.0|[https://bioconductor.org/packages/3.14/bioc/html/oligo.html](https://bioconductor.org/packages/3.14/bioc/html/oligo.html)|
+|limma|3.62.2|[https://bioconductor.org/packages/3.14/bioc/html/limma.html](https://bioconductor.org/packages/3.14/bioc/html/limma.html)|
+|glue|1.8.0|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
+|biomaRt|2.62.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
+|matrixStats|1.5.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
+|statmod|1.5.0|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
+|dp_tools|1.3.5|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
+|singularity|3.9|[https://sylabs.io](https://sylabs.io)|
+|Quarto|1.6.40|[https://quarto.org](https://quarto.org)|
+
+---
+
+# General processing overview with example commands  
+
+> Exact processing commands and output files listed in **bold** below are included with each Microarray processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
+
+---
+
+## 1. Create Sample RunSheet
+
+> Notes: 
+> - Rather than running the commands below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAffymetrix/examples/runsheet/README.md).
+> 
+> - These command line tools are part of the [dp_tools](https://github.com/J-81/dp_tools) program.
+
+```bash
+### Download the *ISA.zip file from the GeneLab Repository ###
+
+dpt-get-isa-archive \
+ --accession OSD-###
+
+### Parse the metadata from the *ISA.zip file to create a sample runsheet ###
+
+dpt-isa-to-runsheet --accession OSD-### \
+ --config-type microarray \
+ --config-version Latest \
+ --isa-archive *ISA.zip
+```
+
+**Parameter Definitions:**
+
+- `--accession OSD-###` - OSD accession ID (replace ### with the OSD number being processed), used to retrieve the urls for the ISA archive and raw expression files hosted on the GeneLab Repository
+- `--config-type` - Instructs the script to extract the metadata required for `microarray` processing from the ISA archive
+- `--config-version` - Specifies the `dp-tools` configuration version to use, a value of `Latest` will specify the most recent version
+- `--isa-archive` - Specifies the *ISA.zip file for the respective GLDS dataset, downloaded in the `dpt-get-isa-archive` command
+
+
+**Input Data:**
+
+- No input data required but the OSD accession ID needs to be indicated, which is used to download the respective ISA archive 
+
+**Output Data:**
+
+- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective OSD dataset, used to define sample groups - the *ISA.zip file is located in the [OSD repository](https://osdr.nasa.gov/bio/repo/search?q=&data_source=cgene,alsda&data_type=study) under 'Study Files' -> 'metadata')
+
+- **{OSD-Accession-ID}_microarray_v{version}_runsheet.csv** (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
+
+<br>
+
+---
+
+## 2. Load Data
+
+> Note: Steps 2 - 9 are done in R
+
+<br>
+
+### 2a. Load Metadata and Raw Data
+
+```R
+### Install R packages if not already installed ###
+
+install.packages("tidyverse")
+install.packages("R.utils")
+install.packages("glue")
+install.packages("matrixStats")
+install.packages("statmod")
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(version = "3.14")
+BiocManager::install("limma")
+BiocManager::install("biomaRt")
+BiocManager::install("oligo")
+
+
+## Note: Only dplyr is explicitly loaded. Other library functions are called with explicit namespace (e.g. LIBRARYNAME::FUNCTION)
 library(dplyr) # Ensure infix operator is available, methods should still reference dplyr namespace otherwise
 options(dplyr.summarise.inform = FALSE) # Don't print out '`summarise()` has grouped output by 'group'. You can override using the `.groups` argument.'
-if (is.null(params$runsheet)) {
-  stop("PARAMETERIZATION ERROR: Must supply runsheet path")
-}
 
-runsheet <- params$runsheet # <path/to/runsheet>
-
-# If using custom annotation, local_annotation_dir is path to directory containing annotation file and annotation_config_path is path/url to config file
-local_annotation_dir <- params$local_annotation_dir # <path/to/annotation_dir>
-annotation_config_path <- params$annotation_config_path # <path/to/config_file>
-
-message(params)
+# Define path to runsheet
+runsheet <- "/path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv"
 
 ## Set up output structure
 
@@ -72,14 +208,6 @@ original_par <- par()
 options(preferRaster=TRUE) # use Raster when possible to avoid antialiasing artifacts in images
 
 options(timeout=1000) # ensure enough time for data downloads
-```
-
-## Load Metadata and Raw Data
-
-``` {r load-runsheet-and-annotation-table-link}
-#| cache: false
-#| message: false
-print("Loading Runsheet...") # NON_DPPD
 
 # Utility function to improve robustness of function calls
 # Used to remedy intermittent internet issues during runtime 
@@ -94,7 +222,7 @@ retry_with_delay <- function(func, ...) {
       expr = func(...),
       error = function(e) e
     )
-    
+
     if (!inherits(result, "error")) {
       return(result)
     } else {
@@ -106,7 +234,7 @@ retry_with_delay <- function(func, ...) {
         stop(paste("Max retry attempts reached. Last error:", result$message))
       }
     }
-    
+
     attempt <- attempt + 1
   }
 }
@@ -114,12 +242,6 @@ retry_with_delay <- function(func, ...) {
 df_rs <- read.csv(runsheet, check.names = FALSE) %>% 
           dplyr::mutate_all(function(x) iconv(x, "latin1", "ASCII", sub="")) # Convert all characters to ascii, when not possible, remove the character
 
-# NON_DPPD:START
-print("Here is the embedded runsheet")
-DT::datatable(df_rs)
-print("Here are the expected comparison groups")
-# NON_DPPD:END
-print("Loading Raw Data...") # NON_DPPD
 allTrue <- function(i_vector) {
   if ( length(i_vector) == 0 ) {
     stop(paste("Input vector is length zero"))
@@ -150,7 +272,6 @@ downloadFilesFromRunsheet <- function(df_runsheet) {
   destinationFiles # Return these paths
 }
 
-
 if ( runsheetPathsAreURIs(df_rs) ) {
   print("Determined Raw Data Locations are URIS")
   local_paths <- retry_with_delay(downloadFilesFromRunsheet, df_rs)
@@ -176,10 +297,6 @@ if ( allTrue(stringr::str_ends(local_paths, ".gz")) ) {
 }
 
 df_local_paths <- data.frame(`Sample Name` = df_rs$`Sample Name`, `Local Paths` = local_paths, check.names = FALSE)
-# NON_DPPD:START
-print("Raw Data Loaded Successfully")
-DT::datatable(df_local_paths)
-# NON_DPPD:END
 
 
 # Load raw data into R object
@@ -190,35 +307,86 @@ raw_data <- retry_with_delay(
                 sampleNames = df_local_paths$`Sample Name`# Map column names as Sample Names (instead of default filenames)
               )
 
-print(str(raw_data))
 
 # Summarize raw data
-print("Summarized Raw Data Below") # NON_DPPD
 print(paste0("Number of Arrays: ", dim(raw_data)[2]))
 print(paste0("Number of Probes: ", dim(raw_data)[1]))
-message(paste0("Number of Arrays: ", dim(raw_data)[2])) # NON_DPPD
-message(paste0("Number of Probes: ", dim(raw_data)[1])) # NON_DPPD
-# NON_DPPD:START
-DT::datatable(raw_data$targets, caption = "Sample to File Mapping")
-DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data file embedded probes to genes table")
-# NON_DPPD:END
-
-annotation_file_path <- params$annotation_file_path
-ensembl_version <- params$ensembl_version
 ```
 
-## QA For Raw Data
+**Input Data:**
 
-### Density Plot
+- `runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
 
-``` {r qa-for-raw-data--density-plot}
-#| fig-cap: Density of raw intensities for each array. A lack of overlap indicates a need for normalization.
-#| warning: false
-#| column: screen-inset-right # Allow images to flow all the way to the right
-#| fig-width: 14
-#| fig-height: 8
-#| fig-align: left
+**Output Data:**
 
+- `df_rs` (R dataframe containing information from the runsheet)
+- `raw_data` (R object containing raw microarray data)
+
+    > Note: The raw data R object will be used to generate quality assessment (QA) plots in the next step.
+
+<br>
+
+### 2b. Load Annotation Metadata
+
+```R
+# If using custom annotation, local_annotation_dir is path to directory containing annotation file and annotation_config_path is path/url to config file
+local_annotation_dir <- NULL # <path/to/custom_annotation>
+annotation_config_path <- NULL # <path/to/config_file>
+
+## Determines the organism specific annotation file to use based on the organism in the runsheet
+fetch_organism_specific_annotation_table <- function(organism) {
+  # Uses the latest GeneLab annotations table to find the organism specific annotation file path and ensembl version
+  # Raises an exception if the organism does not have an associated annotation file or ensembl version yet
+  
+  annotation_table_link <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/GL_RefAnnotTable-A_1.1.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
+  all_organism_table <- read.csv(annotation_table_link)
+
+  annotation_table <- all_organism_table %>% dplyr::filter(species == organism)
+
+  # Guard clause: Ensure annotation_table populated
+  # Else: raise exception for unsupported organism
+  if (nrow(annotation_table) == 0 || annotation_table$genelab_annots_link == "" || is.na(annotation_table$ensemblVersion)) {
+    stop(glue::glue("Organism supplied '{organism}' is not supported. See the following url for supported organisms: {annotation_table_link}.  Supported organisms will correspond to a row based on the 'species' column and include a url in the 'genelab_annots_link' column of that row and a version number in the 'ensemblVersion' column."))
+  }
+
+  return(annotation_table)
+}
+
+annotation_table <- retry_with_delay(fetch_organism_specific_annotation_table, unique(df_rs$organism))
+
+annotation_file_path <- annotation_table$genelab_annots_link
+ensembl_version <- as.character(annotation_table$ensemblVersion)
+```
+
+**Input Data:**
+
+- `local_annotation_dir` (Path to local annotation directory if using custom annotations, see [Step 8a](#8a-get-probeset-annotations))
+
+    > Note: If not using custom annotations, leave `local_annotation_dir` as `NULL`.
+
+- `annotation_config_path` (URL or path to annotation config file if using custom annotations, see [Step 8a](#8a-get-probeset-annotations))
+
+    > Note: If not using custom annotations, leave `annotation_config_path` as `NULL`.
+
+- `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
+- `annotation_table_link` (URL or path to latest GeneLab Annotations file, see [GL-DPPD-7110-A_annotations.csv](../../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv))
+
+**Output Data:**
+
+- `annotation_file_path` (reference organism annotation file url indicated in the 'genelab_annots_link' column of the GeneLab Annotations file provided in `annotation_table_link`)
+- `ensembl_version` (reference organism Ensembl version indicated in the 'ensemblVersion' column of the GeneLab Annotations file provided in `annotation_table_link`)
+
+<br>
+
+---
+
+## 3. Raw Data Quality Assessment
+
+<br>
+
+### 3a. Density Plot
+
+```R
 # Plot settings
 par(
   xpd = TRUE # Ensure legend can extend past plot area
@@ -247,17 +415,20 @@ legend("topright", legend = colnames(raw_data@assayData$exprs),
 par(original_par)
 ```
 
-### Pseudo Image Plots
+**Input Data:**
 
-``` {r qa-for-raw-data--pseudoimage-plots}
-#| message: false
-#| warning: false # NAN can be produced due to log transformations
-#| layout-ncol: 2
-#| column: screen-inset-right # Allow images to flow all the way to the right
-#| fig-align: left
+- `raw_data` (raw data R object created in [Step 2a](#2a-load-metadata-and-raw-data) above)
 
+**Output Data:**
+
+- Plot containing the density of raw intensities for each array (lack of overlap indicates a need for normalization)
+
+<br>
+
+### 3b. Pseudo Image Plots
+
+```R
 for ( i in seq_along(1:ncol(raw_data))) {
-  message(glue::glue("Drawing Psuedoimage for {colnames(raw_data)[i]}")) # NON_DPPD
   oligo::image(raw_data[,i], 
     transfo = log2,
     main = colnames(raw_data)[i]
@@ -265,25 +436,24 @@ for ( i in seq_along(1:ncol(raw_data))) {
 }
 ```
 
-### MA Plots
+**Input Data:**
 
-``` {r report-ma-plots-approach}
-#| column: screen-inset-right # Allow images to flow all the way to the right
+- `raw_data` (raw data R object created in [Step 2a](#2a-load-metadata-and-raw-data) above)
 
+**Output Data:**
+
+- Pseudo images of each array before background correction and normalization
+
+<br>
+
+### 3c. MA Plots
+
+```R
 if (inherits(raw_data, "GeneFeatureSet")) {
   print("Raw data is a GeneFeatureSet, using exprs() to access expression values and adding 0.0001 to avoid log(0)")
 } else if (inherits(raw_data, "ExpressionSet") || inherits(raw_data, "ExpressionFeatureSet") || inherits(raw_data, "HTAFeatureSet")) { 
   print(paste0("Raw data is ", class(raw_data), ". Using default approach for this class for MA Plot"))
 }
-```
-
-- M = Expression log-ratio (this sample vs. pseudo median reference chip)
-- A = Average log-expression
-
-``` {r qa-for-raw-data--ma-plots}
-#| layout-ncol: 2
-#| warning: false # NAN can be produced due to log transformations
-#| column: screen-inset-right # Allow images to flow all the way to the right
 
 if (inherits(raw_data, "GeneFeatureSet")) {
   MA_plot <- oligo::MAplot(
@@ -303,14 +473,20 @@ if (inherits(raw_data, "GeneFeatureSet")) {
 }
 ```
 
-### Boxplots
+**Input Data:**
 
-``` {r qa-for-raw-data--boxplots}
-#| warning: false # NAN can be produced due to log transformations
-#| column: screen-inset-right # Allow images to flow all the way to the right
-#| fig-width: 14
-#| fig-height: !expr max(8, 2 + dim(raw_data)[2] * 0.2)
-#| fig-align: left
+- `raw_data` (raw data R object created in [Step 2a](#2a-load-metadata-and-raw-data) above)
+
+**Output Data:**
+
+- `MA_plot` (M (log ratio of the subject array vs a pseudo-reference, the median of all other arrays) vs. A (average log expression) plot for each array before background correction and normalization)
+
+<br>
+
+
+### 3d. Boxplots
+
+```R
 max_samplename_length <- max(nchar(colnames(raw_data)))
 dynamic_lefthand_margin <- max(max_samplename_length * 0.7, 10)
 par(
@@ -332,20 +508,42 @@ title(ylab = "Sample Name", mgp = c(dynamic_lefthand_margin-2, 1, 0))
 par(original_par)
 ```
 
-## Background Correction
+**Input Data:**
 
-Approach reference: https://www.usu.edu/math/jrstevens/stat5570/1.4.Preprocess.pdf
+- `raw_data` (raw data R object created in [Step 2a](#2a-load-metadata-and-raw-data) above)
 
-``` {r background-correction}
-#| message: false
-# NON_DPPD:  RMA -> Convolution Background Correction
+**Output Data:**
+
+- `boxplot` (Boxplot of raw expression data for each array before background correction and normalization)
+
+<br>
+
+---
+
+## 4. Background Correction
+
+```R
 background_corrected_data <- raw_data %>% oligo::backgroundCorrect(method="rma")
 ```
 
-## Between Array Normalization
+**Input Data:**
 
-``` {r between-array-normalization}
-#| message: false
+- `raw_data` (raw data R object created in [Step 2a](#2a-load-metadata-and-raw-data) above)
+
+**Output Data:**
+
+- `background_corrected_data` (R object containing background-corrected microarray data)
+
+  >   
+  > Note: Background correction was performed using the oligo `rma` method, specifically "Convolution Background Correction"
+
+<br>
+
+---
+
+## 5. Between Array Normalization
+
+```R
 # Normalize background-corrected data using the quantile method
 norm_data <- oligo::normalize(background_corrected_data, 
                               method = "quantile",
@@ -353,29 +551,32 @@ norm_data <- oligo::normalize(background_corrected_data,
                               )
                               
 # Summarize background-corrected and normalized data
-print("Summarized Normalized Data Below") # NON_DPPD
 print(paste0("Number of Arrays: ", dim(norm_data)[2]))
 print(paste0("Number of Probes: ", dim(norm_data)[1]))
-message(paste0("Number of Arrays: ", dim(norm_data)[2])) # NON_DPPD
-message(paste0("Number of Probes: ", dim(norm_data)[1])) # NON_DPPD
-# NON_DPPD:START
-DT::datatable(raw_data$targets, caption = "Sample to File Mapping")
-DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data file embedded probes to genes table")
-# NON_DPPD:END
 ```
 
-## QA For Normalized Data
+**Input Data:**
 
-### Density Plot
+- `background_corrected_data` (R object containing background-corrected microarray data created in [Step 4](#4-background-correction) above)
 
-``` {r qa-for-normalized-data--density-plot}
-#| fig-cap: Density of normalized intensities for each array.  Compared to the raw data density plot, array densities should overlap more.
-#| warning: false
-#| column: screen-inset-right # Allow images to flow all the way to the right
-#| fig-width: 14
-#| fig-height: 8
-#| fig-align: left
+**Output Data:**
 
+- `norm_data` (R object containing background-corrected and normalized microarray data)
+ 
+  >   
+  > Note: Normalization was performed using the `quantile` method, which forces the entire empirical distribution of all arrays to be identical
+
+<br>
+
+---
+
+## 6. Normalized Data Quality Assessment
+
+<br>
+
+### 6a. Density Plot
+
+```R
 # Plot settings
 par(
   xpd = TRUE # Ensure legend can extend past plot area
@@ -383,7 +584,7 @@ par(
 
 number_of_sets = ceiling(dim(norm_data)[2] / 30) # Set of 30 samples, used to scale plot
 
-oligo::hist(norm_data, 
+oligo::hist(norm_data,
             transfo=log2, # Log2 transform normalized intensity values
             which=c("all"),
             nsample=10000, # Number of probes to plot
@@ -399,17 +600,20 @@ legend("topright", legend = colnames(norm_data@assayData$exprs),
 par(original_par)
 ```
 
-### Pseudo Image Plots
+**Input Data:**
 
-``` {r qa-for-normalized-data--pseudoimage-plots}
-#| message: false
-#| warning: false # NAN can be produced due to log transformations
-#| layout-ncol: 2
-#| column: screen-inset-right # Allow images to flow all the way to the right
-#| fig-align: left
+- `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization) above)
 
+**Output Data:**
+
+- Plot containing the density of background-corrected and normalized intensities for each array (near complete overlap is expected after normalization)
+
+<br>
+
+### 6b. Pseudo Image Plots
+
+```R
 for ( i in seq_along(1:ncol(norm_data))) {
-  message(glue::glue("Drawing Psuedoimage for {colnames(norm_data)[i]}")) # NON_DPPD
   oligo::image(norm_data[,i], 
     transfo = log2,
     main = colnames(norm_data)[i]
@@ -417,17 +621,19 @@ for ( i in seq_along(1:ncol(norm_data))) {
 }
 ```
 
-### MA Plots
+**Input Data:**
 
-- M = Expression log-ratio (this sample vs. pseudo median reference chip)
-- A = Average log-expression
+- `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization) above)
 
-``` {r qa-for-normalized-data--ma-plots}
-#| layout-ncol: 2
-#| warning: false # NAN can be produced due to log transformations
-#| column: screen-inset-right # Allow images to flow all the way to the right
-#| fig-align: left
+**Output Data:**
 
+- Pseudo images of each array after background correction and normalization 
+
+<br>
+
+### 6c. MA Plots
+
+```R
 MA_plot <- oligo::MAplot(
     norm_data, 
     ylim=c(-2, 4),
@@ -435,14 +641,19 @@ MA_plot <- oligo::MAplot(
 )
 ```
 
-### Boxplots
+**Input Data:**
 
-``` {r qa-for-normalized-data--boxplots}
-#| warning: false # NAN can be produced due to log transformations
-#| column: screen-inset-right # Allow images to flow all the way to the right
-#| fig-width: 14
-#| fig-height: !expr max(8, 2 + dim(norm_data)[2] * 0.2)
-#| fig-align: left
+- `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization) above)
+
+**Output Data:**
+
+- `MA_plot` (M (log ratio of the subject array vs a pseudo-reference, the median of all other arrays) vs. A (average log expression) plot for each array after background correction and normalization)
+
+<br>
+
+### 6d. Boxplots
+
+```R
 max_samplename_length <- max(nchar(colnames(norm_data)))
 dynamic_lefthand_margin <- max(max_samplename_length * 0.7, 10)
 par(
@@ -464,36 +675,52 @@ title(ylab = "Sample Name", mgp = c(dynamic_lefthand_margin-2, 1, 0))
 par(original_par)
 ```
 
-## Probeset Summarization
+**Input Data:**
 
-``` {r summarization}
-#| message: false
-# Call RMA but skip normalize and background correction since those have already been applied
+- `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization) above)
+
+**Output Data:**
+
+- `boxplot` (Boxplot of expression data for each array after background correction and normalization)
+
+<br>
+
+---
+
+## 7. Probeset Summarization
+
+```R
 probeset_level_data <- oligo::rma(norm_data, 
                                     normalize=FALSE, 
                                     background=FALSE
                                     )
 
 # Summarize background-corrected and normalized data
-print("Summarized Probeset Level Data Below") # NON_DPPD
+print("Summarized Probeset Level Data Below")
 print(paste0("Number of Arrays: ", dim(probeset_level_data)[2]))
 print(paste0("Total Number of Probes Assigned To A Probeset: ", dim(oligo::getProbeInfo(probeset_level_data, target="core")['man_fsetid'])[1])) # man_fsetid means 'Manufacturer Probeset ID'. Ref: https://support.bioconductor.org/p/57191/
 print(paste0("Number of Probesets: ", dim(unique(oligo::getProbeInfo(probeset_level_data, target="core")['man_fsetid']))[1])) # man_fsetid means 'Manufacturer Probeset ID'. Ref: https://support.bioconductor.org/p/57191/
-message(paste0("Number of Arrays: ", dim(probeset_level_data)[2])) # NON_DPPD
-message(paste0("Total Number of Probes Assigned To A Probeset: ", dim(oligo::getProbeInfo(probeset_level_data, target="core")['man_fsetid'])[1])) # NON_DPPD
-message(paste0("Number of Probesets: ", dim(unique(oligo::getProbeInfo(probeset_level_data, target="core")['man_fsetid']))[1])) # NON_DPPD
-# NON_DPPD:START
-DT::datatable(raw_data$targets, caption = "Sample to File Mapping")
-DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data file embedded probes to genes table")
-# NON_DPPD:END
 ```
 
-## Probeset Annotations
+**Input Data:**
 
-### Get Probeset Annotations
+- `norm_data` (R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization) above)
 
-``` {r retrieve-probeset-annotations}
-#| message: false
+**Output Data:**
+
+- `probeset_level_data` (R object containing probeset level expression values after summarization of normalized probeset level data)
+
+<br>
+
+---
+
+## 8. Probeset Annotations
+
+<br>
+
+### 8a. Get Probeset Annotations
+
+```R
 shortenedOrganismName <- function(long_name) {
   #' Convert organism names like 'Homo Sapiens' into 'hsapiens'
   tokens <- long_name %>% stringr::str_split(" ", simplify = TRUE)
@@ -508,10 +735,6 @@ shortenedOrganismName <- function(long_name) {
 
 getBioMartAttribute <- function(df_rs) {
   #' Returns resolved biomart attribute source from runsheet
-  # NON_DPPD:START
-  #' this either comes from the runsheet or as a fall back, the parameters injected during render
-  #' if neither exist, an error is thrown
-  # NON_DPPD:END
 
   # check if runsheet has 'biomart_attribute' column
   if ( !is.null(df_rs$`biomart_attribute`) ) {
@@ -595,15 +818,12 @@ if (organism %in% c("athaliana")) {
   # locate dataset
   expected_dataset_name <- shortenedOrganismName(unique(df_rs$organism)) %>% stringr::str_c("_gene_ensembl")
   print(paste0("Expected dataset name: '", expected_dataset_name, "'"))
-  message(paste0("Expected dataset name: '", expected_dataset_name, "'")) # NON_DPPD
 
   expected_attribute_name <- getBioMartAttribute(df_rs)
   print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
-  message(paste0("Expected attribute name: '", expected_attribute_name, "'")) # NON_DPPD
 
   # Specify Ensembl version used in current GeneLab reference annotations
   ENSEMBL_VERSION <- ensembl_version
-  print(paste0("Searching for Ensembl Version: ", ENSEMBL_VERSION)) # NON_DPPD
 
   print(glue::glue("Using Ensembl biomart to get specific version of mapping table. Ensembl version: {ENSEMBL_VERSION}"))
 
@@ -636,14 +856,6 @@ if (organism %in% c("athaliana")) {
 
     probe_ids <- rownames(probeset_level_data)
 
-    # DEBUG:START
-    if ( is.integer(params$DEBUG_limit_biomart_query) ) {
-      warning(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
-      message(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
-      probe_ids <- probe_ids[1:params$DEBUG_limit_biomart_query]
-    }
-    # DEBUG:END
-
     # Create probe map
     # Run Biomart Queries in chunks to prevent request timeouts
     #   Note: If timeout is occuring (possibly due to larger load on biomart), reduce chunk size
@@ -653,7 +865,6 @@ if (organism %in% c("athaliana")) {
     for (i in seq_along(probe_id_chunks)) {
       probe_id_chunk <- probe_id_chunks[[i]]
       print(glue::glue("Running biomart query chunk {i} of {length(probe_id_chunks)}. Total probes IDS in query ({length(probe_id_chunk)})"))
-      message(glue::glue("Running biomart query chunk {i} of {length(probe_id_chunks)}. Total probes IDS in query ({length(probe_id_chunk)})")) # NON_DPPD
       chunk_results <- biomaRt::getBM(
           attributes = c(
               expected_attribute_name,
@@ -747,7 +958,6 @@ if (use_custom_annot) {
   )
 
   unique_probe_ids <- df_mapping %>% 
-                        # note: '!!sym(VAR)' syntax allows usage of variable 'VAR' in dplyr functions due to NSE. ref: https://dplyr.tidyverse.org/articles/programming.html # NON_DPPD
                         dplyr::mutate(dplyr::across(!!sym(expected_attribute_name), as.character)) %>% # Ensure probeset ids treated as character type
                         dplyr::group_by(!!sym(expected_attribute_name)) %>% 
                         dplyr::summarise(
@@ -760,9 +970,7 @@ if (use_custom_annot) {
                         ) %>%
                         dplyr::left_join(annot, by = c("ENSEMBL" = annot_key))
 }
-```
 
-``` {r reformat-merge-probe-annotations}
 probeset_expression_matrix <- oligo::exprs(probeset_level_data)
 
 probeset_expression_matrix.gene_mapped <- probeset_expression_matrix %>% 
@@ -773,10 +981,30 @@ probeset_expression_matrix.gene_mapped <- probeset_expression_matrix %>%
   dplyr::mutate( gene_mapping_source := unique(unique_probe_ids$gene_mapping_source) )
 ```
 
-### Summarize Gene Mapping
+**Input Data:**
 
-``` {r summarize-remapping-vs-original-mapping}
-#| message: false
+- `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
+- `df_rs$biomart_attribute` (array design biomart identifier specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
+- `annotation_file_path` (reference organism annotation file url indicated in the 'genelab_annots_link' column of the GeneLab Annotations file provided in `annotation_table_link`, output from [Step 2b](#2b-load-annotation-metadata))
+- `ensembl_version` (reference organism Ensembl version indicated in the 'ensemblVersion' column of the GeneLab Annotations file provided in `annotation_table_link`, output from [Step 2b](#2b-load-annotation-metadata))
+- `annot_key` (keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL')
+- `local_annotation_dir` (path to local annotation directory if using custom annotations, output from [Step 2b](#2b-load-annotation-metadata))
+- `annotation_config_path` (URL or path to annotation config file if using custom annotations, output from [Step 2b](#2b-load-annotation-metadata))
+
+  > Note: See [Affymetrix_array_annotations.csv](../Array_Annotations/Affymetrix_array_annotations.csv) for the latest config file used at GeneLab. This file can also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAffymetrix/examples/annotations/README.md).
+
+- `probeset_level_data` (R object containing probeset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-probeset-summarization))
+
+**Output Data:**
+
+- `unique_probe_ids` (R object containing probeset ID to gene annotation mappings)
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html) or custom annotations)
+
+<br>
+
+### 8b. Summarize Gene Mapping
+
+```R
 # Pie Chart with Percentages
 slices <- c(
     'Unique Mapping' = nrow(probeset_expression_matrix.gene_mapped %>% dplyr::filter(count_gene_mappings == 1) %>% dplyr::distinct(ProbesetID)), 
@@ -793,12 +1021,22 @@ pie(slices,labels = chart_names, col=rainbow(length(slices)),
     )
 
 print(glue::glue("Unique Mapping Count: {slices[['Unique Mapping']]}"))
-message(glue::glue("Unique Mapping Count: {slices[['Unique Mapping']]}")) # NON_DPPD
 ```
 
-### Generate Annotated Raw and Normalized Expression Tables
+**Input Data:**
 
-```{r save-tables}
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
+
+**Output Data:**
+
+- A pie chart denoting the gene mapping rates for each unique probeset ID
+- A printout denoting the count of unique mappings for gene mapping
+
+<br>
+
+### 8c. Generate Annotated Raw and Normalized Expression Tables
+
+```R
 ## Reorder columns before saving to file
 ANNOTATIONS_COLUMN_ORDER = c(
   annot_key,
@@ -878,14 +1116,31 @@ norm_data_matrix_annotated <- norm_data_matrix_annotated %>%
 write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe_GLmicroarray.csv"), row.names = FALSE)
 ```
 
-## Perform Probeset Differential Expression (DE)
+**Input Data:**
 
-### Generate Design Matrix
+- `df_rs` (R dataframe containing information from the runsheet, output from [Step 2a](#2a-load-metadata-and-raw-data))
+- `annot_key` (keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL', defined in [Step 8a](#8a-get-probeset-annotations))
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
+- `background_corrected_data` (R object containing background-corrected microarray data, output from [Step 4](#4-background-correction))
+- `norm_data` (R object containing background-corrected and normalized microarray data, output from [Step 5](#5-between-array-normalization))
+- `unique_probe_ids` (R object containing probeset ID to gene annotation mappings, output from [Step 8a](#8a-get-probeset-annotations))
 
-``` {r generate-design-matrix}
-#| include: !expr params$run_DE
-#| eval: !expr params$run_DE
+**Output Data:**
 
+- **normalized_expression_probeset_GLmicroarray.csv** (table containing the background corrected, normalized probeset expression values for each sample. The ProbesetID is the unique index column.)
+- **raw_intensities_probe_GLmicroarray.csv** (table containing the background corrected, unnormalized probe intensity values for each sample including gene annotations. The ProbeID is the unique index column.)
+- **normalized_intensities_probe_GLmicroarray.csv** (table containing the background corrected, normalized probe intensity values for each sample including gene annotations.  The ProbeID is the unique index column.)
+
+## 9. Perform Probeset Differential Expression (DE)
+
+> Note: Run differential expression analysis only if there are at least 2 replicates per factor group.
+
+<br>
+
+### 9a. Generate Design Matrix
+
+```R
+# Pull all factors for each sample in the study from the runsheet created in Step 1
 runsheetToDesignMatrix <- function(runsheet_path) {
     df <- read.csv(runsheet, check.names = FALSE) %>% 
               dplyr::mutate_all(function(x) iconv(x, "latin1", "ASCII", sub="")) # Convert all characters to ascii, when not possible, remove the character    # get only Factor Value columns
@@ -937,12 +1192,21 @@ write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable_GLmicroarray.csv")
 write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts_GLmicroarray.csv"))
 ```
 
-### Perform Individual Probeset Level DE
+**Input Data:**
 
-``` {r perform-probeset-differential-expression}
-#| include: !expr params$run_DE
-#| eval: !expr params$run_DE
+- `runsheet` (path to runsheet, output from [Step 1](#1-create-sample-runsheet))
 
+**Output Data:**
+
+- `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to)
+- **SampleTable_GLmicroarray.csv** (table containing samples and their respective groups)
+- **contrasts_GLmicroarray.csv** (table containing all pairwise comparisons)
+
+<br>
+
+### 9b. Perform Individual Probeset Level DE
+
+```R
 lmFitPairwise <- function(norm_data, design) {
     #' Perform all pairwise comparisons
 
@@ -963,7 +1227,6 @@ lmFitPairwise <- function(norm_data, design) {
 
 # Calculate results
 res <- lmFitPairwise(probeset_level_data, design)
-DT::datatable(limma::topTable(res)) # NON_DPPD
 
 # Print DE table, without filtering
 limma::write.fit(res, adjust = 'BH', 
@@ -973,12 +1236,25 @@ limma::write.fit(res, adjust = 'BH',
                 sep = ",")
 ```
 
-### Add Annotation and Stats Columns and Format DE Table
+**Input Data:**
 
-``` {r save-de-table}
-#| message: false
-#| include: !expr params$run_DE
-#| eval: !expr params$run_DE
+- `norm_data` (R object containing background-corrected and normalized microarray data, output from [Step 5](#5-between-array-normalization))
+- `design` (R object containing the limma study design matrix, indicating the group that each sample belongs to, output from [Step 9a](#9a-generate-design-matrix) above)
+- `probeset_level_data` (R object containing probeset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-probeset-summarization))
+
+**Output Data:**
+
+- INTERIM.csv (Statistical values from individual probeset level DE analysis, including:
+  - Log2fc between all pairwise comparisons
+  - T statistic for all pairwise comparison tests
+  - P value for all pairwise comparison tests
+  - Adjusted P value for all pairwise comparison tests)
+
+<br>
+
+### 9c. Add Annotation and Stats Columns and Format DE Table
+
+```R
 ## Reformat Table for consistency across DE analyses tables within GeneLab ##
 
 # Read in DE table 
@@ -990,17 +1266,6 @@ df_interim <- df_interim %>%
 
 # Reformat column names
 reformat_names <- function(colname, group_name_mapping) {
-  # NON_DPPD:START
-  #! Converts from:
-  #!    "P.value.adj.conditionWild.Type...Space.Flight...1st.generation.conditionWild.Type...Ground.Control...4th.generation"
-  #! to something like:
-  #! "Adj.p.value(Wild Type & Space Flight & 1st generation)v(Wild Type & Ground Control & 4th generation)"
-  #! Since two groups are expected to be replace, ensure replacements happen in pairs
-
-  # Remove 'condition' from group names
-  ## This was introduced while creating design matrix
-  # Rename other columns for consistency across genomics related DE outputs
-  # NON_DPPD:END
   new_colname <- colname  %>% 
                   stringr::str_replace(pattern = "^P.value.adj.condition", replacement = "Adj.p.value_") %>%
                   stringr::str_replace(pattern = "^P.value.condition", replacement = "P.value_") %>%
@@ -1042,11 +1307,6 @@ for ( i in seq_along(unique_groups) ) {
   print(glue::glue("Computing mean and standard deviation for Group {i} of {length(unique_groups)}"))
   print(glue::glue("Group: {current_group}"))
   print(glue::glue("Samples in Group: '{toString(current_samples)}'"))
-  # NON_DPPD:START
-  message(glue::glue("Computing mean and standard deviation for Group {i} of {length(unique_groups)}"))
-  message(glue::glue("Group: {current_group}"))
-  message(glue::glue("Samples in Group: '{toString(current_samples)}'"))
-  # NON_DPPD:END
   
   df_interim <- df_interim %>% 
     dplyr::mutate( 
@@ -1057,10 +1317,6 @@ for ( i in seq_along(unique_groups) ) {
     as.data.frame()
 }
 
-# NON_DPPD:START
-## Compute all sample mean and standard deviation
-message(glue::glue("Computing mean and standard deviation for all samples"))
-# NON_DPPD:END
 df_interim <- df_interim %>% 
   dplyr::mutate( 
     "All.mean" := rowMeans(dplyr::select(., all_of(SAMPLE_COLUMN_ORDER))),
@@ -1148,83 +1404,13 @@ df_interim <- df_interim %>% dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
 write.csv(df_interim, file.path(DIR_DGE, "differential_expression_GLmicroarray.csv"), row.names = FALSE)
 ```
 
-## Version Reporting <!-- non DPPD -->
+**Input Data:**
 
-```{r version-reporting}
-get_versions <- function() {
-  clean_url_field <- function(url_vector) {
-    # URL field can include multiple entries and newline characters
-    #   This helper function extracts just the first url
-    # Handle empty fields, populate downstream
-    if (is.null(url_vector)) {  
-      return("NO URLS ENCODED")
-    }
-    tryCatch(
-    {return(
-        (url_vector %>% 
-          stringr::str_split(pattern = ",") %>% # Often split on commas
-          dplyr::first() %>% # Get first token after comma split
-          stringr::str_split(pattern = " ") %>% # Sometimes just spaces to split, e.g. URL: https://github.com/jeroen/curl (devel) https://curl.se/libcurl/  \n(upstream)
-          dplyr::first() %>% # Get first token after space split
-          stringr::str_replace_all(pattern = "\n", replacement = "") # Never allow newlines, hopefully unlikely after prior steps to isolate first url token
-        )[[1]]
-      )},
-    error = function(cond) {
-            print(url_vector)
-            stop(cond)
-        }
-    )
- 
-  }
-  # Note: newlines seem duplicated here as 'glue' trims the first and last newline if they exist
-  session_info <- sessionInfo()
-  # start with just R version
-  versions_buffer <- glue::glue_collapse(c(
-    glue::glue("- name: R"),
-    glue::glue("  version: {session_info[['R.version']][['major']]}.{session_info[['R.version']][['minor']]}"),
-    glue::glue("  homepage: https://www.r-project.org/"),
-    glue::glue("  workflow task: PROCESS_AFFYMETRIX")
-    ), sep = "\n") 
-  # Get 'other attached packages'
-  for (software in session_info[["otherPkgs"]]) {
-    versions_buffer <- glue::glue_collapse(c(
-      versions_buffer,
-      glue::glue("- name: {software[['Package']]}"),
-      glue::glue("  version: {software[['Version']]}"),
-      glue::glue("  homepage: {clean_url_field(software[['URL']])}"),
-      glue::glue("  workflow task: PROCESS_AFFYMETRIX")
-      ), sep = "\n") 
-  }
-  # Get 'loaded via a namespace (and not attached):'
-  for (software in session_info[["loadedOnly"]]) {
-    versions_buffer <- glue::glue_collapse(c(
-      versions_buffer,
-      glue::glue("- name: {software[['Package']]}"),
-      glue::glue("  version: {software[['Version']]}"),
-      glue::glue("  homepage: {clean_url_field(software[['URL']])}"),
-      glue::glue("  workflow task: PROCESS_AFFYMETRIX")
-      ), sep = "\n") 
-  }
-  return(versions_buffer)
-}
+- INTERIM.csv (Statistical values from individual probeset level DE analysis, output from [Step 9b](#9b-perform-individual-probeset-level-de) above)
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
 
-## Note Libraries that were NOT used during processing
-versions_buffer <- get_versions()
+**Output Data:**
 
-if (organism %in% c("athaliana") || use_custom_annot) {
-  versions_buffer <- glue::glue_collapse(c(
-    versions_buffer,
-    glue::glue("- name: biomaRt"),
-    glue::glue("  version: (Not used for this dataset)"),
-    glue::glue("  homepage: https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html"),
-    glue::glue("  workflow task: PROCESS_AFFYMETRIX")
-    ), sep = "\n")
-}
+- **differential_expression_GLmicroarray.csv** (table containing normalized probeset expression values for each sample, group statistics, Limma probeset DE results for each pairwise comparison, and gene annotations. The ProbesetID is the unique index column.)
 
-## Log same info into versions.txt file
-version_output_fn <- "versions.yml"
-cat(versions_buffer, file = version_output_fn, append = TRUE, sep = "\n")
-## Print for report
-print("Session Info below: ")
-print(sessionInfo())
-```
+> All steps of the Microarray pipeline are performed using R markdown and the completed R markdown is rendered (via Quarto) as an html file (**NF_MAAffymetrix_v\*_GLmicroarray.html**) and published in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/) for the respective dataset.
