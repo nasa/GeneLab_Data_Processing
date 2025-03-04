@@ -78,6 +78,7 @@ Staging:
         - ISA Field Name:
             - Label
             - Parameter Value[label]
+            - Parameter Value[Label]
           ISA Table Source: Sample
           Runsheet Column Name: Label
           Processing Usage: >-
