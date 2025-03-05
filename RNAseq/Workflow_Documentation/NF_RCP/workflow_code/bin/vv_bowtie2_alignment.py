@@ -445,8 +445,8 @@ def check_bowtie2_existence(outdir, samples, paired_end, log_path):
         # Add unmapped files based on paired/single end
         if is_paired:
             required_files.extend([
-                f"{sample}.unmapped_1.fastq.gz",
-                f"{sample}.unmapped_2.fastq.gz"
+                f"{sample}.unmapped.fastq.1.gz",
+                f"{sample}.unmapped.fastq.2.gz"
             ])
         else:
             required_files.append(f"{sample}.unmapped.fastq.gz")
@@ -468,6 +468,91 @@ def check_bowtie2_existence(outdir, samples, paired_end, log_path):
     print(f"All expected alignment files found")
     log_check_result(log_path, "alignment", "all", "check_bowtie2_existence", "GREEN", 
                     "All files found", "")
+    return True
+
+def validate_unmapped_fastq(outdir, samples, paired_end, log_path, max_lines=200000000):
+    """Validate unmapped FASTQ files from bowtie2 alignment."""
+    align_dir = os.path.join(outdir, "02-Bowtie2_Alignment")
+    invalid_files = []
+    all_files = []
+    is_paired = paired_end[0]
+
+    for sample in samples:
+        sample_dir = os.path.join(align_dir, sample)
+        
+        if is_paired:
+            files_to_check = [
+                os.path.join(sample_dir, f"{sample}.unmapped.fastq.1.gz"),
+                os.path.join(sample_dir, f"{sample}.unmapped.fastq.2.gz")
+            ]
+        else:
+            files_to_check = [
+                os.path.join(sample_dir, f"{sample}.unmapped.fastq.gz")
+            ]
+        
+        for file_path in files_to_check:
+            if os.path.exists(file_path):
+                all_files.append(file_path)
+                print(f"Validating unmapped FASTQ: {file_path}")
+                
+                try:
+                    # Check GZIP integrity
+                    result = subprocess.run(["gzip", "-t", file_path], capture_output=True)
+                    if result.returncode != 0:
+                        invalid_files.append(file_path)
+                        print(f"GZIP integrity check failed for: {file_path}")
+                        print(f"Error: {result.stderr.decode('utf-8')}")
+                        continue
+
+                    # Check FASTQ format and ensure file isn't empty
+                    with gzip.open(file_path, 'rt') as f:
+                        line_count = 0
+                        line_in_record = 0
+                        has_valid_record = False
+                        
+                        for line in f:
+                            line_count += 1
+                            line_in_record = (line_count - 1) % 4
+                            
+                            # Check if header line (every 4th line, starting with line 1)
+                            if line_in_record == 0:
+                                if not line.startswith('@'):
+                                    invalid_files.append(file_path)
+                                    print(f"Invalid FASTQ format in {file_path} at line {line_count}")
+                                    break
+                                has_valid_record = True
+                            
+                            # Stop after max_lines
+                            if line_count >= max_lines:
+                                print(f"Reached {max_lines} lines limit for {file_path}")
+                                break
+                        
+                        # Check if file is empty or has incomplete records
+                        if not has_valid_record:
+                            invalid_files.append(file_path)
+                            print(f"Empty or invalid FASTQ file: {file_path}")
+                            continue
+                        
+                        if line_count % 4 != 0:
+                            invalid_files.append(file_path)
+                            print(f"Incomplete FASTQ record in {file_path}")
+                                
+                except Exception as e:
+                    invalid_files.append(file_path)
+                    print(f"Error validating {file_path}: {str(e)}")
+
+    if invalid_files:
+        print(f"WARNING: The following unmapped FASTQ files are invalid:")
+        for file in invalid_files:
+            print(f"  - {file}")
+        log_check_result(log_path, "alignment", "all", "validate_unmapped_fastq", "RED", 
+                        f"Invalid format in {len(invalid_files)} of {len(all_files)} files", 
+                        ",".join(invalid_files))
+        return False
+
+    print(f"All unmapped FASTQ files are valid")
+    log_check_result(log_path, "alignment", "all", "validate_unmapped_fastq", "GREEN", 
+                    "All files valid", "")
     return True
 
 def main():
@@ -515,6 +600,9 @@ def main():
     
     # 1. Check for bowtie2 alignment files existence
     check_bowtie2_existence(args.outdir, sample_names, paired_end_values, vv_log_path)
+
+    # 2. Validate unmapped FASTQ files
+    validate_unmapped_fastq(args.outdir, sample_names, paired_end_values, vv_log_path)
 
 if __name__ == "__main__":
     main()
