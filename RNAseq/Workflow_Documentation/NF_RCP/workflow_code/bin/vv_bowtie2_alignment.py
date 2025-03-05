@@ -245,17 +245,17 @@ def check_raw_fastqc_existence(outdir, samples, paired_end, log_path):
     return True
 
 def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
-    """Check if all samples are included in the MultiQC report."""
-    fastqc_dir = os.path.join(outdir, "00-RawData", "FastQC_Reports")
-    multiqc_zip = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}_report.zip")
+    """Check if all samples are present in the MultiQC report."""
+    align_dir = os.path.join(outdir, "02-Bowtie2_Alignment")
+    multiqc_zip = os.path.join(align_dir, f"align_multiqc{assay_suffix}_report.zip")
     
     if not os.path.exists(multiqc_zip):
-        print(f"WARNING: MultiQC report zip file not found: {multiqc_zip}")
-        log_check_result(log_path, "raw_reads", "all", "check_samples_multiqc", "RED", 
-                         "MultiQC report not found", multiqc_zip)
+        print(f"WARNING: MultiQC report not found at: {multiqc_zip}")
+        log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
+                        "MultiQC report not found", multiqc_zip)
         return False
     
-    print(f"Found MultiQC report: {multiqc_zip}")
+    print(f"Checking samples in MultiQC report: {multiqc_zip}")
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -264,158 +264,225 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
             with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
             
-            # Check for the JSON file
-            json_path = os.path.join(temp_dir, f"raw_multiqc{assay_suffix}_report", 
-                                    f"raw_multiqc{assay_suffix}_data", "multiqc_data.json")
+            # Search for the MultiQC data JSON file
+            json_files = []
+            for root, dirs, files in os.walk(temp_dir):
+                for file in files:
+                    if file.endswith('.json') and 'multiqc_data' in file:
+                        json_files.append(os.path.join(root, file))
             
-            if not os.path.exists(json_path):
-                print(f"Could not find multiqc_data.json in the expected location")
-                log_check_result(log_path, "raw_reads", "all", "check_samples_multiqc", "RED", 
+            if not json_files:
+                print(f"WARNING: No multiqc_data.json file found in the extracted zip")
+                log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
                                "multiqc_data.json not found in zip", "")
                 return False
-                
-            # Parse the MultiQC JSON
-            with open(json_path, 'r') as f:
+            
+            multiqc_data_file = json_files[0]
+            
+            # Parse the JSON file
+            with open(multiqc_data_file) as f:
                 multiqc_data = json.load(f)
             
-            # Extract sample names from FastQC data
-            mqc_samples = []
-            is_paired = paired_end[0]  # Assuming all samples have the same paired_end value
+            # Check for samples in report_data_sources
+            if 'report_data_sources' not in multiqc_data:
+                print(f"WARNING: No report_data_sources found in MultiQC data")
+                log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
+                               "No report_data_sources in MultiQC data", "")
+                return False
             
-            if ('report_data_sources' in multiqc_data and 
-                'FastQC' in multiqc_data['report_data_sources'] and
-                'all_sections' in multiqc_data['report_data_sources']['FastQC']):
-                
-                fastqc_sections = multiqc_data['report_data_sources']['FastQC']['all_sections']
-                for mqc_sample in fastqc_sections.keys():
-                    # For paired-end data, remove _R1 and _R2 suffixes
-                    base_sample = mqc_sample.replace("_raw_fastqc", "").replace("_fastqc", "")
-                    if is_paired:
-                        base_sample = base_sample.replace("_R1", "").replace("_R2", "")
-                    mqc_samples.append(base_sample)
+            # Look for Bowtie2 section
+            if 'Bowtie 2 / HiSAT2' not in multiqc_data['report_data_sources']:
+                print(f"WARNING: No Bowtie2 data found in MultiQC report")
+                log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
+                               "No Bowtie2 data in MultiQC report", "")
+                return False
             
-            # Remove duplicates
-            mqc_samples = list(set(mqc_samples))
+            # Get samples from the Bowtie2 section
+            bowtie_data = multiqc_data['report_data_sources']['Bowtie 2 / HiSAT2']['all_sections']
+            multiqc_samples = set(bowtie_data.keys())
             
-            # Check if all runsheet samples are present in MultiQC report
+            # Check for missing samples
             missing_samples = []
             for sample in samples:
-                if sample not in mqc_samples:
+                if sample not in multiqc_samples:
                     missing_samples.append(sample)
             
             if missing_samples:
                 print(f"WARNING: The following samples are missing from the MultiQC report:")
                 for sample in missing_samples:
                     print(f"  - {sample}")
-                log_check_result(log_path, "raw_reads", "all", "check_samples_multiqc", "RED", 
-                                f"Missing {len(missing_samples)} samples in MultiQC report", 
-                                ",".join(missing_samples))
+                log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
+                               f"Missing {len(missing_samples)} samples in MultiQC report", 
+                               ",".join(missing_samples))
                 return False
             
-            print(f"All {len(samples)} samples found in the MultiQC report")
-            log_check_result(log_path, "raw_reads", "all", "check_samples_multiqc", "GREEN", 
-                            "All samples found in MultiQC report", "")
+            print(f"All {len(samples)} samples found in MultiQC report")
+            log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "GREEN", 
+                           f"All {len(samples)} samples found in report", "")
             return True
             
         except Exception as e:
-            print(f"Error processing MultiQC report: {str(e)}")
-            log_check_result(log_path, "raw_reads", "all", "check_samples_multiqc", "RED", 
-                           f"Error processing MultiQC report: {str(e)}", "")
+            print(f"Error checking MultiQC report: {str(e)}")
+            log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
+                           f"Error checking MultiQC report: {str(e)}", "")
             return False
 
-def report_multiqc_outliers(outdir, multiqc_data, log_path):
-    """Identify and report outliers in MultiQC statistics."""
-    if not multiqc_data:
-        print("No MultiQC data to analyze for outliers")
-        return False
+def get_bowtie2_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
+    """Get alignment statistics from MultiQC report."""
+    align_dir = os.path.join(outdir, "02-Bowtie2_Alignment")
+    multiqc_zip = os.path.join(align_dir, f"align_multiqc{assay_suffix}_report.zip")
+    
+    if not os.path.exists(multiqc_zip):
+        print(f"WARNING: MultiQC report not found at: {multiqc_zip}")
+        log_check_result(log_path, "alignment", "all", "get_bowtie2_multiqc_stats", "RED", 
+                        "MultiQC report not found", multiqc_zip)
+        return None
+    
+    # Create a temporary directory to extract files
+    with tempfile.TemporaryDirectory() as temp_dir:
+        try:
+            # Extract the zip file
+            with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
+                zip_ref.extractall(temp_dir)
+            
+            # Search for the MultiQC data JSON file
+            json_files = []
+            for root, dirs, files in os.walk(temp_dir):
+                for file in files:
+                    if file.endswith('.json') and 'multiqc_data' in file:
+                        json_files.append(os.path.join(root, file))
+            
+            if not json_files:
+                print(f"WARNING: No multiqc_data.json file found in the extracted zip")
+                log_check_result(log_path, "alignment", "all", "get_bowtie2_multiqc_stats", "RED", 
+                               "multiqc_data.json not found in zip", "")
+                return None
+            
+            multiqc_data_file = json_files[0]
+            
+            # Parse the JSON file
+            with open(multiqc_data_file) as f:
+                data = json.load(f)
+            
+            samples_data = {}
+            
+            # Extract stats for each sample from general stats
+            for section in data['report_general_stats_data']:
+                for sample, stats in section.items():
+                    # Clean sample name (remove read identifiers)
+                    base_sample = re.sub(r'_R[12]$', '', sample)
+                    
+                    if base_sample not in samples_data:
+                        samples_data[base_sample] = {}
+                    
+                    # Get the key metrics
+                    if 'total_reads' in stats:
+                        samples_data[base_sample]['total_reads'] = stats['total_reads']
+                    
+                    if 'overall_alignment_rate' in stats:
+                        samples_data[base_sample]['overall_alignment_rate'] = stats['overall_alignment_rate']
+                    
+                    # Handle aligned reads stats for both paired and unpaired data
+                    if 'paired_aligned_none' in stats:
+                        samples_data[base_sample]['aligned_none'] = stats['paired_aligned_none']
+                        samples_data[base_sample]['aligned_one'] = stats['paired_aligned_one']
+                        samples_data[base_sample]['aligned_multi'] = stats['paired_aligned_multi']
+                    elif 'unpaired_aligned_none' in stats:
+                        samples_data[base_sample]['aligned_none'] = stats['unpaired_aligned_none']
+                        samples_data[base_sample]['aligned_one'] = stats['unpaired_aligned_one']
+                        samples_data[base_sample]['aligned_multi'] = stats['unpaired_aligned_multi']
+            
+            if not samples_data:
+                print("No alignment statistics found in MultiQC report")
+                log_check_result(log_path, "alignment", "all", "get_bowtie2_multiqc_stats", "RED", 
+                               "No alignment statistics found", "")
+                return None
+                
+            print(f"Retrieved alignment statistics for {len(samples_data)} samples")
+            return samples_data
+            
+        except Exception as e:
+            print(f"Error parsing MultiQC data: {str(e)}")
+            log_check_result(log_path, "alignment", "all", "get_bowtie2_multiqc_stats", "RED", 
+                           f"Error parsing MultiQC data: {str(e)}", "")
+            return None
 
-    # Keys to check for outliers as specified in protocol.py
-    metrics_to_check = {
-        "raw_percent_gc_f": "percent GC content (forward)",
-        "raw_avg_sequence_length_f": "average sequence length (forward)",
-        "raw_total_sequences_f": "total sequences (forward)",
-        "raw_percent_duplicates_f": "percent duplicates (forward)",
-    }
-    
-    # For paired-end data, also check the reverse reads
-    if any("_r" in key for sample in multiqc_data.values() for key in sample):
-        metrics_to_check.update({
-            "raw_percent_gc_r": "percent GC content (reverse)",
-            "raw_avg_sequence_length_r": "average sequence length (reverse)",
-            "raw_total_sequences_r": "total sequences (reverse)",
-            "raw_percent_duplicates_r": "percent duplicates (reverse)",
-        })
-    
-    # Thresholds for outlier detection
-    thresholds = [
-        {"code": "YELLOW", "stdev_threshold": 2, "middle_fcn": "median"},
-        {"code": "RED", "stdev_threshold": 4, "middle_fcn": "median"},
-    ]
-    
-    # Set to keep track of outlier samples
+def report_multiqc_outliers(outdir, multiqc_data, log_path):
+    """Report statistical outliers in MultiQC statistics using standard deviations."""
+    metrics = ['total_reads', 'overall_alignment_rate', 'aligned_none', 'aligned_one', 'aligned_multi']
     outlier_samples = set()
-    outlier_details = []
     
-    # Check each metric for outliers
-    for metric_key, metric_description in metrics_to_check.items():
-        # Skip if metric doesn't exist in any sample
-        if not any(metric_key in sample_data for sample_data in multiqc_data.values()):
+    # First pass: collect values and convert to percentages
+    metric_values = {metric: [] for metric in metrics}
+    sample_values = {metric: {} for metric in metrics}
+    
+    for sample, stats in multiqc_data.items():
+        if 'total_reads' not in stats:
             continue
             
-        # Collect values for this metric across all samples
-        values = []
-        for sample, sample_data in multiqc_data.items():
-            if metric_key in sample_data:
-                try:
-                    values.append((sample, float(sample_data[metric_key])))
-                except (ValueError, TypeError):
-                    print(f"Warning: Non-numeric value for {metric_key} in sample {sample}")
+        total = stats['total_reads']
         
-        if not values:
-            continue
-            
-        # Calculate median and standard deviation
-        all_values = [v[1] for v in values]
-        median_value = np.median(all_values)
-        stdev_value = np.std(all_values)
+        # Convert aligned counts to percentages
+        if 'aligned_none' in stats:
+            stats['aligned_none'] = (stats['aligned_none'] / total) * 100
+        if 'aligned_one' in stats:
+            stats['aligned_one'] = (stats['aligned_one'] / total) * 100
+        if 'aligned_multi' in stats:
+            stats['aligned_multi'] = (stats['aligned_multi'] / total) * 100
         
-        if stdev_value == 0:
-            # Skip if there's no variation
+        # Collect values for each metric
+        for metric in metrics:
+            if metric in stats:
+                metric_values[metric].append(stats[metric])
+                sample_values[metric][sample] = stats[metric]
+    
+    # Calculate statistics and check for outliers
+    for metric in metrics:
+        if not metric_values[metric]:
             continue
             
-        # Check each sample against thresholds
-        for sample, value in values:
-            # Calculate deviation in terms of standard deviations
-            deviation = abs(value - median_value) / stdev_value
-            
-            # Check against thresholds (largest threshold first)
-            for threshold in sorted(thresholds, key=lambda x: x["stdev_threshold"], reverse=True):
-                if deviation >= threshold["stdev_threshold"]:
+        values = np.array(metric_values[metric])
+        median = np.median(values)
+        std = np.std(values)
+        
+        # Check each sample for this metric
+        for sample, value in sample_values[metric].items():
+            if std > 0:  # Avoid division by zero
+                stdevs_from_median = abs(value - median) / std
+                
+                # Flag if more than 2 standard deviations from median
+                if stdevs_from_median > 2:
                     outlier_samples.add(sample)
-                    outlier_message = (
-                        f"{sample}: {metric_description} ({value}) is {deviation:.2f} "
-                        f"standard deviations from the median ({median_value:.2f})"
-                    )
-                    outlier_details.append((sample, metric_key, threshold["code"], outlier_message))
-                    break  # Stop after finding the first matching threshold
+                    
+                    # Format metric name for logging
+                    metric_name = metric.replace('_', ' ')
+                    
+                    # Log individual outlier
+                    message = f"{sample}: {metric_name} ({value:.2f}) is {stdevs_from_median:.2f} standard deviations from the median ({median:.2f})"
+                    log_check_result(log_path, "alignment", sample, f"outlier_{metric}", "YELLOW", message, "")
     
-    # Report results
-    if outlier_details:
-        print(f"Found {len(outlier_samples)} samples with outlier metrics:")
-        for sample, metric, code, message in outlier_details:
-            print(f"  - {message} [{code}]")
-            log_check_result(log_path, "raw_reads", sample, f"outlier_{metric}", code, message, "")
-        
-        # Keep the list of outlier samples in the summary log
-        log_check_result(log_path, "raw_reads", "all", "check_for_outliers", "YELLOW", 
-                        f"Found {len(outlier_samples)} samples with outlier metrics", 
-                        ",".join(outlier_samples))  # Include outlier samples list
+    # Log summary
+    if outlier_samples:
+        print(f"\nFound {len(outlier_samples)} samples with outlier metrics")
+        log_check_result(log_path, "alignment", "all", "report_multiqc_outliers", "YELLOW",
+                        f"Found {len(outlier_samples)} samples with outlier metrics",
+                        ",".join(sorted(outlier_samples)))
     else:
-        print("No outliers found in MultiQC metrics")
-        log_check_result(log_path, "raw_reads", "all", "check_for_outliers", "GREEN", 
+        print("\nNo statistical outliers found in alignment metrics")
+        log_check_result(log_path, "alignment", "all", "report_multiqc_outliers", "GREEN",
                         "No outliers found", "")
     
-    return len(outlier_details) > 0
+    # Print summary statistics
+    print("\nAlignment Statistics Summary:")
+    for metric in metrics:
+        if metric_values[metric]:
+            values = np.array(metric_values[metric])
+            print(f"\n{metric}:")
+            print(f"  Mean: {np.mean(values):.2f}")
+            print(f"  Median: {np.median(values):.2f}")
+            print(f"  Std Dev: {np.std(values):.2f}")
+    
+    return len(outlier_samples) == 0
 
 def check_bowtie2_existence(outdir, samples, paired_end, log_path):
     """Check if all expected bowtie2 alignment files exist for each sample."""
@@ -603,6 +670,16 @@ def main():
 
     # 2. Validate unmapped FASTQ files
     validate_unmapped_fastq(args.outdir, sample_names, paired_end_values, vv_log_path)
+
+    # 3. Check that samples are present in MultiQC report
+    check_samples_multiqc(args.outdir, sample_names, paired_end_values, vv_log_path, args.assay_suffix)
+
+    # 4. Get MultiQC stats
+    multiqc_data = get_bowtie2_multiqc_stats(args.outdir, sample_names, paired_end_values, vv_log_path, args.assay_suffix)
+
+    # 5. Report MultiQC stats outliers
+    if multiqc_data:
+        report_multiqc_outliers(args.outdir, multiqc_data, vv_log_path)
 
 if __name__ == "__main__":
     main()
