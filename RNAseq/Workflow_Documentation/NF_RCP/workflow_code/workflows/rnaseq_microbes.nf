@@ -390,17 +390,17 @@ workflow RNASEQ_MICROBES {
             RAW_READS_MULTIQC.out.zipped_report
         )
 
-        // VV_TRIMMED_READS(
-        //     dp_tools_plugin,
-        //     ch_outdir,
-        //     ch_meta,
-        //     runsheet_path,
-        //     trimmed_reads | map{ it -> it[1] } | collect,
-        //     trimmed_fastqc_zip,
-        //     TRIMMED_READS_MULTIQC.out.zipped_report,
-        //     TRIMGALORE.out.reports | collect,
-        //     TRIMMING_MULTIQC.out.zipped_report
-        // )
+        VV_TRIMMED_READS(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            trimmed_reads | map{ it -> it[1] } | collect,
+            trimmed_fastqc_zip,
+            TRIMMED_READS_MULTIQC.out.zipped_report,
+            TRIMGALORE.out.reports | collect,
+            TRIMMING_MULTIQC.out.zipped_report
+        )
 
         // VV_BOWTIE2_ALIGNMENT(
         //     dp_tools_plugin,
@@ -455,5 +455,5 @@ workflow RNASEQ_MICROBES {
         // )
 
     emit:
-        VV_RAW_READS.out.log
+        VV_TRIMMED_READS.out.log
 }

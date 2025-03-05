@@ -39,6 +39,8 @@ process VV_RAW_READS {
 }
 
 process VV_TRIMMED_READS {
+  label 'VV'
+
   // Log publishing
   publishDir "${ publishdir }",
     pattern:  "VV_log.csv" ,
@@ -49,43 +51,30 @@ process VV_TRIMMED_READS {
     pattern: '01-TG_Preproc/**',
     mode: params.publish_dir_mode
 
-  label 'VV'
-
   input:
     path(dp_tools__NF_RCP)
     val(publishdir)
     val(meta)
     path(runsheet)              // Runsheet
-    path("INPUT/trimmed_fastq/*")   // Trimmed reads
-    path("INPUT/trimmed_fastqc/*")  // Trimmed FastQC reports
-    path("INPUT/trimmed_multiqc/*") // Trimmed reads multiqc zipped report
-    path("INPUT/trimming_reports/*") // Trimming reports
-    path("INPUT/trimming_multiqc/*") // Trimming multiqc zipped report
+    path("INPUT/01-TG_Preproc/Fastq/*")   // Trimmed reads
+    path("INPUT/01-TG_Preproc/FastQC_Reports/*")  // Trimmed FastQC reports
+    path("INPUT/01-TG_Preproc/FastQC_Reports/*") // Trimmed reads multiqc zipped report
+    path("INPUT/01-TG_Preproc/Trimming_Reports/*") // Trimming reports
+    path("INPUT/01-TG_Preproc/Trimming_Reports/*") // Trimming multiqc zipped report
 
   output:
     path("01-TG_Preproc/Fastq"),                                                      emit: VVed_trimmed_reads
     path("01-TG_Preproc/FastQC_Reports/*{_fastqc.html,_fastqc.zip}"),                 emit: VVed_trimmed_fastqc
     path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc${params.assay_suffix}_report.zip"), emit: VVed_trimmed_zipped_multiqc_report
-    path("01-TG_Preproc/Trimming_Reports"),                                           emit: VVed_trimming_zipped_multiqc_report
+    path("01-TG_Preproc/Trimming_Reports/*trimming_report.txt"), emit: VVed_trimming_reports
+    path("01-TG_Preproc/Trimming_Reports/trimming_multiqc${params.assay_suffix}_report.zip"), emit: VVed_trimming_zipped_multiqc_report
     path("VV_log.csv"),                                                               optional: params.skipVV, emit: log
-    path("vv.log"),                                                                   optional: params.skipVV, emit: log_txt
 
   script:
     """
     mv INPUT/* . || true
-    touch VV_log.csv
-    # vv.py --assay-type rnaseq \\
-    # --assay-suffix ${params.assay_suffix} \\
-    # --runsheet-path ${runsheet} \\
-    # --outdir ${publishdir} \\
-    # --paired-end ${meta.paired_end} \\
-    # --mode microbes \\
-    # --trimmed-fastq trimmed_fastq/ \\
-    # --trimmed-fastqc trimmed_fastqc/ \\
-    # --trimmed-multiqc trimmed_multiqc/ \\
-    # --trimming-reports trimming_reports/ \\
-    # --trimming-multiqc trimming_multiqc/ \\
-    # --run-components trimmed_reads
+    
+    vv_trimmed_reads.py --runsheet ${runsheet} --outdir .
     """
 }
 
