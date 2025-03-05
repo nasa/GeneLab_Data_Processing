@@ -190,10 +190,10 @@ process VV_FEATURECOUNTS {
     val(publishdir)
     val(meta)
     path(runsheet)
-    path("INPUT/fc-counts/*") // featurecounts counts
-    path("INPUT/fc-summary/*") // featurecounts summary
-    path("INPUT/fc-counts-rrnarm/*") // featurecounts counts_rrnarm
-    path("INPUT/fc-multiqc/*") // featurecounts multiqc zipped report
+    path("INPUT/03-FeatureCounts/*") // featurecounts counts
+    path("INPUT/03-FeatureCounts/*") // featurecounts summary
+    path("INPUT/03-FeatureCounts/*") // featurecounts counts_rrnarm
+    path("INPUT/03-FeatureCounts/*") // featurecounts multiqc zipped report
 
   output:
     path("03-FeatureCounts/**")
@@ -203,17 +203,7 @@ process VV_FEATURECOUNTS {
   """
   mv INPUT/* . || true
   
-  vv.py --assay-type rnaseq \
-  --assay-suffix ${params.assay_suffix} \
-  --runsheet-path ${runsheet} \
-  --outdir ${publishdir} \
-  --paired-end ${meta.paired_end} \
-  --mode microbes \
-  --run-components featurecounts \
-  --featurecounts-summary fc-summary/ \
-  --featurecounts-counts fc-counts/ \
-  --featurecounts-counts-rrnarm fc-counts-rrnarm/ \
-  --featurecounts-multiqc fc-multiqc/
+  vv_featurecounts.py --runsheet ${runsheet} --outdir .
   """
 }
 
