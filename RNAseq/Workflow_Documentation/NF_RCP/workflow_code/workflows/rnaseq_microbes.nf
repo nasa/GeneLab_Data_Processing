@@ -71,7 +71,7 @@ include { VV_RAW_READS;
     VV_BOWTIE2_ALIGNMENT;
     VV_RSEQC;
     VV_FEATURECOUNTS;
-    VV_DESEQ2_ANALYSIS;
+    VV_DGE_MICROBES;
     VV_CONCAT_FILTER } from '../modules/vv.nf'
 
 def colorCodes = [
@@ -390,53 +390,70 @@ workflow RNASEQ_MICROBES {
             RAW_READS_MULTIQC.out.zipped_report
         )
 
-        VV_TRIMMED_READS(
-            dp_tools_plugin,
-            ch_outdir,
-            ch_meta,
-            runsheet_path,
-            trimmed_reads | map{ it -> it[1] } | collect,
-            trimmed_fastqc_zip,
-            TRIMMED_READS_MULTIQC.out.zipped_report,
-            TRIMGALORE.out.reports | collect,
-            TRIMMING_MULTIQC.out.zipped_report
-        )
+        // VV_TRIMMED_READS(
+        //     dp_tools_plugin,
+        //     ch_outdir,
+        //     ch_meta,
+        //     runsheet_path,
+        //     trimmed_reads | map{ it -> it[1] } | collect,
+        //     trimmed_fastqc_zip,
+        //     TRIMMED_READS_MULTIQC.out.zipped_report,
+        //     TRIMGALORE.out.reports | collect,
+        //     TRIMMING_MULTIQC.out.zipped_report
+        // )
 
-        VV_BOWTIE2_ALIGNMENT(
-            dp_tools_plugin,
-            ch_outdir,
-            ch_meta,
-            runsheet_path,
-            ALIGN_BOWTIE2.out.alignment_logs | collect,       // log files
-            ALIGN_BOWTIE2.out.unmapped_reads | collect,       // unmapped reads
-            ALIGN_MULTIQC.out.zipped_report,      // MultiQC report
-            SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[1] } | collect,        // sorted BAM files
-            SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[2] } | collect // BAM index files
-        )
+        // VV_BOWTIE2_ALIGNMENT(
+        //     dp_tools_plugin,
+        //     ch_outdir,
+        //     ch_meta,
+        //     runsheet_path,
+        //     ALIGN_BOWTIE2.out.alignment_logs | collect,       // log files
+        //     ALIGN_BOWTIE2.out.unmapped_reads | collect,       // unmapped reads
+        //     ALIGN_MULTIQC.out.zipped_report,      // MultiQC report
+        //     SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[1] } | collect,        // sorted BAM files
+        //     SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[2] } | collect // BAM index files
+        // )
 
-        VV_RSEQC(
-            dp_tools_plugin,
-            ch_outdir,
-            ch_meta,
-            runsheet_path,
-            ch_rseqc_logs,
-            GENEBODY_COVERAGE_MULTIQC.out.zipped_report,
-            INFER_EXPERIMENT_MULTIQC.out.zipped_report,
-            Channel.empty() | mix(INNER_DISTANCE_MULTIQC.out.zipped_report) | collect | ifEmpty({ file("PLACEHOLDER") }),
-            READ_DISTRIBUTION_MULTIQC.out.zipped_report
-        )
+        // VV_RSEQC(
+        //     dp_tools_plugin,
+        //     ch_outdir,
+        //     ch_meta,
+        //     runsheet_path,
+        //     ch_rseqc_logs,
+        //     GENEBODY_COVERAGE_MULTIQC.out.zipped_report,
+        //     INFER_EXPERIMENT_MULTIQC.out.zipped_report,
+        //     Channel.empty() | mix(INNER_DISTANCE_MULTIQC.out.zipped_report) | collect | ifEmpty({ file("PLACEHOLDER") }),
+        //     READ_DISTRIBUTION_MULTIQC.out.zipped_report
+        // )
 
-        VV_FEATURECOUNTS(
-            dp_tools_plugin,
-            ch_outdir,
-            ch_meta,
-            runsheet_path,
-            FEATURECOUNTS.out.counts,
-            FEATURECOUNTS.out.summary,
-            REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm,
-            COUNT_MULTIQC.out.zipped_report
-        )
+        // VV_FEATURECOUNTS(
+        //     dp_tools_plugin,
+        //     ch_outdir,
+        //     ch_meta,
+        //     runsheet_path,
+        //     FEATURECOUNTS.out.counts,
+        //     FEATURECOUNTS.out.summary,
+        //     REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm,
+        //     COUNT_MULTIQC.out.zipped_report
+        // )
+
+        // VV_DGE_MICROBES(
+        //     dp_tools_plugin,
+        //     ch_outdir,
+        //     ch_meta,
+        //     runsheet_path,
+        //     DGE_DESEQ2.out.norm_counts,
+        //     DGE_DESEQ2.out.vst_norm_counts,
+        //     DGE_DESEQ2.out.sample_table,
+        //     DGE_DESEQ2.out.contrasts,
+        //     ADD_GENE_ANNOTATIONS.out.annotated_dge_table,
+        //     DGE_DESEQ2_RRNA_RM.out.norm_counts,
+        //     DGE_DESEQ2_RRNA_RM.out.vst_norm_counts,
+        //     DGE_DESEQ2_RRNA_RM.out.sample_table,
+        //     DGE_DESEQ2_RRNA_RM.out.contrasts,
+        //     ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
+        // )
 
     emit:
-        VV_FEATURECOUNTS.out.log
+        VV_RAW_READS.out.log
 }

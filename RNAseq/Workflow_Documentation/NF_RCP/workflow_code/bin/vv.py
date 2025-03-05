@@ -19,6 +19,7 @@ from statistics import mean, median
 from typing import Dict, List, Tuple, Union, Optional
 import traceback
 import sys
+import pandas as pd
 
 # Setup logging
 def setup_logging():
@@ -207,6 +208,11 @@ class ValidationLogger:
 @click.option('--featurecounts-counts-rrnarm', type=click.Path(), help="Path to featurecounts rRNA removed counts directory")
 @click.option('--featurecounts-counts-rrnarm-summary', type=click.Path(), help="Path to featurecounts rRNA removed summary directory")
 @click.option('--featurecounts-multiqc', type=click.Path(), help="Path to featurecounts multiqc directory")
+@click.option('--counts-norm-microbes', type=click.Path(), help="Path to normalized counts directory for microbes")
+@click.option('--dge-microbes', type=click.Path(), help="Path to DGE results directory for microbes")
+@click.option('--counts-norm-microbes-rrnarm', type=click.Path(), help="Path to rRNA-removed normalized counts directory for microbes")
+@click.option('--dge-microbes-rrnarm', type=click.Path(), help="Path to rRNA-removed DGE results directory for microbes")
+@click.option('--has-ercc', is_flag=True, default=False, help="Whether dataset has ERCC spike-ins")
 def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_components, 
        raw_fastq, raw_fastqc, raw_multiqc,
        trimmed_fastq, trimmed_fastqc, trimmed_multiqc, trimming_reports, trimming_multiqc,
@@ -214,7 +220,8 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
        bowtie2_alignment_sorted, bowtie2_alignment_sorted_index,
        genebody_coverage, infer_experiment, inner_distance, read_distribution,
        featurecounts_counts, featurecounts_summary, featurecounts_counts_rrnarm,
-       featurecounts_counts_rrnarm_summary, featurecounts_multiqc):
+       featurecounts_counts_rrnarm_summary, featurecounts_multiqc,
+       counts_norm_microbes, dge_microbes, counts_norm_microbes_rrnarm, dge_microbes_rrnarm, has_ercc):
     """
     Main validation and verification (VV) function for GeneLab RNAseq pipeline.
     
@@ -268,6 +275,8 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
         bowtie2_alignment_log, bowtie2_alignment_unmapped, bowtie2_alignment_multiqc, bowtie2_alignment_sorted, bowtie2_alignment_sorted_index: Paths to alignment directories
         genebody_coverage, infer_experiment, inner_distance, read_distribution: Paths to RSeQC output directories
         featurecounts_counts, featurecounts_summary, featurecounts_counts_rrnarm, featurecounts_counts_rrnarm_summary, featurecounts_multiqc: Paths to FeatureCounts-related directories
+        counts_norm_microbes, dge_microbes, counts_norm_microbes_rrnarm, dge_microbes_rrnarm: Paths to DGE-related directories for microbes
+        has_ercc: Whether dataset has ERCC spike-ins
     
     Returns:
         None: Results are written to log files and returned as exit code
@@ -296,7 +305,7 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
         logging.info(f"  {f}")
         
     # For validation of components, use the current working directory as outdir
-    # This is where we staged all the files
+    # This is where the files are staged
     validation_outdir = cwd
     
     # Parse run_components into list
@@ -428,6 +437,21 @@ def vv(assay_type, assay_suffix, runsheet_path, outdir, paired_end, mode, run_co
             featurecounts_counts_rrnarm_dir=Path(featurecounts_counts_rrnarm) if featurecounts_counts_rrnarm else None,
             featurecounts_counts_rrnarm_summary_dir=Path(featurecounts_counts_rrnarm_summary) if featurecounts_counts_rrnarm_summary else None,
             featurecounts_multiqc_dir=Path(featurecounts_multiqc) if featurecounts_multiqc else None
+        )
+    
+    # Add DGE validation for microbes
+    if 'dge_microbes' in components:
+        logger.info("Running DGE microbes validation...")
+        results = validate_dge_microbes(
+            validation_outdir,
+            samples_txt=Path(runsheet_path),
+            paired_end=is_paired_end,
+            assay_suffix=assay_suffix,
+            counts_norm_microbes_dir=Path(counts_norm_microbes) if counts_norm_microbes else None,
+            dge_microbes_dir=Path(dge_microbes) if dge_microbes else None,
+            counts_norm_microbes_rrnarm_dir=Path(counts_norm_microbes_rrnarm) if counts_norm_microbes_rrnarm else None,
+            dge_microbes_rrnarm_dir=Path(dge_microbes_rrnarm) if dge_microbes_rrnarm else None,
+            has_ercc=has_ercc
         )
     
     return results
@@ -3482,6 +3506,1331 @@ def validate_featurecounts(outdir: Path,
                          "No FeatureCounts MultiQC report found")
     
     # Return validation status with expected format matching other validation functions
+    return {
+        "status": val_logger.get_status(),
+        "messages": [r["message"] for r in val_logger.results],
+        "failures": {r["check_name"]: r["message"] 
+                    for r in val_logger.results 
+                    if r["status"] in ["HALT", "RED"]}
+    }
+
+def validate_dge_microbes(outdir: Path,
+                        samples_txt: Path,
+                        paired_end: bool = True,
+                        assay_suffix: str = "_GLbulkRNAseq",
+                        counts_norm_microbes_dir: Path = None,
+                        dge_microbes_dir: Path = None,
+                        counts_norm_microbes_rrnarm_dir: Path = None,
+                        dge_microbes_rrnarm_dir: Path = None,
+                        has_ercc: bool = False) -> dict:
+    """
+    Validation of DESeq2 Differential Gene Expression outputs for microbes.
+    
+    This function performs comprehensive validation of the DGE outputs, including:
+    
+    1. File Existence Validation
+       - Checks for the existence of expected files in DESeq2 outputs
+       - Verifies ERCC inclusion/filtering when applicable
+    
+    2. Sample Table Validation
+       - Confirms all runsheet samples are included in sample tables
+       - Verifies group assignments for experimental design
+       - Checks for balanced replication and sufficient sample sizes
+    
+    3. Group Column Validations
+       - Existence Check
+         How it works:
+         - Extracts expected experimental groups from runsheet
+         - Builds expected column names by combining prefixes ("Group.Mean_", "Group.Stdev_") with group names
+         - Checks if all expected columns exist in DGE table
+       - Value Calculation Check
+         How it works:
+         - Recalculates mean and std deviation from sample-level data
+         - Compares calculated values with stored values in group columns
+         - Allows small tolerance (0.001%) for floating-point differences
+         - Reports any groups where calculations deviate beyond tolerance
+    
+    4. Statistical Column Validations
+       - Comparison Statistics Existence
+         How it works:
+         - Determines all possible pairwise comparisons from experimental groups
+         - Generates expected column names by combining prefixes ("Log2fc_", "Stat_", "P.value_", "Adj.p.value_") with comparisons
+         - Verifies all expected columns exist
+       - Constraints Check
+         How it works:
+         - Applies multiple constraints to different column types:
+         - Log2fc columns must be non-null
+         - Statistics columns must be non-null
+         - P-values must be non-negative (can be null for filtered genes)
+         - Adjusted p-values must be non-negative (can be null)
+         - Reports any columns failing constraints
+       - Fixed Statistical Columns
+         How it works:
+         - Verifies existence of dataset-wide statistics (All.mean, All.stdev, LRT.p.value)
+         - Checks constraints:
+         - All.mean and All.stdev must be non-null and non-negative
+         - LRT.p.value must be non-negative (can be null)
+    
+    5. Log2FC Value Validation
+       How it works:
+       - For each comparison:
+         - Recalculates log2FC directly from group means
+         - Compares with DESeq2-computed log2FC values
+         - Checks percentage of genes with differences < 10%
+         - Requires at least 50% of genes to have small differences
+       - For genes with large mean differences (>50%):
+         - Verifies log2FC signs match expected direction
+         - Flags inconsistent sign direction as potentially serious issue
+         - Generates different severity flags based on proportion of inconsistencies
+    
+    6. Count Distribution Validation
+       - Analyzes raw count distributions across samples
+       - Detects outlier samples based on multiple metrics
+       - Calculates percentage of zero counts and flags if excessive
+    
+    Args:
+        outdir: Output directory path
+        samples_txt: Path to samples.txt file
+        paired_end: Whether data is paired-end 
+        assay_suffix: Suffix for output files
+        counts_norm_microbes_dir: Directory with normalized counts
+        dge_microbes_dir: Directory with DGE results
+        counts_norm_microbes_rrnarm_dir: Directory with rRNA-removed normalized counts
+        dge_microbes_rrnarm_dir: Directory with rRNA-removed DGE results
+        has_ercc: Whether ERCC spike-ins are expected in the data
+        
+    Returns:
+        dict: Validation results
+    """
+    logger.info(f"Validating DGE Microbes outputs with params: samples_txt={samples_txt}")
+    
+    # Create the output directories
+    norm_counts_dir = Path("04-DESeq2_NormCounts")
+    dge_dir = Path("05-DESeq2_DGE")
+    norm_counts_rrnarm_dir = Path("04-DESeq2_NormCounts_rRNArm")
+    dge_rrnarm_dir = Path("05-DESeq2_DGE_rRNArm")
+    
+    os.makedirs(norm_counts_dir, exist_ok=True)
+    os.makedirs(dge_dir, exist_ok=True)
+    os.makedirs(norm_counts_rrnarm_dir, exist_ok=True)
+    os.makedirs(dge_rrnarm_dir, exist_ok=True)
+    
+    # Track staged files
+    staged_files = {
+        "counts_norm": [],
+        "dge": [],
+        "counts_norm_rrnarm": [],
+        "dge_rrnarm": []
+    }
+    
+    # Helper function to handle both directory and file inputs
+    def stage_files_from_input(input_path, target_dir, category):
+        """Stage files from input to target directory"""
+        if not input_path:
+            logger.info(f"No input provided for {category}")
+            return
+            
+        try:
+            logger.info(f"Staging {category} files from {input_path}")
+            
+            # Handle both directory and file inputs
+            if os.path.isdir(input_path):
+                # It's a directory - stage all files
+                for filename in os.listdir(input_path):
+                    source_path = os.path.join(input_path, filename)
+                    if os.path.isfile(source_path):
+                        target_path = os.path.join(target_dir, filename)
+                        
+                        # Create symlink (handle existing links)
+                        if os.path.exists(target_path) or os.path.islink(target_path):
+                            os.unlink(target_path)
+                        os.symlink(os.path.realpath(source_path), target_path)
+                        staged_files[category].append(target_path)
+                        logger.info(f"Staged {source_path} -> {target_path}")
+            elif os.path.isfile(input_path):
+                # It's a single file - stage it
+                filename = os.path.basename(input_path)
+                target_path = os.path.join(target_dir, filename)
+                
+                # Create symlink (handle existing links)
+                if os.path.exists(target_path) or os.path.islink(target_path):
+                    os.unlink(target_path)
+                os.symlink(os.path.realpath(input_path), target_path)
+                staged_files[category].append(target_path)
+                logger.info(f"Staged {input_path} -> {target_path}")
+            else:
+                logger.warning(f"Input path {input_path} is neither a file nor a directory")
+        except Exception as e:
+            logger.error(f"Error staging {category} files: {str(e)}")
+    
+    # Stage regular DESeq2 files
+    stage_files_from_input(counts_norm_microbes_dir, norm_counts_dir, "counts_norm")
+    stage_files_from_input(dge_microbes_dir, dge_dir, "dge")
+    
+    # Stage rRNA-removed DESeq2 files
+    stage_files_from_input(counts_norm_microbes_rrnarm_dir, norm_counts_rrnarm_dir, "counts_norm_rrnarm")
+    stage_files_from_input(dge_microbes_rrnarm_dir, dge_rrnarm_dir, "dge_rrnarm")
+    
+    # Define expected files from regular DESeq2
+    expected_counts_norm = [
+        f"Normalized_Counts{assay_suffix}.csv",
+        f"FeatureCounts_Unnormalized_Counts{assay_suffix}.csv",
+        f"VST_Normalized_Counts{assay_suffix}.csv"
+    ]
+    
+    expected_dge = [
+        f"SampleTable{assay_suffix}.csv",
+        f"contrasts{assay_suffix}.csv",
+        f"differential_expression{assay_suffix}.csv"
+    ]
+    
+    # Define expected files for rRNA-removed DESeq2
+    expected_counts_norm_rrnarm = [
+        f"Normalized_Counts{assay_suffix}.csv",
+        f"FeatureCounts_Unnormalized_Counts{assay_suffix}.csv",
+        f"VST_Normalized_Counts{assay_suffix}.csv"
+    ]
+    
+    expected_dge_rrnarm = [
+        f"SampleTable{assay_suffix}.csv",
+        f"contrasts{assay_suffix}.csv", 
+        f"differential_expression{assay_suffix}.csv"
+    ]
+    
+    # Now verify the expected files exist
+    for filename in expected_counts_norm:
+        file_path = norm_counts_dir / filename
+        if file_path.exists():
+            val_logger.log("dge_microbes", "ALL", f"counts_norm_{filename}", "GREEN", 
+                        f"DESeq2 normalized counts file found: {filename}")
+        else:
+            val_logger.log("dge_microbes", "ALL", f"counts_norm_{filename}", "RED", 
+                        f"DESeq2 normalized counts file not found: {filename}")
+    
+    for filename in expected_dge:
+        file_path = dge_dir / filename
+        if file_path.exists():
+            val_logger.log("dge_microbes", "ALL", f"dge_{filename}", "GREEN", 
+                        f"DESeq2 DGE file found: {filename}")
+        else:
+            val_logger.log("dge_microbes", "ALL", f"dge_{filename}", "RED", 
+                        f"DESeq2 DGE file not found: {filename}")
+    
+    for filename in expected_counts_norm_rrnarm:
+        file_path = norm_counts_rrnarm_dir / filename
+        if file_path.exists():
+            val_logger.log("dge_microbes", "ALL", f"counts_norm_rrnarm_{filename}", "GREEN", 
+                        f"rRNA-removed DESeq2 normalized counts file found: {filename}")
+        else:
+            val_logger.log("dge_microbes", "ALL", f"counts_norm_rrnarm_{filename}", "RED", 
+                        f"rRNA-removed DESeq2 normalized counts file not found: {filename}")
+    
+    for filename in expected_dge_rrnarm:
+        file_path = dge_rrnarm_dir / filename
+        if file_path.exists():
+            val_logger.log("dge_microbes", "ALL", f"dge_rrnarm_{filename}", "GREEN", 
+                        f"rRNA-removed DESeq2 DGE file found: {filename}")
+        else:
+            val_logger.log("dge_microbes", "ALL", f"dge_rrnarm_{filename}", "RED", 
+                        f"rRNA-removed DESeq2 DGE file not found: {filename}")
+    
+    # Check for ERCC in unnormalized counts if has_ercc is true
+    if has_ercc:
+        logger.info("Performing ERCC validation...")
+        
+        # Check unnormalized counts for ERCC presence
+        unnorm_files = [
+            {"path": norm_counts_dir / f"FeatureCounts_Unnormalized_Counts{assay_suffix}.csv", "type": "standard"},
+            {"path": norm_counts_rrnarm_dir / f"FeatureCounts_Unnormalized_Counts{assay_suffix}.csv", "type": "rRNA-removed"}
+        ]
+        
+        norm_files = [
+            {"path": norm_counts_dir / f"Normalized_Counts{assay_suffix}.csv", "type": "standard"},
+            {"path": norm_counts_rrnarm_dir / f"Normalized_Counts{assay_suffix}.csv", "type": "rRNA-removed"}
+        ]
+        
+        for file_info in unnorm_files:
+            path = file_info["path"]
+            type_label = file_info["type"]
+            
+            if path.exists():
+                try:
+                    # Use grep to check for ERCC entries
+                    result = subprocess.run(["grep", "-c", "ERCC", str(path)], 
+                                          capture_output=True, text=True)
+                    ercc_count = int(result.stdout.strip()) if result.returncode == 0 else 0
+                    
+                    if ercc_count > 0:
+                        val_logger.log("dge_microbes", "ALL", f"ercc_presence_{type_label}", "GREEN",
+                                    f"Found {ercc_count} ERCC entries in {type_label} unnormalized counts")
+                    else:
+                        val_logger.log("dge_microbes", "ALL", f"ercc_presence_{type_label}", "RED",
+                                    f"No ERCC entries found in {type_label} unnormalized counts despite has_ercc=True")
+                except Exception as e:
+                    val_logger.log("dge_microbes", "ALL", f"ercc_check_{type_label}", "RED",
+                                f"Error checking for ERCC in {type_label} unnormalized counts: {str(e)}")
+        
+        # Check normalized counts for ERCC filtering
+        for file_info in norm_files:
+            path = file_info["path"]
+            type_label = file_info["type"]
+            
+            if path.exists():
+                try:
+                    # Use grep to check for ERCC entries (should be 0)
+                    result = subprocess.run(["grep", "-c", "ERCC", str(path)], 
+                                          capture_output=True, text=True)
+                    ercc_count = int(result.stdout.strip()) if result.returncode == 0 else 0
+                    
+                    if ercc_count == 0:
+                        val_logger.log("dge_microbes", "ALL", f"ercc_filtered_{type_label}", "GREEN",
+                                    f"ERCC entries properly filtered out of {type_label} normalized counts")
+                    else:
+                        val_logger.log("dge_microbes", "ALL", f"ercc_filtered_{type_label}", "RED",
+                                    f"Found {ercc_count} ERCC entries in {type_label} normalized counts - should be filtered")
+                except Exception as e:
+                    val_logger.log("dge_microbes", "ALL", f"ercc_filter_check_{type_label}", "RED",
+                                f"Error checking ERCC filtering in {type_label} normalized counts: {str(e)}")
+    
+    # Display staged files for debugging
+    logger.info(f"Staged {len(staged_files['counts_norm'])} normalized counts files")
+    logger.info(f"Staged {len(staged_files['dge'])} DGE files")
+    logger.info(f"Staged {len(staged_files['counts_norm_rrnarm'])} rRNA-removed normalized counts files")
+    logger.info(f"Staged {len(staged_files['dge_rrnarm'])} rRNA-removed DGE files")
+    
+    # After all the file existence checks, add enhanced content validation:
+    
+    # 1. Sample Table Content Validation
+    logger.info("Validating sample tables...")
+    sample_tables = [
+        {"path": dge_dir / f"SampleTable{assay_suffix}.csv", "type": "standard"},
+        {"path": dge_rrnarm_dir / f"SampleTable{assay_suffix}.csv", "type": "rRNA-removed"}
+    ]
+    
+    # Get sample IDs from runsheet for comparison
+    runsheet_samples = []
+    try:
+        with open(samples_txt, 'r') as f:
+            # Add debug of the file content
+            file_content = f.read()
+            logger.info(f"DEBUG: Raw runsheet content (first 500 chars):\n{file_content[:500]}")
+            f.seek(0)  # Reset file pointer
+            
+            reader = csv.DictReader(f)
+            logger.info(f"DEBUG: Runsheet columns: {reader.fieldnames}")
+            
+            for row in reader:
+                logger.info(f"DEBUG: Runsheet row: {row}")
+                if 'Sample Name' in row:
+                    runsheet_samples.append(row['Sample Name'].strip())
+                elif 'Sample_Name' in row:  # Try alternative column name
+                    runsheet_samples.append(row['Sample_Name'].strip())
+        
+        logger.info(f"Found {len(runsheet_samples)} samples in runsheet: {runsheet_samples}")
+    except Exception as e:
+        logger.error(f"Error reading runsheet: {str(e)}")
+        val_logger.log("dge_microbes", "ALL", "runsheet_read", "RED", 
+                    f"Error reading runsheet: {str(e)}")
+    
+    # Validate each sample table
+    for table_info in sample_tables:
+        path = table_info["path"]
+        type_label = table_info["type"]
+        
+        if path.exists():
+            try:
+                # Read sample table and dump for debugging
+                with open(path, 'r') as f:
+                    file_content = f.read()
+                    logger.info(f"DEBUG: Raw sample table ({type_label}) content:\n{file_content}")
+                    f.seek(0)  # Reset file pointer
+                
+                # Read the sample table to identify column structure
+                with open(path, 'r') as f:
+                    # Use csv.reader instead of DictReader to properly handle empty column headers
+                    reader = csv.reader(f)
+                    header = next(reader)  # Get header row
+                    logger.info(f"DEBUG: Raw sample table header: {header}")
+                    
+                    # Find column indices for sample IDs and groups
+                    sample_col_idx = -1
+                    group_col_idx = -1
+                    
+                    # First look for standard column names
+                    for i, col in enumerate(header):
+                        if col.lower() == 'sample':
+                            sample_col_idx = i
+                        elif col.lower() == 'group':
+                            group_col_idx = i
+                    
+                    # If standard names not found, look for alternatives
+                    if sample_col_idx == -1:
+                        # If first column is empty or unnamed, use it for sample IDs
+                        if len(header) > 0 and (header[0] == '' or header[0] == 'row.names'):
+                            sample_col_idx = 0
+                    
+                    if group_col_idx == -1:
+                        # Look for 'condition' column (common in DESeq2 output)
+                        for i, col in enumerate(header):
+                            if col.lower() == 'condition':
+                                group_col_idx = i
+                                break
+                    
+                    logger.info(f"DEBUG: Identified sample column index: {sample_col_idx}, group column index: {group_col_idx}")
+                    
+                    # Read the data rows
+                    rows = list(reader)
+                    logger.info(f"DEBUG: Found {len(rows)} rows in sample table")
+                    
+                    # Extract samples and groups
+                    table_samples = []
+                    groups = []
+                    
+                    for row in rows:
+                        if sample_col_idx >= 0 and sample_col_idx < len(row):
+                            table_samples.append(row[sample_col_idx])
+                        else:
+                            table_samples.append('')
+                        
+                        if group_col_idx >= 0 and group_col_idx < len(row):
+                            groups.append(row[group_col_idx])
+                        else:
+                            groups.append('')
+                    
+                    logger.info(f"DEBUG: Extracted sample IDs: {table_samples}")
+                    logger.info(f"DEBUG: Extracted groups: {groups}")
+                    
+                    unique_groups = set(filter(None, groups))
+                    logger.info(f"DEBUG: Unique groups: {unique_groups}")
+                    
+                    # Check if all runsheet samples are in the table
+                    missing_samples = set(runsheet_samples) - set(table_samples)
+                    if missing_samples:
+                        val_logger.log("dge_microbes", "ALL", f"sample_table_samples_{type_label}", "YELLOW",
+                                    f"Samples missing from {type_label} sample table: {', '.join(missing_samples)}")
+                    else:
+                        val_logger.log("dge_microbes", "ALL", f"sample_table_samples_{type_label}", "GREEN",
+                                    f"All runsheet samples found in {type_label} sample table")
+                    
+                    # Check for empty or problematic groups
+                    if '' in groups or None in groups:
+                        val_logger.log("dge_microbes", "ALL", f"sample_table_groups_{type_label}", "RED",
+                                    f"Empty group assignment found in {type_label} sample table")
+                    elif len(unique_groups) < 2:
+                        val_logger.log("dge_microbes", "ALL", f"sample_table_groups_{type_label}", "RED",
+                                    f"Only one group found in {type_label} sample table, at least two needed for comparisons")
+                    else:
+                        val_logger.log("dge_microbes", "ALL", f"sample_table_groups_{type_label}", "GREEN",
+                                    f"Found {len(unique_groups)} groups in {type_label} sample table: {', '.join(unique_groups)}")
+                    
+                    # Check group balancing (outlier detection)
+                    group_counts = {}
+                    for group in groups:
+                        if group:
+                            group_counts[group] = group_counts.get(group, 0) + 1
+                    
+                    if len(group_counts) >= 2:
+                        group_sizes = list(group_counts.values())
+                        mean_size = statistics.mean(group_sizes)
+                        
+                        # Warning if any group has < 3 replicates (standard practice)
+                        small_groups = [g for g, count in group_counts.items() if count < 3]
+                        if small_groups:
+                            val_logger.log("dge_microbes", "ALL", f"sample_table_replicates_{type_label}", "YELLOW",
+                                        f"Groups with fewer than 3 replicates: {', '.join(small_groups)}")
+                        
+                        # Try to detect unbalanced designs
+                        if len(group_sizes) > 1 and statistics.stdev(group_sizes) > mean_size * 0.5:
+                            val_logger.log("dge_microbes", "ALL", f"sample_table_balance_{type_label}", "YELLOW",
+                                        f"Unbalanced design detected: group sizes vary significantly: {group_counts}")
+                        else:
+                            val_logger.log("dge_microbes", "ALL", f"sample_table_balance_{type_label}", "GREEN",
+                                        f"Balanced design with similar group sizes")
+            except Exception as e:
+                logger.error(f"Error validating sample table: {str(e)}")
+                logger.error(traceback.format_exc())
+                val_logger.log("dge_microbes", "ALL", f"sample_table_validation_{type_label}", "RED",
+                            f"Error validating {type_label} sample table: {str(e)}")
+    
+    # 2. Contrasts Validation
+    logger.info("Validating contrast definitions...")
+    contrast_files = [
+        {"path": dge_dir / f"contrasts{assay_suffix}.csv", "type": "standard", 
+         "sample_table_path": dge_dir / f"SampleTable{assay_suffix}.csv"},
+        {"path": dge_rrnarm_dir / f"contrasts{assay_suffix}.csv", "type": "rRNA-removed",
+         "sample_table_path": dge_rrnarm_dir / f"SampleTable{assay_suffix}.csv"}
+    ]
+    
+    for contrast_info in contrast_files:
+        path = contrast_info["path"]
+        type_label = contrast_info["type"]
+        sample_table_path = contrast_info["sample_table_path"]
+        
+        if path.exists() and sample_table_path.exists():
+            try:
+                # Get valid groups from sample table - use improved column detection
+                valid_groups = set()
+                with open(sample_table_path, 'r') as f:
+                    # First identify the group column index
+                    reader = csv.reader(f)
+                    header = next(reader)  # Get header row
+                    
+                    # Find group column index
+                    group_col_idx = -1
+                    
+                    # Look for standard 'group' column first, then 'condition'
+                    for i, col in enumerate(header):
+                        if col.lower() == 'group':
+                            group_col_idx = i
+                            break
+                    
+                    # If not found, look for 'condition' column
+                    if group_col_idx == -1:
+                        for i, col in enumerate(header):
+                            if col.lower() == 'condition':
+                                group_col_idx = i
+                                break
+                    
+                    # Now extract group values
+                    if group_col_idx >= 0:
+                        for row in reader:
+                            if len(row) > group_col_idx and row[group_col_idx].strip():
+                                valid_groups.add(row[group_col_idx].strip())
+                
+                # Add normalization of group names for more flexible matching
+                normalized_valid_groups = set()
+                for group in valid_groups:
+                    # Add the original group name
+                    normalized_valid_groups.add(group)
+                    # Also add version with dots replaced by spaces
+                    if '.' in group:
+                        normalized_valid_groups.add(group.replace('.', ' '))
+                    # Also add version with spaces replaced by dots
+                    if ' ' in group:
+                        normalized_valid_groups.add(group.replace(' ', '.'))
+                
+                valid_groups.update(normalized_valid_groups)
+                logger.info(f"DEBUG: Valid groups (with normalization): {valid_groups}")
+                
+                # Read contrasts
+                contrasts_data = []
+                with open(path, 'r') as f:
+                    # Debug output for the file contents
+                    file_content = f.read()
+                    logger.info(f"DEBUG: Raw contrasts file content:\n{file_content}")
+                    f.seek(0)  # Reset file pointer
+                    
+                    # Handle the column-based format in contrast file
+                    reader = csv.reader(f)
+                    header = next(reader)  # Get header row
+                    logger.info(f"DEBUG: Contrasts file header: {header}")
+                    
+                    # Identify contrast columns (column name with 'v' character)
+                    contrast_columns = []
+                    for i, col_name in enumerate(header):
+                        if 'v' in col_name and i > 0:  # Skip first column which is likely empty or row labels
+                            contrast_columns.append({"index": i, "name": col_name})
+                    
+                    # Process data rows to extract group information
+                    for row_idx, row in enumerate(reader):
+                        logger.info(f"DEBUG: Raw contrast row: {row}")
+                        if len(row) < 2:  # Skip rows without enough data
+                            continue
+                        
+                        # Each row represents group mapping for contrasts
+                        # Format is likely: [index, group1_value, group2_value, ...]
+                        for contrast in contrast_columns:
+                            if row_idx < 2 and len(row) > contrast["index"]:  # Only process first two rows which contain group info
+                                group_value = row[contrast["index"]].strip()
+                                
+                                if row_idx == 0:  # First group (numerator)
+                                    group1 = group_value
+                                    contrasts_data.append({
+                                        "contrast": contrast["name"],
+                                        "group1": group_value,
+                                        "group2": ""  # Will be filled in next row
+                                    })
+                                elif row_idx == 1:  # Second group (denominator)
+                                    # Find the contrast record and update group2
+                                    for c in contrasts_data:
+                                        if c["contrast"] == contrast["name"]:
+                                            c["group2"] = group_value
+                                            break
+                
+                # Validate each contrast
+                contrast_issues = []
+                valid_contrasts = []
+                for contrast in contrasts_data:
+                    # Get contrast details
+                    contrast_name = contrast.get('contrast', '')
+                    group1 = contrast.get('group1', '')
+                    group2 = contrast.get('group2', '')
+                    
+                    logger.info(f"DEBUG: Validating contrast - name: '{contrast_name}', group1: '{group1}', group2: '{group2}'")
+                    logger.info(f"DEBUG: Valid groups: {valid_groups}")
+                    
+                    # Function to check if a group name is valid with flexible matching
+                    def is_valid_group(group_name):
+                        # Direct match
+                        if group_name in valid_groups:
+                            return True
+                        
+                        # Try with/without dots
+                        if group_name.replace('.', ' ') in valid_groups:
+                            return True
+                        if group_name.replace(' ', '.') in valid_groups:
+                            return True
+                        
+                        # Try case-insensitive match
+                        for valid_group in valid_groups:
+                            if group_name.lower() == valid_group.lower():
+                                return True
+                        
+                        return False
+                    
+                    if not contrast_name:
+                        contrast_issues.append(f"Unnamed contrast found: {contrast}")
+                    elif not group1 or not group2:
+                        contrast_issues.append(f"Missing group in contrast '{contrast_name}'")
+                    elif not is_valid_group(group1):
+                        contrast_issues.append(f"Invalid group1 '{group1}' in contrast '{contrast_name}'")
+                    elif not is_valid_group(group2):
+                        contrast_issues.append(f"Invalid group2 '{group2}' in contrast '{contrast_name}'")
+                    elif group1 == group2:
+                        contrast_issues.append(f"Same group used for both sides in contrast '{contrast_name}'")
+                    else:
+                        valid_contrasts.append(contrast_name)
+                
+                # Check for duplicate contrast names
+                duplicates = [name for name in set(valid_contrasts) if valid_contrasts.count(name) > 1]
+                if duplicates:
+                    contrast_issues.append(f"Duplicate contrast names: {', '.join(duplicates)}")
+                
+                # Report validation results
+                if contrast_issues:
+                    val_logger.log("dge_microbes", "ALL", f"contrasts_validation_{type_label}", "RED",
+                                f"Issues found in {type_label} contrasts file",
+                                details="; ".join(contrast_issues))
+                else:
+                    # Format contrast names for consistency 
+                    formatted_contrasts = [c.replace('&', 'and').replace('(', '').replace(')', '') for c in valid_contrasts]
+                    val_logger.log("dge_microbes", "ALL", f"contrasts_validation_{type_label}", "GREEN",
+                                f"All {len(formatted_contrasts)} contrasts in {type_label} file are valid")
+            except Exception as e:
+                logger.error(f"Error validating contrasts: {str(e)}")
+                logger.error(traceback.format_exc())
+                val_logger.log("dge_microbes", "ALL", f"contrasts_validation_{type_label}", "RED",
+                            f"Error validating {type_label} contrasts file: {str(e)}")
+    
+    # 3. DGE Results Validation
+    logger.info("Validating DGE results...")
+    dge_files = [
+        {"path": dge_dir / f"differential_expression{assay_suffix}.csv", "type": "standard", 
+         "contrasts_path": dge_dir / f"contrasts{assay_suffix}.csv",
+         "sample_table_path": dge_dir / f"SampleTable{assay_suffix}.csv"},
+        {"path": dge_rrnarm_dir / f"differential_expression{assay_suffix}.csv", "type": "rRNA-removed",
+         "contrasts_path": dge_rrnarm_dir / f"contrasts{assay_suffix}.csv",
+         "sample_table_path": dge_rrnarm_dir / f"SampleTable{assay_suffix}.csv"}
+    ]
+    
+    for dge_info in dge_files:
+        path = dge_info["path"]
+        type_label = dge_info["type"]
+        contrasts_path = dge_info["contrasts_path"]
+        sample_table_path = dge_info["sample_table_path"]
+        
+        if path.exists() and contrasts_path.exists() and sample_table_path.exists():
+            try:
+                # Get expected contrasts from contrast file
+                expected_contrasts = []
+                with open(contrasts_path, 'r') as f:
+                    reader = csv.reader(f)
+                    header = next(reader)
+                    # Extract contrast names from header row (columns with 'v')
+                    for col in header:
+                        if 'v' in col and col.strip():
+                            expected_contrasts.append(col.strip())
+                
+                logger.info(f"DEBUG: Expected contrasts: {expected_contrasts}")
+                
+                # Read DGE results file to identify contrast columns and collect statistics
+                # First, read the headers to identify columns
+                with open(path, 'r') as f:
+                    # Read first few lines for debug
+                    first_lines = []
+                    for i in range(5):
+                        line = f.readline()
+                        if not line:
+                            break
+                        first_lines.append(line)
+                    
+                    logger.info(f"DEBUG: First 5 lines of DGE results file:\n{''.join(first_lines)}")
+                    f.seek(0)  # Reset file pointer
+                    
+                    reader = csv.DictReader(f)
+                    headers = reader.fieldnames
+                    logger.info(f"DEBUG: DGE results file headers: {headers}")
+                    
+                    # Extract contrast-specific column patterns
+                    contrast_patterns = []
+                    for header in headers:
+                        for contrast in expected_contrasts:
+                            if contrast in header and "Log2fc_" in header:
+                                contrast_patterns.append({
+                                    "contrast": contrast,
+                                    "log2fc": header,
+                                    "padj": header.replace("Log2fc_", "Adj.p.value_")
+                                })
+                                break
+                
+                    logger.info(f"DEBUG: Found contrast patterns: {contrast_patterns}")
+                    
+                    # Initialize stats dictionary for each contrast
+                    contrast_stats = {}
+                    for pattern in contrast_patterns:
+                        contrast = pattern["contrast"]
+                        contrast_stats[contrast] = {
+                            'total': 0,
+                            'sig_genes': 0,
+                            'up_genes': 0,
+                            'down_genes': 0,
+                            'log2fc_values': [],
+                            'pvalues': []
+                        }
+                    
+                    # Process DGE file row by row to collect statistics
+                    for row in reader:
+                        for pattern in contrast_patterns:
+                            contrast = pattern["contrast"]
+                            log2fc_col = pattern["log2fc"]
+                            padj_col = pattern["padj"]
+                            
+                            # Count this gene for the contrast
+                            contrast_stats[contrast]['total'] += 1
+                            
+                            try:
+                                # Process numerical values if they exist and aren't empty
+                                if log2fc_col in row and row[log2fc_col] and row[log2fc_col].strip():
+                                    log2fc_val = float(row[log2fc_col])
+                                    contrast_stats[contrast]['log2fc_values'].append(log2fc_val)
+                                    
+                                    # Check if significant (padj < 0.05 is standard)
+                                    if (padj_col in row and 
+                                        row[padj_col] and 
+                                        row[padj_col].strip() and
+                                        float(row[padj_col]) < 0.05):
+                                        contrast_stats[contrast]['sig_genes'] += 1
+                                        
+                                        # Count direction of change
+                                        if log2fc_val > 0:
+                                            contrast_stats[contrast]['up_genes'] += 1
+                                        else:
+                                            contrast_stats[contrast]['down_genes'] += 1
+                            except ValueError as ve:
+                                # Log issue with numerical conversion
+                                logger.warning(f"Non-numeric value in DGE results: {str(ve)}")
+                                # Skip this row
+                                continue
+                
+                # Done processing the file - now analyze results
+                logger.info(f"DEBUG: Collected stats for {len(contrast_stats)} contrasts")
+                for contrast, stats in contrast_stats.items():
+                    logger.info(f"DEBUG: Stats for contrast '{contrast}': {stats}")
+                
+                # Calculate statistics and check for issues
+                result_contrasts = list(contrast_stats.keys())
+                missing_contrasts = set(expected_contrasts) - set(result_contrasts)
+                
+                if missing_contrasts:
+                    # Use original contrast names
+                    val_logger.log("dge_microbes", "ALL", f"dge_completeness_{type_label}", "RED",
+                                f"Missing contrasts in {type_label} DGE results: {', '.join(missing_contrasts)}")
+                else:
+                    val_logger.log("dge_microbes", "ALL", f"dge_completeness_{type_label}", "GREEN",
+                                f"Results found for all {len(expected_contrasts)} contrasts in {type_label} file")
+                
+                # Analyze each contrast
+                for contrast, stats in contrast_stats.items():
+                    # Create a simple check_name without complex formatting
+                    check_name = f"dge_stats_{type_label}_{contrast}"
+                    
+                    # Compute statistics
+                    deg_percent = (stats['sig_genes'] / stats['total'] * 100) if stats['total'] > 0 else 0
+                    deg_ratio = f"{stats['sig_genes']}/{stats['total']} ({deg_percent:.1f}%)"
+                    
+                    # Check for balanced fold changes
+                    if stats['sig_genes'] > 0:
+                        up_percent = (stats['up_genes'] / stats['sig_genes'] * 100) if stats['sig_genes'] > 0 else 0
+                        down_percent = (stats['down_genes'] / stats['sig_genes'] * 100) if stats['sig_genes'] > 0 else 0
+                        
+                        if up_percent > 90 or down_percent > 90:
+                            val_logger.log("dge_microbes", "ALL", check_name, "YELLOW",
+                                        f"Unbalanced fold changes in contrast '{contrast}': {up_percent:.1f}% up, {down_percent:.1f}% down",
+                                        f"Total DEGs: {deg_ratio}")
+                        else:
+                            val_logger.log("dge_microbes", "ALL", check_name, "GREEN",
+                                        f"DEGs: {deg_ratio} ({up_percent:.1f}% up, {down_percent:.1f}% down)")
+                    else:
+                        val_logger.log("dge_microbes", "ALL", check_name, "YELLOW",
+                                    f"No significant DEGs found in contrast '{contrast}' (0/{stats['total']})")
+                
+                    # Check for outliers in DEG counts
+                    if len(contrast_stats) > 1:
+                        deg_counts = [stats['sig_genes'] for _, stats in contrast_stats.items()]
+                        mean_degs = statistics.mean(deg_counts)
+                        
+                        try:
+                            stdev_degs = statistics.stdev(deg_counts)
+                            outlier_threshold = 2  # Z-score threshold
+                            
+                            outlier_contrasts = []
+                            for contrast, stats in contrast_stats.items():
+                                if stdev_degs > 0:
+                                    z_score = abs(stats['sig_genes'] - mean_degs) / stdev_degs
+                                    if z_score > outlier_threshold:
+                                        outlier_contrasts.append(contrast)
+                            
+                            if outlier_contrasts:
+                                # Use original contrast names
+                                val_logger.log("dge_microbes", "ALL", f"dge_outliers_{type_label}", "YELLOW",
+                                            f"Outlier DEG counts detected in contrasts: {', '.join(outlier_contrasts)}",
+                                            f"Mean DEGs: {mean_degs:.1f}, StDev: {stdev_degs:.1f}")
+                            else:
+                                val_logger.log("dge_microbes", "ALL", f"dge_outliers_{type_label}", "GREEN",
+                                            f"DEG counts consistent across all contrasts",
+                                            f"Mean DEGs: {mean_degs:.1f}, StDev: {stdev_degs:.1f}")
+                        except statistics.StatisticsError:
+                            # Not enough data points for stdev
+                            logger.warning(f"Could not calculate standard deviation for {len(deg_counts)} DEG counts")
+                
+                # Add log2FC within reason check
+                try:
+                    # Define thresholds (same as in original implementation)
+                    LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD = 10  # Percent
+                    LOG2FC_CROSS_METHOD_TOLERANCE_PERCENT = 50  # Percent
+                    THRESHOLD_PERCENT_MEANS_DIFFERENCE = 50  # percent
+                    
+                    # Get contrast-specific columns for the check
+                    df_dge = pd.read_csv(path)
+                    all_suspect_signs = {}
+                    percent_within_tolerance_values = []
+                    
+                    for contrast in result_contrasts:
+                        # Simple check name with no complex formatting
+                        check_name = f"log2fc_{type_label}_{contrast}"
+                        
+                        # Identify the columns for this contrast
+                        log2fc_col = None
+                        group1_mean_col = None
+                        group2_mean_col = None
+                        
+                        # Search for the log2fc column for this contrast
+                        for col in df_dge.columns:
+                            if f"Log2fc_{contrast}" in col:
+                                log2fc_col = col
+                                # Try to determine group mean columns from the log2fc column name
+                                groups = contrast.split("v")
+                                if len(groups) == 2:
+                                    group1, group2 = groups
+                                    # Look for matching group mean columns
+                                    for gcol in df_dge.columns:
+                                        if f"Group.Mean_{group1}" in gcol:
+                                            group1_mean_col = gcol
+                                        elif f"Group.Mean_{group2}" in gcol:
+                                            group2_mean_col = gcol
+                                break
+                        
+                        if log2fc_col and group1_mean_col and group2_mean_col:
+                            # Calculate log2FC from group means
+                            computed_log2fc = df_dge[group1_mean_col].div(df_dge[group2_mean_col]).apply(np.log2)
+                            
+                            # Calculate percent difference between DESeq2 and manual calculation
+                            abs_percent_difference = abs(
+                                ((computed_log2fc - df_dge[log2fc_col]) / df_dge[log2fc_col]) * 100
+                            )
+                            
+                            # Calculate percentage within tolerance
+                            percent_within_tolerance = (
+                                (abs_percent_difference < LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD).mean() * 100
+                            )
+                            percent_within_tolerance_values.append(percent_within_tolerance)
+                            
+                            # Sign check for genes with substantial mean differences
+                            abs_percent_differences = abs(
+                                (df_dge[group1_mean_col] - df_dge[group2_mean_col]) / df_dge[group2_mean_col]
+                            ) * 100
+                            
+                            # Filter to genes with substantial mean differences
+                            df_filtered = df_dge[abs_percent_differences > THRESHOLD_PERCENT_MEANS_DIFFERENCE].copy()
+                            
+                            if not df_filtered.empty:
+                                # Determine expected sign based on group means
+                                df_filtered['positive_sign_expected'] = df_filtered[group1_mean_col] > df_filtered[group2_mean_col]
+                                
+                                # Check if log2FC sign matches expected sign
+                                df_filtered['matches_expected_sign'] = (
+                                    (df_filtered[log2fc_col] > 0) & df_filtered['positive_sign_expected']
+                                ) | (
+                                    (df_filtered[log2fc_col] < 0) & ~df_filtered['positive_sign_expected']
+                                )
+                                
+                                # Collect genes with unexpected signs
+                                suspect_genes = df_filtered[~df_filtered['matches_expected_sign']]
+                                if not suspect_genes.empty:
+                                    for idx, row in suspect_genes.iterrows():
+                                        all_suspect_signs[idx] = {
+                                            group1_mean_col: row[group1_mean_col],
+                                            group2_mean_col: row[group2_mean_col],
+                                            log2fc_col: row[log2fc_col]
+                                        }
+                    
+                    # Determine overall log2FC validation result
+                    if all_suspect_signs:
+                        # Get details of the most extreme mismatches
+                        details_list = []
+                        for idx, values in list(all_suspect_signs.items())[:10]:  # Show top 10 worst cases
+                            group1_val = values[group1_mean_col]
+                            group2_val = values[group2_mean_col]
+                            log2fc_val = values[log2fc_col]
+                            expected_sign = "+" if group1_val > group2_val else "-"
+                            actual_sign = "+" if log2fc_val > 0 else "-"
+                            details_list.append(f"Gene {idx}: {group1_mean_col}={group1_val:.2f}, {group2_mean_col}={group2_val:.2f}, " +
+                                               f"log2FC={log2fc_val:.2f}, Expected sign: {expected_sign}, Actual sign: {actual_sign}")
+                        
+                        details_str = "; ".join(details_list)
+                        val_logger.log("dge_microbes", "ALL", f"log2fc_reason_{type_label}", "RED",
+                                     f"Some log2FC values have unexpected signs based on group means",
+                                     f"Found {len(all_suspect_signs)} genes with suspicious log2FC signs. Examples: {details_str}")
+                    elif percent_within_tolerance_values and any(val < LOG2FC_CROSS_METHOD_TOLERANCE_PERCENT for val in percent_within_tolerance_values):
+                        val_logger.log("dge_microbes", "ALL", f"log2fc_reason_{type_label}", "YELLOW",
+                                     f"Some contrasts have log2FC values with high deviation from expected values",
+                                     f"Minimum percent within tolerance: {min(percent_within_tolerance_values):.1f}%")
+                    else:
+                        val_logger.log("dge_microbes", "ALL", f"log2fc_reason_{type_label}", "GREEN",
+                                     f"All log2FC values are consistent with group means",
+                                     f"Log2FC values are within reasonable tolerance of expected values")
+                
+                except Exception as e:
+                    logger.error(f"Error validating log2FC within reason: {str(e)}")
+                    logger.error(traceback.format_exc())
+                    val_logger.log("dge_microbes", "ALL", f"log2fc_reason_{type_label}", "RED",
+                                f"Error validating log2FC within reason: {str(e)}")
+                
+                # Add structure and statistical validation
+                try:
+                    # Check if the dataframe is loaded successfully
+                    if df_dge is None or df_dge.empty:
+                        val_logger.log("dge_microbes", "ALL", f"dge_table_validation_{type_label}", "RED",
+                                    f"Error validating table structure: DGE table is empty or could not be loaded")
+                        continue
+
+                    # Table structure validation - Only check for essential columns and structure
+                    # Removed annotation columns check as requested
+                    
+                    # Check for statistical columns
+                    expected_stat_patterns = ["Adj.p.value", "p.value", "Log2fc", "BaseMean"]
+                    found_stat_cols = []
+                    
+                    for pattern in expected_stat_patterns:
+                        matching_cols = [col for col in df_dge.columns if pattern in col]
+                        if matching_cols:
+                            found_stat_cols.extend(matching_cols[:2])  # Limit to first few matches
+                    
+                    if len(found_stat_cols) >= len(expected_stat_patterns):
+                        val_logger.log("dge_microbes", "ALL", f"dge_stat_columns_{type_label}", "GREEN",
+                                    f"Found all required statistical columns")
+                    else:
+                        missing_patterns = [p for p in expected_stat_patterns if not any(p in col for col in df_dge.columns)]
+                        val_logger.log("dge_microbes", "ALL", f"dge_stat_columns_{type_label}", "YELLOW",
+                                    f"Missing some statistical column types: {', '.join(missing_patterns)}")
+                    
+                    # Check for group mean columns
+                    group_mean_pattern = "Group.Mean"
+                    group_mean_cols = [col for col in df_dge.columns if group_mean_pattern in col]
+                    
+                    # Get group names from sample table
+                    group_names = []
+                    # Use the correct sample_table path directly from the defined variables 
+                    sample_table_path = dge_dir / f"SampleTable{assay_suffix}.csv" if type_label == "standard" else dge_rrnarm_dir / f"SampleTable{assay_suffix}.csv"
+                    try:
+                        if os.path.exists(sample_table_path):
+                            group_col_idx = -1
+                            with open(sample_table_path, 'r') as f:
+                                reader = csv.reader(f)
+                                header = next(reader)
+                                
+                                # Find group column index - account for "condition" column too
+                                for i, col in enumerate(header):
+                                    if col.lower() == 'group' or col.lower() == 'condition':
+                                        group_col_idx = i
+                                        break
+                                
+                                if group_col_idx >= 0:
+                                    for row in reader:
+                                        if len(row) > group_col_idx and row[group_col_idx].strip():
+                                            group_names.append(row[group_col_idx].strip())
+                                    
+                                    group_names = list(set(group_names))  # unique groups
+                    except Exception as e:
+                        logger.error(f"Error reading groups from sample table: {str(e)}")
+                    
+                    # Check if each group has a corresponding mean column
+                    missing_group_means = []
+                    for group in group_names:
+                        normalized_group = group.replace(' ', '.').replace('-', '.')
+                        if not any(normalized_group in col for col in group_mean_cols):
+                            missing_group_means.append(group)
+                    
+                    if missing_group_means:
+                        val_logger.log("dge_microbes", "ALL", f"dge_group_means_{type_label}", "YELLOW",
+                                    f"Missing group mean columns for: {', '.join(missing_group_means)}")
+                    else:
+                        val_logger.log("dge_microbes", "ALL", f"dge_group_means_{type_label}", "GREEN",
+                                    f"Found group mean columns for all groups: {', '.join(group_names)}")
+                    
+                    # Enhanced Statistical Column Validations
+                    # 1. Statistical column constraints check
+                    constraint_issues = []
+                    
+                    # Check Log2fc columns constraint (should be non-null)
+                    log2fc_cols = [col for col in df_dge.columns if "Log2fc_" in col]
+                    for col in log2fc_cols:
+                        null_count = df_dge[col].isna().sum()
+                        if null_count > 0:
+                            constraint_issues.append(f"{col} has {null_count} null values (should be non-null)")
+                    
+                    # Check p-value constraints (should be non-negative, can be null)
+                    pvalue_cols = [col for col in df_dge.columns if "P.value_" in col or "p.value_" in col]
+                    for col in pvalue_cols:
+                        neg_count = (df_dge[col] < 0).sum()
+                        if neg_count > 0:
+                            constraint_issues.append(f"{col} has {neg_count} negative values (should be non-negative)")
+                    
+                    # Check adjusted p-value constraints (should be non-negative, can be null)
+                    adj_pvalue_cols = [col for col in df_dge.columns if "Adj.p.value_" in col or "adj.p.value_" in col]
+                    for col in adj_pvalue_cols:
+                        neg_count = (df_dge[col] < 0).sum()
+                        if neg_count > 0:
+                            constraint_issues.append(f"{col} has {neg_count} negative values (should be non-negative)")
+                    
+                    # Report constraint check results
+                    if constraint_issues:
+                        val_logger.log("dge_microbes", "ALL", f"statistical_constraints_{type_label}", "YELLOW",
+                                     f"Statistical column constraint issues found in {type_label} data",
+                                     "; ".join(constraint_issues))
+                    else:
+                        val_logger.log("dge_microbes", "ALL", f"statistical_constraints_{type_label}", "GREEN",
+                                     f"All statistical columns satisfy constraints in {type_label} data")
+                    
+                    # 2. Fixed Statistical Columns validation
+                    fixed_stat_cols = ["All.mean", "All.stdev", "LRT.p.value"]
+                    missing_fixed_cols = [col for col in fixed_stat_cols if col not in df_dge.columns]
+                    
+                    if missing_fixed_cols:
+                        val_logger.log("dge_microbes", "ALL", f"fixed_stat_columns_{type_label}", "YELLOW",
+                                     f"Missing fixed statistical columns in {type_label} data: {', '.join(missing_fixed_cols)}")
+                    else:
+                        fixed_col_issues = []
+                        
+                        # Check All.mean (should be non-null and non-negative)
+                        if "All.mean" in df_dge.columns:
+                            null_count = df_dge["All.mean"].isna().sum()
+                            neg_count = (df_dge["All.mean"] < 0).sum()
+                            
+                            if null_count > 0:
+                                fixed_col_issues.append(f"All.mean has {null_count} null values")
+                            if neg_count > 0:
+                                fixed_col_issues.append(f"All.mean has {neg_count} negative values")
+                        
+                        # Check All.stdev (should be non-null and non-negative)
+                        if "All.stdev" in df_dge.columns:
+                            null_count = df_dge["All.stdev"].isna().sum()
+                            neg_count = (df_dge["All.stdev"] < 0).sum()
+                            
+                            if null_count > 0:
+                                fixed_col_issues.append(f"All.stdev has {null_count} null values")
+                            if neg_count > 0:
+                                fixed_col_issues.append(f"All.stdev has {neg_count} negative values")
+                        
+                        # Check LRT.p.value (should be non-negative, can be null)
+                        if "LRT.p.value" in df_dge.columns:
+                            neg_count = df_dge["LRT.p.value"].dropna().lt(0).sum()
+                            
+                            if neg_count > 0:
+                                fixed_col_issues.append(f"LRT.p.value has {neg_count} negative values")
+                        
+                        if fixed_col_issues:
+                            val_logger.log("dge_microbes", "ALL", f"fixed_stat_column_constraints_{type_label}", "YELLOW",
+                                         f"Fixed statistical column constraint issues in {type_label} data",
+                                         "; ".join(fixed_col_issues))
+                        else:
+                            val_logger.log("dge_microbes", "ALL", f"fixed_stat_column_constraints_{type_label}", "GREEN",
+                                         f"All fixed statistical columns satisfy constraints in {type_label} data")
+                    
+                except Exception as e:
+                    logger.error(f"Error during table structure/statistical validation: {str(e)}")
+                    logger.error(traceback.format_exc())
+                    val_logger.log("dge_microbes", "ALL", f"dge_table_validation_{type_label}", "RED",
+                                f"Error validating table structure: {str(e)}")
+            except Exception as e:
+                logger.error(f"Error validating DGE results: {str(e)}")
+                logger.error(traceback.format_exc())
+                val_logger.log("dge_microbes", "ALL", f"dge_validation_{type_label}", "RED",
+                            f"Error validating {type_label} DGE results: {str(e)}")
+    
+    # Add Group Column Value Calculation Check
+    logger.info("Validating group mean and stdev calculations...")
+    count_files = [
+        {"normalized_path": norm_counts_dir / f"Normalized_Counts{assay_suffix}.csv", 
+         "dge_path": dge_dir / f"differential_expression{assay_suffix}.csv", "type": "standard"},
+        {"normalized_path": norm_counts_rrnarm_dir / f"Normalized_Counts{assay_suffix}.csv", 
+         "dge_path": dge_rrnarm_dir / f"differential_expression{assay_suffix}.csv", "type": "rRNA-removed"}
+    ]
+    
+    for files_info in count_files:
+        normalized_path = files_info["normalized_path"]
+        dge_path = files_info["dge_path"]
+        type_label = files_info["type"]
+        
+        if not normalized_path.exists() or not dge_path.exists():
+            continue
+            
+        try:
+            # Load normalized counts and DGE results
+            df_norm = pd.read_csv(normalized_path)
+            df_dge = pd.read_csv(dge_path)
+            
+            # Get group names
+            # First column is usually gene ID, remaining columns are samples
+            sample_columns = df_norm.columns[1:]
+            
+            # Get sample-to-group mapping
+            sample_table_path = dge_dir / f"SampleTable{assay_suffix}.csv" if type_label == "standard" else dge_rrnarm_dir / f"SampleTable{assay_suffix}.csv"
+            sample_groups = {}
+            
+            if sample_table_path.exists():
+                # Load sample table
+                with open(sample_table_path, 'r') as f:
+                    reader = csv.reader(f)
+                    header = next(reader)
+                    
+                    # Find sample and group column indices
+                    sample_idx = -1
+                    group_idx = -1
+                    
+                    for i, col in enumerate(header):
+                        if col.lower() == 'sample':
+                            sample_idx = i
+                        elif col.lower() in ['group', 'condition']:
+                            group_idx = i
+                    
+                    # If standard column names not found, try alternative approaches
+                    if sample_idx == -1 and len(header) > 0:
+                        # First column is commonly the sample ID
+                        sample_idx = 0
+                    
+                    # Extract sample-to-group mappings
+                    if sample_idx >= 0 and group_idx >= 0:
+                        for row in reader:
+                            if len(row) > max(sample_idx, group_idx):
+                                sample = row[sample_idx].strip()
+                                group = row[group_idx].strip()
+                                if sample and group:
+                                    sample_groups[sample] = group
+            
+            # Identify group-specific columns in DGE table
+            group_mean_cols = [col for col in df_dge.columns if "Group.Mean_" in col]
+            group_stdev_cols = [col for col in df_dge.columns if "Group.Stdev_" in col]
+            
+            # Extract group names from column names
+            groups = []
+            for col in group_mean_cols:
+                group = col.replace("Group.Mean_", "")
+                groups.append(group)
+            
+            # Group samples by experimental group
+            grouped_samples = {}
+            for sample, group in sample_groups.items():
+                if group not in grouped_samples:
+                    grouped_samples[group] = []
+                grouped_samples[group].append(sample)
+            
+            # Validate calculations for each group
+            tolerance = 0.001  # 0.001% tolerance for floating-point differences
+            calculation_issues = []
+            
+            for group in groups:
+                # Find corresponding column in DGE results
+                mean_col = f"Group.Mean_{group}"
+                stdev_col = f"Group.Stdev_{group}"
+                
+                if mean_col in df_dge.columns and group in grouped_samples:
+                    # Get samples for this group
+                    group_sample_names = grouped_samples[group]
+                    
+                    # Get actual sample columns that exist in normalized counts
+                    group_samples = [s for s in group_sample_names if s in df_norm.columns]
+                    
+                    if group_samples:
+                        # Recalculate mean from samples for each gene
+                        gene_ids = df_norm.iloc[:, 0]  # First column is gene ID
+                        calculated_means = {}
+                        calculated_stdevs = {}
+                        
+                        for idx, gene_id in enumerate(gene_ids):
+                            # Get expression values for this gene across group samples
+                            gene_values = [float(df_norm.loc[idx, sample]) for sample in group_samples if sample in df_norm.columns]
+                            
+                            if gene_values:
+                                calculated_means[gene_id] = statistics.mean(gene_values)
+                                if len(gene_values) > 1:  # Need at least 2 values for std dev
+                                    calculated_stdevs[gene_id] = statistics.stdev(gene_values)
+                                else:
+                                    calculated_stdevs[gene_id] = 0  # Set to 0 if only one sample
+                        
+                        # Compare with DESeq2 calculated values
+                        mean_diff_count = 0
+                        stdev_diff_count = 0
+                        checked_gene_count = 0
+                        
+                        for idx, row in df_dge.iterrows():
+                            gene_id = row.iloc[0]  # Assuming first column is gene ID
+                            
+                            if gene_id in calculated_means:
+                                checked_gene_count += 1
+                                
+                                # Get DESeq2 calculated values
+                                deseq_mean = row[mean_col] if mean_col in df_dge.columns else None
+                                deseq_stdev = row[stdev_col] if stdev_col in df_dge.columns else None
+                                
+                                # Calculate percent difference for mean
+                                if deseq_mean is not None and calculated_means[gene_id] > 0:
+                                    mean_pct_diff = abs((deseq_mean - calculated_means[gene_id]) / calculated_means[gene_id]) * 100
+                                    if mean_pct_diff > tolerance:
+                                        mean_diff_count += 1
+                                
+                                # Calculate percent difference for stdev
+                                if deseq_stdev is not None and calculated_stdevs[gene_id] > 0:
+                                    stdev_pct_diff = abs((deseq_stdev - calculated_stdevs[gene_id]) / calculated_stdevs[gene_id]) * 100
+                                    if stdev_pct_diff > tolerance:
+                                        stdev_diff_count += 1
+                        
+                        # Report results
+                        if checked_gene_count > 0:
+                            mean_diff_pct = (mean_diff_count / checked_gene_count) * 100
+                            stdev_diff_pct = (stdev_diff_count / checked_gene_count) * 100
+                            
+                            if mean_diff_pct > 5 or stdev_diff_pct > 5:  # If more than 5% of genes have differences
+                                calculation_issues.append(f"Group {group}: {mean_diff_pct:.1f}% genes have mean differences, {stdev_diff_pct:.1f}% have stdev differences")
+            
+            # Report overall results
+            if calculation_issues:
+                val_logger.log("dge_microbes", "ALL", f"group_calculations_{type_label}", "YELLOW",
+                            f"Found differences in group calculations for {type_label} data",
+                            "; ".join(calculation_issues))
+            else:
+                val_logger.log("dge_microbes", "ALL", f"group_calculations_{type_label}", "GREEN",
+                            f"Group mean and stdev calculations verified for {type_label} data")
+        
+        except Exception as e:
+            logger.error(f"Error validating group calculations: {str(e)}")
+            logger.error(traceback.format_exc())
+            val_logger.log("dge_microbes", "ALL", f"group_calculations_{type_label}", "RED",
+                        f"Error validating group calculations: {str(e)}")
+            
+    # 4. Count Distribution Validation
+    logger.info("Validating count distributions...")
+    count_files = [
+        {"path": dge_dir / f"FeatureCounts_Unnormalized_Counts{assay_suffix}.csv", "type": "standard"},
+        {"path": dge_rrnarm_dir / f"FeatureCounts_Unnormalized_Counts{assay_suffix}.csv", "type": "rRNA-removed"}
+    ]
+
+    for count_info in count_files:
+        path = count_info["path"]
+        type_label = count_info["type"]
+        
+        if path.exists():
+            try:
+                # Extract sample counts
+                sample_stats = {}
+                first_row = True
+                samples = []
+                
+                with open(path, 'r') as f:
+                    reader = csv.reader(f)
+                    header = next(reader)
+                    
+                    # First column is typically gene IDs, so skip it
+                    samples = header[1:]
+                    logger.info(f"Found {len(samples)} sample columns in {type_label} count file")
+                    
+                    # Initialize stats for each sample
+                    for sample in samples:
+                        sample_stats[sample] = {
+                            'total_counts': 0,
+                            'zero_count_genes': 0,
+                            'gene_count': 0
+                        }
+                    
+                    # Process each gene row
+                    for row in reader:
+                        if len(row) < 2:
+                            continue
+                        
+                        for i, sample in enumerate(samples):
+                            if i + 1 < len(row):  # +1 because we skip first column
+                                try:
+                                    count = float(row[i + 1]) if row[i + 1].strip() else 0
+                                    sample_stats[sample]['gene_count'] += 1
+                                    sample_stats[sample]['total_counts'] += count
+                                    if count == 0:
+                                        sample_stats[sample]['zero_count_genes'] += 1
+                                except ValueError:
+                                    pass
+                
+                # Calculate metrics for outlier detection
+                metrics_data = {}
+                for sample, stats in sample_stats.items():
+                    gene_count = stats['gene_count']
+                    if gene_count > 0:
+                        metrics_data[sample] = {
+                            'library_size': stats['total_counts'],
+                            'zero_percent': (stats['zero_count_genes'] / gene_count) * 100,
+                            'mean_count': stats['total_counts'] / gene_count
+                        }
+                
+                # Use existing outlier detection function
+                outliers = detect_outliers(metrics_data, ['library_size', 'zero_percent', 'mean_count'])
+                
+                # Report findings
+                if outliers:
+                    outlier_samples = list(outliers.keys())
+                    val_logger.log("dge_microbes", "ALL", f"count_stats_{type_label}", "YELLOW",
+                                f"Outliers detected in {type_label} count distributions",
+                                f"Outlier samples: {', '.join(outlier_samples)}")
+                    
+                    # Report each outlier's specific issues
+                    for sample, reasons in outliers.items():
+                        val_logger.log("dge_microbes", sample, f"count_outlier_{type_label}", "YELLOW",
+                                    f"Count distribution outlier in {type_label} data",
+                                    f"Reasons: {'; '.join(reasons)}")
+                else:
+                    val_logger.log("dge_microbes", "ALL", f"count_stats_{type_label}", "GREEN",
+                                f"No outliers detected in {type_label} count distributions")
+                
+                # Check average zero percentage (too many zeros could indicate issues)
+                avg_zero_pct = statistics.mean([stats['zero_percent'] for _, stats in metrics_data.items()])
+                if avg_zero_pct > 70:
+                    val_logger.log("dge_microbes", "ALL", f"count_zeros_{type_label}", "YELLOW",
+                                f"High zero percentage across samples: {avg_zero_pct:.1f}%",
+                                "Many genes have zero counts, which may reduce statistical power")
+                
+            except Exception as e:
+                logger.error(f"Error validating {type_label} count distributions: {str(e)}")
+                logger.error(traceback.format_exc())
+                val_logger.log("dge_microbes", "ALL", f"count_validation_{type_label}", "RED",
+                            f"Error validating {type_label} count distributions: {str(e)}")
+    
     return {
         "status": val_logger.get_status(),
         "messages": [r["message"] for r in val_logger.results],

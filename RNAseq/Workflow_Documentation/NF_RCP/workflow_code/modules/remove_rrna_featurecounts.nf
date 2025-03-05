@@ -12,8 +12,6 @@ process REMOVE_RRNA_FEATURECOUNTS {
      *   rRNA count summary file containing the number of rRNA genes removed for each sample.
      */
 
-    tag "${counts.simpleName}"
-
     input:
         path(counts)
         path(rrna_ids)

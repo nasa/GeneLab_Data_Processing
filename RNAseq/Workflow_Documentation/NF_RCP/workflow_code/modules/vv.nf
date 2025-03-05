@@ -1,46 +1,40 @@
 process VV_RAW_READS {
+  // Arrange Raw reads, raw reads FastQC reports, Raw reads MultiQC report into the expected folder
+  //  structure under 00-RawData
+  // Run vv_raw_reads.py to generate VV_log.csv and publish it to the VV_Logs directory
+  label 'VV'
+
+  // Publish VVed data
+  publishDir "${ publishdir }",
+    pattern: '00-RawData/**',
+    mode: params.publish_dir_mode
   // Publish VV log
   publishDir "${ publishdir }",
     pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
     saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
-  // Publish VVed data
-  publishDir "${ publishdir }",
-    pattern: '00-RawData/**',
-    mode: params.publish_dir_mode
-
-  label 'VV'
 
   input:
     path(dp_tools__NF_RCP)
     val(publishdir)
     val(meta)
-    path(runsheet)              // Runsheet
-    path("INPUT/raw_fastq/*")   // Raw reads
-    path("INPUT/raw_fastqc/*")  // Raw FastQC reports 
-    path("INPUT/raw_multiqc/*") // Xipped Raw MultiQC report
+    path(runsheet)                             // Runsheet
+    path("INPUT/00-RawData/Fastq/*")           // Raw reads
+    path("INPUT/00-RawData/FastQC_Reports/*")  // Raw FastQC reports 
+    path("INPUT/00-RawData/FastQC_Reports/*")  // Zipped Raw MultiQC report
 
   output:
     path("00-RawData/Fastq"),                                                        emit: VVed_raw_reads
     path("00-RawData/FastQC_Reports/*{_fastqc.html,_fastqc.zip}"),                   emit: VVed_raw_fastqc
-    //path("00-RawData/FastQC_Reports/raw_multiqc${params.assay_suffix}_report"),      emit: VVed_raw_unzipped_multiqc_report
-    path("00-RawData/FastQC_Reports/raw_multiqc${params.assay_suffix}_report.zip"), emit: VVed_raw_zipped_multiqc_report
+    path("00-RawData/FastQC_Reports/raw_multiqc${params.assay_suffix}_report.zip"),  emit: VVed_raw_zipped_multiqc_report
     path("VV_log.csv"),                                                              optional: params.skipVV, emit: log
-    path("vv.log"),                                                                optional: params.skipVV, emit: log_txt
 
   script:
     """
+    # Move inputs into task directory to be detected as outputs
     mv INPUT/* . || true
-    vv.py --assay-type rnaseq \
-    --assay-suffix ${params.assay_suffix} \
-    --runsheet-path ${runsheet} \
-    --outdir ${publishdir} \
-    --paired-end ${meta.paired_end} \
-    --mode microbes \
-    --raw-fastq raw_fastq/ \
-    --raw-fastqc raw_fastqc/ \
-    --raw-multiqc raw_multiqc/ \
-    --run-components raw_reads
+
+    vv_raw_reads.py --runsheet ${runsheet} --outdir .
     """
 }
 
@@ -72,25 +66,26 @@ process VV_TRIMMED_READS {
     path("01-TG_Preproc/Fastq"),                                                      emit: VVed_trimmed_reads
     path("01-TG_Preproc/FastQC_Reports/*{_fastqc.html,_fastqc.zip}"),                 emit: VVed_trimmed_fastqc
     path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc${params.assay_suffix}_report.zip"), emit: VVed_trimmed_zipped_multiqc_report
-    path("01-TG_Preproc/Trimming_Reports"),                                           emit: VVed_trimming_reports_all
+    path("01-TG_Preproc/Trimming_Reports"),                                           emit: VVed_trimming_zipped_multiqc_report
     path("VV_log.csv"),                                                               optional: params.skipVV, emit: log
     path("vv.log"),                                                                   optional: params.skipVV, emit: log_txt
 
   script:
     """
     mv INPUT/* . || true
-    vv.py --assay-type rnaseq \\
-    --assay-suffix ${params.assay_suffix} \\
-    --runsheet-path ${runsheet} \\
-    --outdir ${publishdir} \\
-    --paired-end ${meta.paired_end} \\
-    --mode microbes \\
-    --trimmed-fastq trimmed_fastq/ \\
-    --trimmed-fastqc trimmed_fastqc/ \\
-    --trimmed-multiqc trimmed_multiqc/ \\
-    --trimming-reports trimming_reports/ \\
-    --trimming-multiqc trimming_multiqc/ \\
-    --run-components trimmed_reads
+    touch VV_log.csv
+    # vv.py --assay-type rnaseq \\
+    # --assay-suffix ${params.assay_suffix} \\
+    # --runsheet-path ${runsheet} \\
+    # --outdir ${publishdir} \\
+    # --paired-end ${meta.paired_end} \\
+    # --mode microbes \\
+    # --trimmed-fastq trimmed_fastq/ \\
+    # --trimmed-fastqc trimmed_fastqc/ \\
+    # --trimmed-multiqc trimmed_multiqc/ \\
+    # --trimming-reports trimming_reports/ \\
+    # --trimming-multiqc trimming_multiqc/ \\
+    # --run-components trimmed_reads
     """
 }
 
@@ -239,6 +234,60 @@ process VV_FEATURECOUNTS {
   """
 }
 
+process VV_DGE_MICROBES {
+  // Log publishing
+  publishDir "${ publishdir }",
+    pattern:  "VV_log.csv" ,
+    mode: params.publish_dir_mode,
+    saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
+  // V&V'ed data publishing
+  publishDir "${ publishdir }",
+    pattern: '{04-DESeq2_NormCounts,05-DESeq2_DGE,04-DESeq2_NormCounts_rRNArm,05-DESeq2_DGE_rRNArm}',
+    mode: params.publish_dir_mode
+
+  label 'VV'
+
+  input:
+    path(dp_tools__NF_RCP)
+    val(publishdir)
+    val(meta)
+    path(runsheet)
+    path("INPUT/counts-norm-microbes/*") // unnormed counts, normed counts
+    path("INPUT/counts-norm-microbes/*") // vst norm counts
+    path("INPUT/dge-microbes/*") // sample table
+    path("INPUT/dge-microbes/*") // contrasts
+    path("INPUT/dge-microbes/*") // annotated dge table
+    path("INPUT/counts-norm-microbes-rrnarm/*") // (rrna rm) unnormed counts, normed counts
+    path("INPUT/counts-norm-microbes-rrnarm/*") // (rrna rm) vst norm counts
+    path("INPUT/dge-microbes-rrnarm/*") // (rrna rm) sample table
+    path("INPUT/dge-microbes-rrnarm/*") // (rrna rm) contrasts
+    path("INPUT/dge-microbes-rrnarm/*") // (rrna rm) annotated dge table
+
+  output:
+    path("04-DESeq2_NormCounts")
+    path("05-DESeq2_DGE")
+    path("04-DESeq2_NormCounts_rRNArm")
+    path("05-DESeq2_DGE_rRNArm")
+    path("VV_log.csv"), optional: params.skipVV, emit: log
+
+  script:
+  """
+  mv INPUT/* . || true
+  
+  vv.py --assay-type rnaseq \
+  --assay-suffix ${params.assay_suffix} \
+  --runsheet-path ${runsheet} \
+  --outdir ${publishdir} \
+  --paired-end ${meta.paired_end} \
+  --mode microbes \
+  --run-components dge_microbes \
+  --counts-norm-microbes counts-norm-microbes/ \
+  --dge-microbes dge-microbes/ \
+  --counts-norm-microbes-rrnarm counts-norm-microbes-rrnarm/ \
+  --dge-microbes-rrnarm dge-microbes-rrnarm/ \
+  ${meta.has_ercc ? '--has-ercc' : ''}
+  """
+}
 
 process VV_STAR_ALIGNMENTS {
   // Log publishing
@@ -287,8 +336,6 @@ process VV_STAR_ALIGNMENTS {
     """
 
 }
-
-
 
 process VV_RSEM_COUNTS {
   // Log publishing
