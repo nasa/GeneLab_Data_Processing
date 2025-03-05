@@ -371,14 +371,14 @@ workflow RNASEQ_MICROBES {
         )
 
         // Clean paths in outputs before VVing & publishing
-        CLEAN_RAW_READS_MULTIQC_PATHS(RAW_READS_MULTIQC.out.zipped_report, "raw")
-        CLEAN_TRIMMED_READS_MULTIQC_PATHS(TRIMMED_READS_MULTIQC.out.zipped_report, "trimmed")
-        CLEAN_TRIMMING_MULTIQC_PATHS(TRIMMING_MULTIQC.out.zipped_report, "trimming")
-        CLEAN_ALIGN_MULTIQC_PATHS(ALIGN_MULTIQC.out.zipped_report, "align")
-        CLEAN_INFER_EXPERIMENT_MULTIQC_PATHS(INFER_EXPERIMENT_MULTIQC.out.zipped_report, "infer_exp")
-        CLEAN_GENEBODY_COVERAGE_MULTIQC_PATHS(GENEBODY_COVERAGE_MULTIQC.out.zipped_report, "geneBody_cov")
-        CLEAN_INNER_DISTANCE_MULTIQC_PATHS(INNER_DISTANCE_MULTIQC.out.zipped_report, "inner_dist")
-        CLEAN_READ_DISTRIBUTION_MULTIQC_PATHS(READ_DISTRIBUTION_MULTIQC.out.zipped_report, "read_dist")
+        // CLEAN_RAW_READS_MULTIQC_PATHS(RAW_READS_MULTIQC.out.zipped_report, "raw")
+        // CLEAN_TRIMMED_READS_MULTIQC_PATHS(TRIMMED_READS_MULTIQC.out.zipped_report, "trimmed")
+        // CLEAN_TRIMMING_MULTIQC_PATHS(TRIMMING_MULTIQC.out.zipped_report, "trimming")
+        // CLEAN_ALIGN_MULTIQC_PATHS(ALIGN_MULTIQC.out.zipped_report, "align")
+        // CLEAN_INFER_EXPERIMENT_MULTIQC_PATHS(INFER_EXPERIMENT_MULTIQC.out.zipped_report, "infer_exp")
+        // CLEAN_GENEBODY_COVERAGE_MULTIQC_PATHS(GENEBODY_COVERAGE_MULTIQC.out.zipped_report, "geneBody_cov")
+        // CLEAN_INNER_DISTANCE_MULTIQC_PATHS(INNER_DISTANCE_MULTIQC.out.zipped_report, "inner_dist")
+        // CLEAN_READ_DISTRIBUTION_MULTIQC_PATHS(READ_DISTRIBUTION_MULTIQC.out.zipped_report, "read_dist")
 
         VV_RAW_READS(
             dp_tools_plugin,
@@ -414,17 +414,17 @@ workflow RNASEQ_MICROBES {
             SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[2] } | collect  // BAM index files
         )
 
-        // VV_RSEQC(
-        //     dp_tools_plugin,
-        //     ch_outdir,
-        //     ch_meta,
-        //     runsheet_path,
-        //     ch_rseqc_logs,
-        //     GENEBODY_COVERAGE_MULTIQC.out.zipped_report,
-        //     INFER_EXPERIMENT_MULTIQC.out.zipped_report,
-        //     Channel.empty() | mix(INNER_DISTANCE_MULTIQC.out.zipped_report) | collect | ifEmpty({ file("PLACEHOLDER") }),
-        //     READ_DISTRIBUTION_MULTIQC.out.zipped_report
-        // )
+        VV_RSEQC(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            ch_rseqc_logs,
+            GENEBODY_COVERAGE_MULTIQC.out.zipped_report,
+            INFER_EXPERIMENT_MULTIQC.out.zipped_report,
+            Channel.empty() | mix(INNER_DISTANCE_MULTIQC.out.zipped_report) | collect | ifEmpty({ file("PLACEHOLDER") }),
+            READ_DISTRIBUTION_MULTIQC.out.zipped_report
+        )
 
         // VV_FEATURECOUNTS(
         //     dp_tools_plugin,
@@ -455,5 +455,5 @@ workflow RNASEQ_MICROBES {
         // )
 
     emit:
-        VV_BOWTIE2_ALIGNMENT.out.log
+        VV_RSEQC.out.log
 }

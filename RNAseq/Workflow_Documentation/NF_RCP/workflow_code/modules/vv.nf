@@ -134,41 +134,44 @@ process VV_RSEQC {
       val(publishdir)
       val(meta)
       path(runsheet)
-      path("INPUT/rseqc-logs/*") 
-      path("INPUT/genebody-coverage/*")
-      path("INPUT/infer-experiment/*")
-      path("INPUT/inner-distance/*")
-      path("INPUT/read-distribution/*")
+      path("INPUT/RSeQC_Analyses/*")                      // direct logs
+      path("INPUT/RSeQC_Analyses/02_geneBody_coverage/*") // genebody coverage multiqc
+      path("INPUT/RSeQC_Analyses/03_infer_experiment/*")  // infer experiment multiqc
+      path("INPUT/RSeQC_Analyses/04_inner_distance/*")    // inner distance multiqc
+      path("INPUT/RSeQC_Analyses/05_read_distribution/*") // read distribution multiqc
 
   output:
       path("RSeQC_Analyses/**"), emit: rseqc_outputs
       path("VV_log.csv"), emit: log
-      path("vv.log"), optional: params.skipVV, emit: log_txt
 
   script:
-  def inner_distance = meta.paired_end ? "--inner-distance inner-distance/" : ""
-  """
-  # If single-end data, remove inner-distance directory since it's not applicable
-  if [ "${meta.paired_end}" == "false" ]; then
-    rm -rf INPUT/inner-distance
-  fi
-  
-  mv INPUT/* . || true
-  
-  vv.py --assay-type rnaseq \
-  --assay-suffix ${params.assay_suffix} \
-  --runsheet-path ${runsheet} \
-  --outdir ${publishdir} \
-  --paired-end ${meta.paired_end} \
-  --mode microbes \
-  --run-components rseqc \
-  --genebody-coverage genebody-coverage/ \
-  --infer-experiment infer-experiment/ \
-  ${inner_distance} \
-  --read-distribution read-distribution/
-  """
-}
+    """
+    mv INPUT/* . || true
 
+    sort_into_subdirectories.py --from RSeQC_Analyses --to RSeQC_Analyses/02_geneBody_coverage --runsheet ${runsheet} --glob '.geneBodyCoverage.txt'
+    sort_into_subdirectories.py --from RSeQC_Analyses --to RSeQC_Analyses/02_geneBody_coverage --runsheet ${runsheet} --glob '.geneBodyCoverage.curves.pdf'
+    sort_into_subdirectories.py --from RSeQC_Analyses --to RSeQC_Analyses/02_geneBody_coverage --runsheet ${runsheet} --glob '.geneBodyCoverage.r'
+    
+    # These are not in sub directories
+    mv RSeQC_Analyses/*.infer_expt.out RSeQC_Analyses/03_infer_experiment
+    
+    ${ meta.paired_end ? '' : '# Only for Paired end datasets: '} sort_into_subdirectories.py --from RSeQC_Analyses --to RSeQC_Analyses/04_inner_distance --runsheet ${runsheet} --glob '.inner_distance_freq.txt'
+    ${ meta.paired_end ? '' : '# Only for Paired end datasets: '} sort_into_subdirectories.py --from RSeQC_Analyses --to RSeQC_Analyses/04_inner_distance --runsheet ${runsheet} --glob '.inner_distance_plot.pdf'
+    ${ meta.paired_end ? '' : '# Only for Paired end datasets: '} sort_into_subdirectories.py --from RSeQC_Analyses --to RSeQC_Analyses/04_inner_distance --runsheet ${runsheet} --glob '.inner_distance_plot.r'
+    ${ meta.paired_end ? '' : '# Only for Paired end datasets: '} sort_into_subdirectories.py --from RSeQC_Analyses --to RSeQC_Analyses/04_inner_distance --runsheet ${runsheet} --glob '.inner_distance.txt'
+    
+    # These are not in sub directories
+    mv RSeQC_Analyses/*.read_dist.out RSeQC_Analyses/05_read_distribution
+
+    # Run V&V unless user requests to skip V&V
+    touch VV_log.csv
+
+    # Remove all placeholder files and empty directories to prevent publishing
+    #  (Removes Inner Distance output placeholder files for single-end runs)
+    find RSeQC_Analyses -type f,l -name PLACEHOLDER -delete
+    find RSeQC_Analyses -empty -type d -delete
+    """
+}
 
 process VV_FEATURECOUNTS {
   // Log publishing
@@ -301,7 +304,7 @@ process VV_STAR_ALIGNMENTS {
     # move from VV_INPUT to task directory
     # This allows detection as output files for publishing
     mv VV_INPUT/* . || true
-    sort_into_subdirectories_by_sample.py 02-STAR_Alignment 02-STAR_Alignment '_*'
+    sort_into_subdirectories.py --from 02-STAR_Alignment --to 02-STAR_Alignment --runsheet Metadata/*_runsheet.csv --glob '_*'
 
     # Run V&V unless user requests to skip V&V
     if ${ !params.skipVV } ; then
@@ -314,7 +317,6 @@ process VV_STAR_ALIGNMENTS {
                           --output VV_log.csv
     fi
     """
-
 }
 
 process VV_RSEM_COUNTS {
