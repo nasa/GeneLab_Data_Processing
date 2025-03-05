@@ -426,16 +426,16 @@ workflow RNASEQ_MICROBES {
             READ_DISTRIBUTION_MULTIQC.out.zipped_report
         )
 
-        // VV_FEATURECOUNTS(
-        //     dp_tools_plugin,
-        //     ch_outdir,
-        //     ch_meta,
-        //     runsheet_path,
-        //     FEATURECOUNTS.out.counts,
-        //     FEATURECOUNTS.out.summary,
-        //     REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm,
-        //     COUNT_MULTIQC.out.zipped_report
-        // )
+        VV_FEATURECOUNTS(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            FEATURECOUNTS.out.counts,
+            FEATURECOUNTS.out.summary,
+            REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm,
+            COUNT_MULTIQC.out.zipped_report
+        )
 
         // VV_DGE_MICROBES(
         //     dp_tools_plugin,
@@ -455,5 +455,5 @@ workflow RNASEQ_MICROBES {
         // )
 
     emit:
-        VV_RSEQC.out.log
+        VV_FEATURECOUNTS.out.log
 }
