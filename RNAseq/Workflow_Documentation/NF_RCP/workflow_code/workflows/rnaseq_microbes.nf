@@ -281,14 +281,14 @@ workflow RNASEQ_MICROBES {
 
         // Normalize counts, DGE 
         DGE_DESEQ2( ch_meta, runsheet_path, counts, "")
-        DGE_DESEQ2_RRNA_RM( ch_meta, runsheet_path, REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm, "rRNArm_" )
+        DGE_DESEQ2_RRNA_RM( ch_meta, runsheet_path, REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm, "_rRNArm" )
 
         // Add annotations to DGE table
         ADD_GENE_ANNOTATIONS( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2.out.dge_table, "" )
         annotated_dge_table = ADD_GENE_ANNOTATIONS.out.annotated_dge_table
         
         // Add annotations to rRNA-removed DGE table
-        ADD_GENE_ANNOTATIONS_RRNA_RM( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2_RRNA_RM.out.dge_table, "rRNArm_" )
+        ADD_GENE_ANNOTATIONS_RRNA_RM( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2_RRNA_RM.out.dge_table, "_rRNArm" )
         annotated_dge_table_rrna_rm = ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
 
         // MultiQC
@@ -437,23 +437,23 @@ workflow RNASEQ_MICROBES {
             COUNT_MULTIQC.out.zipped_report
         )
 
-        // VV_DGE_MICROBES(
-        //     dp_tools_plugin,
-        //     ch_outdir,
-        //     ch_meta,
-        //     runsheet_path,
-        //     DGE_DESEQ2.out.norm_counts,
-        //     DGE_DESEQ2.out.vst_norm_counts,
-        //     DGE_DESEQ2.out.sample_table,
-        //     DGE_DESEQ2.out.contrasts,
-        //     ADD_GENE_ANNOTATIONS.out.annotated_dge_table,
-        //     DGE_DESEQ2_RRNA_RM.out.norm_counts,
-        //     DGE_DESEQ2_RRNA_RM.out.vst_norm_counts,
-        //     DGE_DESEQ2_RRNA_RM.out.sample_table,
-        //     DGE_DESEQ2_RRNA_RM.out.contrasts,
-        //     ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
-        // )
+        VV_DGE_MICROBES(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            DGE_DESEQ2.out.norm_counts,
+            DGE_DESEQ2.out.vst_norm_counts,
+            DGE_DESEQ2.out.sample_table,
+            DGE_DESEQ2.out.contrasts,
+            ADD_GENE_ANNOTATIONS.out.annotated_dge_table,
+            DGE_DESEQ2_RRNA_RM.out.norm_counts,
+            DGE_DESEQ2_RRNA_RM.out.vst_norm_counts,
+            DGE_DESEQ2_RRNA_RM.out.sample_table,
+            DGE_DESEQ2_RRNA_RM.out.contrasts,
+            ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
+        )
 
     emit:
-        VV_FEATURECOUNTS.out.log
+        VV_DGE_MICROBES.out.log
 }

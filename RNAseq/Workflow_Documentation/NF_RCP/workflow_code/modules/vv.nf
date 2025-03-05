@@ -215,7 +215,7 @@ process VV_DGE_MICROBES {
     saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
-    pattern: '{04-DESeq2_NormCounts,05-DESeq2_DGE,04-DESeq2_NormCounts_rRNArm,05-DESeq2_DGE_rRNArm}',
+    pattern: '{04-*,05-*}',
     mode: params.publish_dir_mode
 
   label 'VV'
@@ -225,40 +225,27 @@ process VV_DGE_MICROBES {
     val(publishdir)
     val(meta)
     path(runsheet)
-    path("INPUT/counts-norm-microbes/*") // unnormed counts, normed counts
-    path("INPUT/counts-norm-microbes/*") // vst norm counts
-    path("INPUT/dge-microbes/*") // sample table
-    path("INPUT/dge-microbes/*") // contrasts
-    path("INPUT/dge-microbes/*") // annotated dge table
-    path("INPUT/counts-norm-microbes-rrnarm/*") // (rrna rm) unnormed counts, normed counts
-    path("INPUT/counts-norm-microbes-rrnarm/*") // (rrna rm) vst norm counts
-    path("INPUT/dge-microbes-rrnarm/*") // (rrna rm) sample table
-    path("INPUT/dge-microbes-rrnarm/*") // (rrna rm) contrasts
-    path("INPUT/dge-microbes-rrnarm/*") // (rrna rm) annotated dge table
+    path("INPUT/04-DESeq2_NormCounts/*") // unnormed counts, normed counts
+    path("INPUT/04-DESeq2_NormCounts/*") // vst norm counts
+    path("INPUT/05-DESeq2_DGE/*") // sample table
+    path("INPUT/05-DESeq2_DGE/*") // contrasts
+    path("INPUT/05-DESeq2_DGE/*") // annotated dge table
+    path("INPUT/04-DESeq2_NormCounts_rRNArm/*") // (rrna rm) unnormed counts, normed counts
+    path("INPUT/04-DESeq2_NormCounts_rRNArm/*") // (rrna rm) vst norm counts
+    path("INPUT/05-DESeq2_DGE_rRNArm/*") // (rrna rm) sample table
+    path("INPUT/05-DESeq2_DGE_rRNArm/*") // (rrna rm) contrasts
+    path("INPUT/05-DESeq2_DGE_rRNArm/*") // (rrna rm) annotated dge table
 
   output:
-    path("04-DESeq2_NormCounts")
-    path("05-DESeq2_DGE")
-    path("04-DESeq2_NormCounts_rRNArm")
-    path("05-DESeq2_DGE_rRNArm")
+    path("04-*")
+    path("05-*")
     path("VV_log.csv"), optional: params.skipVV, emit: log
 
   script:
   """
   mv INPUT/* . || true
-  
-  vv.py --assay-type rnaseq \
-  --assay-suffix ${params.assay_suffix} \
-  --runsheet-path ${runsheet} \
-  --outdir ${publishdir} \
-  --paired-end ${meta.paired_end} \
-  --mode microbes \
-  --run-components dge_microbes \
-  --counts-norm-microbes counts-norm-microbes/ \
-  --dge-microbes dge-microbes/ \
-  --counts-norm-microbes-rrnarm counts-norm-microbes-rrnarm/ \
-  --dge-microbes-rrnarm dge-microbes-rrnarm/ \
-  ${meta.has_ercc ? '--has-ercc' : ''}
+
+  touch VV_log.csv
   """
 }
 

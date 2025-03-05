@@ -8,7 +8,7 @@ params:
   cpus: 1
   work_dir: "." # directory where the script will run
   output_directory: "." # directory for output files
-  output_filename_prefix: "" # prefix for output file names
+  output_filename_label: "" # label for output file names
   output_filename_suffix: "" # suffix for output file names
   runsheet_path: NULL # path to the runsheet file
   input_counts: NULL # directory containing RSEM gene results OR FeatureCounts table for microbes mode
@@ -300,17 +300,19 @@ write.csv(
     file = file.path(params$output_directory,
                      paste0(if(params$microbes) "FeatureCounts_Unnormalized_Counts" 
                            else "RSEM_Unnormalized_Counts",
-                           params$output_filename_suffix, ".csv"))
+                           params$output_filename_label, params$output_filename_suffix, ".csv"))
 )
 write.csv(
     normCounts,
     file = file.path(params$output_directory,
-                     paste0("Normalized_Counts", params$output_filename_suffix, ".csv"))
+                     paste0("Normalized_Counts",
+                           params$output_filename_label, params$output_filename_suffix, ".csv"))
 )
 write.csv(
     VSTCounts,
     file = file.path(params$output_directory,
-                     paste0("VST_Normalized_Counts", params$output_filename_suffix, ".csv"))
+                     paste0("VST_Normalized_Counts",
+                           params$output_filename_label, params$output_filename_suffix, ".csv"))
 )
 ```
 
@@ -390,18 +392,18 @@ dir.create(dirname(paste0(params$output_directory)), recursive = TRUE)
 write.csv(
     contrasts,
     file = file.path(params$output_directory, 
-                     paste0("contrasts", params$output_filename_suffix, ".csv"))
+                     paste0("contrasts", params$output_filename_label, params$output_filename_suffix, ".csv"))
 )
 write.csv(
     output_table,
     row.names = FALSE,
     file = file.path(params$output_directory, 
-                     paste0("differential_expression_no_annotations", params$output_filename_suffix, ".csv"))
+                     paste0("differential_expression_no_annotations", params$output_filename_label, params$output_filename_suffix, ".csv"))
 )
 write.csv(
     sampleTable,
     file = file.path(params$output_directory, 
-                     paste0("SampleTable", params$output_filename_suffix, ".csv"))
+                     paste0("SampleTable", params$output_filename_label, params$output_filename_suffix, ".csv"))
 )
 # Create summary file based on output_table
 output <- capture.output(summary(output_table))
