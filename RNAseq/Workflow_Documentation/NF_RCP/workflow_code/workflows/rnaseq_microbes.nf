@@ -275,19 +275,17 @@ workflow RNASEQ_MICROBES {
         FEATURECOUNTS( ch_meta, genome_references, gtf_features, strandedness, bams )
         counts = FEATURECOUNTS.out.counts
 
-        // Find rRNA sequences in the genome and remove them from the counts table
+        // Use the GTF to find rRNA genes, remove them from the counts table
         EXTRACT_RRNA( organism_sci, genome_references | map { it[1] })
         REMOVE_RRNA_FEATURECOUNTS ( counts, EXTRACT_RRNA.out.rrna_ids )
 
-        // Normalize counts, DGE 
+        // Normalize counts, DGE, Add annotations to DGE table
         DGE_DESEQ2( ch_meta, runsheet_path, counts, "")
-        DGE_DESEQ2_RRNA_RM( ch_meta, runsheet_path, REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm, "_rRNArm" )
-
-        // Add annotations to DGE table
         ADD_GENE_ANNOTATIONS( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2.out.dge_table, "" )
         annotated_dge_table = ADD_GENE_ANNOTATIONS.out.annotated_dge_table
         
-        // Add annotations to rRNA-removed DGE table
+        // For rRNArm counts: Normalize counts, DGE, Add annotations to DGE table
+        DGE_DESEQ2_RRNA_RM( ch_meta, runsheet_path, REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm, "_rRNArm" )
         ADD_GENE_ANNOTATIONS_RRNA_RM( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2_RRNA_RM.out.dge_table, "_rRNArm" )
         annotated_dge_table_rrna_rm = ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
 
