@@ -27,7 +27,7 @@ process VV_RAW_READS {
     path("00-RawData/Fastq"),                                                        emit: VVed_raw_reads
     path("00-RawData/FastQC_Reports/*{_fastqc.html,_fastqc.zip}"),                   emit: VVed_raw_fastqc
     path("00-RawData/FastQC_Reports/raw_multiqc${params.assay_suffix}_report.zip"),  emit: VVed_raw_zipped_multiqc_report
-    path("VV_log.csv"),                                                              optional: params.skipVV, emit: log
+    path("VV_log.csv"),                                                              optional: params.skip_vv, emit: log
 
   script:
     """
@@ -68,7 +68,7 @@ process VV_TRIMMED_READS {
     path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc${params.assay_suffix}_report.zip"), emit: VVed_trimmed_zipped_multiqc_report
     path("01-TG_Preproc/Trimming_Reports/*trimming_report.txt"), emit: VVed_trimming_reports
     path("01-TG_Preproc/Trimming_Reports/trimming_multiqc${params.assay_suffix}_report.zip"), emit: VVed_trimming_zipped_multiqc_report
-    path("VV_log.csv"),                                                               optional: params.skipVV, emit: log
+    path("VV_log.csv"),                                                               optional: params.skip_vv, emit: log
 
   script:
     """
@@ -104,7 +104,7 @@ process VV_BOWTIE2_ALIGNMENT {
     
   output:
     path("02-Bowtie2_Alignment/**")
-    path("VV_log.csv"), optional: params.skipVV, emit: log
+    path("VV_log.csv"), optional: params.skip_vv, emit: log
 
   script:
     """
@@ -197,7 +197,7 @@ process VV_FEATURECOUNTS {
 
   output:
     path("03-FeatureCounts/**")
-    path("VV_log.csv"), optional: params.skipVV, emit: log
+    path("VV_log.csv"), optional: params.skip_vv, emit: log
 
   script:
   """
@@ -239,7 +239,7 @@ process VV_DGE_MICROBES {
   output:
     path("04-*")
     path("05-*")
-    path("VV_log.csv"), optional: params.skipVV, emit: log
+    path("VV_log.csv"), optional: params.skip_vv, emit: log
 
   script:
   """
@@ -274,7 +274,7 @@ process VV_STAR_ALIGNMENTS {
 
   output:
     path("02-STAR_Alignment")
-    path("VV_log.csv"), optional: params.skipVV, emit: log
+    path("VV_log.csv"), optional: params.skip_vv, emit: log
 
   script:
     """
@@ -284,7 +284,7 @@ process VV_STAR_ALIGNMENTS {
     sort_into_subdirectories.py --from 02-STAR_Alignment --to 02-STAR_Alignment --runsheet Metadata/*_runsheet.csv --glob '_*'
 
     # Run V&V unless user requests to skip V&V
-    if ${ !params.skipVV } ; then
+    if ${ !params.skip_vv } ; then
       dpt validation run ${dp_tools__NF_RCP} . Metadata/*_runsheet.csv \\
                           --data-asset-key-sets  \\
                             'STAR alignments' \\
@@ -321,7 +321,7 @@ process VV_RSEM_COUNTS {
 
   output:
     path("03-RSEM_Counts")
-    path("VV_log.csv"), optional: params.skipVV, emit: log
+    path("VV_log.csv"), optional: params.skip_vv, emit: log
   
   script:
     """
@@ -330,7 +330,7 @@ process VV_RSEM_COUNTS {
     mv VV_INPUT/* . || true
 
     # Run V&V unless user requests to skip V&V
-    if ${ !params.skipVV } ; then
+    if ${ !params.skip_vv } ; then
       dpt validation run ${dp_tools__NF_RCP} . Metadata/*_runsheet.csv \\
                           --data-asset-key-sets  \\
                             'RSEM counts' \\
@@ -371,7 +371,7 @@ process VV_DESEQ2_ANALYSIS {
   output:
     path("04-DESeq2_NormCounts")
     path("05-DESeq2_DGE")
-    path("VV_log.csv"), optional: params.skipVV, emit: log
+    path("VV_log.csv"), optional: params.skip_vv, emit: log
   
   script:
     """
@@ -380,7 +380,7 @@ process VV_DESEQ2_ANALYSIS {
     mv VV_INPUT/* . || true
 
     # Run V&V unless user requests to skip V&V
-    if ${ !params.skipVV } ; then
+    if ${ !params.skip_vv } ; then
       dpt validation run ${dp_tools__NF_RCP} . Metadata/*_runsheet.csv \\
                           --data-asset-key-sets  \\
                             'RSEM Output,DGE Output${ meta.has_ercc ? ",ERCC DGE Output" : ''}' \\
