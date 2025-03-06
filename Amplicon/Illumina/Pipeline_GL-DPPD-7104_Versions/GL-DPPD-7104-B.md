@@ -1,12 +1,12 @@
 # Bioinformatics pipeline for amplicon Illumina sequencing data  
 
-> **This page holds an overview and instructions for how GeneLab processes Illumina amplicon datasets. Exact processing commands for specific datasets that have been released are available in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory and/or are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
+> **This page holds an overview and instructions for how GeneLab processes Illumina amplicon sequencing datasets. Exact processing commands for specific datasets that have been released are available in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory and/or are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 
 ---
 
-**Date:** December 30, 2024  
+**Date:** March XX, 2024  
 **Revision:** B  
-**Document Number:** GL-DPPD-7104-B  
+**Document Number:** GL-DPPD-7104  
 
 **Submitted by:**  
 Olabiyi Obayomi, Alexis Torres, and Michael D. Lee (GeneLab Data Processing Team)
@@ -21,9 +21,6 @@ Barbara Novak (GeneLab Data Processing Lead)
 ---
 
 ## Updates from previous version
-
-Updated reference files:
-- ITS UNITE: "UNITE\_v2023\_July2023.RData" from [DECIPHER](http://www2.decipher.codes/Classification/TrainingSets/)
 
 Software Updates and Changes:
 
@@ -52,15 +49,17 @@ Software Updates and Changes:
 | vegan        | N/A              | 2.6.4         |
 
 - Added new processing steps in R to generate processed data outputs for alpha and beta diversity, 
-  taxonomic summary plots, and differential abundance
-  - Alpha Diversity Analysis ([Step 7](#7-alpha-diversity-analysis)).
-  - Beta Diversity Analysis ([Step 8](#8-beta-diversity-analysis)).
-  - Groupwise and Samplewise Taxonomic Summary Plots ([Step 9](#9-taxonomy-plots)).
+  taxonomic summary plots, and differential abundance:
+  - Alpha Diversity Analysis ([Step 7](#7-alpha-diversity-analysis))
+  - Beta Diversity Analysis ([Step 8](#8-beta-diversity-analysis))
+  - Group-wise and Sample-wise Taxonomic Summary Plots ([Step 9](#9-taxonomy-plots))
   - Differential Abundance Testing ([Step 10](#9-differential-abundance-analysis)) with 
-    ANCOMBC 1 ([Step 10a](#10a-ancombc-1)), ANCOMBC 2 ([Step 10b](#10b-ancombc-2)), and Deseq2 ([Step 10c](#10c-deseq2)).
+    ANCOMBC 1 ([Step 10a](#10a-ancombc-1)), ANCOMBC 2 ([Step 10b](#10b-ancombc-2)), and Deseq2 ([Step 10c](#10c-deseq2))
 - Assay-specific suffixes were added where needed for OSDR ("_GLAmpSeq")
+- Updated reference files:
+  - ITS UNITE: "UNITE\_v2023\_July2023.RData" from [DECIPHER](https://www2.decipher.codes/data/Downloads/TrainingSets/)
 - Added persistent reference links to DECIPHER databases on Figshare and replaced reference links to 
-  DECIPHER [website](http://www2.decipher.codes/Classification/TrainingSets/) 
+  DECIPHER [website]([http://www2.decipher.codes/Classification/TrainingSets/](https://www2.decipher.codes/data/Downloads/TrainingSets/)) 
   - [SILVA SSU r138](https://figshare.com/ndownloader/files/46245217)
   - [UNITE v2023](https://figshare.com/ndownloader/files/49181545)
   - [PR2 v4.13](https://figshare.com/ndownloader/files/46241917)
@@ -133,12 +132,12 @@ Software Updates and Changes:
 |vegan|2.6.4|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
 
 # Reference databases used
-
-|Program used| Database| Relevant Links|
-|:-----|:-----:|--------:|
-|DECIPHER| SILVA SSU r138 | [SILVA_SSU_r138_2019.RData](https://figshare.com/ndownloader/files/46245217)|
-|DECIPHER| UNITE v2023 | [UNITE_v2023_July2023.RData](https://figshare.com/ndownloader/files/49181545)|
-|DECIPHER| PR2 v4.13 | [PR2_v4_13_March2021.RData](https://figshare.com/ndownloader/files/46241917)|
+<update figshare links once the updated DBs are downloaded>
+|Program used| Database| DECIPHER Link | GeneLab Figshare Link | GeneLab Download Date|
+|:-----|:-----:|:-----|--------:|
+|DECIPHER| SILVA SSU r138_2 | [https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData) |[SILVA_SSU_r138_2019.RData](https://figshare.com/ndownloader/files/46245217)| <insert download date >|
+|DECIPHER| UNITE v2024 | [https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData) | [UNITE_v2023_July2023.RData](https://figshare.com/ndownloader/files/49181545)| <insert download date >|
+|DECIPHER| PR2 v4.13 | [https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData) | [PR2_v4_13_March2021.RData](https://figshare.com/ndownloader/files/46241917)| <insert download date >|
 ---
 
 # General processing overview with example commands  
@@ -179,15 +178,17 @@ fastqc -o raw_fastqc_output *.fastq.gz
 ### 1b. Compile Raw Data QC  
 
 ```
-multiqc -o raw_multiqc_output raw_fastqc_output
+multiqc --interactive -n raw_multiqc_GLAmpSeq -o /path/to/raw_multiqc/output/raw_multiqc_GLAmpSeq_report /path/to/directory/containing/raw_fastqc/files
 
-zip -r raw_multiqc_GLAmpSeq_report.zip raw_multiqc_output
+zip -r raw_multiqc_GLAmpSeq_report.zip raw_multiqc_GLAmpSeq_report
 ```
 
 **Parameter Definitions:**
 
-*	`-o` – the output directory to store results
-*	`raw_fastqc_output/` – the directory holding the output data from the fastqc run, provided as a positional argument
+- `--interactive` – force reports to use interactive plots
+- `-n` – prefix name for output files
+- `-o` – the output directory to store results
+- `/path/to/directory/containing/raw_fastqc/files` – the directory holding the output data from the FastQC run, provided as a positional argument
 
 **Input Data:**
 
@@ -196,8 +197,8 @@ zip -r raw_multiqc_GLAmpSeq_report.zip raw_multiqc_output
 **Output Data:**
 
 * **raw_multiqc_GLAmpSeq_report.zip** (zip containing the following)
-  * **raw_multiqc.html** (multiqc output html summary)
-  * **raw_multiqc_data** (directory containing multiqc output data)
+  * **raw_multiqc_GLAmpSeq.html** (multiqc output html summary)
+  * **raw_multiqc_GLAmpSeq_data** (directory containing multiqc output data)
 
 <br>  
 
@@ -205,19 +206,18 @@ zip -r raw_multiqc_GLAmpSeq_report.zip raw_multiqc_output
 
 ## 2. Trim Primers  
 
-The location and orientation of primers in the data is important to understand in deciding how to do this step. `cutadapt` has many options for primer identification and removal, which are described in detail in the [cutadapt adapter type documentation](https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types)  
+The location and orientation of primers in the data is important to understand in deciding how to do this step. `cutadapt` has many options for primer identification and removal, which are described in detail in the [cutadapt adapter type documentation](https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types).  
 
 The following example commands show how it was done for some samples of [GLDS-200](https://osdr.nasa.gov/bio/repo/data/studies/OSD-200), which was 2x250 sequencing of the 16S gene using these primers:  
 * forward: 5’-GTGCCAGCMGCCGCGGTAA-3’  
 * reverse: 5’-GGACTACVSGGGTATCTAAT-3’  
 
-Due to the size of the target amplicon and the type of sequencing done here, both forward and reverse primers are expected to be on each of the forward and reverse reads. It therefore takes “linked” primers as input for forward and reverse reads, specified above by the `...` between them. It also expects that the primers start at the first position of the reads (“anchored”), specified with the leading `^` characters.  
+Due to the size of the target amplicon and the type of sequencing done here, both forward and reverse primers are expected to be on each of the forward and reverse reads. It therefore takes “linked” primers as input for forward and reverse reads, specified in the example command below by the `...` between them. It also expects that the primers start at the first position of the reads (“anchored”), specified with the leading `^` characters in the example command below.  
 
 The following website is useful for reverse complementing primers and dealing with degenerate bases appropriately: [http://arep.med.harvard.edu/labgc/adnan/projects/Utilities/revcomp.html](http://arep.med.harvard.edu/labgc/adnan/projects/Utilities/revcomp.html)  
 
 ```
 cutadapt -a ^GTGCCAGCMGCCGCGGTAA...ATTAGATACCCSBGTAGTCC -A ^GGACTACVSGGGTATCTAAT...TTACCGCGGCKGCTGGCAC \
-         ## Define what B represents; and define what K represents ##
          -o sample1_R1_trimmed.fastq.gz -p sample1_R2_trimmed.fastq.gz sample1_R1_raw.fastq.gz sample1_R2_raw.fastq.gz \
          --discard-untrimmed
 ```
@@ -228,7 +228,7 @@ cutadapt -a ^GTGCCAGCMGCCGCGGTAA...ATTAGATACCCSBGTAGTCC -A ^GGACTACVSGGGTATCTAAT
 *	`-A` – specifies the primers and orientations expected on the reverse reads (when primers are linked as noted above)
 *	`-o` – specifies file path/name of forward, primer-trimmed reads
 *	`-p` – specifies file path/name of reverse, primer-trimmed reads
-*	`sample1_R1_raw.fastq.gz` – this and following “R2” version are positional arguments specifying the forward and reverse reads, respectively, for input
+*	`sample1_R1_raw.fastq.gz` – this and following “R2” file are positional arguments specifying the forward and reverse reads, respectively, for input
 *	`--discard-untrimmed` – this filters out those reads where the primers were not found as expected
 
 **Input Data:**
@@ -320,15 +320,17 @@ fastqc -o filtered_fastqc_output/ *filtered.fastq.gz
 
 ### 4b. Compile Filtered Data QC
 ```
-multiqc -o filtered_multiqc_output  filtered_fastqc_output
+multiqc --interactive -n filtered_multiqc_GLAmpSeq -o /path/to/filtered_multiqc/output/filtered_multiqc_GLAmpSeq_report /path/to/directory/containing/filtered_fastqc/files
 
-zip -r filtered_multiqc_GLAmpSeq_report.zip filtered_multiqc_output
+zip -r filtered_multiqc_GLAmpSeq_report.zip filtered_multiqc_GLAmpSeq_report
 ```
 
 **Parameter Definitions:**
 
-* `-o` – the output directory to store results
-* `filtered_fastqc_output` – the directory holding the output data from the fastqc run, provided as a positional argument
+- `--interactive` – force reports to use interactive plots
+- `-n` – prefix name for output files
+- `-o` – the output directory to store results
+- `/path/to/directory/containing/filtered_fastqc/files` – the directory holding the output data from the FastQC run, provided as a positional argument
 
 **Input Data:**
 
@@ -337,8 +339,8 @@ zip -r filtered_multiqc_GLAmpSeq_report.zip filtered_multiqc_output
 **Output Data:**
 
 * **filtered_multiqc_GLAmpSeq_report.zip** (zip containing the following)
-  * **filtered_multiqc_report.html** (multiqc output html summary)
-  * **filtered_multiqc_data** (directory containing multiqc output data)
+  * **filtered_multiqc_GLAmpSeq_report.html** (multiqc output html summary)
+  * **filtered_multiqc_GLAmpSeq_data** (directory containing multiqc output data)
 
 <br>
 
@@ -347,7 +349,7 @@ zip -r filtered_multiqc_GLAmpSeq_report.zip filtered_multiqc_output
 ## 5. Calculate Error Mdel, Apply DADA2 Algorithm, Assign Taxonomy, and Create Output Tables
 > The following is run in an R environment.  
 
-These example commands as written assume paired-end data, with notes included on what would be different if working with single-end data. The taxonomy reference database used below is an example only, suitable for the example 16S dataset ([GLDS-200](https://osdr.nasa.gov/bio/repo/data/studies/OSD-200)) used here. Other taxonomy references databases designed for DECIPHER can be found here: [http://www2.decipher.codes/Downloads.html](http://www2.decipher.codes/Downloads.html)  
+These example commands as written assume paired-end data, with notes included on what would be different if working with single-end data. The taxonomy reference database used below is an example only, suitable for the example 16S dataset ([GLDS-200](https://osdr.nasa.gov/bio/repo/data/studies/OSD-200)) used here. Other taxonomy references databases designed for DECIPHER can be found here: [https://www2.decipher.codes/data/Downloads/TrainingSets/](https://www2.decipher.codes/data/Downloads/TrainingSets/)  
 
 <br>
 
@@ -372,8 +374,8 @@ reverse_errors <- learnErrors(fls=“sample1_R2_filtered.fastq.gz”, multithrea
 
 **Output Data:**
 
-* `forward_errors` (named list storing a numeric matrix with the forward error rates)
-* `reverse_errors` (named list storing a numeric matrix with the reverse error rates (only for paired-end data))
+* `forward_errors` (variable containing a named list storing a numeric matrix with the forward error rates)
+* `reverse_errors` (variable containing a named list storing a numeric matrix with the reverse error rates (only for paired-end data))
 
 <br>
 
@@ -391,7 +393,7 @@ reverse_seqs <- dada(derep=“sample1_R2_filtered.fastq.gz”, err=reverse_error
 * `dada()` – the DADA2 function we are calling, with the following parameters set within it
 * `derep=` – the path to the filtered reads (either forward or reverse)
 * `err=` – the object holding the error profile for the inferred reads (either forward or reverse)
-* `pool=“pseudo”` – setting the method of incorporating information from multiple samples
+* `pool=“pseudo”` – setting the method of incorporating information from multiple samples, "pseudo" instructs the algorithm to perform pseudo-pooling between individually processed samples
 * `multithread=TRUE` – determine number of cores available and run in parallel when possible (can also take an integer specifying the number of cores to use)
 
 **Input Data:**
@@ -402,8 +404,8 @@ reverse_seqs <- dada(derep=“sample1_R2_filtered.fastq.gz”, err=reverse_error
 
 **Output Data:**
 
-* `forward_seqs` (dada-class object storing the forward-read inferred sequences)
-* `reverse_seqs` (dada-class object storing the reverse-read inferred sequences (only for paired-end))
+* `forward_seqs` (variable containing a dada-class object storing the forward-read inferred sequences)
+* `reverse_seqs` (variable containing a dada-class object storing the reverse-read inferred sequences (only for paired-end))
 
 <br>
 
@@ -416,10 +418,10 @@ merged_contigs <- mergePairs(dadaF=forward_seqs, derepF=“sample1_R1_filtered.f
 
 * `merged_contigs <-` – specifies the variable that will store the results within in our R environment
 * `mergePairs()` – the DADA2 function we are calling, with the following parameters set within it
-* `dadaF=` – specifying the object holding the forward-read inferred sequences
-* `derepF=` – specifying the path to the filtered forward reads
-* `dadaR=` – specifying the object holding the reverse-read inferred sequences
-* `derepR=` – specifying the path to the filtered reverse reads
+* `dadaF=` – specifies the object holding the forward-read inferred sequences
+* `derepF=` – specifies the path to the filtered forward reads
+* `dadaR=` – specifies the object holding the reverse-read inferred sequences
+* `derepR=` – specifies the path to the filtered reverse reads
 
 **Input Data:**
 
@@ -429,7 +431,7 @@ merged_contigs <- mergePairs(dadaF=forward_seqs, derepF=“sample1_R1_filtered.f
 
 **Output Data:**
 
-* `merged_contigs` (data.frame storing the merged contigs)
+* `merged_contigs` (variable containing a data.frame storing the merged contigs)
 
 <br>
 
@@ -448,7 +450,7 @@ seqtab <- makeSequenceTable(merged_contigs)
 
 **Output Data:**
 
-* `seqtab` (named integer matrix containing sequence table)
+* `seqtab` (a variable containing a named integer matrix containing the sequence table)
 
 <br>
 
@@ -462,7 +464,7 @@ seqtab.nochim <- removeBimeraDenovo(unqs=seqtab, method=“consensus”, multith
 * `seqtab.nochim <-` – specifies the variable that will store the results within in our R environment
 * `removeBimeraDenovo()` – the DADA2 function we are calling, with the following parameters set within it
 * `unqs=` – specifying the “seqtab” object created above
-* `method=` – specifying the method for putative-chimera identification and removal
+* `method=` – specifying the method for putative-chimera identification and removal, "consensus" instructs the function to check the samples in the sequence table independently for bimeras and make a consensus decision on each sequence variant 
 * `multithread=TRUE` – determine number of cores available and run in parallel when possible (can also take an integer specifying the number to run)
 
 **Input Data:**
@@ -471,39 +473,46 @@ seqtab.nochim <- removeBimeraDenovo(unqs=seqtab, method=“consensus”, multith
 
 **Ouptut Data:**
 
-* `seqtab.nochim` (named integer matrix containing sequence table without putative chimeras)
+* `seqtab.nochim` (variable containing a named integer matrix containing the sequence table without putative chimeras)
 
 <br>
 
 ### 5f. Assigning Taxonomy
+<Change download file URL in the command below> 
 
 ```R
 ## Creating a DNAStringSet object from the ASVs: ##
 dna <- DNAStringSet(getSequences(seqtab.nochim))
 
 ## Downloading the reference R taxonomy object: ##
-# url - reference database URL address to download
-# destfile - local path/name for the downloaded file
-download.file( url="https://figshare.com/ndownloader/files/46245217", destfile=“SILVA_SSU_r138_2019.RData”)
+download.file( url="https://figshare.com/ndownloader/files/46245217", destfile=“SILVA_SSU_r138_2_2024.RData”)
 
 ## Loading taxonomy object: ##
-load(“SILVA_SSU_r138_2019.RData”)
+load(“SILVA_SSU_r138_2_2024.RData”)
 
 ## Classifying sequences:
-# strand="both" - check taxonomy assignment in both orientations
-# test=dna - DNAStringSet object holding sequences to classify from above
-# trainingSet=trainingSet - the reference database downloaded and loaded above
-# processors=NULL - number of processors to use, `NULL` to use all available cores or an integer to manually specify the number to use.
 tax_info <- IdTaxa(test=dna, trainingSet=trainingSet, strand=“both”, processors=NULL)
 ```
 
+**Parameter Definitions:** 
+
+- `download.file()`
+  - `url=` - reference database URL address to download
+  - `destfile=` - local path/name for the downloaded file
+- `IdTaxa()`
+  - `test=dna` - DNAStringSet object holding sequences to classify
+  - `trainingSet=trainingSet` - specifies the reference database to use
+  - `strand="both"` - specifies to check taxonomy assignment in both orientations
+  - `processors=NULL` - specifies the number of processors to use, `NULL` indicates to use all available cores or an integer may be provided to manually specify the number to use
+
 **Input Data:**
 
-* `seqtab.nochim` (sequence table, output from [Step 5e](#5e-removing-putative-chimeras))
+* `seqtab.nochim` (variable containing the sequence table without putative chimeras, output from [Step 5e](#5e-removing-putative-chimeras))
+* `trainingSet` (variable provided in the RData object holding the reference database, SILVA_SSU_r138_2_2024.RData)
 
 **Output Data:**
 
-* `tax_info` (DECIPHER Taxa object containing assigned taxons)
+* `tax_info` (variable containing the DECIPHER Taxa object containing assigned taxons)
 
 <br>
 
@@ -552,8 +561,8 @@ write.table(tax_and_count_tab, "taxonomy-and-counts_GLAmpSeq.tsv", sep="\t", quo
 
 **Input Data:**
 
-* `seqtab.nochim` (sequence table without chimeras, output from [Step 5e](#5e-removing-putative-chimeras))
-* `tax_info` (DECIPHER Taxa object, output from [Step 5f](#5f-assigning-taxonomy))
+* `seqtab.nochim` (variable containing the sequence table without chimeras, output from [Step 5e](#5e-removing-putative-chimeras))
+* `tax_info` (variable containing the DECIPHER Taxa object, output from [Step 5f](#5f-assigning-taxonomy))
 
 **Output Data:**
 
@@ -577,7 +586,7 @@ write.table(tax_and_count_tab, "taxonomy-and-counts_GLAmpSeq.tsv", sep="\t", quo
 > Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the examples for [Paired-end](../Workflow_Documentation/NF_AmpIllumina-B/workflow_code/PE_file.csv) and [Single-end](../Workflow_Documentation/NF_AmpIllumina-B/workflow_code/SE_file.csv) samples. When creating this table manually, the most important columns for the analyses below are:
 
 * `sample_id` - column with unique sample names.
-* `groups`    - column with the groups/treatments that each sample belong. This column is used for comparison.
+* `groups`    - column with the groups/treatments that each sample belong to. This column is used for comparison.
 
 ```bash
 ### Download the *ISA.zip file from the OSDR ###
@@ -649,9 +658,6 @@ library(tidyverse)
 ```R
 # Function to calculate text size for plotting
 calculate_text_size <- function(num_samples, start_samples = 25, min_size = 3) {
-  # num_samples [INT]   - the number of samples to plot
-  # start_samples [INT] - start of samples
-  # min_size [INT]    - minimum text size for plotting
   max_size <- 11  # Maximum size for up to start_samples
   slope <- -0.15
   
@@ -682,13 +688,6 @@ expandy <- function(vec, ymin=NULL) {
 # sample count transformation depending on the supplied transformation method,
 # either 'rarefy' or  'vst'
 transform_phyloseq <- function( feature_table, metadata, method, rarefaction_depth=500){
-  # feature_table  [DATAFRAME] - Feature / ASV count table with samples as columns and features as rows 
-  # metadata [DATAFRAME] -  Samples metadata with samples as row names
-  # method [STRING] - Distance transformation method to use.
-  #                   Either 'rarefy' or 'vst' for rarefaction and variance 
-  #                   stabilizing transformation, respectively.
-  # rarefaction_depth [INT] - Sample rarefaction to even depth when method is 'bray'
-  
 
   # Rarefaction
   if(method == 'rarefy'){
@@ -755,10 +754,6 @@ transform_phyloseq <- function( feature_table, metadata, method, rarefaction_dep
 # -----------  A function  Hierarchical Clustering and dendogram plotting
 make_dendogram <- function(dist_obj, metadata, groups_colname,
                            group_colors, legend_title){
-  # dis_obj [DIST] - a distance object holding the calculated distance (euclidean, bry curtid etc.) between samples 
-  # metadata [DATAFRAME] - sample metadata with samples as rownames and sample info as columns
-  # groups_colname [STRING] - name of column in metadata to group samples by.
-  # legend_title [STRING]  - legend time to use for plotting
 
   # Hierarchical Clustering
   sample_clust <- hclust(d = dist_obj, method = "ward.D2")
@@ -799,10 +794,6 @@ make_dendogram <- function(dist_obj, metadata, groups_colname,
 
 # A function to arun variance test and adonis test
 run_stats <- function(dist_obj, metadata, groups_colname){
-
-  # dis_obj [DIST] - a distance object holding the calculated distance (euclidean, bry curtid etc.) between samples 
-  # metadata [DATAFRAME] - sample metadata with samples as rownames and sample info as columns
-  # groups_colname [STRING] - name of column in metadata to group samples by.
   
   # Retrieve sample names from the dist object
   samples <- attr(dist_obj, "Label")
@@ -832,16 +823,6 @@ run_stats <- function(dist_obj, metadata, groups_colname){
 plot_pcoa <- function(ps, stats_res, distance_method,
                       groups_colname, group_colors, legend_title,
                       addtext=FALSE) {
-
-  # ps [PHYLOSEQ]  - Phyloseq object contructed from  feature, taxonmy and metadata tables
-  # stats_res [LIST] - named list generated after runing the function `run_stats`.
-  #                    The list should contain variance and adonis tests dataframes 
-  # distance_method [STRING] - Method used to calculate the distance between samples. 
-  #                      "euclidean" or "bray" for euclidean and Bray Curtis distance, respectively.
-  # groups_colname [STRING] - name of column in metadata to group samples by.
-  # group_colors   [VECTOR] - named character vector of colors for each group in `groups_colname`
-  # legend_title [STRING]  - legend time to use for plotting
-  # addtext [BOOLEAN]  - should text labels be added to your pcoa plot? Default: FALSE. 
   
   # Generating a PCoA with phyloseq
   pcoa <- ordinate(physeq = ps, method = "PCoA", distance = distance_method)
@@ -1217,6 +1198,37 @@ publication_format <- theme_bw() +
         legend.text = element_text(size = 14,face ='bold', color = 'black'),
         strip.text =  element_text(size = 14,face ='bold', color = 'black'))
 ```
+
+**Function Parameter Definitions:**
+
+- `calculate_text_size()`
+  - `num_samples=` - the number of samples to plot
+  - `start_samples = 25` - default number of samples, used to specify text size
+  - `min_size = 3` - minimum text size for plotting
+- `expandy()`
+  - `vec=` - a numeric vector containing y-values
+- `transform_phyloseq()`
+  - `feature_table=` - dataframe containing feature / ASV counts with samples as columns and features as rows
+  - `metadata=` - dataframe containing sample metadata with samples as row names and sample info as columns
+  - `method=` - either "rarefy" or "vst" to specify rarefaction or variance stabilizing transformation, respectively
+  - `rarefaction_depth=500` - sample rarefaction to even depth when the Bray Curtis distance method is used
+- `make_dendogram()`
+  - `dis_obj=` - a distance object holding the calculated distance (euclidean, bry curtid etc.) between samples
+  - `metadata=` - dataframe containing sample metadata with samples as row names and sample info as columns
+  - `groups_colname=` - name of the column in the metadata dataframe to use for specifying sample groups
+  - `legend_title=` - legend title to use for plotting
+- `run_stats()`
+  - `dis_obj=` - a distance object holding the calculated distance (euclidean, bry curtid etc.) between samples
+  - `metadata=` - dataframe containing sample metadata with samples as row names and sample info as columns
+  - `groups_colname=` - name of the column in the metadata dataframe to use for specifying sample groups
+- `plot_pcoa()`
+  - `ps=` - phyloseq object contructed from feature, taxonmy, and metadata tables
+  - `stats_res=` - named list generated after running the `run_stats()` function; the list should contain variance and adonis tests dataframes
+  - `distance_method=` - method used to calculate the distance between samples; values can be "euclidean" or "bray" for euclidean or Bray Curtis distance, respectively
+  - `groups_colname=` - name of the column in the metadata dataframe to use for specifying sample groups
+  - `group_colors=` - named character vector of colors for each group in `groups_colname`
+  - `legend_title=` - legend title to use for plotting
+  - `addtext=FALSE` - boolean to specify if sample labels should be added to the pcoa plot; default=FALSE
 
 **Output Data:**
 
