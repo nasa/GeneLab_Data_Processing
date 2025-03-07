@@ -8,8 +8,8 @@ GeneLab has wrapped each step of the pipeline into a workflow with validation an
 
 |Pipeline Version|Current Workflow Version (for respective pipeline version)|Nextflow Version|
 |:---------------|:---------------------------------------------------------|:---------------|
-|*[GL-DPPD-7101-G.md](../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md)|[NF_RCP-G_2.0.0](NF_RCP)|24.10.4|
-|*[GL-DPPD-7115.md](../Pipeline_GL-DPPD-7115_Versions/GL-DPPD-7115.md)|[NF_RCP-G_2.0.0](NF_RCP)|24.10.4|
+|*[GL-DPPD-7101-G.md](../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md)|[NF_RCP_2.0.0](NF_RCP)|24.10.4|
+|*[GL-DPPD-7115.md](../Pipeline_GL-DPPD-7115_Versions/GL-DPPD-7115.md)|[NF_RCP_2.0.0](NF_RCP)|24.10.4|
 |[GL-DPPD-7101-F.md](../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md)|[NF_RCP-F_1.0.4](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-F_1.0.4/RNAseq/Workflow_Documentation/NF_RCP-F)|22.10.1|
 
 *Current GeneLab Pipeline/Workflow Implementation
