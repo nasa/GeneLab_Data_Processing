@@ -1014,6 +1014,9 @@ library(tximport)
 library(DESeq2)
 library(BiocParallel)
 
+### Define a system-specific BiocParallelParam object to run DGE R script functions in parallel when applicable ###
+BPPARAM <- SerialParam()
+
 ### Define which organism is used in the study - this should be consistent with the species name in the "species" column of the GL-DPPD-7110-A_annotations.csv file ###
 organism <- "organism_that_samples_were_derived_from"
 
@@ -1040,11 +1043,13 @@ setwd(file.path(work_dir))
 
 - {GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv (runsheet, output from [Step 8a](#8a-create-sample-runsheet))
 - `organism` (name of organism samples were derived from, found in the species column of [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file)
+- `BPPARAM` (system-specific BiocParallelParam object for parallel processing configuration, by default this is set to `SerialParam()`)
 
 **Output Data:**
 
 - `runsheet_path` (variable containing path to runsheet created in [Step 8a](#8a-create-sample-runsheet)) 
 - `annotations_link` (variable containing URL to GeneLab gene annotation table for the organism)
+- `BPPARAM` (variable containing BiocParallelParam object for parallel processing configuration)
 
 <br>
 
@@ -1109,7 +1114,7 @@ rm(contrast.names)
 input_counts <- "/path/to/FeatureCounts_GLbulkRNAseq.tsv"
 
 ### Load featureCounts data ###
-featurecounts <- read.csv(input_counts, header = TRUE, sep = "\t", skip = 1)
+featurecounts <- read.csv(input_counts, header = TRUE, sep = "\t", skip = 1, check.names = FALSE)
 
 ### Create counts matrix: remove metadata columns from featurecounts table, remove bam file extension from column names ###
 row.names(featurecounts) <- featurecounts$Geneid
@@ -1218,7 +1223,7 @@ if (length(grep("ERCC-", rownames(dds))) != 0) {
 }
 
 ### Perform DESeq analysis ###
-dds <- DESeq(dds, parallel = TRUE, BPPARAM = MulticoreParam(workers = 4))
+dds <- DESeq(dds, parallel = TRUE, BPPARAM = BPPARAM)
 
 ### Generate normalized counts ###
 normCounts <- as.data.frame(counts(dds, normalized = TRUE))
@@ -1237,6 +1242,7 @@ res_lrt <- results(dds_lrt)
 
 - `group` (named vector specifying the group or set of factor levels for each sample, output from [Step 8c](#8c-configure-metadata-sample-grouping-and-group-comparisons))
 - `counts` (data frame of gene counts, output from [Step 8c](#8c-configure-metadata-sample-grouping-and-group-comparisons))
+- `BPPARAM` (system-specific BiocParallelParam object for parallel processing configuration, output from [Step 8b](#8b-environment-set-up))
 
 **Output Data:**
 
@@ -1275,7 +1281,7 @@ compute_contrast <- function(i) {
 }
 
 ### Use bplapply to compute results in parallel ###
-res_list <- bplapply(1:dim(contrasts)[2], compute_contrast, BPPARAM = MulticoreParam(workers = 4))
+res_list <- bplapply(1:dim(contrasts)[2], compute_contrast, BPPARAM = BPPARAM)
 
 ### Combine the list of data frames into a single data frame ###
 res_df <- do.call(cbind, res_list)
@@ -1346,6 +1352,7 @@ if (!(gene_id_type %in% colnames(annot)) || !(gene_id_type %in% colnames(output_
 - `contrasts` (matrix defining pairwise comparisons, output from [Step 8c](#8c-configure-metadata-sample-grouping-and-group-comparisons))
 - `dds` (DESeq2 data object containing normalized counts, experimental design, and differential expression results, output from [Step 8e](#8e-perform-dge-analysis))
 - `annotations_link` (variable containing URL to GeneLab gene annotation table, output from [Step 8b](#8b-environment-set-up))
+- `BPPARAM` (system-specific BiocParallelParam object for parallel processing configuration, output from [Step 8b](#8b-environment-set-up))
 
 **Output Data:**
 

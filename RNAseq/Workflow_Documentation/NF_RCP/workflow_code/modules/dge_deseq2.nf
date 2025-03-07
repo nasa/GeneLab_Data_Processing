@@ -35,6 +35,7 @@ process DGE_DESEQ2 {
             output_dir = '\${PWD}',
             params = list(
                 cpus = ${task.cpus},
+                parallel_config = '${params.dge_parallel_config ?: ""}',
                 work_dir = '\${PWD}',
                 output_directory = '\${PWD}',
                 output_filename_label = '${output_filename_label}',

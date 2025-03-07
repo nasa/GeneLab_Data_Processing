@@ -17,6 +17,10 @@
           "type": "string",
           "default": "https://osdr.nasa.gov/osdr/data/search?ffield=Study+Assay+Technology+Type&fvalue=RNA+Sequencing+%28RNA-Seq%29&size=2000",
           "hidden": true
+      },
+      "dge_parallel_config": {
+          "type": "string",
+          "default": "SerialParam()"
       }
   },
   "$defs": {
@@ -35,9 +39,9 @@
               },
               "multiqc_config": {
                   "type": "string",
-                  "default": "/home/alexis/git/NewRepo/GeneLab_Data_Processing/RNAseq/Workflow_Documentation/NF_RCP/workflow_code/conf/multiqc.config",
                   "description": "Path to the MultiQC config file.",
-                  "format": "file-path"
+                  "format": "file-path",
+                  "default": "${projectDir}/conf/multiqc.config"
               },
               "rseqc_sample_count": {
                   "type": "integer",
@@ -52,7 +56,7 @@
               },
               "skip_vv": {
                   "type": "boolean",
-                  "description": "TO DO:  Skip VV modules.",
+                  "description": "Skip VV modules",
                   "hidden": true
               }
           },

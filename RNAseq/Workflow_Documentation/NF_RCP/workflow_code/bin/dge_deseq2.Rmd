@@ -16,6 +16,7 @@ params:
   microbes: FALSE # set this to TRUE to use Bowtie 2 input
   DEBUG_MODE_LIMIT_GENES: FALSE # debugging option to limit the number of genes
   DEBUG_MODE_ADD_DUMMY_COUNTS: FALSE # debugging option to add dummy counts
+  parallel_config: NULL # parallel configuration string (e.g. "MulticoreParam(workers = params$cpus)")
 ---
 
 ## Substeps {.tabset}
@@ -58,13 +59,10 @@ library(dplyr)
 library(tximport)
 library(DESeq2)
 library(BiocParallel)
-# Set up parallel backend
-if (params$cpus > 1) {
-    if (.Platform$OS.type == "windows") {
-        BPPARAM <- SnowParam(workers = params$cpus)
-    } else {
-        BPPARAM <- MulticoreParam(workers = params$cpus)
-    }
+# Set up parallel backend if params$parallel_config is defined, otherwise set BPPARAM <- SerialParam()
+# See https://rdrr.io/bioc/BiocParallel/man/register.html
+if (!is.null(params$parallel_config) && params$parallel_config != "") {
+    BPPARAM <- eval(parse(text = params$parallel_config))
 } else {
     BPPARAM <- SerialParam()
 }
@@ -124,7 +122,7 @@ if (params$microbes) {
         stop(paste("FeatureCounts file not found at:", params$input_counts))
     }
     # Load featureCounts data with tab separator
-    featurecounts <- read.csv(params$input_counts, header = TRUE, sep = "\t", skip = 1)
+    featurecounts <- read.csv(params$input_counts, header = TRUE, sep = "\t", skip = 1, check.names = FALSE)
     # Create counts matrix: remove metadata columns, remove possible .bam from column names
     row.names(featurecounts) <- featurecounts$Geneid
     counts <- featurecounts[,-c(1:6)]
