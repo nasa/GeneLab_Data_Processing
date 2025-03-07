@@ -318,6 +318,7 @@ Bowtie 2 genome reference, which consists of the following files:
 
 ```bash
 bowtie2 -x /path/to/bowtie2/index \
+ -a \ 
  --threads NumberOfThreads \
  --minins 10 \
  --maxins 1000 \
@@ -332,6 +333,7 @@ bowtie2 -x /path/to/bowtie2/index \
 **Parameter Definitions:**
 
 - `-x` – specifies the path to the Bowtie2 index prefix
+- `-a` – search for and report all alignments
 - `--threads` – number of threads to use for alignment
 - `--minins` – minimum fragment length for valid paired-end alignments
 - `--maxins` – maximum fragment length for valid paired-end alignments
@@ -759,6 +761,7 @@ featureCounts -p \
   -D 1000 \
   -P \
   -B \
+  --primary \
   -T NumberOfThreads \
   -a /path/to/annotation/gtf/file \
   -t ${GTF_FEATURES} \
@@ -775,6 +778,7 @@ featureCounts -p \
 - `-D` – maximum fragment length (omit for single-end data)
 - `-P` – specifies that fragment length should be checked against minimum and maximum thresholds when counting fragments (omit for single-end data)
 - `-B` – specifies that only fragments with both ends successfully aligned should be considered for counting (omit for single-end data)
+- `--primary` – specifies that only primary alignments should be counted
 - `-T` – number of threads to use
 - `-a` – path to genome annotation GTF file
 - `-t` – specifies the feature types to be counted, e.g. gene, exon, intron, etc.

@@ -20,6 +20,7 @@ process ALIGN_BOWTIE2 {
     INDEX=\$(find -L ${bowtie2_index_dir} -name "*.rev.1.bt2" | sed "s/\\.rev.1.bt2\$//")
 
     bowtie2 -x "\$INDEX" \\
+      -a \\
       ${readArgs} \\
       --threads ${task.cpus} \\
       --minins 10 \\

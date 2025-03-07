@@ -35,6 +35,7 @@ process FEATURECOUNTS {
       -a ${genomeGtf} \\
       -t "\${GTF_FEATURES}" \\
       -s ${strandOption} \\
+      --primary \\
       -o "FeatureCounts${params.assay_suffix}.tsv" \\
       \$bam_list
 
