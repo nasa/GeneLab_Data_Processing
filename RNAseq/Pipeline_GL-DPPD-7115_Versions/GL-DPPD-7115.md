@@ -332,8 +332,8 @@ bowtie2 -x /path/to/bowtie2/index \
 
 **Parameter Definitions:**
 
-- `-x` – specifies the path to the Bowtie2 index prefix
-- `-a` – search for and report all alignments
+- `-x` – specifies the path to the Bowtie 2 index prefix
+- `-a` – specifies that Bowtie 2 should report all alignments for each read instead of just the primary (best) alignment
 - `--threads` – number of threads to use for alignment
 - `--minins` – minimum fragment length for valid paired-end alignments
 - `--maxins` – maximum fragment length for valid paired-end alignments
