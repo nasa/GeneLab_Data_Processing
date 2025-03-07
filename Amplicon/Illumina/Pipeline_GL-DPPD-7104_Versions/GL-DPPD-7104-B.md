@@ -883,14 +883,6 @@ plot_pcoa <- function(ps, stats_res, distance_method,
 # on the supplied cut off.
 remove_rare_features <- function(feature_table, cut_off_percent=3/4){
   
-  # feature_table [MATRIX] -  feature table matrix with samples as columns and 
-  #                           features as rows
-  # cut_off_percent [NUMERIC] - cut-off fraction  or decimal between 0.001 to 1 
-  #                             of the total number of samples to determine the 
-  #                          most abundant features. By default it removes 
-  #                          features that are not present in 3/4 of the total 
-  #                          number of samples
-  
   # Filter by occurrence in a fraction of samples
   # Define a cut-off for determining what's rare
   cut_off <- cut_off_percent * ncol(feature_table)
@@ -905,10 +897,6 @@ remove_rare_features <- function(feature_table, cut_off_percent=3/4){
 
  # Function to process a taxonopmy assignment table
 process_taxonomy <- function(taxonomy, prefix='\\w__') {
- 
-  # taxonomy [DATAFRAME] - taxonomy dataframe to process
-  # prefix [STRING] - regular expression specifying the characters to remove
-  #                  from taxon names. Use '\\w__'  for greengenes and 'D_\\d__' for SILVA
   
   # Ensure that all columns are of character data type
   taxonomy <- apply(X = taxonomy, MARGIN = 2, FUN = as.character) 
@@ -935,10 +923,6 @@ process_taxonomy <- function(taxonomy, prefix='\\w__') {
 # to a known name
 format_taxonomy_table <- function(taxonomy, stringToReplace="Other", suffix=";Other") {
 
-  # taxonomy [DATAFRAME] - taxonomy dataframe to process
-  # stringToReplace [STRING] - String to replace
-  # suffix [STRING]  - Replacement string
-
   for (taxa_index in seq_along(taxonomy)) {
     
     indices <- grep(x = taxonomy[,taxa_index], pattern = stringToReplace)
@@ -953,10 +937,6 @@ format_taxonomy_table <- function(taxonomy, stringToReplace="Other", suffix=";Ot
 }
 
 fix_names<- function(taxonomy,stringToReplace,suffix){
-  # taxonomy [DATAFRAME] - taxonomy dataframe with taxonomy ranks as column names
-  # stringToReplace [STRING VECTOR] - is a vector of regex strings specifying what to replace
-  # suffix [STRING VECTOR] - string specifying the replacement value
-  
   
   for(index in seq_along(stringToReplace)){
     taxonomy <- format_taxonomy_table(taxonomy = taxonomy,
@@ -970,14 +950,6 @@ fix_names<- function(taxonomy,stringToReplace,suffix){
 # an existing feature table
 make_feature_table <- function(count_matrix,taxonomy,
                                taxon_level, samples2keep=NULL){
-
-  # EAMPLE:
-  # make_feature_table(count_matrix = feature_counts_matrix,
-  #                    taxonomy = taxonomy_table, taxon_level = "Phylum")
-
-  # count_matrix [MATRIX] - ASV or OTU table
-  # taxonomy    [MATRIX] - Taxonomy table
-  # taxon_level [STRING] - taxonol level string i.e. domain to species
 
   feature_counts_df <- data.frame(taxon_level=taxonomy[,taxon_level],
                                   count_matrix, check.names = FALSE,
@@ -1005,11 +977,6 @@ make_feature_table <- function(count_matrix,taxonomy,
 # Function to group rare taxa or return a table with the rare taxa
 group_low_abund_taxa <- function(abund_table, threshold=0.05,
                                  rare_taxa=FALSE) {
-
-  # abund_table [MATRIX] - relative abundance matrix with taxa as columns and  samples as rows
-  # threshold [NUMERIC] - threshold for filtering out rare taxa.
-  # rare_taxa [BOOLEAN] - boolean specifying if only rare taxa should be returned
-  #                       If set to TRU then a table with only the rare taxa will be returned 
   
   # Intialize an empty vector that will contain the indices for the
   # low abundance columns/ taxa to group
@@ -1060,14 +1027,6 @@ group_low_abund_taxa <- function(abund_table, threshold=0.05,
 # Function to collapse samples in a feature table with a defined function(fun)
 # based on a group in metadata 
 collapse_samples <- function(taxon_table, metadata, group, fun=sum, convertToRelativeAbundance=FALSE){
-  
-  # taxon_table [MATRIX] - a matrix count table with samples as rows and features/OTUs as columns
-  # metadata [DATAFRAME] - a dataframe to containing the group to collapse samples by. 
-  #                        Sample names must be the rownames of the metadata
-  # group [STRING] - variable / column within the metadata to collapse samples by
-  # fun   [FUNCTION] - function (without brackets) to apply in order to collapse samples
-  # convertToRelativeAbundance [BOOLEAN] - should the value in the taxon table be converted 
-  #                                        to per sample relave abundance values? Default: FALSE.
 
   common.ids <- intersect(rownames(taxon_table),rownames(metadata))
   metadata <- droplevels(metadata[common.ids,,drop=FALSE])
@@ -1090,9 +1049,6 @@ collapse_samples <- function(taxon_table, metadata, group, fun=sum, convertToRel
 taxize_options(ncbi_sleep = 0.8)
 # A function to retrieve NCBI taxonomy id for a given taxonomy name
 get_ncbi_ids <- function(taxonomy, target_region){
-
-  # taxonomy [STRING] - taxonomy name to search for it's NCBI ID
-  # target [STRING]  - amplicon target region analyzed. options are "16S", "18S" or "ITS"
   
   if(target_region == "ITS"){
     search_string <- "fungi"
@@ -1111,8 +1067,6 @@ get_ncbi_ids <- function(taxonomy, target_region){
 # Error handling function when running ANCOMBC2
 find_bad_taxa <- function(cnd){
 
-  # cnd [TRY ERROR] - error condition to catch when running ancombc2 function below
-
   if(split_res == "replacement has 0 rows, data has 1" || 
      split_res == "All taxa contain structural zeros") { 
     
@@ -1129,9 +1083,6 @@ find_bad_taxa <- function(cnd){
 
 # A function to run ANCOMBC2 while handling common errors 
 ancombc2 <- function(data, ...) {
-
-  # data [treeSummarizedExperiment] - a treeSummarizedExperiment containing the feature, 
-  #                                   taxonomy and metdata to be analyzed using ancombc2.
 
   tryCatch(
     ANCOMBC::ancombc2(data = data, ...),
@@ -1161,8 +1112,6 @@ ancombc2 <- function(data, ...) {
 
 # Geometric mean function used when running DESeq2
 gm_mean <- function(x, na.rm=TRUE) {
-  # x [NUMERIC] -  numeric vector to calculate geometric mean on
-  # na.rm [BOOLEAN] - should NAs be removed prior to the calculation?
   exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
 }
 
@@ -1229,11 +1178,55 @@ publication_format <- theme_bw() +
   - `group_colors=` - named character vector of colors for each group in `groups_colname`
   - `legend_title=` - legend title to use for plotting
   - `addtext=FALSE` - boolean to specify if sample labels should be added to the pcoa plot; default=FALSE
+- `remove_rare_features()`
+  - `feature_table=` - a feature table matrix with samples as columns and features as rows
+  - `cut_off_percent=3/4` - the cut-off fraction or decimal between 0.001 to 1 of the total number of samples to determine the most abundant features; by default it removes features that are not present in 3/4 of the total number of samples
+- `process_taxonomy()`
+  - `taxonomy=` - the taxonomy dataframe to be processed
+  - `prefix='\\w__'` - a regular expression specifying the characters to remove from taxon names; use '\\w__'  for greengenes and 'D_\\d__' for SILVA
+- `format_taxonomy_table()`
+  - `taxonomy=` - the taxonomy dataframe to be formatted
+  - `stringToReplace="Other"` - specifies the string to replace, "Other" is used by default
+  - `suffix=";Other"` - specifies the replacement string, ";Other" is used by dfault
+- `fix_names()`
+  - `taxonomy=` - a taxonomy dataframe with taxonomy ranks as column names
+  - `stringToReplace=` - a vector of regex strings specifying what to replace in the taxonomy dataframe
+  - `suffix=` - a vector of regex strings specifying the replacement strings to use
+- `make_feature_table()`
+  - `count_matrix=` - matrix containing ASVs or OTUs and their respecitve counts
+  - `taxonomy=` - a taxonomy matrix with taxonomy ranks as column names
+  - `taxon_level=` - a string defining the taxon levels, i.e. domain to species
+  - `samples2keep=NULL` - specifies the samples to evaluate; the default value of NULL instructs the function to only retain taxa found in at least one sample
+- `group_low_abund_taxa()`
+  - `abund_table=` - relative abundance matrix with taxa as columns and samples as rows
+  - `threshold=0.05` - specifies the threshold for filtering out rare taxa; default value is 0.05
+  - `rare_taxa=FALSE` - boolean specifying if only rare taxa should be returned, if set to TRUE then a table with only the rare taxa will be returned; default is FALSE
+- `collapse_samples()`
+  - `taxon_table=` - a matrix count table with samples as rows and features (e.g. ASVs or OTUs) as columns
+  - `metadata=` - dataframe containing sample metadata with samples as row names and sample info as columns
+  - `group=` - specifies the column in the `metadata` dataframe containing the sample groups that will be used to collapse the samples
+  - `fun=sum` - specifies the function to apply when collapsing the samples; sum is used by default
+  - `convertToRelativeAbundance=FALSE` - boolean specifying if the value in the taxon table should be converted to per sample relative abundance values; default is FALSE
+- `get_ncbi_ids()`
+  - `taxonomy=` - string specifying the taxonomy name that will be used to search for the respective NCBI ID
+  - `target_region=` - the amplicon target region to analyze; options are "16S", "18S", or "ITS"
+- `find_bad_taxa()`
+  - `cnd=` - specifies the error condition to catch when running the `ancombc2()` function
+- `ancombc2()`
+  - `data=` - specifies the treeSummarizedExperiment containing the feature, taxonomy and metdata to be analyzed using ancombc2
+- `gm_mean()`
+  - `x=` - a numeric vector specifying the values to calculate the geometirc mean on
+  - `na.rm=TRUE` - boolean specifying if NAs should be removed prior to calculating the geometirc mean; default is TRUE  
+
+**Input Data:** 
+
+*No input data required*
 
 **Output Data:**
 
-* `custom_palette` (character vector defining a custom color palette for coloring plots)
-* `publication_format` (custom ggplot theme for plotting)
+* `custom_palette` (variable containing a character vector defining a custom color palette for coloring plots)
+* `publication_format` (variable specifying the custom ggplot theme for plotting)
+* *several functions, indicated in the Function Parameter Definitions above, that will be called in the following pipeline steps*  
 
 <br>
 
@@ -1243,7 +1236,7 @@ publication_format <- theme_bw() +
 custom_palette  <- {COLOR_VECTOR}
 groups_colname <- "groups"
 sample_colname <- "Sample Name"
-metadata_file <- file.path("amplicon_runsheet.csv")
+metadata_file <- file.path("{OSD-Accession-ID}_AmpSeq_v{version}_runsheet.csv")
 features_file <- file.path("counts_GLAmpSeq.tsv")
 taxonomy_file <- file.path("taxonomy_GLAmpSeq.tsv")
 
@@ -1303,27 +1296,27 @@ taxonomy_table <-  read.table(file = taxonomy_file, header = TRUE,
 
 **Parameter Definitions:**
 
-*	`groups_colname` - name of group column in metadata to be analyzed
-* `sample_colname` - name of column in metadata containing the sample names in the feature table
+*	`groups_colname` - variable containing the name of the column in the metadata table containing the group names
+* `sample_colname` - variable contianing the name of the column in the metadata table containing the sample names
 
 **Input Data:**
 
-* {OSD-Accession-ID}_AmpSeq_v{version}_runsheet.csv (path to the comma-separated sample metadata file with the group/treatment to be analyzed, output from [Step 6a](#6a-create-sample-runsheet))
-*	counts_GLAmpSeq.tsv (path to the tab separated samples feature table, i.e. ASV or OTU table, output from [Step 5g](#5g-generating-and-writing-standard-outputs))
-* taxonomy_GLAmpSeq.tsv (path to a feature taxonomy table, i.e. ASV taxonomy table, output from [Step 5g](#5g-generating-and-writing-standard-outputs))
+* {OSD-Accession-ID}_AmpSeq_v{version}_runsheet.csv (a comma-separated sample metadata file containing sample group information, output from [Step 6a](#6a-create-sample-runsheet))
+*	counts_GLAmpSeq.tsv (a tab separated samples feature table (i.e. ASV or OTU table) containing feature counts, output from [Step 5g](#5g-generating-and-writing-standard-outputs))
+* taxonomy_GLAmpSeq.tsv (a tab separated feature taxonomy table containing ASV taxonomy assignments, output from [Step 5g](#5g-generating-and-writing-standard-outputs))
 * `custom_palette` (a color palette, output from [Set Variables](#set-variables))
 
 **Output Data:**
 
-* `metadata` (tibble of sample metadata with the group/treatment to be analyzed)
-* `feature_table` (data.frame of sample features, i.e. ASV counts dataframe)
-* `taxonomy_table` (data.frame of the feature taxonomy table, i.e. ASV taxonomy dataframe)
-* `sample_info_tab` (data.frame of sample information, i.e. a subset of sample metadata)
-* `values` (character vector of unique color values)
-* `sample_names` (character vector of sample names)
-* `deseq2_sample_names` (character vector of sample names for deseq2)
-* `group_colors` (named character vector of colors for each group)
-* `group_levels` (unique group levels within `groups_colname` to be compared)
+* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns)
+* `feature_table` (variable containing a samples feature dataframe (i.e. ASV) with feature counts)
+* `taxonomy_table` (variable containing a feature taxonomy dataframe containing ASV taxonomy assignments)
+* `sample_info_tab` (variable containing a subset of the metadata dataframe with samples as row names and group names and group colors as columns)
+* `values` (variable containing a character vector of unique color values for each group)
+* `sample_names` (variable containing a character vector of sample names)
+* `deseq2_sample_names` (variable containing a character vector of unique sample names)
+* `group_colors` (variable containing a named character vector of colors for each group)
+* `group_levels` (variable containing a character vector of unique group names)
 
 <br>
 
@@ -1400,7 +1393,7 @@ taxonomy_table[,"species"] <- species
 common_ids <- intersect(rownames(feature_table), rownames(taxonomy_table))
 
 # Subset the feature and taxonomy tables to contain 
-# only features found in both table
+# only features found in both tables
 feature_table <- feature_table[common_ids,]
 taxonomy_table <- taxonomy_table[common_ids,]
 ```
