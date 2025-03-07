@@ -368,16 +368,21 @@ tcounts$group <- sampleTable$condition[match(rownames(tcounts), rownames(sampleT
 agg_means <- aggregate(. ~ group, data = tcounts, FUN = mean, na.rm = TRUE)
 agg_stdev <- aggregate(. ~ group, data = tcounts, FUN = sd, na.rm = TRUE)
 # Extract group names
-group_names <- agg_means$group
+group_ids <- agg_means$group
 # Remove the 'group' column and transpose to match expected structure
 group_means <- as.data.frame(t(agg_means[-1]))
 group_stdev <- as.data.frame(t(agg_stdev[-1]))
+# Get cleaned group names
+orig_group_names <- group_names[match(group_ids, group)]
 # Interleave means and stdevs for each group
 group_stats <- data.frame(matrix(ncol = 0, nrow = nrow(group_means)))
-for (i in seq_along(group_names)) {
-    group <- group_names[i]
-    group_stats[paste0("Group.Mean_(", group, ")")] <- group_means[,i]
-    group_stats[paste0("Group.Stdev_(", group, ")")] <- group_stdev[,i]
+for (i in seq_along(group_ids)) {
+    # Create column names with cleaned group names
+    mean_colname <- paste0("Group.Mean_", orig_group_names[i])
+    stdev_colname <- paste0("Group.Stdev_", orig_group_names[i])
+    # Add columns
+    group_stats[[mean_colname]] <- group_means[,i]
+    group_stats[[stdev_colname]] <- group_stdev[,i]
 }
 ### Add computed group means and standard deviations to output_table ###
 output_table <- cbind(output_table, group_stats)

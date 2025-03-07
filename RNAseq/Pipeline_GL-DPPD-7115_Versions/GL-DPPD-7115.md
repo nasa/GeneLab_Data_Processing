@@ -1039,11 +1039,9 @@ annotations_link <- org_table[org_table$species == organism, "genelab_annots_lin
 
 ### Set your working directory to the directory where you will execute your DESeq2 script from ###
 setwd(file.path(work_dir))
-
 ```
 
 **Input Data:**
-
 
 - {GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv (runsheet, output from [Step 8a](#8a-create-sample-runsheet))
 - `organism` (name of organism samples were derived from, found in the species column of [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file)
@@ -1091,7 +1089,9 @@ names(group) <- group_names
 rm(group_names)
 
 ### Format contrasts table, defining pairwise comparisons for all groups ###
-contrast.names <- combn(levels(factor(names(group))),2) ## generate matrix of pairwise group combinations for comparison
+contrast.names <- combn(levels(factor(names(group))),2)
+
+## generate matrix of pairwise group combinations for comparison
 contrasts <- apply(contrast.names, MARGIN=2, function(col) sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", stringr::str_sub(col, 2, -2))))) # limited make.names call for each group (also removes leading parentheses)
 contrast.names <- c(paste(contrast.names[1,],contrast.names[2,],sep = "v"),paste(contrast.names[2,],contrast.names[1,],sep = "v")) ## format combinations for output table files names
 contrasts <- cbind(contrasts,contrasts[c(2,1),])
@@ -1130,6 +1130,7 @@ counts <- counts[, rownames(study)]
 ```
 
 **Input Data:**
+
 - FeatureCounts_GLbulkRNAseq.tsv (table containing raw read counts per gene for each sample, output from [Step 7a](#7a-count-aligned-reads-with-featurecounts) or from [Step 7dii](#7dii-filter-rrna-genes-from-gene-counts) when using rRNA-removed count data)
 - `study` (data frame containing sample condition values, output from [Step 8c](#8c-configure-metadata-sample-grouping-and-group-comparisons))
 
@@ -1307,18 +1308,24 @@ agg_means <- aggregate(. ~ group, data = tcounts, FUN = mean, na.rm = TRUE)
 agg_stdev <- aggregate(. ~ group, data = tcounts, FUN = sd, na.rm = TRUE)
 
 ### Save group names ###
-group_names <- agg_means$group
+group_ids <- agg_means$group
 
 ### Remove the 'group' column and transpose to match expected structure ###
 group_means <- as.data.frame(t(agg_means[-1]))
 group_stdev <- as.data.frame(t(agg_stdev[-1]))
 
-# Interleave means and stdevs for each group
+### Get cleaned group names ###
+orig_group_names <- group_names[match(group_ids, group)]
+
+#### Interleave means and stdevs for each group ###
 group_stats <- data.frame(matrix(ncol = 0, nrow = nrow(group_means)))
-for (i in seq_along(group_names)) {
-    group <- group_names[i]
-    group_stats[paste0("Group.Mean_(", group, ")")] <- group_means[,i]
-    group_stats[paste0("Group.Stdev_(", group, ")")] <- group_stdev[,i]
+for (i in seq_along(group_ids)) {
+    # Create column names with cleaned group names
+    mean_colname <- paste0("Group.Mean_", orig_group_names[i])
+    stdev_colname <- paste0("Group.Stdev_", orig_group_names[i])
+    # Add columns
+    group_stats[[mean_colname]] <- group_means[,i]
+    group_stats[[stdev_colname]] <- group_stdev[,i]
 }
 
 ### Add computed group means and standard deviations to output_table ###
@@ -1345,7 +1352,6 @@ if (!(gene_id_type %in% colnames(annot)) || !(gene_id_type %in% colnames(output_
     ) %>%
     select(all_of(gene_id_type), everything())  # Make sure main gene ID is first column
 }
-
 ```
 
 **Input Data:**

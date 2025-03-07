@@ -1187,39 +1187,28 @@ library(BiocParallel)
 BPPARAM <- SerialParam()
 
 ### Define which organism is used in the study - this should be consistent with the species name in the "species" column of the GL-DPPD-7110-A_annotations.csv file ###
-
 organism <- "organism_that_samples_were_derived_from"
 
-
 ### Define the location of the input data and where the output data will be printed to ###
-
 runsheet_path="/path/to/directory/containing/runsheet.csv/file" ## This is the runsheet created in Step 9a above
 work_dir="/path/to/working/directory/where/script/is/executed/from" 
 input_counts="/path/to/directory/containing/RSEM/counts/files"
 norm_output="/path/to/normalized/counts/output/directory"
 DGE_output="/path/to/DGE/output/directory"
 
-
 ### Pull in the GeneLab annotation table (GL-DPPD-7110-A_annotations.csv) file ###
-
 org_table_link <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
 
 org_table <- read.table(org_table_link, sep = ",", header = TRUE)
 
-
 ### Define the link to the GeneLab annotation table for the organism of interest ###
-
 annotations_link <- org_table[org_table$species == organism, "genelab_annots_link"]
 
-
 ### Set your working directory to the directory where you will execute your DESeq2 script from ###
-
 setwd(file.path(work_dir))
-
 ```
 
 **Input Data:**
-
 
 * {GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv (runsheet, output from [Step 9a](#9a-create-sample-runsheet))
 * `organism` (name of organism samples were derived from, found in the species column of [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file)
@@ -1249,20 +1238,14 @@ compare_csv_from_runsheet <- function(runsheet_path) {
     return(result)
 }
 
-
 ### Load metadata from runsheet csv file ###
-
 compare_csv <- compare_csv_from_runsheet(runsheet_path)
 
-
 ### Create data frame containing all samples and respective factors ###
-
 study <- compare_csv[, -1, drop=FALSE] # Exclude sample_id
 rownames(study) <- compare_csv$sample_id
 
-
 ### Format groups and indicate the group that each sample belongs to ###
-
 group <- if (ncol(study) >= 2) {
     apply(study, 1, paste, collapse = " & ")
 } else {
@@ -1273,16 +1256,15 @@ group <- sub("^BLOCKER_", "", make.names(paste0("BLOCKER_", group))) # group nam
 names(group) <- group_names
 rm(group_names)
 
-
 ### Format contrasts table, defining pairwise comparisons for all groups ###
+contrast.names <- combn(levels(factor(names(group))),2)
 
-contrast.names <- combn(levels(factor(names(group))),2) ## generate matrix of pairwise group combinations for comparison
+## generate matrix of pairwise group combinations for comparison
 contrasts <- apply(contrast.names, MARGIN=2, function(col) sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", stringr::str_sub(col, 2, -2))))) # limited make.names call for each group (also removes leading parentheses)
 contrast.names <- c(paste(contrast.names[1,],contrast.names[2,],sep = "v"),paste(contrast.names[2,],contrast.names[1,],sep = "v")) ## format combinations for output table files names
 contrasts <- cbind(contrasts,contrasts[c(2,1),])
 colnames(contrasts) <- contrast.names
 rm(contrast.names) 
-
 ```
 
 **Input Data:**
@@ -1329,6 +1311,7 @@ txi.rsem$length[txi.rsem$length == 0] <- 1
 ```
 
 **Input Data:**
+
 * *genes.results (RSEM counts per gene, output from [Step 8a](#8a-count-aligned-reads-with-rsem) or from [Step 8dii](#8dii-filter-rrna-genes-from-rsem-genes-results) when using rRNA-removed count data)
 * `study` (data frame containing sample condition values, output from [Step 9c](#9c-create-study-group-and-contrasts))
 
@@ -1396,7 +1379,7 @@ handle_technical_replicates <- function(sampleTable) {
     return(new_sampleTable)
 }
 
-# Apply the technical replicate handling
+### Apply the technical replicate handling to the sample table ###
 sampleTable <- handle_technical_replicates(sampleTable)
 
 # Update the counts matrix to match the new sample table
@@ -1463,7 +1446,8 @@ res_lrt <- results(dds_lrt)
 
 ```R
 ### Initialize output table with normalized counts ###
-output_table <- tibble::rownames_to_column(normCounts, var = "ENSEMBL")
+gene_id_type <- "ENSEMBL"
+output_table <- tibble::rownames_to_column(normCounts, var = gene_id_type)
 
 ### Iterate through Wald Tests to generate pairwise comparisons of all groups ###
 compute_contrast <- function(i) {
@@ -1493,51 +1477,67 @@ output_table <- cbind(output_table, res_df)
 
 ### Add summary statistics ###
 output_table$All.mean <- rowMeans(normCounts, na.rm = TRUE)
-output_table$All.stdev <- rowSds(as.matrix(normCounts), na.rm = TRUE)
+output_table$All.stdev <- rowSds(as.matrix(normCounts), na.rm = TRUE, useNames = FALSE)
 output_table$LRT.p.value <- res_lrt@listData$padj
 
 ### Add group-wise statistics ###
 tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- names(group)
+tcounts$group <- sampleTable$condition[match(rownames(tcounts), rownames(sampleTable))]
 
-# Calculate group means and standard deviations
-group_means <- as.data.frame(t(aggregate(. ~ group, data = tcounts, mean)))
-group_stdev <- as.data.frame(t(aggregate(. ~ group, data = tcounts, sd)))
+### Aggregate group means and standard deviations ###
+agg_means <- aggregate(. ~ group, data = tcounts, FUN = mean, na.rm = TRUE)
+agg_stdev <- aggregate(. ~ group, data = tcounts, FUN = sd, na.rm = TRUE)
 
-# Remove group name rows
-group_means <- group_means[-1,]
-group_stdev <- group_stdev[-1,]
+### Save group names ###
+group_ids <- agg_means$group
 
-# For each group, add mean and stdev columns
-for (group_name in names(group)) {
-    mean_col <- paste0("Group.Mean_(", group_name, ")")
-    stdev_col <- paste0("Group.Stdev_(", group_name, ")")
-    output_table[[mean_col]] <- group_means[, paste0("Group.Mean_", group_means['group',])]
-    output_table[[stdev_col]] <- group_stdev[, paste0("Group.Stdev_", group_stdev['group',])]
+### Remove the 'group' column and transpose to match expected structure ###
+group_means <- as.data.frame(t(agg_means[-1]))
+group_stdev <- as.data.frame(t(agg_stdev[-1]))
+
+### Get cleaned group names ###
+orig_group_names <- group_names[match(group_ids, group)]
+
+#### Interleave means and stdevs for each group ###
+group_stats <- data.frame(matrix(ncol = 0, nrow = nrow(group_means)))
+for (i in seq_along(group_ids)) {
+    # Create column names with cleaned group names
+    mean_colname <- paste0("Group.Mean_", orig_group_names[i])
+    stdev_colname <- paste0("Group.Stdev_", orig_group_names[i])
+    # Add columns
+    group_stats[[mean_colname]] <- group_means[,i]
+    group_stats[[stdev_colname]] <- group_stdev[,i]
 }
+
+### Add computed group means and standard deviations to output_table ###
+output_table <- cbind(output_table, group_stats)
 
 ### Read in GeneLab annotation table for the organism of interest ###
 annot <- read.table(annotations_link, 
     sep = "\t", 
     header = TRUE, 
     quote = "", 
-    comment.char = "", 
-    row.names = 1
+    comment.char = ""
 )
 
 ### Combine annotations table and the DGE table ###
-output_table <- merge(annot, output_table, by='row.names', all.y=TRUE)
-output_table <- annot %>%
+# If gene ID column is missing from either table, just write the original DGE table
+if (!(gene_id_type %in% colnames(annot)) || !(gene_id_type %in% colnames(output_table))) {
+  warning(paste("Gene ID column", gene_id_type, "not found in both tables."))
+} else {
+  ### Combine annotations with data
+  output_table <- annot %>%
     merge(output_table,
-        by = params$gene_id_type,
-        all.y = TRUE
+          by = gene_id_type,
+          all.y = TRUE 
     ) %>%
-    select(all_of(params$gene_id_type), everything())
-
+    select(all_of(gene_id_type), everything())  # Make sure main gene ID is first column
+}
 ```
 
 **Input Data:**
 
+- `gene_id_type` (Gene identifier type, e.g. ENSEMBL, used to merge the annotations with the DGE results)
 * `normCounts` (data frame of normalized counts, output from [Step 9e](#9e-perform-dge-analysis))
 * `res_lrt` (results object from likelihood ratio test, output from [Step 9e](#9e-perform-dge-analysis))
 * `contrasts` (matrix defining pairwise comparisons, output from [Step 9c](#9c-configure-metadata-sample-grouping-and-group-comparisons))
