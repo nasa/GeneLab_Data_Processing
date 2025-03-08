@@ -318,12 +318,12 @@ Bowtie 2 genome reference, which consists of the following files:
 
 ```bash
 bowtie2 -x /path/to/bowtie2/index \
- -a \ 
  --threads NumberOfThreads \
  --minins 10 \
  --maxins 1000 \
  -1 /path/to/trimmed_forward_reads \
  -2 /path/to/trimmed_reverse_reads \
+ -a \
  --un-conc-gz <sample_id>.unmapped.fastq.gz \  # For paired-end data
  # --un-gz <sample_id>.unmapped.fastq.gz \     # For single-end data
  -S /path/to/bowtie2/output/directory/<sample_id>.sam \
@@ -332,13 +332,13 @@ bowtie2 -x /path/to/bowtie2/index \
 
 **Parameter Definitions:**
 
-- `-x` – specifies the path to the Bowtie 2 index prefix
-- `-a` – specifies that Bowtie 2 should report all alignments for each read instead of just the primary (best) alignment
+- `-x` – specifies the path to the Bowtie2 index prefix
 - `--threads` – number of threads to use for alignment
 - `--minins` – minimum fragment length for valid paired-end alignments
 - `--maxins` – maximum fragment length for valid paired-end alignments
 - `-1` – path to input forward reads (R1)
 - `-2` – path to input reverse reads (R2) (omit -1/-2 and use `-U` for single-end reads)
+- `-a` - instructs Bowtie2 to report all alignments found
 - `--un-conc-gz` – write paired-end unmapped reads to gzipped FASTQ file (use for paired-end data)
 - `--un-gz` – write single-end unmapped reads to gzipped FASTQ file (use for single-end data)
 - `-S` – write alignments to SAM format file
@@ -761,7 +761,8 @@ featureCounts -p \
   -D 1000 \
   -P \
   -B \
-  --primary \
+  -M \
+  --fraction \
   -T NumberOfThreads \
   -a /path/to/annotation/gtf/file \
   -t ${GTF_FEATURES} \
@@ -778,7 +779,8 @@ featureCounts -p \
 - `-D` – maximum fragment length (omit for single-end data)
 - `-P` – specifies that fragment length should be checked against minimum and maximum thresholds when counting fragments (omit for single-end data)
 - `-B` – specifies that only fragments with both ends successfully aligned should be considered for counting (omit for single-end data)
-- `--primary` – specifies that only primary alignments should be counted
+- `-M` - specifies to count all mapped reads (or fragments for PE data), including multi-mapped reads (or fragments)
+- `--fraction` - specifies to assign fractional counts to multi-mapped reads (or fragments)
 - `-T` – number of threads to use
 - `-a` – path to genome annotation GTF file
 - `-t` – specifies the feature types to be counted, e.g. gene, exon, intron, etc.
