@@ -29,7 +29,8 @@ process FEATURECOUNTS {
       -a ${genomeGtf} \\
       -t "\${GTF_FEATURES}" \\
       -s ${strandOption} \\
-      --primary \\
+      -M \\
+      --fraction \\
       -o "FeatureCounts${params.assay_suffix}.tsv" \\
       \$bam_list
 
