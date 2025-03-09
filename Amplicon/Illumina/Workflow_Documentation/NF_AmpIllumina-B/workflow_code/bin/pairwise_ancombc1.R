@@ -185,6 +185,8 @@ process_taxonomy <- function(taxonomy, prefix='\\w__') {
     #delete the taxonomy prefix
     taxonomy[,rank] <- gsub(pattern = prefix, x = taxonomy[, rank],
                             replacement = '')
+    # Delete _numuber at the end of taxonomy names inserted by the new version of DECIPHER
+    taxonomy[,rank] <- gsub(pattern ="_[0-9]+$", x = taxonomy[, rank], replacement = '')
     indices <- which(is.na(taxonomy[,rank]))
     taxonomy[indices, rank] <- rep(x = "Other", times=length(indices)) 
     #replace empty cell
@@ -274,7 +276,7 @@ samples_column <- opt[["samples-column"]] # "Sample Name"
 threads <- opt[["cpus"]] # 8
 remove_struc_zero <- opt[["remove-structural-zeros"]] # FALSE
 metadata_file <- opt[["metadata-table"]]
-taxonomy_file <-  opt[["taxonomy-table"]]
+taxonomy_file <- opt[["taxonomy-table"]]
 feature_table_file <- opt[["feature-table"]]
 feature <- opt[["feature-type"]]   # "ASV"
 target_region <- opt[["target-region"]] # 16S
@@ -430,7 +432,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
   # it is recommended to set to TRUE if your sample size is small and the number of expected differentially abundant taxa is large.
   
   out <-  ancombc(data = tse_sub, assay_name = "counts", 
-                  tax_level = NULL, phyloseq = NULL, 
+                  tax_level = NULL, 
                   formula = group, 
                   p_adj_method = "fdr", prv_cut = prevalence_cutoff,
                   lib_cut = library_cutoff, 

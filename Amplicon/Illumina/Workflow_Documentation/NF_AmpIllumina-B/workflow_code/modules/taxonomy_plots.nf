@@ -35,7 +35,7 @@ process PLOT_TAXONOMY  {
                   --samples-column '${meta.samples}' \\
                   --assay-suffix  '${meta.assay_suffix}' \\
                   --output-prefix  '${meta.output_prefix}'
-                  
+                 
         Rscript -e "VERSIONS=sprintf('tidyverse %s\\nglue %s\\ntools %s\\n',  \\
                                     packageVersion('tidyverse'), \\
                                     packageVersion('glue'), \\

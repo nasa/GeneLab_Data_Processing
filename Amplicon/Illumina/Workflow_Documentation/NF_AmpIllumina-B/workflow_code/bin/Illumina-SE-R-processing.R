@@ -133,20 +133,20 @@ dna <- DNAStringSet(getSequences(seqtab.nochim))
     # downloading reference R taxonomy object (at some point this will be stored somewhere on GeneLab's server and we won't download it, but should leave the code here, just commented out)
 cat("\n\n  Downloading reference database...\n\n")
 if ( target_region == "16S" ) { 
-    download.file("https://figshare.com/ndownloader/files/46245217", "SILVA_SSU_r138_2019.RData")
+    download.file("https://figshare.com/ndownloader/files/52846199", "SILVA_SSU_r138_2_2024.RData")
     # loading reference taxonomy object
-    load("SILVA_SSU_r138_2019.RData")
+    load("SILVA_SSU_r138_2_2024.RData")
     # removing downloaded file
-    #file.remove("SILVA_SSU_r138_2019.RData")
+    #file.remove("SILVA_SSU_r138_2_2024.RData")
     ranks <- c("domain", "phylum", "class", "order", "family", "genus", "species")
 
 } else if (target_region == "ITS" ) {
 
-    download.file("https://figshare.com/ndownloader/files/49181545", "UNITE_v2023_July2023.RData")
+    download.file("https://figshare.com/ndownloader/files/52846346", "UNITE_v2024_April2024.RData")
     # loading reference taxonomy object
-    load("UNITE_v2023_July2023.RData")
+    load("UNITE_v2024_April2024.RData")
     # removing downloaded file
-    #file.remove("UNITE_v2023_July2023.RData")
+    #file.remove("UNITE_v2024_April2024.RData")
     ranks <- c("kingdom", "phylum", "class", "order", "family", "genus", "species")
 
 } else if (target_region == "18S" ) {

@@ -195,6 +195,8 @@ process_taxonomy <- function(taxonomy, prefix='\\w__') {
     #delete the taxonomy prefix
     taxonomy[,rank] <- gsub(pattern = prefix, x = taxonomy[, rank],
                             replacement = '')
+    # Delete _numuber at the end of taxonomy names inserted by the new version of DECIPHER
+    taxonomy[,rank] <- gsub(pattern ="_[0-9]+$", x = taxonomy[, rank], replacement = '')
     indices <- which(is.na(taxonomy[,rank]))
     taxonomy[indices, rank] <- rep(x = "Other", times=length(indices)) 
     #replace empty cell

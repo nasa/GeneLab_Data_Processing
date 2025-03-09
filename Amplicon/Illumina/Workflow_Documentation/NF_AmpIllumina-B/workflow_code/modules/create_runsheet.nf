@@ -21,8 +21,8 @@ process GET_RUNSHEET {
     script:
         """
         create_runsheet.py --OSD ${accession} --target ${target_region}
-        GL-version | grep "GeneLab utils"| sed -E 's/^\\s+//' > versions.txt
-        echo "dptools v1.3.4" >> versions.txt
+        VERSION=`python -c 'import dp_tools; print(dp_tools.__version__)'`
+        echo "dptools v\${VERSION}" >> versions.txt
         python --version >> versions.txt 
         """
 }

@@ -7,12 +7,12 @@ import sys
 
 
 def create_config(target_region, raw_R1_suffix, raw_R2_suffix, trim_primers, input_file, min_cutadapt_len, primers_linked,
-                  discard_untrimmed, F_primer, R_primer, left_trunc, right_trunc, left_maxEE, right_maxEE, concatenate_reads_only,
-                  conda_genelab, conda_qc, conda_R, conda_cutadapt, conda_diversity, accession, assay_suffix, output_prefix, publishDir_mode,
+                  discard_untrimmed, anchored_primers, F_primer, R_primer, left_trunc, right_trunc, left_maxEE, right_maxEE, concatenate_reads_only,
+                  conda_dptools, conda_fastqc, conda_multiqc, conda_zip, conda_R, conda_cutadapt, conda_diversity, accession, assay_suffix, output_prefix, publishDir_mode,
                   primer_trimmed_R1_suffix, primer_trimmed_R2_suffix, filtered_R1_suffix, filtered_R2_suffix, output_dir, diff_abund_method,
                   group, samples_column, rarefaction_depth, errorStrategy, queueSize, default_cpus, default_memory, cutadapt_memory, R_cpus,
-                  R_memory, diversity_cpus, diversity_memory, container_genelab, container_fastqc, container_multiqc, container_cutadapt, 
-                  container_dada, container_ancom, container_diversity, singularity_cacheDir, remove_rare, prevalence_cutoff, library_cutoff, remove_struc_zeros):
+                  R_memory, diversity_cpus, diversity_memory, container_dptools, container_fastqc, container_multiqc, container_cutadapt, 
+                  container_dada, container_zip, container_diversity, singularity_cacheDir, conda_cacheDir,  remove_rare, prevalence_cutoff, library_cutoff, remove_struc_zeros):
     """ A function to create nextflow.config file by string interploation using the supplied arguements"""
 
     config =  \
@@ -23,7 +23,7 @@ params {{
     target_region = "{target_region}"
     raw_R1_suffix = "{raw_R1_suffix}"
     raw_R2_suffix = "{raw_R2_suffix}"
-    trim_primers  = "{trim_primers}" == "TRUE" ? true : false
+    trim_primers  = "{trim_primers}"
     
 
     // -------- Required only if --accession is false ---------------//
@@ -35,6 +35,7 @@ params {{
     min_cutadapt_len    = {min_cutadapt_len}
     primers_linked      = "{primers_linked}"
     discard_untrimmed   = "{discard_untrimmed}"
+    anchored_primers    = "{anchored_primers}"
     F_primer            = "{F_primer}"  == "null" ? null : "{F_primer}"
     R_primer            = "{R_primer}"  == "null" ? null : "{R_primer}"
 
@@ -50,11 +51,13 @@ params {{
     conda{{
           // Specify the paths to existing conda environments (/path/to/envs/genelab-utils)
           // leave as is if you want to create a new conda environment
-          genelab          = "{conda_genelab}" == "null" ? null :  "{conda_genelab}"     // /path/to/envs/genelab-utils
-          qc               = "{conda_qc}" == "null" ? null : "{conda_qc}"   // /path/to/envs/qc
-          R                = "{conda_R}" == "null" ? null : "{conda_R}"     // /path/to/envs/R
           cutadapt         = "{conda_cutadapt}" == "null" ? null :  "{conda_cutadapt}"  // /path/to/envs/cutadapt
           diversity        = "{conda_diversity}" == "null" ? null :  "{conda_diversity}"   // /path/to/envs/R_diversity
+          dp_tools         = "{conda_dptools}" == "null" ? null :  "{conda_dptools}"     // /path/to/envs/dp_tools
+          fastqc           = "{conda_fastqc}" == "null" ? null : "{conda_fastqc}"   // /path/to/envs/fastqc
+          multiqc          = "{conda_multiqc}" == "null" ? null : "{conda_multiqc}"   // /path/to/envs/multiqc
+          R                = "{conda_R}" == "null" ? null : "{conda_R}"     // /path/to/envs/R
+          zip              = "{conda_zip}" == "null" ? null :  "{conda_zip}"   // /path/to/envs/zip
       }}
 
 
@@ -122,13 +125,28 @@ profiles {{
 
     conda {{   
         conda.enabled          = true
-        params.use_conda       = true               
+        params.use_conda       = true 
+        conda.channels         = 'conda-forge,bioconda' 
+        conda.cacheDir         = "{conda_cacheDir}" // local conda environments location
+        conda.createTimeout    = '2h' 
     }}
+
+
+    mamba {{
+        conda.enabled          = true
+        conda.useMamba         = true
+        conda.channels         = 'conda-forge,bioconda'
+        params.use_conda       = true
+        conda.cacheDir         = "{conda_cacheDir}" // local conda environments location
+        conda.createTimeout    = '2h'
+    }}
+
+
 
     singularity {{
         singularity.enabled    = true
         singularity.autoMounts = true
-        singularity.cacheDir   = "{singularity_cacheDir}"
+        singularity.cacheDir   = "{singularity_cacheDir}" // local location of singularity images
         params.containerEngine = "singularity"
     }}
 
@@ -160,26 +178,36 @@ process {{
 
 //************************* Accession runsheet and input file retrieval  **************************************//
     withName: GET_RUNSHEET {{
-                  conda = {{params.conda.genelab ? params.conda.genelab : "envs/genelab.yaml"}}
-                  container = "{container_genelab}"
+                  conda = {{params.conda.dp_tools ? params.conda.dp_tools : "envs/dp_tools.yaml"}}
+                  container = "{container_dptools}"
                   publishDir = [path: params.genelab_dir, mode: params.publishDir_mode]
             }}
 
 //********************************** Read quality control and assesment ********************************************//
     withLabel: fastqc {{
-                  conda = {{params.conda.qc ? params.conda.qc : "envs/qc.yaml"}}
+                  conda = {{params.conda.fastqc ? params.conda.fastqc : "envs/fastqc.yaml"}}
                   container = "{container_fastqc}"
             }}
+
+
+    withLabel: zip {{
+                  conda = {{params.conda.zip ? params.conda.zip : "envs/zip.yaml"}}
+                  container = "{container_zip}"
+           }}
+
 
     withName: RAW_FASTQC {{                  
                   publishDir = [path: params.raw_reads_dir, mode: params.publishDir_mode]
             }}
 
     withName: "RAW_MULTIQC|TRIMMED_MULTIQC" {{
-                  conda = {{params.conda.qc ? params.conda.qc : "envs/qc.yaml"}}
+                  conda = {{params.conda.multiqc ? params.conda.multiqc : "envs/multiqc.yaml"}}
                   container = "{container_multiqc}"
-                  publishDir = [path: params.fastqc_out_dir, mode: params.publishDir_mode]
             }}
+
+    withName: "ZIP_MULTIQC_RAW|ZIP_MULTIQC_TRIMMED" {
+                  publishDir = [path: params.fastqc_out_dir, mode: params.publishDir_mode]
+            }
 
     withName: "CUTADAPT|COMBINE_CUTADAPT_LOGS_AND_SUMMARIZE" {{
                   conda = {{params.conda.cutadapt ?  params.conda.cutadapt : "envs/cutadapt.yaml"}}
@@ -192,7 +220,7 @@ process {{
                   publishDir = [path: params.filtered_reads_dir, mode: params.publishDir_mode ]
             }} 
 
-//********************************** ASV table creation********************************************//
+//********************************** ASV table creation ********************************************//
     withName: "RUN_R_TRIM|RUN_R_NOTRIM" {{
                   conda = {{params.conda.R ?  params.conda.R : "envs/R.yaml"}}
                   container = "{container_dada}"
@@ -205,8 +233,6 @@ process {{
           }}
 
     withName: ZIP_BIOM {{
-                  conda = {{params.conda.qc ? params.conda.qc : "envs/qc.yaml"}}
-                  container = "{container_multiqc}"
                   publishDir = [path: "${{params.final_outputs_dir}}${{params.output_prefix}}", mode: params.publishDir_mode]
             }}
 
@@ -219,12 +245,6 @@ process {{
                   publishDir = [path: "${{params.final_outputs_dir}}${{params.output_prefix}}", mode: params.publishDir_mode]
            }}
 
-
-    withName: ANCOMBC {{
-
-             container = "{container_ancom}"
-
-             }}
 
     withName: SOFTWARE_VERSIONS {{
                   publishDir = [path: params.metadata_dir, mode: params.publishDir_mode]
@@ -444,6 +464,13 @@ def main():
                         help='If set to TRUE, instructs cutadapt to remove reads if the primers were not found in the expected location; if FALSE, these reads are kept. Default: TRUE',
                         type=str)
 
+
+    parser.add_argument('--anchored-primers',
+                        choices=['TRUE', 'FALSE'],
+                        default='TRUE',
+                        help='If set to TRUE, primers are prefixed with a caret (^) that informs cutadapt that the primers are anchored; if FALSE, then the primers are not  prefixed with a caret (^). Default: TRUE',
+                        type=str)
+
     parser.add_argument('--left-trunc',
                         default=0,
                         help='Specifies the length of the forwards reads, bases beyond this length will be truncated and reads shorter than this length are discarded. Default: 0 (no truncation)',
@@ -550,8 +577,8 @@ def main():
                         type=int)
     
     parser.add_argument('--R-memory',
-                        default="20 GB",
-                        help="Amount of memory R uses to run Dada2 and DECIPHER. Default: '20 GB' ",
+                        default="12 GB",
+                        help="Amount of memory R uses to run Dada2 and DECIPHER. Default: '12 GB' ",
                         metavar='R_memory',
                         type=str)
 
@@ -573,17 +600,31 @@ def main():
                         metavar='cutadapt_memory',
                         type=str)
         
-    parser.add_argument('--conda-genelab',
-                        metavar='/path/to/envs/genelab-utils',
+    parser.add_argument('--conda-dptools',
+                        metavar='/path/to/envs/dp_tools',
                         default='null', 
-                        help="Path to a conda environment containing genlab-utils. Default: null",
+                        help="Path to a conda environment containing dptools, zip and unzip. Default: null",
                         type=str)
     
-    parser.add_argument('--conda-qc',
-                        metavar='/path/to/envs/qc',
+    parser.add_argument('--conda-fastqc',
+                        metavar='/path/to/envs/fastqc',
                         default='null', 
-                        help="Path to a conda environment containing fastqc, multiqc, zip and python. Default: null",
+                        help="Path to a conda environment containing fastqc. Default: null",
                         type=str)
+
+
+    parser.add_argument('--conda-multiqc',
+                        metavar='/path/to/envs/multiqc',
+                        default='null',
+                        help="Path to a conda environment containing multiqc. Default: null",
+                        type=str)
+
+    parser.add_argument('--conda-zip',
+                        metavar='/path/to/envs/zip',
+                        default='null',
+                        help="Path to a conda environment containing zip. Default: null",
+                        type=str)
+
 
     parser.add_argument('--conda-R',
                         metavar='/path/to/envs/R',
@@ -603,12 +644,18 @@ def main():
                         help="Path to a conda environment containing R packages required for diversity and differential abundance testing. Default: null",
                         type=str)  
 
-    parser.add_argument('--container-genelab',
-                        default="olabiyi/genelab-utils:1.3.22",
-                        help="Genelab utils container to be used to download raw sequences and retrieve sample metadata. Default: olabiyi/genelab-utils:1.3.22",
-                        metavar='container_genelab',
+    parser.add_argument('--container-dptools',
+                        default="quay.io/nasa_genelab/dp_tools:1.3.6.1",
+                        help="dp_tools container to be used to download raw sequences and retrieve sample metadata. Default: quay.io/nasa_genelab/dp_tools:1.3.6.1",
+                        metavar='container_dptools',
                         type=str)
     
+    parser.add_argument('--container-zip',
+                        default="quay.io/nasa_genelab/zip:3.0",
+                        help="A docker container to be used to run zip. Default: quay.io/nasa_genelab/zip:3.0",
+                        metavar='container_zip',
+                        type=str)
+
     parser.add_argument('--container-fastqc',
                         default="staphb/fastqc:0.12.1",
                         help="A docker container to be used to run fastqc. Default: staphb/fastqc:0.12.1",
@@ -616,35 +663,36 @@ def main():
                         type=str)
     
     parser.add_argument('--container-multiqc',
-                        default="staphb/multiqc:1.19",
-                        help="A docker container to be used to run multiqc. Default: staphb/multiqc:1.19",
+                        default="quay.io/biocontainers/multiqc:1.27.1--pyhdfd78af_0",
+                        help="A docker container to be used to run multiqc. Default: quay.io/biocontainers/multiqc:1.27.1--pyhdfd78af_0",
                         metavar='container_multiqc',
                         type=str)
 
     parser.add_argument('--container-cutadapt',
-                        default="zavolab/cutadapt:1.16",
-                        help="A docker container to be used to run cutadapt. Default: zavolab/cutadapt:1.16",
+                        default="quay.io/biocontainers/cutadapt:5.0--py39hbcbf7aa_0",
+                        help="A docker container to be used to run cutadapt. Default: quay.io/biocontainers/cutadapt:5.0--py39hbcbf7aa_0",
                         metavar='container_cutadapt',
                         type=str)
     
     parser.add_argument('--container-dada',
-                        default="olabiyi/r-dada-decipher-biomformat:1.0",
-                        help="A docker container to be used to run dada2 and DECIPHER. Default: olabiyi/r-dada-decipher-biomformat:1.0",
+                        default="quay.io/nasa_genelab/r-dada-decipher-biomformat:1.1",
+                        help="A docker container to be used to run dada2 and DECIPHER. Default: quay.io/nasa_genelab/r-dada-decipher-biomformat:1.1",
                         metavar='container_dada',
                         type=str)
 
-    parser.add_argument('--container-ancom',
-                        default="quay.io/nasa_genelab/ancombc:2.6.0",
-                        help="A docker container containing ancombc v2.6.0 . Default: quay.io/nasa_genelab/ancombc:2.6.0",
-                        metavar='container_ancom',
-                        type=str)
-
     parser.add_argument('--container-diversity',
-                        default="quay.io/nasa_genelab/r-diversity:1.0",
-                        help="A docker container to be used to run diversity analysis. Default: quay.io/nasa_genelab/r-diversity:1.0 ",
+                        default="quay.io/nasa_genelab/r-diversity:1.1",
+                        help="A docker container to be used to run diversity analysis. Default: quay.io/nasa_genelab/r-diversity:1.1",
                         metavar='container_diversity',
                         type=str)
-    
+
+    parser.add_argument('--conda-cacheDir',
+                        default="conda/",
+                        help="A directory to store and retrieve conda environments. Default: conda/",
+                        metavar='conda_directory',
+                        type=str)
+
+
     parser.add_argument('--singularity-cacheDir',
                         default="singularity/",
                         help="A directory to store and retrieve singularity images. Default: singularity/",
@@ -701,16 +749,16 @@ def main():
 
     # Create nextflow.config
     config_file = create_config(args.target_region, args.raw_R1_suffix, args.raw_R2_suffix, args.trim_primers,
-                                args.input_file, args.min_cutadapt_len, args.primers_linked, args.discard_untrimmed, args.F_primer,
+                                args.input_file, args.min_cutadapt_len, args.primers_linked, args.discard_untrimmed, args.anchored_primers, args.F_primer,
                                 args.R_primer, args.left_trunc, args.right_trunc, args.left_maxEE, args.right_maxEE, 
-                                args.concatenate_reads_only, args.conda_genelab, args.conda_qc, args.conda_R, args.conda_cutadapt,
+                                args.concatenate_reads_only, args.conda_dptools, args.conda_fastqc, args.conda_multiqc, args.conda_zip, args.conda_R, args.conda_cutadapt,
                                 args.conda_diversity, args.accession, args.assay_suffix, args.output_prefix, args.publishDir_mode,
                                 args.primer_trimmed_R1_suffix, args.primer_trimmed_R2_suffix, args.filtered_R1_suffix, 
                                 args.filtered_R2_suffix, args.output_dir, args.diff_abund_method, args.group_column, args.samples_column,
                                 args.rarefaction_depth, args.errorStrategy, args.queueSize, args.default_cpus, args.default_memory,
                                 args.cutadapt_memory, args.R_cpus, args.R_memory, args.diversity_cpus, args.diversity_memory,
-                                args.container_genelab, args.container_fastqc, args.container_multiqc, args.container_cutadapt, 
-                                args.container_dada, args.container_ancom, args.container_diversity, args.singularity_cacheDir,
+                                args.container_dptools, args.container_fastqc, args.container_multiqc, args.container_cutadapt, 
+                                args.container_dada, args.container_zip, args.container_diversity, args.singularity_cacheDir, args.conda_cacheDir,
                                 args.remove_rare, args.prevalence_cutoff, args.library_cutoff, args.remove_structural_zeros)
 
     with open("nextflow.config", "w") as file:

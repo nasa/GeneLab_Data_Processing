@@ -31,7 +31,6 @@ process DESEQ  {
                   --target-region  '${meta.target_region}' \\
                   --prevalence-cutoff ${meta.prevalence_cutoff} \\
                   --library-cutoff  ${meta.library_cutoff} ${meta.rare}
-
         
         Rscript -e "VERSIONS=sprintf('DESeq2 %s\\n', packageVersion('DESeq2')); \\
                     write(x=VERSIONS, file='versions.txt', append=TRUE)"     

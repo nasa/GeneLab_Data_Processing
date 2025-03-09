@@ -39,7 +39,6 @@ process ALPHA_DIVERSITY {
                   --prevalence-cutoff ${meta.prevalence_cutoff} \\
                   --library-cutoff  ${meta.library_cutoff} ${meta.rare}
 
-                  
         Rscript -e "VERSIONS=sprintf('FSA %s\\nmultcompView %s\\nrstatix %s\\n',  \\
                                     packageVersion('FSA'), \\
                                     packageVersion('multcompView'), \\

@@ -42,9 +42,14 @@ export NXF_SINGULARITY_CACHEDIR=singularity/
 export TOWER_ACCESS_TOKEN=<ACCESS TOKEN>
 export TOWER_WORKSPACE_ID=<WORKSPACE ID>
 #nextflow run main.nf -resume -profile slurm,singularity --input_file PE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT  -with-tower ## Replace command with the command(s) you want to run ##
+
 #nextflow run main.nf -resume -profile slurm,conda --accession GLDS-487 --target_region 16S -with-tower 
+
 #python3 run_workflow.py --run --target-region 16S --input-file PE_file.csv --F-primer GTGCCAGCMGCCGCGGTAA --R-primer GGACTACHVGGGTWTCTAAT --profile slurm,singularity --singularity-cacheDir /path/to/singularity_images/ --extra 'with-tower' --R-memory '20 GB'
 python3 run_workflow.py --run --target-region 16S --accession GLDS-487 --profile slurm,singularity --singularity-cacheDir /path/to/singularity_images/ --extra 'with-tower' --R-memory '20 GB'
+
+#nextflow -C post_processing.config run post_processing.nf -resume -profile mamba
+
 ## Add a time-stamp at the end of the job then calculate how long the job took to run in seconds, minutes, and hours ##
 echo ""
 end=$(date +%s)

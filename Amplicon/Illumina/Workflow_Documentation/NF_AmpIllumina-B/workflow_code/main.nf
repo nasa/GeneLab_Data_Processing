@@ -24,7 +24,7 @@ if (params.help) {
   println("   > nextflow run main.nf -resume -profile slurm,conda --input_file SE_file.csv --target_region 1TS --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT")
   println()
   println("Example 3: Run jobs locally in conda environments, supplying a GLDS or OSD accession, and specifying the path to an existing conda environment")
-  println("   > nextflow run main.nf -resume -profile conda --accession GLDS-487 --target_region 16S --conda.qc <path/to/existing/conda/environment>")
+  println("   > nextflow run main.nf -resume -profile conda --accession GLDS-487 --target_region 16S --conda.multiqc <path/to/existing/conda/environment>")
   println()
   println("Required arguments:")
   println("""   -profile [STRING] What profile should be used to run the workflow. Options are [singularity, docker, conda, slurm].
@@ -47,6 +47,7 @@ if (params.help) {
   println("	    --R_primer [STRING] Reverse primer sequence e.g. CTGCCTCCCGTAGGAGT. Default: null.")
   println("	    --min_cutadapt_len [INTEGER] What should be the minimum read length after quality trimming with cutadapt. Default: 130.")
   println("	    --primers_linked [STRING] Are the primers linked?. https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads. Default: TRUE. ")
+  println("         --anchored_primers [STRING] Are the primers anchored? https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads. Default: TRUE.")
   println("	    --discard_untrimmed [STRING] Should untrimmed reads be discarded? Any supplied string except TRUE will not discard them. Default: TRUE.")
   println()	
   println("Optional arguments:")  
@@ -95,11 +96,13 @@ if (params.help) {
   println("      --output_prefix [STRING] Unique name to tag onto output files. Default: empty string.")
   println()
   println("Paths to existing conda environments to use otherwise a new one will be created using the yaml file in envs/")
-  println("      --conda.qc [PATH] Path to a conda environment containing fastqc, multiqc, zip and python. Default: null.")
+  println("      --conda.fastqc [PATH] Path to a conda environment containing fastqc. Default: null.")
+  println("      --conda.multiqc [PATH] Path to a conda environment containing multiqc. Default: null.")
+  println("      --conda.zip [PATH] Path to a conda environment containing zip. Default: null.")
   println("      --conda.R [PATH] Path to a conda environment containing R along with the packages decipher and biomformat installed. Default: null.")
-  println("      --conda.genelab  [PATH] Path to a conda environment containing genlab-utils. Default: null.")
+  println("      --conda.dp_tools  [PATH] Path to a conda environment containing dp_tools. Default: null.")
   println("      --conda.cutadapt [PATH] Path to a conda environment containing cutadapt. Default: null.")
-  println("      --conda.diversity [PATH] Path to a conda environment containing R packages required for diversity and differential abundance testing. Default: null.")
+  println("      --conda.diversity [PATH] Path to a conda environment containing R packages required for diversity and differential abundance testing (ANCOMBC and DESeq2). Default: null.")
   println()
   print("Advanced users can edit the nextflow.config file for more control over default settings such container choice, number of cpus, memory per task etc.")
   exit 0
@@ -132,6 +135,7 @@ log.info """
          Reverse Primer: ${params.R_primer}
          Minimum Trimmed Reads length: ${params.min_cutadapt_len}
          Primers Are linked: ${params.primers_linked}
+         Primers Are Anchored: ${params.anchored_primers}
          Discard Untrimmed Reads: ${params.discard_untrimmed}
 
  
@@ -165,9 +169,11 @@ log.info """
          Output Prefix: ${params.output_prefix}
 
          Conda Environments:
-         qc: ${params.conda.qc}
+         fastqc: ${params.conda.fastqc}
+         multiqc: ${params.conda.multiqc}
+         zip: ${params.conda.zip}
          R: ${params.conda.R}
-         genelab: ${params.conda.genelab}
+         dp_tools: ${params.conda.dp_tools}
          cutadapt: ${params.conda.cutadapt}
          Diversity and Differential abundance : ${params.conda.diversity}
          """.stripIndent()
@@ -178,8 +184,22 @@ include { GET_RUNSHEET } from "./modules/create_runsheet.nf"
 
 // Read quality check and filtering
 include { FASTQC as RAW_FASTQC ; MULTIQC as RAW_MULTIQC  } from './modules/quality_assessment.nf'
-include { CUTADAPT; COMBINE_CUTADAPT_LOGS_AND_SUMMARIZE } from './modules/quality_assessment.nf'
+include { ZIP_MULTIQC as ZIP_MULTIQC_RAW } from './modules/quality_assessment.nf'
+
+
+if (params.anchored_primers == "TRUE"){
+ 
+    include { CUTADAPT_ANCHORED as CUTADAPT; COMBINE_CUTADAPT_LOGS_AND_SUMMARIZE } from './modules/cutadapt.nf'
+
+}else{
+
+    include { CUTADAPT_UNANCHORED as CUTADAPT; COMBINE_CUTADAPT_LOGS_AND_SUMMARIZE } from './modules/cutadapt.nf'
+
+}
+
 include { FASTQC as TRIMMED_FASTQC ; MULTIQC as TRIMMED_MULTIQC  } from './modules/quality_assessment.nf'
+include { ZIP_MULTIQC as ZIP_MULTIQC_TRIMMED } from './modules/quality_assessment.nf'
+
 
 // Cluster ASVs
 include { RUN_R_TRIM; RUN_R_NOTRIM } from './modules/run_dada.nf'
@@ -271,19 +291,23 @@ workflow {
 
     // Generating a file with sample ids on a new line
     file_ch.map{row -> "${row.sample_id}"}
-              .collectFile(name: "${projectDir}/unique-sample-IDs.txt", newLine: true)
+              .collectFile(name: "${launchDir}/unique-sample-IDs.txt", newLine: true)
               .set{sample_ids_ch}
 
     // Read quality check and trimming
     RAW_FASTQC(reads_ch)
     raw_fastqc_files = RAW_FASTQC.out.html.flatten().collect()
-
+    
     RAW_MULTIQC("raw", params.multiqc_config,raw_fastqc_files)
+    ZIP_MULTIQC_RAW("raw", RAW_MULTIQC.out.report_dir)
 
     RAW_FASTQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
     RAW_MULTIQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
+    ZIP_MULTIQC_RAW.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
-    if(params.trim_primers){
+     
+    trim_primers = params.trim_primers == "TRUE" ? true : false
+    if(trim_primers){
 
         if(!params.accession) primers_ch = Channel.value([params.F_primer, params.R_primer])
         CUTADAPT(reads_ch, primers_ch)
@@ -296,7 +320,9 @@ workflow {
         COMBINE_CUTADAPT_LOGS_AND_SUMMARIZE(counts, logs)
         TRIMMED_FASTQC(CUTADAPT.out.reads)
         trimmed_fastqc_files = TRIMMED_FASTQC.out.html.flatten().collect()
+        
         TRIMMED_MULTIQC("filtered", params.multiqc_config, trimmed_fastqc_files)
+        ZIP_MULTIQC_TRIMMED("filtered", TRIMMED_MULTIQC.out.report_dir)
 
         isPaired_ch = CUTADAPT.out.reads.map{ 
                                               sample_id, reads, isPaired -> isPaired
@@ -316,6 +342,7 @@ workflow {
         CUTADAPT.out.version | mix(software_versions_ch) | set{software_versions_ch}
         TRIMMED_FASTQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
         TRIMMED_MULTIQC.out.version | mix(software_versions_ch) | set{software_versions_ch}
+        ZIP_MULTIQC_TRIMMED.out.version | mix(software_versions_ch) | set{software_versions_ch}
         RUN_R_TRIM.out.version | mix(software_versions_ch) | set{software_versions_ch}
 
     }else{
