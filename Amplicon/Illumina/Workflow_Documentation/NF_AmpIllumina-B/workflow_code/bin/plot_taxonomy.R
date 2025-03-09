@@ -48,19 +48,29 @@ option_list <- list(
                     Deafault: 'Sample Name' ",
               metavar="Sample Name"),
   
-  make_option(c("-p", "--output-prefix"), type="character", default="", 
+  make_option(c("-o", "--output-prefix"), type="character", default="", 
               help="Unique name to tag onto output files. Default: empty string.",
               metavar=""),
-  
-  make_option(c("-c", "--abundance-cutoff"), type="numeric", default=0.2, 
-              help="A fraction defining how abundant features most be to be \
-                   analyzes. Default: 1/5. ",
-              metavar="0.2"),
   
   make_option(c("-r", "--remove-rare"), type="logical", default=FALSE, 
               help="Should rare features be filtered out?. \
                    Default: FALSE. ", action= "store_true",
               metavar="FALSE"),
+  
+  make_option(c("-p", "--prevalence-cutoff"), type="numeric", default=0.15, 
+              help="If --remove-rare, a numerical fraction between 0 and 1. Taxa with prevalences
+              (the proportion of samples in which the taxon is present) less 
+              than --prevalence-cutoff will be excluded in the analysis. 
+              Default is 0.15, i.e. exclude taxa / features that are not present
+              in at least 15% of the samples.",
+              metavar="0.15"),
+  
+  make_option(c("-l", "--library-cutoff"), type="numeric", default=100, 
+              help="If --remove-rare, a numerical threshold for filtering samples based on library
+              sizes. Samples with library sizes less than lib_cut will be 
+              excluded in the analysis. Default is 100. 
+              if you do not want to discard any sample then set to 0.",
+              metavar="100"),
   
   make_option(c("-a", "--assay-suffix"), type="character", default="_GLAmpSeq", 
               help="Genelab assay suffix.", metavar="GLAmpSeq"),
@@ -92,7 +102,7 @@ opt <- parse_args(opt_parser)
 
 
 if (opt$version) {
-  cat("taxonomy_plots.R version: ", version, "\n")
+  cat("plot_taxonomy.R version: ", version, "\n")
   options_tmp <- options(show.error.messages=FALSE)
   on.exit(options(options_tmp))
   stop()
@@ -114,7 +124,7 @@ if(is.null(opt[["taxonomy-table"]])) {
 }
 
 if(opt[["group"]] == "groups") {
-  message("Alpha diversity will be run on the default 'groups' column \n")
+  message("Taxonomy plots will be grouped by the default 'groups' column \n")
 }
 
 if(opt[["samples-column"]] == "Sample Name") {
@@ -125,7 +135,6 @@ if(opt[["samples-column"]] == "Sample Name") {
 
 library(glue)
 library(tools)
-library(here)
 library(tidyverse)
 
 
@@ -166,6 +175,8 @@ process_taxonomy <- function(taxonomy, prefix='\\w__') {
     #delete the taxonomy prefix
     taxonomy[,rank] <- gsub(pattern = prefix, x = taxonomy[, rank],
                             replacement = '')
+    # Delete _numuber at the end of taxonomy names inserted by the new version of DECIPHER
+    taxonomy[,rank] <- gsub(pattern ="_[0-9]+$", x = taxonomy[, rank], replacement = '')
     indices <- which(is.na(taxonomy[,rank]))
     taxonomy[indices, rank] <- rep(x = "Other", times=length(indices)) 
     #replace empty cell
@@ -364,16 +375,18 @@ custom_palette <- custom_palette[-c(21:23, grep(pattern = pattern_to_filter,
 metadata_file <- opt[["metadata-table"]]
 features_file <- opt[["feature-table"]]
 taxonomy_file <- opt[["taxonomy-table"]]
-taxonomy_plots_out_dir <- "taxonomy_plots/"
-if(!dir.exists(taxonomy_plots_out_dir)) dir.create(taxonomy_plots_out_dir)
 # Metadata group column name to compare
 groups_colname <- opt[["group"]]
 sample_colname  <- opt[["samples-column"]]
 output_prefix <- opt[["output-prefix"]]
 assay_suffix <- opt[["assay-suffix"]]
 remove_rare <- opt[["remove-rare"]]
-abundance_cutoff <- opt[["abundance-cutoff"]]
-
+# taxon / ASV prevalence cutoff
+prevalence_cutoff <- opt[["prevalence-cutoff"]] # 0.15 (15%)
+# sample / library read count cutoff
+library_cutoff <- opt[["library-cutoff"]]  # 100
+taxonomy_plots_out_dir <- "taxonomy_plots/"
+if(!dir.exists(taxonomy_plots_out_dir)) dir.create(taxonomy_plots_out_dir)
 
 
 # Read in processed data
@@ -388,10 +401,16 @@ feature_table <- read.table(file = features_file, header = TRUE,
                             row.names = 1, sep = "\t")
 
 if(remove_rare){
+  
+  # Remove samples with less than library-cutoff
+  message(glue("Dropping samples with less than {library_cutoff} read counts"))
+  feature_table <- feature_table[,colSums(feature_table) >= library_cutoff]
   # Remove rare ASVs
+  message(glue("Dropping features with prevalence less than {prevalence_cutoff * 100}%"))
   feature_table <- remove_rare_features(feature_table,
-                                        cut_off_percent=abundance_cutoff)
+                                        cut_off_percent = prevalence_cutoff)
 }
+
 
 # Taxonomy 
 taxonomy_table <-  read.table(file = taxonomy_file, header = TRUE,
@@ -410,7 +429,7 @@ taxonomy_table <- taxonomy_table[-which(is.na(taxonomy_table$domain)),]
 # Removing Chloroplast and Mitochondria Organelle DNA contamination
 asvs2drop <- taxonomy_table %>%
   unite(col="taxonomy",domain:species) %>%
-  filter(str_detect(taxonomy, "[Cc]hloroplast|[Mn]itochondria")) %>%
+  filter(str_detect(taxonomy, "[Cc]hloroplast|[Mm]itochondria")) %>%
   row.names()
 taxonomy_table <- taxonomy_table[!(rownames(taxonomy_table) %in% asvs2drop),]
 
@@ -498,7 +517,8 @@ walk2(.x = relAbundace_tbs_rare_grouped, .y = taxon_levels[-1],
                              
                           p <- ggplot(data =  df, mapping = aes(x= !!sym(x), y=!!sym(y) )) +
                                geom_col(aes(fill = !!sym(taxon_level) )) + 
-                               facet_wrap(facet_by, scales = "free", nrow = 1) +
+                               facet_wrap(facet_by, scales = "free",
+                                          nrow = 1, labeller = label_wrap_gen()) +
                                publication_format +
                                labs(x = x_lab , y = y_lab, fill= tools::toTitleCase(taxon_level)) + 
                                scale_fill_manual(values = custom_palette) +
@@ -564,16 +584,20 @@ group_relAbundace_tbs <- map2(.x = taxon_levels[-1], .y = taxon_tables[-1],
 y_lab <- "Relative abundance (%)"  
 y <- "relativeAbundance"
 number_of_groups <- length(group_levels)
-plot_width <- 2 * number_of_groups
+plot_width <- 2.5 * number_of_groups
 walk2(.x = group_relAbundace_tbs, .y = taxon_levels[-1], 
                            .f = function(relAbundace_tb=.x, taxon_level=.y){
                              
-                             p <- ggplot(data =  relAbundace_tb, mapping = aes(x= !!sym(groups_colname), y = !!sym(y)   )) +
+                             p <- ggplot(data =  relAbundace_tb %>%
+                                           mutate(X=str_wrap(!!sym(groups_colname),
+                                                             width = 10) # wrap long group names
+                                                  )
+                                           , mapping = aes(x= X, y = !!sym(y)   )) +
                                geom_col(aes(fill = !!sym(taxon_level))) + 
                                publication_format +
                                theme(axis.text.x=element_text(
                                  margin=margin(t=0.5,r=0,b=0,l=0,unit ="cm"),
-                                 angle = 90, 
+                                 angle = 0, 
                                  hjust = 0.5, vjust = 0.5)) + 
                                labs(x = NULL , y = y_lab, fill = tools::toTitleCase(taxon_level)) + 
                                scale_fill_manual(values = custom_palette)

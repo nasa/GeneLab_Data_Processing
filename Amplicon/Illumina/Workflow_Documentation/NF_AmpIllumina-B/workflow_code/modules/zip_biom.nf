@@ -9,6 +9,7 @@ nextflow.enable.dsl = 2
 process ZIP_BIOM {
 
     tag "Zipping the taxonomy counts...."
+    label "zip"
 
     input:
        path(taxonomy_and_counts_biom)

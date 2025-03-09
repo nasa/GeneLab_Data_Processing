@@ -59,6 +59,11 @@ option_list <- list(
               This name will be used to name the feature column in the final table.",
               metavar="ASV"),
   
+  make_option(c("-r", "--target-region"), type="character", default="16S", 
+              help="Amplicon target region. Options are either 16S, 18S or ITS \
+              Default: 16S",
+              metavar="16S"),
+  
   make_option(c("-c", "--cpus"), type="numeric", default=1, 
               help="Number of cpus to us for parallel processing.",
               metavar="1"),
@@ -77,6 +82,11 @@ option_list <- list(
               excluded in the analysis. Default is 100. 
               if you do not want to discard any sample then set to 0.",
               metavar="100"),
+  
+  make_option(c("z", "--remove-structural-zeros"), type="logical", default=FALSE, 
+              help="Should structural zeros (a.k.a ASVs with zeros count in atleast one group) be removed?
+              default is FALSE i.e. structural zeros won't be removed",
+              action= "store_true", metavar= "FALSE"),  
   
   make_option(c("--version"), action = "store_true", type="logical", 
               default=FALSE,
@@ -148,15 +158,13 @@ library(ANCOMBC)
 library(DescTools)
 library(taxize)
 library(glue)
-library(here)
-library(mia)
 library(phyloseq)
 library(utils)
 library(tools)
 library(patchwork)
 library(ggrepel)
 library(tidyverse)
-
+library(scales)
 
 # ---------------------------- Functions ------------------------------------- #
 
@@ -177,6 +185,8 @@ process_taxonomy <- function(taxonomy, prefix='\\w__') {
     #delete the taxonomy prefix
     taxonomy[,rank] <- gsub(pattern = prefix, x = taxonomy[, rank],
                             replacement = '')
+    # Delete _numuber at the end of taxonomy names inserted by the new version of DECIPHER
+    taxonomy[,rank] <- gsub(pattern ="_[0-9]+$", x = taxonomy[, rank], replacement = '')
     indices <- which(is.na(taxonomy[,rank]))
     taxonomy[indices, rank] <- rep(x = "Other", times=length(indices)) 
     #replace empty cell
@@ -225,43 +235,31 @@ fix_names<- function(taxonomy,stringToReplace,suffix){
 }
 
 
+# A function to expand a plots y-limit
+expandy <- function(vec, ymin=NULL) {
+  
+  max.val = max(vec, na.rm=TRUE) + 0.1
+  min.log = floor(log10(max.val))
+  
+  # expand_limits(y=c(ymin, ceiling(max.val/10^min.log)*10^min.log))
+  expand_limits(y=c(ymin, max.val))
+}
 
-# A function to generate taxon level count matrix based on a taxonomy table and
-# an existing feature table
-# make_feature_table <- function(count_matrix,taxonomy,
-#                                taxon_level, samples2keep=NULL){
-#   
-#   # EAMPLE:
-#   # make_feature_table(count_matrix = feature_counts_matrix,
-#   #                    taxonomy = taxonomy_table, taxon_level = "Phylum")
-#   
-#   feature_counts_df <- data.frame(taxon_level=taxonomy[,taxon_level],
-#                                   count_matrix, check.names = FALSE, 
-#                                   stringsAsFactors = FALSE)
-#   
-#   feature_counts_df <- aggregate(.~taxon_level,data = feature_counts_df,
-#                                  FUN = sum)
-#   rownames(feature_counts_df) <- feature_counts_df[,"taxon_level"]
-#   feature_table <- feature_counts_df[,-1]
-#   # Retain only taxa found in at least one sample
-#   taxa2keep <- rowSums(feature_table) > 0
-#   feature_table <- feature_table[taxa2keep,]
-#   
-#   if(!is.null(samples2keep)){
-#     feature_table <- feature_table[,samples2keep]
-#     # Retain only taxa found in at least one sample
-#     taxa2keep <- rowSums(feature_table) > 0
-#     feature_table <- feature_table[taxa2keep,]
-#   }
-#   
-#   return(feature_table)
-# }
+
 
 taxize_options(ncbi_sleep = 0.8)
 # A function to retrieve the NCBI taxonomy id for a given taxonomy name
-get_ncbi_ids <- function(taxonomy){
+get_ncbi_ids <- function(taxonomy, target_region){
   
-  uid <- get_uid(taxonomy, division_filter = "bacteria")
+  if(target_region == "ITS"){
+    search_string <- "fungi"
+  }else if(target_region == "18S"){
+    search_string <- "eukaryote"
+  }else{
+    search_string <- "bacteria"
+  }
+  
+  uid <- get_uid(taxonomy, division_filter = search_string)
   
   tax_ids <- uid[1:length(uid)]
   
@@ -270,30 +268,18 @@ get_ncbi_ids <- function(taxonomy){
 }
 
 
-
-publication_format <- theme_bw() +
-  theme(panel.grid = element_blank()) +
-  theme(axis.ticks.length=unit(-0.15, "cm"),
-        axis.text.x=element_text(margin=ggplot2::margin(t=0.5,r=0,b=0,l=0,unit ="cm")),
-        axis.text.y=element_text(margin=ggplot2::margin(t=0,r=0.5,b=0,l=0,unit ="cm")), 
-        axis.title = element_text(size = 18,face ='bold.italic', color = 'black'), 
-        axis.text = element_text(size = 16,face ='bold', color = 'black'),
-        legend.position = 'right', 
-        legend.title = element_text(size = 15,face ='bold', color = 'black'),
-        legend.text = element_text(size = 14,face ='bold', color = 'black'),
-        strip.text =  element_text(size = 14,face ='bold', color = 'black'))
-
-
 # ------ Collecting the required input variables ---------- #
 
 # Group in metadata to analyze
 group <- opt[["group"]]  # "groups"
 samples_column <- opt[["samples-column"]] # "Sample Name"
 threads <- opt[["cpus"]] # 8
+remove_struc_zero <- opt[["remove-structural-zeros"]] # FALSE
 metadata_file <- opt[["metadata-table"]]
-taxonomy_file <-  opt[["taxonomy-table"]]
+taxonomy_file <- opt[["taxonomy-table"]]
 feature_table_file <- opt[["feature-table"]]
 feature <- opt[["feature-type"]]   # "ASV"
+target_region <- opt[["target-region"]] # 16S
 output_prefix <- opt[["output-prefix"]]
 assay_suffix <- opt[["assay-suffix"]]
 
@@ -301,15 +287,17 @@ assay_suffix <- opt[["assay-suffix"]]
 prevalence_cutoff <- opt[["prevalence-cutoff"]] # 0.15 (15%)
 # sample / library read count cutoff
 library_cutoff <- opt[["library-cutoff"]]  # 100
-diff_abund_out_dir <- "differential_abundance/"
-if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir)
+diff_abund_out_dir <- "differential_abundance/ancombc1/"
+if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir, recursive = TRUE)
 
 
 # ------------------------ Read metadata ---------------------------------- #
 metadata <- read_csv(metadata_file)  %>% as.data.frame()
 rownames(metadata) <- metadata[[samples_column]]
 
-
+# Write out Sample Table
+write_csv(x = metadata %>% select(!!sym(samples_column), !!sym(group)),
+          file = glue("{diff_abund_out_dir}{output_prefix}SampleTable{assay_suffix}.csv"))
 
 # -------------------------- Read Feature table  -------------------------- #
 feature_table <- read_delim(file = feature_table_file) %>% as.data.frame()
@@ -333,16 +321,34 @@ feature_names <- rownames(taxonomy_table)
 taxonomy_table  <- process_taxonomy(taxonomy_table)
 rownames(taxonomy_table) <- feature_names
 
-print(glue("There are {sum(taxonomy_table$domain == 'Other')} features without 
+print(glue("There are {sum(taxonomy_table$phylum == 'Other')} features without 
            taxonomy assignments. Dropping them ..."))
 
 # Dropping features that couldn't be assigned taxonomy
-taxonomy_table <- taxonomy_table[-which(taxonomy_table$domain == 'Other'),]
+taxonomy_table <- taxonomy_table[-which(taxonomy_table$phylum == 'Other'),]
+
+# Handle case where no domain was assigned but a phylum wasn't.
+if(all(is.na(taxonomy$domain))){
+  
+  if(target_region == "ITS"){
+    
+    taxonomy_table$domain <- "Fungi"
+    
+  }else if(target_region == "18S"){
+    
+    taxonomy_table$domain <- "Eukaryotes"
+    
+  }else{
+    
+    taxonomy_table$domain <- "Bacteria"
+  }
+  
+}
 
 # Removing Chloroplast and Mitochondria Organelle DNA contamination
 asvs2drop <- taxonomy_table %>%
   unite(col="taxonomy",domain:species) %>%
-  filter(str_detect(taxonomy, "[Cc]hloroplast|[Mn]itochondria")) %>%
+  filter(str_detect(taxonomy, "[Cc]hloroplast|[Mm]itochondria")) %>%
   row.names()
 taxonomy_table <- taxonomy_table[!(rownames(taxonomy_table) %in% asvs2drop),]
 
@@ -367,14 +373,6 @@ common_ids <- intersect(rownames(feature_table), rownames(taxonomy_table))
 feature_table <- feature_table[common_ids,]
 taxonomy_table <- taxonomy_table[common_ids,]
 
-# -------------------------Prepare feature tables -------------------------- #
-# taxon_levels <- colnames(taxonomy_table)
-# names(taxon_levels) <- taxon_levels
-# taxon_tables <- map(.x = taxon_levels,
-#                     .f = make_feature_table,
-#                     count_matrix = feature_table, 
-#                     taxonomy = taxonomy_table)
-
 
 # Create phyloseq object
 ps <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
@@ -390,9 +388,15 @@ pairwise_comp.m <- utils::combn(metadata[,group] %>% unique, 2)
 pairwise_comp_df <- pairwise_comp.m %>% as.data.frame 
 
 colnames(pairwise_comp_df) <- map_chr(pairwise_comp_df,
-                                      \(col) str_c(col, collapse = ".vs."))
+                                      \(col) str_c(col, collapse = "v"))
 comparisons <- colnames(pairwise_comp_df)
 names(comparisons) <- comparisons
+
+# Write out contrasts table
+write_csv(x = pairwise_comp_df,
+          file =  glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"),
+          col_names = FALSE)
+
 
 
 message("Running ANCOMBC1....")
@@ -428,11 +432,12 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
   # it is recommended to set to TRUE if your sample size is small and the number of expected differentially abundant taxa is large.
   
   out <-  ancombc(data = tse_sub, assay_name = "counts", 
-                  tax_level = NULL, phyloseq = NULL, 
+                  tax_level = NULL, 
                   formula = group, 
                   p_adj_method = "fdr", prv_cut = prevalence_cutoff,
                   lib_cut = library_cutoff, 
-                  group = group, struc_zero = TRUE, neg_lb = TRUE, tol = 1e-5, 
+                  group = group, struc_zero = remove_struc_zero,
+                  neg_lb = TRUE, tol = 1e-5, 
                   max_iter = 100, conserve = TRUE, alpha = 0.05, global = FALSE,
                   n_cl = threads, verbose = TRUE)
   
@@ -443,7 +448,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     select(-contains("Intercept")) %>% 
     set_names(
       c("taxon",
-        glue("lfc_({group2}).vs.({group1})"))
+        glue("LnFC_({group2})v({group1})"))
     )
   
   # SE
@@ -452,7 +457,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     select(-contains("Intercept")) %>%
     set_names(
       c("taxon",
-        glue("se_({group2}).vs.({group1})"))
+        glue("lfcSE_({group2})v({group1})"))
     )
   
   # W    
@@ -461,7 +466,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     select(-contains("Intercept")) %>%
     set_names(
       c("taxon",
-        glue("W_({group2}).vs.({group1})"))
+        glue("Wstat_({group2})v({group1})"))
     )
   
   # p_val
@@ -470,7 +475,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     select(-contains("Intercept")) %>%
     set_names(
       c("taxon",
-        glue("p_({group2}).vs.({group1})"))
+        glue("pvalue_({group2})v({group1})"))
     )
   
   # q_val
@@ -479,7 +484,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     select(-contains("Intercept")) %>% 
     set_names(
       c("taxon",
-        glue("q_({group2}).vs.({group1})"))
+        glue("qvalue_({group2})v({group1})"))
     )
   
   
@@ -489,7 +494,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     select(-contains("Intercept")) %>%
     set_names(
       c("taxon",
-        glue("diff_({group2}).vs.({group1})"))
+        glue("diff_({group2})v({group1})"))
     )
   
   
@@ -524,14 +529,13 @@ walk(comparisons[names(final_results_bc1)], .f = function(comparison){
 # Sort ASVs in ascending order
 merged_stats_df <- merged_stats_df %>% 
   rename(!!feature := taxon) %>%
-  #filter(str_detect(ASV, "ASV")) %>%
   mutate(!!feature := SortMixed(!!sym(feature)))
 
 
 
 comp_names <- merged_stats_df %>% 
-  select(starts_with("lfc")) %>%
-  colnames() %>% str_remove_all("lfc_")
+  select(starts_with("LnFC")) %>%
+  colnames() %>% str_remove_all("LnFC_")
 names(comp_names) <- comp_names
 
 message("Making volcano plots...")
@@ -539,11 +543,11 @@ message("Making volcano plots...")
 volcano_plots <- map(comp_names, function(comparison){
   
   comp_col  <- c(
-    glue("lfc_{comparison}"),
-    glue("se_{comparison}"),
-    glue("W_{comparison}"),
-    glue("p_{comparison}"),
-    glue("q_{comparison}"),
+    glue("LnFC_{comparison}"),
+    glue("lfcSE_{comparison}"),
+    glue("Wstat_{comparison}"),
+    glue("pvalue_{comparison}"),
+    glue("qvalue_{comparison}"),
     glue("diff_{comparison}")
   )
   
@@ -554,34 +558,57 @@ volcano_plots <- map(comp_names, function(comparison){
                                           pattern = "(.+)_.+", 
                                           replacement = "\\1")
   
-  p <- ggplot(sub_res_df, aes(x=lfc, y=-log10(p), color=diff, label=!!sym(feature))) +
-    geom_point(size=4) + geom_point(size=4) +
-    scale_color_manual(values=c("TRUE"="cyan2", "FALSE"="red")) +
-    geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
-    ggrepel::geom_text_repel() + 
-    labs(x="logFC", y="-log10(Pvalue)", 
-         title = comparison, color="Significant") + publication_format
+  p_val <- 0.1
+  plot_width_inches <- 11.1
+  plot_height_inches <- 8.33
   
-  ggsave(filename = glue("{output_prefix}{comparison}_volcano{assay_suffix}.png"), plot = p, device = "png",
-         width = 6, height = 8, units = "in", dpi = 300, path=diff_abund_out_dir)
+  groups_vec <- comparison %>%
+    str_replace_all("\\)v\\(", ").vs.(") %>% 
+    str_remove_all("\\(|\\)") %>%
+    str_split(".vs.") %>% unlist
+  
+  group1 <- groups_vec[1]
+  group2 <- groups_vec[2]
+  
+  ######Long x-axis label adjustments##########
+  x_label <- glue("Ln Fold Change\n\n( {group1} vs {group2} )")
+  label_length <- nchar(x_label)
+  max_allowed_label_length <- plot_width_inches * 10
+  
+  # Construct x-axis label with new line breaks if was too long
+  if (label_length > max_allowed_label_length){
+    x_label <- glue("Ln Fold Change\n\n( {group1} \n vs \n {group2} )")
+  }
+
+  
+  p <- ggplot(sub_res_df %>% mutate(diff = qvalue <= p_val), 
+              aes(x=LnFC, y=-log10(qvalue), 
+                  color=diff, label=!!sym(feature))) +
+    geom_point(alpha=0.7, size=2) +
+    scale_color_manual(values=c("TRUE"="red", "FALSE"="black"),
+                       labels=c(paste0("qval > ", p_val), 
+                                paste0("qval \u2264 ", p_val))) +
+    geom_hline(yintercept = -log10(p_val), linetype = "dashed") +
+    ggrepel::geom_text_repel(show.legend = FALSE) +
+    expandy(-log10(sub_res_df$qvalue)) + # Expand plot y-limit
+    coord_cartesian(clip = 'off') +
+    scale_y_continuous(oob = scales::oob_squish_infinite) +
+    labs(x= x_label, y="-log10(Q-value)", 
+         title = "Volcano Plot", color=NULL,
+         caption = glue("dotted line: q-value = {p_val}")) + 
+    theme_bw() +
+    theme(legend.position="top", legend.key = element_rect(colour=NA),
+          plot.caption = element_text(face = 'bold.italic'))
+ 
+  file_name <-  glue("{output_prefix}{comparison %>% str_replace_all('[:space:]+','_')}_volcano.png")
+  ggsave(filename = file_name,
+         plot = p, device = "png", width = plot_width_inches,
+         height = plot_height_inches, units = "in",
+         dpi = 300, path = diff_abund_out_dir)
   
   return(p)
 })
 
-
-
-
-number_of_columns <- 2
-number_of_rows = ceiling(length(comp_names) / number_of_columns)
-fig_height = 7.5 * number_of_rows
-
-p <- wrap_plots(volcano_plots, ncol = 2)
-#  Try to combine all the volcano plots in one figure
-try(
-ggsave(filename = glue("{output_prefix}{feature}_volcano{assay_suffix}.png"), plot = p, device = "png",
-       width = 16, height = fig_height, units = "in", dpi = 300,
-       path=diff_abund_out_dir, limitsize = FALSE)
-)
 
 # Add NCBI id to feature i.e. ASV
 tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","")  %>%
@@ -589,116 +616,96 @@ tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","")  %>%
                      function(row) row[length(row)])
 
 df <- data.frame(ASV=rownames(taxonomy_table), best_taxonomy=tax_names)
+colnames(df) <- c(feature, "best_taxonomy")
+
+# Pull NCBI IDS for unique taxonomy names
+df2 <- data.frame(best_taxonomy = df$best_taxonomy %>%
+                    unique()) %>%
+  mutate(NCBI_id=get_ncbi_ids(best_taxonomy, target_region),
+         .after = best_taxonomy)
 
 df <- df %>%
-  right_join(merged_stats_df) %>%
-  mutate(NCBI_id=get_ncbi_ids(best_taxonomy), .after = best_taxonomy)
+  left_join(df2, join_by("best_taxonomy")) %>%
+  right_join(merged_stats_df)
 
 
-# Manually creating a normalized table because normalized 
+# Manually creating a normalized table because normalized
 # tables differ by comparison
 normalized_table <- as.data.frame(feature_table + 1) %>%
   rownames_to_column(feature) %>%
   mutate(across( where(is.numeric), log ) )
 
 
-group_means_df <- normalized_table[feature]
+samples <- metadata[[samples_column]]
+samplesdropped <- setdiff(x = samples, y = colnames(normalized_table)[-1])
+missing_df <- data.frame(ASV=normalized_table[[feature]],
+                         matrix(data = NA,
+                                nrow = nrow(normalized_table),
+                                ncol = length(samplesdropped)
+                         )
+)
+colnames(missing_df) <- c(feature,samplesdropped)
 
-walk(pairwise_comp_df, function(col){
-  
-  group1 <- col[1] 
-  group2 <- col[2]
-  
-  mean_col <- glue("Group.Mean_({group2}).vs.({group1})")
-  std_col <- glue("Group.Stdev_({group2}).vs.({group1})")
-  
+
+group_levels <- metadata[, group] %>% unique() %>% sort()
+group_means_df <- normalized_table[feature]
+walk(group_levels, function(group_level){
+
+
+  mean_col <- glue("Group.Mean_({group_level})")
+  std_col <- glue("Group.Stdev_({group_level})")
+
+  # Samples that belong to the current group
   Samples <- metadata %>%
-    filter(!!sym(group) %in% c(group1, group2)) %>%
-    pull(!!samples_column)
-  
-  temp_df <- normalized_table %>% select(!!feature, !!Samples) %>% 
+    filter(!!sym(group) == group_level) %>%
+    pull(!!sym(samples_column))
+  # Samples that belong to the current group that are in the normalized table
+  Samples <- intersect(colnames(normalized_table), Samples)
+
+  temp_df <- normalized_table %>% select(!!feature, all_of(Samples)) %>%
     rowwise() %>%
     mutate(!!mean_col := mean(c_across(where(is.numeric))),
-           !!std_col := sd(c_across(where(is.numeric))) ) %>% 
-    select(!!feature, !!sym(mean_col), !!sym(std_col))
-  
+           !!std_col := sd(c_across(where(is.numeric))) ) %>%
+    select(!!feature,!!sym(mean_col), !!sym(std_col))
+
   group_means_df <<- group_means_df %>% left_join(temp_df)
-  
+
 })
 
 
 # Append Mean and standard deviation
 normalized_table <- normalized_table %>%
+  left_join(missing_df, by = feature) %>%
+  select(!!feature, all_of(samples))
+
+
+All_mean_sd <- normalized_table %>%
   rowwise() %>%
   mutate(All.Mean=mean(c_across(where(is.numeric))),
-         All.Stdev=sd(c_across(where(is.numeric))) )
+         All.Stdev=sd(c_across(where(is.numeric))) ) %>%
+  select(!!feature, All.Mean, All.Stdev)
 
 
 merged_df <- df  %>%
   left_join(taxonomy_table %>%
               as.data.frame() %>%
-              rownames_to_column(feature)) %>% 
+              rownames_to_column(feature)) %>%
   select(!!feature, domain:species,everything()) # Try to generalize
 
 
 merged_df <- merged_df %>%
   select(!!sym(feature):NCBI_id) %>%
-  left_join(normalized_table) %>%
-  left_join(merged_df) %>% 
-  left_join(group_means_df) %>% 
-  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>% 
+  left_join(normalized_table, by = feature) %>%
+  left_join(merged_df) %>%
+  left_join(All_mean_sd) %>%
+  left_join(group_means_df, by = feature) %>%
+  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>%
   mutate(across(where(is.matrix), as.numeric))
 
-output_file <- glue("{diff_abund_out_dir}/{output_prefix}ancombc1_differential_abundance{assay_suffix}.csv")
+output_file <- glue("{diff_abund_out_dir}{output_prefix}ancombc1_differential_abundance{assay_suffix}.csv")
 message("Writing out results of differential abundance using ANCOMBC1...")
-write_csv(merged_df,output_file)
+write_csv(merged_df %>%
+            select(-starts_with("diff_")),
+          output_file)
 
-
-#  --------------- Make log abundance box plots ------------------ #
-
-df2 <- (metadata %>% select(!!samples_column, !!group)) %>% 
-  left_join(feature_table %>%
-              t %>%
-              as.data.frame %>%
-              rownames_to_column(samples_column))
-
-message("Making abundance box plots...")
-boxplots <- map( merged_stats_df[[feature]], function(feature){
-  
-  p <- ggplot(df2, aes(x=!!sym(group), y=log(!!sym(feature)+1), fill=!!sym(group) )) +
-    geom_boxplot() + 
-    labs(x=NULL, y="Log Abundance", fill=tools::toTitleCase(group), title = feature) +
-    theme_light() +
-    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
-          axis.title.y = element_text(face = "bold", size=12),
-          legend.text = element_text(face = "bold", size=10), 
-          legend.title = element_text(face = "bold", size=12))
-  
-  # Save feature boxplot as separate figures
-  ggsave(plot = p, filename = glue("{output_prefix}{feature}_boxplot{assay_suffix}.png"), device = "png", 
-         width = 8, height = 5, units = "in", dpi = 300, path = diff_abund_out_dir)
-  
-  return(p)
-})
-
-
-p <- wrap_plots(boxplots, ncol = 2, guides = 'collect')
-
-number_of_features <- merged_stats_df[[feature]] %>% length
-number_of_columns <- 2
-number_of_rows = ceiling(number_of_features / number_of_columns)
-fig_height = 5 * number_of_rows
-
-# Try to Plot all features / ASVs in one figure
-try(
-ggsave(filename = glue("{output_prefix}{feature}_boxplots{assay_suffix}.png"), plot = p, device = "png",
-       width = 14, height = fig_height, units = "in", dpi = 300,
-       limitsize = FALSE, path = diff_abund_out_dir)  # There too many things to plot
-
-)
-
-# Error: One or both dimensions exceed the maximum (50000px).
-# - Use `options(ragg.max_dim = ...)` to change the max
-# Warning: May cause the R session to crash
-# Execution halted
 message("Run completed sucessfully.")
