@@ -92,6 +92,39 @@ def initialize_vv_log(outdir):
 
 def log_check_result(log_path, component, sample_id, check_name, status, message="", details=""):
     """Log check result to the VV_log.csv file."""
+    # Properly escape and format fields for CSV
+    def escape_field(field, is_details=False):
+        # Convert to string if not already
+        field = str(field)
+        
+        # Replace newlines with semicolons to keep CSV valid
+        field = field.replace('\n', '; ')
+        
+        # For details field, replace commas with semicolons to avoid CSV quoting
+        if is_details and ',' in field:
+            field = field.replace(', ', '; ')
+        
+        # Also replace commas in message fields that contain percentages
+        if '%' in field and ',' in field:
+            field = field.replace(', ', '; ')
+        
+        # If the field contains commas or quotes (but not just semicolons), wrap it in quotes
+        if ',' in field or '"' in field:
+            # Double any quotes within the field
+            field = field.replace('"', '""')
+            # Wrap in quotes
+            field = f'"{field}"'
+        return field
+    
+    # Format all fields
+    component = escape_field(component)
+    sample_id = escape_field(sample_id)
+    check_name = escape_field(check_name)
+    status = escape_field(status)
+    message = escape_field(message)
+    details = escape_field(details, True)  # Specify this is a details field
+    
+    # Write the formatted line
     with open(log_path, 'a') as f:
         f.write(f"{component},{sample_id},{check_name},{status},{message},{details}\n")
 
@@ -405,6 +438,40 @@ def get_trimmed_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffi
             # Parse FastQC data
             fastqc_data = parse_fastqc(os.path.join(multiqc_data_dir, "trimmed"), assay_suffix)
             
+            # Debug output - show fields for a sample
+            if fastqc_data and len(fastqc_data) > 0:
+                sample_name = next(iter(fastqc_data.keys()))
+                print(f"DEBUG - Available fields for sample '{sample_name}':")
+                for key in sorted(fastqc_data[sample_name].keys()):
+                    print(f"  {key}")
+                
+                # Add total_sequences directly from the MultiQC data if not already present
+                json_path = os.path.join(multiqc_data_dir, "trimmed_multiqc" + assay_suffix + "_data/multiqc_data.json")
+                if os.path.exists(json_path):
+                    with open(json_path) as f:
+                        multiqc_json = json.load(f)
+                    
+                    # Check if total_sequences is in the original data
+                    if 'report_general_stats_data' in multiqc_json and multiqc_json['report_general_stats_data']:
+                        for sample, stats in multiqc_json['report_general_stats_data'][0].items():
+                            # Get the base sample name
+                            base_sample = sample
+                            if '_R1' in sample:
+                                base_sample = sample.replace('_R1', '')
+                            elif '_R2' in sample:
+                                base_sample = sample.replace('_R2', '')
+                            elif ' Read 1' in sample:
+                                base_sample = sample.replace(' Read 1', '')
+                            elif ' Read 2' in sample:
+                                base_sample = sample.replace(' Read 2', '')
+                                
+                            # If base_sample is in our data and the sample has total_sequences
+                            if base_sample in fastqc_data and 'total_sequences' in stats:
+                                # Add it directly to our data if not already present
+                                if not any('total_sequences' in key for key in fastqc_data[base_sample]):
+                                    fastqc_data[base_sample]['total_sequences'] = stats['total_sequences']
+                                    print(f"Added direct total_sequences={stats['total_sequences']} for sample {base_sample}")
+            
             # Write stats to a file for inspection
             stats_file = os.path.join(outdir, "trimmed_multiqc_stats.csv")
             
@@ -461,7 +528,7 @@ def get_trimmed_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffi
         except Exception as e:
             print(f"Error extracting MultiQC stats: {str(e)}")
             log_check_result(log_path, "trimmed_reads", "all", "get_trimmed_multiqc_stats", "RED", 
-                           f"Error extracting MultiQC stats: {str(e)}", "")  # Empty details
+                           f"Error extracting MultiQC stats: {str(e)}", "")
             return False
 
 def parse_fastqc(prefix, assay_suffix):
@@ -638,20 +705,23 @@ def report_multiqc_outliers(outdir, multiqc_data, log_path):
                         f"{sample}: {metric_description} ({value}) is {deviation:.2f} "
                         f"standard deviations from the median ({median_value:.2f})"
                     )
-                    outlier_details.append((sample, metric_key, threshold["code"], outlier_message))
+                    code = threshold["code"]
+                    details = (f"Median={median_value:.2f}, StDev={stdev_value:.2f}, " 
+                             f"Threshold={threshold['stdev_threshold']} standard deviations")
+                    outlier_details.append((sample, metric_key, code, outlier_message, details))
                     break  # Stop after finding the first matching threshold
     
     # Report results
     if outlier_details:
         print(f"Found {len(outlier_samples)} samples with outlier metrics:")
-        for sample, metric, code, message in outlier_details:
+        for sample, metric, code, message, details in outlier_details:
             print(f"  - {message} [{code}]")
-            log_check_result(log_path, "trimmed_reads", sample, f"outlier_{metric}", code, message, "")
+            log_check_result(log_path, "trimmed_reads", sample, f"outlier_{metric}", code, message, details)
         
         # Keep the list of outlier samples in the summary log
         log_check_result(log_path, "trimmed_reads", "all", "check_for_outliers", "YELLOW", 
                         f"Found {len(outlier_samples)} samples with outlier metrics", 
-                        ",".join(outlier_samples))  # Include outlier samples list
+                        "; ".join(outlier_samples))  # Include outlier samples list
     else:
         print("No outliers found in MultiQC metrics")
         log_check_result(log_path, "trimmed_reads", "all", "check_for_outliers", "GREEN", 
@@ -664,7 +734,7 @@ def check_paired_read_counts(multiqc_data, log_path):
     if not multiqc_data:
         print("No MultiQC data to analyze read count comparison")
         log_check_result(log_path, "trimmed_reads", "all", "check_paired_read_counts", "GREEN", 
-                        "No paired-end data to check", "")
+                        "No MultiQC data available", "Unable to perform read count comparison")
         return True
     
     # Check if we have paired-end data by looking for _r keys
@@ -673,7 +743,7 @@ def check_paired_read_counts(multiqc_data, log_path):
     if not has_paired_data:
         print("No paired-end data detected, skipping read count comparison")
         log_check_result(log_path, "trimmed_reads", "all", "check_paired_read_counts", "GREEN", 
-                        "No paired-end data to check", "")
+                        "No paired-end data to check", "Single-end sequencing detected based on MultiQC metrics")
         return True
     
     mismatched_samples = []
@@ -981,7 +1051,7 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
             if all_adapter_ratios:
                 mean_adapter_ratio = sum(all_adapter_ratios) / len(all_adapter_ratios)
                 stdev_adapter_ratio = np.std(all_adapter_ratios) if len(all_adapter_ratios) > 1 else 0
-                stats_message = f"Mean % of reads with adapters: {mean_adapter_ratio:.2%}, StdDev: {stdev_adapter_ratio:.2%}"
+                stats_message = f"Mean % of reads with adapters: {mean_adapter_ratio:.2%}; StdDev: {stdev_adapter_ratio:.2%}"
             else:
                 stats_message = "No adapter ratio data available"
             
@@ -992,14 +1062,15 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
                     print(f"  - {sample}")
                 print(f"Adapter presence stats: {stats_message}")
                 log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "YELLOW", 
-                                f"Low adapter presence in {len(low_adapter_samples)} samples. {stats_message}", 
-                                ",".join(low_adapter_samples))
+                                f"Low adapter presence in {len(low_adapter_samples)} samples; {stats_message}", 
+                                "; ".join(low_adapter_samples))
                 return False
             
             print(f"All {len(all_checked_samples)} samples had adapter presence above threshold (≥{threshold:.2%})")
             print(f"Adapter presence stats: {stats_message}")
             log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "GREEN", 
-                            f"Adapter presence ≥{threshold:.2%}. {stats_message}", "")
+                            f"Adapter presence ≥{threshold:.2%}; {stats_message}", 
+                            f"Checked {len(all_checked_samples)} samples: minimum adapter ratio: {min(all_adapter_ratios):.2%}")
             return True
             
         except Exception as e:
@@ -1007,6 +1078,166 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
             log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "RED", 
                            f"Error checking adapter presence: {str(e)}", "")
             return False
+
+def report_read_depth_stats(multiqc_data, log_path):
+    """Report min, max, and median read depths from MultiQC data."""
+    if not multiqc_data:
+        print("No MultiQC data to analyze read depths")
+        log_check_result(log_path, "trimmed_reads", "all", "read_depth_stats", "YELLOW", 
+                        "No data available", "Cannot report read depth statistics")
+        return
+
+    # Extract read counts for all samples
+    read_counts = []
+    for sample, data in multiqc_data.items():
+        # The field name in the processed data has a prefix and suffix
+        if 'trimmed_total_sequences_f' in data:
+            read_counts.append((sample, data['trimmed_total_sequences_f']))
+    
+    if not read_counts:
+        print("No read count data found in MultiQC stats")
+        # Print all available keys for debugging
+        if multiqc_data:
+            first_sample = next(iter(multiqc_data.keys()))
+            print(f"Available fields for sample '{first_sample}': {sorted(multiqc_data[first_sample].keys())}")
+        log_check_result(log_path, "trimmed_reads", "all", "read_depth_stats", "YELLOW", 
+                        "No read count data found", "")
+        return
+    
+    # Calculate statistics
+    counts = [count for _, count in read_counts]
+    min_count = min(counts)
+    max_count = max(counts)
+    median_count = median(counts)
+    
+    # Just convert everything to strings without any special formatting
+    min_str = str(int(min_count))
+    max_str = str(int(max_count))
+    median_str = str(int(median_count))
+    unit = "reads"
+    
+    # Report results
+    print(f"Read depth statistics:")
+    print(f"  Minimum: {min_str}")
+    print(f"  Maximum: {max_str}")
+    print(f"  Median: {median_str}")
+    
+    # Log the result
+    message = f"Read depth range: {min_str} - {max_str} {unit}"
+    details = f"Min: {min_str}; Max: {max_str}; Median: {median_str}; From {len(counts)} samples"
+    
+    log_check_result(log_path, "trimmed_reads", "all", "read_depth_stats", "GREEN", message, details)
+
+def report_duplication_rate_stats(multiqc_data, log_path):
+    """Report min, max, and median duplication rates from MultiQC data."""
+    if not multiqc_data:
+        print("No MultiQC data to analyze duplication rates")
+        log_check_result(log_path, "trimmed_reads", "all", "duplication_rate_stats", "YELLOW", 
+                        "No data available", "Cannot report duplication rate statistics")
+        return
+
+    # Extract duplication rates for all samples
+    duplication_rates = []
+    for sample, data in multiqc_data.items():
+        if 'trimmed_percent_duplicates_f' in data:
+            duplication_rates.append((sample, data['trimmed_percent_duplicates_f']))
+    
+    if not duplication_rates:
+        print("No duplication rate data found in MultiQC stats")
+        # Print all available keys for debugging
+        if multiqc_data:
+            first_sample = next(iter(multiqc_data.keys()))
+            print(f"Available fields for sample '{first_sample}': {sorted(multiqc_data[first_sample].keys())}")
+        log_check_result(log_path, "trimmed_reads", "all", "duplication_rate_stats", "YELLOW", 
+                        "No duplication rate data found", "")
+        return
+    
+    # Calculate statistics
+    rates = [rate for _, rate in duplication_rates]
+    min_rate = min(rates)
+    max_rate = max(rates)
+    median_rate = median(rates)
+    
+    # Report results
+    print(f"Duplication rate statistics:")
+    print(f"  Minimum: {min_rate:.2f}%")
+    print(f"  Maximum: {max_rate:.2f}%")
+    print(f"  Median: {median_rate:.2f}%")
+    
+    # Log the result
+    message = f"Duplication rate range: {min_rate:.2f}% - {max_rate:.2f}%"
+    details = f"Min: {min_rate:.2f}%; Max: {max_rate:.2f}%; Median: {median_rate:.2f}%; From {len(rates)} samples"
+    
+    log_check_result(log_path, "trimmed_reads", "all", "duplication_rate_stats", "GREEN", message, details)
+
+def report_gc_content_stats(multiqc_data, log_path):
+    """Report GC content statistics from MultiQC data, focusing on peak values and outliers."""
+    if not multiqc_data:
+        print("No MultiQC data to analyze GC content")
+        log_check_result(log_path, "trimmed_reads", "all", "gc_content_stats", "YELLOW", 
+                        "No data available", "Cannot report GC content statistics")
+        return
+
+    # Extract GC content percentages for all samples
+    gc_contents = []
+    for sample, data in multiqc_data.items():
+        if 'trimmed_percent_gc_f' in data:
+            gc_contents.append((sample, data['trimmed_percent_gc_f']))
+    
+    if not gc_contents:
+        print("No GC content data found in MultiQC stats")
+        # Print all available keys for debugging
+        if multiqc_data:
+            first_sample = next(iter(multiqc_data.keys()))
+            print(f"Available fields for sample '{first_sample}': {sorted(multiqc_data[first_sample].keys())}")
+        log_check_result(log_path, "trimmed_reads", "all", "gc_content_stats", "YELLOW", 
+                        "No GC content data found", "")
+        return
+    
+    # Extract just the GC percentages
+    gc_values = [gc for _, gc in gc_contents]
+    
+    # Find the most common GC percentage (peak)
+    # Round to nearest integer to identify the peak
+    gc_counts = {}
+    for gc in gc_values:
+        gc_int = int(round(gc))
+        gc_counts[gc_int] = gc_counts.get(gc_int, 0) + 1
+    
+    # Find the peak GC percentage (mode)
+    peak_gc = max(gc_counts.items(), key=lambda x: x[1])[0]
+    
+    # Calculate statistics
+    min_gc = min(gc_values)
+    max_gc = max(gc_values)
+    median_gc = median(gc_values)
+    
+    # Identify outliers (samples more than 2 standard deviations from median)
+    stddev_gc = np.std(gc_values) if len(gc_values) > 1 else 0
+    outliers = []
+    for sample, gc in gc_contents:
+        if abs(gc - median_gc) > 2 * stddev_gc:
+            deviation = abs(gc - median_gc) / stddev_gc
+            outliers.append(f"{sample} ({gc:.1f}%; {deviation:.2f} SD)")
+    
+    # Report results
+    print(f"GC content statistics:")
+    print(f"  Mode: {peak_gc}%")
+    print(f"  Range: {min_gc:.1f}% - {max_gc:.1f}%")
+    print(f"  Median: {median_gc:.1f}%")
+    
+    if outliers:
+        print(f"  Outliers ({len(outliers)}):")
+        for outlier in outliers:
+            print(f"    - {outlier}")
+    
+    # Log the result
+    message = f"GC content mode: {peak_gc}%"
+    details = f"Range: {min_gc:.1f}% - {max_gc:.1f}%; Median: {median_gc:.1f}%; From {len(gc_values)} samples"
+    if outliers:
+        details += f"; Outliers: {'; '.join(outliers)}"
+    
+    log_check_result(log_path, "trimmed_reads", "all", "gc_content_stats", "GREEN", message, details)
 
 def main():
     """Main function to process runsheet and validate trimmed reads."""
@@ -1084,7 +1315,18 @@ def main():
 
     # 11. Check >0.1% of reads had adapters present
     check_adapters_presence(args.outdir, sample_names, paired_end_values, vv_log_path)
+
+    # 12. Report read depth stats
+    if multiqc_data:
+        report_read_depth_stats(multiqc_data, vv_log_path)
         
+    # 13. Report duplication rate stats
+    if multiqc_data:
+        report_duplication_rate_stats(multiqc_data, vv_log_path)
+        
+    # 14. Report GC content stats
+    if multiqc_data:
+        report_gc_content_stats(multiqc_data, vv_log_path)
 
 if __name__ == "__main__":
     main()

@@ -88,6 +88,39 @@ def initialize_vv_log(outdir):
 
 def log_check_result(log_path, component, sample_id, check_name, status, message="", details=""):
     """Log check result to the VV_log.csv file."""
+    # Properly escape and format fields for CSV
+    def escape_field(field, is_details=False):
+        # Convert to string if not already
+        field = str(field)
+        
+        # Replace newlines with semicolons to keep CSV valid
+        field = field.replace('\n', '; ')
+        
+        # For details field, replace commas with semicolons to avoid CSV quoting
+        if is_details and ',' in field:
+            field = field.replace(', ', '; ')
+        
+        # Also replace commas in message fields that contain percentages
+        if '%' in field and ',' in field:
+            field = field.replace(', ', '; ')
+        
+        # If the field contains commas or quotes (but not just semicolons), wrap it in quotes
+        if ',' in field or '"' in field:
+            # Double any quotes within the field
+            field = field.replace('"', '""')
+            # Wrap in quotes
+            field = f'"{field}"'
+        return field
+    
+    # Format all fields
+    component = escape_field(component)
+    sample_id = escape_field(sample_id)
+    check_name = escape_field(check_name)
+    status = escape_field(status)
+    message = escape_field(message)
+    details = escape_field(details, True)  # Specify this is a details field
+    
+    # Write the formatted line
     with open(log_path, 'a') as f:
         f.write(f"{component},{sample_id},{check_name},{status},{message},{details}\n")
 
@@ -313,12 +346,13 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
                     print(f"  - {sample}")
                 log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
                                f"Missing {len(missing_samples)} samples in MultiQC report", 
-                               ",".join(missing_samples))
+                               "; ".join(missing_samples))
                 return False
             
             print(f"All {len(samples)} samples found in MultiQC report")
             log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "GREEN", 
-                           f"All {len(samples)} samples found in report", "")
+                           f"All {len(samples)} samples found in report", 
+                           f"Checked presence of {len(samples)} samples in Bowtie2 section of MultiQC report")
             return True
             
         except Exception as e:
@@ -457,20 +491,23 @@ def report_multiqc_outliers(outdir, multiqc_data, log_path):
                     # Format metric name for logging
                     metric_name = metric.replace('_', ' ')
                     
+                    # Add detailed information for outliers
+                    outlier_details = f"Median={median:.2f}, StdDev={std:.2f}, Threshold=2.0 standard deviations"
+                    
                     # Log individual outlier
                     message = f"{sample}: {metric_name} ({value:.2f}) is {stdevs_from_median:.2f} standard deviations from the median ({median:.2f})"
-                    log_check_result(log_path, "alignment", sample, f"outlier_{metric}", "YELLOW", message, "")
+                    log_check_result(log_path, "alignment", sample, f"outlier_{metric}", "YELLOW", message, outlier_details)
     
     # Log summary
     if outlier_samples:
         print(f"\nFound {len(outlier_samples)} samples with outlier metrics")
         log_check_result(log_path, "alignment", "all", "report_multiqc_outliers", "YELLOW",
                         f"Found {len(outlier_samples)} samples with outlier metrics",
-                        ",".join(sorted(outlier_samples)))
+                        "; ".join(sorted(outlier_samples)))
     else:
         print("\nNo statistical outliers found in alignment metrics")
         log_check_result(log_path, "alignment", "all", "report_multiqc_outliers", "GREEN",
-                        "No outliers found", "")
+                        "No outliers found", "All samples within 2 standard deviations of median values")
     
     # Print summary statistics
     print("\nAlignment Statistics Summary:")
@@ -529,12 +566,13 @@ def check_bowtie2_existence(outdir, samples, paired_end, log_path):
         for file in missing_files:
             print(f"  - {file}")
         log_check_result(log_path, "alignment", "all", "check_bowtie2_existence", "RED", 
-                        f"Missing {len(missing_files)} files", ",".join(missing_files))
+                        f"Missing {len(missing_files)} files", "; ".join(missing_files))
         return False
 
     print(f"All expected alignment files found")
+    total_files = len(samples) * (4 if is_paired else 3) + 1  # +1 for multiqc report
     log_check_result(log_path, "alignment", "all", "check_bowtie2_existence", "GREEN", 
-                    "All files found", "")
+                    "All files found", f"Verified {total_files} files for {len(samples)} samples")
     return True
 
 def validate_unmapped_fastq(outdir, samples, paired_end, log_path, max_lines=200000000):
@@ -614,12 +652,12 @@ def validate_unmapped_fastq(outdir, samples, paired_end, log_path, max_lines=200
             print(f"  - {file}")
         log_check_result(log_path, "alignment", "all", "validate_unmapped_fastq", "RED", 
                         f"Invalid format in {len(invalid_files)} of {len(all_files)} files", 
-                        ",".join(invalid_files))
+                        "; ".join(invalid_files))
         return False
 
     print(f"All unmapped FASTQ files are valid")
     log_check_result(log_path, "alignment", "all", "validate_unmapped_fastq", "GREEN", 
-                    "All files valid", "")
+                    "All files valid", f"Validated {len(all_files)} unmapped FASTQ files; Checked for valid FASTQ format and complete records")
     return True
 
 def main():

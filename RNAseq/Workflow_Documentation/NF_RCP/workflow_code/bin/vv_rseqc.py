@@ -112,13 +112,19 @@ def initialize_vv_log(outdir):
 def log_check_result(log_path, component, sample_id, check_name, status, message="", details=""):
     """Log check result to the VV_log.csv file."""
     # Properly escape and format fields for CSV
-    def escape_field(field):
+    def escape_field(field, is_details=False):
         # Convert to string if not already
         field = str(field)
+        
         # Replace newlines with semicolons to keep CSV valid
         field = field.replace('\n', '; ')
-        # If the field contains commas, quotes, or semicolons, wrap it in quotes
-        if ',' in field or '"' in field or ';' in field:
+        
+        # For details field, replace commas with semicolons to avoid CSV quoting
+        if is_details and ',' in field:
+            field = field.replace(', ', '; ')
+        
+        # If the field contains commas or quotes (but not just semicolons), wrap it in quotes
+        if ',' in field or '"' in field:
             # Double any quotes within the field
             field = field.replace('"', '""')
             # Wrap in quotes
@@ -131,7 +137,7 @@ def log_check_result(log_path, component, sample_id, check_name, status, message
     check_name = escape_field(check_name)
     status = escape_field(status)
     message = escape_field(message)
-    details = escape_field(details)
+    details = escape_field(details, True)  # Specify this is a details field
     
     # Write the formatted line
     with open(log_path, 'a') as f:
@@ -588,9 +594,9 @@ def report_genebody_coverage_issues(outdir, multiqc_data, log_path):
         stdev_ratio = statistics.stdev(all_ratios) if len(all_ratios) > 1 else 0
         
         # Log the overall statistics
-        stats_message = (f"5' region (0-33%): {mean_five_prime:.2f} ±{stdev_five_prime:.2f}, "
-                        f"Middle (33-67%): {mean_middle:.2f} ±{stdev_middle:.2f}, "
-                        f"3' region (67-100%): {mean_three_prime:.2f} ±{stdev_three_prime:.2f}, "
+        stats_message = (f"5' region (0-33%): {mean_five_prime:.2f} ±{stdev_five_prime:.2f}; "
+                        f"Middle (33-67%): {mean_middle:.2f} ±{stdev_middle:.2f}; "
+                        f"3' region (67-100%): {mean_three_prime:.2f} ±{stdev_three_prime:.2f}; "
                         f"3'/5' ratio: {mean_ratio:.2f} ±{stdev_ratio:.2f}")
         
         log_check_result(log_path, component, "all", "genebody_coverage_stats", "GREEN", 
@@ -653,12 +659,12 @@ def report_genebody_coverage_issues(outdir, multiqc_data, log_path):
         if severe_outliers:
             log_check_result(log_path, component, "all", check_name, "RED", 
                            f"Major outliers found in {len(severe_outliers)} samples", 
-                           ", ".join(severe_outliers))
+                           "; ".join(severe_outliers))
             status = "RED"
         elif outliers:
             log_check_result(log_path, component, "all", check_name, "YELLOW", 
                            f"Minor outliers found in {len(outliers)} samples", 
-                           ", ".join(outliers))
+                           "; ".join(outliers))
             status = "YELLOW"
         else:
             log_check_result(log_path, component, "all", check_name, "GREEN", 
@@ -805,7 +811,7 @@ def report_infer_experiment_issues(outdir, infer_exp_data, log_path):
     if summary_texts:
         log_check_result(log_path, component, "all", "infer_experiment_summary", "GREEN",
                         "Infer experiment metrics summary (mean ± stdev)",
-                        ", ".join(summary_texts))
+                        "; ".join(summary_texts))
         
         print("\nInfer Experiment Summary (mean ± stdev):")
         for text in summary_texts:
@@ -1549,14 +1555,13 @@ def report_read_distribution_issues(outdir, read_dist_data, log_path):
         if mean_value > 0.1:  # Only include regions with >0.1% reads
             significant_regions.append(f"{name}: {mean_value:.2f}% ±{stdev_value:.2f}")
     
-    # Add regions to message
-    if significant_regions:
-        summary_message += ", " + ", ".join(significant_regions)
+    # Create details string with regions
+    details = "; ".join(significant_regions)
     
     # Log the summary statistics
     log_check_result(log_path, component, "all", "read_distribution_summary", "GREEN", 
-                     summary_message, "")
-    print(f"SUMMARY: {summary_message}")
+                     summary_message, details)
+    print(f"SUMMARY: {summary_message} - {details}")
     
     # Prepare to track issues
     cds_outlier_samples = []
@@ -1695,8 +1700,9 @@ def report_read_distribution_issues(outdir, read_dist_data, log_path):
             log_check_result(log_path, component, sample, "outlier_intergenic_pct", severity, sample_message, sample_details)
     else:
         message = "All samples have consistent read distribution metrics"
+        details = f"Using thresholds: {YELLOW_THRESHOLD} stdev (warning), {RED_THRESHOLD} stdev (error); Regions analyzed: CDS exons, introns, intergenic regions"
         print(f"PASSED: {message}")
-        log_check_result(log_path, component, "all", check_name, status, message, "")
+        log_check_result(log_path, component, "all", check_name, status, message, details)
     
     return status
 

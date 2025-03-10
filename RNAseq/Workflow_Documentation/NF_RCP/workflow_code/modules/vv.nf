@@ -34,7 +34,10 @@ process VV_RAW_READS {
     # Move inputs into task directory to be detected as outputs
     mv INPUT/* . || true
 
-    vv_raw_reads.py --runsheet ${runsheet} --outdir .
+    # Run V&V unless user requests to skip V&V
+    if ${ !params.skip_vv } ; then
+      vv_raw_reads.py --runsheet ${runsheet} --outdir .
+    fi
     """
 }
 
@@ -63,18 +66,21 @@ process VV_TRIMMED_READS {
     path("INPUT/01-TG_Preproc/Trimming_Reports/*") // Trimming multiqc zipped report
 
   output:
-    path("01-TG_Preproc/Fastq"),                                                      emit: VVed_trimmed_reads
-    path("01-TG_Preproc/FastQC_Reports/*{_fastqc.html,_fastqc.zip}"),                 emit: VVed_trimmed_fastqc
-    path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc${params.assay_suffix}_report.zip"), emit: VVed_trimmed_zipped_multiqc_report
+    path("01-TG_Preproc/Fastq"),                                                              emit: VVed_trimmed_reads
+    path("01-TG_Preproc/FastQC_Reports/*{_fastqc.html,_fastqc.zip}"),                         emit: VVed_trimmed_fastqc
+    path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc${params.assay_suffix}_report.zip"),    emit: VVed_trimmed_zipped_multiqc_report
     path("01-TG_Preproc/Trimming_Reports/*trimming_report.txt"), emit: VVed_trimming_reports
     path("01-TG_Preproc/Trimming_Reports/trimming_multiqc${params.assay_suffix}_report.zip"), emit: VVed_trimming_zipped_multiqc_report
-    path("VV_log.csv"),                                                               optional: params.skip_vv, emit: log
+    path("VV_log.csv"),                                                                       optional: params.skip_vv, emit: log
 
   script:
     """
     mv INPUT/* . || true
-    
-    vv_trimmed_reads.py --runsheet ${runsheet} --outdir .
+
+    # Run V&V unless user requests to skip V&V
+    if ${ !params.skip_vv } ; then
+      vv_trimmed_reads.py --runsheet ${runsheet} --outdir .
+    fi
     """
 }
 
@@ -112,7 +118,10 @@ process VV_BOWTIE2_ALIGNMENT {
 
     sort_into_subdirectories.py --from 02-Bowtie2_Alignment --to 02-Bowtie2_Alignment --runsheet ${runsheet}
 
-    vv_bowtie2_alignment.py --runsheet ${runsheet} --outdir .
+    # Run V&V unless user requests to skip V&V
+    if ${ !params.skip_vv } ; then
+      vv_bowtie2_alignment.py --runsheet ${runsheet} --outdir .
+    fi
     """
 } 
 
@@ -142,7 +151,7 @@ process VV_RSEQC {
 
   output:
       path("RSeQC_Analyses/**"), emit: rseqc_outputs
-      path("VV_log.csv"), emit: log
+      path("VV_log.csv"), optional: params.skip_vv, emit: log
 
   script:
     """
@@ -164,7 +173,9 @@ process VV_RSEQC {
     mv RSeQC_Analyses/*.read_dist.out RSeQC_Analyses/05_read_distribution
 
     # Run V&V unless user requests to skip V&V
-    touch VV_log.csv
+    if ${ !params.skip_vv } ; then
+      vv_rseqc.py --runsheet ${runsheet} --outdir .
+    fi
 
     # Remove all placeholder files and empty directories to prevent publishing
     #  (Removes Inner Distance output placeholder files for single-end runs)
@@ -202,12 +213,15 @@ process VV_FEATURECOUNTS {
   script:
   """
   mv INPUT/* . || true
-  
-  vv_featurecounts.py --runsheet ${runsheet} --outdir .
+
+  # Run V&V unless user requests to skip V&V
+  if ${ !params.skip_vv } ; then
+    vv_featurecounts.py --runsheet ${runsheet} --outdir .
+  fi
   """
 }
 
-process VV_DGE_MICROBES {
+process VV_DGE_DESEQ2 {
   // Log publishing
   publishDir "${ publishdir }",
     pattern:  "VV_log.csv" ,
@@ -245,7 +259,9 @@ process VV_DGE_MICROBES {
   """
   mv INPUT/* . || true
 
-  touch VV_log.csv
+  if ${ !params.skip_vv } ; then
+    vv_dge_deseq2.py --runsheet ${runsheet} --outdir .
+  fi
   """
 }
 

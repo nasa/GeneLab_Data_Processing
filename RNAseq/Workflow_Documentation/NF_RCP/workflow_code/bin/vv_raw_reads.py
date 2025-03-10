@@ -92,6 +92,35 @@ def initialize_vv_log(outdir):
 
 def log_check_result(log_path, component, sample_id, check_name, status, message="", details=""):
     """Log check result to the VV_log.csv file."""
+    # Properly escape and format fields for CSV
+    def escape_field(field, is_details=False):
+        # Convert to string if not already
+        field = str(field)
+        
+        # Replace newlines with semicolons to keep CSV valid
+        field = field.replace('\n', '; ')
+        
+        # For details field, replace commas with semicolons to avoid CSV quoting
+        if is_details and ',' in field:
+            field = field.replace(', ', '; ')
+        
+        # If the field contains commas or quotes (but not just semicolons), wrap it in quotes
+        if ',' in field or '"' in field:
+            # Double any quotes within the field
+            field = field.replace('"', '""')
+            # Wrap in quotes
+            field = f'"{field}"'
+        return field
+    
+    # Format all fields
+    component = escape_field(component)
+    sample_id = escape_field(sample_id)
+    check_name = escape_field(check_name)
+    status = escape_field(status)
+    message = escape_field(message)
+    details = escape_field(details, True)  # Specify this is a details field
+    
+    # Write the formatted line
     with open(log_path, 'a') as f:
         f.write(f"{component},{sample_id},{check_name},{status},{message},{details}\n")
 
@@ -638,20 +667,23 @@ def report_multiqc_outliers(outdir, multiqc_data, log_path):
                         f"{sample}: {metric_description} ({value}) is {deviation:.2f} "
                         f"standard deviations from the median ({median_value:.2f})"
                     )
-                    outlier_details.append((sample, metric_key, threshold["code"], outlier_message))
-                    break  # Stop after finding the first matching threshold
+                    code = threshold["code"]
+                    details = (f"Median={median_value:.2f}, StDev={stdev_value:.2f}, " 
+                            f"Threshold={threshold['stdev_threshold']} standard deviations")
+                    outlier_details.append((sample, metric_key, code, outlier_message, details))
+                    break
     
     # Report results
     if outlier_details:
         print(f"Found {len(outlier_samples)} samples with outlier metrics:")
-        for sample, metric, code, message in outlier_details:
+        for sample, metric, code, message, details in outlier_details:
             print(f"  - {message} [{code}]")
-            log_check_result(log_path, "raw_reads", sample, f"outlier_{metric}", code, message, "")
+            log_check_result(log_path, "raw_reads", sample, f"outlier_{metric}", code, message, details)
         
         # Keep the list of outlier samples in the summary log
         log_check_result(log_path, "raw_reads", "all", "check_for_outliers", "YELLOW", 
                         f"Found {len(outlier_samples)} samples with outlier metrics", 
-                        ",".join(outlier_samples))  # Include outlier samples list
+                        "; ".join(outlier_samples))  # Include outlier samples list
     else:
         print("No outliers found in MultiQC metrics")
         log_check_result(log_path, "raw_reads", "all", "check_for_outliers", "GREEN", 
@@ -671,7 +703,7 @@ def check_paired_read_counts(multiqc_data, log_path):
     if not has_paired_data:
         print("No paired-end data detected, skipping read count comparison")
         log_check_result(log_path, "raw_reads", "all", "check_paired_read_counts", "GREEN", 
-                        "No paired-end data to check", "")
+                        "No paired-end data to check", "Single-end sequencing detected based on MultiQC metrics")
         return True
     
     mismatched_samples = []
@@ -712,6 +744,97 @@ def check_paired_read_counts(multiqc_data, log_path):
         log_check_result(log_path, "raw_reads", "all", "check_paired_read_counts", "GREEN", 
                         "All paired-end read counts match", "")
         return True
+
+def report_read_depth_stats(multiqc_data, log_path):
+    """Report min, max, and median read depths from MultiQC data."""
+    if not multiqc_data:
+        print("No MultiQC data to analyze read depths")
+        log_check_result(log_path, "raw_reads", "all", "read_depth_stats", "YELLOW", 
+                        "No data available", "Cannot report read depth statistics")
+        return
+
+    # Extract read counts for all samples
+    read_counts = []
+    for sample, data in multiqc_data.items():
+        # The field name in the processed data has a prefix and suffix
+        if 'raw_total_sequences_f' in data:
+            read_counts.append((sample, data['raw_total_sequences_f']))
+    
+    if not read_counts:
+        print("No read count data found in MultiQC stats")
+        # Print all available keys for debugging
+        if multiqc_data:
+            first_sample = next(iter(multiqc_data.keys()))
+            print(f"Available fields for sample '{first_sample}': {sorted(multiqc_data[first_sample].keys())}")
+        log_check_result(log_path, "raw_reads", "all", "read_depth_stats", "YELLOW", 
+                        "No read count data found", "")
+        return
+    
+    # Calculate statistics
+    counts = [count for _, count in read_counts]
+    min_count = min(counts)
+    max_count = max(counts)
+    median_count = median(counts)
+    
+    # Just convert everything to strings without any special formatting
+    min_str = str(int(min_count))
+    max_str = str(int(max_count))
+    median_str = str(int(median_count))
+    unit = "reads"
+    
+    # Report results
+    print(f"Read depth statistics:")
+    print(f"  Minimum: {min_str}")
+    print(f"  Maximum: {max_str}")
+    print(f"  Median: {median_str}")
+    
+    # Log the result
+    message = f"Read depth range: {min_str} - {max_str} {unit}"
+    details = f"Min: {min_str}; Max: {max_str}; Median: {median_str}; From {len(counts)} samples"
+    
+    log_check_result(log_path, "raw_reads", "all", "read_depth_stats", "GREEN", message, details)
+
+def report_duplication_rate_stats(multiqc_data, log_path):
+    """Report min, max, and median duplication rates from MultiQC data."""
+    if not multiqc_data:
+        print("No MultiQC data to analyze duplication rates")
+        log_check_result(log_path, "raw_reads", "all", "duplication_rate_stats", "YELLOW", 
+                        "No data available", "Cannot report duplication rate statistics")
+        return
+
+    # Extract duplication rates for all samples
+    duplication_rates = []
+    for sample, data in multiqc_data.items():
+        if 'raw_percent_duplicates_f' in data:
+            duplication_rates.append((sample, data['raw_percent_duplicates_f']))
+    
+    if not duplication_rates:
+        print("No duplication rate data found in MultiQC stats")
+        # Print all available keys for debugging
+        if multiqc_data:
+            first_sample = next(iter(multiqc_data.keys()))
+            print(f"Available fields for sample '{first_sample}': {sorted(multiqc_data[first_sample].keys())}")
+        log_check_result(log_path, "raw_reads", "all", "duplication_rate_stats", "YELLOW", 
+                        "No duplication rate data found", "")
+        return
+    
+    # Calculate statistics
+    rates = [rate for _, rate in duplication_rates]
+    min_rate = min(rates)
+    max_rate = max(rates)
+    median_rate = median(rates)
+    
+    # Report results
+    print(f"Duplication rate statistics:")
+    print(f"  Minimum: {min_rate:.2f}%")
+    print(f"  Maximum: {max_rate:.2f}%")
+    print(f"  Median: {median_rate:.2f}%")
+    
+    # Log the result
+    message = f"Duplication rate range: {min_rate:.2f}% - {max_rate:.2f}%"
+    details = f"Min: {min_rate:.2f}%; Max: {max_rate:.2f}%; Median: {median_rate:.2f}%; From {len(rates)} samples"
+    
+    log_check_result(log_path, "raw_reads", "all", "duplication_rate_stats", "GREEN", message, details)
 
 def main():
     """Main function to process runsheet and validate raw reads."""
@@ -780,6 +903,14 @@ def main():
         
         # 8. Check paired read counts match (for paired-end data)
         check_paired_read_counts(multiqc_data, vv_log_path)
+
+    # 9. Report read depth stats
+    if multiqc_data:
+        report_read_depth_stats(multiqc_data, vv_log_path)
+        
+    # 10. Report duplication rate stats
+    if multiqc_data:
+        report_duplication_rate_stats(multiqc_data, vv_log_path)
 
 if __name__ == "__main__":
     main()

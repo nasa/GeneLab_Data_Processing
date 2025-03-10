@@ -71,7 +71,7 @@ include { VV_RAW_READS;
     VV_BOWTIE2_ALIGNMENT;
     VV_RSEQC;
     VV_FEATURECOUNTS;
-    VV_DGE_MICROBES;
+    VV_DGE_DESEQ2;
     VV_CONCAT_FILTER } from '../modules/vv.nf'
 
 def colorCodes = [
@@ -435,7 +435,7 @@ workflow RNASEQ_MICROBES {
             COUNT_MULTIQC.out.zipped_report
         )
 
-        VV_DGE_MICROBES(
+        VV_DGE_DESEQ2(
             dp_tools_plugin,
             ch_outdir,
             ch_meta,
@@ -453,5 +453,5 @@ workflow RNASEQ_MICROBES {
         )
 
     emit:
-        VV_DGE_MICROBES.out.log
+        VV_DGE_DESEQ2.out.log
 }
