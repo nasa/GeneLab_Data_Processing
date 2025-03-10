@@ -32,7 +32,7 @@ The current GeneLab Illumina amplicon sequencing data processing pipeline (AmpIl
    6a. [Main outputs](#6a-main-outputs)  
    6b. [Resource logs](#6b-resource-logs)  
 
-7. [Post Processing](#6-post-processing) 
+7. [Post Processing](#6-post-processing)   
 
 <br>
 
@@ -52,7 +52,8 @@ Nextflow can be installed either through [Anaconda](https://anaconda.org/biocond
 > conda install -c bioconda nextflow
 > nextflow self-update
 > ```
-
+> You may also install [mamba](https://mamba.readthedocs.io/en/latest/index.html) as a fast alternative to conda.
+> conda install -c conda-forge mamba
 <br>
 
 #### 1b. Install Singularity
@@ -130,10 +131,10 @@ nextflow run main.nf -resume -profile slurm,singularity  --input_file PE_file.cs
 
 <br>
 
-#### 4c. Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environment(s)
+#### 4c. Approach 3: Run jobs locally in conda/mamba environments and specify the path to one or more existing conda environment(s)
 
 ```bash
-nextflow run main.nf -resume -profile conda --input_file SE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --conda.qc <path/to/existing/conda/environment>
+nextflow run main.nf -resume -profile mamba --input_file SE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --conda.qc <path/to/existing/conda/environment>
 ```
 
 <br>

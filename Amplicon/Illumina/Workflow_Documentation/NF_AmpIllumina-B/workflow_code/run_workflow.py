@@ -205,9 +205,9 @@ process {{
                   container = "{container_multiqc}"
             }}
 
-    withName: "ZIP_MULTIQC_RAW|ZIP_MULTIQC_TRIMMED" {
+    withName: "ZIP_MULTIQC_RAW|ZIP_MULTIQC_TRIMMED" {{
                   publishDir = [path: params.fastqc_out_dir, mode: params.publishDir_mode]
-            }
+            }}
 
     withName: "CUTADAPT|COMBINE_CUTADAPT_LOGS_AND_SUMMARIZE" {{
                   conda = {{params.conda.cutadapt ?  params.conda.cutadapt : "envs/cutadapt.yaml"}}
