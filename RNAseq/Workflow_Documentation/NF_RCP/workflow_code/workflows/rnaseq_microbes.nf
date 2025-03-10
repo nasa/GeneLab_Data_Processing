@@ -62,8 +62,6 @@ include { ADD_GENE_ANNOTATIONS as ADD_GENE_ANNOTATIONS_RRNA_RM } from '../module
 //include { EXTEND_DGE_TABLE } from '../modules/extend_dge_table.nf'
 //include { GENERATE_PCA_TABLE } from '../modules/generate_pca_table.nf'
 include { SOFTWARE_VERSIONS } from '../modules/software_versions.nf'
-include { MD5SUM as RAW_MD5SUM } from '../modules/md5sum.nf'
-include { MD5SUM as PROCESSED_MD5SUM } from '../modules/md5sum.nf'
 include { validateParameters; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
 include { VV_RAW_READS;
     VV_TRIMMED_READS;
@@ -333,19 +331,6 @@ workflow RNASEQ_MICROBES {
             | set { ch_final_software_versions }
         // Convert software versions combined yaml to markdown table
         SOFTWARE_VERSIONS(ch_final_software_versions)
-
-        // Generate md5sums for raw and processed data
-        RAW_MD5SUM( 
-            STAGE_RAW_READS.out.ch_all_raw_reads
-            | concat (RAW_READS_MULTIQC.out.zipped_report)
-            | collect,
-            "raw_"
-        )
-
-        // PROCESSED_MD5SUM(
-        //     TRIMMED_READS_MULTIQC.out.zipped_report,
-        //     "processed_"
-        // )
 
         // Parse QC metrics
         all_multiqc_output = RAW_READS_MULTIQC.out.data
