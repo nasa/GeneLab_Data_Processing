@@ -1397,25 +1397,22 @@ common_ids <- intersect(rownames(feature_table), rownames(taxonomy_table))
 feature_table <- feature_table[common_ids,]
 taxonomy_table <- taxonomy_table[common_ids,]
 ```
+
 **Parameter Definitions:**
 
-* `remove_rare`       - should rare features and samples be filtered out prior to analysis? If true, rare features and 
-                        samples will be removed according to the cutoffs set below.
-* `prevalence_cutoff` - If `remove_rare` is true, a numerical fraction between 0 and 1. 
-                        Taxa with prevalences(the proportion of samples in which the taxon is present) less than this 
-                        will be excluded from the analysis. Default is 0, i.e. do not exclude any taxon / feature.
-* `library_cutoff`    - If `remove_rare` is true, a numerical threshold for filtering samples based on library sizes. 
-                        Samples with library sizes less than lib_cutoff will be excluded in the analysis. Default is 0, 
-                        i.e. no sample will be dropped. To discard samples with read counts less than or equal to 100, 
-                        set to 100.
-* `target_region`     - amplicon target region. Options are either "16S", "18S", or "ITS"
-* `feature_table`     - ASV count table variable from [Read-in Input Tables](#read-in-input-tables)
-* `taxonomy_table`    - ASV taxonomy table variable from [Read-in Input Tables](#read-in-input-tables)
+* `remove_rare`       - boolean specifying if rare features and samples should be filtered out based on the `prevalence_cutoff` and `library_cutoff` cutoff thresholds, respectively, prior to analysis; default is FALSE 
+* `prevalence_cutoff` - a decimal between 0 and 1 specifying the proportion of samples required to contain a taxon in order to keep the taxon when `remove_rare` is set to TRUE; default is 0, i.e. do not exclude any taxon / feature
+* `library_cutoff`    - a numerical value specifying the number of total counts a sample must have across all features to be retained when `remove_rare` is set to TRUE; default is 0, i.e. no samples will be dropped
+* `target_region`     - specifies the amplicon target region; options are either "16S", "18S", or "ITS"
+
+**Input Data:**
+
+* `feature_table` (variable containing a samples feature dataframe (i.e. ASV) with feature counts, output from [Read-in Input Tables](#read-in-input-tables))
+* `taxonomy_table` (variable containing a feature taxonomy dataframe containing ASV taxonomy assignments, output from [Read-in Input Tables](#read-in-input-tables))
 
 **Output Data:**
-* `feature_table` (data.frame of sample feature table containing only features in common with taxonomy_table, i.e. ASV counts data.frame)
-* `taxonomy_table` (data.frame taxonomy table subset containing features in common with feature_table, i.e. ASV taxonomy data.frame)
-* `sample_info_tab` (data.frame of sample information, i.e. a subset of sample metadata)
+* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering)
+* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering)
 
 <br>
 
@@ -1427,12 +1424,7 @@ Alpha diversity examines the variety and abundance of taxa within individual sam
 visually represent this diversity, plotting the number of unique sequences (ASVs) identified against the total number of 
 sequences sampled, offering a perspective on the saturation and completeness of sampling. Metrics like Observed features 
 estimates and Shannon diversity indices are employed to quantify the richness (total number of unique sequences) and 
-diversity (combination of richness and evenness) within these samples.
-
-> Please note that if you'd like to run the code in this section, make sure that you [load the libraries](#load-libraries) 
-and [functions](#load-functions), [read-in input tables](#read-in-input-tables) and [preprocess](#preprocessing) them in R 
-by running the lines of code in [section 6](#6-amplicon-seq-data-analysis-set-up) sequentially, particularly those 
-in [section 6b](#6b-r-environment-set-up).
+diversity (combination of richness and evenness) within these samples, respectively.
 
 ```R
 # Create output directory if it doesn't already exist
