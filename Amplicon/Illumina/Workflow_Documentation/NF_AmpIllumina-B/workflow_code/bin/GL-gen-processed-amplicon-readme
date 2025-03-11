@@ -134,6 +134,10 @@ def write_amplicon_body(output, output_file, assay_suffix, processing_zip_file,
 
     # Outputs
     output.write("    {:<41} {:>0}".format("- " + str(final_outputs_dir), "- primary output files (may or may not have additional prefix)\n"))
+    output.write("        {:<37} {:>0}".format(f"- alpha_diversity/", "- directory containing alpha diversity plots and statistics tables\n"))
+    output.write("        {:<37} {:>0}".format(f"- beta_diversity/", "- directory containing beta diversity plots and statistics tables\n"))
+    output.write("        {:<37} {:>0}".format(f"- differential_abundance/", "- directory containing the results (tables and plots) of differential abundance testing using one of or all of ANCOMBC1, ANCOMBC2 and DESeq2 \n"))
+    output.write("        {:<37} {:>0}".format(f"- taxonomy_plots/", "- directory containing sample-wise and group-wise taxonomy relative abundance stacked bar plots from phylum to specie level\n"))
     output.write("        {:<37} {:>0}".format(f"- *{assay_suffix}.fasta", "- fasta file of recovered sequences\n"))
     output.write("        {:<37} {:>0}".format(f"- *counts{assay_suffix}.tsv", "- count table of sequences across samples\n"))
     output.write("        {:<37} {:>0}".format(f"- *taxonomy{assay_suffix}.tsv", "- assigned taxonomy of recovered sequences\n"))

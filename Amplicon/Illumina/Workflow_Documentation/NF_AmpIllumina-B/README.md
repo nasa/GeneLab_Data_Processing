@@ -16,17 +16,23 @@ The current GeneLab Illumina amplicon sequencing data processing pipeline (AmpIl
 
 3. [Fetch Singularity Images](#3-fetch-singularity-images)  
 
-4. [Run the workflow](#4-run-the-workflow)  
+4. [Run the workflow directly with nextflow](#4-run-the-workflow-directly-with-nextflow)  
    4a. [Approach 1: Run slurm jobs in singularity containers with OSD accession as input](#4a-approach-1-run-slurm-jobs-in-singularity-containers-with-osd-accession-as-input)   
    4b. [Approach 2: Run slurm jobs in singularity containers with a csv file as input](#4b-approach-2-run-slurm-jobs-in-singularity-containers-with-a-csv-file-as-input)  
    4c. [Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environments](#4c-approach-run-jobs-locally-in-conda-environments-and-specify-the-path-to-one-or-more-existing-conda-environments)  
    4d. [Modify parameters and cpu resources in the nextflow config file](#4d-modify-parameters-and-cpu-resources-in-the-nextflow-config-file)  
 
-5. [Workflow outputs](#5-workflow-outputs)  
-   5a. [Main outputs](#5a-main-outputs)  
-   5b. [Resource logs](#5b-resource-logs)  
+5. [Run the workflow indirectly using the python wrapper script](#5-run-the-workflow-indirectly-using-the-python-wrapper-script)  
+   5a. [Approach 1: Use an OSD or Genelab acession as input](#5a-approach-1-use-an-osd-or-Genelab-acession-as-input)  
+   5b. [Approach 2: Use a csv file as input to the workflow](#5b-approach-2-use-a-csv-file-as-input-to-the-workflow)  
+   5c. [Approach 3: Use a csv file as input to the workflow and supply extra arguments to nextflow run](#5c-approach-3-use-a-csv-file-as-input-to-the-workflow-and-supply-extra-arguments-to-nextflow-run)  
+   5d. [Approach 4: Just create an edited nextflow config file but dont run the workflow](#5d-approach-4-just-create-an-edited-nextflow-config-file-but-dont-run-the-workflow)  
 
-6. [Post Processing](#6-post-processing) 
+6. [Workflow outputs](#6-workflow-outputs)  
+   6a. [Main outputs](#6a-main-outputs)  
+   6b. [Resource logs](#6b-resource-logs)  
+
+7. [Post Processing](#6-post-processing)   
 
 <br>
 
@@ -46,7 +52,8 @@ Nextflow can be installed either through [Anaconda](https://anaconda.org/biocond
 > conda install -c bioconda nextflow
 > nextflow self-update
 > ```
-
+> You may also install [mamba](https://mamba.readthedocs.io/en/latest/index.html) as a fast alternative to conda.
+> conda install -c conda-forge mamba
 <br>
 
 #### 1b. Install Singularity
@@ -96,7 +103,7 @@ export NXF_SINGULARITY_CACHEDIR=$(pwd)/singularity
 
 ---
 
-### 4. Run the Workflow
+### 4. Run the workflow directly with nextflow
 
 For options and detailed help on how to run the workflow, run the following command:
 
@@ -105,7 +112,7 @@ nextflow run main.nf --help
 ```
 
 > Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --input_file) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
-
+> Please Note: This workflow assumes that all your raw reads end with the same suffix. If they don't, please modify your input read filenames to have the same suffix as shown in [SE_file.csv](workflow_code/SE_file.csv) and [PE_file.csv](workflow_code/PE_file.csv).
 <br>
 
 #### 4a. Approach 1: Run slurm jobs in singularity containers with OSD or GLDS accession as input
@@ -124,10 +131,10 @@ nextflow run main.nf -resume -profile slurm,singularity  --input_file PE_file.cs
 
 <br>
 
-#### 4c. Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environment(s)
+#### 4c. Approach 3: Run jobs locally in conda/mamba environments and specify the path to one or more existing conda environment(s)
 
 ```bash
-nextflow run main.nf -resume -profile conda --input_file SE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --conda.qc <path/to/existing/conda/environment>
+nextflow run main.nf -resume -profile mamba --input_file SE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --conda.qc <path/to/existing/conda/environment>
 ```
 
 <br>
@@ -165,13 +172,55 @@ Once you've downloaded the workflow template, you can modify the parameters in t
 
 ---
 
-### 5. Workflow outputs
+### 5. Run the workflow indirectly using the python wrapper script
 
-#### 5a. Main outputs
+For options and detailed help on how to run the workflow using the script, run the following command:
+
+```bash
+python run_workflow.py
+```
+
+#### 5a. Approach 1: Use an OSD or Genelab acession as input
+
+```bash
+python run_workflow.py --run --target-region 16S --accession GLDS-487 --profile slurm,singularity 
+```
+
+#### 5b. Approach 2: Use a csv file as input to the workflow
+
+```bash
+python run_workflow.py --run --target-region 16S --input-file PE_file.csv --F-primer AGAGTTTGATCCTGGCTCAG --R-primer CTGCCTCCCGTAGGAGT --profile singularity 
+```
+
+#### 5c. Approach 3: Use a csv file as input to the workflow and supply extra arguments to nextflow run 
+
+Here were want to monitor our jobs with nextflow tower.
+
+```bash
+export TOWER_ACCESS_TOKEN=<ACCESS TOKEN>
+export TOWER_WORKSPACE_ID=<WORKSPACE ID>
+python run_workflow.py --run --target-region 16S --input-file PE_file.csv --F-primer AGAGTTTGATCCTGGCTCAG --R-primer CTGCCTCCCGTAGGAGT --profile slurm,conda --extra 'with-tower'
+```
+
+#### 5d. Aproach 4: Just create an edited nextflow config file but dont run the workflow
+
+```bash
+python run_workflow.py --target-region 16S --accession GLDS-487 --profile slurm,singularity
+```
+
+> Note: When using the wrapper script, all outputs generated by the workflow will be in a directory specified by the `--output-dir` parameter. This will be the parent directory `..` by default.
+
+<br>
+
+---
+
+### 6. Workflow outputs
+
+#### 6a. Main outputs
 
 The outputs from this pipeline are documented in the [GL-DPPD-7104-B](../../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md) processing protocol.
 
-#### 5b. Resource logs
+#### 6b. Resource logs
 
 Standard nextflow resource usage logs are also produced as follows:
 
@@ -186,7 +235,7 @@ Standard nextflow resource usage logs are also produced as follows:
 
 ---
 
-### 6. Post Processing
+### 7. Post Processing
 
 For options and detailed help on how to run the post-processing workflow, run the following command:
 

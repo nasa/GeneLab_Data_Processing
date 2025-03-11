@@ -96,7 +96,7 @@ process RUN_R_TRIM {
 process RUN_R_NOTRIM {
 
     tag "Running dada2 on the raw reads..."
-    beforeScript "chmod +x ${baseDir}/bin/*"
+    beforeScript "chmod +x ${projectDir}/bin/*"
 
     input:
         tuple path(sample_IDs_file), val(isPaired)

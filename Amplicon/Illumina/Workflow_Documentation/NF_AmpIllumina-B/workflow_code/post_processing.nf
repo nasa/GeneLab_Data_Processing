@@ -38,9 +38,9 @@ if(params.help){
   println("  --target_files [STRING] A comma separated list of target files and/or directories to find in processing_info.zip. Default: main.nf,nextflow.config,unique-sample-IDs.txt,envs/,bin/,config/,modules/.")
   println()
   println("File Suffixes:")
-  println("      --raw_suffix [STRING]  Suffix used for the raw reads during processing. Only applicable when input reads are single-end. Default: _HRremoved_raw.fastq.gz.")  
-  println("      --raw_R1_suffix [STRING]  Suffix used for the raw forward reads during processing. Default: _R1_HRremoved_raw.fastq.gz.")
-  println("      --raw_R2_suffix [STRING]  Suffix used for the raw reverse reads during processing. Default: _R2_HRremoved_raw.fastq.gz.")
+  println("      --raw_suffix [STRING]  Suffix used for the raw reads during processing. Only applicable when input reads are single-end. Default: _raw.fastq.gz.")  
+  println("      --raw_R1_suffix [STRING]  Suffix used for the raw forward reads during processing. Default: _R1_raw.fastq.gz.")
+  println("      --raw_R2_suffix [STRING]  Suffix used for the raw reverse reads during processing. Default: _R2_raw.fastq.gz.")
   println("      --primer_trimmed_suffix [STRING]  Suffix used for primer trimmed reads during processing. Only applicable when input reads are single-end. Default: _trimmed.fastq.gz.")
   println("      --primer_trimmed_R1_suffix [STRING]  Suffix to use for primer trimmed reads during processing. Default: _R1_trimmed.fastq.gz.")
   println("      --primer_trimmed_R2_suffix [STRING]  Suffix to use for primer trimmed reverse reads during processing. Default: _R2_trimmed.fastq.gz.")
@@ -78,7 +78,7 @@ if(params.help){
   println("    --help  Print this help message and exit")
   println()
   println("Paths to existing conda environments to use otherwise a new one will be created using the yaml file in envs/.")
-  println("      --conda.genelab [PATH] Path to a conda environment containing genelab-utils. Default: null.")
+  println("      --conda.dp_tools [PATH] Path to a conda environment containing dp_tools. Default: null.")
   exit 0
 }
 

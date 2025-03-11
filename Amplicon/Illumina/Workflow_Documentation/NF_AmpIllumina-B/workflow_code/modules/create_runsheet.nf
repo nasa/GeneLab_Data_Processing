@@ -6,7 +6,7 @@ nextflow.enable.dsl = 2
 
 process GET_RUNSHEET {
 
-    beforeScript "chmod +x ${baseDir}/bin/create_runsheet.py"
+    beforeScript "chmod +x ${projectDir}/bin/create_runsheet.py"
     tag "Retrieving raw sequences and metadata for ${accession}..."
     input:
         tuple val(accession), val(target_region)
@@ -21,8 +21,8 @@ process GET_RUNSHEET {
     script:
         """
         create_runsheet.py --OSD ${accession} --target ${target_region}
-        GL-version | grep "GeneLab utils"| sed -E 's/^\\s+//' > versions.txt
-        echo "dptools v1.3.4" >> versions.txt
+        VERSION=`python -c 'import dp_tools; print(dp_tools.__version__)'`
+        echo "dptools v\${VERSION}" >> versions.txt
         python --version >> versions.txt 
         """
 }

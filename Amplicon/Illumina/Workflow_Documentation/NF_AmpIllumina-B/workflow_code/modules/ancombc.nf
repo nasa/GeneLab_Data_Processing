@@ -12,23 +12,30 @@ nextflow.enable.dsl = 2
 
 process ANCOMBC {
 
-    tag "Running ${params.diff_abund_method} for differential abundance testing..."
+    tag "Running ${method} for differential abundance testing..."
     label "visualization"
 
     input: 
+        val(method)
         val(meta)
         path(feature_table)
         path(taxonomy)
         path(metadata)
+        path(dummy) // dummy path to ensure dependency between this step and the step that generates this file
 
     output:
-        path("differential_abundance/"), emit: output_dir
+        path("differential_abundance/${method}/"), emit: output_dir
         path("versions.txt"), emit: version
 
-    script:
-        def script_name = params.diff_abund_method == "ancombc1" ? "pairwise_ancombc1.R" : "pairwise_ancombc2.R"
+    script:      
         """
-        ${script_name} \\
+        if [  ${method} == "ancombc1" ]; then
+            script_name='pairwise_ancombc1.R'
+        else
+            script_name='pairwise_ancombc2.R'
+        fi
+        
+        \${script_name} \\
                   --metadata-table '${metadata}' \\
                   --feature-table '${feature_table}' \\
                   --taxonomy-table '${taxonomy}' \\
@@ -36,22 +43,12 @@ process ANCOMBC {
                   --samples-column '${meta.samples}' \\
                   --assay-suffix  '${meta.assay_suffix}' \\
                   --output-prefix  '${meta.output_prefix}' \\
-                  --cpus ${task.cpus}
-
-	      Rscript -e "VERSION=sprintf('ANCOMBC %s',  packageVersion('ANCOMBC')); \\
-                    write(x=VERSION, file='versions.txt', append=TRUE)"
+                  --cpus ${task.cpus} \\
+                  --target-region  '${meta.target_region}' \\
+                  --prevalence-cutoff ${meta.prevalence_cutoff} \\
+                  --library-cutoff  ${meta.library_cutoff} ${meta.struc_zero}
                     
-        Rscript -e "VERSIONS=sprintf('tidyverse %s\\nglue %s\\nANCOMBC %s\\nhere %s\\nphyloseq %s\\nmia %s\\ntaxize %s\\nDescTools %s\\npatchwork %s\\nggrepel %s\\n',  \\
-                                    packageVersion('tidyverse'), \\
-                                    packageVersion('glue'), \\
-                                    packageVersion('ANCOMBC'), \\
-                                    packageVersion('here'), \\
-                                    packageVersion('phyloseq'), \\
-                                    packageVersion('mia'), \\
-                                    packageVersion('taxize'), \\
-                                    packageVersion('DescTools'), \\
-                                    packageVersion('patchwork'), \\
-                                    packageVersion('ggrepel')); \\
+        Rscript -e "VERSIONS=sprintf('ANCOMBC %s\\n', packageVersion('ANCOMBC'))
                     write(x=VERSIONS, file='versions.txt', append=TRUE)"
         """
 
@@ -65,16 +62,23 @@ workflow {
     meta  = Channel.of(["samples": params.samples_column,
                         "group" : params.group,
                         "assay_suffix" : params.assay_suffix,
-                        "output_prefix" : params.output_prefix
+                        "output_prefix" : params.output_prefix,
+                        "target_region" : params.target_region,
+                        "library_cutoff" : params.library_cutoff,
+                        "prevalence_cutoff" : params.prevalence_cutoff,
+                        "rare" : params.remove_rare ? "--remove-rare" : "",
+                        "struc_zero" : params.remove_struc_zeros ? "--remove-structural-zeros" : ""
                         ])
                             
                             
     metadata  = Channel.fromPath(params.input_file, checkIfExists: true)
     asv_table = Channel.fromPath(params.asv_table, checkIfExists: true) 
     taxonomy  =  Channel.fromPath(params.taxonomy, checkIfExists: true)
+    // Dummy file
+    dummy  =  Channel.fromPath(params.taxonomy, checkIfExists: true)
 
-    
-    ANCOMBC(meta, asv_table, taxonomy, metadata)
+    method = Channel.of(params.diff_abund_method)
+    ANCOMBC(method, meta, asv_table, taxonomy, metadata, dummy)
 
     emit:
         version = ANCOMBC.out.version

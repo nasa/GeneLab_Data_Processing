@@ -84,7 +84,7 @@ process PACKAGE_PROCESSING_INFO {
 
 process GENERATE_README {
 
-    beforeScript "chmod +x ${baseDir}/bin/*"
+    beforeScript "chmod +x ${projectDir}/bin/*"
     tag "Generating README for ${OSD_accession}"
     input:
         tuple val(name), val(email),
@@ -167,7 +167,7 @@ process VALIDATE_PROCESSING {
 
 process GENERATE_CURATION_TABLE {
 
-    beforeScript "chmod +x ${baseDir}/bin/*"
+    beforeScript "chmod +x ${projectDir}/bin/*"
     tag "Generating a file association table for curation..."
 
     input:
@@ -190,6 +190,7 @@ process GENERATE_CURATION_TABLE {
     script:
         def INPUT_TABLE = "${params.files.assay_table}" == "" ? "--isa-zip  ${input_table}" : "--assay-table ${input_table}"
         """
+
         GL-gen-amplicon-file-associations-table ${INPUT_TABLE} \\
                     --output '${GLDS_accession}_${output_prefix}-associated-file-names.tsv' \\
                     --GLDS-ID  '${GLDS_accession}' \\
@@ -211,6 +212,7 @@ process GENERATE_CURATION_TABLE {
                     --filtered_reads_dir '${filtered_reads_dir}' \\
                     --trimmed_reads_dir '${trimmed_reads_dir}' \\
                     --final_outputs_dir '${final_outputs_dir}'  ${params.file_association_extra}
+
         """
 }
 
@@ -243,7 +245,7 @@ process GENERATE_MD5SUMS {
 
 process GENERATE_PROTOCOL {
 
-    beforeScript "chmod +x ${baseDir}/bin/*"
+    beforeScript "chmod +x ${projectDir}/bin/*"
     tag "Generating your analysis protocol..."
 
     input:

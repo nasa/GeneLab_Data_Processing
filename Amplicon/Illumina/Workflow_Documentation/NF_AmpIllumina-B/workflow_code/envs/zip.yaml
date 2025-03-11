@@ -1,6 +1,6 @@
+name: zip
 channels:
     - conda-forge
-    - bioconda
     - defaults
 dependencies:
-    - cutadapt=5.0
+    - zip==3.0
