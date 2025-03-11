@@ -438,5 +438,6 @@ workflow RNASEQ_MICROBES {
         )
 
     emit:
-        VV_DGE_DESEQ2.out.log
+        vv_log = VV_DGE_DESEQ2.out.log
+        outdir = ch_outdir
 }

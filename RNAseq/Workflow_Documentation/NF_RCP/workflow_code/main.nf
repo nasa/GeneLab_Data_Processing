@@ -39,6 +39,8 @@ println("${colorCodes.c_reset}")
 include { RNASEQ } from './workflows/rnaseq.nf'
 include { RNASEQ_MICROBES } from './workflows/rnaseq_microbes.nf'
 
+include { GENERATE_MD5SUMS } from './modules/generate_md5sums.nf'
+
 ch_dp_tools_plugin = params.dp_tools_plugin ? 
     Channel.value(file(params.dp_tools_plugin)) : 
     Channel.value(file(params.mode == 'microbes' ? 
@@ -107,4 +109,12 @@ workflow {
             ch_derived_store_path
         )
     }
+}
+
+workflow POST_PROCESSING {
+  main:
+    ch_processed_directory = Channel.fromPath("${ params.outdir }/${ params.accession }", checkIfExists: true)
+    ch_runsheet = Channel.fromPath("${ params.outdir }/${ params.accession }/Metadata/*_runsheet.csv", checkIfExists: true)
+    GENERATE_MD5SUMS(ch_processed_directory)
+    //UPDATE_ISA_TABLES(ch_processed_directory, ch_runsheet, params.mode == 'microbes' ? "microbes" : "" )
 }
