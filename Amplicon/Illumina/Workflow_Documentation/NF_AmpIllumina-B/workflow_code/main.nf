@@ -37,7 +37,7 @@ if (params.help) {
   println("                   The paired column should be true for paired-end or anything else for single-end reads.")
   println("                   The groups column contain group levels / treatments to be compared during diversity and differential abundance testing analysis. Default: null")
   println("     --target_region [STRING] What is the amplicon target region to be analyzed. Options are one of [16S, 18S, ITS]. Default: 16S.")
-  println("     --trim_primers [BOOLEAN] Should primers be trimmed? true or false. Default: true.") 
+  println("     --trim_primers [STRING] Should primers be trimmed? TRUE or FALSE. Default: TRUE.") 
   println("PLEASE NOTE: This workflow assumes that all your raw reads end with the same suffix. If they don't please modify your filenames to have the same suffix as shown below.")
   println("     --raw_R1_suffix [STRING] Raw forward reads suffix (region following the unique part of the sample names). e.g. _R1_raw.fastq.gz.") 
   println("     --raw_R2_suffix [STRING] Raw reverse reads suffix (region following the unique part of the sample names). e.g. _R2_raw.fastq.gz.") 
