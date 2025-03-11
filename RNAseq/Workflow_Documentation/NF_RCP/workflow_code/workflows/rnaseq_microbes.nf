@@ -71,6 +71,7 @@ include { VV_RAW_READS;
     VV_FEATURECOUNTS;
     VV_DGE_DESEQ2;
     VV_CONCAT_FILTER } from '../modules/vv.nf'
+include { GENERATE_PROTOCOL } from '../modules/generate_protocol.nf'
 
 def colorCodes = [
     c_line: "┅" * 70,
@@ -437,7 +438,16 @@ workflow RNASEQ_MICROBES {
             ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
         )
 
+
+        GENERATE_PROTOCOL(ch_outdir,
+            ch_meta,
+            strandedness,
+            SOFTWARE_VERSIONS.out.software_versions_yaml,
+            reference_source,
+            reference_version,
+            genome_references
+        )
+
     emit:
-        vv_log = VV_DGE_DESEQ2.out.log
         outdir = ch_outdir
 }
