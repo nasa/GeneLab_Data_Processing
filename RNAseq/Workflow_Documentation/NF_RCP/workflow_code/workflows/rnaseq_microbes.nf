@@ -330,7 +330,7 @@ workflow RNASEQ_MICROBES {
             )
             | set { ch_final_software_versions }
         // Convert software versions combined yaml to markdown table
-        SOFTWARE_VERSIONS(ch_final_software_versions)
+        SOFTWARE_VERSIONS(ch_outdir, ch_final_software_versions)
 
         // Parse QC metrics
         all_multiqc_output = RAW_READS_MULTIQC.out.data
