@@ -40,6 +40,7 @@ include { RNASEQ } from './workflows/rnaseq.nf'
 include { RNASEQ_MICROBES } from './workflows/rnaseq_microbes.nf'
 
 include { GENERATE_MD5SUMS } from './modules/generate_md5sums.nf'
+include { UPDATE_ASSAY_TABLE } from './modules/update_assay_table.nf'
 
 ch_dp_tools_plugin = params.dp_tools_plugin ? 
     Channel.value(file(params.dp_tools_plugin)) : 
@@ -116,5 +117,5 @@ workflow POST_PROCESSING {
     ch_processed_directory = Channel.fromPath("${ params.outdir }/${ params.accession }", checkIfExists: true)
     ch_runsheet = Channel.fromPath("${ params.outdir }/${ params.accession }/Metadata/*_runsheet.csv", checkIfExists: true)
     GENERATE_MD5SUMS(ch_processed_directory)
-    //UPDATE_ISA_TABLES(ch_processed_directory, ch_runsheet, params.mode == 'microbes' ? "microbes" : "" )
+    UPDATE_ASSAY_TABLE(ch_processed_directory)
 }
