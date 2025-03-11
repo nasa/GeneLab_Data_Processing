@@ -61,21 +61,78 @@ def find_runsheet(outdir, glds_accession):
         return None
 
 def is_paired_end_data(runsheet_df):
-    """Determine if the data is paired-end based on the runsheet."""
+    """Determine if this is paired-end data from the runsheet.
+    
+    Args:
+        runsheet_df: DataFrame containing the runsheet
+        
+    Returns:
+        bool: True if paired-end, False if single-end
+    """
     if runsheet_df is None:
+        print("Warning: No runsheet provided, assuming single-end data")
         return False
     
-    # Check if the paired_end column exists
+    # Check if there's a paired_end column
     if 'paired_end' in runsheet_df.columns:
-        # Convert to string to handle different formats, then check for truthy values
-        paired_end_values = runsheet_df['paired_end'].astype(str).str.lower()
-        return any(val in ['true', 'yes', '1', 't', 'y'] for val in paired_end_values)
+        paired_end_values = runsheet_df['paired_end'].unique()
+        if len(paired_end_values) == 1:
+            # If all values are the same, use that
+            value = paired_end_values[0]
+            # Handle different types of values (string or boolean)
+            if isinstance(value, bool):
+                return value
+            elif isinstance(value, str):
+                return value.lower() == 'true'
+            else:
+                # Try to convert to string if it's not a boolean or string
+                return str(value).lower() == 'true'
     
-    # If no explicit paired_end column, check for file path patterns
-    if 'read1_path' in runsheet_df.columns and 'read2_path' in runsheet_df.columns:
-        # If read2_path has values, it's paired-end
-        return not runsheet_df['read2_path'].isna().all()
+    # Check based on R1/R2 file presence
+    if any(col for col in runsheet_df.columns if col.endswith('_R2.fastq.gz')):
+        print("Detected paired-end data based on _R2 files in runsheet")
+        return True
+    else:
+        print("Assuming single-end data (no _R2 files in runsheet)")
+        return False
+
+def has_ercc_spikes(runsheet_df):
+    """Determine if ERCC spike-ins are used based on the runsheet.
     
+    Args:
+        runsheet_df: DataFrame containing the runsheet
+        
+    Returns:
+        bool: True if ERCC spike-ins are used, False otherwise
+    """
+    if runsheet_df is None:
+        print("Warning: No runsheet provided, assuming no ERCC spike-ins")
+        return False
+    
+    # Check if there's a has_ercc column
+    if 'has_ercc' in runsheet_df.columns:
+        has_ercc_values = runsheet_df['has_ercc'].unique()
+        if len(has_ercc_values) == 1:
+            # If all values are the same, use that
+            value = has_ercc_values[0]
+            # Handle different types of values (string or boolean)
+            if isinstance(value, bool):
+                ercc_used = value
+            elif isinstance(value, str):
+                ercc_used = value.lower() == 'true'
+            else:
+                # Try to convert to string if it's not a boolean or string
+                ercc_used = str(value).lower() == 'true'
+            
+            print(f"ERCC spike-ins {'are' if ercc_used else 'are not'} used based on runsheet")
+            return ercc_used
+    
+    # Look for ERCC in sample names as a fallback
+    if 'Sample Name' in runsheet_df.columns and any('ercc' in str(name).lower() for name in runsheet_df['Sample Name']):
+        print("Detected ERCC spike-ins based on sample names")
+        return True
+    
+    print("Assuming no ERCC spike-ins (not indicated in runsheet)")
     return False
 
 def extract_and_find_assay(outdir, glds_accession):
@@ -390,29 +447,230 @@ def add_trimming_reports_column(df, glds_prefix, runsheet_df=None):
     
     return df
 
-def add_multiqc_reports_column(df, glds_prefix, assay_suffix):
-    """Add the Multiqc Reports column to the dataframe.
+def add_trimmed_multiqc_reports_column(df, glds_prefix, assay_suffix):
+    """Add the trimmed sequence data MultiQC reports column to the dataframe."""
+    column_name = "Parameter Value[Trimmed Sequence Data/MultiQC Reports]"
     
-    Args:
-        df: The assay table dataframe
-        glds_prefix: The GLDS prefix to add to filenames
-        assay_suffix: The suffix for the multiqc report
-        
-    Returns:
-        The modified dataframe
-    """
-    column_name = "Parameter Value[Trimmed Sequence Data/Multiqc Reports]"
-    
-    # The multiqc report is the same for all samples
-    report_value = f"{glds_prefix}trimmed_multiqc{assay_suffix}_report.zip"
+    # Create the multiqc report filename - same for all samples
+    multiqc_report = f"{glds_prefix}trimmed_multiqc{assay_suffix}_report.zip"
     
     # Add the column to the dataframe with the same value for all rows
     if column_name not in df.columns:
         print(f"Adding column: {column_name}")
-        df[column_name] = report_value
+        df[column_name] = multiqc_report
     else:
         print(f"Updating column: {column_name}")
-        df[column_name] = report_value
+        df[column_name] = multiqc_report
+    
+    return df
+
+def add_align_multiqc_reports_column(df, glds_prefix, assay_suffix):
+    """Add the aligned sequence data MultiQC reports column to the dataframe."""
+    column_name = "Parameter Value[Aligned Sequence Data/MultiQC Reports]"
+    
+    # Create the alignment multiqc report filename - same for all samples
+    multiqc_report = f"{glds_prefix}align_multiqc{assay_suffix}_report.zip"
+    
+    # Add the column to the dataframe with the same value for all rows
+    if column_name not in df.columns:
+        print(f"Adding column: {column_name}")
+        df[column_name] = multiqc_report
+    else:
+        print(f"Updating column: {column_name}")
+        df[column_name] = multiqc_report
+    
+    return df
+
+def add_rseqc_multiqc_reports_column(df, glds_prefix, assay_suffix):
+    """Add the RSeQC MultiQC reports column to the dataframe."""
+    column_name = "Parameter Value[RSeQC/MultiQC Reports]"
+    
+    # Create the four RSeQC multiqc report filenames - same for all samples
+    multiqc_reports = [
+        f"{glds_prefix}geneBody_cov_multiqc{assay_suffix}_report.zip",
+        f"{glds_prefix}infer_exp_multiqc{assay_suffix}_report.zip",
+        f"{glds_prefix}inner_dist_multiqc{assay_suffix}_report.zip",
+        f"{glds_prefix}read_dist_multiqc{assay_suffix}_report.zip"
+    ]
+    
+    # Join the reports with commas
+    combined_reports = ",".join(multiqc_reports)
+    
+    # Add the column to the dataframe with the same value for all rows
+    if column_name not in df.columns:
+        print(f"Adding column: {column_name}")
+        df[column_name] = combined_reports
+    else:
+        print(f"Updating column: {column_name}")
+        df[column_name] = combined_reports
+    
+    return df
+
+def add_raw_counts_data_column(df, glds_prefix, assay_suffix):
+    """Add the Raw Counts Data column to the dataframe."""
+    column_name = "Parameter Value[Raw Counts Data]"
+    
+    # Create the feature counts file names - same for all samples
+    feature_counts_files = [
+        f"{glds_prefix}FeatureCounts{assay_suffix}.tsv",
+        f"{glds_prefix}FeatureCounts{assay_suffix}.tsv.summary"
+    ]
+    
+    # Join the files with commas
+    combined_files = ",".join(feature_counts_files)
+    
+    # Add the column to the dataframe with the same value for all rows
+    if column_name not in df.columns:
+        print(f"Adding column: {column_name}")
+        df[column_name] = combined_files
+    else:
+        print(f"Updating column: {column_name}")
+        df[column_name] = combined_files
+    
+    return df
+
+def add_raw_counts_multiqc_column(df, glds_prefix, assay_suffix):
+    """Add the Raw Counts Data MultiQC reports column to the dataframe."""
+    column_name = "Parameter Value[Raw Counts Data/MultiQC Reports]"
+    
+    # Create the feature counts multiqc report filename - same for all samples
+    multiqc_report = f"{glds_prefix}featureCounts_multiqc{assay_suffix}_report.zip"
+    
+    # Add the column to the dataframe with the same value for all rows
+    if column_name not in df.columns:
+        print(f"Adding column: {column_name}")
+        df[column_name] = multiqc_report
+    else:
+        print(f"Updating column: {column_name}")
+        df[column_name] = multiqc_report
+    
+    return df
+
+def add_raw_counts_tables_column(df, glds_prefix, assay_suffix):
+    """Add the Raw Counts Tables column to the dataframe."""
+    column_name = "Parameter Value[Raw Counts Tables]"
+    
+    # Create the unnormalized counts filename - same for all samples
+    counts_file = f"{glds_prefix}FeatureCounts_Unnormalized_Counts{assay_suffix}.csv"
+    
+    # Add the column to the dataframe with the same value for all rows
+    if column_name not in df.columns:
+        print(f"Adding column: {column_name}")
+        df[column_name] = counts_file
+    else:
+        print(f"Updating column: {column_name}")
+        df[column_name] = counts_file
+    
+    return df
+
+def add_raw_counts_tables_rrnarm_column(df, glds_prefix, assay_suffix):
+    """Add the Raw Counts Tables rRNArm column to the dataframe."""
+    column_name = "Parameter Value[Raw Counts Tables rRNArm]"
+    
+    # Create the unnormalized counts filename with rRNArm - same for all samples
+    counts_file = f"{glds_prefix}FeatureCounts_Unnormalized_Counts_rRNArm{assay_suffix}.csv"
+    
+    # Add the column to the dataframe with the same value for all rows
+    if column_name not in df.columns:
+        print(f"Adding column: {column_name}")
+        df[column_name] = counts_file
+    else:
+        print(f"Updating column: {column_name}")
+        df[column_name] = counts_file
+    
+    return df
+
+def add_normalized_counts_data_column(df, glds_prefix, assay_suffix):
+    """Add the Normalized Counts Data column to the dataframe."""
+    column_name = "Parameter Value[Normalized Counts Data]"
+    
+    # Create the normalized counts filenames - same for all samples
+    normalized_files = [
+        f"{glds_prefix}Normalized_Counts{assay_suffix}.csv",
+        f"{glds_prefix}VST_Normalized_Counts{assay_suffix}.csv"
+    ]
+    
+    # Join the files with commas
+    combined_files = ",".join(normalized_files)
+    
+    # Add the column to the dataframe with the same value for all rows
+    if column_name not in df.columns:
+        print(f"Adding column: {column_name}")
+        df[column_name] = combined_files
+    else:
+        print(f"Updating column: {column_name}")
+        df[column_name] = combined_files
+    
+    return df
+
+def add_normalized_counts_data_rrnarm_column(df, glds_prefix, assay_suffix):
+    """Add the Normalized Counts Data rRNArm column to the dataframe."""
+    column_name = "Parameter Value[Normalized Counts Data rRNArm]"
+    
+    # Create the normalized counts filenames with rRNArm - same for all samples
+    normalized_files = [
+        f"{glds_prefix}Normalized_Counts_rRNArm{assay_suffix}.csv",
+        f"{glds_prefix}VST_Normalized_Counts_rRNArm{assay_suffix}.csv"
+    ]
+    
+    # Join the files with commas
+    combined_files = ",".join(normalized_files)
+    
+    # Add the column to the dataframe with the same value for all rows
+    if column_name not in df.columns:
+        print(f"Adding column: {column_name}")
+        df[column_name] = combined_files
+    else:
+        print(f"Updating column: {column_name}")
+        df[column_name] = combined_files
+    
+    return df
+
+def add_differential_expression_column(df, glds_prefix, assay_suffix):
+    """Add the Differential Expression Analysis Data column to the dataframe."""
+    column_name = "Parameter Value[Differential Expression Analysis Data]"
+    
+    # Create the differential expression filenames - same for all samples
+    de_files = [
+        f"{glds_prefix}SampleTable{assay_suffix}.csv",
+        f"{glds_prefix}contrasts{assay_suffix}.csv",
+        f"{glds_prefix}differential_expression{assay_suffix}.csv"
+    ]
+    
+    # Join the files with commas
+    combined_files = ",".join(de_files)
+    
+    # Add the column to the dataframe with the same value for all rows
+    if column_name not in df.columns:
+        print(f"Adding column: {column_name}")
+        df[column_name] = combined_files
+    else:
+        print(f"Updating column: {column_name}")
+        df[column_name] = combined_files
+    
+    return df
+
+def add_differential_expression_rrnarm_column(df, glds_prefix, assay_suffix):
+    """Add the Differential Expression Analysis Data rRNArm column to the dataframe."""
+    column_name = "Parameter Value[Differential Expression Analysis Data rRNArm]"
+    
+    # Create the differential expression filenames with rRNArm - same for all samples
+    de_files = [
+        f"{glds_prefix}SampleTable_rRNArm{assay_suffix}.csv",
+        f"{glds_prefix}contrasts_rRNArm{assay_suffix}.csv",
+        f"{glds_prefix}differential_expression_rRNArm{assay_suffix}.csv"
+    ]
+    
+    # Join the files with commas
+    combined_files = ",".join(de_files)
+    
+    # Add the column to the dataframe with the same value for all rows
+    if column_name not in df.columns:
+        print(f"Adding column: {column_name}")
+        df[column_name] = combined_files
+    else:
+        print(f"Updating column: {column_name}")
+        df[column_name] = combined_files
     
     return df
 
@@ -511,6 +769,23 @@ def add_alignment_logs_column(df, glds_prefix, runsheet_df=None):
     
     return df
 
+def add_ercc_analyses_column(df, glds_prefix, assay_suffix):
+    """Add the ERCC Analyses column to the dataframe."""
+    column_name = "Parameter Value[ERCC Analyses]"
+    
+    # Create the ercc analyses filename - same for all samples
+    ercc_analyses_file = f"{glds_prefix}ercc_analyses{assay_suffix}.csv"
+    
+    # Add the column to the dataframe with the same value for all rows
+    if column_name not in df.columns:
+        print(f"Adding column: {column_name}")
+        df[column_name] = ercc_analyses_file
+    else:
+        print(f"Updating column: {column_name}")
+        df[column_name] = ercc_analyses_file
+    
+    return df
+
 def main():
     args = parse_args()
     
@@ -526,23 +801,66 @@ def main():
         # Create GLDS prefix for filenames
         glds_prefix = f"{args.glds_accession.upper()}_rna_seq_"
         
-        # Add Trimmed Sequence Data column using information from the runsheet
+        # Check if ERCC spike-ins are used
+        ercc_used = has_ercc_spikes(runsheet_df)
+        
+        # Following the original star workflow order:
+        
+        # 1. Trimmed Sequence Data column
         assay_df = add_trimmed_data_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
         
-        # Add Multiqc Reports column first
-        assay_df = add_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
+        # 2. Trimmed Sequence Data/MultiQC Reports column
+        assay_df = add_trimmed_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
         
-        # Add Trimming Reports column second
+        # 3. Trimmed Sequence Data/Trimming Reports column
         assay_df = add_trimming_reports_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
         
-        # Add aligned sequence data column
+        # 4. Aligned Sequence Data column
         assay_df = add_aligned_sequence_data_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
         
-        # Add alignment logs column
+        # 5. Unmapped Reads column (moved here as requested)
+        assay_df = add_unmapped_reads_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
+        
+        # 6. Aligned Sequence Data/Alignment Logs column
         assay_df = add_alignment_logs_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
         
-        # Add unmapped reads column
-        assay_df = add_unmapped_reads_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
+        # 7. Aligned Sequence Data/MultiQC Reports column
+        assay_df = add_align_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
+        
+        # 8. RSeQC/MultiQC Reports column
+        assay_df = add_rseqc_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
+        
+        # 9. Raw Counts Data column
+        assay_df = add_raw_counts_data_column(assay_df, glds_prefix, args.assay_suffix)
+        
+        # 10. Raw Counts Data/MultiQC Reports column
+        assay_df = add_raw_counts_multiqc_column(assay_df, glds_prefix, args.assay_suffix)
+        
+        # 11. Raw Counts Tables column
+        assay_df = add_raw_counts_tables_column(assay_df, glds_prefix, args.assay_suffix)
+        
+        # 12. Normalized Counts Data column
+        assay_df = add_normalized_counts_data_column(assay_df, glds_prefix, args.assay_suffix)
+        
+        # 13. Differential Expression Analysis Data column
+        assay_df = add_differential_expression_column(assay_df, glds_prefix, args.assay_suffix)
+        
+        # All rRNArm columns
+        
+        # 14. Raw Counts Tables rRNArm column
+        assay_df = add_raw_counts_tables_rrnarm_column(assay_df, glds_prefix, args.assay_suffix)
+        
+        # 15. Normalized Counts Data rRNArm column
+        assay_df = add_normalized_counts_data_rrnarm_column(assay_df, glds_prefix, args.assay_suffix)
+        
+        # 16. Differential Expression Analysis Data rRNArm column
+        assay_df = add_differential_expression_rrnarm_column(assay_df, glds_prefix, args.assay_suffix)
+        
+        # ERCC column (conditionally added only if ERCC spike-ins are used)
+        if ercc_used:
+            print("Adding ERCC Analyses column")
+            # 17. ERCC Analyses column
+            assay_df = add_ercc_analyses_column(assay_df, glds_prefix, args.assay_suffix)
         
         # Get the original assay name from the ISA zip for output filename
         metadata_dir = os.path.join(args.outdir, 'Metadata')
