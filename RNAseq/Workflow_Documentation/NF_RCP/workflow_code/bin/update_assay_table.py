@@ -136,7 +136,7 @@ def has_ercc_spikes(runsheet_df):
     return False
 
 def extract_and_find_assay(outdir, glds_accession):
-    """Extract ISA.zip and find the RNA-Seq assay file."""
+    """Extract ISA.zip and find the RNA-Seq assay file using ONLY investigation file logic."""
     # Setup paths
     metadata_dir = os.path.join(outdir, 'Metadata')
     if not os.path.exists(metadata_dir):
@@ -166,60 +166,71 @@ def extract_and_find_assay(outdir, glds_accession):
             error_msg=f"Error: No investigation file found in {extraction_dir}"
         )
         
-        # Try to find RNA-Seq assay file directly by filename pattern
-        assay_file = (
-            find_file(extraction_dir, 'a_*rna-seq*.txt') or 
-            find_file(extraction_dir, 'a_*transcription*.txt')
-        )
+        # Define valid combination for RNA-seq
+        valid_measurement = "transcription profiling"
+        valid_technology = "RNA Sequencing (RNA-Seq)"
         
-        if assay_file:
-            print(f"Found RNA-Seq assay file by filename: {assay_file}")
-            # Need to read the file here since the temp dir will be gone
-            return pd.read_csv(assay_file, sep='\t')
+        # Parse investigation file to build STUDY ASSAYS table
+        study_assays_table = {}
+        study_assays_section = False
         
-        # Parse investigation file to find assay file
         with open(i_file, 'r') as f:
             for line in f:
-                if line.startswith('Study Assay File Name'):
-                    # Extract assay filenames
-                    parts = line.strip().split('\t')
-                    if len(parts) > 1:
-                        assay_files = [p.strip() for p in parts[1:] if p.strip()]
-                        
-                        # First check for RNA-Seq in filename
-                        for file in assay_files:
-                            if 'rna-seq' in file.lower() or 'transcription' in file.lower():
-                                full_path = os.path.join(extraction_dir, file)
-                                if os.path.exists(full_path):
-                                    print(f"Found RNA-Seq assay file: {full_path}")
-                                    return pd.read_csv(full_path, sep='\t')
-                        
-                        # If not found, use first assay file
-                        if assay_files:
-                            first_assay = os.path.join(extraction_dir, assay_files[0])
-                            if os.path.exists(first_assay):
-                                print(f"Using first assay file: {first_assay}")
-                                return pd.read_csv(first_assay, sep='\t')
-                        
-                        # Try pattern matching
-                        assay_file = find_file(extraction_dir, 'a_*.txt')
-                        if assay_file:
-                            print(f"Using first available assay file: {assay_file}")
-                            return pd.read_csv(assay_file, sep='\t')
+                line = line.strip()
+                
+                # Track STUDY ASSAYS section
+                if line == "STUDY ASSAYS":
+                    study_assays_section = True
+                    continue
+                elif study_assays_section and not line:
+                    study_assays_section = False
+                    continue
+                
+                # Extract data from section
+                if study_assays_section and line:
+                    parts = line.split('\t')
+                    if parts and parts[0]:
+                        key = parts[0]
+                        values = [v.strip() for v in parts[1:] if v.strip()]
+                        study_assays_table[key] = values
         
-        # Last resort - find any assay file
-        assay_file = find_file(
-            extraction_dir, 
-            'a_*.txt',
-            error_msg=f"Error: No assay file found in {extraction_dir}"
-        )
-        
-        if assay_file:
-            return pd.read_csv(assay_file, sep='\t')
-        else:
-            print(f"Error: No valid assay file found in {extraction_dir}")
-            print(f"Files in directory: {os.listdir(extraction_dir)}")
+        # Check if we have all required keys
+        required_keys = ["Study Assay Measurement Type", "Study Assay Technology Type", "Study Assay File Name"]
+        if not all(key in study_assays_table for key in required_keys):
+            print(f"Error: Missing required keys in STUDY ASSAYS section")
             sys.exit(1)
+        
+        # Get the values from the table
+        measurement_types = study_assays_table["Study Assay Measurement Type"]
+        technology_types = study_assays_table["Study Assay Technology Type"]
+        file_names = study_assays_table["Study Assay File Name"]
+        
+        # Ensure all lists have equal length
+        if not (len(measurement_types) == len(technology_types) == len(file_names)):
+            print(f"Error: Measurement types, technology types, and file names have different lengths")
+            sys.exit(1)
+        
+        # Find matching assay file
+        matched_file = None
+        for i in range(len(measurement_types)):
+            if (measurement_types[i].lower() == valid_measurement.lower() and 
+                technology_types[i].lower() == valid_technology.lower()):
+                matched_file = file_names[i]
+                break
+        
+        if not matched_file:
+            print(f"Error: No assay file matched for RNA-Seq. Measurement types: {measurement_types}, Technology types: {technology_types}")
+            sys.exit(1)
+        
+        # Load the matched assay file
+        assay_path = os.path.join(extraction_dir, matched_file)
+        if not os.path.exists(assay_path):
+            print(f"Error: Matched assay file doesn't exist: {assay_path}")
+            sys.exit(1)
+        
+        print(f"Using RNA-Seq assay file: {assay_path}")
+        # Return both the dataframe and the filename
+        return pd.read_csv(assay_path, sep='\t'), matched_file
 
 def add_parameter_column(df, column_name, value, prefix=None):
     """Add a parameter column to the dataframe if it doesn't exist already.
@@ -805,7 +816,7 @@ def main():
     runsheet_df = find_runsheet(args.outdir, args.glds_accession)
     
     # Find RNA-Seq assay file and get its contents
-    assay_df = extract_and_find_assay(args.outdir, args.glds_accession)
+    assay_df, assay_filename = extract_and_find_assay(args.outdir, args.glds_accession)
     print(f"Original assay table has {len(assay_df)} rows and {len(assay_df.columns)} columns")
     
     # Process and save assay file
@@ -877,19 +888,8 @@ def main():
         # Clean comma-space in all string columns
         assay_df = clean_comma_space(assay_df)
         
-        # Get the original assay name from the ISA zip for output filename
-        metadata_dir = os.path.join(args.outdir, 'Metadata')
-        isa_zip = find_file(metadata_dir, '*ISA*.zip') or find_file(metadata_dir, '*.zip')
-        
-        # Default filename if we can't find anything else
-        orig_filename = f"a_{args.glds_accession}_assay.txt"
-        
-        if isa_zip:
-            with zipfile.ZipFile(isa_zip, 'r') as zip_ref:
-                file_list = zip_ref.namelist()
-                assay_files = [f for f in file_list if os.path.basename(f).startswith('a_')]
-                if assay_files:
-                    orig_filename = os.path.basename(assay_files[0])
+        # Use the filename we found in extract_and_find_assay
+        orig_filename = assay_filename
         
         # Create both original and modified output files
         # Original file (preserving the original name)
