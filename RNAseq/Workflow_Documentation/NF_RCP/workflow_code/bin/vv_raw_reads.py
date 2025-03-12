@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Script to validate and verify raw reads based on runsheet information.
 Expects to run from inside a output directory GLDS-##.
