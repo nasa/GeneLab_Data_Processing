@@ -786,6 +786,18 @@ def add_ercc_analyses_column(df, glds_prefix, assay_suffix):
     
     return df
 
+def clean_comma_space(df):
+    """Remove spaces after commas in all string columns of the dataframe."""
+    # Loop through all columns in the dataframe
+    for col in df.columns:
+        # Only process string (object) columns
+        if df[col].dtype == 'object':
+            # Replace comma-space with just comma
+            df[col] = df[col].str.replace(", ", ",", regex=False)
+            
+    print("Removed spaces after commas in all string columns")
+    return df
+
 def main():
     args = parse_args()
     
@@ -861,6 +873,9 @@ def main():
             print("Adding ERCC Analyses column")
             # 17. ERCC Analyses column
             assay_df = add_ercc_analyses_column(assay_df, glds_prefix, args.assay_suffix)
+        
+        # Clean comma-space in all string columns
+        assay_df = clean_comma_space(assay_df)
         
         # Get the original assay name from the ISA zip for output filename
         metadata_dir = os.path.join(args.outdir, 'Metadata')
