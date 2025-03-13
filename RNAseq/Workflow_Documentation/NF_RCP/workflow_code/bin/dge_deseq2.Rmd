@@ -133,15 +133,26 @@ if (params$microbes) {
     # Load RSEM data for default mode
     files <- list.files(
         path = params$input_counts, 
-        pattern = ".genes.results", 
+        pattern = ".genes.results$", 
         full.names = TRUE
     )
-    samples = rownames(study)
+
+    # Remove "_rRNA_removed" from filenames for matching
+    clean_filenames <- sub("_rRNA_removed", "", basename(files))
+
+    samples <- rownames(study)
+
     # Reorder files based on sample names
-    reordering <- sapply(samples, function(x) grep(paste0(x, ".genes.results$"), files, value = FALSE))
+    reordering <- sapply(samples, function(x) {
+        grep(paste0("^", x, "\\.genes.results$"), clean_filenames, value = FALSE)
+    })
+
     files <- files[reordering]
     names(files) <- samples
+
+    # Import data using tximport
     txi.rsem <- tximport(files, type = "rsem", txIn = FALSE, txOut = FALSE)
+
     if (dim(txi.rsem$counts)[2] != nrow(study)) {
         stop("Sample count mismatch between imported gene results and runsheet")
     }

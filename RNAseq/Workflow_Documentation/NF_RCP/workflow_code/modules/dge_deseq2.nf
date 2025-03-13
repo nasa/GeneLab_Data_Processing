@@ -28,8 +28,13 @@ process DGE_DESEQ2 {
         def microbes = params.mode == 'microbes' ? 'TRUE' : 'FALSE'
         def dge_rmd_file = "${projectDir}/bin/dge_deseq2.Rmd"
         def debug_dummy_counts = params.use_dummy_gene_counts ? 'TRUE'  : 'FALSE'
+        def input_counts_path = "gene_counts"
 
         """
+        if [[ "${params.mode}" != "microbes" ]]; then
+            mkdir -p ${input_counts_path}
+            mv ${gene_counts} ${input_counts_path}/
+        fi
         Rscript -e "rmarkdown::render('${dge_rmd_file}', 
             output_file = 'DGE_DESeq2.html',
             output_dir = '\${PWD}',
@@ -43,7 +48,7 @@ process DGE_DESEQ2 {
                 runsheet_path = '${runsheet_path}',
                 microbes = ${microbes},
                 gene_id_type = '${meta.gene_id_type}',
-                input_counts = '${gene_counts}',
+                input_counts = '${input_counts_path}',
                 DEBUG_MODE_LIMIT_GENES = FALSE,
                 DEBUG_MODE_ADD_DUMMY_COUNTS = ${debug_dummy_counts}
             ))"
