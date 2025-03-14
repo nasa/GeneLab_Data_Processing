@@ -53,6 +53,10 @@ include { ADD_GENE_ANNOTATIONS as ADD_GENE_ANNOTATIONS_RRNA_RM } from '../module
 
 // include { EXTEND_DGE_TABLE } from '../modules/extend_dge_table.nf'
 // include { GENERATE_PCA_TABLE } from '../modules/generate_pca_table.nf'
+
+include { SOFTWARE_VERSIONS } from '../modules/software_versions.nf'
+
+
 include { validateParameters; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
 
 
@@ -319,6 +323,40 @@ workflow RNASEQ {
             | concat( READ_DISTRIBUTION_MULTIQC.out.data )
             | concat( COUNT_MULTIQC.out.data )
             | collect
+
+
+        // Software Version Capturing
+        nf_version = '"NEXTFLOW":\n    nextflow: '.concat("${nextflow.version}\n")
+        ch_nextflow_version = Channel.value(nf_version)
+        ch_software_versions = Channel.empty()
+        // Mix in versions from each process
+        ch_software_versions = ch_software_versions
+            | mix(ISA_TO_RUNSHEET.out.versions)  
+            | mix(GTF_TO_PRED.out.versions)
+            | mix(PRED_TO_BED.out.versions)
+            | mix(RAW_FASTQC.out.versions)
+            | mix(TRIMGALORE.out.versions)
+            | mix(ALIGN_STAR.out.versions)
+            | mix(SORT_AND_INDEX_BAM.out.versions)
+            | mix(INFER_EXPERIMENT.out.versions)
+            | mix(GENEBODY_COVERAGE.out.versions)
+            | mix(INNER_DISTANCE.out.versions)
+            | mix(READ_DISTRIBUTION.out.versions)
+            | mix(COUNT_ALIGNED.out.versions)
+            | mix(RAW_READS_MULTIQC.out.versions)
+            | mix(DGE_DESEQ2.out.versions)
+            | mix(ch_nextflow_version)
+        // Process the versions:
+        ch_software_versions 
+            | unique  
+            | collectFile(
+                newLine: true, 
+                cache: false
+            )
+            | set { ch_final_software_versions }
+        // Convert software versions combined yaml to markdown table
+        SOFTWARE_VERSIONS(ch_outdir, ch_final_software_versions)
+
 
         PARSE_QC_METRICS(
             ch_outdir,
