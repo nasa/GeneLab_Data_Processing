@@ -58,11 +58,10 @@ include { validateParameters; paramsSummaryLog; samplesheetToList } from 'plugin
 
 include { VV_RAW_READS;
     VV_TRIMMED_READS;
-    VV_STAR_ALIGNMENTS;
+    VV_STAR_ALIGNMENT;
     VV_RSEQC;
     VV_RSEM_COUNTS;
-    VV_DESEQ2_ANALYSIS;
-    VV_CONCAT_FILTER } from '../modules/vv.nf'
+    VV_DGE_DESEQ2 } from '../modules/vv.nf'
 
 def colorCodes = [
     c_line: "┅" * 70,
@@ -330,81 +329,79 @@ workflow RNASEQ {
             QUANTIFY_RSEM_GENES.out.publishables
         )
 
-        // Run dp_tools V&V modules on workflow outputs and publish them
-        // VV_RAW_READS( 
-        //     publishdir,
-        //     ch_meta,
-        //     runsheet_path,
-        //     raw_reads | map{ it -> it[1] } | collect,
-        //     raw_fastqc_zip,
-        //     RAW_READS_MULTIQC.out.unzipped_report,
-        //     RAW_READS_MULTIQC.out.zipped_report,
-        //     "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
-        // )
-        // VV_TRIMMED_READS( 
-        //     publishdir,
-        //     ch_meta,
-        //     runsheet_path,
-        //     trimmed_reads | map{ it -> it[1] } | collect,
-        //     trimmed_fastqc_zip,
-        //     TRIMMED_READS_MULTIQC.out.unzipped_report,
-        //     TRIMMED_READS_MULTIQC.out.zipped_report,
-        //     "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
-        // )
-        // VV_STAR_ALIGNMENTS(
-        //     publishdir,
-        //     runsheet_path,
-        //     ALIGN_STAR.out.publishables | collect,
-        //     QUANTIFY_STAR_GENES.out.publishables | collect,
-        //     ALIGN_MULTIQC.out.zipped_report,
-        //     ALIGN_MULTIQC.out.unzipped_report,
-        //     SORT_AND_INDEX_BAM.out.bam_bed | collect,
-        //     "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
-        // )
-        // VV_RSEQC(
-        //     publishdir,
-        //     ch_meta,
-        //     runsheet_path,
-        //     ch_rseqc_logs,
-        //     GENEBODY_COVERAGE_MULTIQC.out.zipped_report
-        //         .mix( GENEBODY_COVERAGE_MULTIQC.out.unzipped_report )
-        //         .collect(),
-        //     INFER_EXPERIMENT_MULTIQC.out.zipped_report
-        //         .mix( INFER_EXPERIMENT_MULTIQC.out.unzipped_report )
-        //         .collect(),
-        //     INNER_DISTANCE_MULTIQC.out.zipped_report
-        //         .mix( INNER_DISTANCE_MULTIQC.out.unzipped_report )
-        //         .collect(),
-        //     READ_DISTRIBUTION_MULTIQC.out.zipped_report
-        //         .mix( READ_DISTRIBUTION_MULTIQC.out.unzipped_report )
-        //         .collect(),
-        //     "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
-        // )
-        // VV_RSEM_COUNTS(
-        //     publishdir,
-        //     runsheet_path,
-        //     COUNT_ALIGNED.out.only_counts | collect,
-        //     QUANTIFY_RSEM_GENES.out.publishables,
-        //     COUNT_MULTIQC.out.zipped_report,
-        //     COUNT_MULTIQC.out.unzipped_report,
-        //     "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
-        // )
-        // VV_DESEQ2_ANALYSIS(
-        //     publishdir,
-        //     ch_meta,
-        //     runsheet_path,
-        //     QUANTIFY_RSEM_GENES.out.publishables,
-        //     COUNT_MULTIQC.out.zipped_report,
-        //     COUNT_MULTIQC.out.unzipped_report,
-        //     DGE_DESEQ2.out.norm_counts,
-        //     DGE_DESEQ2.out.contrasts
-        //         .mix( DGE_DESEQ2.out.sample_table )
-        //         .mix( annotated_dge_table )
-        //         .mix( GENERATE_PCA_TABLE.out.pca_table ),
-        //     DGE_DESEQ2.out.norm_counts_ercc | ifEmpty( { file("NO_FILES.placeholder") }),
-        //     DGE_BY_DESEQ2.out.dge_ercc | ifEmpty( { file("NO_FILES.placeholder") }),
-        //     "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
-        //             )
+        VV_RAW_READS(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            raw_reads | map{ it -> it[1] } | collect,
+            raw_fastqc_zip,
+            RAW_READS_MULTIQC.out.zipped_report
+        )
+
+
+        VV_TRIMMED_READS(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            trimmed_reads | map{ it -> it[1] } | collect,
+            trimmed_fastqc_zip,
+            TRIMMED_READS_MULTIQC.out.zipped_report,
+            TRIMGALORE.out.reports | collect,
+            TRIMMING_MULTIQC.out.zipped_report
+        )
+
+        VV_STAR_ALIGNMENT(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            ALIGN_STAR.out.publishables | collect,
+            QUANTIFY_STAR_GENES.out.publishables | collect,
+            ALIGN_MULTIQC.out.zipped_report,
+            SORT_AND_INDEX_BAM.out.bam_only_files | collect,
+        )
+
+        VV_RSEQC(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            ch_rseqc_logs,
+            GENEBODY_COVERAGE_MULTIQC.out.zipped_report,
+            INFER_EXPERIMENT_MULTIQC.out.zipped_report,
+            Channel.empty() | mix(INNER_DISTANCE_MULTIQC.out.zipped_report) | collect | ifEmpty({ file("PLACEHOLDER") }),
+            READ_DISTRIBUTION_MULTIQC.out.zipped_report
+        )
+
+        VV_RSEM_COUNTS(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            COUNT_ALIGNED.out.only_counts | collect,
+            QUANTIFY_RSEM_GENES.out.publishables,
+            COUNT_MULTIQC.out.zipped_report
+        )
+
+        VV_DGE_DESEQ2(
+            dp_tools_plugin,
+            ch_outdir,
+            ch_meta,
+            runsheet_path,
+            DGE_DESEQ2.out.norm_counts,
+            DGE_DESEQ2.out.vst_norm_counts,
+            DGE_DESEQ2.out.sample_table,
+            DGE_DESEQ2.out.contrasts,
+            ADD_GENE_ANNOTATIONS.out.annotated_dge_table,
+            DGE_DESEQ2_RRNA_RM.out.norm_counts,
+            DGE_DESEQ2_RRNA_RM.out.vst_norm_counts,
+            DGE_DESEQ2_RRNA_RM.out.sample_table,
+            DGE_DESEQ2_RRNA_RM.out.contrasts,
+            ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
+        )
     emit:
         PARSE_QC_METRICS.out.file
+        VV_DGE_DESEQ2.out.log
 }

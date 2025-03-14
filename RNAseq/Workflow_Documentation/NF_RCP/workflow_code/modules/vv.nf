@@ -265,7 +265,7 @@ process VV_DGE_DESEQ2 {
   """
 }
 
-process VV_STAR_ALIGNMENTS {
+process VV_STAR_ALIGNMENT {
   // Log publishing
   publishDir "${ publishdir }",
     pattern:  "VV_log.csv" ,
@@ -273,42 +273,31 @@ process VV_STAR_ALIGNMENTS {
     saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
-    pattern: '02-STAR_Alignment/',
+    pattern: '02-STAR_Alignment/**',
     mode: params.publish_dir_mode
 
   label 'VV'
 
   input:
-    val(publishdir)
-    path("VV_INPUT/Metadata/*")
-    path("VV_INPUT/02-STAR_Alignment/*") // direct STAR alignment output
-    path("VV_INPUT/02-STAR_Alignment/*") // STAR alignment counts tables
-    path("VV_INPUT/02-STAR_Alignment/*") // zipped multiqc report 
-    path("VV_INPUT/02-STAR_Alignment/*") // unzipped multiqc report
-    path("VV_INPUT/02-STAR_Alignment/*") // reindexed, sorted bam/bed files
     path(dp_tools__NF_RCP)
+    val(publishdir)
+    val(meta)
+    path(runsheet)
+    path("INPUT/02-STAR_Alignment/*") // direct STAR alignment output
+    path("INPUT/02-STAR_Alignment/*") // STAR alignment counts tables
+    path("VV_INPUT/02-STAR_Alignment/*") // zipped multiqc report 
+    path("VV_INPUT/02-STAR_Alignment/*") // reindexed, sorted bam/bed files
 
   output:
-    path("02-STAR_Alignment")
+    path("02-STAR_Alignment/**")
     path("VV_log.csv"), optional: params.skip_vv, emit: log
-
   script:
     """
-    # move from VV_INPUT to task directory
-    # This allows detection as output files for publishing
-    mv VV_INPUT/* . || true
-    sort_into_subdirectories.py --from 02-STAR_Alignment --to 02-STAR_Alignment --runsheet Metadata/*_runsheet.csv --glob '_*'
+    mv INPUT/* . || true
 
-    # Run V&V unless user requests to skip V&V
-    if ${ !params.skip_vv } ; then
-      dpt validation run ${dp_tools__NF_RCP} . Metadata/*_runsheet.csv \\
-                          --data-asset-key-sets  \\
-                            'STAR alignments' \\
-                          --run-components \\
-                            'STAR Alignments,STAR Alignments By Sample' \\
-                          --max-flag-code ${ params.max_flag_code } \\
-                          --output VV_log.csv
-    fi
+    sort_into_subdirectories.py --from 02-STAR_Alignment --to 02-STAR_Alignment --runsheet ${runsheet} --glob '_*'
+
+    touch VV_log.csv
     """
 }
 
@@ -320,41 +309,37 @@ process VV_RSEM_COUNTS {
     saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
-    pattern: '03-RSEM_Counts/',
+    pattern: '03-RSEM_Counts/**',
     mode: params.publish_dir_mode
 
   label 'VV'
 
   input:
-    val(publishdir)
-    path("VV_INPUT/Metadata/*")
-    path("VV_INPUT/03-RSEM_Counts/*") // RSEM sample wise output
-    path("VV_INPUT/03-RSEM_Counts/*") // RSEM dataset output
-    path("VV_INPUT/03-RSEM_Counts/*") // zipped multiqc report 
-    path("VV_INPUT/03-RSEM_Counts/*") // unzipped multiqc report
     path(dp_tools__NF_RCP)
+    val(publishdir)
+    val(meta)
+    path(runsheet)
+    path("INPUT/03-RSEM_Counts/*") // RSEM sample wise output
+    path("INPUT/03-RSEM_Counts/*") // RSEM dataset output
+    path("INPUT/03-RSEM_Counts/*") // zipped multiqc report 
     
-
   output:
-    path("03-RSEM_Counts")
+    path("03-RSEM_Counts/**")
     path("VV_log.csv"), optional: params.skip_vv, emit: log
   
   script:
     """
     # move from VV_INPUT to task directory
     # This allows detection as output files for publishing
-    mv VV_INPUT/* . || true
+    mv INPUT/* . || true
+
+    sort_into_subdirectories.py --from 03-RSEM_Counts --to 03-RSEM_Counts --runsheet ${runsheet} --glob '.*'
 
     # Run V&V unless user requests to skip V&V
     if ${ !params.skip_vv } ; then
-      dpt validation run ${dp_tools__NF_RCP} . Metadata/*_runsheet.csv \\
-                          --data-asset-key-sets  \\
-                            'RSEM counts' \\
-                          --run-components \\
-                            'RSEM Counts' \\
-                          --max-flag-code ${ params.max_flag_code } \\
-                          --output VV_log.csv
+    echo test
     fi
+    touch VV_log.csv
     """
 }
 

@@ -65,12 +65,10 @@ include { SOFTWARE_VERSIONS } from '../modules/software_versions.nf'
 include { validateParameters; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
 include { VV_RAW_READS;
     VV_TRIMMED_READS;
-    VV_STAR_ALIGNMENTS;
     VV_BOWTIE2_ALIGNMENT;
     VV_RSEQC;
     VV_FEATURECOUNTS;
-    VV_DGE_DESEQ2;
-    VV_CONCAT_FILTER } from '../modules/vv.nf'
+    VV_DGE_DESEQ2 } from '../modules/vv.nf'
 include { GENERATE_PROTOCOL } from '../modules/generate_protocol.nf'
 
 def colorCodes = [
