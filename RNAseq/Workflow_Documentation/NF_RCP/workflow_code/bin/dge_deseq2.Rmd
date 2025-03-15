@@ -198,59 +198,62 @@ rownames(sampleTable) <- if (params$microbes) {
     colnames(txi.rsem$counts)
 }
 # Handle technical replicates
-handle_technical_replicates <- function(sampleTable) {
-    # Extract base names and tech rep numbers
+# Identify technical replicates by name pattern
+tech_rep_pattern <- "_techrep(\\d+)$"
+all_samples <- rownames(sampleTable)
+has_tech_rep <- grepl(tech_rep_pattern, all_samples)
+
+# Only process if we have technical replicates
+if (any(has_tech_rep)) {
+    # Get sample base names and tech replicate numbers
     sample_info <- data.frame(
-        full_name = rownames(sampleTable),
-        condition = sampleTable$condition,
+        name = all_samples,
         stringsAsFactors = FALSE
     )
     
-    # Identify technical replicates
-    tech_rep_pattern <- "_techrep(\\d+)$"
-    has_tech_rep <- grepl(tech_rep_pattern, sample_info$full_name)
+    # For samples with tech reps, extract base name and replicate number
+    sample_info$base_name <- ifelse(has_tech_rep, 
+                                   sub(tech_rep_pattern, "", all_samples),
+                                   all_samples)
     
-    if (!any(has_tech_rep)) {
-        return(sampleTable)  # No technical replicates found
-    }
+    sample_info$tech_rep <- rep(1, length(all_samples))
+    sample_info$tech_rep[has_tech_rep] <- as.integer(sub(".*_techrep", "", all_samples[has_tech_rep]))
     
-    # Extract base names and tech rep numbers
-    sample_info$base_name <- sub(tech_rep_pattern, "", sample_info$full_name)
-    sample_info$tech_rep <- as.numeric(sub(".*_techrep", "", sample_info$full_name))
-    sample_info$tech_rep[!has_tech_rep] <- 1
+    # Count how many tech reps each base sample has
+    base_samples <- unique(sample_info$base_name)
+    tech_rep_counts <- sapply(base_samples, function(b) {
+        sum(sample_info$base_name == b)
+    })
     
-    # Group samples by base name and keep track of which ones to keep
-    samples_to_keep <- c()
-    unique_base_names <- unique(sample_info$base_name)
+    # Find the minimum number of tech reps across all samples
+    min_tech_reps <- min(tech_rep_counts)
     
-    for (base_name in unique_base_names) {
-        base_samples <- which(sample_info$base_name == base_name)
-        if (length(base_samples) == 1) {
-            # Single sample, keep as is
-            samples_to_keep <- c(samples_to_keep, base_samples)
+    # Keep all regular samples (no tech reps) and the minimum number of tech reps for each base sample
+    samples_to_keep <- character(0)
+    
+    for (base in base_samples) {
+        indices <- which(sample_info$base_name == base)
+        if (length(indices) == 1) {
+            # Regular sample, no tech reps
+            samples_to_keep <- c(samples_to_keep, sample_info$name[indices])
         } else {
-            # Multiple samples (tech reps), keep only the minimum number
-            tech_rep_samples <- base_samples[order(sample_info$tech_rep[base_samples])]
-            samples_to_keep <- c(samples_to_keep, tech_rep_samples[1])  # Keep only first tech rep
+            # Has tech reps, keep the minimum number in order
+            ordered_indices <- indices[order(sample_info$tech_rep[indices])]
+            samples_to_keep <- c(samples_to_keep, sample_info$name[ordered_indices[1:min_tech_reps]])
         }
     }
     
-    # Create new sample table with only the kept samples
-    new_sampleTable <- data.frame(
-        condition = sample_info$condition[samples_to_keep],
-        row.names = sample_info$base_name[samples_to_keep],
-        stringsAsFactors = FALSE
-    )
+    # Update sample table and counts to keep only selected samples
+    sampleTable <- sampleTable[samples_to_keep, , drop=FALSE]
     
-    return(new_sampleTable)
-}
-# Apply the technical replicate handling
-sampleTable <- handle_technical_replicates(sampleTable)
-# Update the counts matrix to match the new sample table
-if (params$microbes) {
-    counts <- counts[, rownames(sampleTable)]
-} else {
-    txi.rsem$counts <- txi.rsem$counts[, rownames(sampleTable)]
+    # Update the counts matrix to match the new sample table
+    if (params$microbes) {
+        counts <- counts[, samples_to_keep]
+    } else {
+        txi.rsem$counts <- txi.rsem$counts[, samples_to_keep]
+        txi.rsem$abundance <- txi.rsem$abundance[, samples_to_keep]
+        txi.rsem$length <- txi.rsem$length[, samples_to_keep]
+    }
 }
 ```
 
