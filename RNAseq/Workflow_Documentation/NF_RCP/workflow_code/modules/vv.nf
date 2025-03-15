@@ -297,7 +297,10 @@ process VV_STAR_ALIGNMENT {
 
     sort_into_subdirectories.py --from 02-STAR_Alignment --to 02-STAR_Alignment --runsheet ${runsheet} --glob '_*'
 
-    touch VV_log.csv
+    # Run V&V unless user requests to skip V&V
+    if ${ !params.skip_vv } ; then
+      vv_star_alignment.py --runsheet ${runsheet} --outdir .
+    fi
     """
 }
 
@@ -337,9 +340,8 @@ process VV_RSEM_COUNTS {
 
     # Run V&V unless user requests to skip V&V
     if ${ !params.skip_vv } ; then
-    echo test
+      vv_rsem_counts.py --runsheet ${runsheet} --outdir .
     fi
-    touch VV_log.csv
     """
 }
 

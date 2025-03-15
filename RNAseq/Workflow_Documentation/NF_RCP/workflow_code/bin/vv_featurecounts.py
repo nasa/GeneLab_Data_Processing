@@ -12,7 +12,10 @@ Has ERCC
 Check that the expected output directories exist
 
 Section-specific checks:
-[To be added]
+- check_featurecounts_files_existence: Check if all expected featureCounts output files exist
+- get_featurecounts_multiqc_stats: Extract featureCounts metrics from MultiQC report
+- report_multiqc_outliers: Identify and report outliers in featureCounts metrics
+- check_rrna_removal: Verify that rRNA genes were properly removed in the rRNArm file
 
 """
 

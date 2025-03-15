@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Script to validate and verify raw reads based on runsheet information.
+Script to validate and verify Bowtie2 alignment outputs based on runsheet information.
 Expects to run from inside a output directory GLDS-##.
 
 Parse the input runsheet to get:
@@ -11,9 +11,11 @@ Has ERCC
 Check that the expected output directories exist
 
 Section-specific checks:
-
-check_bowtie2_alignment_existence: Check if all expected bowtie2 alignment files exist for each sample
-
+- check_bowtie2_existence: Check if all expected bowtie2 alignment files exist for each sample
+- validate_unmapped_fastq: Validate the format and integrity of unmapped FASTQ files
+- check_samples_multiqc: Check if all samples are present in the MultiQC report
+- get_bowtie2_multiqc_stats: Extract Bowtie2 metrics from MultiQC report
+- report_multiqc_outliers: Identify and report statistical outliers in alignment metrics
 """
 
 import os

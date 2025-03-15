@@ -17,6 +17,11 @@ check_gzip_integrity: Verify GZIP integrity of FASTQ files using gzip -t
 validate_fastq_format: Ensure FASTQ files have proper formatting (headers start with @)
 check_raw_fastqc_existence: Verify FastQC output files exist (HTML and ZIP files)
 check_samples_multiqc: Confirm all samples are included in the MultiQC report
+get_raw_multiqc_stats: Extract FastQC metrics from MultiQC report
+report_multiqc_outliers: Identify and report outliers in FastQC metrics
+check_paired_read_counts: Ensure paired-end reads have matching read counts
+report_read_depth_stats: Log statistics about sequencing depth across all samples
+report_duplication_rate_stats: Log statistics about duplication rates across all samples
 
 """
 

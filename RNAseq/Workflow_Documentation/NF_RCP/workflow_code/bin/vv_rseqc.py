@@ -1,4 +1,31 @@
 #!/usr/bin/env python
+"""
+Script to validate and verify RSeQC outputs based on runsheet information.
+Expects to run from inside a output directory GLDS-##.
+
+Parse the input runsheet to get:
+Sample Name
+Paired End
+Has ERCC
+Organism
+
+Check that the expected output directories exist
+
+Section-specific checks:
+- check_gene_body_coverage_existence: Check if all expected gene body coverage files exist
+- check_infer_experiment_existence: Check if all expected infer experiment files exist
+- check_read_distribution_existence: Check if all expected read distribution files exist
+- check_inner_distance_existence: Check if all expected inner distance files exist
+- get_genebody_coverage_multiqc_stats: Extract gene body coverage metrics from MultiQC report
+- report_genebody_coverage_issues: Identify and report issues in gene body coverage data
+- get_infer_experiment_multiqc_stats: Extract infer experiment metrics from MultiQC report
+- report_infer_experiment_issues: Identify and report issues in infer experiment data
+- detect_coverage_bin_outliers: Detect outliers in gene body coverage bins
+- get_inner_distance_multiqc_stats: Extract inner distance metrics from MultiQC report
+- report_inner_distance_issues: Identify and report issues in inner distance data
+- get_read_distribution_multiqc_stats: Extract read distribution metrics from MultiQC report
+- report_read_distribution_issues: Identify and report issues in read distribution data
+"""
 
 import os
 import sys
