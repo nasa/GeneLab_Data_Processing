@@ -66,6 +66,7 @@ include { VV_RAW_READS;
     VV_RSEQC;
     VV_RSEM_COUNTS;
     VV_DGE_DESEQ2 } from '../modules/vv.nf'
+include { GENERATE_PROTOCOL } from '../modules/generate_protocol.nf'
 
 def colorCodes = [
     c_line: "┅" * 70,
@@ -439,6 +440,16 @@ workflow RNASEQ {
             DGE_DESEQ2_RRNA_RM.out.contrasts,
             ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
         )
+
+        GENERATE_PROTOCOL(ch_outdir,
+            ch_meta,
+            strandedness,
+            SOFTWARE_VERSIONS.out.software_versions_yaml,
+            reference_source,
+            reference_version,
+            genome_references_pre_ercc
+        )
+
     emit:
         PARSE_QC_METRICS.out.file
         VV_DGE_DESEQ2.out.log

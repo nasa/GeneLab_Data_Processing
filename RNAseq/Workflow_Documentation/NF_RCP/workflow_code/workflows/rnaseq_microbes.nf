@@ -442,7 +442,7 @@ workflow RNASEQ_MICROBES {
             SOFTWARE_VERSIONS.out.software_versions_yaml,
             reference_source,
             reference_version,
-            genome_references
+            genome_references_pre_ercc
         )
 
     emit:

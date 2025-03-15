@@ -57,6 +57,9 @@ process DGE_DESEQ2 {
                     versions['R'] <- gsub(' .*', '', gsub('R version ', '', R.version\\\$version.string));
                     versions['BioConductor'] <- as.character(BiocManager::version()); 
                     pkg_list <- c('BiocParallel', 'DESeq2', 'tidyverse', 'dplyr', 'knitr', 'stringr', 'yaml');
+                    if (${microbes} != TRUE) {
+                        pkg_list <- c(pkg_list, 'tximport');
+                    }
                     for(pkg in pkg_list) {
                         versions[pkg] <- as.character(packageVersion(pkg))
                     };
