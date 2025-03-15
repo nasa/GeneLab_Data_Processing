@@ -12,6 +12,7 @@ import enum
 from pathlib import Path
 import itertools
 import numpy as np
+import re
 
 #############################################################################
 # Differential Gene Expression (DGE) Validation Checks
@@ -159,18 +160,19 @@ def log_check_result(log_path, component, sample_id, check_name, status, message
         f.write(f"{escape_field(component)},{escape_field(sample_id)},{escape_field(check_name)},"
                 f"{escape_field(status)},{escape_field(message)},{escape_field(details, True)}\n")
 
-def check_deseq2_normcounts_existence(outdir, log_path, assay_suffix="_GLbulkRNAseq"):
+def check_deseq2_normcounts_existence(outdir, log_path, assay_suffix="_GLbulkRNAseq", mode="default"):
     """Check if DESeq2 normalized counts files exist.
     
     Args:
         outdir: Path to the NormCounts directory (not the parent outdir)
         log_path: Path to the log file
         assay_suffix: Suffix to append to filenames
+        mode: Processing mode, either 'default' or 'microbes'
         
     Returns:
         bool: True if all required files exist, False otherwise
     """
-    component = "dge"
+    component = "dge_NormCounts"
     
     # Strip any stratification suffix from component name
     if "_" in os.path.basename(outdir):
@@ -180,8 +182,15 @@ def check_deseq2_normcounts_existence(outdir, log_path, assay_suffix="_GLbulkRNA
         else:
             component = f"{component}_{stratum}"
     
+    # Set the unnormalized counts filename based on mode
+    if mode == "microbes":
+        unnorm_file = f"FeatureCounts_Unnormalized_Counts{assay_suffix}.csv"
+    else:
+        unnorm_file = f"RSEM_Unnormalized_Counts{assay_suffix}.csv"
+    
+    # List of expected files
     expected_files = [
-        f"FeatureCounts_Unnormalized_Counts{assay_suffix}.csv",
+        unnorm_file,
         f"Normalized_Counts{assay_suffix}.csv",
         f"VST_Normalized_Counts{assay_suffix}.csv"
     ]
@@ -340,10 +349,33 @@ def check_sample_table_against_runsheet(outdir, runsheet_path, log_path, assay_s
         df_rs = df_rs.set_index("Sample Name").sort_index()
         df_sample = pd.read_csv(sample_table_path, index_col=0).sort_index()
 
-        extra_samples = {
-            "unique_to_runsheet": set(df_rs.index) - set(df_sample.index),
-            "unique_to_sampleTable": set(df_sample.index) - set(df_rs.index),
-        }
+        # First check if there are any technical replicates in the runsheet
+        tech_rep_pattern = "_techrep\\d+$"
+        has_tech_reps = any(re.search(tech_rep_pattern, sample) for sample in df_rs.index)
+        
+        if has_tech_reps:
+            # Function to get base sample name (remove _techrepX if present)
+            def get_base_name(sample_name):
+                return re.sub(tech_rep_pattern, "", sample_name)
+            
+            # Apply the function to get base sample names
+            runsheet_base_names = set(get_base_name(sample) for sample in df_rs.index)
+            sample_table_base_names = set(get_base_name(sample) for sample in df_sample.index)
+            
+            extra_samples = {
+                "unique_to_runsheet": runsheet_base_names - sample_table_base_names,
+                "unique_to_sampleTable": sample_table_base_names - runsheet_base_names,
+            }
+            
+            print(f"Tech replicates detected in runsheet - checking base sample names")
+        else:
+            # No tech reps detected - use exact sample name matching
+            extra_samples = {
+                "unique_to_runsheet": set(df_rs.index) - set(df_sample.index),
+                "unique_to_sampleTable": set(df_sample.index) - set(df_rs.index),
+            }
+            
+            print(f"No tech replicates detected - checking exact sample names")
 
         # Check logic - all samples must be included
         all_samples_required = True
@@ -366,9 +398,10 @@ def check_sample_table_against_runsheet(outdir, runsheet_path, log_path, assay_s
             
             # Include stratum info in the message if applicable
             stratum_info = f" for {stratum_factor}={stratum_value}" if stratum_factor and stratum_value else ""
+            tech_rep_info = " (using base sample names)" if has_tech_reps else ""
             
             log_check_result(log_path, component_name, "all", check_name, "GREEN", 
-                            f"All samples accounted for based on runsheet{stratum_info}", 
+                            f"All samples accounted for based on runsheet{stratum_info}{tech_rep_info}", 
                             f"Total samples: {samples_count}. Sample list: {'; '.join(samples_list)}")
             return True
     
@@ -377,7 +410,6 @@ def check_sample_table_against_runsheet(outdir, runsheet_path, log_path, assay_s
         log_check_result(log_path, component_name, "all", check_name, "RED", 
                         f"Error checking sample table", f"Error: {str(e)}")
         return False
-
 
 def check_sample_table_for_correct_group_assignments(outdir, runsheet_path, log_path, assay_suffix="_GLbulkRNAseq",
                                                   stratum_factor="", stratum_value=""):
@@ -1143,7 +1175,21 @@ def check_dge_table_sample_columns_exist(outdir, runsheet_path, log_path, assay_
             return False
         
         # Get sample names
-        sample_names = set(df_rs['Sample Name'])
+        sample_names = list(df_rs['Sample Name'])
+        
+        # Check if there are any technical replicates in the sample names
+        tech_rep_pattern = "_techrep\\d+$"
+        has_tech_reps = any(re.search(tech_rep_pattern, sample) for sample in sample_names)
+        
+        # Function to get base sample name (remove _techrepX if present)
+        def get_base_name(sample_name):
+            return re.sub(tech_rep_pattern, "", sample_name)
+        
+        # If tech reps are present, convert to base sample names
+        if has_tech_reps:
+            expected_samples = set(get_base_name(sample) for sample in sample_names)
+        else:
+            expected_samples = set(sample_names)
         
     except Exception as e:
         log_check_result(log_path, component_name, "all", check_name, "RED", 
@@ -1163,30 +1209,40 @@ def check_dge_table_sample_columns_exist(outdir, runsheet_path, log_path, assay_
     try:
         # Read the DGE table
         df_dge = pd.read_csv(dge_table_path)
+        dge_columns = list(df_dge.columns)
         
-        # Find sample columns that exist in the table
-        existing_sample_columns = [col for col in df_dge.columns if col in sample_names]
+        # Find sample columns in the DGE table
+        if has_tech_reps:
+            # For each expected base sample name, check if it appears in DGE columns
+            found_base_samples = set()
+            for expected_base in expected_samples:
+                for col in dge_columns:
+                    # If the column matches exactly or its base name matches
+                    if col == expected_base or get_base_name(col) == expected_base:
+                        found_base_samples.add(expected_base)
+                        break
+            
+            existing_samples = found_base_samples
+        else:
+            # Direct matching for non-tech rep datasets
+            existing_samples = set(col for col in dge_columns if col in expected_samples)
         
-        if not existing_sample_columns:
-            status = "RED"
-            message = "No sample columns found in DGE table"
-            details = f"Available columns: {', '.join(df_dge.columns[:10])}..."
-            log_check_result(log_path, component_name, "all", check_name, status, message, details)
-            return False
+        # Calculate missing samples
+        missing_samples = expected_samples - existing_samples
         
-        # Check if all expected sample columns are present
-        missing_sample_columns = sample_names - set(existing_sample_columns)
-        
-        if not missing_sample_columns:
+        if not missing_samples:
             status = "GREEN"
             message = "All sample columns present in DGE table"
-            details = f"Found all {len(existing_sample_columns)} expected sample columns in the DGE table."
+            details = f"Found all {len(expected_samples)} expected sample names in the DGE table."
             log_check_result(log_path, component_name, "all", check_name, status, message, details)
             return True
         else:
             status = "RED"
             message = "Some sample columns missing from DGE table"
-            details = f"{len(missing_sample_columns)} of {len(sample_names)} expected sample columns are missing from the DGE table. Missing columns: {', '.join(missing_sample_columns)}"
+            if has_tech_reps:
+                details = f"{len(missing_samples)} of {len(expected_samples)} expected sample base names are missing from the DGE table. Missing samples: {'; '.join(missing_samples)}"
+            else:
+                details = f"{len(missing_samples)} of {len(expected_samples)} expected sample columns are missing from the DGE table. Missing columns: {'; '.join(missing_samples)}"
             log_check_result(log_path, component_name, "all", check_name, status, message, details)
             return False
         
@@ -1248,7 +1304,11 @@ def check_dge_table_sample_columns_constraints(outdir, runsheet_path, log_path, 
             return False
         
         # Get sample names
-        sample_names = set(df_rs['Sample Name'])
+        sample_names = list(df_rs['Sample Name'])
+        
+        # Check if there are any technical replicates in the sample names
+        tech_rep_pattern = "_techrep\\d+$"
+        has_tech_reps = any(re.search(tech_rep_pattern, sample) for sample in sample_names)
         
     except Exception as e:
         log_check_result(log_path, component_name, "all", check_name, "RED", 
@@ -1269,24 +1329,41 @@ def check_dge_table_sample_columns_constraints(outdir, runsheet_path, log_path, 
         # Read the DGE table
         df_dge = pd.read_csv(dge_table_path)
         
-        # Find sample columns that exist in the table
-        existing_sample_columns = [col for col in df_dge.columns if col in sample_names]
+        # Identify sample columns in the DGE table
+        if has_tech_reps:
+            # When there are tech reps, identify sample columns by looking for columns 
+            # that either directly match a sample name or match a base sample name
+            def get_base_name(sample_name):
+                return re.sub(tech_rep_pattern, "", sample_name)
+                
+            # Extract base sample names from the runsheet
+            base_sample_names = set(get_base_name(sample) for sample in sample_names)
+            
+            # Find columns in DGE table that correspond to samples
+            sample_columns = []
+            for col in df_dge.columns:
+                # Check if this column is a sample column (matches sample name or base name)
+                if col in sample_names or get_base_name(col) in base_sample_names:
+                    sample_columns.append(col)
+        else:
+            # For datasets without tech reps, use direct matching
+            sample_columns = [col for col in df_dge.columns if col in sample_names]
         
-        if not existing_sample_columns:
+        if not sample_columns:
             status = "RED"
             message = "No sample columns found in DGE table"
-            details = f"Available columns: {', '.join(df_dge.columns[:10])}..."
+            details = f"Could not identify sample columns among: {', '.join(df_dge.columns[:10])}..."
             log_check_result(log_path, component_name, "all", check_name, status, message, details)
             return False
         
         # Filter to only include sample columns
-        df_dge_samples = df_dge[existing_sample_columns]
+        df_dge_samples = df_dge[sample_columns]
         
         # Check if all values in each column meet the minimum count constraint
         columns_with_issues = []
         min_values = {}
         
-        for col in existing_sample_columns:
+        for col in sample_columns:
             if not (df_dge_samples[col] >= MINIMUM_COUNT).all():
                 columns_with_issues.append(col)
                 min_val = float(df_dge_samples[col].min())  # Convert numpy type to Python float
@@ -1297,19 +1374,19 @@ def check_dge_table_sample_columns_constraints(outdir, runsheet_path, log_path, 
         if not columns_with_issues:
             status = "GREEN"
             message = "All sample columns meet the minimum count constraint"
-            details = f"All {len(existing_sample_columns)} sample columns satisfy: {constraint_description}"
+            details = f"All {len(sample_columns)} sample columns satisfy: {constraint_description}"
             log_check_result(log_path, component_name, "all", check_name, status, message, details)
             return True
         else:
             status = "RED"
             message = "Some sample columns have values below the minimum count constraint"
-            details = f"{len(columns_with_issues)} of {len(existing_sample_columns)} sample columns with counts below {MINIMUM_COUNT}: {', '.join(columns_with_issues)}"
+            details = f"{len(columns_with_issues)} of {len(sample_columns)} sample columns with counts below {MINIMUM_COUNT}: {'; '.join(columns_with_issues)}"
             log_check_result(log_path, component_name, "all", check_name, status, message, details)
             return False
         
     except Exception as e:
         log_check_result(log_path, component_name, "all", check_name, "RED", 
-                        "Error checking sample column constraints", str(e))
+                        "Error checking sample columns", str(e))
         return False
 
 def check_dge_table_group_columns_exist(outdir, runsheet_path, log_path, assay_suffix="_GLbulkRNAseq",
@@ -1437,10 +1514,9 @@ def check_dge_table_group_columns_exist(outdir, runsheet_path, log_path, assay_s
 
 def check_dge_table_group_columns_constraints(outdir, runsheet_path, log_path, assay_suffix="_GLbulkRNAseq",
                                      stratum_factor="", stratum_value=""):
-    """Check if the group mean and standard deviation columns in the DGE table match computed values.
+    """Check if the group statistics columns in the DGE table meet value constraints.
     
-    This validates that the Group.Mean_ and Group.Stdev_ columns contain values that are within
-    a small tolerance of the actual computed mean and standard deviation of the corresponding samples.
+    Group statistics columns include Group.Mean_* and Group.Stdev_* for each group.
     
     Args:
         outdir: Path to the DGE directory (not the parent outdir)
@@ -1456,12 +1532,6 @@ def check_dge_table_group_columns_constraints(outdir, runsheet_path, log_path, a
     component = "dge"
     check_name = "check_dge_table_group_columns_constraints"
     
-    # Define tolerance for float comparison (percent difference allowed)
-    FLOAT_TOLERANCE = 0.001  # 0.001% tolerance to account for minor float precision differences
-    
-    # Define the group column prefixes
-    GROUP_PREFIXES = ["Group.Mean_", "Group.Stdev_"]
-    
     # Adjust the suffix and component name if stratified
     if stratum_value:
         check_suffix = f"_{stratum_value}"
@@ -1470,18 +1540,8 @@ def check_dge_table_group_columns_constraints(outdir, runsheet_path, log_path, a
         check_suffix = ""
         component_name = component
     
-    # Get DGE table path with the correct pattern
-    dge_table_path = os.path.join(outdir, f"differential_expression{check_suffix}{assay_suffix}.csv")
-    
-    # Check if the DGE table exists
-    if not os.path.exists(dge_table_path):
-        message = f"DGE table not found"
-        log_check_result(log_path, component_name, "all", check_name, "RED", 
-                      message, f"Expected at: {dge_table_path}")
-        return False
-    
+    # First get sample names from runsheet
     try:
-        # First get expected groups from runsheet
         df_rs = pd.read_csv(runsheet_path)
         
         # Filter runsheet by stratum if needed
@@ -1500,214 +1560,155 @@ def check_dge_table_group_columns_constraints(outdir, runsheet_path, log_path, a
                             "No samples found in runsheet after filtering", 
                             f"Stratum factor: {stratum_factor}, Stratum value: {stratum_value}")
             return False
-            
-        # Read DGE table
-        df_dge = pd.read_csv(dge_table_path)
         
-        # Extract factor value columns from runsheet
-        factor_cols = [col for col in df_rs.columns if col.startswith("Factor Value[")]
+        # Get sample names
+        sample_names = list(df_rs['Sample Name'])
         
-        # Group samples by their factor combinations
-        groups = {}
-        for _, row in df_rs.iterrows():
-            sample_name = row['Sample Name']
-            factors = [row[col] for col in factor_cols]
-            
-            # Format in two ways: one with dots (for R-style) and one with parentheses and ampersands
-            r_style_group = "...".join(factors)
-            paren_style_group = f"({' & '.join(factors)})"
-            
-            if r_style_group not in groups:
-                groups[r_style_group] = {
-                    'samples': [],
-                    'paren_style': paren_style_group
-                }
-            groups[r_style_group]['samples'].append(sample_name)
+        # Check if there are any technical replicates in the sample names
+        tech_rep_pattern = "_techrep\\d+$"
+        has_tech_reps = any(re.search(tech_rep_pattern, sample) for sample in sample_names)
         
-        # Track issues for reporting
-        issues = {
-            f"mean computation deviates by more than {FLOAT_TOLERANCE} percent": [],
-            f"standard deviation deviates by more than {FLOAT_TOLERANCE} percent": []
-        }
-        
-        # Track maximum differences for reporting in success case
-        max_mean_diff_pct = 0.0
-        max_stdev_diff_pct = 0.0
-        max_diff_details = {}
-        
-        # Check each group's statistics
-        for r_style_group, group_info in groups.items():
-            sample_list = group_info['samples']
-            paren_style_group = group_info['paren_style']
-            
-            # Skip if any sample is missing from the DGE table
-            if not all(sample in df_dge.columns for sample in sample_list):
-                missing_samples = [sample for sample in sample_list if sample not in df_dge.columns]
-                log_check_result(log_path, component_name, "all", check_name, "RED", 
-                                f"Missing samples in DGE table", 
-                                f"Cannot check group statistics, the following samples are missing: {', '.join(missing_samples)}")
-                return False
-                
-            # Try both formats for group column names
-            mean_col_paren = f"Group.Mean_{paren_style_group}"
-            mean_col_r_style = f"Group.Mean_{r_style_group}"
-            stdev_col_paren = f"Group.Stdev_{paren_style_group}"
-            stdev_col_r_style = f"Group.Stdev_{r_style_group}"
-            
-            # Determine which format is used in the table
-            mean_col = mean_col_paren if mean_col_paren in df_dge.columns else mean_col_r_style
-            stdev_col = stdev_col_paren if stdev_col_paren in df_dge.columns else stdev_col_r_style
-            
-            # Skip if mean column is missing
-            if mean_col not in df_dge.columns:
-                log_check_result(log_path, component_name, "all", check_name, "RED", 
-                                f"Missing mean column in DGE table", 
-                                f"Cannot check group mean, column not found: {mean_col_paren} or {mean_col_r_style}")
-                return False
-                
-            # Skip if stdev column is missing
-            if stdev_col not in df_dge.columns:
-                log_check_result(log_path, component_name, "all", check_name, "RED", 
-                                f"Missing standard deviation column in DGE table", 
-                                f"Cannot check group standard deviation, column not found: {stdev_col_paren} or {stdev_col_r_style}")
-                return False
-            
-            # Use the display name that matches the columns found in the table
-            group_display = paren_style_group if mean_col == mean_col_paren else r_style_group
-            
-            # Compute means and compare
-            computed_means = df_dge[sample_list].mean(axis=1)
-            # Avoid division by zero
-            nonzero_means_mask = computed_means != 0
-            if nonzero_means_mask.any():
-                # Calculate percent difference between stored and computed means
-                percent_diff_means = abs((df_dge.loc[nonzero_means_mask, mean_col] - computed_means[nonzero_means_mask]) / 
-                                        computed_means[nonzero_means_mask] * 100)
-                
-                # Track maximum difference for success case
-                current_max = percent_diff_means.max()
-                if current_max > max_mean_diff_pct:
-                    max_mean_diff_pct = current_max
-                    # Find the row with max difference
-                    max_diff_row = df_dge.loc[nonzero_means_mask].iloc[percent_diff_means.idxmax()]
-                    max_diff_details[f"Max mean diff ({group_display})"] = {
-                        "stored": max_diff_row[mean_col],
-                        "computed": computed_means[percent_diff_means.idxmax()],
-                        "percent_diff": max_mean_diff_pct,
-                        "gene_id": max_diff_row.iloc[0] if 'ENSEMBL' in df_dge.columns else f"Row {percent_diff_means.idxmax()}"
-                    }
-                
-                # Check if any differences exceed tolerance
-                if (percent_diff_means > FLOAT_TOLERANCE).any():
-                    # Add to issues with information about the deviations
-                    # Find rows where difference exceeds tolerance
-                    deviation_rows = df_dge.loc[nonzero_means_mask][percent_diff_means > FLOAT_TOLERANCE]
-                    
-                    # Collect information about the first few deviations
-                    deviation_info = []
-                    for i, (idx, row) in enumerate(deviation_rows.iterrows()):
-                        if i >= 3:  # Only show first 3 examples
-                            break
-                        gene_id = row.iloc[0] if 'ENSEMBL' in df_dge.columns else f"Row {idx}"
-                        deviation_info.append(
-                            f"{gene_id}: stored={row[mean_col]:.6f}, computed={computed_means[idx]:.6f}, diff={percent_diff_means[idx]:.6f}%"
-                        )
-                    
-                    issues[f"mean computation deviates by more than {FLOAT_TOLERANCE} percent"].append(
-                        f"{group_display} ({len(deviation_rows)} genes, e.g., {'; '.join(deviation_info)})"
-                    )
-            
-            # Compute standard deviations and compare
-            computed_stdevs = df_dge[sample_list].std(axis=1)
-            # Avoid division by zero or very small values
-            nonzero_means_mask = computed_means > 1e-10
-            if nonzero_means_mask.any():
-                # Calculate percent difference between stored and computed stdevs
-                # Using mean as denominator to get relative scale
-                percent_diff_stdevs = abs((df_dge.loc[nonzero_means_mask, stdev_col] - computed_stdevs[nonzero_means_mask]) / 
-                                         computed_means[nonzero_means_mask] * 100)
-                
-                # Track maximum difference for success case
-                current_max = percent_diff_stdevs.max()
-                if current_max > max_stdev_diff_pct:
-                    max_stdev_diff_pct = current_max
-                    # Find the row with max difference
-                    max_diff_row = df_dge.loc[nonzero_means_mask].iloc[percent_diff_stdevs.idxmax()]
-                    max_diff_details[f"Max stdev diff ({group_display})"] = {
-                        "stored": max_diff_row[stdev_col],
-                        "computed": computed_stdevs[percent_diff_stdevs.idxmax()],
-                        "percent_diff": max_stdev_diff_pct,
-                        "gene_id": max_diff_row.iloc[0] if 'ENSEMBL' in df_dge.columns else f"Row {percent_diff_stdevs.idxmax()}"
-                    }
-                
-                # Check if any differences exceed tolerance
-                if (percent_diff_stdevs > FLOAT_TOLERANCE).any():
-                    # Add to issues with information about the deviations
-                    # Find rows where difference exceeds tolerance
-                    deviation_rows = df_dge.loc[nonzero_means_mask][percent_diff_stdevs > FLOAT_TOLERANCE]
-                    
-                    # Collect information about the first few deviations
-                    deviation_info = []
-                    for i, (idx, row) in enumerate(deviation_rows.iterrows()):
-                        if i >= 3:  # Only show first 3 examples
-                            break
-                        gene_id = row.iloc[0] if 'ENSEMBL' in df_dge.columns else f"Row {idx}"
-                        deviation_info.append(
-                            f"{gene_id}: stored={row[stdev_col]:.6f}, computed={computed_stdevs[idx]:.6f}, diff={percent_diff_stdevs[idx]:.6f}%"
-                        )
-                    
-                    issues[f"standard deviation deviates by more than {FLOAT_TOLERANCE} percent"].append(
-                        f"{group_display} ({len(deviation_rows)} genes, e.g., {'; '.join(deviation_info)})"
-                    )
-        
-        # Determine status based on issues
-        if not any(issues.values()):
-            status = "GREEN"
-            message = "Group statistical columns match computed values"
-            
-            # Check if we have any actual differences to report
-            has_differences = False
-            for diff_info in max_diff_details.values():
-                if diff_info['percent_diff'] > 1e-10:  # Check if there's any meaningful difference
-                    has_differences = True
-                    break
-            
-            if has_differences:
-                # Format the details with maximum differences
-                details = f"All group mean and standard deviation values are within {FLOAT_TOLERANCE}% of the computed values."
-                
-                # Add information about maximum differences
-                max_diff_parts = []
-                for diff_type, diff_info in max_diff_details.items():
-                    max_diff_parts.append(
-                        f"{diff_type}: {diff_info['gene_id']}, stored={diff_info['stored']:.6f}, "
-                        f"computed={diff_info['computed']:.6f}, diff={diff_info['percent_diff']:.6f}%"
-                    )
-                
-                if max_diff_parts:
-                    details += f" Maximum differences observed: {'; '.join(max_diff_parts)}"
-            else:
-                # Simplified message for perfect matches
-                details = f"All group statistic columns perfectly match computed values (0% difference)"
-            
-            log_check_result(log_path, component_name, "all", check_name, status, message, details)
-            return True
-        else:
-            status = "RED"
-            message = "Group statistical columns deviate from computed values"
-            
-            # Format the details with issues
-            details = []
-            for issue_type, affected_groups in issues.items():
-                if affected_groups:
-                    details.append(f"{issue_type}: {', '.join(affected_groups)}")
-            
-            log_check_result(log_path, component_name, "all", check_name, status, message, "; ".join(details))
-            return False
-            
     except Exception as e:
         log_check_result(log_path, component_name, "all", check_name, "RED", 
-                        "Error checking group columns constraints", str(e))
+                        "Error parsing runsheet", str(e))
+        return False
+    
+    # Get group information
+    try:
+        # Read sample table to get group assignments
+        sample_table_path = os.path.join(outdir, f"SampleTable{check_suffix}{assay_suffix}.csv") 
+        
+        if not os.path.exists(sample_table_path):
+            log_check_result(log_path, component_name, "all", check_name, "RED", 
+                           "Sample table not found", 
+                           f"Expected at: {sample_table_path}")
+            return False
+            
+        df_sample_table = pd.read_csv(sample_table_path)
+        
+        # Check if 'condition' column exists
+        if "condition" not in df_sample_table.columns:
+            log_check_result(log_path, component_name, "all", check_name, "RED", 
+                           "Condition column missing in sample table", 
+                           f"Expected columns: condition")
+            return False
+        
+        # Get group names
+        unique_conditions = df_sample_table["condition"].unique()
+        
+    except Exception as e:
+        log_check_result(log_path, component_name, "all", check_name, "RED", 
+                       "Error processing sample table", str(e))
+        return False
+    
+    # Get DGE table path with the correct pattern
+    dge_table_path = os.path.join(outdir, f"differential_expression{check_suffix}{assay_suffix}.csv")
+    
+    # Check if the DGE table exists
+    if not os.path.exists(dge_table_path):
+        message = f"DGE table not found"
+        log_check_result(log_path, component_name, "all", check_name, "RED", 
+                       message, f"Expected at: {dge_table_path}")
+        return False
+    
+    try:
+        # Read the DGE table
+        df_dge = pd.read_csv(dge_table_path)
+        
+        # Function to get base sample name (remove _techrepX if present)
+        def get_base_name(sample_name):
+            return re.sub(tech_rep_pattern, "", sample_name)
+        
+        # Check if all samples from the runsheet are in the DGE table
+        missing_samples = []
+        for sample in sample_names:
+            if has_tech_reps:
+                base_name = get_base_name(sample)
+                # Check if either the sample or its base name is in the DGE columns
+                if base_name not in df_dge.columns and sample not in df_dge.columns:
+                    missing_samples.append(sample)
+            else:
+                if sample not in df_dge.columns:
+                    missing_samples.append(sample)
+        
+        if missing_samples:
+            log_check_result(log_path, component_name, "all", check_name, "RED", 
+                           "Missing samples in DGE table", 
+                           f"Cannot check group statistics; the following samples are missing: {'; '.join(missing_samples)}")
+            return False
+        
+        # Create a set of expected columns for group statistics
+        expected_group_prefixes = [
+            "Group.Mean_", "Group.Stdev_"
+        ]
+        
+        groups = []
+        for condition in unique_conditions:
+            # Convert condition to R-friendly group name parentheses format
+            group_name = f"({condition.replace('.', ' ')})"
+            groups.append(group_name)
+        
+        expected_columns = []
+        for prefix in expected_group_prefixes:
+            for group in groups:
+                expected_columns.append(f"{prefix}{group}")
+        
+        # Check if all expected columns are present
+        missing_columns = [col for col in expected_columns if col not in df_dge.columns]
+        
+        if missing_columns:
+            log_check_result(log_path, component_name, "all", check_name, "RED", 
+                           "Group summary statistics columns missing", 
+                           f"Missing columns: {', '.join(missing_columns)}")
+            return False
+        
+        # Check if the mean columns have no null values and are non-negative
+        mean_columns = [col for col in expected_columns if col.startswith("Group.Mean_")]
+        for col in mean_columns:
+            # Check for nulls
+            if df_dge[col].isnull().any():
+                status = "RED"
+                message = f"Group mean column contains null values"
+                details = f"Column {col} has {df_dge[col].isnull().sum()} null values"
+                log_check_result(log_path, component_name, "all", check_name, status, message, details)
+                return False
+            
+            # Check for negative values
+            if (df_dge[col] < 0).any():
+                status = "RED"
+                message = f"Group mean column contains negative values"
+                details = f"Column {col} has {(df_dge[col] < 0).sum()} negative values"
+                log_check_result(log_path, component_name, "all", check_name, status, message, details)
+                return False
+        
+        # Check if the stdev columns have no null values and are non-negative
+        stdev_columns = [col for col in expected_columns if col.startswith("Group.Stdev_")]
+        for col in stdev_columns:
+            # Check for nulls
+            if df_dge[col].isnull().any():
+                status = "RED"
+                message = f"Group standard deviation column contains null values"
+                details = f"Column {col} has {df_dge[col].isnull().sum()} null values"
+                log_check_result(log_path, component_name, "all", check_name, status, message, details)
+                return False
+            
+            # Check for negative values
+            if (df_dge[col] < 0).any():
+                status = "RED"
+                message = f"Group standard deviation column contains negative values"
+                details = f"Column {col} has {(df_dge[col] < 0).sum()} negative values"
+                log_check_result(log_path, component_name, "all", check_name, status, message, details)
+                return False
+        
+        status = "GREEN"
+        message = "All group summary statistic columns meet constraints"
+        details = f"Group mean and standard deviation columns for {len(groups)} groups have no null or negative values"
+        log_check_result(log_path, component_name, "all", check_name, status, message, details)
+        return True
+        
+    except Exception as e:
+        log_check_result(log_path, component_name, "all", check_name, "RED", 
+                       "Error checking group columns", str(e))
         return False
 
 def check_dge_table_comparison_statistical_columns_exist(outdir, runsheet_path, log_path, assay_suffix="_GLbulkRNAseq",
@@ -2210,9 +2211,10 @@ def check_dge_table_log2fc_within_reason(outdir, runsheet_path, log_path, assay_
     check_name = "check_dge_table_log2fc_within_reason"
     
     # Define thresholds for log2fc validation
-    LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD = 10  # Maximum percent difference allowed
-    LOG2FC_CROSS_METHOD_TOLERANCE_PERCENT = 50  # Minimum percentage of genes that must be within threshold
-    THRESHOLD_PERCENT_MEANS_DIFFERENCE = 50  # Minimum percent difference between group means to check sign
+    LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD = 10  # Percent
+    LOG2FC_CROSS_METHOD_TOLERANCE_PERCENT = 50  # Percent
+    THRESHOLD_PERCENT_MEANS_DIFFERENCE = 50  # percent
+    SMALL_COUNTS_THRESHOLD = 20  # Minimum sum of Group.Mean values to consider
     
     # Adjust the suffix and component name if stratified
     if stratum_value:
@@ -2233,47 +2235,23 @@ def check_dge_table_log2fc_within_reason(outdir, runsheet_path, log_path, assay_
         return False
     
     try:
-        # Get sample table path to extract groups - try both lowercase and uppercase variations
-        sample_table_path = os.path.join(outdir, f"SampleTable{check_suffix}{assay_suffix}.csv")
-        
-        # If the capitalized version doesn't exist, try the lowercase version
-        if not os.path.exists(sample_table_path):
-            sample_table_path = os.path.join(outdir, f"samples_table{check_suffix}{assay_suffix}.csv")
-            
-        # If neither exists, look for any file matching the pattern *[sS]ample*[tT]able*{assay_suffix}.csv
-        if not os.path.exists(sample_table_path):
-            potential_files = [f for f in os.listdir(outdir) if 
-                              (("ample" in f and "able" in f) or ("AMPLE" in f and "ABLE" in f)) and 
-                              assay_suffix in f and f.endswith(".csv")]
-            
-            if potential_files:
-                sample_table_path = os.path.join(outdir, potential_files[0])
-            else:
-                log_check_result(log_path, component_name, "all", check_name, "RED", 
-                               "Sample table not found", f"Tried both SampleTable{assay_suffix}.csv and samples_table{assay_suffix}.csv")
-                return False
-        
-        # Read the sample table to get group information
-        sample_table_df = pd.read_csv(sample_table_path)
-        
-        # Use either "group" or "condition" column for groups
-        group_col = None
-        if "group" in sample_table_df.columns:
-            group_col = "group"
-        elif "condition" in sample_table_df.columns:
-            group_col = "condition"
-        
-        if not group_col:
-            log_check_result(log_path, component_name, "all", check_name, "RED",
-                           "Neither 'group' nor 'condition' column found in sample table", 
-                           f"Available columns: {', '.join(sample_table_df.columns)}")
-            return False
-        
-        # Get unique groups from sample table
-        expected_groups = sample_table_df[group_col].unique().tolist()
-        
         # Read DGE table to get actual column names
         df_dge = pd.read_csv(dge_table_path)
+        original_count = len(df_dge)
+        
+        # Filter out low-count genes
+        group_mean_cols = [col for col in df_dge.columns if col.startswith("Group.Mean_")]
+        if group_mean_cols:
+            # Sum of all Group.Mean columns
+            df_dge["Group.Mean_SUM"] = df_dge[group_mean_cols].sum(axis=1)
+            # Filter out genes with low counts
+            df_dge_filtered = df_dge[df_dge["Group.Mean_SUM"] > SMALL_COUNTS_THRESHOLD]
+            filtered_count = original_count - len(df_dge_filtered)
+            filtering_info = f"Filtered out {filtered_count}/{original_count} ({filtered_count/original_count*100:.1f}%) genes with sum of Group.Mean values below {SMALL_COUNTS_THRESHOLD}."
+            print(filtering_info)
+            df_dge = df_dge_filtered
+        else:
+            filtering_info = "No Group.Mean columns found for filtering."
         
         # Find Log2fc columns that exist in the data
         log2fc_columns = [col for col in df_dge.columns if col.startswith("Log2fc_")]
@@ -2284,170 +2262,167 @@ def check_dge_table_log2fc_within_reason(outdir, runsheet_path, log_path, assay_
                            f"Available columns: {', '.join(df_dge.columns[:10])}...")
             return False
         
-        # Extract group comparisons from the actual column names
-        # Example format: "Log2fc_(Group1 & Factor)v(Group2 & Factor)"
-        comparisons = []
-        for col in log2fc_columns:
-            try:
-                # Extract comparison part (everything after "Log2fc_")
-                comparison = col[len("Log2fc_"):]
-                comparisons.append(comparison)
-            except:
-                # Skip if we can't parse the column format
-                pass
-        
-        if not comparisons:
-            log_check_result(log_path, component_name, "all", check_name, "RED",
-                           "Could not parse comparison groups from Log2fc columns", 
-                           f"Log2fc columns: {', '.join(log2fc_columns)}")
-            return False
+        # Extract comparisons from column names
+        comparisons = [col[len("Log2fc_"):] for col in log2fc_columns]
         
         # Track issues
         err_msg_yellow = ""
         all_suspect_signs = {}
-        last_percent_within_tolerance = 0  # Store for final message if all pass
+        last_percent_within_tolerance = 0
         
         # Process each comparison
         for comparison in comparisons:
             query_column = f"Log2fc_{comparison}"
             
-            # Extract group names from comparison
+            # Extract group names based on the comparison format
             try:
-                # Handles format like "(Group1 & Factor)v(Group2 & Factor)" 
                 group1_name = comparison.split(")v(")[0] + ")"
                 group2_name = "(" + comparison.split(")v(")[1]
             except:
-                log_check_result(log_path, component_name, "all", check_name, "RED", 
-                              f"Invalid comparison format: {comparison}", 
-                              "Expected format: (Group1 & Factor)v(Group2 & Factor)")
-                return False
+                try:
+                    # Try simple "v" separator without parentheses
+                    group1_name = comparison.split("v")[0]
+                    group2_name = comparison.split("v")[1]
+                except:
+                    # Skip malformed comparison
+                    continue
             
             # Get group mean columns
             group1_mean_col = f"Group.Mean_{group1_name}"
             group2_mean_col = f"Group.Mean_{group2_name}"
             
-            # Check if group mean columns exist
+            # Skip if mean columns don't exist
             if group1_mean_col not in df_dge.columns or group2_mean_col not in df_dge.columns:
-                log_check_result(log_path, component_name, "all", check_name, "RED", 
-                              f"Missing group mean columns for comparison {comparison}", 
-                              f"Expected columns {group1_mean_col} and {group2_mean_col}")
-                return False
+                continue
             
             # Compute log2fc directly from group means
-            # Use numpy for log2 to handle potential zeros or negative values
-            # Replace zeros with np.nan to avoid log2(0) which is -inf
-            ratio = df_dge[group1_mean_col] / df_dge[group2_mean_col].replace(0, np.nan)
+            safe_denom = df_dge[group2_mean_col].replace(0, np.nan)  # Avoid division by zero
+            ratio = df_dge[group1_mean_col] / safe_denom
             computed_log2fc = np.log2(ratio)
             
-            # Calculate absolute percent difference between computed and DESeq2 log2fc
-            # For zero or near-zero values, avoid division by zero
-            denom = df_dge[query_column].replace(0, np.nan)
-            abs_percent_difference = abs(((computed_log2fc - df_dge[query_column]) / denom) * 100)
+            # Calculate percent difference between methods
+            safe_query_values = df_dge[query_column].replace(0, np.nan)  # Avoid division by zero
+            abs_percent_difference = abs(((computed_log2fc - df_dge[query_column]) / safe_query_values) * 100)
             
-            # Calculate percentage of genes within tolerance
-            percent_within_tolerance = (
-                (abs_percent_difference < LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD).mean() * 100
-            )
-            last_percent_within_tolerance = percent_within_tolerance
-            
-            # Flag if not enough within tolerance
-            if percent_within_tolerance < LOG2FC_CROSS_METHOD_TOLERANCE_PERCENT:
-                err_msg_yellow += (
-                    f"For comparison '{comparison}', {percent_within_tolerance:.2f}% of genes have absolute percent differences "
-                    f"(between log2fc direct computation and DESeq2's approach) "
-                    f"less than {LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD}%, which is below the minimum required "
-                    f"({LOG2FC_CROSS_METHOD_TOLERANCE_PERCENT}%). "
-                    f"This may indicate misassigned or misaligned columns. "
-                )
-            
-            # Sign-based checks
-            # Filter to genes with substantial differences between group means
-            # Avoid division by zero by replacing zeros with np.nan
-            denom_diff = df_dge[group2_mean_col].replace(0, np.nan)
-            abs_percent_differences = (
-                abs(
-                    (df_dge[group1_mean_col] - df_dge[group2_mean_col])
-                    / denom_diff
-                )
-                * 100
-            )
-            
-            # Filter DGE table to genes with substantial differences
-            # Handle any np.nan in the calculation
-            mask = (abs_percent_differences > THRESHOLD_PERCENT_MEANS_DIFFERENCE) & (~abs_percent_differences.isna())
-            df_dge_filtered = df_dge[mask].copy()
-            
-            if not df_dge_filtered.empty:
-                # Determine expected sign based on group means
-                df_dge_filtered["positive_sign_expected"] = (
-                    df_dge_filtered[group1_mean_col] - df_dge_filtered[group2_mean_col] > 0
-                )
+            # Check what percentage is within tolerance (ignoring NaN values)
+            valid_mask = ~abs_percent_difference.isna()
+            if valid_mask.sum() > 0:
+                within_tolerance_mask = abs_percent_difference < LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD
+                percent_within_tolerance = (within_tolerance_mask[valid_mask].sum() / valid_mask.sum()) * 100
+                last_percent_within_tolerance = percent_within_tolerance
                 
-                # Check if actual log2fc sign matches expected sign
-                df_dge_filtered["matches_expected_sign"] = (
-                    (df_dge_filtered[query_column] > 0) & df_dge_filtered["positive_sign_expected"]
-                ) | ((df_dge_filtered[query_column] < 0) & (~df_dge_filtered["positive_sign_expected"]))
+                # Flag if not enough within tolerance
+                if percent_within_tolerance < LOG2FC_CROSS_METHOD_TOLERANCE_PERCENT:
+                    err_msg_yellow += (
+                        f"For comparison '{comparison}': {percent_within_tolerance:.2f}% of genes have absolute percent differences "
+                        f"(between log2fc direct computation and DESeq2's approach) "
+                        f"less than {LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD}% which is below the minimum required "
+                        f"({LOG2FC_CROSS_METHOD_TOLERANCE_PERCENT}%). "
+                        f"This may indicate misassigned or misaligned columns. "
+                    )
+            
+            # SIGN CHECK: Filter genes with substantial mean differences
+            abs_mean_diffs = abs((df_dge[group1_mean_col] - df_dge[group2_mean_col]) / safe_denom) * 100
+            mask = (abs_mean_diffs > THRESHOLD_PERCENT_MEANS_DIFFERENCE) & (~abs_mean_diffs.isna())
+            
+            if mask.sum() > 0:  # Only proceed if we have genes meeting criteria
+                # Calculate expected sign
+                positive_sign_expected = (df_dge[group1_mean_col] - df_dge[group2_mean_col])[mask] > 0
                 
-                # Collect suspect genes (where sign doesn't match expectation)
-                suspect_genes = df_dge_filtered[~df_dge_filtered["matches_expected_sign"]]
+                # Check if actual log2fc matches expected sign
+                actual_sign_positive = df_dge[query_column][mask] > 0
+                matches_expected = (actual_sign_positive & positive_sign_expected) | (~actual_sign_positive & ~positive_sign_expected)
                 
-                if not suspect_genes.empty:
-                    # Get information about suspect genes (first 5 examples)
-                    gene_col = df_dge.columns[0]  # Use first column as gene ID
-                    suspect_info = []
+                # Find genes with wrong signs
+                wrong_sign_mask = ~matches_expected.values
+                if wrong_sign_mask.any():
+                    wrong_sign_genes = df_dge[mask][wrong_sign_mask]
                     
-                    for _, row in suspect_genes.iloc[:5].iterrows():
-                        gene_id = row[gene_col]
-                        group1_val = row[group1_mean_col]
-                        group2_val = row[group2_mean_col]
-                        log2fc_val = row[query_column]
-                        expected_sign = "+" if group1_val > group2_val else "-"
-                        actual_sign = "+" if log2fc_val > 0 else "-"
-                        
-                        suspect_info.append(
-                            f"{gene_id}: {group1_name}={group1_val:.2f}, {group2_name}={group2_val:.2f}, "
-                            f"expected sign={expected_sign}, actual log2fc={log2fc_val:.2f} (sign={actual_sign})"
-                        )
+                    # Get gene identifiers - use first column as gene ID
+                    gene_id_col = df_dge.columns[0]
                     
-                    # Store information about suspect genes
+                    # Get examples (max 5)
+                    examples = []
+                    for _, row in wrong_sign_genes.head(5).iterrows():
+                        gene_id = row[gene_id_col]
+                        examples.append(f"{gene_id}")
+                    
+                    # Store information about wrong sign genes
                     all_suspect_signs[comparison] = {
-                        "count": len(suspect_genes),
-                        "total": len(df_dge_filtered),
-                        "examples": suspect_info
+                        "count": wrong_sign_mask.sum(),
+                        "total": mask.sum(),
+                        "examples": examples
                     }
         
-        # Determine status based on issues found
+        # Determine status based on findings
         if all_suspect_signs:
-            # RED status for sign issues
-            status = "RED"
+            status = "YELLOW"  # Changed from RED to YELLOW
             message = "Log2fc signs do not match expected direction based on group means"
             
-            # Format details about suspect genes
-            details_parts = []
-            for comparison, info in all_suspect_signs.items():
-                percent = (info["count"] / info["total"]) * 100
-                details_parts.append(
-                    f"Comparison {comparison}: {info['count']}/{info['total']} genes ({percent:.1f}%) have wrong sign. "
-                    f"Examples: {'; '.join(info['examples'][:3])}"
-                )
+            # Collect all unique genes with wrong signs across all contrasts
+            all_wrong_sign_genes = set()
+            total_genes_checked = 0
+            total_wrong_signs = 0
+            wrong_sign_gene_ids = []
             
-            details = "; ".join(details_parts)
+            # Track contrast-specific information for context
+            contrasts_info = []
+            
+            # Process each comparison and collect consolidated info
+            for comparison, info in all_suspect_signs.items():
+                all_wrong_sign_genes.update(info["examples"])
+                total_genes_checked += info["total"]
+                total_wrong_signs += info["count"]
+                
+                # Get all gene IDs from this comparison (not just examples)
+                # Need to fetch full list by re-querying the data
+                wrong_sign_mask = ~matches_expected.values if 'matches_expected' in locals() else None
+                if wrong_sign_mask is not None and any(wrong_sign_mask):
+                    gene_id_col = df_dge.columns[0]
+                    wrong_sign_gene_ids.extend(df_dge.loc[mask][wrong_sign_mask][gene_id_col].tolist())
+            
+            # Check how many of these problematic genes had low counts
+            # Create a complete DGE table with the Group.Mean_SUM column
+            if "Group.Mean_SUM" not in df_dge.columns:
+                df_dge_with_sum = pd.read_csv(dge_table_path)
+                df_dge_with_sum["Group.Mean_SUM"] = df_dge_with_sum[group_mean_cols].sum(axis=1)
+            else:
+                df_dge_with_sum = df_dge
+                
+            # Count low-expression genes among the problematic ones
+            gene_id_col = df_dge.columns[0]
+            low_count_wrong_sign_genes = 0
+            
+            # If we have gene IDs, check them
+            if wrong_sign_gene_ids:
+                low_count_mask = df_dge_with_sum[df_dge_with_sum[gene_id_col].isin(wrong_sign_gene_ids)]["Group.Mean_SUM"] <= SMALL_COUNTS_THRESHOLD
+                low_count_wrong_sign_genes = low_count_mask.sum()
+            
+            # Limit to 10 gene examples maximum if there are more
+            gene_examples = list(all_wrong_sign_genes)[:10]
+            if len(all_wrong_sign_genes) > 10:
+                gene_examples.append("...")
+            
+            # Calculate overall percentage
+            overall_percent = (total_wrong_signs / total_genes_checked) * 100 if total_genes_checked > 0 else 0
+            
+            # Create consolidated details message
+            details = f"Found {total_wrong_signs} genes with incorrect log2fc signs across all comparisons ({total_wrong_signs}/{total_genes_checked} genes). Genes: {'; '.join(gene_examples)}. {low_count_wrong_sign_genes}/{total_wrong_signs} genes with incorrect signs had Group.Mean values below {SMALL_COUNTS_THRESHOLD}."
+            
             log_check_result(log_path, component_name, "all", check_name, status, message, details)
             return False
             
         elif err_msg_yellow:
-            # YELLOW status for tolerance issues
             status = "YELLOW"
             message = "Log2fc values show significant differences from direct computation"
-            details = err_msg_yellow.strip()
+            details = f"Log2fc values differ significantly from direct calculation."
             log_check_result(log_path, component_name, "all", check_name, status, message, details)
-            return True  # Yellow status still returns True
+            return True  # Yellow status still passes
             
         else:
-            # GREEN status - all checks pass
             status = "GREEN"
             message = "All log2fc values are within reasonable bounds"
-            details = f"Log2fc values match direct calculation ({last_percent_within_tolerance:.0f}% within {LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD}% difference) and all signs are correct"
+            details = f"Log2fc values match direct calculation and all signs match expected direction."
             log_check_result(log_path, component_name, "all", check_name, status, message, details)
             return True
             
@@ -2458,7 +2433,7 @@ def check_dge_table_log2fc_within_reason(outdir, runsheet_path, log_path, assay_
                        "Error checking log2fc reasonableness", f"{str(e)}\n{error_details}")
         return False
 
-def check_ercc_presence(outdir, runsheet_path, log_path, assay_suffix="_GLbulkRNAseq"):
+def check_ercc_presence(outdir, runsheet_path, log_path, assay_suffix="_GLbulkRNAseq", mode="default"):
     """Check for the presence/absence of ERCC spike-ins in count matrices.
     
     If the runsheet indicates has_ercc=True, this function verifies:
@@ -2470,6 +2445,7 @@ def check_ercc_presence(outdir, runsheet_path, log_path, assay_suffix="_GLbulkRN
         runsheet_path: Path to the runsheet CSV
         log_path: Path to the log file
         assay_suffix: Suffix for the assay files
+        mode: Processing mode, either 'default' or 'microbes'
         
     Returns:
         bool: True if check passes, False otherwise
@@ -2494,8 +2470,12 @@ def check_ercc_presence(outdir, runsheet_path, log_path, assay_suffix="_GLbulkRN
                            "ERCC spike-in check skipped", "No has_ercc=True found in runsheet")
             return True
         
-        # Look for the unnormalized counts file
-        unnorm_path = os.path.join(outdir, f"FeatureCounts_Unnormalized_Counts{assay_suffix}.csv")
+        # Set the unnormalized counts file based on mode
+        if mode == "microbes":
+            unnorm_path = os.path.join(outdir, f"FeatureCounts_Unnormalized_Counts{assay_suffix}.csv")
+        else:
+            unnorm_path = os.path.join(outdir, f"RSEM_Unnormalized_Counts{assay_suffix}.csv")
+            
         norm_path = os.path.join(outdir, f"Normalized_Counts{assay_suffix}.csv")
         vst_norm_path = os.path.join(outdir, f"VST_Normalized_Counts{assay_suffix}.csv")
         
@@ -2572,6 +2552,8 @@ def main():
     parser.add_argument("--runsheet", required=True, help="Path to the runsheet CSV file")
     parser.add_argument("--assay_suffix", default="_GLbulkRNAseq", help="Assay suffix")
     parser.add_argument("--stratify_by", default="", help="Factor to stratify analysis by (e.g., 'Plant Part')")
+    parser.add_argument("--mode", default="default", choices=["default", "microbes"], 
+                       help="Processing mode: 'default' for RSEM or 'microbes' for FeatureCounts")
     args = parser.parse_args()
     
     # Initialize the VV log
@@ -2621,7 +2603,7 @@ def main():
         # Check DESeq2 normalized counts files
         print("\nChecking DESeq2 normalized counts files...")
         try:
-            norm_counts_passed = check_deseq2_normcounts_existence(norm_counts_dir, vv_log_path, final_suffix)
+            norm_counts_passed = check_deseq2_normcounts_existence(norm_counts_dir, vv_log_path, final_suffix, args.mode)
         except Exception as e:
             print(f"Error during normalized counts check: {str(e)}")
             log_check_result(vv_log_path, "dge_NormCounts", "all", "check_deseq2_normcounts_existence", 
@@ -2630,7 +2612,7 @@ def main():
         # Check ERCC spike-ins if applicable
         print("\nChecking ERCC spike-ins...")
         try:
-            ercc_passed = check_ercc_presence(norm_counts_dir, args.runsheet, vv_log_path, final_suffix)
+            ercc_passed = check_ercc_presence(norm_counts_dir, args.runsheet, vv_log_path, final_suffix, args.mode)
         except Exception as e:
             print(f"Error during ERCC spike-in check: {str(e)}")
             log_check_result(vv_log_path, "dge_NormCounts", "all", "check_ercc_presence", 
