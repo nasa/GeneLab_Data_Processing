@@ -393,23 +393,6 @@ def get_star_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
                 )
                 return False
             
-            # Write stats to a file for inspection
-            stats_file = os.path.join(outdir, "star_multiqc_stats.csv")
-            with open(stats_file, 'w') as f:
-                # Write header
-                metrics = ['uniquely_mapped_percent', 'multimapped_percent', 'multimapped_toomany_percent', 
-                           'unmapped_tooshort_percent', 'unmapped_other_percent']
-                f.write("Sample," + ",".join(metrics) + "\n")
-                
-                # Write data for each sample
-                for sample, data in star_data.items():
-                    values = [sample]
-                    for metric in metrics:
-                        values.append(f"{data.get(metric, 0):.2f}")
-                    f.write(",".join(values) + "\n")
-            
-            print(f"Wrote STAR alignment stats to {stats_file}")
-            
             # Check if all samples are in the stats
             missing_samples = []
             for sample in samples:

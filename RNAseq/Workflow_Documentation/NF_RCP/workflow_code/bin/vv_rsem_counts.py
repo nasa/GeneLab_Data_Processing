@@ -101,17 +101,17 @@ def log_check_result(log_path, component, sample_id, check_name, status, message
         if not isinstance(field, str):
             field = str(field)
         
-        # Escape commas, quotes and newlines
-        field = field.replace('"', '""')  # Double quotes to escape them
+        # Replace commas with semicolons to avoid CSV quoting
+        field = field.replace(',', ';')
+        
+        # Remove any quotes to prevent issues with CSV format
+        field = field.replace('"', '')
+        field = field.replace("'", "")
         
         # If it's the details field, truncate to 1000 chars if too long
         if is_details and len(field) > 1000:
             field = field[:997] + "..."
         
-        # If field contains commas, quotes or newlines, enclose in quotes
-        if ',' in field or '"' in field or '\n' in field:
-            field = f'"{field}"'
-            
         return field
     
     with open(log_path, 'a') as f:
@@ -317,26 +317,6 @@ def get_rsem_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
                 )
                 return False
             
-            # Write stats to a file for inspection
-            stats_file = os.path.join(outdir, "rsem_multiqc_stats.csv")
-            with open(stats_file, 'w') as f:
-                # Write header
-                metrics = ['num_uniquely_aligned', 'pct_uniquely_aligned', 'pct_multi_aligned', 
-                          'pct_filtered', 'pct_unalignable', 'total_reads']
-                f.write("Sample," + ",".join(metrics) + "\n")
-                
-                # Write data for each sample
-                for sample, data in rsem_data.items():
-                    values = [sample]
-                    for metric in metrics:
-                        if metric == 'num_uniquely_aligned' or metric == 'total_reads':
-                            values.append(f"{data.get(metric, 0)}")
-                        else:
-                            values.append(f"{data.get(metric, 0):.2f}")
-                    f.write(",".join(values) + "\n")
-            
-            print(f"Wrote RSEM stats to {stats_file}")
-            
             # Check if all samples are in the stats
             missing_samples = []
             for sample in samples:
@@ -461,7 +441,8 @@ def report_rsem_outliers(outdir, rsem_data, log_path):
                 # Check if sample is an outlier based on threshold
                 if stdev_multiples >= stdev_threshold:
                     outlier_samples.add(sample)
-                    detail = f"{sample}: {metric_description}={value:.2f}%, {stdev_multiples:.2f} stdevs from median"
+                    # Format detail with semicolons instead of commas to avoid quotes in CSV
+                    detail = f"{sample}: {metric_description}={value:.2f}%; {stdev_multiples:.2f} stdevs from median"
                     outlier_details.append(detail)
                     
                     print(f"  {code} outlier: {detail}")
@@ -472,7 +453,7 @@ def report_rsem_outliers(outdir, rsem_data, log_path):
                         f"outlier_{metric_key}", 
                         code, 
                         f"{stdev_multiples:.2f} stdevs from median", 
-                        f"value={value:.2f}%, median={median_value:.2f}%, stdev={stdev:.2f}"
+                        f"value={value:.2f}%; median={median_value:.2f}%; stdev={stdev:.2f}"
                     )
                     break  # Once we've identified the highest threshold, we can stop
     
@@ -663,7 +644,7 @@ def check_all_samples_in_multiqc(outdir, samples, log_path, assay_suffix="_GLbul
                     "check_all_samples_in_multiqc", 
                     "YELLOW",  # Changed to YELLOW since we can proceed even with this warning
                     f"Missing {len(missing_samples)} samples in RSEM MultiQC report", 
-                    f"Using flexible matching. Missing: {','.join(missing_samples[:20])}"  # Limit to 20 sample names
+                    f"Using flexible matching. Missing: {';'.join(missing_samples[:20])}"  # Limit to 20 sample names
                 )
                 # Return True so we can continue with validation
                 return True
@@ -764,10 +745,10 @@ def add_rsem_group_stats(outdir, rsem_data, log_path):
         
         # Format appropriately based on metric type
         if metric.startswith("pct_") or metric.endswith("_percent"):
-            # Percentage metrics
-            detail_str = (f"Range: {stats['min']:.2f}% - {stats['max']:.2f}%, "
-                  f"Median: {stats['median']:.2f}%, "
-                  f"Mean: {stats['mean']:.2f}%, "
+            # Percentage metrics - use semicolons instead of commas to avoid CSV quoting
+            detail_str = (f"Range: {stats['min']:.2f}% - {stats['max']:.2f}%; "
+                  f"Median: {stats['median']:.2f}%; "
+                  f"Mean: {stats['mean']:.2f}%; "
                   f"StdDev: {stats['stddev']:.2f}")
             
             print(f"  {description}: {detail_str}")
@@ -783,10 +764,10 @@ def add_rsem_group_stats(outdir, rsem_data, log_path):
                 detail_str
             )
         else:
-            # Count metrics
-            detail_str = (f"Range: {stats['min']:.0f} - {stats['max']:.0f}, "
-                  f"Median: {stats['median']:.0f}, "
-                  f"Mean: {stats['mean']:.1f}, "
+            # Count metrics - use semicolons instead of commas to avoid CSV quoting
+            detail_str = (f"Range: {stats['min']:.0f} - {stats['max']:.0f}; "
+                  f"Median: {stats['median']:.0f}; "
+                  f"Mean: {stats['mean']:.1f}; "
                   f"StdDev: {stats['stddev']:.1f}")
             
             print(f"  {description}: {detail_str}")

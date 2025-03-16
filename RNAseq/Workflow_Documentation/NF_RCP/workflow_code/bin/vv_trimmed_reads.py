@@ -481,9 +481,6 @@ def get_trimmed_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffi
                                     fastqc_data[base_sample]['total_sequences'] = stats['total_sequences']
                                     print(f"Added direct total_sequences={stats['total_sequences']} for sample {base_sample}")
             
-            # Write stats to a file for inspection
-            stats_file = os.path.join(outdir, "trimmed_multiqc_stats.csv")
-            
             # Collect all possible column names across all samples
             all_columns = set()
             for sample_data in fastqc_data.values():
@@ -506,22 +503,6 @@ def get_trimmed_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffi
             # Create a mapping from original columns to clean columns
             column_mapping = dict(zip(sorted_columns, clean_columns))
             
-            # Write the data to CSV
-            with open(stats_file, 'w') as f:
-                # Write header with clean column names
-                f.write("sample," + ",".join(clean_columns) + "\n")
-                
-                # Write each sample's data
-                for sample, sample_data in fastqc_data.items():
-                    row_values = [sample]
-                    for col in sorted_columns:
-                        if col in sample_data:
-                            row_values.append(str(sample_data[col]))
-                        else:
-                            row_values.append("")
-                    f.write(",".join(row_values) + "\n")
-            
-            print(f"MultiQC stats written to: {stats_file}")
             log_check_result(log_path, "trimmed_reads", "all", "get_trimmed_multiqc_stats", "GREEN", 
                             f"Extracted MultiQC stats for {len(fastqc_data)} samples", "")  # Remove path from details
             

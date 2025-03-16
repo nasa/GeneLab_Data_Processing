@@ -204,39 +204,6 @@ def get_featurecounts_multiqc_stats(outdir, samples, log_path, assay_suffix="_GL
                                "No valid featureCounts data found", "")
                 return False
             
-            # Write stats to a file for inspection
-            stats_file = os.path.join(outdir, "featurecounts_multiqc_stats.csv")
-            
-            # Collect all possible column names across all samples
-            all_columns = set()
-            for sample_data in fc_data.values():
-                all_columns.update(sample_data.keys())
-            
-            # Sort column names for consistent output
-            sorted_columns = sorted(list(all_columns))
-            
-            # Write the stats to a CSV file
-            with open(stats_file, 'w') as f:
-                # Write header
-                f.write("Sample," + ",".join(sorted_columns) + "\n")
-                
-                # Write data for each sample
-                for sample, data in fc_data.items():
-                    sample_values = [sample]
-                    for col in sorted_columns:
-                        value = data.get(col, "")
-                        # Format numerical values for better readability
-                        if isinstance(value, (int, float)):
-                            if "pct_" in col or col.endswith("_pct"):
-                                sample_values.append(f"{value:.2f}")
-                            else:
-                                sample_values.append(f"{value}")
-                        else:
-                            sample_values.append(str(value))
-                    f.write(",".join(sample_values) + "\n")
-            
-            print(f"Wrote featureCounts stats to {stats_file}")
-            
             # Check if all samples are in the stats
             missing_samples = []
             for sample in samples:
