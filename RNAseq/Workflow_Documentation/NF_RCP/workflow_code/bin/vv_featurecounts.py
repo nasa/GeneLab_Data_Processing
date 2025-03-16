@@ -108,8 +108,8 @@ def check_featurecounts_files_existence(outdir, log_path, assay_suffix="_GLbulkR
     expected_files = [
         f"FeatureCounts{assay_suffix}.tsv",
         f"FeatureCounts{assay_suffix}.tsv.summary",
-        f"featureCounts_multiqc{assay_suffix}_report.zip",
-        f"FeatureCounts_rRNArm{assay_suffix}.tsv"
+        f"featureCounts_multiqc{assay_suffix}_report.zip"
+        # f"FeatureCounts_rRNArm{assay_suffix}.tsv"
     ]
     
     missing_files = []
@@ -458,6 +458,109 @@ def check_rrna_removal(outdir, log_path, assay_suffix="_GLbulkRNAseq"):
         return False
 
 
+def add_featurecounts_group_stats(outdir, multiqc_data, log_path):
+    """Calculate and log summary statistics for featureCounts metrics across all samples."""
+    if not multiqc_data or len(multiqc_data) == 0:
+        print("No featureCounts data to analyze for group statistics")
+        log_check_result(
+            log_path, 
+            "featurecounts", 
+            "all", 
+            "add_featurecounts_group_stats", 
+            "RED", 
+            "No featureCounts data to analyze for group statistics", 
+            ""
+        )
+        return False
+    
+    # Metrics to analyze
+    metrics = {
+        "total_count": "total number of reads counted",
+        "num_assigned": "number of reads assigned to features",
+        "pct_assigned": "percentage of reads assigned to features",
+        "num_unassigned_nofeatures": "number of reads with no features",
+        "num_unassigned_ambiguity": "number of reads with ambiguous features",
+        "pct_unassigned_nofeatures": "percentage of reads with no features",
+        "pct_unassigned_ambiguity": "percentage of reads with ambiguous features"
+    }
+    
+    # Collect values for each metric
+    metric_values = {metric: [] for metric in metrics.keys()}
+    
+    for sample, data in multiqc_data.items():
+        for metric in metrics.keys():
+            if metric in data:
+                metric_values[metric].append(data[metric])
+    
+    # Calculate statistics for each metric
+    stats_summary = {}
+    
+    for metric, values in metric_values.items():
+        if not values:
+            continue
+            
+        values = np.array(values)
+        stats_summary[metric] = {
+            "min": np.min(values),
+            "max": np.max(values),
+            "mean": np.mean(values),
+            "median": np.median(values),
+            "stddev": np.std(values),
+            "count": len(values)
+        }
+    
+    # Print and log the statistics
+    print("\nfeatureCounts Metrics Summary Statistics:")
+    
+    for metric, description in metrics.items():
+        if metric not in stats_summary:
+            continue
+            
+        stats = stats_summary[metric]
+        
+        # Format appropriately based on metric type
+        if metric.startswith("pct_") or metric.endswith("_percent"):
+            # Percentage metrics
+            detail_str = (f"Range: {stats['min']:.2f}% - {stats['max']:.2f}%; "
+                         f"Median: {stats['median']:.2f}%; "
+                         f"Mean: {stats['mean']:.2f}%; "
+                         f"StdDev: {stats['stddev']:.2f}")
+            
+            print(f"  {description}: {detail_str}")
+            
+            # Log each metric as a separate entry
+            log_check_result(
+                log_path, 
+                "featurecounts", 
+                "all", 
+                f"featurecounts_stats_{metric}", 
+                "GREEN", 
+                f"{description}", 
+                detail_str
+            )
+        else:
+            # Count metrics
+            detail_str = (f"Range: {stats['min']:.0f} - {stats['max']:.0f}; "
+                         f"Median: {stats['median']:.0f}; "
+                         f"Mean: {stats['mean']:.1f}; "
+                         f"StdDev: {stats['stddev']:.1f}")
+            
+            print(f"  {description}: {detail_str}")
+            
+            # Log each metric as a separate entry
+            log_check_result(
+                log_path, 
+                "featurecounts", 
+                "all", 
+                f"featurecounts_stats_{metric}", 
+                "GREEN", 
+                f"{description}", 
+                detail_str
+            )
+    
+    return True
+
+
 def main():
     """Main function to process runsheet and validate featureCounts output."""
     parser = argparse.ArgumentParser(description='Validate featureCounts output based on runsheet information.')
@@ -507,12 +610,15 @@ def main():
     # Get featureCounts MultiQC stats
     multiqc_data = get_featurecounts_multiqc_stats(args.outdir, sample_names, vv_log_path, args.assay_suffix)
     
-    # Report outliers in featureCounts metrics
+    # Add group statistics for featureCounts metrics
     if multiqc_data:
+        add_featurecounts_group_stats(args.outdir, multiqc_data, vv_log_path)
+        
+        # Report outliers in featureCounts metrics
         report_multiqc_outliers(args.outdir, multiqc_data, vv_log_path)
     
-    # Check rRNA gene removal
-    check_rrna_removal(args.outdir, vv_log_path, args.assay_suffix)
+    # Remove rRNA check since the file is no longer provided in the pipeline
+    # check_rrna_removal(args.outdir, vv_log_path, args.assay_suffix)
     
     print("FeatureCounts validation complete")
 

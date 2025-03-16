@@ -523,6 +523,120 @@ def report_multiqc_outliers(outdir, multiqc_data, log_path):
     
     return len(outlier_samples) == 0
 
+def add_bowtie2_group_stats(outdir, multiqc_data, log_path):
+    """Calculate and log summary statistics for Bowtie2 alignment metrics across all samples."""
+    if not multiqc_data or len(multiqc_data) == 0:
+        print("No Bowtie2 data to analyze for group statistics")
+        log_check_result(
+            log_path, 
+            "alignment", 
+            "all", 
+            "add_bowtie2_group_stats", 
+            "RED", 
+            "No Bowtie2 data to analyze for group statistics", 
+            ""
+        )
+        return False
+    
+    # Metrics to analyze
+    metrics = {
+        "total_reads": "total number of reads processed",
+        "overall_alignment_rate": "overall alignment rate",
+        "aligned_none": "percentage of unaligned reads",
+        "aligned_one": "percentage of uniquely aligned reads",
+        "aligned_multi": "percentage of multi-mapped reads"
+    }
+    
+    # Collect values for each metric
+    metric_values = {metric: [] for metric in metrics.keys()}
+    
+    for sample, data in multiqc_data.items():
+        # Convert aligned counts to percentages if they haven't been converted already
+        if 'total_reads' in data and 'aligned_none' in data:
+            total = data['total_reads']
+            
+            # Check if values need to be converted (if they're not already percentages)
+            if data.get('aligned_none', 0) > 100 or data.get('aligned_one', 0) > 100 or data.get('aligned_multi', 0) > 100:
+                if 'aligned_none' in data:
+                    data['aligned_none'] = (data['aligned_none'] / total) * 100
+                if 'aligned_one' in data:
+                    data['aligned_one'] = (data['aligned_one'] / total) * 100
+                if 'aligned_multi' in data:
+                    data['aligned_multi'] = (data['aligned_multi'] / total) * 100
+        
+        # Collect metrics
+        for metric in metrics.keys():
+            if metric in data:
+                metric_values[metric].append(data[metric])
+    
+    # Calculate statistics for each metric
+    stats_summary = {}
+    
+    for metric, values in metric_values.items():
+        if not values:
+            continue
+            
+        values = np.array(values)
+        stats_summary[metric] = {
+            "min": np.min(values),
+            "max": np.max(values),
+            "mean": np.mean(values),
+            "median": np.median(values),
+            "stddev": np.std(values),
+            "count": len(values)
+        }
+    
+    # Print and log the statistics
+    print("\nBowtie2 Alignment Metrics Summary Statistics:")
+    
+    for metric, description in metrics.items():
+        if metric not in stats_summary:
+            continue
+            
+        stats = stats_summary[metric]
+        
+        # Format appropriately based on metric type
+        if metric in ["overall_alignment_rate", "aligned_none", "aligned_one", "aligned_multi"]:
+            # Percentage metrics
+            detail_str = (f"Range: {stats['min']:.2f}% - {stats['max']:.2f}%; "
+                         f"Median: {stats['median']:.2f}%; "
+                         f"Mean: {stats['mean']:.2f}%; "
+                         f"StdDev: {stats['stddev']:.2f}")
+            
+            print(f"  {description}: {detail_str}")
+            
+            # Log each metric as a separate entry
+            log_check_result(
+                log_path, 
+                "alignment", 
+                "all", 
+                f"bowtie2_stats_{metric}", 
+                "GREEN", 
+                f"{description}", 
+                detail_str
+            )
+        else:
+            # Count metrics
+            detail_str = (f"Range: {stats['min']:.0f} - {stats['max']:.0f}; "
+                         f"Median: {stats['median']:.0f}; "
+                         f"Mean: {stats['mean']:.1f}; "
+                         f"StdDev: {stats['stddev']:.1f}")
+            
+            print(f"  {description}: {detail_str}")
+            
+            # Log each metric as a separate entry
+            log_check_result(
+                log_path, 
+                "alignment", 
+                "all", 
+                f"bowtie2_stats_{metric}", 
+                "GREEN", 
+                f"{description}", 
+                detail_str
+            )
+    
+    return True
+
 def check_bowtie2_existence(outdir, samples, paired_end, log_path):
     """Check if all expected bowtie2 alignment files exist for each sample."""
     align_dir = os.path.join(outdir, "02-Bowtie2_Alignment")
@@ -717,8 +831,11 @@ def main():
     # 4. Get MultiQC stats
     multiqc_data = get_bowtie2_multiqc_stats(args.outdir, sample_names, paired_end_values, vv_log_path, args.assay_suffix)
 
-    # 5. Report MultiQC stats outliers
+    # 5. Add group statistics for Bowtie2 metrics
     if multiqc_data:
+        add_bowtie2_group_stats(args.outdir, multiqc_data, vv_log_path)
+        
+        # 6. Report MultiQC stats outliers
         report_multiqc_outliers(args.outdir, multiqc_data, vv_log_path)
 
 if __name__ == "__main__":

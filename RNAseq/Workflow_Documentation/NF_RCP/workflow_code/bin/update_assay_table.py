@@ -12,7 +12,7 @@ import tempfile
 def parse_args():
     parser = argparse.ArgumentParser(description='Extract RNA-Seq assay table from ISA.zip')
     parser.add_argument('--outdir', required=True, help='Directory containing Metadata folder with ISA.zip')
-    parser.add_argument('--mode', required=True, help='Processing mode')
+    parser.add_argument('--mode', required=False, default="", help='Processing mode (microbes or empty for default)')
     parser.add_argument('--assay_suffix', required=True, help='Suffix for output file')
     parser.add_argument('--glds_accession', required=True, help='GLDS accession number (e.g. GLDS-123)')
     return parser.parse_args()
@@ -97,21 +97,20 @@ def is_paired_end_data(runsheet_df):
         return False
 
 def has_ercc_spikes(runsheet_df):
-    """Determine if ERCC spike-ins are used based on the runsheet.
-    
-    Args:
-        runsheet_df: DataFrame containing the runsheet
-        
-    Returns:
-        bool: True if ERCC spike-ins are used, False otherwise
-    """
+    """Determine if ERCC spike-ins are used based on the runsheet."""
     if runsheet_df is None:
         print("Warning: No runsheet provided, assuming no ERCC spike-ins")
         return False
     
-    # Check if there's a has_ercc column
-    if 'has_ercc' in runsheet_df.columns:
-        has_ercc_values = runsheet_df['has_ercc'].unique()
+    # Check for either has_ercc or has_ERCC column (case-insensitive)
+    ercc_column = None
+    for col in runsheet_df.columns:
+        if col.lower() == 'has_ercc':
+            ercc_column = col
+            break
+            
+    if ercc_column:
+        has_ercc_values = runsheet_df[ercc_column].unique()
         if len(has_ercc_values) == 1:
             # If all values are the same, use that
             value = has_ercc_values[0]
@@ -126,7 +125,8 @@ def has_ercc_spikes(runsheet_df):
             
             print(f"ERCC spike-ins {'are' if ercc_used else 'are not'} used based on runsheet")
             return ercc_used
-    
+        
+    # Check for other indicators of ERCC usage
     # Look for ERCC in sample names as a fallback
     if 'Sample Name' in runsheet_df.columns and any('ercc' in str(name).lower() for name in runsheet_df['Sample Name']):
         print("Detected ERCC spike-ins based on sample names")
@@ -263,17 +263,8 @@ def add_parameter_column(df, column_name, value, prefix=None):
     
     return df
 
-def add_unmapped_reads_column(df, glds_prefix, runsheet_df=None):
-    """Add the Unmapped Reads column to the dataframe.
-    
-    Args:
-        df: The assay table dataframe
-        glds_prefix: The GLDS prefix to add to filenames
-        runsheet_df: Optional runsheet dataframe with sample information
-        
-    Returns:
-        The modified dataframe
-    """
+def add_unmapped_reads_column(df, glds_prefix, runsheet_df=None, mode=""):
+    """Add the Unmapped Reads column to the dataframe."""
     column_name = "Parameter Value[Unmapped Reads]"
     
     # Determine if paired-end from runsheet
@@ -286,10 +277,18 @@ def add_unmapped_reads_column(df, glds_prefix, runsheet_df=None):
     if not sample_col:
         print("Warning: Could not find Sample Name column in assay table")
         # If no sample column, just use placeholder values
-        if is_paired_end:
-            values = [f"{glds_prefix}sample{i+1}.unmapped.fastq.1.gz,{glds_prefix}sample{i+1}.unmapped.fastq.2.gz" for i in range(len(df))]
+        if mode == "microbes":
+            # Microbes mode (Bowtie2)
+            if is_paired_end:
+                values = [f"{glds_prefix}sample{i+1}.unmapped.fastq.1.gz,{glds_prefix}sample{i+1}.unmapped.fastq.2.gz" for i in range(len(df))]
+            else:
+                values = [f"{glds_prefix}sample{i+1}.unmapped.fastq.gz" for i in range(len(df))]
         else:
-            values = [f"{glds_prefix}sample{i+1}.unmapped.fastq.gz" for i in range(len(df))]
+            # Default mode (STAR)
+            if is_paired_end:
+                values = [f"{glds_prefix}sample{i+1}_Unmapped.out.mate1,{glds_prefix}sample{i+1}_Unmapped.out.mate2" for i in range(len(df))]
+            else:
+                values = [f"{glds_prefix}sample{i+1}_Unmapped.out.mate1" for i in range(len(df))]
     else:
         # Get sample names from assay table
         assay_sample_names = df[sample_col].tolist()
@@ -311,12 +310,22 @@ def add_unmapped_reads_column(df, glds_prefix, runsheet_df=None):
             # Use mapped name if available, otherwise use the assay table name
             sample = sample_name_map.get(assay_sample, assay_sample)
             
-            if is_paired_end:
-                # For paired-end data, create entries with both .1 and .2 files
-                values.append(f"{glds_prefix}{sample}.unmapped.fastq.1.gz,{glds_prefix}{sample}.unmapped.fastq.2.gz")
+            if mode == "microbes":
+                # Microbes mode (Bowtie2)
+                if is_paired_end:
+                    # For paired-end data, create entries with both .1 and .2 files
+                    values.append(f"{glds_prefix}{sample}.unmapped.fastq.1.gz,{glds_prefix}{sample}.unmapped.fastq.2.gz")
+                else:
+                    # For single-end data
+                    values.append(f"{glds_prefix}{sample}.unmapped.fastq.gz")
             else:
-                # For single-end data
-                values.append(f"{glds_prefix}{sample}.unmapped.fastq.gz")
+                # Default mode (STAR)
+                if is_paired_end:
+                    # For paired-end data with STAR
+                    values.append(f"{glds_prefix}{sample}_Unmapped.out.mate1,{glds_prefix}{sample}_Unmapped.out.mate2")
+                else:
+                    # For single-end data with STAR
+                    values.append(f"{glds_prefix}{sample}_Unmapped.out.mate1")
     
     # Add the column to the dataframe
     if column_name not in df.columns:
@@ -517,35 +526,89 @@ def add_rseqc_multiqc_reports_column(df, glds_prefix, assay_suffix):
     
     return df
 
-def add_raw_counts_data_column(df, glds_prefix, assay_suffix):
+def add_raw_counts_data_column(df, glds_prefix, assay_suffix, mode=""):
     """Add the Raw Counts Data column to the dataframe."""
     column_name = "Parameter Value[Raw Counts Data]"
     
-    # Create the feature counts file names - same for all samples
-    feature_counts_files = [
-        f"{glds_prefix}FeatureCounts{assay_suffix}.tsv",
-        f"{glds_prefix}FeatureCounts{assay_suffix}.tsv.summary"
-    ]
+    # Find the sample name column in the assay table
+    sample_col = next((col for col in df.columns if 'Sample Name' in col), None)
     
-    # Join the files with commas
-    combined_files = ",".join(feature_counts_files)
+    if not sample_col:
+        print("Warning: Could not find Sample Name column in assay table")
+        
+        if mode == "microbes":
+            # Microbes mode (FeatureCounts)
+            # Create the feature counts file names - same for all samples
+            feature_counts_files = [
+                f"{glds_prefix}FeatureCounts{assay_suffix}.tsv",
+                f"{glds_prefix}FeatureCounts{assay_suffix}.tsv.summary"
+            ]
+            # Join the files with commas
+            combined_files = ",".join(feature_counts_files)
+            values = [combined_files] * len(df)
+        else:
+            # Default mode (RSEM) - placeholder values
+            values = [f"{glds_prefix}sample{i+1}.genes.results,{glds_prefix}sample{i+1}.isoforms.results" for i in range(len(df))]
+    else:
+        # Get sample names from assay table
+        assay_sample_names = df[sample_col].tolist()
+        
+        # Create a mapping from assay table sample names to runsheet sample names if available
+        sample_name_map = {}
+        runsheet_df = None  # Define outside the if to avoid UnboundLocalError
+        if 'runsheet_df' in locals() and runsheet_df is not None and 'Sample Name' in runsheet_df.columns:
+            # Check for 'Original Sample Name' column to map between assay table and runsheet
+            if 'Original Sample Name' in runsheet_df.columns:
+                for _, row in runsheet_df.iterrows():
+                    orig_name = row['Original Sample Name']
+                    rs_name = row['Sample Name']
+                    if orig_name in assay_sample_names:
+                        sample_name_map[orig_name] = rs_name
+        
+        values = []
+        if mode == "microbes":
+            # Microbes mode (FeatureCounts) - same for all samples
+            feature_counts_files = [
+                f"{glds_prefix}FeatureCounts{assay_suffix}.tsv",
+                f"{glds_prefix}FeatureCounts{assay_suffix}.tsv.summary"
+            ]
+            # Join the files with commas
+            combined_files = ",".join(feature_counts_files)
+            values = [combined_files] * len(df)
+        else:
+            # Default mode (RSEM) - sample-specific files
+            for assay_sample in assay_sample_names:
+                # Use mapped name if available, otherwise use the assay table name
+                sample = sample_name_map.get(assay_sample, assay_sample)
+                
+                # For RSEM, each sample has genes and isoforms result files
+                rsem_files = [
+                    f"{glds_prefix}{sample}.genes.results",
+                    f"{glds_prefix}{sample}.isoforms.results"
+                ]
+                values.append(",".join(rsem_files))
     
-    # Add the column to the dataframe with the same value for all rows
+    # Add the column to the dataframe
     if column_name not in df.columns:
         print(f"Adding column: {column_name}")
-        df[column_name] = combined_files
+        df[column_name] = values
     else:
         print(f"Updating column: {column_name}")
-        df[column_name] = combined_files
+        df[column_name] = values
     
     return df
 
-def add_raw_counts_multiqc_column(df, glds_prefix, assay_suffix):
+def add_raw_counts_multiqc_column(df, glds_prefix, assay_suffix, mode=""):
     """Add the Raw Counts Data MultiQC reports column to the dataframe."""
     column_name = "Parameter Value[Raw Counts Data/MultiQC Reports]"
     
-    # Create the feature counts multiqc report filename - same for all samples
-    multiqc_report = f"{glds_prefix}featureCounts_multiqc{assay_suffix}_report.zip"
+    # Create the appropriate multiqc report filename based on mode
+    if mode == "microbes":
+        # Microbes mode (FeatureCounts)
+        multiqc_report = f"{glds_prefix}featureCounts_multiqc{assay_suffix}_report.zip"
+    else:
+        # Default mode (RSEM)
+        multiqc_report = f"{glds_prefix}RSEM_count_multiqc{assay_suffix}_report.zip"
     
     # Add the column to the dataframe with the same value for all rows
     if column_name not in df.columns:
@@ -557,12 +620,19 @@ def add_raw_counts_multiqc_column(df, glds_prefix, assay_suffix):
     
     return df
 
-def add_raw_counts_tables_column(df, glds_prefix, assay_suffix):
+def add_raw_counts_tables_column(df, glds_prefix, assay_suffix, mode=""):
     """Add the Raw Counts Tables column to the dataframe."""
     column_name = "Parameter Value[Raw Counts Tables]"
     
-    # Create the unnormalized counts filename - same for all samples
-    counts_file = f"{glds_prefix}FeatureCounts_Unnormalized_Counts{assay_suffix}.csv"
+    # Create the unnormalized counts filename based on mode
+    if mode == "microbes":
+        # Microbes mode (FeatureCounts)
+        counts_file = f"{glds_prefix}FeatureCounts_Unnormalized_Counts{assay_suffix}.csv"
+    else:
+        # Default mode (STAR/RSEM)
+        rsem_file = f"{glds_prefix}RSEM_Unnormalized_Counts{assay_suffix}.csv"
+        star_file = f"{glds_prefix}STAR_Unnormalized_Counts{assay_suffix}.csv"
+        counts_file = f"{rsem_file},{star_file}"
     
     # Add the column to the dataframe with the same value for all rows
     if column_name not in df.columns:
@@ -574,12 +644,19 @@ def add_raw_counts_tables_column(df, glds_prefix, assay_suffix):
     
     return df
 
-def add_raw_counts_tables_rrnarm_column(df, glds_prefix, assay_suffix):
+def add_raw_counts_tables_rrnarm_column(df, glds_prefix, assay_suffix, mode=""):
     """Add the Raw Counts Tables rRNArm column to the dataframe."""
     column_name = "Parameter Value[Raw Counts Tables rRNArm]"
     
-    # Create the unnormalized counts filename with rRNArm - same for all samples
-    counts_file = f"{glds_prefix}FeatureCounts_Unnormalized_Counts_rRNArm{assay_suffix}.csv"
+    # Create the unnormalized counts filename based on mode
+    if mode == "microbes":
+        # Microbes mode (FeatureCounts)
+        counts_file = f"{glds_prefix}FeatureCounts_Unnormalized_Counts_rRNArm{assay_suffix}.csv"
+    else:
+        # Default mode (STAR/RSEM)
+        rsem_file = f"{glds_prefix}RSEM_Unnormalized_Counts_rRNArm{assay_suffix}.csv"
+        star_file = f"{glds_prefix}STAR_Unnormalized_Counts_rRNArm{assay_suffix}.csv"
+        counts_file = f"{rsem_file},{star_file}"
     
     # Add the column to the dataframe with the same value for all rows
     if column_name not in df.columns:
@@ -685,7 +762,7 @@ def add_differential_expression_rrnarm_column(df, glds_prefix, assay_suffix):
     
     return df
 
-def add_aligned_sequence_data_column(df, glds_prefix, runsheet_df=None):
+def add_aligned_sequence_data_column(df, glds_prefix, runsheet_df=None, mode=""):
     """Add the aligned sequence data column to the dataframe."""
     # Title Case column name
     column_name = "Parameter Value[Aligned Sequence Data]"
@@ -696,7 +773,18 @@ def add_aligned_sequence_data_column(df, glds_prefix, runsheet_df=None):
     if not sample_col:
         print("Warning: Could not find Sample Name column in assay table")
         # If no sample column, just use placeholder values
-        values = [f"{glds_prefix}sample{i+1}_sorted.bam,{glds_prefix}sample{i+1}_sorted.bam.bai" for i in range(len(df))]
+        if mode == "microbes":
+            # Microbes mode (Bowtie2)
+            values = [f"{glds_prefix}sample{i+1}_sorted.bam,{glds_prefix}sample{i+1}_sorted.bam.bai" for i in range(len(df))]
+        else:
+            # Default mode (STAR)
+            values = [
+                f"{glds_prefix}sample{i+1}_Aligned.sortedByCoord_sorted.out.bam,"
+                f"{glds_prefix}sample{i+1}_Aligned.sortedByCoord_sorted.out.bam.bai,"
+                f"{glds_prefix}sample{i+1}_Aligned.toTranscriptome.out.bam,"
+                f"{glds_prefix}sample{i+1}_SJ.out.tab" 
+                for i in range(len(df))
+            ]
     else:
         # Get sample names from assay table
         assay_sample_names = df[sample_col].tolist()
@@ -718,11 +806,20 @@ def add_aligned_sequence_data_column(df, glds_prefix, runsheet_df=None):
             # Use mapped name if available, otherwise use the assay table name
             sample = sample_name_map.get(assay_sample, assay_sample)
             
-            # Create only the BAM and BAI files, not the log
-            files = [
-                f"{glds_prefix}{sample}_sorted.bam",
-                f"{glds_prefix}{sample}_sorted.bam.bai"
-            ]
+            if mode == "microbes":
+                # Microbes mode (Bowtie2)
+                files = [
+                    f"{glds_prefix}{sample}_sorted.bam",
+                    f"{glds_prefix}{sample}_sorted.bam.bai"
+                ]
+            else:
+                # Default mode (STAR)
+                files = [
+                    f"{glds_prefix}{sample}_Aligned.sortedByCoord_sorted.out.bam",
+                    f"{glds_prefix}{sample}_Aligned.sortedByCoord_sorted.out.bam.bai",
+                    f"{glds_prefix}{sample}_Aligned.toTranscriptome.out.bam",
+                    f"{glds_prefix}{sample}_SJ.out.tab"
+                ]
             values.append(",".join(files))
     
     # Add the column to the dataframe
@@ -735,7 +832,7 @@ def add_aligned_sequence_data_column(df, glds_prefix, runsheet_df=None):
     
     return df
 
-def add_alignment_logs_column(df, glds_prefix, runsheet_df=None):
+def add_alignment_logs_column(df, glds_prefix, runsheet_df=None, mode=""):
     """Add the Alignment Logs column to the dataframe."""
     column_name = "Parameter Value[Aligned Sequence Data/Alignment Logs]"
     
@@ -745,7 +842,12 @@ def add_alignment_logs_column(df, glds_prefix, runsheet_df=None):
     if not sample_col:
         print("Warning: Could not find Sample Name column in assay table")
         # If no sample column, just use placeholder values
-        values = [f"{glds_prefix}sample{i+1}.bowtie2.log" for i in range(len(df))]
+        if mode == "microbes":
+            # Microbes mode (Bowtie2)
+            values = [f"{glds_prefix}sample{i+1}.bowtie2.log" for i in range(len(df))]
+        else:
+            # Default mode (STAR)
+            values = [f"{glds_prefix}sample{i+1}_Log.final.out" for i in range(len(df))]
     else:
         # Get sample names from assay table
         assay_sample_names = df[sample_col].tolist()
@@ -767,8 +869,12 @@ def add_alignment_logs_column(df, glds_prefix, runsheet_df=None):
             # Use mapped name if available, otherwise use the assay table name
             sample = sample_name_map.get(assay_sample, assay_sample)
             
-            # Create just the log file
-            values.append(f"{glds_prefix}{sample}.bowtie2.log")
+            if mode == "microbes":
+                # Microbes mode (Bowtie2)
+                values.append(f"{glds_prefix}{sample}.bowtie2.log")
+            else:
+                # Default mode (STAR)
+                values.append(f"{glds_prefix}{sample}_Log.final.out")
     
     # Add the column to the dataframe
     if column_name not in df.columns:
@@ -785,7 +891,7 @@ def add_ercc_analyses_column(df, glds_prefix, assay_suffix):
     column_name = "Parameter Value[ERCC Analyses]"
     
     # Create the ercc analyses filename - same for all samples
-    ercc_analyses_file = f"{glds_prefix}ercc_analyses{assay_suffix}.csv"
+    ercc_analyses_file = f"{glds_prefix}ERCC_analysis{assay_suffix}.html"
     
     # Add the column to the dataframe with the same value for all rows
     if column_name not in df.columns:
@@ -839,13 +945,13 @@ def main():
         assay_df = add_trimming_reports_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
         
         # 4. Aligned Sequence Data column
-        assay_df = add_aligned_sequence_data_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
+        assay_df = add_aligned_sequence_data_column(assay_df, glds_prefix, runsheet_df=runsheet_df, mode=args.mode)
         
         # 5. Unmapped Reads column (moved here as requested)
-        assay_df = add_unmapped_reads_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
+        assay_df = add_unmapped_reads_column(assay_df, glds_prefix, runsheet_df=runsheet_df, mode=args.mode)
         
         # 6. Aligned Sequence Data/Alignment Logs column
-        assay_df = add_alignment_logs_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
+        assay_df = add_alignment_logs_column(assay_df, glds_prefix, runsheet_df=runsheet_df, mode=args.mode)
         
         # 7. Aligned Sequence Data/MultiQC Reports column
         assay_df = add_align_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
@@ -854,13 +960,13 @@ def main():
         assay_df = add_rseqc_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
         
         # 9. Raw Counts Data column
-        assay_df = add_raw_counts_data_column(assay_df, glds_prefix, args.assay_suffix)
+        assay_df = add_raw_counts_data_column(assay_df, glds_prefix, args.assay_suffix, args.mode)
         
         # 10. Raw Counts Data/MultiQC Reports column
-        assay_df = add_raw_counts_multiqc_column(assay_df, glds_prefix, args.assay_suffix)
+        assay_df = add_raw_counts_multiqc_column(assay_df, glds_prefix, args.assay_suffix, args.mode)
         
         # 11. Raw Counts Tables column
-        assay_df = add_raw_counts_tables_column(assay_df, glds_prefix, args.assay_suffix)
+        assay_df = add_raw_counts_tables_column(assay_df, glds_prefix, args.assay_suffix, args.mode)
         
         # 12. Normalized Counts Data column
         assay_df = add_normalized_counts_data_column(assay_df, glds_prefix, args.assay_suffix)
@@ -871,7 +977,7 @@ def main():
         # All rRNArm columns
         
         # 14. Raw Counts Tables rRNArm column
-        assay_df = add_raw_counts_tables_rrnarm_column(assay_df, glds_prefix, args.assay_suffix)
+        assay_df = add_raw_counts_tables_rrnarm_column(assay_df, glds_prefix, args.assay_suffix, args.mode)
         
         # 15. Normalized Counts Data rRNArm column
         assay_df = add_normalized_counts_data_rrnarm_column(assay_df, glds_prefix, args.assay_suffix)
@@ -891,19 +997,9 @@ def main():
         # Use the filename we found in extract_and_find_assay
         orig_filename = assay_filename
         
-        # Create both original and modified output files
-        # Original file (preserving the original name)
+        # Only save the original filename version
         assay_df.to_csv(orig_filename, sep='\t', index=False)
-        print(f"Original assay table saved as: {orig_filename}")
-        
-        # Modified file with GLDS prefix
-        if not orig_filename.startswith(glds_prefix):
-            mod_filename = f"{glds_prefix}{orig_filename}"
-        else:
-            mod_filename = orig_filename
-            
-        assay_df.to_csv(mod_filename, sep='\t', index=False)
-        print(f"Modified assay table saved as: {mod_filename}")
+        print(f"Assay table saved as: {orig_filename}")
         
     except Exception as e:
         print(f"Error processing assay file: {e}")
