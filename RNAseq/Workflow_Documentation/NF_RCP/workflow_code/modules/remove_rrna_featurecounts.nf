@@ -22,6 +22,6 @@ process REMOVE_RRNA_FEATURECOUNTS {
 
     script:
         """
-        python $projectDir/bin/remove_rrna_featurecounts.py ${counts} ${rrna_ids} FeatureCounts_rRNArm${params.assay_suffix}.tsv
+        remove_rrna_featurecounts.py ${counts} ${rrna_ids} FeatureCounts_rRNArm${params.assay_suffix}.tsv
         """
 }

@@ -414,7 +414,6 @@ workflow RNASEQ_MICROBES {
             runsheet_path,
             FEATURECOUNTS.out.counts,
             FEATURECOUNTS.out.summary,
-            REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm,
             COUNT_MULTIQC.out.zipped_report
         )
 

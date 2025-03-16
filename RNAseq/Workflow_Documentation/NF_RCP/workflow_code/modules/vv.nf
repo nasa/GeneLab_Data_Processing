@@ -203,7 +203,6 @@ process VV_FEATURECOUNTS {
     path(runsheet)
     path("INPUT/03-FeatureCounts/*") // featurecounts counts
     path("INPUT/03-FeatureCounts/*") // featurecounts summary
-    path("INPUT/03-FeatureCounts/*") // featurecounts counts_rrnarm
     path("INPUT/03-FeatureCounts/*") // featurecounts multiqc zipped report
 
   output:
