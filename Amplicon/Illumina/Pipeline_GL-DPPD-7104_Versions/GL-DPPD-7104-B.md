@@ -1307,7 +1307,7 @@ taxonomy_table <-  read.table(file = taxonomy_file, header = TRUE,
 * {OSD-Accession-ID}_AmpSeq_v{version}_runsheet.csv (a comma-separated sample metadata file containing sample group information, output from [Step 6a](#6a-create-sample-runsheet))
 *	counts_GLAmpSeq.tsv (a tab separated samples feature table (i.e. ASV or OTU table) containing feature counts, output from [Step 5g](#5g-generating-and-writing-standard-outputs))
 * taxonomy_GLAmpSeq.tsv (a tab separated feature taxonomy table containing ASV taxonomy assignments, output from [Step 5g](#5g-generating-and-writing-standard-outputs))
-* `custom_palette` (a color palette, output from [Set Variables](#set-variables))
+* `custom_palette` (variable containing a character vector defining a custom color palette for coloring plots, output from [Set Variables](#set-variables))
 
 **Output Data:**
 
@@ -1546,7 +1546,7 @@ diversity_stats <- map_dfr(.x = diversity_metrics, function(metric){
 write_csv(x = diversity_stats, 
             file = glue("{alpha_diversity_out_dir}/{output_prefix}statistics_table{assay_suffix}.csv"))
 
-# Get diffrent letters compare groups for every diversity metric
+# Get diffrent letters indicating statistically significant group comparisons for every diversity metric
 comp_letters <- data.frame(group = group_levels)
 colnames(comp_letters) <- groups_colname
 
@@ -1559,7 +1559,7 @@ walk(.x = diversity_metrics, function(metric=.x){
   letters_df <-  enframe(multcompView::multcompLetters(p_values)$Letters,
                       name = groups_colname,
                       value = glue("{metric}_letter"))
-  comp_letters <<- comp_letters %>% left_join(letters_df)
+  comp_letters <- comp_letters %>% left_join(letters_df)
    
 })
 
@@ -1598,7 +1598,7 @@ samples_order <- metadata %>% arrange(!!sym(groups_colname)) %>% rownames()
 richness_by_sample <- plot_richness(ps.rarefied, color = groups_colname,
                                     measures = metrics2plot)
 
-richness_by_sample <-  ggplot(richness_by_sample$data %>% 
+richness_by_sample <- ggplot(richness_by_sample$data %>% 
                                 mutate(samples = factor(samples, 
                                                         levels=samples_order)),
                               aes(x=samples, y=value, colour = !!sym(groups_colname))) +
@@ -1695,28 +1695,27 @@ ggsave(filename = glue("{output_prefix}richness_and_diversity_estimates_by_group
 ```
 **Parameter Definitions:**
 
-* `rarefaction_depth` – minimum rarefaction depth for alpha diversity estimation
-* `groups_colname`    - name of group column in metadata to be analyzed
-* `legend_title`      - legend title for plotting
-* `assay_suffix`      - Genelab assay suffix. Default : "_GLAmpSeq"
-* `output_prefix`     - additional prefix to be added to output files. Default: ""
+* `rarefaction_depth` – specifies the minimum rarefaction depth for alpha diversity estimation
+* `groups_colname`    - specifies the name of group column in the metadata dataframe to be analyzed
+* `legend_title`      - specifies the legend title for plotting
+* `assay_suffix`      - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
+* `output_prefix`     - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
 
 **Input Data:**
-* `metadata` (sample metadata with the group/treatment to be analyzed, output from [Preprocessing](#preprocessing))
-* `sample_info_tab` (sample information, output from [Preprocessing](#preprocessing))
-* `feature_table` (ASV counts table, output from [Preprocessing](#preprocessing))
-* `taxonomy_table` (taxonomy table, output from [Preprocessing](#preprocessing))
-* `publication_format` (custom ggplot theme, output from [Set Variables](#set-variables))
-* `group_levels` (group levels to compare, output from [Read-in Input Tables](#read-in-input-tables))
-* `group_colors` (colors for each group, output from [Read-in Input Tables](#read-in-input-tables))
+* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [Read-in Input Tables](#read-in-input-tables))
+* `sample_info_tab` (variable containing a subset of the metadata dataframe with samples as row names and group names and group colors as columns, output from [Read-in Input Tables](#read-in-input-tables))
+* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [Preprocessing](#preprocessing))
+* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [Preprocessing](#preprocessing))
+* `group_levels` (variable containing a character vector of unique group names, output from [Read-in Input Tables](#read-in-input-tables))
+* `group_colors` (variable containing a named character vector of colors for each group, output from [Read-in Input Tables](#read-in-input-tables))
 
 **Output Data:**
 
-* **alpha_diversity/<output_prefix>rarefaction_curves_GLAmpSeq.png** (Rarefaction curves)
-* **alpha_diversity/<output_prefix>statistics_table_GLAmpSeq.csv** (Statistics Table)
-* **alpha_diversity/<output_prefix>summary_table_GLAmpSeq.csv** (Summary Table)
-* **alpha_diversity/<output_prefix>richness_and_diversity_estimates_by_sample_GLAmpSeq.png** (Samples Dot Plot)
-* **alpha_diversity/<output_prefix>richness_and_diversity_estimates_by_group_GLAmpSeq.png** (Group boxplot)
+* **alpha_diversity/<output_prefix>rarefaction_curves_GLAmpSeq.png** (plot containing the rarefaction curves for each sample)
+* **alpha_diversity/<output_prefix>statistics_table_GLAmpSeq.csv** (table containing the z-score, p-value, and adjusted p-value statistics for each pairwise comparison for all metrics evaluated, Observed, Chao1, Shannon, and Simpson)
+* **alpha_diversity/<output_prefix>summary_table_GLAmpSeq.csv** (table containing the sample number and mean +/- standard deviation of each metric (Observed, Chao1, Shannon, and Simpson) for each group)
+* **alpha_diversity/<output_prefix>richness_and_diversity_estimates_by_sample_GLAmpSeq.png** (dot plots containing richness and diversity estimates for each sample)
+* **alpha_diversity/<output_prefix>richness_and_diversity_estimates_by_group_GLAmpSeq.png** (box plots containing richness and diversity estimates for each group)
 
 <br>
 
@@ -1725,10 +1724,6 @@ ggsave(filename = glue("{output_prefix}richness_and_diversity_estimates_by_group
 ## 8. Beta Diversity Analysis
 
 Beta diversity measures the variation in species composition between different samples or environments. A common practice in working with a new dataset is to generate some exploratory visualizations like ordinations and hierarchical clusterings. These give us a quick overview of how our samples relate to each other and can be a way to check for problems like batch effects.
-
-> Please note that if you'd like to run the code in this section, make sure that you [load the libraries](#load-libraries) 
-and [functions](#load-functions), [read-in input tables](#read-in-input-tables) and [preprocess](#preprocessing) them in R 
-by running the lines of code in [section 6](#6-amplicon-seq-data-analysis-set-up) sequentially, particularly those in [section 6b](#6b-r-environment-set-up).
 
 ```R
 beta_diversity_out_dir <- "beta_diversity/"
@@ -1743,7 +1738,6 @@ assay_suffix  <- "_GLAmpSeq"
 output_prefix  <- ""
 distance_methods <- c("euclidean", "bray")
 normalization_methods <- c("vst", "rarefy")
-legend_title <- NULL
 
 options(warn=-1) # ignore warnings
 # Run the analysis
@@ -1786,7 +1780,7 @@ write_csv(x = stats_res$adonis,
 #---------------------------- Make PCoA
 # Unlabeled PCoA plot
 ordination_plot_u <- plot_pcoa(ps, stats_res, distance_method, 
-                               groups_colname,group_colors, legend_title) 
+                               groups_colname, group_colors, legend_title) 
 ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_without_labels{assay_suffix}.png"),
        plot=ordination_plot_u, width = 14, height = 8.33, dpi = 300, units = "in")
 
@@ -1801,27 +1795,26 @@ ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_
 ```
 **Parameter Definitions:**
 
-* `rarefaction_depth`     – minimum rarefaction depth when using Bray Curtis distance
-* `groups_colname`        - name of group column in metadata to be analyzed
-* `legend_title`          - legend title for plotting
-* `assay_suffix`          - Genelab assay suffix. Default : "_GLAmpSeq"
-* `output_prefix`         - additional prefix to be added to output files, Default: ""
-* `distance_methods`      - method used to calculate the distance between samples, either "euclidean" and "bray" for 
-                            euclidean and Bray Curtis distance, respectively
-* `normalization_methods` - method for normalizing sample counts, either "vst" and "rarefy" for variance stabilizing 
-                            transformation and rarefaction, respectively
+* `rarefaction_depth`     – specifies the minimum rarefaction depth when using Bray Curtis distance
+* `groups_colname`        - specifies the name of group column in the metadata dataframe to be analyzed
+* `legend_title`          - specifies the legend title for plotting
+* `assay_suffix`          - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
+* `output_prefix`         - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
+* `distance_methods`      - specifies the method(s) to use to calculate the distance between samples; by default, "euclidean" and "bray" for euclidean and Bray Curtis distance, respectively, are used
+* `normalization_methods` - specifies the method(s) to use for normalizing sample counts; by default, "vst" and "rarefy" for variance stabilizing transformation and rarefaction, respectively, are used
 
 **Input Data:**
-* `metadata` (sample metadata with the group/treatment to be analyzed, output from [Preprocessing](#preprocessing))
-* `feature_table` (ASV counts table, output from [Preprocessing](#preprocessing))
-* `group_colors` (colors for each group, output from [Read-in Input Tables](#read-in-input-tables))
+* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [Read-in Input Tables](#read-in-input-tables))
+* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [Preprocessing](#preprocessing))
+* `group_colors` (variable containing a named character vector of colors for each group, output from [Read-in Input Tables](#read-in-input-tables))
 
 **Output Data:**
 
-* **beta_diversity/<output_prefix><distance_method>_dendrogram_GLAmpSeq.png** (Dendogram)
-* **beta_diversity/<output_prefix><distance_method>_adonis_table_GLAmpSeq.csv** (Adonis Stats Table)
-* **beta_diversity/<output_prefix><distance_method>_PCoA_without_labels_GLAmpSeq.png** (Unlabeled PCoA)
-* **beta_diversity/<output_prefix><distance_method>_PCoA_w_labels_GLAmpSeq.png** (Labeled PCoA)
+* **beta_diversity/<output_prefix><distance_method>_dendrogram_GLAmpSeq.png** (dendrogram(s) of the specified distance, euclidean and Bray Curtis, - based hierarchical clustering of the samples, colored by experimental groups)
+* **beta_diversity/<output_prefix><distance_method>_adonis_table_GLAmpSeq.csv** (table(s) containing the degrees of freedom (df), sum of squares (SumOfSqs), coefficient of determination (R^2), F-statistic (statistic), and p-value for the model (variation explained by experimental groups) and residual (unexplained variation) sources of variation (terms) for the specified distance analysis, euclidean and Bray Curtis)
+* **beta_diversity/<output_prefix><distance_method>_variance_table_GLAmpSeq.csv** (table(s) containing the degrees of freedom (df), sum of squares (sumsq), mean square (meansq), F-statistic (statistic), and p-value for the groups (variation explained by experimental groups) and residual (unexplained variation) sources of variation (terms) for the specified distance analysis, euclidean and Bray Curtis)
+* **beta_diversity/<output_prefix><distance_method>_PCoA_without_labels_GLAmpSeq.png** (principle Coordinates Analysis plots of VST transformed and rarefy transformed ASV counts for euclidean and Bray Curtis distance methods, respectively, without sample labels)
+* **beta_diversity/<output_prefix><distance_method>_PCoA_w_labels_GLAmpSeq.png** (principle Coordinates Analysis plots of VST transformed and rarefy transformed ASV counts for euclidean and Bray Curtis distance methods, respectively, with sample labels)
 
 <br>
 
@@ -1831,11 +1824,6 @@ ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_
 ## 9. Taxonomy Plots
 
 Taxonomy summaries provide insights into the composition of microbial communities at various taxonomic levels.
-
-
-> Please note that if you'd like to run the code in this section, make sure that you [load the libraries](#load-libraries) 
-and [functions](#load-functions), [read-in input tables](#read-in-input-tables) and [preprocess](#preprocessing) them in R 
-by running the lines of code in [section 6](#6-amplicon-seq-data-analysis-set-up) sequentially, particularly those in [section 6b](#6b-r-environment-set-up).
 
 ```R
 taxonomy_plots_out_dir <- "taxonomy_plots/"
@@ -2005,25 +1993,25 @@ walk2(.x = group_relAbundace_tbs, .y = taxon_levels[-1],
 ```
 **Parameter Definitions:**
 
-* `groups_colname`     - group column in metadata to be analyzed
-* `assay_suffix`       - GeneLab assay suffix, default : "_GLAmpSeq"
-* `output_prefix`      - additional prefix to be added to output files . Default: ""
-
+* `groups_colname`     - specifies the name of the column in the metadata table containing the group names to be analyzed
+* `assay_suffix`          - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
+* `output_prefix`         - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
+  
 **Input Data:**
 
-* `metadata` (sample metadata with the group/treatment to be analyzed, output from [Preprocessing](#preprocessing))
-* `feature_table` (ASV counts table, output from [Preprocessing](#preprocessing))
-* `taxonomy_table` (taxonomy information, output from [Preprocessing](#preprocessing))
-* `publication_format` (custom ggplot theme, output from [Set Variables](#set-variables))
-* `custom_palette` (custom color palette, output from [Set Variables](#set-variables))
+* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [Read-in Input Tables](#read-in-input-tables))
+* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [Preprocessing](#preprocessing))
+* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [Preprocessing](#preprocessing))
+* `publication_format` (variable specifying the custom ggplot theme for plotting, output from [Set Variables](#set-variables))
+* `custom_palette` (variable containing a character vector defining a custom color palette for coloring plots, output from [Set Variables](#set-variables))
 
 
 **Output Data:**
 
-* **taxonomy_plots/<output_prefix>samples_<taxon_level>_GLAmpSeq.png** (samples barplots)
-* **taxonomy_plots/<output_prefix>groups_<taxon_level>_GLAmpSeq.png** (groups barplots)
+* **taxonomy_plots/<output_prefix>samples_<taxon_level>_GLAmpSeq.png** (barplots of the relative abundance of the specified taxon level for each sample)
+* **taxonomy_plots/<output_prefix>groups_<taxon_level>_GLAmpSeq.png** (barplots of the relative abundance of the specified taxon level for each group)
 
-Where `taxon_level` is all of phylum, class, order, family, genus and species.
+Where `taxon_level` is all of phylum, class, order, family, genus, and species.
 
 > Please note that the species plot can be misleading as short amplicon sequences can't be used to accurately predict species.
 
@@ -2034,11 +2022,8 @@ Where `taxon_level` is all of phylum, class, order, family, genus and species.
 
 ## 10. Differential Abundance Testing
 
-Differential abundance testing aims to uncover specific taxa that exhibit notable variations across different conditions, complemented by visualizations like volcano plots to illustrate these disparities and their implications on ASV expression and overall microbial community dynamics. ANCOMBC 1, ANCOMBC 2, and DESeq2 provide 3 different methods for calculating differential abundance.
+Differential abundance testing aims to uncover specific taxa that exhibit notable variations across different conditions, complemented by visualizations like volcano plots to illustrate these disparities and their implications on ASV abundance and overall microbial community dynamics. ANCOMBC 1, ANCOMBC 2, and DESeq2 provide 3 different methods for calculating differential abundance.
 
-> Please note that if you'd like to run the code in this section, make sure that you [load the libraries](#load-libraries) 
-and [functions](#load-functions), [read-in input tables](#read-in-input-tables) and [preprocess](#preprocessing) them in R 
-by running the lines of code in [section 6](#6-amplicon-seq-data-analysis-set-up) sequentially, particularly those in [section 6b](#6b-r-environment-set-up).
 
 ### 10a. ANCOMBC 1
 
@@ -2049,7 +2034,6 @@ if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir, recursive = T
 metadata  <-  {DATAFRAME}  
 feature_table <- {DATAFRAME}
 taxonomy_table <- {DATAFRAME}
-publication_format <- {GGPLOT_THEME}
 feature <- "ASV"
 groups_colname  <- "groups"
 samples_column  <- "Sample Name"
@@ -2101,25 +2085,8 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
   # alphabetically. 
   # Changing the reference group by reordering the factor levels
   tse_sub[[groups_colname]] <- factor(tse_sub[[groups_colname]] , levels = c(group1, group2))
-  
-  # data - input data. TreeSummarizedExperiment or Phyloseq object
-  # assay_name - name of count table in the input data object.
-  # tax_level - taxonomy level for aggregation and analysis
-  # prv_cut - prevalence cut-off. proportion of samples in which taxon is present.
-  # lib_cut - a numerical threshold for filtering samples based on library sizes.
-  # p_adj_method - p-value adjustment method for multiple comparisons
-  # struc_zero - should group-wise rare taxa be detected
-  # neg_lb - whether to classify a taxon as a structural zero using its asymptotic lower bound. i.e.the best the algorithm can possibly achieve 
-  # group - name of the group variable in metadata. Only important you'd like to perform global test  can be set to NULL.
-  # alpha - significance level
-  # n_cl - number of processes to run in parallel
-  # global - should a global test be performed to detect significant differences between at least 2 groups (ANOVA-like comparison) 
-  # tol - iteration convergence tolerance for the E-M algorithm.
-  # max_iter - max iteration 
-  # formula - fixed effects formula
-  # conserve - should a conservative variance estimator be used for the test statistic? 
-  # it is recommended to set to TRUE if your sample size is small and the number of expected differentially abundant taxa is large.
-  
+
+  # Run ancombc
   out <-  ancombc(data = tse_sub, assay_name = "counts", 
                   tax_level = NULL, phyloseq = NULL, 
                   formula = groups_colname, 
@@ -2131,13 +2098,13 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
                   n_cl = threads, verbose = TRUE)
   
   # ------ Set data frame names ---------# 
-  # LFC 
+  # lnFC 
   lfc <- out$res$lfc %>%
     as.data.frame() %>% 
     select(-contains("Intercept")) %>% 
     set_names(
       c("taxon",
-        glue("LnFC_({group2})v({group1})"))
+        glue("lnFC_({group2})v({group1})"))
     )
   
   # SE
@@ -2146,7 +2113,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     select(-contains("Intercept")) %>%
     set_names(
       c("taxon",
-        glue("lfcSE_({group2})v({group1})"))
+        glue("lnfcSE_({group2})v({group1})"))
     )
   
   # W    
@@ -2228,10 +2195,10 @@ merged_stats_df <- merged_stats_df %>%
 # ------ Get comparison names
 # Since all column groups i.e. LnFC, pval, W, etc. have the same
 # suffixes as comparison names, we only need to extract the comparion names
-# from one of them. Here we extract them from the "LnFC" prefixed columns
+# from one of them. Here we extract them from the "lnFC" prefixed columns
 comp_names <- merged_stats_df %>% 
-  select(starts_with("LnFC")) %>%
-  colnames() %>% str_remove_all("LnFC_")
+  select(starts_with("lnFC")) %>%
+  colnames() %>% str_remove_all("lnFC_")
 names(comp_names) <- comp_names
 
 
@@ -2240,8 +2207,8 @@ volcano_plots <- map(comp_names, function(comparison){
   
   # Construct column names for columns to be selected
   comp_col  <- c(
-    glue("LnFC_{comparison}"),
-    glue("lfcSE_{comparison}"),
+    glue("lnFC_{comparison}"),
+    glue("lnfcSE_{comparison}"),
     glue("Wstat_{comparison}"),
     glue("pvalue_{comparison}"),
     glue("qvalue_{comparison}"),
@@ -2269,19 +2236,19 @@ volcano_plots <- map(comp_names, function(comparison){
   group2 <- groups_vec[2]
   
   ###### Long x-axis label adjustments ##########
-  x_label <- glue("Ln Fold Change\n\n( {group1} vs {group2} )")
+  x_label <- glue("ln Fold Change\n\n( {group1} vs {group2} )")
   label_length <- nchar(x_label)
   max_allowed_label_length <- plot_width_inches * 10
   
   # Construct x-axis label with new line breaks if was too long
   if (label_length > max_allowed_label_length){
-    x_label <- glue("Ln Fold Change\n\n( {group1} \n vs \n {group2} )")
+    x_label <- glue("ln Fold Change\n\n( {group1} \n vs \n {group2} )")
   }
 
   
   # Make plot
   p <- ggplot(sub_res_df %>% mutate(diff = qvalue <= p_val), 
-              aes(x=LnFC, y=-log10(qvalue), 
+              aes(x=lnFC, y=-log10(qvalue), 
                   color=diff, label=!!sym(feature))) +
     geom_point(alpha=0.7, size=2) +
     scale_color_manual(values=c("TRUE"="red", "FALSE"="black"),
@@ -2421,34 +2388,64 @@ write_csv(merged_df %>%
 
 **Parameter Definitions:**
 
-* `feature`            - feature type, i.e. ASV or OTU.
-* `groups_colname`     - group column in metadata to be analyzed
-* `samples_column`     - specifies the column in metadata containing the sample names in the feature table
-* `assay_suffix`       - GeneLab assay suffix, default : "_GLAmpSeq"
-* `output_prefix`      - additional prefix to be added to output files . Default: ""
+* `feature`            - specifies the feature type, i.e. ASV or OTU
+* `groups_colname`     - specifies the name of the column in the metadata table containing the group names to be analyzed
+* `samples_column`     - specifies the name of the column in the metadata table containing the sample names
+* `assay_suffix`       - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
+* `output_prefix`      - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
 * `threads`            - specifies the number of cpus to use for parallel processing
-* `prevalence_cutoff`  - If `remove_rare` is true, a numerical fraction between 0 and 1. Taxa with prevalences (the 
-                         proportion of samples in which the taxon is present) less than this will be excluded from 
-                         the analysis. Default is 0, i.e. do not exclude any taxa / features.
-* `library_cutoff`     - If `remove_rare` is true, a numerical threshold for filtering samples based on library sizes. 
-                         Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0, 
-                         i.e. no sample will be dropped. To discard samples with read counts less than or equal to 100, 
-                         set to 100.
-* `target_region`      - amplicon target region. Options are either "16S", "18S", or "ITS".
-* `remove_struc_zero`  - Should structural zeros (a.k.a ASVs with zero count in at least one group) be removed ?
-                         Default is FALSE i.e. structural zeros won't be removed.
+* `prevalence_cutoff` - a decimal between 0 and 1 specifying the proportion of samples required to contain a taxon in order to keep the taxon when `remove_rare` is set to TRUE; default is 0, i.e. do not exclude any taxon / feature
+* `library_cutoff`    - a numerical value specifying the number of total counts a sample must have across all features to be retained when `remove_rare` is set to TRUE; default is 0, i.e. no samples will be dropped
+* `target_region`     - specifies the amplicon target region; options are either "16S", "18S", or "ITS"
+* `remove_struc_zero`  - specifies whether or not structural zeros (a.k.a ASVs with zero count in at least one group) should be removed; default is FALSE i.e. structural zeros won't be removed
+* `ancombc()`
+  * data - specifies the input data for the `ancombc()` function; TreeSummarizedExperiment or Phyloseq object
+  * assay_name - specifices the name of count table in the input data object; default is "counts" for TreeSummarizedExperiment object
+  * tax_level - specifies the taxonomy level to be aggregated and analyzed; NULL instructions `ancombc()` not to perform agglomeration and use the lowest taxonomic level of the input data for analysis
+  * prv_cut - fraction between 0 and 1 specifying the taxon prevalence cut-off; taxa with prevalences (the proporation of samples in which the taxon is present) less than this value will be excluded from the analysis
+  * lib_cut - a numerical threshold for filtering samples based on library sizes; samples with library sizes less than the specified value will not be included in the analysis
+  * p_adj_method - specifies the p-value adjustment method to use to correct for multiple comparisons testing
+  * struc_zero - logical value indicating whether or not group-wise structural zeros should be detected (a taxon is considered to contain structural zeros in a group if it is completely or nearly completely absent from that group)
+  * neg_lb - logical value specifying whether to classify a taxon as a structural zero using its asymptotic lower bound 
+  * group - specifies the name of the group variable in the metadata; enables global testing when more than 2 groups are present (set to NULL to disable global testing or if there are only 2 groups)
+  * alpha - specifies the significance level
+  * n_cl - specifies the number of processes to run in parallel 
+  * global - logical value indicating where or not to perform a global test to detect significant differences between 1 group and all other groups (ANOVA-like comparison) 
+  * tol - specifies the iteration convergence tolerance for the Expectation-Maximization (E-M) algorithm
+  * max_iter - specifies the maximum number of iterations for the E-M algorithm 
+  * formula - specifies the variable in the metadata to use for the fixed effects formula (e.g. group names)
+  * conserve - logical value indicating where or not a conservative variance estimator should be used for the test statistic (set to TRUE if your sample size is small and the number of expected differentially abundant taxa is large)
+  
 
 **Input Data:**
 
-* `metadata` (sample metadata with the group/treatment to be analyzed, output from [Preprocessing](#preprocessing))
-* `feature_table` (ASV counts table, output from [Preprocessing](#preprocessing))
-* `taxonomy_table` (taxonomy information, output from [Preprocessing](#preprocessing))
-* `publication_format` (custom ggplot theme, output from [Set Variables](#set-variables))
+* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [Read-in Input Tables](#read-in-input-tables))
+* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [Preprocessing](#preprocessing))
+* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [Preprocessing](#preprocessing))
 
 **Output Data:**
 
-* **differential_abundance/ancombc1/<output_prefix>(\<group1\>)v(\<group2\>)_volcano.png** (Comparion Volcano Plot)
-* **differential_abundance/ancombc1/<output_prefix>ancombc1_differential_abundance_GLAmpSeq.csv** (Statistics Table)
+* **differential_abundance/ancombc1/<output_prefix>contrasts_GLAmpSeq.csv** (table listing all pairwise group comparisons)
+* **differential_abundance/ancombc1/<output_prefix>(\<group1\>)v(\<group2\>)_volcano.png** (volcano plots for each pariwise comparison)
+* **differential_abundance/ancombc1/<output_prefix>ancombc1_differential_abundance_GLAmpSeq.csv** (ANCOM-BC1 differential abundance results table containing the following columns:
+  - ASV (identified ASVs)
+  - taxonomic assignment columns
+  - NCBI identifier for the best taxonomic assignment for each ASV 
+  - Normalized abundance values for each ASV for each sample
+  - For each pairwise group comparison:
+    - natural log of the fold change (lnFC)
+    - standard error for the lnFC (lnfcSE)
+    - test statistic from the primary result (Wstat)
+    - P-value (pvalue)
+    - Adjusted p-value (qvalue)
+    - logical value indicating differential abundance based on the qvalue cutoff of 0.05 (diff)
+  - All.mean (mean across all samples)
+  - All.stdev (standard deviation across all samples) 
+  - For each group:
+    - Group.Mean_(group) (mean within group)
+    - Group.Stdev_(group) (standard deviation within group))
+
+
 <br>
 
 ---
@@ -2461,7 +2458,6 @@ if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir, recursive = T
 metadata  <-  {DATAFRAME} 
 feature_table <- {DATAFRAME}
 taxonomy_table <- {DATAFRAME}
-publication_format <- {GGPLOT_THEME}
 feature <- "ASV"
 target_region <- "16S" # "16S" , "18S" or "ITS"
 groups_colname  <- "groups"
@@ -2491,24 +2487,6 @@ tse[[groups_colname]] <- factor(tse[[groups_colname]] , levels = group_levels)
 # Running ANCOMBC2....
 # Run acombc2
 
-  # data - input data. TreeSummarizedExperiment or Phyloseq object
-  # assay_name - name of count table in the input data object.
-  # tax_level - taxonomy level for aggregation and analysis
-  # prv_cut - prevalence cut-off. proportion of samples in which taxon is present.
-  # lib_cut - a numerical threshold for filtering samples based on library sizes.
-  # p_adj_method - p-value adjustment method for multiple comparisons
-  # struc_zero - should group-wise rare taxa be detected
-  # neg_lb - whether to classify a taxon as a structural zero using its asymptotic lower bound, i.e.the best the algorithm can possibly achieve 
-  # group - name of the group variable in metadata. Only important you'd like to perform global test  can be set to NULL.
-  # alpha - significance level
-  # n_cl - number of processes to run in parallel
-  # global - should a global test be performed to detect significant differences between at least 2 groups (ANOVA-like comparison) 
-  # tol - iteration convergence tolerance for the E-M algorithm.
-  # max_iter - max iteration 
-  # formula - fixed effects formula
-  # conserve - should a conservative variance estimator be used for the test statistic? 
-  # it is recommended to set to TRUE if your sample size is small and the number of expected differentially abundant taxa is large.
-
 output <- ancombc2(data = tse, assay_name = "counts", tax_level = NULL,
                    fix_formula = groups_colname, rand_formula = NULL,
                    p_adj_method = "fdr", pseudo_sens = TRUE,
@@ -2535,8 +2513,8 @@ new_colnames <- map_chr(output$res_pair  %>% colnames,
                             str_replace_all(string=colname, 
                                             pattern=glue("(.+)_{groups_colname}(.+)"),
                                             replacement=glue("\\1_(\\2)v({ref_group})")) %>% 
-                            str_replace(pattern = "^lfc_", replacement = "LnFC_") %>% 
-                            str_replace(pattern = "^se_", replacement = "lfcSE_") %>% 
+                            str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
+                            str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
                             str_replace(pattern = "^W_", replacement = "Wstat_") %>%
                             str_replace(pattern = "^p_", replacement = "pvalue_") %>%
                             str_replace(pattern = "^q_", replacement = "qvalue_")
@@ -2547,8 +2525,8 @@ new_colnames <- map_chr(output$res_pair  %>% colnames,
                             str_replace_all(string=colname, 
                                             pattern=glue("(.+)_{groups_colname}(.+)_{groups_colname}(.+)"),
                                             replacement=glue("\\1_(\\2)v(\\3)")) %>% 
-                            str_replace(pattern = "^lfc_", replacement = "LnFC_") %>% 
-                            str_replace(pattern = "^se_", replacement = "lfcSE_") %>% 
+                            str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
+                            str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
                             str_replace(pattern = "^W_", replacement = "Wstat_") %>%
                             str_replace(pattern = "^p_", replacement = "pvalue_") %>%
                             str_replace(pattern = "^q_", replacement = "qvalue_")
@@ -2626,7 +2604,7 @@ normalized_table <- output$bias_correct_log_table  %>%
 
 # Create a missing values / NAs dataframe of samples that were dropped
 # due to prefiltering steps (prevalence and library cut offs filtering)
-# proir to running ANCOMBC
+# proir to running ANCOMBC2
 samples <- metadata[[samples_column]]
 samplesdropped <- setdiff(x = samples, y = colnames(normalized_table)[-1])
 missing_df <- data.frame(ASV=normalized_table[[feature]],
@@ -2709,8 +2687,8 @@ write_csv(merged_df %>%
 volcano_plots <- map(uniq_comps, function(comparison){
   
   comp_col  <- c(
-    glue("LnFC_{comparison}"),
-    glue("lfcSE_{comparison}"),
+    glue("lnFC_{comparison}"),
+    glue("lnfcSE_{comparison}"),
     glue("Wstat_{comparison}"),
     glue("pvalue_{comparison}"),
     glue("qvalue_{comparison}"),
@@ -2738,20 +2716,20 @@ volcano_plots <- map(uniq_comps, function(comparison){
   group2 <- groups_vec[2]
   
   ######Long x-axis label adjustments##########
-  x_label <- glue("Ln Fold Change\n\n( {group1} vs {group2} )")
+  x_label <- glue("ln Fold Change\n\n( {group1} vs {group2} )")
   label_length <- nchar(x_label)
   max_allowed_label_length <- plot_width_inches * 10
   
   # Construct x-axis label with new line breaks if was too long
   if (label_length > max_allowed_label_length){
-    x_label <- glue("Ln Fold Change\n\n( {group1} \n vs \n {group2} )")
+    x_label <- glue("ln Fold Change\n\n( {group1} \n vs \n {group2} )")
   }
   #######################################
   
   
   
   p <- ggplot(sub_res_df %>% mutate(diff = qvalue <= p_val),
-              aes(x=LnFC, y=-log10(qvalue), color=diff, label=!!sym(feature))) +
+              aes(x=lnFC, y=-log10(qvalue), color=diff, label=!!sym(feature))) +
     geom_point(alpha=0.7, size=2) +
     scale_color_manual(values=c("TRUE"="red", "FALSE"="black"),
                        labels=c(paste0("qval > ", p_val), 
@@ -2785,34 +2763,75 @@ volcano_plots <- map(uniq_comps, function(comparison){
 
 **Parameter Definitions:**
 
-* `feature`            - feature type, i.e. ASV or OTU.
-* `samples_column`     – column in metadata containing the sample names in the feature table
-* `groups_colname`     - group column in metadata to be analyzed
-* `assay_suffix`       - GeneLab assay suffix, default : "_GLAmpSeq"
-* `output_prefix`      - additional prefix to be added to output files . Default: ""
-* `threads`            - specifies the number of cpus to use for parallel processing.
-* `prevalence_cutoff`  - If `remove_rare` is true, a numerical fraction between 0 and 1. Taxa with prevalences (the 
-                         proportion of samples in which the taxon is present) less than this will be excluded from 
-                         the analysis. Default is 0, i.e. do not exclude any taxa / features.
-* `library_cutoff`     - If `remove_rare` is true, a numerical threshold for filtering samples based on library sizes. 
-                         Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0, 
-                         i.e. no sample will be dropped. To discard samples with read counts less than or equal to 100, 
-                         set to 100.
-* `target_region`      - amplicon target region. Options are either "16S", "18S", or "ITS"
-* `remove_struc_zero`  - Should structural zeros (a.k.a ASVs with zero count in at least one group) be removed ?
-                         Default is FALSE i.e. structural zeros won't be removed.
+* `feature`            - specifies the feature type, i.e. ASV or OTU
+* `groups_colname`     - specifies the name of the column in the metadata table containing the group names to be analyzed
+* `samples_column`     - specifies the name of the column in the metadata table containing the sample names
+* `assay_suffix`       - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
+* `output_prefix`      - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
+* `threads`            - specifies the number of cpus to use for parallel processing
+* `prevalence_cutoff` - a decimal between 0 and 1 specifying the proportion of samples required to contain a taxon in order to keep the taxon when `remove_rare` is set to TRUE; default is 0, i.e. do not exclude any taxon / feature
+* `library_cutoff`    - a numerical value specifying the number of total counts a sample must have across all features to be retained when `remove_rare` is set to TRUE; default is 0, i.e. no samples will be dropped
+* `target_region`     - specifies the amplicon target region; options are either "16S", "18S", or "ITS"
+* `remove_struc_zero`  - specifies whether or not structural zeros (a.k.a ASVs with zero count in at least one group) should be removed; default is FALSE i.e. structural zeros won't be removed
+* `ancombc2()`
+  * data - specifies the input data for the `ancombc2()` function; TreeSummarizedExperiment or Phyloseq object
+  * assay_name - specifices the name of count table in the input data object; default is "counts" for TreeSummarizedExperiment object
+  * tax_level - specifies the taxonomy level to be aggregated and analyzed; NULL instructions `ancombc()` not to perform agglomeration and use the lowest taxonomic level of the input data for analysis
+  * fix_formula - specifies the variable in the metadata to use for the fixed effects formula (e.g. group names)
+  * rand_formula - specifies the variable in the metadata to use for the random effects formula (NULL indicates that no random effects will be included in the model)
+  * p_adj_method - specifies the p-value adjustment method to use to correct for multiple comparisons testing
+  * pseudo_sens - logical value specifying whether or not to perform the sensitivity analysis to the pseudo-count addition
+  * prv_cut - fraction between 0 and 1 specifying the taxon prevalence cut-off; taxa with prevalences (the proporation of samples in which the taxon is present) less than this value will be excluded from the analysis
+  * lib_cut - a numerical threshold for filtering samples based on library sizes; samples with library sizes less than the specified value will not be included in the analysis
+  * s0_perc - a fraction between 0 and 1 representing the percentile of standard error values that will be used to calculate the small positive constant that will be added to the denominator of ANCOM-BC2 test statistic corresponding to each taxon to avoid the significance due to extremely small standard errors
+  * group - specifies the name of the group variable in the metadata; enables global testing when more than 2 groups are present (set to NULL to disable global testing or if there are only 2 groups)
+  * struc_zero - logical value indicating whether or not group-wise structural zeros should be detected (a taxon is considered to contain structural zeros in a group if it is completely or nearly completely absent from that group)
+  * neg_lb - logical value specifying whether to classify a taxon as a structural zero using its asymptotic lower bound 
+  * alpha - specifies the significance level
+  * n_cl - specifies the number of processes to run in parallel
+  * verbose - logival value specifying whether or not to generate verbose output during the ANCOM-BC2 fitting process
+  * global - logical value indicating where or not to perform a global test to detect significant differences between 1 group and all other groups (ANOVA-like comparison)
+  * pairwise - logical value indicating where or not to perform the pairwise directional test
+  * iter_control - list of control parameters for the iterative MLE or RMEL algorithm
+    * tol - specifies the iteration convergence tolerance for the algorithm
+    * max_iter - specifies the maximum number of iterations for the algorithm
+    * verbose - logival value specifying whether or not to generate verbose output 
+  * em_control - list of control parameters for the E-M algorithm
+    * tol - specifies the iteration convergence tolerance for the Expectation-Maximization (E-M) algorithm
+    * max_iter - specifies the maximum number of iterations for the E-M algorithm
+  * mdfdr_control - list of control parameters for the mixed directional falso discovery rate
+    * fwer_ctrl_method - specifies the family-wise error controlling procedure
+    * B - specifies the number of bootstrap samples
+  * lme_control - list of control parameters for mixed model fitting
+  * trend_control - list of control parameters for the trend test
 
 **Input Data:**
 
-* `metadata` (sample metadata with the group/treatment to be analyzed, output from [Preprocessing](#preprocessing))
-* `feature_table` (ASV counts table, output from [Preprocessing](#preprocessing))
-* `taxonomy_table` (taxonomy information, output from [Preprocessing](#preprocessing))
-* `publication_format` (custom ggplot theme, output from [Set Variables](#set-variables))
+* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [Read-in Input Tables](#read-in-input-tables))
+* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [Preprocessing](#preprocessing))
+* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [Preprocessing](#preprocessing))
 
 **Output Data:**
 
-* **differential_abundance/ancombc2/<output_prefix>(\<group1\>)v(\<group2\>)_volcano.png** (Comparion Volcano Plot)
-* **differential_abundance/ancombc2/<output_prefix>ancombc2_differential_abundance_GLAmpSeq.csv** (Statistics Table)
+* **differential_abundance/ancombc2/<output_prefix>contrasts_GLAmpSeq.csv** (table listing all pairwise group comparisons)
+* **differential_abundance/ancombc2/<output_prefix>(\<group1\>)v(\<group2\>)_volcano.png** (volcano plots for each pariwise comparison)
+* **differential_abundance/ancombc2/<output_prefix>ancombc1_differential_abundance_GLAmpSeq.csv** (ANCOM-BC2 differential abundance results table containing the following columns:
+  - ASV (identified ASVs)
+  - taxonomic assignment columns
+  - NCBI identifier for the best taxonomic assignment for each ASV 
+  - Normalized abundance values for each ASV for each sample
+  - For each pairwise group comparison:
+    - natural log of the fold change (lnFC)
+    - standard error for the lnFC (lnfcSE)
+    - test statistic from the primary result (Wstat)
+    - P-value (pvalue)
+    - Adjusted p-value (qvalue)
+    - logical value indicating differential abundance based on the qvalue cutoff of 0.05 (diff)
+  - All.mean (mean across all samples)
+  - All.stdev (standard deviation across all samples) 
+  - For each group:
+    - Group.Mean_(group) (mean within group)
+    - Group.Stdev_(group) (standard deviation within group))
 
 
 <br>
@@ -2828,7 +2847,6 @@ if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir, recursive = T
 metadata  <-  {DATAFRAME}
 feature_table <- {DATAFRAME}
 taxonomy_table <- {DATAFRAME}
-publication_format <- {GGPLOT_THEME}
 feature <- "ASV"
 samples_column <- "Sample Name"
 groups_colname  <- "groups" 
@@ -3095,32 +3113,42 @@ walk(pairwise_comp_df, function(col){
 
 **Parameter Definitions:**
 
-* `feature`            - feature type, i.e. ASV or OTU.
-* `samples_column`     – column in metadata containing the sample names in the feature table
-* `groups_colname`     - group column in metadata to be analyzed
-* `assay_suffix`       - GeneLab assay suffix, default : "_GLAmpSeq"
-* `output_prefix`      - additional prefix to be added to output files . Default: ""
-* `prevalence_cutoff`  - If `remove_rare` is true, a numerical fraction between 0 and 1. Taxa with prevalences (the 
-                         proportion of samples in which the taxon is present) less than this will be excluded from 
-                         the analysis. Default is 0, i.e. do not exclude any taxa / features.
-* `library_cutoff`     - If `remove_rare` is true, a numerical threshold for filtering samples based on library sizes. 
-                         Samples with library sizes less than lib_cut will be excluded in the analysis. Default is 0, 
-                         i.e. no sample will be dropped. To discard samples with read counts less than or equal to 100, 
-                         set to 100.
-* `target_region`      - amplicon target region. Options are "16S", "18S", or "ITS".
+* `feature`            - specifies the feature type, i.e. ASV or OTU
+* `groups_colname`     - specifies the name of the column in the metadata table containing the group names to be analyzed
+* `samples_column`     - specifies the name of the column in the metadata table containing the sample names
+* `assay_suffix`       - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
+* `output_prefix`      - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
+* `prevalence_cutoff` - a decimal between 0 and 1 specifying the proportion of samples required to contain a taxon in order to keep the taxon when `remove_rare` is set to TRUE; default is 0, i.e. do not exclude any taxon / feature
+* `library_cutoff`    - a numerical value specifying the number of total counts a sample must have across all features to be retained when `remove_rare` is set to TRUE; default is 0, i.e. no samples will be dropped
+* `target_region`     - specifies the amplicon target region; options are either "16S", "18S", or "ITS"
 
 **Input Data:**
 
-* `metadata` (sample metadata with the group/treatment to be analyzed, output from [Preprocessing](#preprocessing))
-* `feature_table` (ASV counts table, output from [Preprocessing](#preprocessing))
-* `taxonomy_table` (taxonomy information, output from [Preprocessing](#preprocessing))
-* `publication_format` (custom ggplot theme, output from [Set Variables](#set-variables))
-
+* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [Read-in Input Tables](#read-in-input-tables))
+* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [Preprocessing](#preprocessing))
+* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [Preprocessing](#preprocessing))
 
 **Output Data:**
 
-* **differential_abundance/deseq2/<output_prefix>(\<group1\>)v(\<group2\>)_volcano.png** (Comparion Volcano Plot)
-* **differential_abundance/deseq2/<output_prefix>deseq2_differential_abundance_GLAmpSeq.csv** (Statistics Table)
+* **differential_abundance/deseq2/<output_prefix>contrasts_GLAmpSeq.csv** (table listing all pairwise group comparisons)
+* **differential_abundance/deseq2/<output_prefix>(\<group1\>)v(\<group2\>)_volcano.png** (volcano plots for each pariwise comparison)
+* **differential_abundance/deseq2/<output_prefix>deseq2_differential_abundance_GLAmpSeq.csv** (DESeq2 differential abundance results table containing the following columns:
+  - ASV (identified ASVs)
+  - taxonomic assignment columns
+  - NCBI identifier for the best taxonomic assignment for each ASV 
+  - Normalized abundance values for each ASV for each sample
+  - For each pairwise group comparison:
+    - log2 of the fold change (log2FC)
+    - standard error for the log2FC (lfcSE)
+    - test statistic from the primary result (stat)
+    - P-value (pvalue)
+    - Adjusted p-value (padj)
+  - All.mean (mean across all samples)
+  - All.stdev (standard deviation across all samples) 
+  - For each group:
+    - Group.Mean_(group) (mean within group)
+    - Group.Stdev_(group) (standard deviation within group))
+
 <br>
 
 ---
