@@ -11,6 +11,6 @@ process UPDATE_ASSAY_TABLE {
     script:
     def mode_param = params.mode == "microbes" ? "--mode microbes" : ""
     """
-    update_assay_table.py --outdir ${ch_processed_directory} --mode ${mode_param} --assay_suffix ${params.assay_suffix} --glds_accession ${params.accession}
+    update_assay_table.py --outdir ${ch_processed_directory} ${mode_param} --assay_suffix ${params.assay_suffix} --glds_accession ${params.accession}
     """
 }

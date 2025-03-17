@@ -100,9 +100,16 @@ def generate_protocol_content(args, software_versions):
                 if len(parts) > 1:
                     genome_assembly = parts[1]
         elif args.reference_source and "ncbi" in args.reference_source.lower():
-            # For NCBI: extract assembly from GCF_accession_ASSEMBLY_genomic pattern
-            # Example: GCF_000007465.2_ASM746v2_genomic.fna.gz
-            if '_' in ref_fasta_name:
+            # For NCBI: extract only the assembly name (e.g., ASM746v2 from GCF_000007465.2_ASM746v2_genomic.fna.gz)
+            if '_genomic' in ref_fasta_name:
+                # Get the part right before _genomic
+                parts = ref_fasta_name.split('_genomic')[0].split('_')
+                # The assembly name is typically the last part before _genomic (after the GCF_accession_)
+                if len(parts) > 2:
+                    # Skip the GCF part and accession, take the assembly name
+                    genome_assembly = parts[-1]
+            # Fallback to old method if _genomic is not in the name
+            elif '_' in ref_fasta_name:
                 parts = ref_fasta_name.split('_')
                 if len(parts) > 2:  # Should have at least 3 parts
                     # The assembly name is usually the second part after the GCF_accession

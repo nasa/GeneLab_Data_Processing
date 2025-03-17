@@ -28,12 +28,12 @@ process DGE_DESEQ2 {
         def microbes = params.mode == 'microbes' ? 'TRUE' : 'FALSE'
         def dge_rmd_file = "${projectDir}/bin/dge_deseq2.Rmd"
         def debug_dummy_counts = params.use_dummy_gene_counts ? 'TRUE'  : 'FALSE'
-        def input_counts_path = "gene_counts"
+        def input_counts_path = params.mode == 'microbes' ? gene_counts : "gene_counts"
 
         """
         if [[ "${params.mode}" != "microbes" ]]; then
-            mkdir -p ${input_counts_path}
-            mv ${gene_counts} ${input_counts_path}/
+            mkdir -p gene_counts
+            mv ${gene_counts} gene_counts/
         fi
         Rscript -e "rmarkdown::render('${dge_rmd_file}', 
             output_file = 'DGE_DESeq2.html',
