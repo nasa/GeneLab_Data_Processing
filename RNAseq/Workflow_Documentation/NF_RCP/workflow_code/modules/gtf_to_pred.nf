@@ -15,7 +15,7 @@ process GTF_TO_PRED {
 
     script:
     """
-    gtfToGenePred -geneNameAsName2 ${ genome_gtf } ${ genome_gtf }.genePred
+    gtfToGenePred -geneNameAsName2 -ignoreGroupsWithoutExons ${ genome_gtf } ${ genome_gtf }.genePred
 
     echo '"${task.process}":' > versions.yml
     echo "    gtfToGenePred: 469" >> versions.yml
