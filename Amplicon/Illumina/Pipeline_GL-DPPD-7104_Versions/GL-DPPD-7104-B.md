@@ -2399,22 +2399,22 @@ write_csv(merged_df %>%
 * `target_region`     - specifies the amplicon target region; options are either "16S", "18S", or "ITS"
 * `remove_struc_zero`  - specifies whether or not structural zeros (a.k.a ASVs with zero count in at least one group) should be removed; default is FALSE i.e. structural zeros won't be removed
 * `ancombc()`
-  * data - specifies the input data for the `ancombc()` function; TreeSummarizedExperiment or Phyloseq object
-  * assay_name - specifices the name of count table in the input data object; default is "counts" for TreeSummarizedExperiment object
-  * tax_level - specifies the taxonomy level to be aggregated and analyzed; NULL instructions `ancombc()` not to perform agglomeration and use the lowest taxonomic level of the input data for analysis
-  * prv_cut - fraction between 0 and 1 specifying the taxon prevalence cut-off; taxa with prevalences (the proporation of samples in which the taxon is present) less than this value will be excluded from the analysis
-  * lib_cut - a numerical threshold for filtering samples based on library sizes; samples with library sizes less than the specified value will not be included in the analysis
-  * p_adj_method - specifies the p-value adjustment method to use to correct for multiple comparisons testing
-  * struc_zero - logical value indicating whether or not group-wise structural zeros should be detected (a taxon is considered to contain structural zeros in a group if it is completely or nearly completely absent from that group)
-  * neg_lb - logical value specifying whether to classify a taxon as a structural zero using its asymptotic lower bound 
-  * group - specifies the name of the group variable in the metadata; enables global testing when more than 2 groups are present (set to NULL to disable global testing or if there are only 2 groups)
-  * alpha - specifies the significance level
-  * n_cl - specifies the number of processes to run in parallel 
-  * global - logical value indicating where or not to perform a global test to detect significant differences between 1 group and all other groups (ANOVA-like comparison) 
-  * tol - specifies the iteration convergence tolerance for the Expectation-Maximization (E-M) algorithm
-  * max_iter - specifies the maximum number of iterations for the E-M algorithm 
-  * formula - specifies the variable in the metadata to use for the fixed effects formula (e.g. group names)
-  * conserve - logical value indicating where or not a conservative variance estimator should be used for the test statistic (set to TRUE if your sample size is small and the number of expected differentially abundant taxa is large)
+  * `data` - specifies the input data for the `ancombc()` function; TreeSummarizedExperiment or Phyloseq object
+  * `assay_name` - specifices the name of count table in the input data object; default is "counts" for TreeSummarizedExperiment object
+  * `tax_level` - specifies the taxonomy level to be aggregated and analyzed; NULL instructions `ancombc()` not to perform agglomeration and use the lowest taxonomic level of the input data for analysis
+  * `prv_cut` - fraction between 0 and 1 specifying the taxon prevalence cut-off; taxa with prevalences (the proporation of samples in which the taxon is present) less than this value will be excluded from the analysis
+  * `lib_cut` - a numerical threshold for filtering samples based on library sizes; samples with library sizes less than the specified value will not be included in the analysis
+  * `p_adj_method` - specifies the p-value adjustment method to use to correct for multiple comparisons testing
+  * `struc_zero` - logical value indicating whether or not group-wise structural zeros should be detected (a taxon is considered to contain structural zeros in a group if it is completely or nearly completely absent from that group)
+  * `neg_lb` - logical value specifying whether to classify a taxon as a structural zero using its asymptotic lower bound 
+  * `group` - specifies the name of the group variable in the metadata; enables global testing when more than 2 groups are present (set to NULL to disable global testing or if there are only 2 groups)
+  * `alpha` - specifies the significance level
+  * `n_cl` - specifies the number of processes to run in parallel 
+  * `global` - logical value indicating where or not to perform a global test to detect significant differences between 1 group and all other groups (ANOVA-like comparison) 
+  * `tol` - specifies the iteration convergence tolerance for the Expectation-Maximization (E-M) algorithm
+  * `max_iter` - specifies the maximum number of iterations for the E-M algorithm 
+  * `formula` - specifies the variable in the metadata to use for the fixed effects formula (e.g. group names)
+  * `conserve` - logical value indicating where or not a conservative variance estimator should be used for the test statistic (set to TRUE if your sample size is small and the number of expected differentially abundant taxa is large)
   
 
 **Input Data:**
@@ -2774,36 +2774,36 @@ volcano_plots <- map(uniq_comps, function(comparison){
 * `target_region`     - specifies the amplicon target region; options are either "16S", "18S", or "ITS"
 * `remove_struc_zero`  - specifies whether or not structural zeros (a.k.a ASVs with zero count in at least one group) should be removed; default is FALSE i.e. structural zeros won't be removed
 * `ancombc2()`
-  * data - specifies the input data for the `ancombc2()` function; TreeSummarizedExperiment or Phyloseq object
-  * assay_name - specifices the name of count table in the input data object; default is "counts" for TreeSummarizedExperiment object
-  * tax_level - specifies the taxonomy level to be aggregated and analyzed; NULL instructions `ancombc()` not to perform agglomeration and use the lowest taxonomic level of the input data for analysis
-  * fix_formula - specifies the variable in the metadata to use for the fixed effects formula (e.g. group names)
-  * rand_formula - specifies the variable in the metadata to use for the random effects formula (NULL indicates that no random effects will be included in the model)
-  * p_adj_method - specifies the p-value adjustment method to use to correct for multiple comparisons testing
-  * pseudo_sens - logical value specifying whether or not to perform the sensitivity analysis to the pseudo-count addition
-  * prv_cut - fraction between 0 and 1 specifying the taxon prevalence cut-off; taxa with prevalences (the proporation of samples in which the taxon is present) less than this value will be excluded from the analysis
-  * lib_cut - a numerical threshold for filtering samples based on library sizes; samples with library sizes less than the specified value will not be included in the analysis
-  * s0_perc - a fraction between 0 and 1 representing the percentile of standard error values that will be used to calculate the small positive constant that will be added to the denominator of ANCOM-BC2 test statistic corresponding to each taxon to avoid the significance due to extremely small standard errors
-  * group - specifies the name of the group variable in the metadata; enables global testing when more than 2 groups are present (set to NULL to disable global testing or if there are only 2 groups)
-  * struc_zero - logical value indicating whether or not group-wise structural zeros should be detected (a taxon is considered to contain structural zeros in a group if it is completely or nearly completely absent from that group)
-  * neg_lb - logical value specifying whether to classify a taxon as a structural zero using its asymptotic lower bound 
-  * alpha - specifies the significance level
-  * n_cl - specifies the number of processes to run in parallel
-  * verbose - logival value specifying whether or not to generate verbose output during the ANCOM-BC2 fitting process
-  * global - logical value indicating where or not to perform a global test to detect significant differences between 1 group and all other groups (ANOVA-like comparison)
-  * pairwise - logical value indicating where or not to perform the pairwise directional test
-  * iter_control - list of control parameters for the iterative MLE or RMEL algorithm
-    * tol - specifies the iteration convergence tolerance for the algorithm
-    * max_iter - specifies the maximum number of iterations for the algorithm
-    * verbose - logival value specifying whether or not to generate verbose output 
-  * em_control - list of control parameters for the E-M algorithm
-    * tol - specifies the iteration convergence tolerance for the Expectation-Maximization (E-M) algorithm
-    * max_iter - specifies the maximum number of iterations for the E-M algorithm
-  * mdfdr_control - list of control parameters for the mixed directional falso discovery rate
-    * fwer_ctrl_method - specifies the family-wise error controlling procedure
-    * B - specifies the number of bootstrap samples
-  * lme_control - list of control parameters for mixed model fitting
-  * trend_control - list of control parameters for the trend test
+  * `data` - specifies the input data for the `ancombc2()` function; TreeSummarizedExperiment or Phyloseq object
+  * `assay_name` - specifices the name of count table in the input data object; default is "counts" for TreeSummarizedExperiment object
+  * `tax_level` - specifies the taxonomy level to be aggregated and analyzed; NULL instructions `ancombc()` not to perform agglomeration and use the lowest taxonomic level of the input data for analysis
+  * `fix_formula` - specifies the variable in the metadata to use for the fixed effects formula (e.g. group names)
+  * `rand_formula` - specifies the variable in the metadata to use for the random effects formula (NULL indicates that no random effects will be included in the model)
+  * `p_adj_method` - specifies the p-value adjustment method to use to correct for multiple comparisons testing
+  * `pseudo_sens` - logical value specifying whether or not to perform the sensitivity analysis to the pseudo-count addition
+  * `prv_cut` - fraction between 0 and 1 specifying the taxon prevalence cut-off; taxa with prevalences (the proporation of samples in which the taxon is present) less than this value will be excluded from the analysis
+  * `lib_cut` - a numerical threshold for filtering samples based on library sizes; samples with library sizes less than the specified value will not be included in the analysis
+  * `s0_perc` - a fraction between 0 and 1 representing the percentile of standard error values that will be used to calculate the small positive constant that will be added to the denominator of ANCOM-BC2 test statistic corresponding to each taxon to avoid the significance due to extremely small standard errors
+  * `group` - specifies the name of the group variable in the metadata; enables global testing when more than 2 groups are present (set to NULL to disable global testing or if there are only 2 groups)
+  * `struc_zero` - logical value indicating whether or not group-wise structural zeros should be detected (a taxon is considered to contain structural zeros in a group if it is completely or nearly completely absent from that group)
+  * `neg_lb` - logical value specifying whether to classify a taxon as a structural zero using its asymptotic lower bound 
+  * `alpha` - specifies the significance level
+  * `n_cl` - specifies the number of processes to run in parallel
+  * `verbose` - logival value specifying whether or not to generate verbose output during the ANCOM-BC2 fitting process
+  * `global` - logical value indicating where or not to perform a global test to detect significant differences between 1 group and all other groups (ANOVA-like comparison)
+  * `pairwise` - logical value indicating where or not to perform the pairwise directional test
+  * `iter_control` - list of control parameters for the iterative MLE or RMEL algorithm
+    * `tol` - specifies the iteration convergence tolerance for the algorithm
+    * `max_iter` - specifies the maximum number of iterations for the algorithm
+    * `verbose` - logival value specifying whether or not to generate verbose output 
+  * `em_control` - list of control parameters for the E-M algorithm
+    * `tol` - specifies the iteration convergence tolerance for the Expectation-Maximization (E-M) algorithm
+    * `max_iter` - specifies the maximum number of iterations for the E-M algorithm
+  * `mdfdr_control` - list of control parameters for the mixed directional falso discovery rate
+    * `fwer_ctrl_method` - specifies the family-wise error controlling procedure
+    * `B` - specifies the number of bootstrap samples
+  * `lme_control` - list of control parameters for mixed model fitting
+  * `trend_control` - list of control parameters for the trend test
 
 **Input Data:**
 
