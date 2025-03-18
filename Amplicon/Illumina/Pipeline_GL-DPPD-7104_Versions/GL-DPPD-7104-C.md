@@ -90,11 +90,11 @@ Software Updates and Changes:
   - [**6. Amplicon Seq Data Analysis Set Up**](#6-amplicon-seq-data-analysis-set-up)
     - [6a. Create Sample Runsheet](#6a-create-sample-runsheet)
     - [6b. R Environment Set Up](#6b-r-environment-set-up)
-      - [Load Libraries](#load-libraries)
-      - [Load Functions](#load-functions)
-      - [Set Variables](#set-variables)
-      - [Read-in Input Tables](#read-in-input-tables)
-      - [Preprocessing](#preprocessing)
+      - [6b.i. Load Libraries](#6bi-load-libraries)
+      - [6b.ii. Load Functions](#6bii-load-functions)
+      - [6b.iii. Set Variables](#6biii-set-variables)
+      - [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables)
+      - [6b.v. Preprocessing](#6bv-preprocessing)
   - [**7. Alpha Diversity Analysis**](#7-alpha-diversity-analysis)
   - [**8. Beta Diversity Analysis**](#8-beta-diversity-analysis)
   - [**9. Taxonomy Plots**](#9-taxonomy-plots)
@@ -628,7 +628,7 @@ dpt-isa-to-runsheet --accession OSD-### \
 ### 6b. R Environment Set Up
 
 
-#### Load Libraries
+#### 6b.i. Load Libraries
 
 ```R
 library(vegan)
@@ -653,7 +653,7 @@ library(scales)
 library(tidyverse)
 ```
 
-#### Load Functions
+#### 6b.ii. Load Functions
 
 ```R
 # Function to calculate text size for plotting
@@ -1120,7 +1120,7 @@ gm_mean <- function(x, na.rm=TRUE) {
 
 ```
 
-#### Set Variables
+#### 6b.iii. Set Variables
 
 ```R
 # Define a custom palette for plotting
@@ -1233,7 +1233,7 @@ publication_format <- theme_bw() +
 
 <br>
 
-#### Read-in Input Tables
+#### 6b.iv. Read-in Input Tables
 
 ```R
 custom_palette  <- {COLOR_VECTOR}
@@ -1307,7 +1307,7 @@ taxonomy_table <-  read.table(file = taxonomy_file, header = TRUE,
 * {OSD-Accession-ID}_AmpSeq_v{version}_runsheet.csv (a comma-separated sample metadata file containing sample group information, output from [Step 6a](#6a-create-sample-runsheet))
 *	counts_GLAmpSeq.tsv (a tab separated samples feature table (i.e. ASV or OTU table) containing feature counts, output from [Step 5g](#5g-generating-and-writing-standard-outputs))
 * taxonomy_GLAmpSeq.tsv (a tab separated feature taxonomy table containing ASV taxonomy assignments, output from [Step 5g](#5g-generating-and-writing-standard-outputs))
-* `custom_palette` (variable containing a character vector defining a custom color palette for coloring plots, output from [Set Variables](#set-variables))
+* `custom_palette` (variable containing a character vector defining a custom color palette for coloring plots, output from [6b.iii. Set Variables](#6biii-set-variables))
 
 **Output Data:**
 
@@ -1323,7 +1323,7 @@ taxonomy_table <-  read.table(file = taxonomy_file, header = TRUE,
 
 <br>
 
-#### Preprocessing
+#### 6b.v. Preprocessing
 
 ```R
 feature_table <- {DATAFRAME} # from step [Read-in Input Tables]
@@ -1410,8 +1410,8 @@ taxonomy_table <- taxonomy_table[common_ids,]
 
 **Input Data:**
 
-* `feature_table` (variable containing a samples feature dataframe (i.e. ASV) with feature counts, output from [Read-in Input Tables](#read-in-input-tables))
-* `taxonomy_table` (variable containing a feature taxonomy dataframe containing ASV taxonomy assignments, output from [Read-in Input Tables](#read-in-input-tables))
+* `feature_table` (variable containing a samples feature dataframe (i.e. ASV) with feature counts, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
+* `taxonomy_table` (variable containing a feature taxonomy dataframe containing ASV taxonomy assignments, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
 
 **Output Data:**
 * `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering)
@@ -1696,18 +1696,18 @@ ggsave(filename = glue("{output_prefix}richness_and_diversity_estimates_by_group
 **Parameter Definitions:**
 
 * `rarefaction_depth` – specifies the minimum rarefaction depth for alpha diversity estimation
-* `groups_colname`    - specifies the name of group column in the metadata dataframe to be analyzed
+* `groups_colname`    - specifies the name of the column in the metadata table containing the group names to be analyzed
 * `legend_title`      - specifies the legend title for plotting
 * `assay_suffix`      - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
 * `output_prefix`     - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
 
 **Input Data:**
-* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [Read-in Input Tables](#read-in-input-tables))
-* `sample_info_tab` (variable containing a subset of the metadata dataframe with samples as row names and group names and group colors as columns, output from [Read-in Input Tables](#read-in-input-tables))
-* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [Preprocessing](#preprocessing))
-* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [Preprocessing](#preprocessing))
-* `group_levels` (variable containing a character vector of unique group names, output from [Read-in Input Tables](#read-in-input-tables))
-* `group_colors` (variable containing a named character vector of colors for each group, output from [Read-in Input Tables](#read-in-input-tables))
+* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
+* `sample_info_tab` (variable containing a subset of the metadata dataframe with samples as row names and group names and group colors as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
+* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
+* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
+* `group_levels` (variable containing a character vector of unique group names, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
+* `group_colors` (variable containing a named character vector of colors for each group, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
 
 **Output Data:**
 
@@ -1796,7 +1796,7 @@ ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_
 **Parameter Definitions:**
 
 * `rarefaction_depth`     – specifies the minimum rarefaction depth when using Bray Curtis distance
-* `groups_colname`        - specifies the name of group column in the metadata dataframe to be analyzed
+* `groups_colname`        - specifies the name of the column in the metadata table containing the group names to be analyzed
 * `legend_title`          - specifies the legend title for plotting
 * `assay_suffix`          - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
 * `output_prefix`         - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
@@ -1804,9 +1804,9 @@ ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_
 * `normalization_methods` - specifies the method(s) to use for normalizing sample counts; by default, "vst" and "rarefy" for variance stabilizing transformation and rarefaction, respectively, are used
 
 **Input Data:**
-* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [Read-in Input Tables](#read-in-input-tables))
-* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [Preprocessing](#preprocessing))
-* `group_colors` (variable containing a named character vector of colors for each group, output from [Read-in Input Tables](#read-in-input-tables))
+* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
+* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
+* `group_colors` (variable containing a named character vector of colors for each group, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
 
 **Output Data:**
 
@@ -1999,11 +1999,11 @@ walk2(.x = group_relAbundace_tbs, .y = taxon_levels[-1],
   
 **Input Data:**
 
-* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [Read-in Input Tables](#read-in-input-tables))
-* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [Preprocessing](#preprocessing))
-* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [Preprocessing](#preprocessing))
-* `publication_format` (variable specifying the custom ggplot theme for plotting, output from [Set Variables](#set-variables))
-* `custom_palette` (variable containing a character vector defining a custom color palette for coloring plots, output from [Set Variables](#set-variables))
+* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
+* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
+* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
+* `publication_format` (variable specifying the custom ggplot theme for plotting, output from [6b.iii. Set Variables](#6biii-set-variables))
+* `custom_palette` (variable containing a character vector defining a custom color palette for coloring plots, output from [6b.iii. Set Variables](#6biii-set-variables))
 
 
 **Output Data:**
@@ -2419,9 +2419,9 @@ write_csv(merged_df %>%
 
 **Input Data:**
 
-* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [Read-in Input Tables](#read-in-input-tables))
-* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [Preprocessing](#preprocessing))
-* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [Preprocessing](#preprocessing))
+* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
+* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
+* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
 
 **Output Data:**
 
@@ -2807,9 +2807,9 @@ volcano_plots <- map(uniq_comps, function(comparison){
 
 **Input Data:**
 
-* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [Read-in Input Tables](#read-in-input-tables))
-* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [Preprocessing](#preprocessing))
-* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [Preprocessing](#preprocessing))
+* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
+* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
+* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
 
 **Output Data:**
 
@@ -3124,9 +3124,9 @@ walk(pairwise_comp_df, function(col){
 
 **Input Data:**
 
-* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [Read-in Input Tables](#read-in-input-tables))
-* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [Preprocessing](#preprocessing))
-* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [Preprocessing](#preprocessing))
+* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
+* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
+* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
 
 **Output Data:**
 
