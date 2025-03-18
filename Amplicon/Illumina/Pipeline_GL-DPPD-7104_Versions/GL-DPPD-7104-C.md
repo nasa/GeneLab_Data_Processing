@@ -751,47 +751,6 @@ transform_phyloseq <- function( feature_table, metadata, method, rarefaction_dep
   return(ps)
 }
 
-# -----------  A function  Hierarchical Clustering and dendogram plotting
-make_dendogram <- function(dist_obj, metadata, groups_colname,
-                           group_colors, legend_title){
-
-  # Hierarchical Clustering
-  sample_clust <- hclust(d = dist_obj, method = "ward.D2")
-  
-  # Extract clustering data for plotting
-  hcdata <- dendro_data(sample_clust, type = "rectangle")
-  segment_data <- segment(hcdata) # sepcifications for tree structure
-  label_data <- label(hcdata) %>%
-    left_join(metadata %>% 
-                rownames_to_column("label")) # Labels are sample names
-
-  # Plot dendogram
-  dendogram <- ggplot() +
-    # Plot tree
-    geom_segment(data = segment_data, 
-                 aes(x = x, y = y, xend = xend, yend = yend) 
-    ) +
-    # Add sample text labels to tree
-    geom_text(data = label_data , 
-              aes(x = x, y = y, label = label, 
-                  color = !!sym(groups_colname) , hjust = 0), 
-              size = 4.5, key_glyph = "rect") +
-    scale_color_manual(values = group_colors) +
-    coord_flip() +
-    scale_y_reverse(expand = c(0.2, 0)) +
-    labs(color = legend_title) +
-    theme_dendro() +
-    guides(colour = guide_legend(override.aes = list(size = 5)))+
-    theme(legend.key = element_rect(fill=NA),
-          text = element_text(face = 'bold'),
-          legend.title = element_text(size = 12, face='bold'),
-          legend.text = element_text(face = 'bold', size = 11))
-  
-  
-  return(dendogram)
-  
-}
-
 # A function to arun variance test and adonis test
 run_stats <- function(dist_obj, metadata, groups_colname){
   
@@ -1163,20 +1122,15 @@ publication_format <- theme_bw() +
   - `feature_table=` - dataframe containing feature / ASV counts with samples as columns and features as rows
   - `metadata=` - dataframe containing sample metadata with samples as row names and sample info as columns
   - `method=` - either "rarefy" or "vst" to specify rarefaction or variance stabilizing transformation, respectively
-  - `rarefaction_depth=500` - sample rarefaction to even depth when the Bray Curtis distance method is used
-- `make_dendogram()`
-  - `dis_obj=` - a distance object holding the calculated distance (euclidean, bry curtid etc.) between samples
-  - `metadata=` - dataframe containing sample metadata with samples as row names and sample info as columns
-  - `groups_colname=` - name of the column in the metadata dataframe to use for specifying sample groups
-  - `legend_title=` - legend title to use for plotting
+  - `rarefaction_depth=500` - sample rarefaction to even depth when the Bray-Curtis distance method is used
 - `run_stats()`
-  - `dis_obj=` - a distance object holding the calculated distance (euclidean, bry curtid etc.) between samples
+  - `dis_obj=` - a distance object holding the calculated distance (Euclidean, Bray-Curtis etc.) between samples
   - `metadata=` - dataframe containing sample metadata with samples as row names and sample info as columns
   - `groups_colname=` - name of the column in the metadata dataframe to use for specifying sample groups
 - `plot_pcoa()`
   - `ps=` - phyloseq object contructed from feature, taxonmy, and metadata tables
   - `stats_res=` - named list generated after running the `run_stats()` function; the list should contain variance and adonis tests dataframes
-  - `distance_method=` - method used to calculate the distance between samples; values can be "euclidean" or "bray" for euclidean or Bray Curtis distance, respectively
+  - `distance_method=` - method used to calculate the distance between samples; values can be "euclidean" (Euclidean distance) or "bray" (Bray-Curtis distance)
   - `groups_colname=` - name of the column in the metadata dataframe to use for specifying sample groups
   - `group_colors=` - named character vector of colors for each group in `groups_colname`
   - `legend_title=` - legend title to use for plotting
@@ -1725,6 +1679,8 @@ ggsave(filename = glue("{output_prefix}richness_and_diversity_estimates_by_group
 
 Beta diversity measures the variation in species composition between different samples or environments. A common practice in working with a new dataset is to generate some exploratory visualizations like ordinations and hierarchical clusterings. These give us a quick overview of how our samples relate to each other and can be a way to check for problems like batch effects.
 
+Two methods are supported for generating heirarchical clustering plots from normalized data: variance stabilizing transformation (VST) and rarefaction. Rarefaction supports using the default Bray-Curtis dissimilarity to generate dissimilarity matrices for heirarchical clustering. VST, however, generates negative values which are incompatible with calculating Bray-Curtis diddimilary. For VST transformed data Euclidean distance is used instead.
+
 ```R
 beta_diversity_out_dir <- "beta_diversity/"
 if(!dir.exists(beta_diversity_out_dir)) dir.create(beta_diversity_out_dir)
@@ -1738,6 +1694,47 @@ assay_suffix  <- "_GLAmpSeq"
 output_prefix  <- ""
 distance_methods <- c("euclidean", "bray")
 normalization_methods <- c("vst", "rarefy")
+
+# -----------  A function  Hierarchical Clustering and dendogram plotting
+make_dendogram <- function(dist_obj, metadata, groups_colname,
+                           group_colors, legend_title){
+
+  # Hierarchical Clustering
+  sample_clust <- hclust(d = dist_obj, method = "ward.D2")
+  
+  # Extract clustering data for plotting
+  hcdata <- dendro_data(sample_clust, type = "rectangle")
+  segment_data <- segment(hcdata) # sepcifications for tree structure
+  label_data <- label(hcdata) %>%
+    left_join(metadata %>% 
+                rownames_to_column("label")) # Labels are sample names
+
+  # Plot dendogram
+  dendogram <- ggplot() +
+    # Plot tree
+    geom_segment(data = segment_data, 
+                 aes(x = x, y = y, xend = xend, yend = yend) 
+    ) +
+    # Add sample text labels to tree
+    geom_text(data = label_data , 
+              aes(x = x, y = y, label = label, 
+                  color = !!sym(groups_colname) , hjust = 0), 
+              size = 4.5, key_glyph = "rect") +
+    scale_color_manual(values = group_colors) +
+    coord_flip() +
+    scale_y_reverse(expand = c(0.2, 0)) +
+    labs(color = legend_title) +
+    theme_dendro() +
+    guides(colour = guide_legend(override.aes = list(size = 5)))+
+    theme(legend.key = element_rect(fill=NA),
+          text = element_text(face = 'bold'),
+          legend.title = element_text(size = 12, face='bold'),
+          legend.text = element_text(face = 'bold', size = 11))
+  
+  
+  return(dendogram)
+  
+}
 
 options(warn=-1) # ignore warnings
 # Run the analysis
@@ -1795,13 +1792,13 @@ ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_
 ```
 **Parameter Definitions:**
 
-* `rarefaction_depth`     – specifies the minimum rarefaction depth when using Bray Curtis distance
+* `rarefaction_depth`     – specifies the minimum rarefaction depth when using Bray-Curtis distance
 * `groups_colname`        - specifies the name of the column in the metadata table containing the group names to be analyzed
 * `legend_title`          - specifies the legend title for plotting
 * `assay_suffix`          - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
 * `output_prefix`         - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
-* `distance_methods`      - specifies the method(s) to use to calculate the distance between samples; by default, "euclidean" and "bray" for euclidean and Bray Curtis distance, respectively, are used
-* `normalization_methods` - specifies the method(s) to use for normalizing sample counts; by default, "vst" and "rarefy" for variance stabilizing transformation and rarefaction, respectively, are used
+* `normalization_methods` - specifies the method(s) to use for normalizing sample counts; "vst" (variance stabilizing transform) and "rarefy" (rarefaction) are supported
+* `distance_methods`      - specifies the method(s) to use to calculate the distance between samples; "vst" transformed data uses "euclidean" (Euclidean distance) and "rarefy" transformed data uses "bray" (Bray-Curtis distance)
 
 **Input Data:**
 * `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
@@ -1810,11 +1807,11 @@ ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_
 
 **Output Data:**
 
-* **beta_diversity/<output_prefix><distance_method>_dendrogram_GLAmpSeq.png** (dendrogram(s) of the specified distance, euclidean and Bray Curtis, - based hierarchical clustering of the samples, colored by experimental groups)
-* **beta_diversity/<output_prefix><distance_method>_adonis_table_GLAmpSeq.csv** (table(s) containing the degrees of freedom (df), sum of squares (SumOfSqs), coefficient of determination (R^2), F-statistic (statistic), and p-value for the model (variation explained by experimental groups) and residual (unexplained variation) sources of variation (terms) for the specified distance analysis, euclidean and Bray Curtis)
-* **beta_diversity/<output_prefix><distance_method>_variance_table_GLAmpSeq.csv** (table(s) containing the degrees of freedom (df), sum of squares (sumsq), mean square (meansq), F-statistic (statistic), and p-value for the groups (variation explained by experimental groups) and residual (unexplained variation) sources of variation (terms) for the specified distance analysis, euclidean and Bray Curtis)
-* **beta_diversity/<output_prefix><distance_method>_PCoA_without_labels_GLAmpSeq.png** (principle Coordinates Analysis plots of VST transformed and rarefy transformed ASV counts for euclidean and Bray Curtis distance methods, respectively, without sample labels)
-* **beta_diversity/<output_prefix><distance_method>_PCoA_w_labels_GLAmpSeq.png** (principle Coordinates Analysis plots of VST transformed and rarefy transformed ASV counts for euclidean and Bray Curtis distance methods, respectively, with sample labels)
+* **beta_diversity/<output_prefix><distance_method>_dendrogram_GLAmpSeq.png** (dendrogram(s) of the specified distance, Euclidean or Bray-Curtis, - based hierarchical clustering of the samples, colored by experimental groups)
+* **beta_diversity/<output_prefix><distance_method>_adonis_table_GLAmpSeq.csv** (table(s) containing the degrees of freedom (df), sum of squares (SumOfSqs), coefficient of determination (R^2), F-statistic (statistic), and p-value for the model (variation explained by experimental groups) and residual (unexplained variation) sources of variation (terms) for the specified distance analysis, Euclidean or Bray-Curtis)
+* **beta_diversity/<output_prefix><distance_method>_variance_table_GLAmpSeq.csv** (table(s) containing the degrees of freedom (df), sum of squares (sumsq), mean square (meansq), F-statistic (statistic), and p-value for the groups (variation explained by experimental groups) and residual (unexplained variation) sources of variation (terms) for the specified distance analysis, Euclidean or Bray-Curtis)
+* **beta_diversity/<output_prefix><distance_method>_PCoA_without_labels_GLAmpSeq.png** (Principle Coordinates Analysis plots of VST transformed and rarefy transformed ASV counts for Euclidean and Bray-Curtis distance methods, respectively, without sample labels)
+* **beta_diversity/<output_prefix><distance_method>_PCoA_w_labels_GLAmpSeq.png** (Principle Coordinates Analysis plots of VST transformed and rarefy transformed ASV counts for Euclidean and Bray-Curtis distance methods, respectively, with sample labels)
 
 <br>
 
