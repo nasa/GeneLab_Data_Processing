@@ -885,7 +885,7 @@ sessionInfo()
 
 ```bash
 ### Extract unique rRNA gene IDs from GTF file ###
-grep "rRNA" /path/to/annotation/gtf/file \
+grep -E 'gene_biotype "rRNA"|gene_type "rRNA"|gbkey "rRNA"' /path/to/annotation/gtf/file \
     | grep -o 'gene_id "[^"]*"' \
     | sed 's/gene_id "\(.*\)"/\1/' \
     | sort -u > rrna_ids.txt
