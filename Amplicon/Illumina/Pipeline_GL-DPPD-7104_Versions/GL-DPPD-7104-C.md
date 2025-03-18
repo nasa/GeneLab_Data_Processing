@@ -1741,52 +1741,52 @@ options(warn=-1) # ignore warnings
 walk2(.x = normalization_methods, .y = distance_methods,
       .f = function(normalization_method, distance_method){
   
-# Create transformed phyloseq object
-ps <- transform_phyloseq(feature_table, metadata, 
-                         method = normalization_method,
-                         rarefaction_depth = rarefaction_depth)
+  # Create transformed phyloseq object
+  ps <- transform_phyloseq(feature_table, metadata, 
+                          method = normalization_method,
+                          rarefaction_depth = rarefaction_depth)
 
-# ---------Clustering and dendogram plotting
+  # ---------Clustering and dendogram plotting
 
-# Extract normalized count table
-count_tab <- otu_table(ps)
+  # Extract normalized count table
+  count_tab <- otu_table(ps)
 
-# Calculate distance between samples
-dist_obj <- vegdist(t(count_tab), method = distance_method)
+  # Calculate distance between samples
+  dist_obj <- vegdist(t(count_tab), method = distance_method)
 
-# Make dendogram
-dendogram <- make_dendogram(dist_obj, metadata, groups_colname,
-                            group_colors, legend_title)
+  # Make dendogram
+  dendogram <- make_dendogram(dist_obj, metadata, groups_colname,
+                              group_colors, legend_title)
 
-# Save dendogram
-ggsave(filename = glue("{output_prefix}{distance_method}_dendrogram{assay_suffix}.png"),
-       plot = dendogram, width = 14, 
-       height = 10, dpi = 300,
-      units = "in", path = beta_diversity_out_dir)
+  # Save dendogram
+  ggsave(filename = glue("{output_prefix}{distance_method}_dendrogram{assay_suffix}.png"),
+         plot = dendogram, width = 14, 
+         height = 10, dpi = 300,
+         units = "in", path = beta_diversity_out_dir)
 
-#---------------------------- Run stats
-# Checking homogeneity of variance and comparing groups using adonis test
+  #---------------------------- Run stats
+  # Checking homogeneity of variance and comparing groups using adonis test
 
-stats_res <- run_stats(dist_obj, metadata, groups_colname)
-write_csv(x = stats_res$variance, 
-          file = glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_variance_table{assay_suffix}.csv"))
+  stats_res <- run_stats(dist_obj, metadata, groups_colname)
+  write_csv(x = stats_res$variance, 
+            file = glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_variance_table{assay_suffix}.csv"))
 
-write_csv(x = stats_res$adonis, 
-          file = glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_adonis_table{assay_suffix}.csv"))
+  write_csv(x = stats_res$adonis, 
+            file = glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_adonis_table{assay_suffix}.csv"))
 
-#---------------------------- Make PCoA
-# Unlabeled PCoA plot
-ordination_plot_u <- plot_pcoa(ps, stats_res, distance_method, 
-                               groups_colname, group_colors, legend_title) 
-ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_without_labels{assay_suffix}.png"),
-       plot=ordination_plot_u, width = 14, height = 8.33, dpi = 300, units = "in")
+  #---------------------------- Make PCoA
+  # Unlabeled PCoA plot
+  ordination_plot_u <- plot_pcoa(ps, stats_res, distance_method, 
+                                 groups_colname, group_colors, legend_title) 
+  ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_without_labels{assay_suffix}.png"),
+         plot=ordination_plot_u, width = 14, height = 8.33, dpi = 300, units = "in")
 
-# Labeled PCoA plot
-ordination_plot <- plot_pcoa(ps, stats_res, distance_method,
-                             groups_colname, group_colors, legend_title,
-                             addtext=TRUE) 
-ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_w_labels{assay_suffix}.png"),
-       plot=ordination_plot, width = 14, height = 8.33, dpi = 300, units = "in")
+  # Labeled PCoA plot
+  ordination_plot <- plot_pcoa(ps, stats_res, distance_method,
+                               groups_colname, group_colors, legend_title,
+                               addtext=TRUE) 
+  ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_w_labels{assay_suffix}.png"),
+         plot=ordination_plot, width = 14, height = 8.33, dpi = 300, units = "in")
 
 })
 ```
