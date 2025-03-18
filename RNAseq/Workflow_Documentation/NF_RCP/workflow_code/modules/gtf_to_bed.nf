@@ -1,6 +1,6 @@
 process GTF_TO_BED {
     // Converts reference gtf into bed 
-    //storeDir "${ derived_store_path }/Genome_GTF_BED_Files/${reference_source}/${reference_source.toLowerCase().contains('ensembl') ? reference_version + '/' : ''}${organism_sci}/microbes"
+    storeDir "${ derived_store_path }/Genome_GTF_BED_Files/${reference_source}/${reference_source.toLowerCase().contains('ensembl') ? reference_version + '/' : ''}${organism_sci}"
     
     input:
         val(derived_store_path)
