@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 """
 Downloads the ISA archive for a given dataset using the provided OSD ID.
