@@ -454,8 +454,8 @@ output <- ancombc2(data = tse, assay_name = "counts", tax_level = NULL,
                    lib_cut = library_cutoff, s0_perc = 0.05,
                    group = group, struc_zero = remove_struc_zero, neg_lb = FALSE,
                    alpha = 0.05, n_cl = threads, verbose = TRUE,
-                   global = TRUE, pairwise = TRUE, 
-                   dunnet = TRUE, trend = FALSE,
+                   global = FALSE, pairwise = TRUE, 
+                   dunnet = FALSE, trend = FALSE,
                    iter_control = list(tol = 1e-5, max_iter = 20,
                                        verbose = FALSE),
                    em_control = list(tol = 1e-5, max_iter = 100),
@@ -473,8 +473,8 @@ new_colnames <- map_chr(output$res_pair  %>% colnames,
                             str_replace_all(string=colname, 
                                             pattern=glue("(.+)_{group}(.+)"),
                                             replacement=glue("\\1_(\\2)v({ref_group})")) %>% 
-                            str_replace(pattern = "^lfc_", replacement = "LnFC_") %>% 
-                            str_replace(pattern = "^se_", replacement = "lfcSE_") %>% 
+                            str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
+                            str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
                             str_replace(pattern = "^W_", replacement = "Wstat_") %>%
                             str_replace(pattern = "^p_", replacement = "pvalue_") %>%
                             str_replace(pattern = "^q_", replacement = "qvalue_")
@@ -485,8 +485,8 @@ new_colnames <- map_chr(output$res_pair  %>% colnames,
                             str_replace_all(string=colname, 
                                             pattern=glue("(.+)_{group}(.+)_{group}(.+)"),
                                             replacement=glue("\\1_(\\2)v(\\3)")) %>% 
-                            str_replace(pattern = "^lfc_", replacement = "LnFC_") %>% 
-                            str_replace(pattern = "^se_", replacement = "lfcSE_") %>% 
+                            str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
+                            str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
                             str_replace(pattern = "^W_", replacement = "Wstat_") %>%
                             str_replace(pattern = "^p_", replacement = "pvalue_") %>%
                             str_replace(pattern = "^q_", replacement = "qvalue_")
@@ -503,10 +503,8 @@ new_colnames <- map_chr(output$res_pair  %>% colnames,
 new_colnames[match("taxon", new_colnames)] <- feature
 
 
-# Round numeric values and rename columns
-paired_stats_df <- output$res_pair  %>% 
-  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>%
-  set_names(new_colnames)
+# Rename columns
+paired_stats_df <- output$res_pair  %>%  set_names(new_colnames)
 
 # Get the unique comparison names 
 uniq_comps <- str_replace_all(new_colnames, ".+_(\\(.+\\))", "\\1") %>% unique()
@@ -624,8 +622,7 @@ merged_df <- merged_df %>%
   left_join(normalized_table, by = feature) %>%
   left_join(merged_df) %>% 
   left_join(All_mean_sd) %>% 
-  left_join(group_means_df, by = feature) %>% 
-  mutate(across(where(is.numeric), ~round(.x, digits=3)))
+  left_join(group_means_df, by = feature)
 
 
 # ---------------------- Visualization --------------------------------------- #
@@ -634,8 +631,8 @@ message("Making volcano plots...")
 volcano_plots <- map(uniq_comps, function(comparison){
   
   comp_col  <- c(
-    glue("LnFC_{comparison}"),
-    glue("lfcSE_{comparison}"),
+    glue("lnFC_{comparison}"),
+    glue("lnfcSE_{comparison}"),
     glue("Wstat_{comparison}"),
     glue("pvalue_{comparison}"),
     glue("qvalue_{comparison}"),
@@ -663,20 +660,20 @@ volcano_plots <- map(uniq_comps, function(comparison){
   group2 <- groups_vec[2]
   
   ######Long x-axis label adjustments##########
-  x_label <- glue("Ln Fold Change\n\n( {group1} vs {group2} )")
+  x_label <- glue("ln Fold Change\n\n( {group1} vs {group2} )")
   label_length <- nchar(x_label)
   max_allowed_label_length <- plot_width_inches * 10
   
   # Construct x-axis label with new line breaks if was too long
   if (label_length > max_allowed_label_length){
-    x_label <- glue("Ln Fold Change\n\n( {group1} \n vs \n {group2} )")
+    x_label <- glue("ln Fold Change\n\n( {group1} \n vs \n {group2} )")
   }
   #######################################
   
   
   
   p <- ggplot(sub_res_df %>% mutate(diff = qvalue <= p_val),
-              aes(x=LnFC, y=-log10(qvalue), color=diff, label=!!sym(feature))) +
+              aes(x=lnFC, y=-log10(qvalue), color=diff, label=!!sym(feature))) +
     geom_point(alpha=0.7, size=2) +
     scale_color_manual(values=c("TRUE"="red", "FALSE"="black"),
                        labels=c(paste0("qval > ", p_val), 

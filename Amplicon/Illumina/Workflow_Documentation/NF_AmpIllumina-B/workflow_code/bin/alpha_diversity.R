@@ -419,12 +419,10 @@ diversity_stats <- map_dfr(.x = diversity_metrics, function(metric){
   df <- res$res %>%
     separate(col = Comparison, into = c("group1", "group2"), sep = " - ") %>% 
     mutate(Metric=metric)  %>% 
-    rename(p=P.unadj, p.adj=P.adj) %>% 
-    mutate(p.format=round(p,digits = 2))
+    rename(p=P.unadj, p.adj=P.adj)
   
   add_significance(df, p.col='p.adj', output.col = 'p.signif') %>% 
-    select(Metric,group1, group2, Z, p, p.adj, p.format, p.signif) %>% 
-    mutate(across(where(is.numeric), ~round(.x, digits = 2)))
+    select(Metric,group1, group2, Z, p, p.adj, p.signif)
   
 })
 

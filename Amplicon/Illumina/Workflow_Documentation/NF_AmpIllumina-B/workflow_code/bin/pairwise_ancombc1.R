@@ -423,8 +423,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
   # neg_lb - whether to classify a taxon as a structural zero using its asymptotic lower bound. i.e.the best the algorithm can possibly achieve 
   # group - name of the group variable in metadata. Only important you'd like to perform global test  can be set to NULL.
   # alpha - significance level
-  # n_cl - number of processes to run in parallel
-  # global - should a global test be performed to detect significant differences between at least 2 groups (ANOVA-like comparison) 
+  # n_cl - number of processes to run in parallel 
   # tol - iteration convergence tolerance for the E-M algorithm.
   # max_iter - max iteration 
   # formula - fixed effects formula
@@ -448,7 +447,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     select(-contains("Intercept")) %>% 
     set_names(
       c("taxon",
-        glue("LnFC_({group2})v({group1})"))
+        glue("lnFC_({group2})v({group1})"))
     )
   
   # SE
@@ -457,7 +456,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
     select(-contains("Intercept")) %>%
     set_names(
       c("taxon",
-        glue("lfcSE_({group2})v({group1})"))
+        glue("lnfcSE_({group2})v({group1})"))
     )
   
   # W    
@@ -534,8 +533,8 @@ merged_stats_df <- merged_stats_df %>%
 
 
 comp_names <- merged_stats_df %>% 
-  select(starts_with("LnFC")) %>%
-  colnames() %>% str_remove_all("LnFC_")
+  select(starts_with("lnFC_", ignore.case = FALSE)) %>%
+  colnames() %>% str_remove_all("lnFC_")
 names(comp_names) <- comp_names
 
 message("Making volcano plots...")
@@ -543,8 +542,8 @@ message("Making volcano plots...")
 volcano_plots <- map(comp_names, function(comparison){
   
   comp_col  <- c(
-    glue("LnFC_{comparison}"),
-    glue("lfcSE_{comparison}"),
+    glue("lnFC_{comparison}"),
+    glue("lnfcSE_{comparison}"),
     glue("Wstat_{comparison}"),
     glue("pvalue_{comparison}"),
     glue("qvalue_{comparison}"),
@@ -571,18 +570,18 @@ volcano_plots <- map(comp_names, function(comparison){
   group2 <- groups_vec[2]
   
   ######Long x-axis label adjustments##########
-  x_label <- glue("Ln Fold Change\n\n( {group1} vs {group2} )")
+  x_label <- glue("ln Fold Change\n\n( {group1} vs {group2} )")
   label_length <- nchar(x_label)
   max_allowed_label_length <- plot_width_inches * 10
   
   # Construct x-axis label with new line breaks if was too long
   if (label_length > max_allowed_label_length){
-    x_label <- glue("Ln Fold Change\n\n( {group1} \n vs \n {group2} )")
+    x_label <- glue("ln Fold Change\n\n( {group1} \n vs \n {group2} )")
   }
 
   
   p <- ggplot(sub_res_df %>% mutate(diff = qvalue <= p_val), 
-              aes(x=LnFC, y=-log10(qvalue), 
+              aes(x=lnFC, y=-log10(qvalue), 
                   color=diff, label=!!sym(feature))) +
     geom_point(alpha=0.7, size=2) +
     scale_color_manual(values=c("TRUE"="red", "FALSE"="black"),
@@ -699,7 +698,6 @@ merged_df <- merged_df %>%
   left_join(merged_df) %>%
   left_join(All_mean_sd) %>%
   left_join(group_means_df, by = feature) %>%
-  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>%
   mutate(across(where(is.matrix), as.numeric))
 
 output_file <- glue("{diff_abund_out_dir}{output_prefix}ancombc1_differential_abundance{assay_suffix}.csv")

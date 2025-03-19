@@ -78,9 +78,9 @@ option_list <- list(
               if you do not want to discard any sample then set to 0.",
               metavar="100"),
   
-  make_option(c("-e", "--legend-title"), type="character", default="Groups", 
+  make_option(c("-e", "--legend-title"), type="character", default=NULL, 
               help="Legend title for alpha diversity plots.",
-              metavar="Groups"),
+              metavar=NULL),
   
   make_option(c("-a", "--assay-suffix"), type="character", default="_GLAmpSeq", 
               help="Genelab assay suffix.", metavar="GLAmpSeq"),
@@ -493,7 +493,7 @@ taxonomy_table <- taxonomy_table[common_ids,]
 
 distance_methods <- c("euclidean", "bray") # "bray" # "euclidean"
 normalization_methods <- c("vst", "rarefy")
-legend_title <- NULL
+#legend_title <- NULL
 
 options(warn=-1) # ignore warnings
 # Run the analysis

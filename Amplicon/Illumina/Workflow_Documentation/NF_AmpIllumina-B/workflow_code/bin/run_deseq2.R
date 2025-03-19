@@ -562,7 +562,6 @@ merged_df <- merged_df %>%
   left_join(merged_df) %>%
   left_join(All_mean_sd) %>%
   left_join(group_means_df, by = feature) %>% 
-  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>% 
   mutate(across(where(is.matrix), as.numeric))
 
 
