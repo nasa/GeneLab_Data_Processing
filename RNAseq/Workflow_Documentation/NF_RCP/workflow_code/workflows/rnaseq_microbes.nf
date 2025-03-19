@@ -129,7 +129,7 @@ workflow RNASEQ_MICROBES {
         validateParameters()
 
         // Print summary of supplied parameters
-        log.info paramsSummaryLog(workflow)
+        // log.info paramsSummaryLog(workflow)
 
         // Parse the runsheet
         PARSE_RUNSHEET( runsheet_path )

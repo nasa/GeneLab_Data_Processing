@@ -10,17 +10,19 @@ def colorCodes = [
     c_reset: "\033[0m"
 ]
 
-// Command for: 'run main.nf --version'
+// Command for: 'nextflow run main.nf --version'
 if (params.version) {
-    println("${workflow.manifest.name} ${workflow.manifest.version}")
+    println """${workflow.manifest.name}
+Workflow Version: ${workflow.manifest.version}"""
     exit 0
 }
 
 // Print the pipeline version on start
 println """
-${colorCodes.c_bright_green}${colorCodes.c_line}
-${workflow.manifest.name} ${workflow.manifest.version}
-${colorCodes.c_line}${colorCodes.c_reset}
+${colorCodes.c_bright_green}
+${workflow.manifest.name}
+Workflow Version: ${workflow.manifest.version}
+${colorCodes.c_reset}
 """.stripIndent()
 
 // Debug warning
