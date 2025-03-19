@@ -52,8 +52,10 @@ Nextflow can be installed either through [Anaconda](https://anaconda.org/biocond
 > conda install -c bioconda nextflow
 > nextflow self-update
 > ```
-> You may also install [mamba](https://mamba.readthedocs.io/en/latest/index.html) as a fast alternative to conda.
+> You may also install [mamba](https://mamba.readthedocs.io/en/latest/index.html) which is a faster implementation of conda like so:
+> ```bash
 > conda install -c conda-forge mamba
+> ```
 <br>
 
 #### 1b. Install Singularity

@@ -254,7 +254,7 @@ find_bad_taxa <- function(cnd){
   #print("======cnd==========")
   #print(cnd)
   #print("======split_res==========")
-  #split_res <- strsplit(conditionMessage(cnd), "\n")
+  split_res <- strsplit(conditionMessage(cnd), "\n")
   #print(split_res)
   #print("========================")
   if(split_res == "replacement has 0 rows, data has 1" || 

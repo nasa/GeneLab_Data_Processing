@@ -88,7 +88,7 @@ if(params.help){
 *************************************************/
 if(params.debug){
 
-log.info """
+log.info """${c_blue}
          GeneLab Post Processing Pipeline: $workflow.manifest.version
          
          You have set the following parameters:
@@ -142,7 +142,7 @@ log.info """
          FastQC Outputs: ${params.directories.FastQC_Outputs}
          Final Outputs: ${params.directories.Final_Outputs}
          Pipeline Outputs: ${params.directories.Output_dir}
-         """
+         ${c_reset}"""
 
 }
 
@@ -270,3 +270,13 @@ workflow {
 
 
 }
+
+workflow.onComplete {
+    println("${c_bright_green}Pipeline completed at: $workflow.complete")
+    println("""Execution status: ${ workflow.success ? 'OK' : "${c_back_bright_red}failed" }""")
+    log.info ( workflow.success ? "\nDone! Workflow completed without any error\n" : "Oops .. something went wrong${c_reset}" )
+    if ( workflow.success ) {
+    println("Post-processing Outputs: ${params.directories.Output_dir} ${c_reset}")
+    }
+}
+

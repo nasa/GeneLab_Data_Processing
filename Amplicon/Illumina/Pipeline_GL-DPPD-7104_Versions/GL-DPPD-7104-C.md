@@ -27,26 +27,26 @@ Software Updates and Changes:
 | Program      | Previous Version | New Version   |
 |:-------------|:-----------------|:--------------|
 | FastQC       | 0.11.9           | 0.12.1        |
-| MultiQC      | 1.9              | 1.19          |
-| Cutadapt     | 2.3              | 4.6           |
-| R-base       | 4.1.1            | 4.4.1         |
-| DADA2        | 1.20.0           | 1.30.0        |
-| DECIPHER     | 2.20.0           | 2.30.0        |
-| biomformat   | 1.20.0           | 1.30.0        |
-| ANCOMBC      | N/A              | 2.6.0         |
+| MultiQC      | 1.9              | 1.27.1        |
+| Cutadapt     | 2.3              | 5.0           |
+| R-base       | 4.1.1            | 4.4.2         |
+| DADA2        | 1.20.0           | 1.34.0        |
+| DECIPHER     | 2.20.0           | 3.2.0         |
+| biomformat   | 1.20.0           | 1.34.0        |
+| ANCOMBC      | N/A              | 2.8.0         |
 | broom        | N/A              | 1.0.7         |
-| DescTools    | N/A              | 0.99.57       |
-| DESeq2       | N/A              | 1.42.0        |
-| FSA          | N/A              | 0.9.5         |
+| DescTools    | N/A              | 0.99.59       |
+| DESeq2       | N/A              | 1.46.0        |
+| FSA          | N/A              | 0.9.6         |
 | ggdendro     | N/A              | 0.2.0         |
 | ggrepel      | N/A              | 0.9.6         |
 | glue         | N/A              | 1.8.0         |
-| mia          | N/A              | 1.12.0        |
-| phyloseq     | N/A              | 1.46.0        |
-| rcolorbrewer | N/A              | 1.1_3         |
-| taxize       | N/A              | 0.9.100.1     |
+| mia          | N/A              | 1.14.0        |
+| phyloseq     | N/A              | 1.50.0        |
+| rcolorbrewer | N/A              | 1.1.3         |
+| taxize       | N/A              | 0.10.0        |
 | tidyverse    | N/A              | 2.0.0         |
-| vegan        | N/A              | 2.6.4         |
+| vegan        | N/A              | 2.6_10        |
 
 - Added new processing steps in R to generate processed data outputs for alpha and beta diversity, 
   taxonomic summary plots, and differential abundance:
@@ -60,8 +60,8 @@ Software Updates and Changes:
   - ITS UNITE: "UNITE\_v2023\_July2023.RData" from [DECIPHER](https://www2.decipher.codes/data/Downloads/TrainingSets/)
 - Added persistent reference links to DECIPHER databases on Figshare and replaced reference links to 
   DECIPHER [website]([http://www2.decipher.codes/Classification/TrainingSets/](https://www2.decipher.codes/data/Downloads/TrainingSets/)) 
-  - [SILVA SSU r138](https://figshare.com/ndownloader/files/46245217)
-  - [UNITE v2023](https://figshare.com/ndownloader/files/49181545)
+  - [SILVA SSU r138](https://figshare.com/ndownloader/files/52846199)
+  - [UNITE v2024](https://figshare.com/ndownloader/files/52846346)
   - [PR2 v4.13](https://figshare.com/ndownloader/files/46241917)
 
 ---
@@ -110,34 +110,33 @@ Software Updates and Changes:
 |Program|Version|Relevant Links|
 |:------|:------:|:-------------|
 |FastQC|0.12.1|[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
-|MultiQC|1.19|[https://multiqc.info/](https://multiqc.info/)|
-|Cutadapt|4.6|[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
-|R-base|4.4.1|[https://www.r-project.org/](https://www.r-project.org/)|
-|DADA2|1.30.0|[https://www.bioconductor.org/packages/release/bioc/html/dada2.html](https://www.bioconductor.org/packages/release/bioc/html/dada2.html)|
-|DECIPHER|2.30.0|[https://bioconductor.org/packages/release/bioc/html/DECIPHER.html](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html)|
-|biomformat|1.30.0|[https://github.com/joey711/biomformat](https://github.com/joey711/biomformat)|
-|ANCOMBC|2.6.0|[https://github.com/FrederickHuangLin/ANCOMBC](https://github.com/FrederickHuangLin/ANCOMBC)|
+|MultiQC|1.27.1|[https://multiqc.info/](https://multiqc.info/)|
+|Cutadapt|5.0|[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
+|R-base|4.4.2|[https://www.r-project.org/](https://www.r-project.org/)|
+|DADA2|1.34.0|[https://www.bioconductor.org/packages/release/bioc/html/dada2.html](https://www.bioconductor.org/packages/release/bioc/html/dada2.html)|
+|DECIPHER|3.20.0|[https://bioconductor.org/packages/release/bioc/html/DECIPHER.html](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html)|
+|biomformat|1.34.0|[https://github.com/joey711/biomformat](https://github.com/joey711/biomformat)|
+|ANCOMBC|2.8.0|[https://github.com/FrederickHuangLin/ANCOMBC](https://github.com/FrederickHuangLin/ANCOMBC)|
 |broom|1.0.7|[https://CRAN.R-project.org/package=broom](https://CRAN.R-project.org/package=broom)|
-|DescTools|0.99.57|[https://andrisignorell.github.io/DescTools/](https://andrisignorell.github.io/DescTools/)|
-|DESeq2|1.42.0|[https://bioconductor.org/packages/release/bioc/html/DESeq2.html](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)|
-|FSA|0.9.5|[https://CRAN.R-project.org/package=FSA](https://CRAN.R-project.org/package=FSA)|
+|DescTools|0.99.59|[https://andrisignorell.github.io/DescTools/](https://andrisignorell.github.io/DescTools/)|
+|DESeq2|1.46.0|[https://bioconductor.org/packages/release/bioc/html/DESeq2.html](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)|
+|FSA|0.9.6|[https://CRAN.R-project.org/package=FSA](https://CRAN.R-project.org/package=FSA)|
 |ggdendro|0.2.0|[https://CRAN.R-project.org/package=ggdendro](https://CRAN.R-project.org/package=ggdendro)|
 |ggrepel|0.9.6|[https://CRAN.R-project.org/package=ggrepel](https://CRAN.R-project.org/package=ggrepel)|
 |glue|1.8.0|[https://glue.tidyverse.org/](https://glue.tidyverse.org/)|
-|mia|1.12.0|[https://github.com/microbiome/mia](https://github.com/microbiome/mia)|
-|phyloseq|1.46.0|[https://bioconductor.org/packages/release/bioc/html/phyloseq.html](https://bioconductor.org/packages/release/bioc/html/phyloseq.html)|
-|rcolorbrewer|1.1_3|[https://CRAN.R-project.org/package=RColorBrewer](https://CRAN.R-project.org/package=RColorBrewer)|
-|taxize|0.9.100.1|[https://docs.ropensci.org/taxize/](https://docs.ropensci.org/taxize/)|
+|mia|1.14.0|[https://github.com/microbiome/mia](https://github.com/microbiome/mia)|
+|phyloseq|1.50.0|[https://bioconductor.org/packages/release/bioc/html/phyloseq.html](https://bioconductor.org/packages/release/bioc/html/phyloseq.html)|
+|rcolorbrewer|1.1.3|[https://CRAN.R-project.org/package=RColorBrewer](https://CRAN.R-project.org/package=RColorBrewer)|
+|taxize|0.10.0|[https://docs.ropensci.org/taxize/](https://docs.ropensci.org/taxize/)|
 |tidyverse|2.0.0|[https://CRAN.R-project.org/package=tidyverse](https://CRAN.R-project.org/package=tidyverse)|
-|vegan|2.6.4|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
+|vegan|2.6_10|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
 
 # Reference databases used
-<update figshare links once the updated DBs are downloaded>
 |Program used| Database| DECIPHER Link | GeneLab Figshare Link | GeneLab Download Date|
 |:-----|:-----:|:-----|--------:|
-|DECIPHER| SILVA SSU r138_2 | [https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData) |[SILVA_SSU_r138_2019.RData](https://figshare.com/ndownloader/files/46245217)| <insert download date >|
-|DECIPHER| UNITE v2024 | [https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData) | [UNITE_v2023_July2023.RData](https://figshare.com/ndownloader/files/49181545)| <insert download date >|
-|DECIPHER| PR2 v4.13 | [https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData) | [PR2_v4_13_March2021.RData](https://figshare.com/ndownloader/files/46241917)| <insert download date >|
+|DECIPHER| SILVA SSU r138_2 | [https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData) |[SILVA_SSU_r138_2_2024.RData](https://figshare.com/ndownloader/files/52846199)| 03/06/2025 |
+|DECIPHER| UNITE v2024 | [https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData) | [UNITE_v2024_April2024.RData](https://figshare.com/ndownloader/files/52846346)| 03/06/2025 |
+|DECIPHER| PR2 v4.13 | [https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData) | [PR2_v4_13_March2021.RData](https://figshare.com/ndownloader/files/46241917)| 05/10/2024 |
 ---
 
 # General processing overview with example commands  
@@ -1260,12 +1259,10 @@ diversity_stats <- map_dfr(.x = diversity_metrics, function(metric){
   df <- res$res %>%
     separate(col = Comparison, into = c("group1", "group2"), sep = " - ") %>% 
     mutate(Metric=metric) %>% 
-    rename(p=P.unadj, p.adj=P.adj) %>% 
-    mutate(p.format=round(p,digits = 2))
+    rename(p=P.unadj, p.adj=P.adj)
   
   add_significance(df, p.col='p.adj', output.col = 'p.signif') %>% 
-    select(Metric,group1, group2, Z, p, p.adj, p.format, p.signif) %>% 
-    mutate(across(where(is.numeric), ~round(.x, digits = 2)))
+    select(Metric,group1, group2, Z, p, p.adj, p.signif)
   
 })
 
@@ -2214,7 +2211,7 @@ merged_stats_df <- merged_stats_df %>%
 # suffixes as comparison names, we only need to extract the comparion names
 # from one of them. Here we extract them from the "lnFC" prefixed columns
 comp_names <- merged_stats_df %>% 
-  select(starts_with("lnFC")) %>%
+  select(starts_with("lnFC_", ignore.case = FALSE)) %>%
   colnames() %>% str_remove_all("lnFC_")
 names(comp_names) <- comp_names
 
@@ -2390,7 +2387,6 @@ merged_df <- merged_df %>%
   left_join(merged_df) %>%
   left_join(All_mean_sd) %>%
   left_join(group_means_df, by = feature) %>%
-  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>%
   mutate(across(where(is.matrix), as.numeric))
 
 # Write out results of differential abundance using ANCOMBC 1
@@ -2552,10 +2548,8 @@ new_colnames <- map_chr(output$res_pair %>% colnames,
 new_colnames[match("taxon", new_colnames)] <- feature
 
 
-# Round numeric values and rename columns
-paired_stats_df <- output$res_pair %>% 
-  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>%
-  set_names(new_colnames)
+# Rename columns
+paired_stats_df <- output$res_pair %>% set_names(new_colnames)
 
 # Get the unique comparison names 
 uniq_comps <- str_replace_all(new_colnames, ".+_(\\(.+\\))", "\\1") %>% unique()
@@ -2675,8 +2669,7 @@ merged_df <- merged_df %>%
   left_join(normalized_table, by = feature) %>%
   left_join(merged_df) %>% 
   left_join(All_mean_sd) %>% 
-  left_join(group_means_df, by = feature) %>% 
-  mutate(across(where(is.numeric), ~round(.x, digits=3)))
+  left_join(group_means_df, by = feature)
 
 
 # Writing out results of differential abundance using ANCOMBC2...
@@ -3032,7 +3025,6 @@ merged_df <- merged_df %>%
   left_join(merged_df) %>%  # append the stats table
   left_join(All_mean_sd) %>%  # append the global/ASV means and stds
   left_join(group_means_df, by = feature) %>% # append the group means and stds
-  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>%  # round numeric columns
   mutate(across(where(is.matrix), as.numeric)) # convert meatrix columns to numeric columns
 
 # Defining the output file

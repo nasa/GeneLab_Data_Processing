@@ -110,7 +110,7 @@ if (params.help) {
 
 
 if(params.debug){
-log.info """
+log.info """${c_blue}
          Nextflow AmpIllumina Consensus Pipeline: $workflow.manifest.version
          
          You have set the following parameters:
@@ -176,7 +176,7 @@ log.info """
          dp_tools: ${params.conda.dp_tools}
          cutadapt: ${params.conda.cutadapt}
          Diversity and Differential abundance : ${params.conda.diversity}
-         """.stripIndent()
+         ${c_reset}"""
 }
 
 // Create GLDS runsheet
@@ -229,11 +229,10 @@ workflow {
     //  ---------------------  Sanity Checks ------------------------------------- //
     // Test input requirement
     if (!params.accession &&  !params.input_file){
-     
-       error("""
+       error("""${c_back_bright_red}INPUT ERROR! 
               Please supply either an accession (OSD or Genelab number) or an input CSV file
               by passing either to the --accession or --input_file parameter, respectively.
-              """)
+              ${c_reset}""")
     } 
     
     // Test input csv file
@@ -241,12 +240,12 @@ workflow {
         // Test primers
         if(!params.F_primer || !params.R_primer){
 
-            error("""
+            error("""${c_back_bright_red}PRIMER ERROR! 
                   When using a csv file as input (--input_file) to this workflow you must provide 
                   foward and reverse primer sequences. Please provide your forward 
                   and reverse primer sequences as arguements to the --F_primer 
-                  and --R_primer parameters, respectively. 
-                  """)
+                  and --R_primer parameters, respectively.
+                  ${c_reset}""")
          }
      }
 
@@ -473,6 +472,20 @@ workflow {
 
 }
 
+
 workflow.onComplete {
-	log.info ( workflow.success ? "\nDone! Workflow completed without any error\n" : "Oops .. something went wrong" )
+    println("${c_bright_green}Pipeline completed at: $workflow.complete")
+    println("""Execution status: ${ workflow.success ? 'OK' : "${c_back_bright_red}failed" }""")
+    log.info ( workflow.success ? "\nDone! Workflow completed without any error\n" : "Oops .. something went wrong${c_reset}" )
+
+    if ( workflow.success ) {
+
+    println("Raw reads location: ${params.raw_reads_dir}")
+    println("FastQC outputs location: ${params.fastqc_out_dir}")
+    println("Trimmed Reads location: ${params.trimmed_reads_dir}")
+    println("Filtered Reads location: ${params.filtered_reads_dir}")
+    println("Software versions location: ${params.metadata_dir}")
+    println("Final results (i.e. ASV count and taxonomy tables, diversity, and differential abundance testing)00: ${params.final_outputs_dir}")
+    println "Pipeline tracing/visualization files location:  ../Resource_Usage${c_reset}"
+    }
 }
