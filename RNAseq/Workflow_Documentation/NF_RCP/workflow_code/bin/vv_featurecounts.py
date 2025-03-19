@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 """
-Script to validate and verify featureCounts output based on runsheet information.
-Expects to run from inside a output directory GLDS-##.
+Script to validate featureCounts results based on runsheet information.
+Expects to run from inside an output directory GLDS-##.
 
 Parse the input runsheet to get:
 Sample Name
@@ -108,7 +108,7 @@ def check_featurecounts_files_existence(outdir, log_path, assay_suffix="_GLbulkR
     expected_files = [
         f"FeatureCounts{assay_suffix}.tsv",
         f"FeatureCounts{assay_suffix}.tsv.summary",
-        f"featureCounts_multiqc{assay_suffix}_report.zip"
+        f"featureCounts_multiqc{assay_suffix}_data.zip"
         # f"FeatureCounts_rRNArm{assay_suffix}.tsv"
     ]
     
@@ -136,15 +136,15 @@ def check_featurecounts_files_existence(outdir, log_path, assay_suffix="_GLbulkR
 def get_featurecounts_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
     """Extract featureCounts MultiQC stats for all samples and write to a stats file for analysis."""
     featurecounts_dir = os.path.join(outdir, "03-FeatureCounts")
-    multiqc_zip = os.path.join(featurecounts_dir, f"featureCounts_multiqc{assay_suffix}_report.zip")
+    multiqc_zip = os.path.join(featurecounts_dir, f"featureCounts_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
-        print(f"WARNING: MultiQC report zip file not found: {multiqc_zip}")
+        print(f"WARNING: MultiQC data zip file not found: {multiqc_zip}")
         log_check_result(log_path, "featurecounts", "all", "get_featurecounts_multiqc_stats", "RED", 
-                         "MultiQC report not found", "")
+                         "MultiQC data not found", "")
         return False
     
-    print(f"Extracting stats from MultiQC report: {multiqc_zip}")
+    print(f"Extracting stats from MultiQC data: {multiqc_zip}")
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -153,23 +153,17 @@ def get_featurecounts_multiqc_stats(outdir, samples, log_path, assay_suffix="_GL
             with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
             
-            # Search for the MultiQC data JSON file
-            json_files = []
-            for root, dirs, files in os.walk(temp_dir):
-                for file in files:
-                    if file.endswith('.json') and 'multiqc_data' in file:
-                        json_files.append(os.path.join(root, file))
+            # Path to the MultiQC data JSON file (new structure)
+            json_path = os.path.join(temp_dir, f"featureCounts_multiqc{assay_suffix}_data", "multiqc_data.json")
             
-            if not json_files:
-                print(f"WARNING: No multiqc_data.json file found in the extracted zip")
+            if not os.path.exists(json_path):
+                print(f"WARNING: No multiqc_data.json file found in the expected location")
                 log_check_result(log_path, "featurecounts", "all", "get_featurecounts_multiqc_stats", "RED", 
                                "multiqc_data.json not found in zip", "")
                 return False
             
-            multiqc_data_file = json_files[0]
-            
             # Parse the MultiQC data
-            with open(multiqc_data_file) as f:
+            with open(json_path) as f:
                 multiqc_data = json.load(f)
             
             fc_data = {}
@@ -177,9 +171,9 @@ def get_featurecounts_multiqc_stats(outdir, samples, log_path, assay_suffix="_GL
             # Check if featureCounts data exists in the MultiQC report
             if ('report_saved_raw_data' not in multiqc_data or 
                 'multiqc_featurecounts' not in multiqc_data['report_saved_raw_data']):
-                print("WARNING: No featureCounts data found in MultiQC report")
+                print("WARNING: No featureCounts data found in MultiQC data")
                 log_check_result(log_path, "featurecounts", "all", "get_featurecounts_multiqc_stats", "RED", 
-                               "No featureCounts data in MultiQC report", "")
+                               "No featureCounts data in MultiQC data", "")
                 return False
             
             # Extract featureCounts data
@@ -199,7 +193,7 @@ def get_featurecounts_multiqc_stats(outdir, samples, log_path, assay_suffix="_GL
                 }
             
             if not fc_data:
-                print("WARNING: No valid featureCounts data found in MultiQC report")
+                print("WARNING: No valid featureCounts data found in MultiQC data")
                 log_check_result(log_path, "featurecounts", "all", "get_featurecounts_multiqc_stats", "RED", 
                                "No valid featureCounts data found", "")
                 return False
@@ -237,17 +231,17 @@ def parse_featurecounts(multiqc_data_dir, assay_suffix="_GLbulkRNAseq"):
     
     if not os.path.exists(multiqc_data_json):
         print(f"WARNING: MultiQC data file not found: {multiqc_data_json}")
-        return {}
+        return None
     
     try:
         with open(multiqc_data_json) as f:
-            j = json.loads(f.read())
+            j = json.load(f)
         
-        data = {}
+        fc_data = {}
         
         if 'report_saved_raw_data' not in j or 'multiqc_featurecounts' not in j['report_saved_raw_data']:
-            print("WARNING: No featureCounts data found in MultiQC report")
-            return {}
+            print("WARNING: No featureCounts data found in MultiQC data")
+            return None
         
         for sample, count_data in j['report_saved_raw_data']['multiqc_featurecounts'].items():
             sample_name = sample
@@ -255,7 +249,7 @@ def parse_featurecounts(multiqc_data_dir, assay_suffix="_GLbulkRNAseq"):
             if "/" in sample:
                 sample_name = sample.split("/")[-1]
             
-            data[sample_name] = {
+            fc_data[sample_name] = {
                 'total_count': count_data['Total'],
                 'num_assigned': count_data['Assigned'],
                 'pct_assigned': count_data['percent_assigned'],
@@ -265,11 +259,11 @@ def parse_featurecounts(multiqc_data_dir, assay_suffix="_GLbulkRNAseq"):
                 'pct_unassigned_ambiguity': count_data['Unassigned_Ambiguity'] / count_data['Total'] * 100 if count_data['Total'] > 0 else 0
             }
         
-        return data
+        return fc_data
     
     except Exception as e:
         print(f"ERROR parsing featureCounts data: {str(e)}")
-        return {}
+        return None
 
 
 def report_multiqc_outliers(outdir, multiqc_data, log_path):
@@ -568,7 +562,7 @@ def main():
     parser.add_argument('--outdir', '-o', default=os.getcwd(), 
                         help='Output directory (GLDS-## folder), defaults to current directory')
     parser.add_argument('--assay-suffix', default="_GLbulkRNAseq", 
-                        help='Assay suffix used in MultiQC report filenames (default: _GLbulkRNAseq)')
+                        help='Assay suffix used in MultiQC data filenames (default: _GLbulkRNAseq)')
     args = parser.parse_args()
 
     # Initialize VV log

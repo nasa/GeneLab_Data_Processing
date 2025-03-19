@@ -142,7 +142,7 @@ def check_rsem_output_existence(outdir, samples, log_path, assay_suffix="_GLbulk
     dataset_files = [
         "RSEM_NumNonZeroGenes{assay_suffix}.csv",
         "RSEM_Unnormalized_Counts{assay_suffix}.csv",
-        "RSEM_count_multiqc{assay_suffix}_report.zip"
+        "RSEM_count_multiqc{assay_suffix}_data.zip"
     ]
     
     missing_files_by_sample = {}
@@ -255,24 +255,24 @@ def parse_rsem(multiqc_data_dir, assay_suffix="_GLbulkRNAseq"):
 
 
 def get_rsem_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
-    """Extract RSEM metrics from MultiQC report."""
+    """Extract RSEM metrics from MultiQC data."""
     rsem_dir = os.path.join(outdir, '03-RSEM_Counts')
-    multiqc_zip = os.path.join(rsem_dir, f"RSEM_count_multiqc{assay_suffix}_report.zip")
+    multiqc_zip = os.path.join(rsem_dir, f"RSEM_count_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
-        print(f"WARNING: MultiQC report zip file not found: {multiqc_zip}")
+        print(f"WARNING: MultiQC data zip file not found: {multiqc_zip}")
         log_check_result(
             log_path, 
             "RSEM_counts", 
             "all", 
             "get_rsem_multiqc_stats", 
             "RED", 
-            "RSEM MultiQC report not found", 
+            "RSEM MultiQC data not found", 
             f"Expected at {multiqc_zip}"
         )
         return False
     
-    print(f"Extracting RSEM stats from MultiQC report: {multiqc_zip}")
+    print(f"Extracting RSEM stats from MultiQC data: {multiqc_zip}")
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -281,15 +281,11 @@ def get_rsem_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
             with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
             
-            # Find the data directory within the extracted files
-            data_dir = None
-            for root, dirs, files in os.walk(temp_dir):
-                if "multiqc_data.json" in files:
-                    data_dir = root
-                    break
+            # Path to the MultiQC data JSON file (new structure)
+            json_path = os.path.join(temp_dir, f"RSEM_count_multiqc{assay_suffix}_data", "multiqc_data.json")
             
-            if not data_dir:
-                print("WARNING: multiqc_data.json not found in the extracted zip")
+            if not os.path.exists(json_path):
+                print("WARNING: multiqc_data.json not found in the expected location")
                 log_check_result(
                     log_path, 
                     "RSEM_counts", 
@@ -297,22 +293,25 @@ def get_rsem_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
                     "get_rsem_multiqc_stats", 
                     "RED", 
                     "multiqc_data.json not found in MultiQC zip", 
-                    ""
+                    f"Expected at {json_path}"
                 )
                 return False
+            
+            # Use the directory containing the JSON file for parse_rsem
+            data_dir = os.path.dirname(json_path)
             
             # Parse RSEM data
             rsem_data = parse_rsem(data_dir, assay_suffix)
             
             if not rsem_data:
-                print("WARNING: No RSEM data found in MultiQC report")
+                print("WARNING: No RSEM data found in MultiQC data")
                 log_check_result(
                     log_path, 
                     "RSEM_counts", 
                     "all", 
                     "get_rsem_multiqc_stats", 
                     "RED", 
-                    "No RSEM data found in MultiQC report", 
+                    "No RSEM data found in MultiQC data", 
                     ""
                 )
                 return False
@@ -490,19 +489,19 @@ def report_rsem_outliers(outdir, rsem_data, log_path):
 
 
 def check_all_samples_in_multiqc(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
-    """Check if all samples are present in the RSEM MultiQC report."""
+    """Check if all samples are present in the RSEM MultiQC data."""
     rsem_dir = os.path.join(outdir, '03-RSEM_Counts')
-    multiqc_zip = os.path.join(rsem_dir, f"RSEM_count_multiqc{assay_suffix}_report.zip")
+    multiqc_zip = os.path.join(rsem_dir, f"RSEM_count_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
-        print(f"WARNING: MultiQC report zip file not found: {multiqc_zip}")
+        print(f"WARNING: MultiQC data zip file not found: {multiqc_zip}")
         log_check_result(
             log_path, 
             "RSEM_counts", 
             "all", 
             "check_all_samples_in_multiqc", 
             "RED", 
-            "RSEM MultiQC report not found", 
+            "RSEM MultiQC data not found", 
             f"Expected at {multiqc_zip}"
         )
         return False
@@ -514,18 +513,14 @@ def check_all_samples_in_multiqc(outdir, samples, log_path, assay_suffix="_GLbul
             with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
             
-            # Find the multiqc_sources.txt file
-            sources_file = None
-            for root, dirs, files in os.walk(temp_dir):
-                for file in files:
-                    if file == "multiqc_sources.txt":
-                        sources_file = os.path.join(root, file)
-                        break
-                if sources_file:
-                    break
+            # Path to the expected data directory
+            data_dir = os.path.join(temp_dir, f"RSEM_count_multiqc{assay_suffix}_data")
             
-            if not sources_file:
-                print("WARNING: multiqc_sources.txt not found in the extracted zip")
+            # Check for the multiqc_sources.txt file in the expected location
+            sources_file = os.path.join(data_dir, "multiqc_sources.txt")
+            
+            if not os.path.exists(sources_file):
+                print("WARNING: multiqc_sources.txt not found in the expected location")
                 log_check_result(
                     log_path, 
                     "RSEM_counts", 
@@ -533,23 +528,16 @@ def check_all_samples_in_multiqc(outdir, samples, log_path, assay_suffix="_GLbul
                     "check_all_samples_in_multiqc", 
                     "RED", 
                     "multiqc_sources.txt not found in MultiQC zip", 
-                    ""
+                    f"Expected at {sources_file}"
                 )
                 return False
             
-            # Also check the multiqc_data.json to get samples directly from RSEM module
-            data_json_file = None
-            for root, dirs, files in os.walk(temp_dir):
-                for file in files:
-                    if file == "multiqc_data.json":
-                        data_json_file = os.path.join(root, file)
-                        break
-                if data_json_file:
-                    break
+            # Path to the MultiQC data JSON file in the expected location
+            data_json_file = os.path.join(data_dir, "multiqc_data.json")
             
             # Get the sample names used in the RSEM module if possible
             rsem_module_samples = []
-            if data_json_file:
+            if os.path.exists(data_json_file):
                 try:
                     with open(data_json_file, 'r') as f:
                         mqc_data = json.load(f)

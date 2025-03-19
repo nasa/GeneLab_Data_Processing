@@ -337,26 +337,26 @@ def check_raw_fastqc_existence(outdir, samples, paired_end, log_path):
 def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
     """Check if all samples are included in the MultiQC report."""
     fastqc_dir = os.path.join(outdir, "00-RawData", "FastQC_Reports")
-    multiqc_zip = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}_report.zip")
+    multiqc_data_zip = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}_data.zip")
+    multiqc_html = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}.html")
     
-    if not os.path.exists(multiqc_zip):
-        print(f"WARNING: MultiQC report zip file not found: {multiqc_zip}")
+    if not os.path.exists(multiqc_data_zip):
+        print(f"WARNING: MultiQC data zip file not found: {multiqc_data_zip}")
         log_check_result(log_path, "raw_reads", "all", "check_samples_multiqc", "RED", 
-                         "MultiQC report not found", multiqc_zip)
+                         "MultiQC data zip not found", multiqc_data_zip)
         return False
     
-    print(f"Found MultiQC report: {multiqc_zip}")
+    print(f"Found MultiQC data zip: {multiqc_data_zip}")
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
         try:
             # Extract the zip file
-            with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
+            with zipfile.ZipFile(multiqc_data_zip, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
             
-            # Check for the JSON file
-            json_path = os.path.join(temp_dir, f"raw_multiqc{assay_suffix}_report", 
-                                    f"raw_multiqc{assay_suffix}_data", "multiqc_data.json")
+            # Check for the JSON file (new path structure)
+            json_path = os.path.join(temp_dir, f"raw_multiqc{assay_suffix}_data", "multiqc_data.json")
             
             if not os.path.exists(json_path):
                 print(f"Could not find multiqc_data.json in the expected location")
@@ -416,28 +416,29 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
 def get_raw_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
     """Extract raw MultiQC stats for all samples and write to a stats file for analysis."""
     fastqc_dir = os.path.join(outdir, "00-RawData", "FastQC_Reports")
-    multiqc_zip = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}_report.zip")
+    multiqc_data_zip = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}_data.zip")
+    multiqc_html = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}.html")
     
-    if not os.path.exists(multiqc_zip):
-        print(f"WARNING: MultiQC report zip file not found: {multiqc_zip}")
+    if not os.path.exists(multiqc_data_zip):
+        print(f"WARNING: MultiQC data zip file not found: {multiqc_data_zip}")
         log_check_result(log_path, "raw_reads", "all", "get_raw_multiqc_stats", "RED", 
-                         "MultiQC report not found", "")  # Remove the path from details
+                         "MultiQC data zip not found", "")
         return False
     
-    print(f"Extracting stats from MultiQC report: {multiqc_zip}")
+    print(f"Extracting stats from MultiQC data: {multiqc_data_zip}")
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
         try:
             # Extract the zip file
-            with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
+            with zipfile.ZipFile(multiqc_data_zip, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
             
-            # Path to the extracted MultiQC data directory
-            multiqc_data_dir = os.path.join(temp_dir, f"raw_multiqc{assay_suffix}_report")
+            # Path directly to the extracted data directory
+            multiqc_data_dir = os.path.join(temp_dir, f"raw_multiqc{assay_suffix}_data")
             
-            # Parse FastQC data
-            fastqc_data = parse_fastqc(os.path.join(multiqc_data_dir, "raw"), assay_suffix)
+            # Parse FastQC data using the top-level temp directory as the base path
+            fastqc_data = parse_fastqc(os.path.join(temp_dir, "raw"), assay_suffix)
             
             # Collect all possible column names across all samples
             all_columns = set()
@@ -462,7 +463,7 @@ def get_raw_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffix="_
             column_mapping = dict(zip(sorted_columns, clean_columns))
             
             log_check_result(log_path, "raw_reads", "all", "get_raw_multiqc_stats", "GREEN", 
-                            f"Extracted MultiQC stats for {len(fastqc_data)} samples", "")  # Remove path from details
+                            f"Extracted MultiQC stats for {len(fastqc_data)} samples", "")
             
             # Create a new version of the data with clean column names
             clean_data = {}
@@ -476,11 +477,12 @@ def get_raw_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffix="_
         except Exception as e:
             print(f"Error extracting MultiQC stats: {str(e)}")
             log_check_result(log_path, "raw_reads", "all", "get_raw_multiqc_stats", "RED", 
-                           f"Error extracting MultiQC stats: {str(e)}", "")  # Empty details
+                           f"Error extracting MultiQC stats: {str(e)}", "")
             return False
 
 def parse_fastqc(prefix, assay_suffix):
     """Parse MultiQC JSON data to extract FastQC metrics."""
+    # Updated path to directly access the multiqc_data.json in the data directory
     with open(f'{prefix}_multiqc{assay_suffix}_data/multiqc_data.json') as f:
         j = json.loads(f.read())
 

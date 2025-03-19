@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Script to validate and verify Bowtie2 alignment outputs based on runsheet information.
+Script to validate and verify Bowtie2 alignment based on runsheet information.
 Expects to run from inside a output directory GLDS-##.
 
 Parse the input runsheet to get:
@@ -282,15 +282,15 @@ def check_raw_fastqc_existence(outdir, samples, paired_end, log_path):
 def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
     """Check if all samples are present in the MultiQC report."""
     align_dir = os.path.join(outdir, "02-Bowtie2_Alignment")
-    multiqc_zip = os.path.join(align_dir, f"align_multiqc{assay_suffix}_report.zip")
+    multiqc_zip = os.path.join(align_dir, f"align_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
-        print(f"WARNING: MultiQC report not found at: {multiqc_zip}")
+        print(f"WARNING: MultiQC data not found at: {multiqc_zip}")
         log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
-                        "MultiQC report not found", multiqc_zip)
+                        "MultiQC data not found", multiqc_zip)
         return False
     
-    print(f"Checking samples in MultiQC report: {multiqc_zip}")
+    print(f"Checking samples in MultiQC data: {multiqc_zip}")
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -299,23 +299,17 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
             with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
             
-            # Search for the MultiQC data JSON file
-            json_files = []
-            for root, dirs, files in os.walk(temp_dir):
-                for file in files:
-                    if file.endswith('.json') and 'multiqc_data' in file:
-                        json_files.append(os.path.join(root, file))
+            # Path to the MultiQC data JSON file (new structure)
+            json_path = os.path.join(temp_dir, f"align_multiqc{assay_suffix}_data", "multiqc_data.json")
             
-            if not json_files:
-                print(f"WARNING: No multiqc_data.json file found in the extracted zip")
+            if not os.path.exists(json_path):
+                print(f"WARNING: No multiqc_data.json file found in the expected location")
                 log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
                                "multiqc_data.json not found in zip", "")
                 return False
             
-            multiqc_data_file = json_files[0]
-            
             # Parse the JSON file
-            with open(multiqc_data_file) as f:
+            with open(json_path) as f:
                 multiqc_data = json.load(f)
             
             # Check for samples in report_data_sources
@@ -327,9 +321,9 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
             
             # Look for Bowtie2 section
             if 'Bowtie 2 / HiSAT2' not in multiqc_data['report_data_sources']:
-                print(f"WARNING: No Bowtie2 data found in MultiQC report")
+                print(f"WARNING: No Bowtie2 data found in MultiQC data")
                 log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
-                               "No Bowtie2 data in MultiQC report", "")
+                               "No Bowtie2 data in MultiQC data", "")
                 return False
             
             # Get samples from the Bowtie2 section
@@ -343,35 +337,35 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
                     missing_samples.append(sample)
             
             if missing_samples:
-                print(f"WARNING: The following samples are missing from the MultiQC report:")
+                print(f"WARNING: The following samples are missing from the MultiQC data:")
                 for sample in missing_samples:
                     print(f"  - {sample}")
                 log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
-                               f"Missing {len(missing_samples)} samples in MultiQC report", 
+                               f"Missing {len(missing_samples)} samples in MultiQC data", 
                                "; ".join(missing_samples))
                 return False
             
-            print(f"All {len(samples)} samples found in MultiQC report")
+            print(f"All {len(samples)} samples found in MultiQC data")
             log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "GREEN", 
-                           f"All {len(samples)} samples found in report", 
-                           f"Checked presence of {len(samples)} samples in Bowtie2 section of MultiQC report")
+                           f"All {len(samples)} samples found in data", 
+                           f"Checked presence of {len(samples)} samples in Bowtie2 section of MultiQC data")
             return True
             
         except Exception as e:
-            print(f"Error checking MultiQC report: {str(e)}")
+            print(f"Error checking MultiQC data: {str(e)}")
             log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
-                           f"Error checking MultiQC report: {str(e)}", "")
+                           f"Error checking MultiQC data: {str(e)}", "")
             return False
 
 def get_bowtie2_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
-    """Get alignment statistics from MultiQC report."""
+    """Get alignment statistics from MultiQC data."""
     align_dir = os.path.join(outdir, "02-Bowtie2_Alignment")
-    multiqc_zip = os.path.join(align_dir, f"align_multiqc{assay_suffix}_report.zip")
+    multiqc_zip = os.path.join(align_dir, f"align_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
-        print(f"WARNING: MultiQC report not found at: {multiqc_zip}")
+        print(f"WARNING: MultiQC data not found at: {multiqc_zip}")
         log_check_result(log_path, "alignment", "all", "get_bowtie2_multiqc_stats", "RED", 
-                        "MultiQC report not found", multiqc_zip)
+                        "MultiQC data not found", multiqc_zip)
         return None
     
     # Create a temporary directory to extract files
@@ -381,29 +375,23 @@ def get_bowtie2_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffi
             with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
             
-            # Search for the MultiQC data JSON file
-            json_files = []
-            for root, dirs, files in os.walk(temp_dir):
-                for file in files:
-                    if file.endswith('.json') and 'multiqc_data' in file:
-                        json_files.append(os.path.join(root, file))
+            # Path to the MultiQC data JSON file (new structure)
+            json_path = os.path.join(temp_dir, f"align_multiqc{assay_suffix}_data", "multiqc_data.json")
             
-            if not json_files:
-                print(f"WARNING: No multiqc_data.json file found in the extracted zip")
+            if not os.path.exists(json_path):
+                print(f"WARNING: No multiqc_data.json file found in the expected location")
                 log_check_result(log_path, "alignment", "all", "get_bowtie2_multiqc_stats", "RED", 
                                "multiqc_data.json not found in zip", "")
                 return None
-            
-            multiqc_data_file = json_files[0]
-            
-            # Parse the JSON file
-            with open(multiqc_data_file) as f:
-                data = json.load(f)
-            
+                
+            # Parse the MultiQC data file
+            with open(json_path, 'r') as f:
+                multiqc_data = json.load(f)
+
             samples_data = {}
             
             # Extract stats for each sample from general stats
-            for section in data['report_general_stats_data']:
+            for section in multiqc_data['report_general_stats_data']:
                 for sample, stats in section.items():
                     # Clean sample name (remove read identifiers)
                     base_sample = re.sub(r'_R[12]$', '', sample)
@@ -429,7 +417,7 @@ def get_bowtie2_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffi
                         samples_data[base_sample]['aligned_multi'] = stats['unpaired_aligned_multi']
             
             if not samples_data:
-                print("No alignment statistics found in MultiQC report")
+                print("No alignment statistics found in MultiQC data")
                 log_check_result(log_path, "alignment", "all", "get_bowtie2_multiqc_stats", "RED", 
                                "No alignment statistics found", "")
                 return None
@@ -643,8 +631,8 @@ def check_bowtie2_existence(outdir, samples, paired_end, log_path):
     missing_files = []
     is_paired = paired_end[0]  # Assuming all samples have same paired_end value
 
-    # First check for MultiQC report
-    multiqc_file = os.path.join(align_dir, "align_multiqc_GLbulkRNAseq_report.zip")
+    # First check for MultiQC data
+    multiqc_file = os.path.join(align_dir, "align_multiqc_GLbulkRNAseq_data.zip")
     if not os.path.exists(multiqc_file):
         missing_files.append(multiqc_file)
 
@@ -686,7 +674,7 @@ def check_bowtie2_existence(outdir, samples, paired_end, log_path):
         return False
 
     print(f"All expected alignment files found")
-    total_files = len(samples) * (4 if is_paired else 3) + 1  # +1 for multiqc report
+    total_files = len(samples) * (4 if is_paired else 3) + 1  # +1 for multiqc data zip
     log_check_result(log_path, "alignment", "all", "check_bowtie2_existence", "GREEN", 
                     "All files found", f"Verified {total_files} files for {len(samples)} samples")
     return True
@@ -783,7 +771,7 @@ def main():
     parser.add_argument('--outdir', '-o', default=os.getcwd(), 
                         help='Output directory (GLDS-## folder), defaults to current directory')
     parser.add_argument('--assay-suffix', default="_GLbulkRNAseq", 
-                        help='Assay suffix used in MultiQC report filenames (default: _GLbulkRNAseq)')
+                        help='Assay suffix used in MultiQC data filenames (default: _GLbulkRNAseq)')
     args = parser.parse_args()
 
     # Initialize VV log
@@ -825,7 +813,7 @@ def main():
     # 2. Validate unmapped FASTQ files
     validate_unmapped_fastq(args.outdir, sample_names, paired_end_values, vv_log_path)
 
-    # 3. Check that samples are present in MultiQC report
+    # 3. Check that samples are present in MultiQC data
     check_samples_multiqc(args.outdir, sample_names, paired_end_values, vv_log_path, args.assay_suffix)
 
     # 4. Get MultiQC stats

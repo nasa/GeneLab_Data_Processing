@@ -153,7 +153,7 @@ def check_star_output_existence(outdir, samples, paired_end, log_path, assay_suf
     dataset_files = [
         "STAR_NumNonZeroGenes{assay_suffix}.csv",
         "STAR_Unnormalized_Counts{assay_suffix}.csv",
-        "align_multiqc{assay_suffix}_report.zip"
+        "align_multiqc{assay_suffix}_data.zip"
     ]
     
     missing_files_by_sample = {}
@@ -293,24 +293,24 @@ def check_bam_file_integrity(outdir, samples, log_path):
 
 
 def get_star_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
-    """Extract STAR alignment metrics from MultiQC report."""
+    """Extract STAR alignment metrics from MultiQC data."""
     alignment_dir = os.path.join(outdir, '02-STAR_Alignment')
-    multiqc_zip = os.path.join(alignment_dir, f"align_multiqc{assay_suffix}_report.zip")
+    multiqc_zip = os.path.join(alignment_dir, f"align_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
-        print(f"WARNING: MultiQC report zip file not found: {multiqc_zip}")
+        print(f"WARNING: MultiQC data zip file not found: {multiqc_zip}")
         log_check_result(
             log_path, 
             "STAR_alignment", 
             "all", 
             "get_star_multiqc_stats", 
             "RED", 
-            "STAR MultiQC report not found", 
+            "STAR MultiQC data not found", 
             f"Expected at {multiqc_zip}"
         )
         return False
     
-    print(f"Extracting STAR stats from MultiQC report: {multiqc_zip}")
+    print(f"Extracting STAR stats from MultiQC data: {multiqc_zip}")
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -319,15 +319,11 @@ def get_star_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
             with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
             
-            # Find the multiqc_data.json file
-            json_files = []
-            for root, dirs, files in os.walk(temp_dir):
-                for file in files:
-                    if file == 'multiqc_data.json':
-                        json_files.append(os.path.join(root, file))
+            # Path to the MultiQC data JSON file (new structure)
+            json_path = os.path.join(temp_dir, f"align_multiqc{assay_suffix}_data", "multiqc_data.json")
             
-            if not json_files:
-                print("WARNING: multiqc_data.json not found in the extracted zip")
+            if not os.path.exists(json_path):
+                print("WARNING: multiqc_data.json not found in the expected location")
                 log_check_result(
                     log_path, 
                     "STAR_alignment", 
@@ -335,12 +331,12 @@ def get_star_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
                     "get_star_multiqc_stats", 
                     "RED", 
                     "multiqc_data.json not found in MultiQC zip", 
-                    ""
+                    f"Expected at {json_path}"
                 )
                 return False
             
             # Parse the MultiQC data
-            with open(json_files[0]) as f:
+            with open(json_path) as f:
                 multiqc_data = json.load(f)
             
             # Extract STAR metrics from MultiQC data
@@ -348,14 +344,14 @@ def get_star_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
             
             # Check if STAR data exists in the MultiQC report
             if 'report_general_stats_data' not in multiqc_data:
-                print("WARNING: No general stats data found in MultiQC report")
+                print("WARNING: No general stats data found in MultiQC data")
                 log_check_result(
                     log_path, 
                     "STAR_alignment", 
                     "all", 
                     "get_star_multiqc_stats", 
                     "RED", 
-                    "No general stats data in MultiQC report", 
+                    "No general stats data in MultiQC data", 
                     ""
                 )
                 return False
@@ -381,14 +377,14 @@ def get_star_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
                         }
             
             if not star_metrics_found:
-                print("WARNING: No STAR metrics found in MultiQC report")
+                print("WARNING: No STAR metrics found in MultiQC data")
                 log_check_result(
                     log_path, 
                     "STAR_alignment", 
                     "all", 
                     "get_star_multiqc_stats", 
                     "RED", 
-                    "No STAR metrics found in MultiQC report", 
+                    "No STAR metrics found in MultiQC data", 
                     ""
                 )
                 return False

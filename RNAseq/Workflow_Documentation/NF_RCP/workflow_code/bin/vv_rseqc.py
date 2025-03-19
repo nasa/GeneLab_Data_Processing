@@ -187,18 +187,18 @@ def check_gene_body_coverage_existence(outdir, samples, log_path):
         return "RED"
     
     # Check MultiQC report existence
-    multiqc_glob = os.path.join(rseqc_dir, "geneBody_cov_multiqc*_report.zip")
+    multiqc_glob = os.path.join(rseqc_dir, "geneBody_cov_multiqc*_data.zip")
     multiqc_files = glob.glob(multiqc_glob)
     
     if not multiqc_files:
-        print(f"WARNING: No gene body coverage MultiQC report found in {rseqc_dir}")
+        print(f"WARNING: No gene body coverage MultiQC data found in {rseqc_dir}")
         log_check_result(log_path, component, "all", "check_genebody_coverage_multiqc", "RED", 
-                         "geneBody coverage MultiQC report not found", f"Searched: {multiqc_glob}")
+                         "geneBody coverage MultiQC data not found", f"Searched: {multiqc_glob}")
         status = "RED"
     else:
-        print(f"Found gene body coverage MultiQC report: {os.path.basename(multiqc_files[0])}")
+        print(f"Found gene body coverage MultiQC data: {os.path.basename(multiqc_files[0])}")
         log_check_result(log_path, component, "all", "check_genebody_coverage_multiqc", "GREEN", 
-                         "geneBody coverage MultiQC report exists")
+                         "geneBody coverage MultiQC data exists")
     
     # Track missing files
     missing_files = []
@@ -255,18 +255,18 @@ def check_infer_experiment_existence(outdir, samples, log_path):
         return "RED"
     
     # Check MultiQC report existence
-    multiqc_glob = os.path.join(rseqc_dir, "infer_exp_multiqc*_report.zip")
+    multiqc_glob = os.path.join(rseqc_dir, "infer_exp_multiqc*_data.zip")
     multiqc_files = glob.glob(multiqc_glob)
     
     if not multiqc_files:
-        print(f"WARNING: No infer experiment MultiQC report found in {rseqc_dir}")
+        print(f"WARNING: No infer experiment MultiQC data found in {rseqc_dir}")
         log_check_result(log_path, component, "all", "check_infer_experiment_multiqc", "RED", 
-                         "Infer experiment MultiQC report not found", f"Searched: {multiqc_glob}")
+                         "Infer experiment MultiQC data not found", f"Searched: {multiqc_glob}")
         status = "RED"
     else:
-        print(f"Found infer experiment MultiQC report: {os.path.basename(multiqc_files[0])}")
+        print(f"Found infer experiment MultiQC data: {os.path.basename(multiqc_files[0])}")
         log_check_result(log_path, component, "all", "check_infer_experiment_multiqc", "GREEN", 
-                         "Infer experiment MultiQC report exists")
+                         "Infer experiment MultiQC data exists")
     
     # Track missing files
     missing_files = []
@@ -314,18 +314,18 @@ def check_read_distribution_existence(outdir, samples, log_path):
         return "RED"
     
     # Check MultiQC report existence
-    multiqc_glob = os.path.join(rseqc_dir, "read_dist_multiqc*_report.zip")
+    multiqc_glob = os.path.join(rseqc_dir, "read_dist_multiqc*_data.zip")
     multiqc_files = glob.glob(multiqc_glob)
     
     if not multiqc_files:
-        print(f"WARNING: No read distribution MultiQC report found in {rseqc_dir}")
+        print(f"WARNING: No read distribution MultiQC data found in {rseqc_dir}")
         log_check_result(log_path, component, "all", "check_read_distribution_multiqc", "RED", 
-                         "Read distribution MultiQC report not found", f"Searched: {multiqc_glob}")
+                         "Read distribution MultiQC data not found", f"Searched: {multiqc_glob}")
         status = "RED"
     else:
-        print(f"Found read distribution MultiQC report: {os.path.basename(multiqc_files[0])}")
+        print(f"Found read distribution MultiQC data: {os.path.basename(multiqc_files[0])}")
         log_check_result(log_path, component, "all", "check_read_distribution_multiqc", "GREEN", 
-                         "Read distribution MultiQC report exists")
+                         "Read distribution MultiQC data exists")
     
     # Track missing files
     missing_files = []
@@ -373,18 +373,18 @@ def check_inner_distance_existence(outdir, samples, log_path):
         return "RED"
     
     # Check MultiQC report existence
-    multiqc_glob = os.path.join(rseqc_dir, "inner_dist_multiqc*_report.zip")
+    multiqc_glob = os.path.join(rseqc_dir, "inner_dist_multiqc*_data.zip")
     multiqc_files = glob.glob(multiqc_glob)
     
     if not multiqc_files:
-        print(f"WARNING: No inner distance MultiQC report found in {rseqc_dir}")
+        print(f"WARNING: No inner distance MultiQC data found in {rseqc_dir}")
         log_check_result(log_path, component, "all", "check_inner_distance_multiqc", "RED", 
-                         "Inner distance MultiQC report not found", f"Searched: {multiqc_glob}")
+                         "Inner distance MultiQC data not found", f"Searched: {multiqc_glob}")
         status = "RED"
     else:
-        print(f"Found inner distance MultiQC report: {os.path.basename(multiqc_files[0])}")
+        print(f"Found inner distance MultiQC data: {os.path.basename(multiqc_files[0])}")
         log_check_result(log_path, component, "all", "check_inner_distance_multiqc", "GREEN", 
-                         "Inner distance MultiQC report exists")
+                         "Inner distance MultiQC data exists")
     
     # Track missing files
     missing_files = []
@@ -427,15 +427,15 @@ def check_inner_distance_existence(outdir, samples, log_path):
 def get_genebody_coverage_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
     """Extract gene body coverage MultiQC stats for all samples and write to a stats file for analysis."""
     rseqc_dir = os.path.join(outdir, "RSeQC_Analyses", "02_geneBody_coverage")
-    multiqc_zip = os.path.join(rseqc_dir, f"geneBody_cov_multiqc{assay_suffix}_report.zip")
+    multiqc_zip = os.path.join(rseqc_dir, f"geneBody_cov_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
-        print(f"WARNING: Gene body coverage MultiQC report zip file not found: {multiqc_zip}")
+        print(f"WARNING: Gene body coverage MultiQC data zip file not found: {multiqc_zip}")
         log_check_result(log_path, "rseqc", "all", "get_genebody_coverage_multiqc_stats", "RED", 
-                         "Gene body coverage MultiQC report not found", "")
+                         "Gene body coverage MultiQC data not found", "")
         return None
     
-    print(f"Extracting stats from Gene body coverage MultiQC report: {multiqc_zip}")
+    print(f"Extracting stats from Gene body coverage MultiQC data: {multiqc_zip}")
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -444,23 +444,17 @@ def get_genebody_coverage_multiqc_stats(outdir, samples, log_path, assay_suffix=
             with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
             
-            # Search for the MultiQC data JSON file
-            json_files = []
-            for root, dirs, files in os.walk(temp_dir):
-                for file in files:
-                    if file.endswith('.json') and 'multiqc_data' in file:
-                        json_files.append(os.path.join(root, file))
+            # Path to the MultiQC data JSON file (new structure)
+            json_path = os.path.join(temp_dir, f"geneBody_cov_multiqc{assay_suffix}_data", "multiqc_data.json")
             
-            if not json_files:
-                print(f"WARNING: No multiqc_data.json file found in the extracted zip")
+            if not os.path.exists(json_path):
+                print(f"WARNING: No multiqc_data.json file found in the expected location")
                 log_check_result(log_path, "rseqc", "all", "get_genebody_coverage_multiqc_stats", "RED", 
                                "multiqc_data.json not found in zip", "")
                 return None
             
-            multiqc_data_file = json_files[0]
-            
             # Parse the MultiQC data
-            with open(multiqc_data_file) as f:
+            with open(json_path) as f:
                 multiqc_data = json.load(f)
             
             genebody_data = {}
@@ -707,40 +701,42 @@ def report_genebody_coverage_issues(outdir, multiqc_data, log_path):
     return status
 
 def get_infer_experiment_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
-    """
-    Extract infer experiment stats from MultiQC report.
-    Retrieves: pct_sense, pct_antisense, pct_undetermined
-    """
+    """Extract infer experiment results from the MultiQC report."""
     component = "rseqc"
-    check_name = "get_infer_experiment_multiqc_stats"
+    check_name = "infer_experiment_multiqc_stats"
     
-    # Path to MultiQC report
-    multiqc_zip = os.path.join(outdir, "RSeQC_Analyses", "03_infer_experiment", f"infer_exp_multiqc{assay_suffix}_report.zip")
+    # Get the infer experiment directory
+    infer_exp_dir = os.path.join(outdir, "RSeQC_Analyses", "03_infer_experiment")
+    
+    # Find the MultiQC zip file
+    multiqc_zip = os.path.join(outdir, "RSeQC_Analyses", "03_infer_experiment", f"infer_exp_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
-        print(f"WARNING: Infer experiment MultiQC report not found: {multiqc_zip}")
+        print(f"WARNING: Infer experiment MultiQC data zip file not found: {multiqc_zip}")
         log_check_result(log_path, component, "all", check_name, "RED", 
-                         "Infer experiment MultiQC report not found", "")
+                         "Infer experiment MultiQC data not found", multiqc_zip)
         return None
     
-    # Create a temporary directory to extract the zip file
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        # Extract the zip file
-        with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
-            zip_ref.extractall(tmpdirname)
-        
-        # Read the JSON data
-        json_path = os.path.join(tmpdirname, f"infer_exp_multiqc{assay_suffix}_report", 
-                                 f"infer_exp_multiqc{assay_suffix}_data", "multiqc_data.json")
-        
-        if not os.path.exists(json_path):
-            print(f"WARNING: MultiQC data file not found in ZIP: {json_path}")
-            log_check_result(log_path, component, "all", check_name, "RED", 
-                             "MultiQC data file not found in ZIP", "")
-            return None
-        
+    print(f"Extracting stats from infer experiment MultiQC data: {multiqc_zip}")
+    
+    # Create a temporary directory to extract files
+    with tempfile.TemporaryDirectory() as temp_dir:
         try:
-            with open(json_path, 'r') as f:
+            # Extract the zip file
+            with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
+                zip_ref.extractall(temp_dir)
+            
+            # Path to the MultiQC data JSON file (new structure)
+            json_path = os.path.join(temp_dir, f"infer_exp_multiqc{assay_suffix}_data", "multiqc_data.json")
+            
+            if not os.path.exists(json_path):
+                print(f"WARNING: No multiqc_data.json file found in the expected location")
+                log_check_result(log_path, component, "all", check_name, "RED", 
+                               "multiqc_data.json not found in zip", "")
+                return None
+            
+            # Parse the MultiQC data
+            with open(json_path) as f:
                 multiqc_data = json.load(f)
                 
             # Extract infer experiment data
@@ -1076,19 +1072,19 @@ def get_inner_distance_multiqc_stats(outdir, samples, log_path, assay_suffix="_G
     inner_dist_dir = os.path.join(outdir, "RSeQC_Analyses", "04_inner_distance")
     
     # Find the MultiQC report zip file
-    multiqc_glob = os.path.join(inner_dist_dir, f"inner_dist_multiqc{assay_suffix}_report.zip")
+    multiqc_glob = os.path.join(inner_dist_dir, f"inner_dist_multiqc{assay_suffix}_data.zip")
     multiqc_files = glob.glob(multiqc_glob)
     
     if not multiqc_files:
-        print(f"ERROR: Inner distance MultiQC report not found: {multiqc_glob}")
+        print(f"ERROR: Inner distance MultiQC data not found: {multiqc_glob}")
         log_check_result(log_path, component, "all", check_name, "RED", 
-                         "Inner distance MultiQC report not found", 
+                         "Inner distance MultiQC data not found", 
                          f"Expected: {multiqc_glob}")
         return None
     
     # Get the most recent MultiQC report (should only be one, but just in case)
     multiqc_report = sorted(multiqc_files)[-1]
-    print(f"Using MultiQC report: {multiqc_report}")
+    print(f"Using MultiQC data: {multiqc_report}")
     
     # Extract the zip to a temporary directory
     try:
@@ -1096,24 +1092,18 @@ def get_inner_distance_multiqc_stats(outdir, samples, log_path, assay_suffix="_G
             with zipfile.ZipFile(multiqc_report, 'r') as zip_ref:
                 zip_ref.extractall(tmpdirname)
             
-            # Search for the MultiQC data JSON file recursively
-            json_files = []
-            for root, dirs, files in os.walk(tmpdirname):
-                for file in files:
-                    if file.endswith('.json') and 'multiqc_data' in file:
-                        json_files.append(os.path.join(root, file))
+            # Path to the MultiQC data JSON file (new structure)
+            json_path = os.path.join(tmpdirname, f"inner_dist_multiqc{assay_suffix}_data", "multiqc_data.json")
             
-            if not json_files:
-                print(f"ERROR: No multiqc_data.json file found in the extracted zip")
+            if not os.path.exists(json_path):
+                print(f"ERROR: No multiqc_data.json file found in the expected location")
                 log_check_result(log_path, component, "all", check_name, "RED", 
-                                "No multiqc_data.json found in extracted zip", "")
+                                "No multiqc_data.json found in expected location", "")
                 return None
                 
-            multiqc_data_file = json_files[0]
-            
             # Parse the MultiQC data file
             try:
-                with open(multiqc_data_file, 'r') as f:
+                with open(json_path, 'r') as f:
                     multiqc_data = json.load(f)
                 
                 # Extract inner distance data
@@ -1221,7 +1211,7 @@ def report_inner_distance_issues(outdir, inner_dist_data, log_path):
     
     # Get the inner distance MultiQC report zip file
     inner_dist_dir = os.path.join(outdir, "RSeQC_Analyses", "04_inner_distance")
-    multiqc_report = os.path.join(inner_dist_dir, f"inner_dist_multiqc_GLbulkRNAseq_report.zip")
+    multiqc_report = os.path.join(inner_dist_dir, f"inner_dist_multiqc_GLbulkRNAseq_data.zip")
     
     try:
         if os.path.exists(multiqc_report):
@@ -1413,19 +1403,19 @@ def get_read_distribution_multiqc_stats(outdir, samples, log_path, assay_suffix=
     read_dist_dir = os.path.join(outdir, "RSeQC_Analyses", "05_read_distribution")
     
     # Find the MultiQC report zip file
-    multiqc_glob = os.path.join(read_dist_dir, f"read_dist_multiqc{assay_suffix}_report.zip")
+    multiqc_glob = os.path.join(read_dist_dir, f"read_dist_multiqc{assay_suffix}_data.zip")
     multiqc_files = glob.glob(multiqc_glob)
     
     if not multiqc_files:
-        print(f"ERROR: Read distribution MultiQC report not found: {multiqc_glob}")
+        print(f"ERROR: Read distribution MultiQC data not found: {multiqc_glob}")
         log_check_result(log_path, component, "all", check_name, "RED", 
-                         "Read distribution MultiQC report not found", 
+                         "Read distribution MultiQC data not found", 
                          f"Expected: {multiqc_glob}")
         return None
     
     # Get the most recent MultiQC report (should only be one, but just in case)
     multiqc_report = sorted(multiqc_files)[-1]
-    print(f"Using MultiQC report: {multiqc_report}")
+    print(f"Using MultiQC data: {multiqc_report}")
     
     # Extract the zip to a temporary directory
     try:
@@ -1433,25 +1423,19 @@ def get_read_distribution_multiqc_stats(outdir, samples, log_path, assay_suffix=
             with zipfile.ZipFile(multiqc_report, 'r') as zip_ref:
                 zip_ref.extractall(tmpdirname)
             
-            # Search for the MultiQC data JSON file recursively
-            json_files = []
-            for root, dirs, files in os.walk(tmpdirname):
-                for file in files:
-                    if file.endswith('.json') and 'multiqc_data' in file:
-                        json_files.append(os.path.join(root, file))
+            # Path to the MultiQC data JSON file (new structure)
+            json_path = os.path.join(tmpdirname, f"read_dist_multiqc{assay_suffix}_data", "multiqc_data.json")
             
-            if not json_files:
-                print(f"ERROR: No multiqc_data.json file found in the extracted zip")
+            if not os.path.exists(json_path):
+                print(f"ERROR: No multiqc_data.json file found in the expected location")
                 log_check_result(log_path, component, "all", check_name, "RED", 
-                                "No multiqc_data.json found in extracted zip", "")
+                                "No multiqc_data.json found in expected location", "")
                 return None
                 
-            multiqc_data_file = json_files[0]
-            
             # Parse the MultiQC data
             try:
                 # Read and parse the JSON data
-                with open(multiqc_data_file, 'r') as f:
+                with open(json_path, 'r') as f:
                     multiqc_data = json.load(f)
                 
                 # Extract read distribution data for each sample

@@ -345,26 +345,26 @@ def check_trimmed_fastqc_existence(outdir, samples, paired_end, log_path):
 def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
     """Check if all samples are included in the MultiQC report."""
     fastqc_dir = os.path.join(outdir, "01-TG_Preproc", "FastQC_Reports")
-    multiqc_zip = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}_report.zip")
+    multiqc_data_zip = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}_data.zip")
+    multiqc_html = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}.html")
     
-    if not os.path.exists(multiqc_zip):
-        print(f"WARNING: MultiQC report zip file not found: {multiqc_zip}")
+    if not os.path.exists(multiqc_data_zip):
+        print(f"WARNING: MultiQC data zip file not found: {multiqc_data_zip}")
         log_check_result(log_path, "trimmed_reads", "all", "check_samples_multiqc", "RED", 
-                         "MultiQC report not found", multiqc_zip)
+                         "MultiQC data zip not found", multiqc_data_zip)
         return False
     
-    print(f"Found MultiQC report: {multiqc_zip}")
+    print(f"Found MultiQC data zip: {multiqc_data_zip}")
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
         try:
             # Extract the zip file
-            with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
+            with zipfile.ZipFile(multiqc_data_zip, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
             
-            # Check for the JSON file
-            json_path = os.path.join(temp_dir, f"trimmed_multiqc{assay_suffix}_report", 
-                                    f"trimmed_multiqc{assay_suffix}_data", "multiqc_data.json")
+            # Check for the JSON file (new path structure)
+            json_path = os.path.join(temp_dir, f"trimmed_multiqc{assay_suffix}_data", "multiqc_data.json")
             
             if not os.path.exists(json_path):
                 print(f"Could not find multiqc_data.json in the expected location")
@@ -424,62 +424,29 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
 def get_trimmed_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
     """Extract trimmed MultiQC stats for all samples and write to a stats file for analysis."""
     fastqc_dir = os.path.join(outdir, "01-TG_Preproc", "FastQC_Reports")
-    multiqc_zip = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}_report.zip")
+    multiqc_data_zip = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}_data.zip")
+    multiqc_html = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}.html")
     
-    if not os.path.exists(multiqc_zip):
-        print(f"WARNING: MultiQC report zip file not found: {multiqc_zip}")
+    if not os.path.exists(multiqc_data_zip):
+        print(f"WARNING: MultiQC data zip file not found: {multiqc_data_zip}")
         log_check_result(log_path, "trimmed_reads", "all", "get_trimmed_multiqc_stats", "RED", 
-                         "MultiQC report not found", "")  # Remove the path from details
+                         "MultiQC data zip not found", "")
         return False
     
-    print(f"Extracting stats from MultiQC report: {multiqc_zip}")
+    print(f"Extracting stats from MultiQC data: {multiqc_data_zip}")
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
         try:
             # Extract the zip file
-            with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
+            with zipfile.ZipFile(multiqc_data_zip, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
             
-            # Path to the extracted MultiQC data directory
-            multiqc_data_dir = os.path.join(temp_dir, f"trimmed_multiqc{assay_suffix}_report")
+            # Path directly to the extracted data directory
+            multiqc_data_dir = os.path.join(temp_dir, f"trimmed_multiqc{assay_suffix}_data")
             
-            # Parse FastQC data
-            fastqc_data = parse_fastqc(os.path.join(multiqc_data_dir, "trimmed"), assay_suffix)
-            
-            # Debug output - show fields for a sample
-            if fastqc_data and len(fastqc_data) > 0:
-                sample_name = next(iter(fastqc_data.keys()))
-                print(f"DEBUG - Available fields for sample '{sample_name}':")
-                for key in sorted(fastqc_data[sample_name].keys()):
-                    print(f"  {key}")
-                
-                # Add total_sequences directly from the MultiQC data if not already present
-                json_path = os.path.join(multiqc_data_dir, "trimmed_multiqc" + assay_suffix + "_data/multiqc_data.json")
-                if os.path.exists(json_path):
-                    with open(json_path) as f:
-                        multiqc_json = json.load(f)
-                    
-                    # Check if total_sequences is in the original data
-                    if 'report_general_stats_data' in multiqc_json and multiqc_json['report_general_stats_data']:
-                        for sample, stats in multiqc_json['report_general_stats_data'][0].items():
-                            # Get the base sample name
-                            base_sample = sample
-                            if '_R1' in sample:
-                                base_sample = sample.replace('_R1', '')
-                            elif '_R2' in sample:
-                                base_sample = sample.replace('_R2', '')
-                            elif ' Read 1' in sample:
-                                base_sample = sample.replace(' Read 1', '')
-                            elif ' Read 2' in sample:
-                                base_sample = sample.replace(' Read 2', '')
-                                
-                            # If base_sample is in our data and the sample has total_sequences
-                            if base_sample in fastqc_data and 'total_sequences' in stats:
-                                # Add it directly to our data if not already present
-                                if not any('total_sequences' in key for key in fastqc_data[base_sample]):
-                                    fastqc_data[base_sample]['total_sequences'] = stats['total_sequences']
-                                    print(f"Added direct total_sequences={stats['total_sequences']} for sample {base_sample}")
+            # Parse FastQC data using the top-level temp directory as the base path
+            fastqc_data = parse_fastqc(os.path.join(temp_dir, "trimmed"), assay_suffix)
             
             # Collect all possible column names across all samples
             all_columns = set()
@@ -504,7 +471,7 @@ def get_trimmed_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffi
             column_mapping = dict(zip(sorted_columns, clean_columns))
             
             log_check_result(log_path, "trimmed_reads", "all", "get_trimmed_multiqc_stats", "GREEN", 
-                            f"Extracted MultiQC stats for {len(fastqc_data)} samples", "")  # Remove path from details
+                            f"Extracted MultiQC stats for {len(fastqc_data)} samples", "")
             
             # Create a new version of the data with clean column names
             clean_data = {}
@@ -827,41 +794,37 @@ def check_trimming_report_existence(outdir, samples, paired_end, log_path):
 def check_trimming_multiqc_samples(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
     """Check if all samples are included in the trimming MultiQC report."""
     trimming_dir = os.path.join(outdir, "01-TG_Preproc", "Trimming_Reports")
-    multiqc_zip = os.path.join(trimming_dir, f"trimming_multiqc{assay_suffix}_report.zip")
+    multiqc_data_zip = os.path.join(trimming_dir, f"trimming_multiqc{assay_suffix}_data.zip")
+    multiqc_html = os.path.join(trimming_dir, f"trimming_multiqc{assay_suffix}.html")
     
-    if not os.path.exists(multiqc_zip):
-        print(f"WARNING: Trimming MultiQC report zip file not found: {multiqc_zip}")
+    if not os.path.exists(multiqc_data_zip):
+        print(f"WARNING: Trimming MultiQC data zip file not found: {multiqc_data_zip}")
         log_check_result(log_path, "trimmed_reads", "all", "check_trimming_multiqc_samples", "RED", 
-                         "Trimming MultiQC report not found", "")
+                         "Trimming MultiQC data zip not found", "")
         return False
     
-    print(f"Found Trimming MultiQC report: {multiqc_zip}")
+    print(f"Found Trimming MultiQC data zip: {multiqc_data_zip}")
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
         try:
             # Extract the zip file
-            with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
+            with zipfile.ZipFile(multiqc_data_zip, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
             
-            # Search for the MultiQC data JSON file
-            json_files = []
-            for root, dirs, files in os.walk(temp_dir):
-                for file in files:
-                    if file.endswith('.json') and 'multiqc_data' in file:
-                        json_files.append(os.path.join(root, file))
+            # Check for the JSON file (new path structure)
+            json_path = os.path.join(temp_dir, f"trimming_multiqc{assay_suffix}_data", "multiqc_data.json")
             
-            if not json_files:
-                print(f"WARNING: No multiqc_data.json file found in the extracted zip")
+            if not os.path.exists(json_path):
+                print(f"WARNING: No multiqc_data.json file found in the expected location")
                 log_check_result(log_path, "trimmed_reads", "all", "check_trimming_multiqc_samples", "RED", 
                                "multiqc_data.json not found in zip", "")
                 return False
             
-            multiqc_data_file = json_files[0]
-            print(f"Using MultiQC data file: {multiqc_data_file}")
+            print(f"Using MultiQC data file: {json_path}")
             
             # Parse the JSON file
-            with open(multiqc_data_file) as f:
+            with open(json_path) as f:
                 multiqc_data = json.load(f)
             
             # Extract sample names from the Cutadapt section
@@ -923,40 +886,35 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
     that adapters were present in the input data.
     """
     trimming_dir = os.path.join(outdir, "01-TG_Preproc", "Trimming_Reports")
-    multiqc_zip = os.path.join(trimming_dir, f"trimming_multiqc{assay_suffix}_report.zip")
+    multiqc_data_zip = os.path.join(trimming_dir, f"trimming_multiqc{assay_suffix}_data.zip")
+    multiqc_html = os.path.join(trimming_dir, f"trimming_multiqc{assay_suffix}.html")
     
-    if not os.path.exists(multiqc_zip):
-        print(f"WARNING: Trimming MultiQC report zip file not found: {multiqc_zip}")
+    if not os.path.exists(multiqc_data_zip):
+        print(f"WARNING: Trimming MultiQC data zip file not found: {multiqc_data_zip}")
         log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "RED", 
-                         "Trimming MultiQC report not found", "")
+                         "Trimming MultiQC data zip not found", "")
         return False
     
-    print(f"Checking adapter presence in trimming report: {multiqc_zip}")
+    print(f"Checking adapter presence in trimming data: {multiqc_data_zip}")
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
         try:
             # Extract the zip file
-            with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
+            with zipfile.ZipFile(multiqc_data_zip, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
             
-            # Search for the MultiQC data JSON file
-            json_files = []
-            for root, dirs, files in os.walk(temp_dir):
-                for file in files:
-                    if file.endswith('.json') and 'multiqc_data' in file:
-                        json_files.append(os.path.join(root, file))
+            # Check for the JSON file (new path structure)
+            json_path = os.path.join(temp_dir, f"trimming_multiqc{assay_suffix}_data", "multiqc_data.json")
             
-            if not json_files:
-                print(f"WARNING: No multiqc_data.json file found in the extracted zip")
+            if not os.path.exists(json_path):
+                print(f"WARNING: No multiqc_data.json file found in the expected location")
                 log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "RED", 
                                "multiqc_data.json not found in zip", "")
                 return False
             
-            multiqc_data_file = json_files[0]
-            
             # Parse the JSON file
-            with open(multiqc_data_file) as f:
+            with open(json_path) as f:
                 multiqc_data = json.load(f)
             
             # Get the general stats data

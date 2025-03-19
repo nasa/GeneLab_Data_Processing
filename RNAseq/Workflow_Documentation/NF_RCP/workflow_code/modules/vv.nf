@@ -214,6 +214,7 @@ process VV_FEATURECOUNTS {
     path(runsheet)
     path("INPUT/03-FeatureCounts/*") // featurecounts counts
     path("INPUT/03-FeatureCounts/*") // featurecounts summary
+    path("INPUT/03-FeatureCounts/*") // featurecounts num non zero genes
     path("INPUT/03-FeatureCounts/*") // featurecounts multiqc zipped data directory
     path("INPUT/03-FeatureCounts/*") // featurecounts multiqc HTML report
 
