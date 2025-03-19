@@ -431,7 +431,7 @@ merged_contigs <- mergePairs(dadaF=forward_seqs, derepF=“sample1_R1_filtered.f
 
 **Output Data:**
 
-* `merged_contigs` (variable containing a data.frame storing the merged contigs)
+* `merged_contigs` (variable containing a dataframe storing the merged contigs)
 
 <br>
 
@@ -446,7 +446,7 @@ seqtab <- makeSequenceTable(merged_contigs)
 
 **Input Data:**
 
-* `merged_contigs` or `forward_seqs` (for paired-end data, the merged contigs, output from [Step 5d](#5d-generating-sequence-table-with-counts-per-sample), for single-end data, the `forward_seqs` object, output from [Step 5b](#5b-inferring-sequences))
+* `merged_contigs` or `forward_seqs` (for paired-end data, the merged contigs, output from [Step 5c](#5c-merging-forward-and-reverse-reads-skip-if-data-are-single-end), for single-end data, the `forward_seqs` object, output from [Step 5b](#5b-inferring-sequences))
 
 **Output Data:**
 
@@ -473,7 +473,7 @@ seqtab.nochim <- removeBimeraDenovo(unqs=seqtab, method=“consensus”, multith
 
 **Ouptut Data:**
 
-* `seqtab.nochim` (variable containing a named integer matrix containing the sequence table without putative chimeras)
+* `seqtab.nochim` (variable containing the sequence table without putative chimeras)
 
 <br>
 
@@ -561,7 +561,7 @@ write.table(tax_and_count_tab, "taxonomy-and-counts_GLAmpSeq.tsv", sep="\t", quo
 
 **Input Data:**
 
-* `seqtab.nochim` (variable containing the sequence table without chimeras, output from [Step 5e](#5e-removing-putative-chimeras))
+* `seqtab.nochim` (variable containing the sequence table without putative chimeras, output from [Step 5e](#5e-removing-putative-chimeras))
 * `tax_info` (variable containing the DECIPHER Taxa object, output from [Step 5f](#5f-assigning-taxonomy))
 
 **Output Data:**
@@ -608,7 +608,6 @@ dpt-isa-to-runsheet --accession OSD-### \
 * `--config-type` - instructs the script to extract the metadata required for Amplicon Sequencing data processing from the ISA archive
 * `--config-version` - specifies the `dp-tools` configuration version to use, a value of `Latest` will specify the most recent version
 * `--isa-archive` - specifies the *ISA.zip file for the respective OSD dataset, downloaded in the `dpt-get-isa-archive` command
-
 
 **Input Data:**
 
@@ -683,161 +682,6 @@ expandy <- function(vec, ymin=NULL) {
   expand_limits(y=c(ymin, max.val))
 }
 
-
-# A function to create a phyloseq object with the appropriate
-# sample count transformation depending on the supplied transformation method,
-# either 'rarefy' or  'vst'
-transform_phyloseq <- function( feature_table, metadata, method, rarefaction_depth=500){
-
-  # Rarefaction
-  if(method == 'rarefy'){
-    # Create phyloseq object
-    ASV_physeq <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
-                           sample_data(metadata))
-    
-    # Get the count for every sample sorted in ascending order
-    seq_per_sample <- colSums(feature_table) %>% sort()
-    # Minimum sequences/count value
-    depth <- min(seq_per_sample)
-    
-    # Loop through the sequences per sample and return the count
-    # nearest to the minimum required rarefaction depth
-    for (count in seq_per_sample) {
-      # Get the count equal to rarefaction_depth or nearest to it
-      if(count >= rarefaction_depth) {
-        depth <- count
-        break
-      }
-      
-    }
-    
-    #----- Rarefy sample counts to even depth per sample
-    ps <- rarefy_even_depth(physeq = ASV_physeq, 
-                            sample.size = depth,
-                            rngseed = 1, 
-                            replace = FALSE, 
-                            verbose = FALSE)
-
-  # Variance Stabilizing Transformation
-  }else if(method == "vst"){
-    
-    # Using deseq
-    # Keep only ASVs with at least 1 count
-    feature_table <- feature_table[rowSums(feature_table) > 0, ]
-    # Add +1 pseudocount for VST for vst transformation
-    feature_table <- feature_table + 1
-    
-    # Make the order of samples in metadata match the order in feature table
-    metadata <- metadata[colnames(feature_table),]
-    
-    # Create VST normalized counts matrix
-    # ~1 means no design
-    deseq_counts <- DESeqDataSetFromMatrix(countData = feature_table, 
-                                           colData = metadata, 
-                                           design = ~1)
-    deseq_counts_vst <- varianceStabilizingTransformation(deseq_counts)
-    vst_trans_count_tab <- assay(deseq_counts_vst)
-    
-    # Making a phyloseq object with our transformed table
-    vst_count_phy <- otu_table(object = vst_trans_count_tab, taxa_are_rows = TRUE)
-    sample_info_tab_phy <- sample_data(metadata)
-    ps <- phyloseq(vst_count_phy, sample_info_tab_phy)
-  }else{
-    
-    stop("Please supply a valid normalization method, either 'rarefy' or 'vst' ")
-  }
-  
-  
-  return(ps)
-}
-
-# A function to arun variance test and adonis test
-run_stats <- function(dist_obj, metadata, groups_colname){
-  
-  # Retrieve sample names from the dist object
-  samples <- attr(dist_obj, "Label")
-  # subset metadata to contain ony samples in the dist_obj
-  metadata <- metadata[samples,]
-  
-  # Run variance test and present the result in a nicely formatted table / dataframe
-  variance_test <- betadisper(d = dist_obj, 
-                              group = metadata[[groups_colname]]) %>%
-    anova() %>% # MAke results anova-like
-    broom::tidy() %>%  # make the table 'tidy'
-    mutate(across(where(is.numeric), ~round(.x, digits = 2))) # round-up numeric columns
-  
-  
-  # Run Adonis test
-  adonis_res <- adonis2(formula = dist_obj ~ metadata[[groups_colname]])
-
-  adonis_test <- adonis_res %>%
-    broom::tidy() %>% # Make tidy table 
-    mutate(across(where(is.numeric), ~round(.x, digits = 2))) # round-up numeric columns
-  
-  # Return a named list with the variance and adonis test results
-  return(list(variance = variance_test, adonis = adonis_test))
-}
-
-# Make PCoA
-plot_pcoa <- function(ps, stats_res, distance_method,
-                      groups_colname, group_colors, legend_title,
-                      addtext=FALSE) {
-  
-  # Generating a PCoA with phyloseq
-  pcoa <- ordinate(physeq = ps, method = "PCoA", distance = distance_method)
-  eigen_vals <- pcoa$values$Eigenvalues
-  
-  # Calculate the percentage of variance
-  percent_variance <- eigen_vals / sum(eigen_vals) * 100
-  
-  # Retrieving plot labels
-  r2_value <- stats_res$adonis[["R2"]][1]
-  prf_value <- stats_res$adonis[["p.value"]][1]
-  label_PC1 <- sprintf("PC1 [%.1f%%]", percent_variance[1])
-  label_PC2 <- sprintf("PC2 [%.1f%%]", percent_variance[2])
-  
-  # Retrieving pcoa vectors
-  vectors_df <- pcoa$vectors %>%
-                   as.data.frame() %>%
-                   rownames_to_column("samples")
-  # Creating a dataframe for plotting
-  plot_df <- sample_data(ps) %>%
-               as.matrix() %>%
-               as.data.frame() %>%
-               rownames_to_column("samples") %>% 
-               select(samples, !!groups_colname) %>% 
-               right_join(vectors_df, join_by("samples"))
-  # Plot pcoa
-  p <- ggplot(plot_df, aes(x=Axis.1, y=Axis.2, 
-                           color=!!sym(groups_colname), 
-                           label=samples)) +
-    geom_point(size=1)
-
-  # Add text
-  if(addtext){
-    p <- p + geom_text(show.legend = FALSE,
-                       hjust = 0.3, vjust = -0.4, size = 4)
-  }
-  
- # Add annotations to pcoa plot 
- p <-  p +  labs(x = label_PC1, y = label_PC2, color = legend_title) +
-    coord_fixed(sqrt(eigen_vals[2]/eigen_vals[1])) + 
-    scale_color_manual(values = group_colors) +
-    theme_bw() + theme(text = element_text(size = 15, face="bold"),
-                       legend.direction = "vertical",
-                       legend.justification = "center",
-                       legend.title = element_text(hjust=0.1)) +
-    annotate("text", x = Inf, y = -Inf, 
-             label = paste("R2:", toString(round(r2_value, 3))),
-             hjust = 1.1, vjust = -2, size = 4)+
-    annotate("text", x = Inf, y = -Inf, 
-             label = paste("Pr(>F)", toString(round(prf_value,4))),
-             hjust = 1.1, vjust = -0.5, size = 4) + ggtitle("PCoA")
-  
-  
-  return(p)
-}
-
 # A function to filter out rare features from a feature table depending
 # on the supplied cut off.
 remove_rare_features <- function(feature_table, cut_off_percent=3/4){
@@ -876,7 +720,7 @@ process_taxonomy <- function(taxonomy, prefix='\\w__') {
   }
   # Replace _ with space
   taxonomy <- apply(X = taxonomy,MARGIN = 2,
-                    FUN =  gsub,pattern = "_",replacement = " ") %>% 
+                    FUN = gsub,pattern = "_",replacement = " ") %>% 
     as.data.frame(stringAsfactor=F)
   return(taxonomy)
 }
@@ -936,77 +780,6 @@ make_feature_table <- function(count_matrix,taxonomy,
 }
 
 
-# Function to group rare taxa or return a table with the rare taxa
-group_low_abund_taxa <- function(abund_table, threshold=0.05,
-                                 rare_taxa=FALSE) {
-  
-  # Intialize an empty vector that will contain the indices for the
-  # low abundance columns/ taxa to group
-  taxa_to_group <- c()
-  #intialize the index variable of species with low abundance (taxa/columns)
-  index <- 1
-  
-  # Loop over every column or taxa then check to see if the max abundance is less than the set threshold
-  # if true, save the index in the taxa_to_group vector variable
-  while(TRUE){
-    
-    for (column in seq_along(abund_table)){
-      if(max(abund_table[,column]) < threshold ){
-        taxa_to_group[index] <- column
-        index = index + 1
-      }
-    }
-    if(is.null(taxa_to_group)){
-      threshold <- readline("please provide a higher threshold for grouping rare taxa, only numbers are allowed   ")
-      threshold <- as.numeric(threshold)
-    }else{
-      break
-    }
-    
-  }
-  
-  
-  if(rare_taxa){
-    abund_table <- abund_table[,taxa_to_group,drop=FALSE]
-  }else{
-    #remove the low abundant taxa or columns
-    abundant_taxa <-abund_table[,-(taxa_to_group), drop=FALSE]
-    #get the rare taxa
-    # rare_taxa <-abund_table[,taxa_to_group]
-    rare_taxa <- subset(x = abund_table, select = taxa_to_group)
-    #get the proportion of each sample that makes up the rare taxa
-    rare <- rowSums(rare_taxa)
-    #bind the abundant taxa to the rae taxa
-    abund_table <- cbind(abundant_taxa,rare)
-    #rename the columns i.e the taxa
-    colnames(abund_table) <- c(colnames(abundant_taxa),"Rare")
-  }
-  
-  return(abund_table)
-}
-
-
-# Function to collapse samples in a feature table with a defined function(fun)
-# based on a group in metadata 
-collapse_samples <- function(taxon_table, metadata, group, fun=sum, convertToRelativeAbundance=FALSE){
-
-  common.ids <- intersect(rownames(taxon_table),rownames(metadata))
-  metadata <- droplevels(metadata[common.ids,,drop=FALSE])
-  taxon_table <- taxon_table[common.ids,,drop=FALSE]
-  taxon_table <- cbind(subset(x = metadata, select=group),taxon_table)
-  
-  taxon_table <- aggregate(reformulate(termlabels = group, response = '.'),
-                           data = taxon_table, FUN = fun)
-  rownames(taxon_table) <- taxon_table[,1]
-  taxon_table <- taxon_table[,-1]
-  if(convertToRelativeAbundance){
-    taxon_table <- t(apply(X = taxon_table, MARGIN = 1, FUN = function(x) x/sum(x)))
-  }
-  
-  final <- list(taxon_table,metadata)
-  names(final) <- c("taxon_table","metadata")
-  return(final)
-}
 
 taxize_options(ncbi_sleep = 0.8)
 # A function to retrieve NCBI taxonomy id for a given taxonomy name
@@ -1020,7 +793,7 @@ get_ncbi_ids <- function(taxonomy, target_region){
     search_string <- "bacteria"
   }
   
-  uid <- get_uid(taxonomy, division_filter = search_string)  
+  uid <- get_uid(taxonomy, division_filter = search_string)
   tax_ids <- uid[1:length(uid)]
   return(tax_ids)
   
@@ -1050,7 +823,7 @@ ancombc2 <- function(data, ...) {
     ANCOMBC::ancombc2(data = data, ...),
     error = function(cnd) {
             
-      res  <- find_bad_taxa(cnd)
+      res <- find_bad_taxa(cnd)
       if( is.data.frame(res[[1]]) ){
         # Returns a manually created empty data.frame
         return(res)
@@ -1070,11 +843,6 @@ ancombc2 <- function(data, ...) {
             
     }
   )
-}
-
-# Geometric mean function used when running DESeq2
-gm_mean <- function(x, na.rm=TRUE) {
-  exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
 }
 
 ```
@@ -1107,7 +875,7 @@ publication_format <- theme_bw() +
         legend.position = 'right', 
         legend.title = element_text(size = 15,face ='bold', color = 'black'),
         legend.text = element_text(size = 14,face ='bold', color = 'black'),
-        strip.text =  element_text(size = 14,face ='bold', color = 'black'))
+        strip.text = element_text(size = 14,face ='bold', color = 'black'))
 ```
 
 **Function Parameter Definitions:**
@@ -1118,29 +886,12 @@ publication_format <- theme_bw() +
   - `min_size = 3` - minimum text size for plotting
 - `expandy()`
   - `vec=` - a numeric vector containing y-values
-- `transform_phyloseq()`
-  - `feature_table=` - dataframe containing feature / ASV counts with samples as columns and features as rows
-  - `metadata=` - dataframe containing sample metadata with samples as row names and sample info as columns
-  - `method=` - either "rarefy" or "vst" to specify rarefaction or variance stabilizing transformation, respectively
-  - `rarefaction_depth=500` - sample rarefaction to even depth when the Bray-Curtis distance method is used
-- `run_stats()`
-  - `dis_obj=` - a distance object holding the calculated distance (Euclidean, Bray-Curtis etc.) between samples
-  - `metadata=` - dataframe containing sample metadata with samples as row names and sample info as columns
-  - `groups_colname=` - name of the column in the metadata dataframe to use for specifying sample groups
-- `plot_pcoa()`
-  - `ps=` - phyloseq object contructed from feature, taxonmy, and metadata tables
-  - `stats_res=` - named list generated after running the `run_stats()` function; the list should contain variance and adonis tests dataframes
-  - `distance_method=` - method used to calculate the distance between samples; values can be "euclidean" (Euclidean distance) or "bray" (Bray-Curtis distance)
-  - `groups_colname=` - name of the column in the metadata dataframe to use for specifying sample groups
-  - `group_colors=` - named character vector of colors for each group in `groups_colname`
-  - `legend_title=` - legend title to use for plotting
-  - `addtext=FALSE` - boolean to specify if sample labels should be added to the pcoa plot; default=FALSE
 - `remove_rare_features()`
   - `feature_table=` - a feature table matrix with samples as columns and features as rows
   - `cut_off_percent=3/4` - the cut-off fraction or decimal between 0.001 to 1 of the total number of samples to determine the most abundant features; by default it removes features that are not present in 3/4 of the total number of samples
 - `process_taxonomy()`
   - `taxonomy=` - the taxonomy dataframe to be processed
-  - `prefix='\\w__'` - a regular expression specifying the characters to remove from taxon names; use '\\w__'  for greengenes and 'D_\\d__' for SILVA
+  - `prefix='\\w__'` - a regular expression specifying the characters to remove from taxon names; use '\\w__' for greengenes and 'D_\\d__' for SILVA
 - `format_taxonomy_table()`
   - `taxonomy=` - the taxonomy dataframe to be formatted
   - `stringToReplace="Other"` - specifies the string to replace, "Other" is used by default
@@ -1154,16 +905,6 @@ publication_format <- theme_bw() +
   - `taxonomy=` - a taxonomy matrix with taxonomy ranks as column names
   - `taxon_level=` - a string defining the taxon levels, i.e. domain to species
   - `samples2keep=NULL` - specifies the samples to evaluate; the default value of NULL instructs the function to only retain taxa found in at least one sample
-- `group_low_abund_taxa()`
-  - `abund_table=` - relative abundance matrix with taxa as columns and samples as rows
-  - `threshold=0.05` - specifies the threshold for filtering out rare taxa; default value is 0.05
-  - `rare_taxa=FALSE` - boolean specifying if only rare taxa should be returned, if set to TRUE then a table with only the rare taxa will be returned; default is FALSE
-- `collapse_samples()`
-  - `taxon_table=` - a matrix count table with samples as rows and features (e.g. ASVs or OTUs) as columns
-  - `metadata=` - dataframe containing sample metadata with samples as row names and sample info as columns
-  - `group=` - specifies the column in the `metadata` dataframe containing the sample groups that will be used to collapse the samples
-  - `fun=sum` - specifies the function to apply when collapsing the samples; sum is used by default
-  - `convertToRelativeAbundance=FALSE` - boolean specifying if the value in the taxon table should be converted to per sample relative abundance values; default is FALSE
 - `get_ncbi_ids()`
   - `taxonomy=` - string specifying the taxonomy name that will be used to search for the respective NCBI ID
   - `target_region=` - the amplicon target region to analyze; options are "16S", "18S", or "ITS"
@@ -1173,7 +914,7 @@ publication_format <- theme_bw() +
   - `data=` - specifies the treeSummarizedExperiment containing the feature, taxonomy and metdata to be analyzed using ancombc2
 - `gm_mean()`
   - `x=` - a numeric vector specifying the values to calculate the geometirc mean on
-  - `na.rm=TRUE` - boolean specifying if NAs should be removed prior to calculating the geometirc mean; default is TRUE  
+  - `na.rm=TRUE` - boolean specifying if NAs should be removed prior to calculating the geometirc mean; default is TRUE
 
 **Input Data:** 
 
@@ -1183,14 +924,14 @@ publication_format <- theme_bw() +
 
 * `custom_palette` (variable containing a character vector defining a custom color palette for coloring plots)
 * `publication_format` (variable specifying the custom ggplot theme for plotting)
-* *several functions, indicated in the Function Parameter Definitions above, that will be called in the following pipeline steps*  
+* *several functions, indicated in the Function Parameter Definitions above, that will be called in the following pipeline steps*
 
 <br>
 
 #### 6b.iv. Read-in Input Tables
 
 ```R
-custom_palette  <- {COLOR_VECTOR}
+custom_palette <- {COLOR_VECTOR}
 groups_colname <- "groups"
 sample_colname <- "Sample Name"
 metadata_file <- file.path("{OSD-Accession-ID}_AmpSeq_v{version}_runsheet.csv")
@@ -1247,14 +988,14 @@ feature_table <- read.table(file = features_file, header = TRUE,
                             row.names = 1, sep = "\t")
 
 # ---- Import Taxonomy table ---- #
-taxonomy_table <-  read.table(file = taxonomy_file, header = TRUE,
+taxonomy_table <- read.table(file = taxonomy_file, header = TRUE,
                               row.names = 1, sep = "\t")
 ```
 
 **Parameter Definitions:**
 
-*	`groups_colname` - variable containing the name of the column in the metadata table containing the group names
-* `sample_colname` - variable contianing the name of the column in the metadata table containing the sample names
+*	`groups_colname` - specifies the name of the column in the metadata table containing the group names
+* `sample_colname` - specifies the name of the column in the metadata table containing the sample names
 
 **Input Data:**
 
@@ -1329,7 +1070,7 @@ taxonomy_table <- taxonomy_table[!(rownames(taxonomy_table) %in% asvs2drop),]
 
 # Clean taxonomy names
 feature_names <- rownames(taxonomy_table)
-taxonomy_table  <- process_taxonomy(taxonomy_table)
+taxonomy_table <- process_taxonomy(taxonomy_table)
 rownames(taxonomy_table) <- feature_names
 taxonomy_table <- fix_names(taxonomy_table, "Other", ";_")
 
@@ -1368,6 +1109,7 @@ taxonomy_table <- taxonomy_table[common_ids,]
 * `taxonomy_table` (variable containing a feature taxonomy dataframe containing ASV taxonomy assignments, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
 
 **Output Data:**
+
 * `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering)
 * `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering)
 
@@ -1383,20 +1125,21 @@ sequences sampled, offering a perspective on the saturation and completeness of 
 estimates and Shannon diversity indices are employed to quantify the richness (total number of unique sequences) and 
 diversity (combination of richness and evenness) within these samples, respectively.
 
+### 7a. Rarefaction Curves
 ```R
 # Create output directory if it doesn't already exist
 alpha_diversity_out_dir <- "alpha_diversity/"
 if(!dir.exists(alpha_diversity_out_dir)) dir.create(alpha_diversity_out_dir)
-metadata  <-  {DATAFRAME}
-sample_info_tab <-  {DATAFRAME} 
+metadata <- {DATAFRAME}
+sample_info_tab <- {DATAFRAME} 
 feature_table <- {DATAFRAME}
 taxonomy_table <- {DATAFRAME}
-group_colors  <- {NAMED_VECTOR} 
-groups_colname  <- "groups"
+group_colors <- {NAMED_VECTOR} 
+groups_colname <- "groups"
 rarefaction_depth <- 500
-legend_title  <- "Groups"
-assay_suffix  <- "_GLAmpSeq"
-output_prefix  <- ""
+legend_title <- "Groups"
+assay_suffix <- "_GLAmpSeq"
+output_prefix <- ""
 
 # Create phyloseq object
 ASV_physeq <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
@@ -1429,7 +1172,7 @@ ps.rarefied <- rarefy_even_depth(physeq = ASV_physeq,
 # ------------------- Rarefaction curve
 # Calculate a rough estimate of the step sample step size for plotting.
 # This is meant to keep plotting time constant regardless of sample depth
-step <-  (50*depth)/1000
+step <- (50*depth)/1000
 
 p <- rarecurve(t(otu_table(ps.rarefied)) %>% as.data.frame(),
                step = step,
@@ -1438,7 +1181,7 @@ p <- rarecurve(t(otu_table(ps.rarefied)) %>% as.data.frame(),
                label = FALSE, tidy = TRUE)
 
 
-sample_info_tab_names <-  sample_info_tab %>% rownames_to_column("Site")
+sample_info_tab_names <- sample_info_tab %>% rownames_to_column("Site")
 
 p <- p %>% left_join(sample_info_tab_names, by = "Site")
 
@@ -1463,6 +1206,37 @@ rareplot <- ggplot(p, aes(x = Sample, y = Species,
 
 ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}rarefaction_curves{assay_suffix}.png"),
        plot=rareplot, width = 14, height = 8.33, dpi = 300)
+```
+
+**Parameter Definitions:**
+
+* `rarefaction_depth` – specifies the minimum rarefaction depth for alpha diversity estimation
+* `groups_colname`    - specifies the name of the column in the metadata table containing the group names
+* `legend_title`      - specifies the legend title for plotting
+* `assay_suffix`      - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
+* `output_prefix`     - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
+
+**Input Data:**
+
+* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
+* `sample_info_tab` (variable containing a subset of the metadata dataframe with samples as row names and group names and group colors as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
+* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
+* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
+* `group_levels` (variable containing a character vector of unique group names, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
+* `group_colors` (variable containing a named character vector of colors for each group, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
+
+**Output Data:**
+
+* `ps.rarefied` (variable containing a phyloseq object of the sample features (i.e. ASV) with feature counts derived from the `feature_table`, resampled such that all samples have the same library size)
+* **alpha_diversity/<output_prefix>rarefaction_curves_GLAmpSeq.png** (plot containing the rarefaction curves for each sample)
+
+<br>
+
+### 7b. Richness and Diversity Estimates
+```R
+groups_colname <- "groups"
+assay_suffix <- "_GLAmpSeq"
+output_prefix <- ""
 
 # ------------------  Richness and diversity estimates  ------------------#
 
@@ -1475,7 +1249,7 @@ diversity.df <- estimate_richness(ps.rarefied,
                rownames_to_column("samples")
                
 
-merged_table  <- metadata %>%
+merged_table <- metadata %>%
   rownames_to_column("samples") %>%
   inner_join(diversity.df)
 
@@ -1485,7 +1259,7 @@ diversity_stats <- map_dfr(.x = diversity_metrics, function(metric){
   
   df <- res$res %>%
     separate(col = Comparison, into = c("group1", "group2"), sep = " - ") %>% 
-    mutate(Metric=metric)  %>% 
+    mutate(Metric=metric) %>% 
     rename(p=P.unadj, p.adj=P.adj) %>% 
     mutate(p.format=round(p,digits = 2))
   
@@ -1500,7 +1274,7 @@ diversity_stats <- map_dfr(.x = diversity_metrics, function(metric){
 write_csv(x = diversity_stats, 
             file = glue("{alpha_diversity_out_dir}/{output_prefix}statistics_table{assay_suffix}.csv"))
 
-# Get diffrent letters indicating statistically significant group comparisons for every diversity metric
+# Get different letters indicating statistically significant group comparisons for every diversity metric
 comp_letters <- data.frame(group = group_levels)
 colnames(comp_letters) <- groups_colname
 
@@ -1522,7 +1296,7 @@ walk(.x = diversity_metrics, function(metric=.x){
 diversity_table <- metadata %>%
   rownames_to_column("samples") %>%
   inner_join(diversity.df) %>%
-  group_by(!!sym(groups_colname))  %>% 
+  group_by(!!sym(groups_colname)) %>% 
   summarise(N=n(), across(Observed:Simpson,
                    .fns=list(mean=mean, se=se),
                    .names = "{.col}_{.fn}")) %>% 
@@ -1538,7 +1312,33 @@ diversity_table <- metadata %>%
 # Write diversity summary table to file 
 write_csv(x = diversity_table, 
             file = glue("{alpha_diversity_out_dir}/{output_prefix}summary_table{assay_suffix}.csv"))
+```
 
+**Parameter Definitions:**
+
+* `groups_colname`    - specifies the name of the column in the metadata table containing the group names
+* `assay_suffix`      - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
+* `output_prefix`     - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
+
+**Input Data:**
+
+* `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
+* `ps.rarefied` (variable containing a phyloseq object of the sample features (i.e. ASV) with feature counts, resampled such that all samples have the same library size, output from [7a. Rarefaction Curves](#7a-rarefaction-curves))
+* `group_levels` (variable containing a character vector of unique group names, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
+
+**Output Data:**
+
+* **alpha_diversity/<output_prefix>statistics_table_GLAmpSeq.csv** (table containing the z-score, p-value, and adjusted p-value statistics for each pairwise comparison for all metrics evaluated, Observed, Chao1, Shannon, and Simpson)
+* **alpha_diversity/<output_prefix>summary_table_GLAmpSeq.csv** (table containing the sample number and mean +/- standard deviation of each metric (Observed, Chao1, Shannon, and Simpson) for each group)
+
+<br>
+
+### 7c. Plot Richness and Diversity Estimates
+
+```R
+legend_title <- "Groups"
+assay_suffix <- "_GLAmpSeq"
+output_prefix <- ""
 
 # ------------------ Make richness by sample dot plots ---------------------- #
 
@@ -1575,7 +1375,7 @@ richness_by_sample <- ggplot(richness_by_sample$data %>%
                                vjust = 0.5,  # Vertically center the text
                                hjust = 1),
     axis.ticks.length=unit(-0.15, "cm"),
-    strip.text =  element_text(size = 14,face ='bold')
+    strip.text = element_text(size = 14,face ='bold')
   )
 
 # Save sample plot
@@ -1590,7 +1390,7 @@ richness_by_group <- plot_richness(ps.rarefied, x = groups_colname,
 
 p <- map(.x = metrics2plot, .f = function(metric){
     
-  p <-  ggplot(richness_by_group$data %>%  filter(variable == metric), 
+  p <- ggplot(richness_by_group$data %>% filter(variable == metric), 
               aes(x=!!sym(groups_colname), y=value, fill=!!sym(groups_colname)) 
               ) +
     geom_point() +
@@ -1607,7 +1407,7 @@ p <- map(.x = metrics2plot, .f = function(metric){
       legend.title = element_text(face = 'bold', size = 15),
       axis.text.x = element_blank(),
       axis.ticks.length=unit(-0.15, "cm"),
-      strip.text =  element_text(size = 14,face ='bold')
+      strip.text = element_text(size = 14,face ='bold')
     ) 
   
   
@@ -1634,7 +1434,7 @@ p <- map(.x = metrics2plot, .f = function(metric){
                 size = text_size)
 })
 
-richness_by_group <- wrap_plots(p, ncol = 2, guides =  'collect')  + 
+richness_by_group <- wrap_plots(p, ncol = 2, guides = 'collect') + 
                      plot_annotation(caption = "If letters are shared between two groups, then they are not significantly different (q-value > 0.05)",
                                      theme = theme(plot.caption = element_text(face = 'bold.italic')) 
                                      )
@@ -1647,27 +1447,25 @@ ggsave(filename = glue("{output_prefix}richness_and_diversity_estimates_by_group
        path = alpha_diversity_out_dir)
 
 ```
+
 **Parameter Definitions:**
 
-* `rarefaction_depth` – specifies the minimum rarefaction depth for alpha diversity estimation
-* `groups_colname`    - specifies the name of the column in the metadata table containing the group names to be analyzed
+* `groups_colname`    - specifies the name of the column in the metadata table containing the group names
 * `legend_title`      - specifies the legend title for plotting
 * `assay_suffix`      - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
 * `output_prefix`     - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
 
 **Input Data:**
+
 * `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
 * `sample_info_tab` (variable containing a subset of the metadata dataframe with samples as row names and group names and group colors as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
-* `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
-* `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
+* `ps.rarefied` (variable containing a phyloseq object of the sample features (i.e. ASV) with feature counts, resampled such that all samples have the same library size, output from [7a. Rarefaction Curves](#7a-rarefaction-curves))
 * `group_levels` (variable containing a character vector of unique group names, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
 * `group_colors` (variable containing a named character vector of colors for each group, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
 
+
 **Output Data:**
 
-* **alpha_diversity/<output_prefix>rarefaction_curves_GLAmpSeq.png** (plot containing the rarefaction curves for each sample)
-* **alpha_diversity/<output_prefix>statistics_table_GLAmpSeq.csv** (table containing the z-score, p-value, and adjusted p-value statistics for each pairwise comparison for all metrics evaluated, Observed, Chao1, Shannon, and Simpson)
-* **alpha_diversity/<output_prefix>summary_table_GLAmpSeq.csv** (table containing the sample number and mean +/- standard deviation of each metric (Observed, Chao1, Shannon, and Simpson) for each group)
 * **alpha_diversity/<output_prefix>richness_and_diversity_estimates_by_sample_GLAmpSeq.png** (dot plots containing richness and diversity estimates for each sample)
 * **alpha_diversity/<output_prefix>richness_and_diversity_estimates_by_group_GLAmpSeq.png** (box plots containing richness and diversity estimates for each group)
 
@@ -1684,16 +1482,81 @@ Two methods are supported for generating heirarchical clustering plots from norm
 ```R
 beta_diversity_out_dir <- "beta_diversity/"
 if(!dir.exists(beta_diversity_out_dir)) dir.create(beta_diversity_out_dir)
-metadata  <-  {DATAFRAME}  
+metadata <- {DATAFRAME}
 feature_table <- {DATAFRAME} 
-group_colors  <- {NAMED_VECTOR} 
-groups_colname  <- "groups"
+group_colors <- {NAMED_VECTOR} 
+groups_colname <- "groups"
 rarefaction_depth <- 500
-legend_title  <- "Groups"
-assay_suffix  <- "_GLAmpSeq"
-output_prefix  <- ""
+legend_title <- "Groups"
+assay_suffix <- "_GLAmpSeq"
+output_prefix <- ""
 distance_methods <- c("euclidean", "bray")
 normalization_methods <- c("vst", "rarefy")
+
+# A function to create a phyloseq object with the appropriate
+# sample count transformation depending on the supplied transformation method,
+# either 'rarefy' or 'vst'
+transform_phyloseq <- function( feature_table, metadata, method, rarefaction_depth=500){
+
+  # Rarefaction
+  if(method == 'rarefy'){
+    # Create phyloseq object
+    ASV_physeq <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
+                           sample_data(metadata))
+
+    # Get the count for every sample sorted in ascending order
+    seq_per_sample <- colSums(feature_table) %>% sort()
+    # Minimum sequences/count value
+    depth <- min(seq_per_sample)
+
+    # Loop through the sequences per sample and return the count
+    # nearest to the minimum required rarefaction depth
+    for (count in seq_per_sample) {
+      # Get the count equal to rarefaction_depth or nearest to it
+      if(count >= rarefaction_depth) {
+        depth <- count
+        break
+      }
+    }
+
+    #----- Rarefy sample counts to even depth per sample
+    ps <- rarefy_even_depth(physeq = ASV_physeq,
+                            sample.size = depth,
+                            rngseed = 1,
+                            replace = FALSE,
+                            verbose = FALSE)
+
+  # Variance Stabilizing Transformation
+  }else if(method == "vst"){
+
+    # Using deseq
+    # Keep only ASVs with at least 1 count
+    feature_table <- feature_table[rowSums(feature_table) > 0, ]
+    # Add +1 pseudocount for VST for vst transformation
+    feature_table <- feature_table + 1
+
+    # Make the order of samples in metadata match the order in feature table
+    metadata <- metadata[colnames(feature_table),]
+
+    # Create VST normalized counts matrix
+    # ~1 means no design
+    deseq_counts <- DESeqDataSetFromMatrix(countData = feature_table,
+                                           colData = metadata,
+                                           design = ~1)
+    deseq_counts_vst <- varianceStabilizingTransformation(deseq_counts)
+    vst_trans_count_tab <- assay(deseq_counts_vst)
+
+    # Making a phyloseq object with our transformed table
+    vst_count_phy <- otu_table(object = vst_trans_count_tab, taxa_are_rows = TRUE)
+    sample_info_tab_phy <- sample_data(metadata)
+    ps <- phyloseq(vst_count_phy, sample_info_tab_phy)
+  }else{
+
+    stop("Please supply a valid normalization method, either 'rarefy' or 'vst' ")
+  }
+
+  return(ps)
+}
 
 # -----------  A function  Hierarchical Clustering and dendogram plotting
 make_dendogram <- function(dist_obj, metadata, groups_colname,
@@ -1735,6 +1598,92 @@ make_dendogram <- function(dist_obj, metadata, groups_colname,
   return(dendogram)
   
 }
+
+# A function to run variance test and adonis test
+run_stats <- function(dist_obj, metadata, groups_colname){
+
+  # Retrieve sample names from the dist object
+  samples <- attr(dist_obj, "Label")
+  # subset metadata to contain ony samples in the dist_obj
+  metadata <- metadata[samples,]
+
+  # Run variance test and present the result in a nicely formatted table / dataframe
+  variance_test <- betadisper(d = dist_obj,
+                              group = metadata[[groups_colname]]) %>%
+    anova() %>% # MAke results anova-like
+    broom::tidy() %>%  # make the table 'tidy'
+    mutate(across(where(is.numeric), ~round(.x, digits = 2))) # round-up numeric columns
+
+  # Run Adonis test
+  adonis_res <- adonis2(formula = dist_obj ~ metadata[[groups_colname]])
+
+  adonis_test <- adonis_res %>%
+    broom::tidy() %>% # Make tidy table
+    mutate(across(where(is.numeric), ~round(.x, digits = 2))) # round-up numeric columns
+
+  # Return a named list with the variance and adonis test results
+  return(list(variance = variance_test, adonis = adonis_test))
+}
+
+# Make PCoA
+plot_pcoa <- function(ps, stats_res, distance_method,
+                      groups_colname, group_colors, legend_title,
+                      addtext=FALSE) {
+
+  # Generating a PCoA with phyloseq
+  pcoa <- ordinate(physeq = ps, method = "PCoA", distance = distance_method)
+  eigen_vals <- pcoa$values$Eigenvalues
+
+  # Calculate the percentage of variance
+  percent_variance <- eigen_vals / sum(eigen_vals) * 100
+
+  # Retrieving plot labels
+  r2_value <- stats_res$adonis[["R2"]][1]
+  prf_value <- stats_res$adonis[["p.value"]][1]
+  label_PC1 <- sprintf("PC1 [%.1f%%]", percent_variance[1])
+  label_PC2 <- sprintf("PC2 [%.1f%%]", percent_variance[2])
+
+  # Retrieving pcoa vectors
+  vectors_df <- pcoa$vectors %>%
+                   as.data.frame() %>%
+                   rownames_to_column("samples")
+  # Creating a dataframe for plotting
+  plot_df <- sample_data(ps) %>%
+               as.matrix() %>%
+               as.data.frame() %>%
+               rownames_to_column("samples") %>%
+               select(samples, !!groups_colname) %>%
+               right_join(vectors_df, join_by("samples"))
+  # Plot pcoa
+  p <- ggplot(plot_df, aes(x=Axis.1, y=Axis.2,
+                           color=!!sym(groups_colname),
+                           label=samples)) +
+    geom_point(size=1)
+
+  # Add text
+  if(addtext){
+    p <- p + geom_text(show.legend = FALSE,
+                       hjust = 0.3, vjust = -0.4, size = 4)
+  }
+
+ # Add annotations to pcoa plot
+ p <-  p +  labs(x = label_PC1, y = label_PC2, color = legend_title) +
+    coord_fixed(sqrt(eigen_vals[2]/eigen_vals[1])) +
+    scale_color_manual(values = group_colors) +
+    theme_bw() + theme(text = element_text(size = 15, face="bold"),
+                       legend.direction = "vertical",
+                       legend.justification = "center",
+                       legend.title = element_text(hjust=0.1)) +
+    annotate("text", x = Inf, y = -Inf,
+             label = paste("R2:", toString(round(r2_value, 3))),
+             hjust = 1.1, vjust = -2, size = 4)+
+    annotate("text", x = Inf, y = -Inf,
+             label = paste("Pr(>F)", toString(round(prf_value,4))),
+             hjust = 1.1, vjust = -0.5, size = 4) + ggtitle("PCoA")
+
+  return(p)
+}
+
 
 options(warn=-1) # ignore warnings
 # Run the analysis
@@ -1790,10 +1739,11 @@ walk2(.x = normalization_methods, .y = distance_methods,
 
 })
 ```
+
 **Parameter Definitions:**
 
 * `rarefaction_depth`     – specifies the minimum rarefaction depth when using Bray-Curtis distance
-* `groups_colname`        - specifies the name of the column in the metadata table containing the group names to be analyzed
+* `groups_colname`        - specifies the name of the column in the metadata table containing the group names
 * `legend_title`          - specifies the legend title for plotting
 * `assay_suffix`          - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
 * `output_prefix`         - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
@@ -1801,6 +1751,7 @@ walk2(.x = normalization_methods, .y = distance_methods,
 * `distance_methods`      - specifies the method(s) to use to calculate the distance between samples; "vst" transformed data uses "euclidean" (Euclidean distance) and "rarefy" transformed data uses "bray" (Bray-Curtis distance)
 
 **Input Data:**
+
 * `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
 * `feature_table` (variable containing a sub-set of the samples feature dataframe (i.e. ASV) with feature counts that only includes features with assigned taxonomy after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
 * `group_colors` (variable containing a named character vector of colors for each group, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
@@ -1825,14 +1776,85 @@ Taxonomy summaries provide insights into the composition of microbial communitie
 ```R
 taxonomy_plots_out_dir <- "taxonomy_plots/"
 if(!dir.exists(taxonomy_plots_out_dir)) dir.create(taxonomy_plots_out_dir)
-metadata  <-  {DATAFRAME} 
+metadata <- {DATAFRAME} 
 feature_table <- {DATAFRAME}
 taxonomy_table <- {DATAFRAME}
-custom_palette  <- {COLOR_VECTOR}
+custom_palette <- {COLOR_VECTOR}
 publication_format <- {GGPLOT_THEME}
 groups_colname <- "groups"
-assay_suffix  <- "_GLAmpSeq"
-output_prefix  <- ""
+assay_suffix <- "_GLAmpSeq"
+output_prefix <- ""
+
+# ------------------------- Define Functions -------------------------- #
+# Function to group rare taxa or return a table with the rare taxa
+group_low_abund_taxa <- function(abund_table, threshold=0.05,
+                                 rare_taxa=FALSE) {
+
+  # Intialize an empty vector that will contain the indices for the
+  # low abundance columns/ taxa to group
+  taxa_to_group <- c()
+  #intialize the index variable of species with low abundance (taxa/columns)
+  index <- 1
+
+  # Loop over every column or taxa then check to see if the max abundance is less than the set threshold
+  # if true, save the index in the taxa_to_group vector variable
+  while(TRUE){
+
+    for (column in seq_along(abund_table)){
+      if(max(abund_table[, column]) < threshold ){
+        taxa_to_group[index] <- column
+        index = index + 1
+      }
+    }
+    if(is.null(taxa_to_group)){
+      threshold <- readline("please provide a higher threshold for grouping rare taxa, only numbers are allowed")
+      threshold <- as.numeric(threshold)
+    }else{
+      break
+    }
+
+  }
+
+  if(rare_taxa){
+    abund_table <- abund_table[, taxa_to_group, drop=FALSE]
+  }else{
+    #remove the low abundant taxa or columns
+    abundant_taxa <-abund_table[, -(taxa_to_group), drop=FALSE]
+    #get the rare taxa
+    # rare_taxa <-abund_table[, taxa_to_group]
+    rare_taxa <- subset(x = abund_table, select = taxa_to_group)
+    #get the proportion of each sample that makes up the rare taxa
+    rare <- rowSums(rare_taxa)
+    #bind the abundant taxa to the rae taxa
+    abund_table <- cbind(abundant_taxa, rare)
+    #rename the columns i.e the taxa
+    colnames(abund_table) <- c(colnames(abundant_taxa), "Rare")
+  }
+
+  return(abund_table)
+}
+
+# Function to collapse samples in a feature table with a defined function(fun)
+# based on a group in metadata 
+collapse_samples <- function(taxon_table, metadata, group, fun=sum, convertToRelativeAbundance=FALSE){
+
+  common.ids <- intersect(rownames(taxon_table), rownames(metadata))
+  metadata <- droplevels(metadata[common.ids, , drop=FALSE])
+  taxon_table <- taxon_table[common.ids, , drop=FALSE]
+  taxon_table <- cbind(subset(x = metadata, select=group), taxon_table)
+
+  taxon_table <- aggregate(reformulate(termlabels = group, response = '.'),
+                           data = taxon_table, FUN = fun)
+  rownames(taxon_table) <- taxon_table[, 1]
+  taxon_table <- taxon_table[,-1]
+  if(convertToRelativeAbundance){
+    taxon_table <- t(apply(X = taxon_table, MARGIN = 1, FUN = function(x) x/sum(x)))
+  }
+
+  final <- list(taxon_table,metadata)
+  names(final) <- c("taxon_table","metadata")
+  return(final)
+}
 
 
 # -------------------------Prepare feature tables -------------------------- #
@@ -1866,10 +1888,10 @@ relAbundace_tbs_rare_grouped <- map2(.x = taxon_levels[-1],
                                        taxon_table <- as.data.frame(taxon_table %>% t())
                                        if(group_rare && !(taxon_level %in% dont_group)){
                                          
-                                         taxon_table <- group_low_abund_taxa(taxon_table %>%  
+                                         taxon_table <- group_low_abund_taxa(taxon_table %>%
                                                                                as.data.frame(check.names=FALSE,
                                                                                              stringAsFactor=FALSE),
-                                                                             threshold =  thresholds[taxon_level])
+                                                                             threshold = thresholds[taxon_level])
                                          
                                        }
                                        taxon_table$samples <- rownames(taxon_table)
@@ -1885,8 +1907,8 @@ relAbundace_tbs_rare_grouped <- map2(.x = taxon_levels[-1],
 
 
 x_lab <- "Samples"/
-y_lab <- "Relative abundance (%)"  
-x <-  'samples'  
+y_lab <- "Relative abundance (%)"
+x <- 'samples'
 y <- "relativeAbundance"
 facet_by <- reformulate(groups_colname)
 number_of_samples <- length(samples_order)
@@ -1899,7 +1921,7 @@ walk2(.x = relAbundace_tbs_rare_grouped, .y = taxon_levels[-1],
                              df <- relAbundace_tb %>%
                                left_join(metadata %>% rownames_to_column("samples"))
                              
-                          p <- ggplot(data =  df, mapping = aes(x= !!sym(x), y=!!sym(y) )) +
+                          p <- ggplot(data = df, mapping = aes(x= !!sym(x), y=!!sym(y) )) +
                                geom_col(aes(fill = !!sym(taxon_level) )) + 
                                facet_wrap(facet_by, scales = "free", 
                                nrow = 1, labeller = label_wrap_gen()) +
@@ -1933,8 +1955,8 @@ group_relAbundace_tbs <- map2(.x = taxon_levels[-1], .y = taxon_tables[-1],
                                        
                                        taxon_table <- as.data.frame(taxon_table %>% t()) 
                                        taxon_table <- (collapse_samples(taxon_table = taxon_table,
-                                                                        metadata = metadata, group = groups_colname, 
-                                                                        convertToRelativeAbundance = TRUE)$taxon_table * 100 )  %>%  
+                                                                        metadata = metadata, group = groups_colname,
+                                                                        convertToRelativeAbundance = TRUE)$taxon_table * 100 ) %>%
                                          as.data.frame(check.names=FALSE)
                                        
                                        if(ncol(taxon_table) > maximum_number_of_taxa){
@@ -1942,10 +1964,10 @@ group_relAbundace_tbs <- map2(.x = taxon_levels[-1], .y = taxon_tables[-1],
                                        }
                                        
                                        if(group_rare){
-                                         taxon_table <- group_low_abund_taxa(taxon_table %>%  
+                                         taxon_table <- group_low_abund_taxa(taxon_table %>%
                                                                                as.data.frame(check.names=FALSE,
                                                                                              stringAsFactor=FALSE),
-                                                                             threshold =  thresholds[taxon_level])
+                                                                             threshold = thresholds[taxon_level])
                                          group_rare <- FALSE
                                        }
                                        
@@ -1954,7 +1976,7 @@ group_relAbundace_tbs <- map2(.x = taxon_levels[-1], .y = taxon_tables[-1],
                                        
                                        # Change from wide to long format
                                        taxon_table <- taxon_table %>% 
-                                         pivot_longer(cols =  -!!sym(groups_colname),
+                                         pivot_longer(cols = -!!sym(groups_colname),
                                                       names_to = taxon_level,
                                                       values_to = "relativeAbundance")
                               
@@ -1964,7 +1986,7 @@ group_relAbundace_tbs <- map2(.x = taxon_levels[-1], .y = taxon_tables[-1],
 
 
 # Make bar plots
-y_lab <- "Relative abundance (%)"  
+y_lab <- "Relative abundance (%)"
 y <- "relativeAbundance"
 number_of_groups <- length(group_levels)
 plot_width <- 2.5 * number_of_groups
@@ -1975,7 +1997,7 @@ walk2(.x = group_relAbundace_tbs, .y = taxon_levels[-1],
                                            mutate(X = str_wrap(!!sym(groups_colname),
                                                              width = 10) # wrap long group names
                                                   ), 
-                                        mapping = aes(x = X , y = !!sym(y)   )) +
+                                        mapping = aes(x = X , y = !!sym(y))) +
                                geom_col(aes(fill = !!sym(taxon_level))) + 
                                publication_format +
                                theme(axis.text.x=element_text(
@@ -1988,11 +2010,12 @@ walk2(.x = group_relAbundace_tbs, .y = taxon_levels[-1],
                                     plot=p, width = plot_width, height = 10, dpi = 300)
                            })
 ```
+
 **Parameter Definitions:**
 
-* `groups_colname`     - specifies the name of the column in the metadata table containing the group names to be analyzed
-* `assay_suffix`          - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
-* `output_prefix`         - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
+* `groups_colname`     - specifies the name of the column in the metadata table containing the group names
+* `assay_suffix`       - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
+* `output_prefix`      - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
   
 **Input Data:**
 
@@ -2001,7 +2024,6 @@ walk2(.x = group_relAbundace_tbs, .y = taxon_levels[-1],
 * `taxonomy_table` (variable containing a subset of the feature taxonomy dataframe containing ASV taxonomy assignments after filtering, output from [6b.v. Preprocessing](#6bv-preprocessing))
 * `publication_format` (variable specifying the custom ggplot theme for plotting, output from [6b.iii. Set Variables](#6biii-set-variables))
 * `custom_palette` (variable containing a character vector defining a custom color palette for coloring plots, output from [6b.iii. Set Variables](#6biii-set-variables))
-
 
 **Output Data:**
 
@@ -2028,15 +2050,15 @@ Differential abundance testing aims to uncover specific taxa that exhibit notabl
 # Create output directory if it doesn't already exist
 diff_abund_out_dir <- "differential_abundance/ancombc1/"
 if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir, recursive = TRUE)
-metadata  <-  {DATAFRAME}  
+metadata <- {DATAFRAME}
 feature_table <- {DATAFRAME}
 taxonomy_table <- {DATAFRAME}
 feature <- "ASV"
-groups_colname  <- "groups"
-samples_column  <- "Sample Name"
-assay_suffix  <- "_GLAmpSeq"
+groups_colname <- "groups"
+samples_column <- "Sample Name"
+assay_suffix <- "_GLAmpSeq"
 target_region <- "16S" # "16S", "18S" or "ITS"
-output_prefix  <- ""
+output_prefix <- ""
 prevalence_cutoff <- 0
 library_cutoff <- 0
 remove_struc_zero <- FALSE
@@ -2063,35 +2085,34 @@ names(comparisons) <- comparisons
 
 # Write out contrasts table
 write_csv(x = pairwise_comp_df,
-          file =  glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"),
+          file = glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"),
           col_names = FALSE)
 
 
-# Running ANCOMBC 1
+# ---------------------- Run ANCOMBC 1 ---------------------------------- #
 set.seed(123)
-final_results_bc1  <- map(pairwise_comp_df, function(col){
+final_results_bc1 <- map(pairwise_comp_df, function(col){
   
   group1 <- col[1]
   group2 <- col[2]
   
   # Subset the treeSummarizedExperiment object to contain only samples
   # in group1 and group2 
-  tse_sub <-  tse[, tse[[groups_colname]] %in% c(group1, group2)]
+  tse_sub <- tse[, tse[[groups_colname]] %in% c(group1, group2)]
   
   # Note that by default, levels of a categorical variable in R are sorted 
   # alphabetically. 
   # Changing the reference group by reordering the factor levels
   tse_sub[[groups_colname]] <- factor(tse_sub[[groups_colname]] , levels = c(group1, group2))
 
-  # Run ancombc
-  out <-  ancombc(data = tse_sub, assay_name = "counts", 
-                  tax_level = NULL, phyloseq = NULL, 
+  # Run ancombc (uses default parameters unless specified in pipeline Parameter Definitions)
+  out <- ancombc(data = tse_sub, 
                   formula = groups_colname, 
                   p_adj_method = "fdr", prv_cut = prevalence_cutoff,
                   lib_cut = library_cutoff, 
                   group = groups_colname , struc_zero = remove_struc_zero,
-                  neg_lb = TRUE, tol = 1e-5, 
-                  max_iter = 100, conserve = TRUE, alpha = 0.05, global = FALSE,
+                  neg_lb = TRUE, 
+                  conserve = TRUE,
                   n_cl = threads, verbose = TRUE)
   
   # ------ Set data frame names ---------# 
@@ -2154,7 +2175,7 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
   res <- lfc %>%
     left_join(se) %>%
     left_join(W) %>% 
-    left_join(p_val)  %>% 
+    left_join(p_val) %>% 
     left_join(q_val) %>% 
     left_join(diff_abn)
   
@@ -2162,7 +2183,6 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
   return(res)
   
 })
-
 
 
 # ------------ Create merged stats pairwise dataframe ----------------- #
@@ -2175,7 +2195,7 @@ merged_stats_df <- final_results_bc1[[names(final_results_bc1)[1]]] %>%
 walk(comparisons[names(final_results_bc1)], .f = function(comparison){
   
   # Get comparison specific statistics
-  df <-  final_results_bc1[[comparison]] %>% as.data.frame()
+  df <- final_results_bc1[[comparison]] %>% as.data.frame()
   
   # Merge it to the pre-existing statistics table
   merged_stats_df <<- merged_stats_df %>%
@@ -2203,7 +2223,7 @@ names(comp_names) <- comp_names
 volcano_plots <- map(comp_names, function(comparison){
   
   # Construct column names for columns to be selected
-  comp_col  <- c(
+  comp_col <- c(
     glue("lnFC_{comparison}"),
     glue("lnfcSE_{comparison}"),
     glue("Wstat_{comparison}"),
@@ -2226,8 +2246,8 @@ volcano_plots <- map(comp_names, function(comparison){
   # Retrieve a vector of the 2 groups being compared
   groups_vec <- comparison %>%
     str_replace_all("\\)v\\(", ").vs.(") %>%  # replace ')v(' with ').vs.(' to enhance accurate groups splitting 
-    str_remove_all("\\(|\\)") %>% # remove brackets
-    str_split(".vs.") %>% unlist # split groups to list then convert to a vector
+    str_remove_all("\\(|\\)") %>%  # remove brackets
+    str_split(".vs.") %>% unlist  # split groups to list then convert to a vector
   
   group1 <- groups_vec[1]
   group2 <- groups_vec[2]
@@ -2263,7 +2283,7 @@ volcano_plots <- map(comp_names, function(comparison){
     theme(legend.position="top", legend.key = element_rect(colour=NA),
           plot.caption = element_text(face = 'bold.italic'))
   # Save plot
-  file_name <-  glue("{output_prefix}{comparison %>% str_replace_all('[:space:]+','_')}_volcano.png")
+  file_name <- glue("{output_prefix}{comparison %>% str_replace_all('[:space:]+','_')}_volcano.png")
   ggsave(filename = file_name,
          plot = p, device = "png", width = plot_width_inches,
          height = plot_height_inches, units = "in",
@@ -2276,7 +2296,7 @@ volcano_plots <- map(comp_names, function(comparison){
 
 # ------------------- Add NCBI id to feature, i.e. ASV -------------- #
 # Get the best/least possible taxonomy name for the ASVs
-tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","")  %>%
+tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","") %>%
                        str_split(";"),
                      function(row) row[length(row)])
 
@@ -2357,7 +2377,7 @@ All_mean_sd <- normalized_table %>%
   select(!!feature, All.Mean, All.Stdev)
 
 # Merge the taxonomy table to the stats table
-merged_df <- df  %>%
+merged_df <- df %>%
   left_join(taxonomy_table %>%
               as.data.frame() %>%
               rownames_to_column(feature)) %>% 
@@ -2386,34 +2406,27 @@ write_csv(merged_df %>%
 **Parameter Definitions:**
 
 * `feature`            - specifies the feature type, i.e. ASV or OTU
-* `groups_colname`     - specifies the name of the column in the metadata table containing the group names to be analyzed
+* `groups_colname`     - specifies the name of the column in the metadata table containing the group names
 * `samples_column`     - specifies the name of the column in the metadata table containing the sample names
 * `assay_suffix`       - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
 * `output_prefix`      - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
 * `threads`            - specifies the number of cpus to use for parallel processing
-* `prevalence_cutoff` - a decimal between 0 and 1 specifying the proportion of samples required to contain a taxon in order to keep the taxon when `remove_rare` is set to TRUE; default is 0, i.e. do not exclude any taxon / feature
-* `library_cutoff`    - a numerical value specifying the number of total counts a sample must have across all features to be retained when `remove_rare` is set to TRUE; default is 0, i.e. no samples will be dropped
+* `prevalence_cutoff` - a decimal between 0 and 1 specifying the proportion of samples required to contain a taxon in order to keep the taxon when `remove_rare` (set in [Step 6b.iv. Preprocessing](#6bv-preprocessing)) is set to TRUE; default is 0, i.e. do not exclude any taxon / feature
+* `library_cutoff`    - a numerical value specifying the number of total counts a sample must have across all features to be retained when `remove_rare` (set in [Step 6b.iv. Preprocessing](#6bv-preprocessing)) is set to TRUE; default is 0, i.e. no samples will be dropped
 * `target_region`     - specifies the amplicon target region; options are either "16S", "18S", or "ITS"
 * `remove_struc_zero`  - specifies whether or not structural zeros (a.k.a ASVs with zero count in at least one group) should be removed; default is FALSE i.e. structural zeros won't be removed
-* `ancombc()`
-  * `data` - specifies the input data for the `ancombc()` function; TreeSummarizedExperiment or Phyloseq object
-  * `assay_name` - specifices the name of count table in the input data object; default is "counts" for TreeSummarizedExperiment object
-  * `tax_level` - specifies the taxonomy level to be aggregated and analyzed; NULL instructions `ancombc()` not to perform agglomeration and use the lowest taxonomic level of the input data for analysis
-  * `prv_cut` - fraction between 0 and 1 specifying the taxon prevalence cut-off; taxa with prevalences (the proporation of samples in which the taxon is present) less than this value will be excluded from the analysis
-  * `lib_cut` - a numerical threshold for filtering samples based on library sizes; samples with library sizes less than the specified value will not be included in the analysis
-  * `p_adj_method` - specifies the p-value adjustment method to use to correct for multiple comparisons testing
-  * `struc_zero` - logical value indicating whether or not group-wise structural zeros should be detected (a taxon is considered to contain structural zeros in a group if it is completely or nearly completely absent from that group)
-  * `neg_lb` - logical value specifying whether to classify a taxon as a structural zero using its asymptotic lower bound 
-  * `group` - specifies the name of the group variable in the metadata; enables global testing when more than 2 groups are present (set to NULL to disable global testing or if there are only 2 groups)
-  * `alpha` - specifies the significance level
-  * `n_cl` - specifies the number of processes to run in parallel 
-  * `global` - logical value indicating where or not to perform a global test to detect significant differences between 1 group and all other groups (ANOVA-like comparison) 
-  * `tol` - specifies the iteration convergence tolerance for the Expectation-Maximization (E-M) algorithm
-  * `max_iter` - specifies the maximum number of iterations for the E-M algorithm 
-  * `formula` - specifies the variable in the metadata to use for the fixed effects formula (e.g. group names)
-  * `conserve` - logical value indicating where or not a conservative variance estimator should be used for the test statistic (set to TRUE if your sample size is small and the number of expected differentially abundant taxa is large)
+* `ancombc()` - Compute differential abundance using the ANCOMBC algorithm (*uses default values unless defined below*)
+  * `data` - specifies the input data for the `ancombc()` function; TreeSummarizedExperiment object created from `feature_table` input data
+  * `prv_cut` - fraction between 0 and 1 specifying the taxon prevalence cut-off; taxa with prevalences (the proporation of samples in which the taxon is present) less than this value will be excluded from the analysis, set by `prevalence_cutoff` parameter above
+  * `lib_cut` - a numerical threshold for filtering samples based on library sizes; samples with library sizes less than the specified value will not be included in the analysis, set by `library_cutoff` parameter above
+  * `p_adj_method` - specifies the p-value adjustment method to use to correct for multiple comparisons testing, set to 'fdr' to standardize the multiple comparisons method across all three differential abundance methods.
+  * `struc_zero` - logical value indicating whether or not group-wise structural zeros should be detected (a taxon is considered to contain structural zeros in a group if it is completely or nearly completely absent from that group), set by `remove_struc_zero` parameter above. 
+  * `neg_lb` - logical value specifying whether to classify a taxon as a structural zero using its asymptotic lower bound, set to 'TRUE'. 
+  * `group` - specifies the name of the group variable in the metadata; enables global testing when more than 2 groups are present (set to NULL to disable global testing or if there are only 2 groups), set by `groups_colname` parameter above.
+  * `n_cl` - specifies the number of processes to run in parallel, set by `threads` parameter above
+  * `formula` - specifies the variable in the metadata to use for the fixed effects formula (e.g. group names), set by `groups_colname` parameter above.
+  * `conserve` - logical value indicating where or not a conservative variance estimator should be used for the test statistic (set to TRUE if your sample size is small and the number of expected differentially abundant taxa is large), set to 'TRUE' by default for OSDR data
   
-
 **Input Data:**
 
 * `metadata` (variable containing a metadata dataframe with samples as row names and sample info, including groups and group colors, as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
@@ -2452,17 +2465,17 @@ write_csv(merged_df %>%
 ```R
 diff_abund_out_dir <- "differential_abundance/ancombc2/"
 if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir, recursive = TRUE)
-metadata  <-  {DATAFRAME} 
+metadata <- {DATAFRAME} 
 feature_table <- {DATAFRAME}
 taxonomy_table <- {DATAFRAME}
 feature <- "ASV"
 target_region <- "16S" # "16S" , "18S" or "ITS"
-groups_colname  <- "groups"
-samples_column  <- "Sample Name"
-assay_suffix  <- "_GLAmpSeq"
-output_prefix  <- ""
-prevalence_cutoff <- 0
-library_cutoff <- 0
+groups_colname <- "groups"
+samples_column <- "Sample Name"
+assay_suffix <- "_GLAmpSeq"
+output_prefix <- ""
+prevalence_cutoff <- 0  # from [Step 6b.v. Preprocessing]
+library_cutoff <- 0  # from [Step 6b.v. Preprocessing]
 remove_struc_zero <- FALSE
 threads <- 5
 
@@ -2473,7 +2486,7 @@ ps <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
                tax_table(as.matrix(taxonomy_table)))
 
 # Convert phyloseq to tree summarized experiment object
-tse <-  mia::makeTreeSummarizedExperimentFromPhyloseq(ps)
+tse <- mia::makeTreeSummarizedExperimentFromPhyloseq(ps)
 
 # Getting the reference group and making sure that it is the reference 
 # used in the analysis
@@ -2481,29 +2494,27 @@ group_levels <- metadata[, groups_colname] %>% unique() %>% sort()
 ref_group <- group_levels[1] # the first group is used as the reference group by default
 tse[[groups_colname]] <- factor(tse[[groups_colname]] , levels = group_levels)
 
-# Running ANCOMBC2....
-# Run acombc2
 
-output <- ancombc2(data = tse, assay_name = "counts", tax_level = NULL,
-                   fix_formula = groups_colname, rand_formula = NULL,
-                   p_adj_method = "fdr", pseudo_sens = TRUE,
+# ---------------------- Run ANCOMBC2 ---------------------------------- #
+# Run ancombc2 (uses default parameters unless specified in pipeline Parameter Definitions)
+output <- ancombc2(data = tse,
+                   fix_formula = groups_colname,
+                   p_adj_method = "fdr",
                    prv_cut = prevalence_cutoff, 
                    lib_cut = library_cutoff, s0_perc = 0.05,
                    group = groups_colname, struc_zero = remove_struc_zero,
-                   neg_lb = FALSE, alpha = 0.05, n_cl = threads, verbose = TRUE,
-                   global = TRUE, pairwise = TRUE, 
-                   dunnet = TRUE, trend = FALSE,
+                   n_cl = threads, verbose = TRUE,
+                   pairwise = TRUE, 
                    iter_control = list(tol = 1e-5, max_iter = 20,
                                        verbose = FALSE),
-                   em_control = list(tol = 1e-5, max_iter = 100),
                    mdfdr_control = list(fwer_ctrl_method = "fdr", B = 100), 
-                   lme_control = NULL, trend_control = NULL)
+                   lme_control = NULL)
 
 
 
 # Create new column names - the original column names given by ANCOMBC are
 # difficult to understand
-new_colnames <- map_chr(output$res_pair  %>% colnames, 
+new_colnames <- map_chr(output$res_pair %>% colnames, 
                         function(colname) {
                           # Columns comparing a group to the reference group
                           if(str_count(colname,groups_colname) == 1){
@@ -2542,7 +2553,7 @@ new_colnames[match("taxon", new_colnames)] <- feature
 
 
 # Round numeric values and rename columns
-paired_stats_df <- output$res_pair  %>% 
+paired_stats_df <- output$res_pair %>% 
   mutate(across(where(is.numeric), ~round(.x, digits=3))) %>%
   set_names(new_colnames)
 
@@ -2572,10 +2583,10 @@ walk(uniq_comps, function(comp){
   res_df <<- res_df %>% left_join(temp_df)
 })
 
-# --------- Add NCBI id to feature  ---------------#
+# --------- Add NCBI id to feature ---------------#
 
 # Get the best taxonomy assigned to each ASV
-tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","")  %>%
+tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","") %>%
                        str_split(";"),
                      function(row) row[length(row)])
 
@@ -2595,7 +2606,7 @@ df <- df %>%
 
 
 # Retrieve the normalized table
-normalized_table <- output$bias_correct_log_table  %>%
+normalized_table <- output$bias_correct_log_table %>%
   rownames_to_column(feature) %>%
   mutate(across(where(is.numeric), ~replace_na(.x, replace=0)))
 
@@ -2652,7 +2663,7 @@ All_mean_sd <- normalized_table %>%
 
 
 # Append the taxonomy table to the ncbi and stats table
-merged_df <- df  %>%
+merged_df <- df %>%
   left_join(taxonomy_table %>%
               as.data.frame() %>%
               rownames_to_column(feature)) %>% 
@@ -2683,7 +2694,7 @@ write_csv(merged_df %>%
 # ------------ Make volcano ---------------- #
 volcano_plots <- map(uniq_comps, function(comparison){
   
-  comp_col  <- c(
+  comp_col <- c(
     glue("lnFC_{comparison}"),
     glue("lnfcSE_{comparison}"),
     glue("Wstat_{comparison}"),
@@ -2766,41 +2777,29 @@ volcano_plots <- map(uniq_comps, function(comparison){
 * `assay_suffix`       - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
 * `output_prefix`      - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
 * `threads`            - specifies the number of cpus to use for parallel processing
-* `prevalence_cutoff` - a decimal between 0 and 1 specifying the proportion of samples required to contain a taxon in order to keep the taxon when `remove_rare` is set to TRUE; default is 0, i.e. do not exclude any taxon / feature
-* `library_cutoff`    - a numerical value specifying the number of total counts a sample must have across all features to be retained when `remove_rare` is set to TRUE; default is 0, i.e. no samples will be dropped
+* `prevalence_cutoff` - a decimal between 0 and 1 specifying the proportion of samples required to contain a taxon in order to keep the taxon when `remove_rare` (set in [Step 6b.iv. Preprocessing](#6bv-preprocessing)) is set to TRUE; default is 0, i.e. do not exclude any taxon / feature
+* `library_cutoff`    - a numerical value specifying the number of total counts a sample must have across all features to be retained when `remove_rare` (set in [Step 6b.iv. Preprocessing](#6bv-preprocessing)) is set to TRUE; default is 0, i.e. no samples will be dropped
 * `target_region`     - specifies the amplicon target region; options are either "16S", "18S", or "ITS"
 * `remove_struc_zero`  - specifies whether or not structural zeros (a.k.a ASVs with zero count in at least one group) should be removed; default is FALSE i.e. structural zeros won't be removed
-* `ancombc2()`
-  * `data` - specifies the input data for the `ancombc2()` function; TreeSummarizedExperiment or Phyloseq object
-  * `assay_name` - specifices the name of count table in the input data object; default is "counts" for TreeSummarizedExperiment object
-  * `tax_level` - specifies the taxonomy level to be aggregated and analyzed; NULL instructions `ancombc()` not to perform agglomeration and use the lowest taxonomic level of the input data for analysis
-  * `fix_formula` - specifies the variable in the metadata to use for the fixed effects formula (e.g. group names)
-  * `rand_formula` - specifies the variable in the metadata to use for the random effects formula (NULL indicates that no random effects will be included in the model)
-  * `p_adj_method` - specifies the p-value adjustment method to use to correct for multiple comparisons testing
-  * `pseudo_sens` - logical value specifying whether or not to perform the sensitivity analysis to the pseudo-count addition
-  * `prv_cut` - fraction between 0 and 1 specifying the taxon prevalence cut-off; taxa with prevalences (the proporation of samples in which the taxon is present) less than this value will be excluded from the analysis
-  * `lib_cut` - a numerical threshold for filtering samples based on library sizes; samples with library sizes less than the specified value will not be included in the analysis
-  * `s0_perc` - a fraction between 0 and 1 representing the percentile of standard error values that will be used to calculate the small positive constant that will be added to the denominator of ANCOM-BC2 test statistic corresponding to each taxon to avoid the significance due to extremely small standard errors
-  * `group` - specifies the name of the group variable in the metadata; enables global testing when more than 2 groups are present (set to NULL to disable global testing or if there are only 2 groups)
-  * `struc_zero` - logical value indicating whether or not group-wise structural zeros should be detected (a taxon is considered to contain structural zeros in a group if it is completely or nearly completely absent from that group)
-  * `neg_lb` - logical value specifying whether to classify a taxon as a structural zero using its asymptotic lower bound 
-  * `alpha` - specifies the significance level
-  * `n_cl` - specifies the number of processes to run in parallel
+* `ancombc2()` - Compute differential abundance using the ANCOMBC2 algorithm (*uses default values unless defined below*)
+  * `data` - specifies the input data for the `ancombc2()` function; TreeSummarizedExperiment object created from `feature_table` input data
+  * `fix_formula` - specifies the variable in the metadata to use for the fixed effects formula (e.g. group names), set by `groups_colname` parameter above
+  * `p_adj_method` - specifies the p-value adjustment method to use to correct for multiple comparisons testing, set to 'fdr' to standardize the multiple comparisons method across all three differential abundance methods.
+  * `prv_cut` - fraction between 0 and 1 specifying the taxon prevalence cut-off; taxa with prevalences (the proporation of samples in which the taxon is present) less than this value will be excluded from the analysis, set by `prevalence_cutoff` parameter above
+  * `lib_cut` - a numerical threshold for filtering samples based on library sizes; samples with library sizes less than the specified value will not be included in the analysis, set by `library_cutoff` parameter above
+  * `group` - specifies the name of the group variable in the metadata; enables global testing when more than 2 groups are present (set to NULL to disable global testing or if there are only 2 groups), set by `groups_colname` parameter above.
+  * `struc_zero` - logical value indicating whether or not group-wise structural zeros should be detected (a taxon is considered to contain structural zeros in a group if it is completely or nearly completely absent from that group), set by `remove_struc_zero` parameter above 
+  * `n_cl` - specifies the number of processes to run in parallel, set to `threads` parameter above
   * `verbose` - logival value specifying whether or not to generate verbose output during the ANCOM-BC2 fitting process
-  * `global` - logical value indicating where or not to perform a global test to detect significant differences between 1 group and all other groups (ANOVA-like comparison)
-  * `pairwise` - logical value indicating where or not to perform the pairwise directional test
+  * `pairwise` - logical value indicating where or not to perform the pairwise directional test, set to 'TRUE' to compute all pairwise comparisons
   * `iter_control` - list of control parameters for the iterative MLE or RMEL algorithm
-    * `tol` - specifies the iteration convergence tolerance for the algorithm
-    * `max_iter` - specifies the maximum number of iterations for the algorithm
-    * `verbose` - logival value specifying whether or not to generate verbose output 
-  * `em_control` - list of control parameters for the E-M algorithm
-    * `tol` - specifies the iteration convergence tolerance for the Expectation-Maximization (E-M) algorithm
-    * `max_iter` - specifies the maximum number of iterations for the E-M algorithm
-  * `mdfdr_control` - list of control parameters for the mixed directional falso discovery rate
-    * `fwer_ctrl_method` - specifies the family-wise error controlling procedure
-    * `B` - specifies the number of bootstrap samples
-  * `lme_control` - list of control parameters for mixed model fitting
-  * `trend_control` - list of control parameters for the trend test
+    * `tol` - specifies the iteration convergence tolerance for the algorithm, set to '1e-5' to match ancombc
+    * `max_iter` - specifies the maximum number of iterations for the algorithm, set to default value: '20'
+    * `verbose` - logival value specifying whether or not to generate verbose output, set to default value: 'FALSE'
+  * `mdfdr_control` - list of control parameters for the mixed directional false discovery rate
+    * `fwer_ctrl_method` - specifies the family-wise error controlling procedure, set to 'fdr' to match p_adj_method specified above
+    * `B` - specifies the number of bootstrap samples, set to default value: '100'
+  * `lme_control` - list of control parameters for mixed model fitting, set to 'NULL' to disable
 
 **Input Data:**
 
@@ -2841,17 +2840,21 @@ volcano_plots <- map(uniq_comps, function(comparison){
 # Create output directory if it doesn't already exist
 diff_abund_out_dir <- "differential_abundance/deseq2/"
 if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir, recursive = TRUE)
-metadata  <-  {DATAFRAME}
+metadata <- {DATAFRAME}
 feature_table <- {DATAFRAME}
 taxonomy_table <- {DATAFRAME}
 feature <- "ASV"
 samples_column <- "Sample Name"
-groups_colname  <- "groups" 
-assay_suffix  <- "_GLAmpSeq"
+groups_colname <- "groups" 
+assay_suffix <- "_GLAmpSeq"
 target_region <- "16S" # "16S", "18S" or "ITS"
-output_prefix  <- ""
-prevalence_cutoff <- 0
-library_cutoff <- 0
+output_prefix <- ""
+
+# ---------------------- Define Functions ---------------------------------- #
+# Geometric mean function used when running DESeq2
+gm_mean <- function(x, na.rm=TRUE) {
+  exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+}
 
 
 # Create phyloseq object from the feature, taxonomy and metadata tables 
@@ -2873,7 +2876,7 @@ if (sum(colSums(counts(deseq_obj)) == 0) > 0) {
   counts(deseq_obj) <- count_data
 }
 
-# Run Deseq
+# ---------------------- Run DESeq ---------------------------------- #
 # https://rdrr.io/bioc/phyloseq/src/inst/doc/phyloseq-mixture-models.R 
 deseq_modeled <- tryCatch({
   # Attempt to run DESeq, if error occurs then attempt an alternative 
@@ -2904,12 +2907,12 @@ names(comparisons) <- comparisons
 
 # Write out contrasts table
 write_csv(x = pairwise_comp_df,
-          file =  glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"),
+          file = glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"),
           col_names = FALSE)
 
 
 # Retrieve statistics table
-merged_stats_df <-  data.frame(ASV=rownames(feature_table))
+merged_stats_df <- data.frame(ASV=rownames(feature_table))
 colnames(merged_stats_df) <- feature
 
 walk(pairwise_comp_df, function(col){
@@ -2917,7 +2920,7 @@ walk(pairwise_comp_df, function(col){
   group1 <- col[1]
   group2 <- col[2]
 
-# Retrieve the statistics table for the cuurrent pair and rename the columns  
+# Retrieve the statistics table for the cuurrent pair and rename the columns
 df <- results(deseq_modeled, contrast = c(groups_colname, group1, group2)) %>% # Get stats
   data.frame() %>%
   rownames_to_column(feature) %>% 
@@ -2938,7 +2941,7 @@ df <- results(deseq_modeled, contrast = c(groups_colname, group1, group2)) %>% #
 # ---------------------- Add NCBI id to feature, i.e. ASV
 
 # Get the best / lowest possible taxonomy assignment for the features, i.e. ASVs
-tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","")  %>%
+tax_names <- map_chr(str_replace_all(taxonomy_table$species, ";_","") %>%
                        str_split(";"),
                      function(row) row[length(row)])
 
@@ -3019,15 +3022,15 @@ All_mean_sd <- normalized_table %>%
 merged_df <- df  %>% # statistics table
   left_join(taxonomy_table %>%
               as.data.frame() %>%
-              rownames_to_column(feature)) %>% # append taxonomy table
-  select(!!feature, domain:species,everything()) # select columns of interest
+              rownames_to_column(feature)) %>%  # append taxonomy table
+  select(!!feature, domain:species,everything())  # select columns of interest
 
 # Merge all prepared tables in the desired order
 merged_df <- merged_df %>%
   select(!!sym(feature):NCBI_id) %>%  # select only the features and NCBI ids
-  left_join(normalized_table, by = feature) %>% # append the normalized table
-  left_join(merged_df) %>% # append the stats table
-  left_join(All_mean_sd) %>% # append the global/ASV means and stds
+  left_join(normalized_table, by = feature) %>%  # append the normalized table
+  left_join(merged_df) %>%  # append the stats table
+  left_join(All_mean_sd) %>%  # append the global/ASV means and stds
   left_join(group_means_df, by = feature) %>% # append the group means and stds
   mutate(across(where(is.numeric), ~round(.x, digits=3))) %>%  # round numeric columns
   mutate(across(where(is.matrix), as.numeric)) # convert meatrix columns to numeric columns
@@ -3097,7 +3100,7 @@ walk(pairwise_comp_df, function(col){
   # --- Save Plot
   # Replace space in group name with underscore 
   group1 <- str_replace_all(group1, "[:space:]+", "_")
-  group2 <- str_replace_all(group2, "[:space:]+", "_")  
+  group2 <- str_replace_all(group2, "[:space:]+", "_")
   ggsave(filename = glue("{output_prefix}({group1})v({group2})_volcano.png"),
          plot = p,
          width = plot_width_inches, 
@@ -3115,8 +3118,6 @@ walk(pairwise_comp_df, function(col){
 * `samples_column`     - specifies the name of the column in the metadata table containing the sample names
 * `assay_suffix`       - specifies the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq"
 * `output_prefix`      - specifies an additional prefix to be added to the output files; default is no additional prefix, ""
-* `prevalence_cutoff` - a decimal between 0 and 1 specifying the proportion of samples required to contain a taxon in order to keep the taxon when `remove_rare` is set to TRUE; default is 0, i.e. do not exclude any taxon / feature
-* `library_cutoff`    - a numerical value specifying the number of total counts a sample must have across all features to be retained when `remove_rare` is set to TRUE; default is 0, i.e. no samples will be dropped
 * `target_region`     - specifies the amplicon target region; options are either "16S", "18S", or "ITS"
 
 **Input Data:**
