@@ -108,7 +108,7 @@ Software Updates and Changes:
 # Software used  
 
 |Program|Version|Relevant Links|
-|:------|:------:|:-------------|
+|:------|:-----:|:-------------|
 |FastQC|0.12.1|[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
 |MultiQC|1.19|[https://multiqc.info/](https://multiqc.info/)|
 |Cutadapt|4.6|[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
@@ -133,11 +133,12 @@ Software Updates and Changes:
 
 # Reference databases used
 <update figshare links once the updated DBs are downloaded>
-|Program used| Database| DECIPHER Link | GeneLab Figshare Link | GeneLab Download Date|
-|:-----|:-----:|:-----|--------:|
-|DECIPHER| SILVA SSU r138_2 | [https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData) |[SILVA_SSU_r138_2019.RData](https://figshare.com/ndownloader/files/46245217)| <insert download date >|
-|DECIPHER| UNITE v2024 | [https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData) | [UNITE_v2023_July2023.RData](https://figshare.com/ndownloader/files/49181545)| <insert download date >|
-|DECIPHER| PR2 v4.13 | [https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData) | [PR2_v4_13_March2021.RData](https://figshare.com/ndownloader/files/46241917)| <insert download date >|
+  
+|Program used|Database|DECIPHER Link|GeneLab Figshare Link|GeneLab Download Date|
+|:-----------|:------:|:------------|--------------------:|--------------------:|
+|DECIPHER| SILVA SSU r138_2 | [https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData) |[SILVA_SSU_r138_2019.RData](https://figshare.com/ndownloader/files/46245217)| <insert download date> |
+|DECIPHER| UNITE v2024 | [https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData) | [UNITE_v2023_July2023.RData](https://figshare.com/ndownloader/files/49181545)| <insert download date> |
+|DECIPHER| PR2 v4.13 | [https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData) | [PR2_v4_13_March2021.RData](https://figshare.com/ndownloader/files/46241917)| <insert download date> |
 ---
 
 # General processing overview with example commands  
@@ -1477,7 +1478,7 @@ ggsave(filename = glue("{output_prefix}richness_and_diversity_estimates_by_group
 
 Beta diversity measures the variation in species composition between different samples or environments. A common practice in working with a new dataset is to generate some exploratory visualizations like ordinations and hierarchical clusterings. These give us a quick overview of how our samples relate to each other and can be a way to check for problems like batch effects.
 
-Two methods are supported for generating heirarchical clustering plots from normalized data: variance stabilizing transformation (VST) and rarefaction. Rarefaction supports using the default Bray-Curtis dissimilarity to generate dissimilarity matrices for heirarchical clustering. VST, however, generates negative values which are incompatible with calculating Bray-Curtis diddimilary. For VST transformed data Euclidean distance is used instead.
+Two normalization methods are supported before performing hierarchical clustering: variance stabilizing transformation (VST) and rarefaction. After rarefaction, the default Bray-Curtis dissimilarity can be used to generate dissimilarity matrices for hierarchical clustering. VST, however, generates negative values which are incompatible with calculating Bray-Curtis dissimilarity. For VST transformed data, Euclidean distance is used instead.
 
 ```R
 beta_diversity_out_dir <- "beta_diversity/"
