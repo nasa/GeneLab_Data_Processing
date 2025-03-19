@@ -10,10 +10,9 @@ process MULTIQC {
 
     output:
     // path("${ mqc_label }multiqc_GLbulkRNAseq_report.zip"), emit: zipped_report, to do: reimplement zip output w/ cleaned paths
-    path("${ mqc_label }multiqc${ params.assay_suffix }_report"), emit: unzipped_report
-    path("${ mqc_label }multiqc${ params.assay_suffix }_report.zip"), emit: zipped_report
-    path("${ mqc_label }multiqc${ params.assay_suffix }_report/${ mqc_label }multiqc${ params.assay_suffix }.html"), emit: html
-    path("${ mqc_label }multiqc${ params.assay_suffix }_report/${ mqc_label }multiqc${ params.assay_suffix }_data"), emit: data
+    path("${ mqc_label }multiqc${ params.assay_suffix }_data.zip"), emit: zipped_data
+    path("${ mqc_label }multiqc${ params.assay_suffix }.html"), emit: html
+    path("${ mqc_label }multiqc${ params.assay_suffix }_data"), emit: data
     path("versions.yml"), emit: versions
 
     script:
@@ -22,11 +21,11 @@ process MULTIQC {
     multiqc \\
         --force \\
         --interactive \\
-        -o ${ mqc_label }multiqc${ params.assay_suffix  }_report \\
-        -n ${ mqc_label }multiqc${ params.assay_suffix  } \\
+        -o . \\
+        -n ${ mqc_label }multiqc${ params.assay_suffix } \\
         ${ config_arg } \\
         .
-    zip -r '${ mqc_label }multiqc${ params.assay_suffix  }_report.zip' '${ mqc_label }multiqc${ params.assay_suffix  }_report'
+    zip -r '${ mqc_label }multiqc${ params.assay_suffix }_data.zip' '${ mqc_label }multiqc${ params.assay_suffix }_data'
 
     echo '"${task.process}":' > versions.yml
     echo "    multiqc: \$(multiqc --version | sed "s/multiqc, version //")" >> versions.yml

@@ -368,7 +368,8 @@ workflow RNASEQ_MICROBES {
             runsheet_path,
             raw_reads | map{ it -> it[1] } | collect,
             raw_fastqc_zip,
-            RAW_READS_MULTIQC.out.zipped_report
+            RAW_READS_MULTIQC.out.zipped_data,
+            RAW_READS_MULTIQC.out.html
         )
 
         VV_TRIMMED_READS(
@@ -378,9 +379,11 @@ workflow RNASEQ_MICROBES {
             runsheet_path,
             trimmed_reads | map{ it -> it[1] } | collect,
             trimmed_fastqc_zip,
-            TRIMMED_READS_MULTIQC.out.zipped_report,
+            TRIMMED_READS_MULTIQC.out.zipped_data,
+            TRIMMED_READS_MULTIQC.out.html,
             TRIMGALORE.out.reports | collect,
-            TRIMMING_MULTIQC.out.zipped_report
+            TRIMMING_MULTIQC.out.zipped_data,
+            TRIMMING_MULTIQC.out.html
         )
 
         VV_BOWTIE2_ALIGNMENT(
@@ -390,7 +393,8 @@ workflow RNASEQ_MICROBES {
             runsheet_path,
             ALIGN_BOWTIE2.out.alignment_logs | collect,                       // log files
             ALIGN_BOWTIE2.out.unmapped_reads | collect,                       // unmapped reads
-            ALIGN_MULTIQC.out.zipped_report,                                  // MultiQC report
+            ALIGN_MULTIQC.out.zipped_data,                                  // MultiQC report
+            ALIGN_MULTIQC.out.html,
             SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[1] } | collect, // sorted BAM files
             SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[2] } | collect  // BAM index files
         )
@@ -401,10 +405,14 @@ workflow RNASEQ_MICROBES {
             ch_meta,
             runsheet_path,
             ch_rseqc_logs,
-            GENEBODY_COVERAGE_MULTIQC.out.zipped_report,
-            INFER_EXPERIMENT_MULTIQC.out.zipped_report,
-            Channel.empty() | mix(INNER_DISTANCE_MULTIQC.out.zipped_report) | collect | ifEmpty({ file("PLACEHOLDER") }),
-            READ_DISTRIBUTION_MULTIQC.out.zipped_report
+            GENEBODY_COVERAGE_MULTIQC.out.zipped_data,
+            GENEBODY_COVERAGE_MULTIQC.out.html,
+            INFER_EXPERIMENT_MULTIQC.out.zipped_data,
+            INFER_EXPERIMENT_MULTIQC.out.html,
+            Channel.empty() | mix(INNER_DISTANCE_MULTIQC.out.zipped_data) | collect | ifEmpty({ file("PLACEHOLDER1") }),
+            Channel.empty() | mix(INNER_DISTANCE_MULTIQC.out.html) | collect | ifEmpty({ file("PLACEHOLDER2") }),
+            READ_DISTRIBUTION_MULTIQC.out.zipped_data,
+            READ_DISTRIBUTION_MULTIQC.out.html
         )
 
         VV_FEATURECOUNTS(
@@ -414,7 +422,8 @@ workflow RNASEQ_MICROBES {
             runsheet_path,
             FEATURECOUNTS.out.counts,
             FEATURECOUNTS.out.summary,
-            COUNT_MULTIQC.out.zipped_report
+            COUNT_MULTIQC.out.zipped_data,
+            COUNT_MULTIQC.out.html
         )
 
         VV_DGE_DESEQ2(
