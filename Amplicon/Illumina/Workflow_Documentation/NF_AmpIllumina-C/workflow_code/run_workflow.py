@@ -177,20 +177,20 @@ process {{
 
 //************************* Accession runsheet and input file retrieval  **************************************//
     withName: GET_RUNSHEET {{
-                  conda = {{params.conda.dp_tools ? params.conda.dp_tools : "envs/dp_tools.yaml"}}
+                  conda = {{params.conda_dp_tools ? params.conda_dp_tools : "${{projectDir}}/envs/dp_tools.yaml"}}
                   container = "{container_dptools}"
                   publishDir = [path: params.genelab_dir, mode: params.publishDir_mode]
             }}
 
 //********************************** Read quality control and assesment ********************************************//
     withLabel: fastqc {{
-                  conda = {{params.conda.fastqc ? params.conda.fastqc : "envs/fastqc.yaml"}}
+                  conda = {{params.conda_fastqc ? params.conda_fastqc : "${{projectDir}}/envs/fastqc.yaml"}}
                   container = "{container_fastqc}"
             }}
 
 
     withLabel: zip {{
-                  conda = {{params.conda.zip ? params.conda.zip : "envs/zip.yaml"}}
+                  conda = {{params.conda_zip ? params.conda_zip : "${{projectDir}}/envs/zip.yaml"}}
                   container = "{container_zip}"
            }}
 
@@ -200,7 +200,7 @@ process {{
             }}
 
     withName: "RAW_MULTIQC|TRIMMED_MULTIQC" {{
-                  conda = {{params.conda.multiqc ? params.conda.multiqc : "envs/multiqc.yaml"}}
+                  conda = {{params.conda_multiqc ? params.conda_multiqc : "${{projectDir}}/envs/multiqc.yaml"}}
                   container = "{container_multiqc}"
             }}
 
@@ -209,7 +209,7 @@ process {{
             }}
 
     withName: "CUTADAPT|COMBINE_CUTADAPT_LOGS_AND_SUMMARIZE" {{
-                  conda = {{params.conda.cutadapt ?  params.conda.cutadapt : "envs/cutadapt.yaml"}}
+                  conda = {{params.conda_cutadapt ?  params.conda_cutadapt : "${{projectDir}}/envs/cutadapt.yaml"}}
                   container = "{container_cutadapt}"
                   memory = "{cutadapt_memory}"
                   publishDir = [path: params.trimmed_reads_dir, mode: params.publishDir_mode]
@@ -221,7 +221,7 @@ process {{
 
 //********************************** ASV table creation ********************************************//
     withName: "RUN_R_TRIM|RUN_R_NOTRIM" {{
-                  conda = {{params.conda.R ?  params.conda.R : "envs/R.yaml"}}
+                  conda = {{params.conda_R ?  params.conda_R : "${{projectDir}}/envs/R.yaml"}}
                   container = "{container_dada}"
                   memory = "{R_memory}"
                   cpus = {R_cpus} 
@@ -237,7 +237,7 @@ process {{
 
 //********************************** Diversity and differential abundance testing ********************************************//
     withLabel: visualization {{
-                  conda = {{params.conda.diversity ? params.conda.diversity : "envs/diversity.yaml"}}
+                  conda = {{params.conda_diversity ? params.conda_diversity : "${{projectDir}}/envs/diversity.yaml"}}
                   container = "{container_diversity}"
                   cpus = {diversity_cpus}
                   memory = "{diversity_memory}"
