@@ -25,7 +25,9 @@ process MULTIQC {
         -n ${ mqc_label }multiqc${ params.assay_suffix } \\
         ${ config_arg } \\
         .
-    zip -r '${ mqc_label }multiqc${ params.assay_suffix }_data.zip' '${ mqc_label }multiqc${ params.assay_suffix }_data'
+    
+    # Clean paths and create zip
+    clean_multiqc_paths.py ${ mqc_label }multiqc${ params.assay_suffix }_data .
 
     echo '"${task.process}":' > versions.yml
     echo "    multiqc: \$(multiqc --version | sed "s/multiqc, version //")" >> versions.yml
