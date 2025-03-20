@@ -320,6 +320,12 @@ def main():
                         action='store_true',
                         help="Set this flag if would like to run the workflow")
 
+    parser.add_argument('--main',
+                        default="./main.nf",
+                        help="Specifies the location/path of the main nextflow script i.e main.nf . Default: ./main.nf",
+                        metavar='main_nf',
+                        type=str)
+
     parser.add_argument('-a', '--accession',
                         metavar='osd_number',
                         default="null",
@@ -771,9 +777,9 @@ def main():
             extra = ""
             for opt in args.extra.split(","):
                 extra += f"-{opt} "
-            command = f"nextflow run main.nf -resume -profile {args.profile} {extra}"
+            command = f"nextflow run {args.main} -resume -profile {args.profile} {extra}"
         else:
-            command = f"nextflow run main.nf -resume -profile {args.profile}"
+            command = f"nextflow run {args.main} -resume -profile {args.profile}"
         print(f"Running this nextflow command: {command}")
         subprocess.run(command, shell=True, check=True)
 
