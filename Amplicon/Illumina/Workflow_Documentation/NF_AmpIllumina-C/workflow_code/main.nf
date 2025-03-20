@@ -24,7 +24,7 @@ if (params.help) {
   println("   > nextflow run main.nf -resume -profile slurm,conda --input_file SE_file.csv --target_region 1TS --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT")
   println()
   println("Example 3: Run jobs locally in conda environments, supplying a GLDS or OSD accession, and specifying the path to an existing conda environment")
-  println("   > nextflow run main.nf -resume -profile conda --accession GLDS-487 --target_region 16S --conda.multiqc <path/to/existing/conda/environment>")
+  println("   > nextflow run main.nf -resume -profile mamba --accession GLDS-487 --target_region 16S --conda_multiqc <path/to/existing/conda/environment>")
   println()
   println("Required arguments:")
   println("""   -profile [STRING] What profile should be used to run the workflow. Options are [singularity, docker, conda, slurm].
@@ -52,6 +52,7 @@ if (params.help) {
   println()	
   println("Optional arguments:")  
   println("  --help  Print this help message and exit.")
+  println("  --debug [BOOLEAN] Set to true if you'd like to see the values of your set parameters printed to the terminal. Default: false.")
   println("  --publishDir_mode [STRING]  How should nextflow publish file outputs. Options can be found here https://www.nextflow.io/docs/latest/process.html#publishdir. Default: link.")
   println("  --errorStrategy [STRING] How should nextflow handle errors. Options can be found here https://www.nextflow.io/docs/latest/process.html#errorstrategy. Default: terminate")
   println("  --multiqc_config [PATH] Path to a custome multiqc config file. Default: config/multiqc.config.")
@@ -71,7 +72,7 @@ if (params.help) {
   println("         --rarefaction_depth [INTEGER] The Minimum desired sample rarefaction depth for diversity analysis. Default: 500.")
   println("         --group [STRING] Column in input csv file with treatments to be compared. Default: 'groups' ")
   println("         --samples_column [STRING] Column in input csv file with sample names belonging to each treatment group. Default: 'sample_id' ")
-  println("         --remove_struc_zeros [BOOLEAN] Should structural zeros (a.k.a ASVs with zeros count in atleast one group) be removed? default is falsee i.e. structural zeros will be retained. Options are true or false. Default: false.")
+  println("         --remove_struc_zeros [BOOLEAN] Should structural zeros (a.k.a ASVs with zeros count in atleast one group) be removed? default is false i.e. structural zeros will be retained. Options are true or false. Default: false.")
   println("         --remove_rare [BOOLEAN] Should rare features be filtered out prior to analysis? If true, rare features will be removed. Options are true or false. Default: false.")
   println("         --prevalence_cutoff [FLOAT] If --remove_rare is true, a numerical fraction between 0 and 1. Taxa with prevalences(the proportion of samples in which the taxon is present) less than this will be excluded from diversity and diffrential abundance analysis. Default is 0 , i.e. do not exclude any taxa. For example, to exclude taxa that are not present in at least 15% of the samples set it to 0.15.")
   println("         --library_cutoff [INTEGER] If --remove-rare is true, a numerical threshold for filtering samples based on library sizes. Samples with library sizes less than this number will be excluded in the analysis. Default is 0 i.e do not remove any sample. For example, if you want to discard samples with library sizes less than 100, then set to 100.")
@@ -83,11 +84,12 @@ if (params.help) {
   println("      --filtered_R2_suffix [STRING]  Suffix to use for naming your quality filtered reverse reads. Default: _R2_filtered.fastq.gz.")
   println()
   println("Output directories:")
-  println("      --raw_reads_dir [PATH] Where should the fastqc report of the raw reads be stored. Default: ../Raw_Sequence_Data/")
-  println("      --fastqc_out_dir [PATH] Where should multiqc outputs be stored. Default: ../workflow_output/FastQC_Outputs/")
-  println("      --trimmed_reads_dir [PATH] Where should your cutadapt trimmed reads be stored. Default: ../workflow_output/Trimmed_Sequence_Data/")
-  println("      --filtered_reads_dir [PATH] Where should your filtered reads be stored.  Default: ../workflow_output/Filtered_Sequence_Data/")
-  println("      --metadata_dir [PATH] Where should output metadata be stored. Default: ../Metadata/")
+  println("      --raw_reads_dir [PATH] Where should the fastqc report of the raw reads be stored? Default: ../Raw_Sequence_Data/")
+  println("      --fastqc_out_dir [PATH] Where should multiqc outputs be stored? Default: ../workflow_output/FastQC_Outputs/")
+  println("      --trimmed_reads_dir [PATH] Where should your cutadapt trimmed reads be stored? Default: ../workflow_output/Trimmed_Sequence_Data/")
+  println("      --filtered_reads_dir [PATH] Where should your filtered reads be stored?  Default: ../workflow_output/Filtered_Sequence_Data/")
+  println("      --metadata_dir [PATH] This directory contains a file listing the software versions used by the pipeline. Default: ../Metadata/")
+  println("      --genelab_dir [PATH] This directory contains the runsheet, ISA zip file and params file used when an --accession is used to run the workflow. Default: ../GeneLab/")
   println("      --final_outputs_dir [PATH] Where should most outputs and summary reports be stored.  Default: ../workflow_output/Final_Outputs/")
   println()
   println("Genelab specific arguements:")
@@ -96,13 +98,13 @@ if (params.help) {
   println("      --output_prefix [STRING] Unique name to tag onto output files. Default: empty string.")
   println()
   println("Paths to existing conda environments to use otherwise a new one will be created using the yaml file in envs/")
-  println("      --conda.fastqc [PATH] Path to a conda environment containing fastqc. Default: null.")
-  println("      --conda.multiqc [PATH] Path to a conda environment containing multiqc. Default: null.")
-  println("      --conda.zip [PATH] Path to a conda environment containing zip. Default: null.")
-  println("      --conda.R [PATH] Path to a conda environment containing R along with the packages decipher and biomformat installed. Default: null.")
-  println("      --conda.dp_tools  [PATH] Path to a conda environment containing dp_tools. Default: null.")
-  println("      --conda.cutadapt [PATH] Path to a conda environment containing cutadapt. Default: null.")
-  println("      --conda.diversity [PATH] Path to a conda environment containing R packages required for diversity and differential abundance testing (ANCOMBC and DESeq2). Default: null.")
+  println("      --conda_fastqc [PATH] Path to a conda environment containing fastqc. Default: null.")
+  println("      --conda_multiqc [PATH] Path to a conda environment containing multiqc. Default: null.")
+  println("      --conda_zip [PATH] Path to a conda environment containing zip. Default: null.")
+  println("      --conda_R [PATH] Path to a conda environment containing R along with the packages decipher and biomformat installed. Default: null.")
+  println("      --conda_dp_tools  [PATH] Path to a conda environment containing dp_tools. Default: null.")
+  println("      --conda_cutadapt [PATH] Path to a conda environment containing cutadapt. Default: null.")
+  println("      --conda_diversity [PATH] Path to a conda environment containing R packages required for diversity and differential abundance testing (ANCOMBC and DESeq2). Default: null.")
   println()
   print("Advanced users can edit the nextflow.config file for more control over default settings such container choice, number of cpus, memory per task etc.")
   exit 0
@@ -162,20 +164,20 @@ log.info """${c_blue}
          FastQC: ${params.fastqc_out_dir}
          Trimmed Reads: ${params.trimmed_reads_dir}
          Filtered Reads: ${params.filtered_reads_dir}
-         Metadata: ${params.metadata_dir}
+         Software versions: ${params.metadata_dir}
          Reports: ${params.final_outputs_dir}
 
          Genelab Assay Suffix: ${params.assay_suffix}
          Output Prefix: ${params.output_prefix}
 
          Conda Environments:
-         fastqc: ${params.conda.fastqc}
-         multiqc: ${params.conda.multiqc}
-         zip: ${params.conda.zip}
-         R: ${params.conda.R}
-         dp_tools: ${params.conda.dp_tools}
-         cutadapt: ${params.conda.cutadapt}
-         Diversity and Differential abundance : ${params.conda.diversity}
+         fastqc: ${params.conda_fastqc}
+         multiqc: ${params.conda_multiqc}
+         zip: ${params.conda_zip}
+         R: ${params.conda_R}
+         dp_tools: ${params.conda_dp_tools}
+         cutadapt: ${params.conda_cutadapt}
+         Diversity and Differential abundance : ${params.conda_diversity}
          ${c_reset}"""
 }
 
@@ -485,7 +487,7 @@ workflow.onComplete {
     println("Trimmed Reads location: ${params.trimmed_reads_dir}")
     println("Filtered Reads location: ${params.filtered_reads_dir}")
     println("Software versions location: ${params.metadata_dir}")
-    println("Final results (i.e. ASV count and taxonomy tables, diversity, and differential abundance testing)00: ${params.final_outputs_dir}")
+    println("Final results (i.e. ASV count and taxonomy tables, diversity, and differential abundance testing): ${params.final_outputs_dir}")
     println "Pipeline tracing/visualization files location:  ../Resource_Usage${c_reset}"
     }
 }

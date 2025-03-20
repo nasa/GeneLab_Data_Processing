@@ -136,7 +136,7 @@ nextflow run main.nf -resume -profile slurm,singularity  --input_file PE_file.cs
 #### 4c. Approach 3: Run jobs locally in conda/mamba environments and specify the path to one or more existing conda environment(s)
 
 ```bash
-nextflow run main.nf -resume -profile mamba --input_file SE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --conda.qc <path/to/existing/conda/environment>
+nextflow run main.nf -resume -profile mamba --input_file SE_file.csv --target_region 16S --F_primer AGAGTTTGATCCTGGCTCAG --R_primer CTGCCTCCCGTAGGAGT --conda_R <path/to/existing/conda/environment>
 ```
 
 <br>
@@ -168,7 +168,7 @@ nextflow run main.nf -resume -profile mamba --input_file SE_file.csv --target_re
 
 Additionally, the parameters and workflow resources can be directly specified in the nextflow.config file. For detailed instructions on how to modify and set parameters in the nextflow.config file, please see the [documentation here](https://www.nextflow.io/docs/latest/config.html).
 
-Once you've downloaded the workflow template, you can modify the parameters in the `params` scope and cpus/memory requirements in the `process` scope in your downloaded version of the [nextflow.config](workflow_code/nextflow.config) file as needed in order to match your dataset and system setup. For example, you can directly set the the full paths to available conda environments in the `conda` scope within the `params`  scope. Additionally, if necessary, you'll need to modify each variable in the  [nextflow.config](workflow_code/nextflow.config) file to be consistent with the study you want to process and the machine you're using.
+Once you've downloaded the workflow template, you can modify the parameters in the `params` scope and cpus/memory requirements in the `process` scope in your downloaded version of the [nextflow.config](workflow_code/nextflow.config) file as needed in order to match your dataset and system setup. Additionally, if necessary, you'll need to modify each variable in the  [nextflow.config](workflow_code/nextflow.config) file to be consistent with the study you want to process and the machine you're using.
 
 <br>
 

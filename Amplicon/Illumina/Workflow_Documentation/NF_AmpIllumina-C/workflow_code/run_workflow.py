@@ -48,17 +48,16 @@ params {{
 
 
     // If using conda environments specify their locations so new ones won't be created
-    conda{{
-          // Specify the paths to existing conda environments (/path/to/envs/genelab-utils)
-          // leave as is if you want to create a new conda environment
-          cutadapt         = "{conda_cutadapt}" == "null" ? null :  "{conda_cutadapt}"  // /path/to/envs/cutadapt
-          diversity        = "{conda_diversity}" == "null" ? null :  "{conda_diversity}"   // /path/to/envs/R_diversity
-          dp_tools         = "{conda_dptools}" == "null" ? null :  "{conda_dptools}"     // /path/to/envs/dp_tools
-          fastqc           = "{conda_fastqc}" == "null" ? null : "{conda_fastqc}"   // /path/to/envs/fastqc
-          multiqc          = "{conda_multiqc}" == "null" ? null : "{conda_multiqc}"   // /path/to/envs/multiqc
-          R                = "{conda_R}" == "null" ? null : "{conda_R}"     // /path/to/envs/R
-          zip              = "{conda_zip}" == "null" ? null :  "{conda_zip}"   // /path/to/envs/zip
-      }}
+
+    // Specify the paths to existing conda environments (/path/to/envs/genelab-utils)
+    // leave as is if you want to create a new conda environment
+    conda_cutadapt         = "{conda_cutadapt}" == "null" ? null :  "{conda_cutadapt}"  // /path/to/envs/cutadapt
+    conda_diversity        = "{conda_diversity}" == "null" ? null :  "{conda_diversity}"   // /path/to/envs/R_diversity
+    conda_dp_tools         = "{conda_dptools}" == "null" ? null :  "{conda_dptools}"     // /path/to/envs/dp_tools
+    conda_fastqc           = "{conda_fastqc}" == "null" ? null : "{conda_fastqc}"   // /path/to/envs/fastqc
+    conda_multiqc          = "{conda_multiqc}" == "null" ? null : "{conda_multiqc}"   // /path/to/envs/multiqc
+    conda_R                = "{conda_R}" == "null" ? null : "{conda_R}"     // /path/to/envs/R
+    conda_zip              = "{conda_zip}" == "null" ? null :  "{conda_zip}"   // /path/to/envs/zip
 
 
     // Mandatory parameters if using GLDS or OSD accession as input
