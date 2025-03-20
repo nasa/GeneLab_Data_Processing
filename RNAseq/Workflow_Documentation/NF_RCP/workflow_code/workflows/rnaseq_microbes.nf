@@ -278,14 +278,17 @@ workflow RNASEQ_MICROBES {
         EXTRACT_RRNA( organism_sci, genome_references | map { it[1] })
         REMOVE_RRNA_FEATURECOUNTS ( counts, EXTRACT_RRNA.out.rrna_ids )
 
+        dge_script = "${projectDir}/bin/dge_deseq2.Rmd"
+        dge_annotations_script = "${projectDir}/bin/add_gene_annotations.Rmd"
+
         // Normalize counts, DGE, Add annotations to DGE table
-        DGE_DESEQ2( ch_meta, runsheet_path, counts, "")
-        ADD_GENE_ANNOTATIONS( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2.out.dge_table, "" )
+        DGE_DESEQ2( ch_meta, runsheet_path, counts, dge_script, "" )
+        ADD_GENE_ANNOTATIONS( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2.out.dge_table, dge_annotations_script, "" )
         annotated_dge_table = ADD_GENE_ANNOTATIONS.out.annotated_dge_table
         
         // For rRNArm counts: Normalize counts, DGE, Add annotations to DGE table
-        DGE_DESEQ2_RRNA_RM( ch_meta, runsheet_path, REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm, "_rRNArm" )
-        ADD_GENE_ANNOTATIONS_RRNA_RM( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2_RRNA_RM.out.dge_table, "_rRNArm" )
+        DGE_DESEQ2_RRNA_RM( ch_meta, runsheet_path, REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm, dge_script, "_rRNArm" )
+        ADD_GENE_ANNOTATIONS_RRNA_RM( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2_RRNA_RM.out.dge_table, dge_annotations_script, "_rRNArm" )
         annotated_dge_table_rrna_rm = ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
 
         // MultiQC

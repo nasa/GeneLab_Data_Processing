@@ -9,6 +9,7 @@ process DGE_DESEQ2 {
         val(meta)
         path(runsheet_path)
         path(gene_counts)
+        path("dge_deseq2.Rmd")
         val(output_label)
 
     output:
@@ -26,7 +27,6 @@ process DGE_DESEQ2 {
         def output_filename_label = output_label ?: ""
         def output_filename_suffix = params.assay_suffix ?: ""
         def microbes = params.mode == 'microbes' ? 'TRUE' : 'FALSE'
-        def dge_rmd_file = "${projectDir}/bin/dge_deseq2.Rmd"
         def debug_dummy_counts = params.use_dummy_gene_counts ? 'TRUE'  : 'FALSE'
         def input_counts_path = params.mode == 'microbes' ? gene_counts : "gene_counts"
 
@@ -35,7 +35,7 @@ process DGE_DESEQ2 {
             mkdir -p gene_counts
             mv ${gene_counts} gene_counts/
         fi
-        Rscript -e "rmarkdown::render('${dge_rmd_file}', 
+        Rscript -e "rmarkdown::render('dge_deseq2.Rmd', 
             output_file = 'DGE_DESeq2.html',
             output_dir = '\${PWD}',
             params = list(

@@ -9,6 +9,7 @@ process ADD_GENE_ANNOTATIONS {
         val(meta)
         val(gene_annotations_url)
         path(dge_no_annotations)
+        path("add_gene_annotations.Rmd")
         val(output_label)
 
     output:
@@ -18,10 +19,9 @@ process ADD_GENE_ANNOTATIONS {
     script:
         def output_filename_label = output_label ?: ""
         def output_filename_suffix = params.assay_suffix ?: ""
-        def annotations_rmd_file = "${projectDir}/bin/add_gene_annotations.Rmd"
 
         """
-        Rscript -e "rmarkdown::render('${annotations_rmd_file}', 
+        Rscript -e "rmarkdown::render('add_gene_annotations.Rmd', 
         output_file = 'DGE_Annotations.html',
         output_dir = '\${PWD}',
             params = list(
