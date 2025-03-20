@@ -991,7 +991,7 @@ def check_contrasts_table_rows(outdir, log_path, assay_suffix="_GLbulkRNAseq",
             # Prepare detailed error message
             error_details = []
             for col in bad_columns:
-                info = column_infos[col]
+                info = bad_columns[col]
                 error_details.append(
                     f"Column '{col}': Expected values: {'; '.join(str(x) for x in info['expected'])}, "
                     f"Actual values: {'; '.join(str(x) for x in info['actual'])}"
