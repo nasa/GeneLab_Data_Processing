@@ -268,11 +268,12 @@ process VV_DGE_DESEQ2 {
     path("VV_log.csv"), optional: params.skip_vv, emit: log
 
   script:
+  def mode_params = params.mode == "microbes" ? "--mode microbes" : ""
   """
   mv INPUT/* . || true
 
   if ${ !params.skip_vv } ; then
-    vv_dge_deseq2.py --runsheet ${runsheet} --outdir .
+    vv_dge_deseq2.py --runsheet ${runsheet} --outdir . ${mode_params}
   fi
   """
 }
