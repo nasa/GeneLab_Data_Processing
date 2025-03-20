@@ -95,7 +95,6 @@ log.info """${c_blue}
          Profile: ${workflow.profile} 
          Analyst's Name : ${params.name}
          Analyst's Email : ${params.email}
-         Raw Reads Directory: ${params.raw_reads_dir}
          GLDS Accession : ${params.GLDS_accession}
          OSD Accession : ${params.OSD_accession}
          Assay Suffix: ${params.assay_suffix}
