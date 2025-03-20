@@ -777,9 +777,9 @@ def main():
             extra = ""
             for opt in args.extra.split(","):
                 extra += f"-{opt} "
-            command = f"nextflow run {args.main} -resume -profile {args.profile} {extra}"
+            command = f"nextflow -C ./nextflow.config run {args.main} -resume -profile {args.profile} {extra}"
         else:
-            command = f"nextflow run {args.main} -resume -profile {args.profile}"
+            command = f"nextflow -C ./nextflow.config run {args.main} -resume -profile {args.profile}"
         print(f"Running this nextflow command: {command}")
         subprocess.run(command, shell=True, check=True)
 
