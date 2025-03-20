@@ -1,4 +1,33 @@
 #!/usr/bin/env python
+"""
+RNA-Seq Assay Table Updater for the NASA GeneLab Data Processing Pipeline
+
+This script processes and updates RNA-Seq assay tables from ISA.zip files within a GLDS dataset.
+It adds or updates various parameter columns required for the GeneLab RNA-Seq processing pipeline,
+including paths to processed files like trimmed sequence data, aligned sequence data, raw counts,
+normalized counts, and differential expression analysis results.
+
+The script supports both default mode (STAR/RSEM) and microbes mode (Bowtie2/FeatureCounts).
+It also handles both paired-end and single-end sequencing data and can detect the presence
+of ERCC spike-ins to conditionally add related columns.
+
+Usage:
+    python update_assay_table.py --outdir <directory> --assay_suffix <suffix> --glds_accession <GLDS-XXX> [--mode <mode>]
+
+Parameters:
+    --outdir: Directory containing the Metadata folder with ISA.zip
+    --assay_suffix: Suffix to append to output filenames (e.g., "_GLbulkRNAseq")
+    --glds_accession: GLDS accession number (e.g., "GLDS-123")
+    --mode: Processing mode - "microbes" for microbial datasets or empty for default
+
+The script automatically:
+1. Extracts and locates the RNA-Seq assay table from the ISA.zip file
+2. Loads the runsheet if available for additional metadata
+3. Detects if data is paired-end or single-end
+4. Detects if ERCC spike-ins are used
+5. Updates the assay table with appropriate file paths for all processing outputs
+6. Saves the updated assay table using the original filename
+"""
 
 import os
 import sys
@@ -16,6 +45,57 @@ def parse_args():
     parser.add_argument('--assay_suffix', required=True, help='Suffix for output file')
     parser.add_argument('--glds_accession', required=True, help='GLDS accession number (e.g. GLDS-123)')
     return parser.parse_args()
+
+# Create a global variable to track changes
+column_changes = []
+
+def find_column_case_insensitive(df, column_name):
+    """Find a column name in the dataframe case-insensitively.
+    
+    Args:
+        df: The DataFrame to search in
+        column_name: The column name to find
+        
+    Returns:
+        The actual column name if found, None otherwise
+    """
+    # Convert column name to lowercase for comparison
+    column_lower = column_name.lower()
+    
+    # Check if any existing column matches (case-insensitive)
+    for col in df.columns:
+        if col.lower() == column_lower:
+            return col
+    
+    # If no match found
+    return None
+
+def update_column(df, column_name, values):
+    """Add or update a column in the dataframe, with case-insensitive matching.
+    
+    Args:
+        df: The DataFrame to update
+        column_name: The column name to add or update
+        values: The values to set
+        
+    Returns:
+        The updated DataFrame
+    """
+    # Find if column exists (case-insensitive)
+    existing_col = find_column_case_insensitive(df, column_name)
+    
+    if existing_col:
+        # Column exists (might be different case)
+        print(f"Updating column: {existing_col}")
+        df[existing_col] = values
+        column_changes.append(f"Updated: {existing_col}")
+    else:
+        # Column doesn't exist
+        print(f"Adding new column: {column_name}")
+        df[column_name] = values
+        column_changes.append(f"Added: {column_name}")
+    
+    return df
 
 def find_file(directory, pattern, error_msg=None):
     """Generic function to find files matching a pattern in a directory."""
@@ -471,16 +551,15 @@ def add_trimmed_multiqc_reports_column(df, glds_prefix, assay_suffix):
     """Add the trimmed sequence data MultiQC reports column to the dataframe."""
     column_name = "Parameter Value[Trimmed Sequence Data/MultiQC Reports]"
     
-    # Create the multiqc report filename - same for all samples
-    multiqc_report = f"{glds_prefix}trimmed_multiqc{assay_suffix}_report.zip"
+    # Create the multiqc report filenames - both data zip and html
+    multiqc_html = f"trimmed_multiqc{assay_suffix}.html"
+    multiqc_data = f"trimmed_multiqc{assay_suffix}_data.zip"
+    
+    # Join the files with commas
+    combined_files = f"{multiqc_data},{multiqc_html}"
     
     # Add the column to the dataframe with the same value for all rows
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = multiqc_report
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = multiqc_report
+    df = update_column(df, column_name, combined_files)
     
     return df
 
@@ -488,16 +567,15 @@ def add_align_multiqc_reports_column(df, glds_prefix, assay_suffix):
     """Add the aligned sequence data MultiQC reports column to the dataframe."""
     column_name = "Parameter Value[Aligned Sequence Data/MultiQC Reports]"
     
-    # Create the alignment multiqc report filename - same for all samples
-    multiqc_report = f"{glds_prefix}align_multiqc{assay_suffix}_report.zip"
+    # Create the alignment multiqc report filenames - both data zip and html
+    multiqc_html = f"align_multiqc{assay_suffix}.html"
+    multiqc_data = f"align_multiqc{assay_suffix}_data.zip"
+    
+    # Join the files with commas
+    combined_files = f"{multiqc_data},{multiqc_html}"
     
     # Add the column to the dataframe with the same value for all rows
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = multiqc_report
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = multiqc_report
+    df = update_column(df, column_name, combined_files)
     
     return df
 
@@ -505,24 +583,18 @@ def add_rseqc_multiqc_reports_column(df, glds_prefix, assay_suffix):
     """Add the RSeQC MultiQC reports column to the dataframe."""
     column_name = "Parameter Value[RSeQC/MultiQC Reports]"
     
-    # Create the four RSeQC multiqc report filenames - same for all samples
-    multiqc_reports = [
-        f"{glds_prefix}geneBody_cov_multiqc{assay_suffix}_report.zip",
-        f"{glds_prefix}infer_exp_multiqc{assay_suffix}_report.zip",
-        f"{glds_prefix}inner_dist_multiqc{assay_suffix}_report.zip",
-        f"{glds_prefix}read_dist_multiqc{assay_suffix}_report.zip"
-    ]
+    # Create the four RSeQC multiqc report filenames - data zip and html for each
+    multiqc_reports = []
+    for report_type in ["geneBody_cov", "infer_exp", "inner_dist", "read_dist"]:
+        data_zip = f"{report_type}_multiqc{assay_suffix}_data.zip"
+        html = f"{report_type}_multiqc{assay_suffix}.html"
+        multiqc_reports.extend([data_zip, html])
     
     # Join the reports with commas
     combined_reports = ",".join(multiqc_reports)
     
     # Add the column to the dataframe with the same value for all rows
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = combined_reports
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = combined_reports
+    df = update_column(df, column_name, combined_reports)
     
     return df
 
@@ -602,21 +674,21 @@ def add_raw_counts_multiqc_column(df, glds_prefix, assay_suffix, mode=""):
     """Add the Raw Counts Data MultiQC reports column to the dataframe."""
     column_name = "Parameter Value[Raw Counts Data/MultiQC Reports]"
     
-    # Create the appropriate multiqc report filename based on mode
+    # Create the appropriate multiqc report filenames based on mode - both data zip and html
     if mode == "microbes":
         # Microbes mode (FeatureCounts)
-        multiqc_report = f"{glds_prefix}featureCounts_multiqc{assay_suffix}_report.zip"
+        multiqc_html = f"featureCounts_multiqc{assay_suffix}.html"
+        multiqc_data = f"featureCounts_multiqc{assay_suffix}_data.zip"
     else:
         # Default mode (RSEM)
-        multiqc_report = f"{glds_prefix}RSEM_count_multiqc{assay_suffix}_report.zip"
+        multiqc_html = f"RSEM_count_multiqc{assay_suffix}.html"
+        multiqc_data = f"RSEM_count_multiqc{assay_suffix}_data.zip"
+    
+    # Join the files with commas
+    combined_files = f"{multiqc_data},{multiqc_html}"
     
     # Add the column to the dataframe with the same value for all rows
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = multiqc_report
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = multiqc_report
+    df = update_column(df, column_name, combined_files)
     
     return df
 
@@ -635,12 +707,7 @@ def add_raw_counts_tables_column(df, glds_prefix, assay_suffix, mode=""):
         counts_file = f"{rsem_file},{star_file}"
     
     # Add the column to the dataframe with the same value for all rows
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = counts_file
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = counts_file
+    df = update_column(df, column_name, counts_file)
     
     return df
 
@@ -659,12 +726,7 @@ def add_raw_counts_tables_rrnarm_column(df, glds_prefix, assay_suffix, mode=""):
         counts_file = f"{rsem_file},{star_file}"
     
     # Add the column to the dataframe with the same value for all rows
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = counts_file
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = counts_file
+    df = update_column(df, column_name, counts_file)
     
     return df
 
@@ -682,12 +744,7 @@ def add_normalized_counts_data_column(df, glds_prefix, assay_suffix):
     combined_files = ",".join(normalized_files)
     
     # Add the column to the dataframe with the same value for all rows
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = combined_files
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = combined_files
+    df = update_column(df, column_name, combined_files)
     
     return df
 
@@ -705,12 +762,7 @@ def add_normalized_counts_data_rrnarm_column(df, glds_prefix, assay_suffix):
     combined_files = ",".join(normalized_files)
     
     # Add the column to the dataframe with the same value for all rows
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = combined_files
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = combined_files
+    df = update_column(df, column_name, combined_files)
     
     return df
 
@@ -729,12 +781,7 @@ def add_differential_expression_column(df, glds_prefix, assay_suffix):
     combined_files = ",".join(de_files)
     
     # Add the column to the dataframe with the same value for all rows
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = combined_files
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = combined_files
+    df = update_column(df, column_name, combined_files)
     
     return df
 
@@ -753,12 +800,7 @@ def add_differential_expression_rrnarm_column(df, glds_prefix, assay_suffix):
     combined_files = ",".join(de_files)
     
     # Add the column to the dataframe with the same value for all rows
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = combined_files
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = combined_files
+    df = update_column(df, column_name, combined_files)
     
     return df
 
@@ -894,12 +936,7 @@ def add_ercc_analyses_column(df, glds_prefix, assay_suffix):
     ercc_analyses_file = f"{glds_prefix}ERCC_analysis{assay_suffix}.html"
     
     # Add the column to the dataframe with the same value for all rows
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = ercc_analyses_file
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = ercc_analyses_file
+    df = update_column(df, column_name, ercc_analyses_file)
     
     return df
 
@@ -1000,6 +1037,13 @@ def main():
         # Only save the original filename version
         assay_df.to_csv(orig_filename, sep='\t', index=False)
         print(f"Assay table saved as: {orig_filename}")
+        
+        # Print summary of changes
+        print("\n=== SUMMARY OF CHANGES ===")
+        print(f"Processed assay table for {args.glds_accession} with {len(column_changes)} column operations:")
+        for change in column_changes:
+            print(f"  - {change}")
+        print(f"Final assay table has {len(assay_df)} rows and {len(assay_df.columns)} columns")
         
     except Exception as e:
         print(f"Error processing assay file: {e}")
