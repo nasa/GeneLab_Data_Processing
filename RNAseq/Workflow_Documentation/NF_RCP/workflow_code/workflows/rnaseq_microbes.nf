@@ -52,7 +52,7 @@ include { CLEAN_MULTIQC_PATHS as CLEAN_ALL_MULTIQC_PATHS } from '../modules/clea
 // include { QUALIMAP_RNASEQ_QC } from '../modules/qualimap.nf'
 include { GET_GTF_FEATURES } from '../modules/get_gtf_features.nf'
 include { FEATURECOUNTS } from '../modules/featurecounts.nf'
-include { GENES_PER_SAMPLE } from '../modules/genes_per_sample.nf'
+include { QUANTIFY_FEATURECOUNTS_GENES } from '../modules/quantify_featurecounts_genes.nf'
 include { EXTRACT_RRNA } from '../modules/extract_rrna.nf'
 include { REMOVE_RRNA_FEATURECOUNTS } from '../modules/remove_rrna_featurecounts.nf'
 include { DGE_DESEQ2 } from '../modules/dge_deseq2.nf'
@@ -272,7 +272,7 @@ workflow RNASEQ_MICROBES {
         FEATURECOUNTS( ch_meta, genome_references, gtf_features, strandedness, bams )
         counts = FEATURECOUNTS.out.counts
         
-        GENES_PER_SAMPLE( samples_txt, FEATURECOUNTS.out.counts )
+        QUANTIFY_FEATURECOUNTS_GENES( samples_txt, FEATURECOUNTS.out.counts )
 
         // Use the GTF to find rRNA genes, remove them from the counts table
         EXTRACT_RRNA( organism_sci, genome_references | map { it[1] })
@@ -428,7 +428,7 @@ workflow RNASEQ_MICROBES {
             runsheet_path,
             FEATURECOUNTS.out.counts,
             FEATURECOUNTS.out.summary,
-            GENES_PER_SAMPLE.out.num_non_zero_genes,
+            QUANTIFY_FEATURECOUNTS_GENES.out.num_non_zero_genes,
             COUNT_MULTIQC.out.zipped_data,
             COUNT_MULTIQC.out.html
         )

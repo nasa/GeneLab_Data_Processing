@@ -1,4 +1,4 @@
-process GENES_PER_SAMPLE {
+process QUANTIFY_FEATURECOUNTS_GENES {
   // tag "Dataset-wide"
   // An R script that gets the number of non-zero genes per sample in a featureCounts output table
   input:
@@ -10,7 +10,7 @@ process GENES_PER_SAMPLE {
 
   script:
     """
-    featurecounts_genes_per_sample.R
+    Quantitate_non-zero_genes_per_sample_Featurecounts.R
     """
 
 }
