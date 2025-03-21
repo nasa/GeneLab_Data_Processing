@@ -1660,6 +1660,7 @@ ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}rarefaction_cur
 
 ### 7b. Richness and Diversity Estimates
 ```R
+metadata <- {DATAFRAME}
 groups_colname <- "groups"
 assay_suffix <- "_GLAmpSeq"
 output_prefix <- ""
@@ -1754,6 +1755,9 @@ write_csv(x = diversity_table,
 ### 7c. Plot Richness and Diversity Estimates
 
 ```R
+sample_info_tab <- {DATAFRAME}
+metadata <- {DATAFRAME}
+groups_colname <- "groups"
 legend_title <- "Groups"
 assay_suffix <- "_GLAmpSeq"
 output_prefix <- ""
@@ -3266,15 +3270,15 @@ walk(pairwise_comp_df, function(col){
 
 **Input Data:**
 
-* `feature`        (a string specifying the feature type, i.e. "ASV" or "OTU")
-* `groups_colname`    (a string specifying the name of the column in the metadata table containing the group names)
+* `feature` (a string specifying the feature type, i.e. "ASV" or "OTU")
+* `groups_colname` (a string specifying the name of the column in the metadata table containing the group names)
 * `samples_column` (a string specifying the name of the column in the metadata table containing the sample names)
-* `assay_suffix`      (a string specifying the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq")
-* `output_prefix`  (a string specifying an additional prefix to be added to the output files; default is no additional prefix, "")
-* `target_region`  (a string specifying the amplicon target region; options are either "16S", "18S", or "ITS")
+* `assay_suffix` (a string specifying the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq")
+* `output_prefix` (a string specifying an additional prefix to be added to the output files; default is no additional prefix, "")
+* `target_region` (a string specifying the amplicon target region; options are either "16S", "18S", or "ITS")
 * `metadata` (a dataframe containing the sample metadata, with samples as row names and sample info as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
-* `feature_table`     (a dataframe containing a filtered subset of the samples feature dataframe (i.e. ASV), output from [6b.v. Preprocessing](#6bv-preprocessing))
-* `taxonomy_table`    (a dataframe containing a filtered subset of the feature taxonomy dataframe with ASV taxonomy assignments, output from [6b.v. Preprocessing](#6bv-preprocessing))
+* `feature_table` (a dataframe containing a filtered subset of the samples feature dataframe (i.e. ASV), output from [6b.v. Preprocessing](#6bv-preprocessing))
+* `taxonomy_table` (a dataframe containing a filtered subset of the feature taxonomy dataframe with ASV taxonomy assignments, output from [6b.v. Preprocessing](#6bv-preprocessing))
 
 **Output Data:**
 
