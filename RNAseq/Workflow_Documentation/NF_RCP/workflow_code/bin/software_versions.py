@@ -92,6 +92,16 @@ def main(versions_json_path: Path, output_path: Path, assay: str = 'rnaseq'):
                     if (normalized_name not in processed_versions or 
                         compare_versions(ver_str, processed_versions[normalized_name])):
                         processed_versions[normalized_name] = ver_str
+    
+    # Always ensure gtfToGenePred and genePredToBed are included with version 469
+    if "gtfToGenePred" not in processed_versions:
+        processed_versions["gtfToGenePred"] = "469"
+    if "genePredToBed" not in processed_versions:
+        processed_versions["genePredToBed"] = "469"
+    
+    # Fix Bioconductor version display (3.2 → 3.20)
+    if "Bioconductor" in processed_versions and processed_versions["Bioconductor"] == "3.2":
+        processed_versions["Bioconductor"] = "3.20"
 
     results = []
     for program, ver in processed_versions.items():
