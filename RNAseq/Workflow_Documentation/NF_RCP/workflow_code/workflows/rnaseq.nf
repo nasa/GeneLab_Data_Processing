@@ -133,6 +133,14 @@ workflow RNASEQ {
         PARSE_RUNSHEET( runsheet_path )
 
         samples = PARSE_RUNSHEET.out.samples
+        runsheet_path = PARSE_RUNSHEET.out.runsheet
+
+        // Stage the raw or truncated reads.
+        STAGE_RAW_READS( samples )
+        raw_reads = STAGE_RAW_READS.out.raw_reads
+        samples_txt = STAGE_RAW_READS.out.samples_txt
+        //samples_txt | view
+
         //samples | view
         samples | first 
                 | map { meta, reads -> meta }
@@ -191,11 +199,6 @@ workflow RNASEQ {
 
         // Metadata and reference files are ready. Stage the raw reads, find the max read length, and build the STAR index.
 
-        // Stage the raw or truncated reads.
-        STAGE_RAW_READS( samples )
-        raw_reads = STAGE_RAW_READS.out.raw_reads
-        samples_txt = STAGE_RAW_READS.out.samples_txt
-        //samples_txt | view
 
         RAW_FASTQC( raw_reads )
 
@@ -328,40 +331,6 @@ workflow RNASEQ {
             | concat( COUNT_MULTIQC.out.data )
             | collect
 
-
-        // Software Version Capturing
-        nf_version = '"NEXTFLOW":\n    nextflow: '.concat("${nextflow.version}\n")
-        ch_nextflow_version = Channel.value(nf_version)
-        ch_software_versions = Channel.empty()
-        // Mix in versions from each process
-        ch_software_versions = ch_software_versions
-            | mix(ISA_TO_RUNSHEET.out.versions)  
-            | mix(GTF_TO_PRED.out.versions)
-            | mix(PRED_TO_BED.out.versions)
-            | mix(RAW_FASTQC.out.versions)
-            | mix(TRIMGALORE.out.versions)
-            | mix(ALIGN_STAR.out.versions)
-            | mix(SORT_AND_INDEX_BAM.out.versions)
-            | mix(INFER_EXPERIMENT.out.versions)
-            | mix(GENEBODY_COVERAGE.out.versions)
-            | mix(INNER_DISTANCE.out.versions)
-            | mix(READ_DISTRIBUTION.out.versions)
-            | mix(COUNT_ALIGNED.out.versions)
-            | mix(RAW_READS_MULTIQC.out.versions)
-            | mix(DGE_DESEQ2.out.versions)
-            | mix(ch_nextflow_version)
-        // Process the versions:
-        ch_software_versions 
-            | unique  
-            | collectFile(
-                newLine: true, 
-                cache: false
-            )
-            | set { ch_final_software_versions }
-        // Convert software versions combined yaml to markdown table
-        SOFTWARE_VERSIONS(ch_outdir, ch_final_software_versions)
-
-
         PARSE_QC_METRICS(
             ch_outdir,
             osd_accession,
@@ -452,6 +421,38 @@ workflow RNASEQ {
             DGE_DESEQ2_RRNA_RM.out.contrasts,
             ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
         )
+
+        // Software Version Capturing
+        nf_version = '"NEXTFLOW":\n    nextflow: '.concat("${nextflow.version}\n")
+        ch_nextflow_version = Channel.value(nf_version)
+        ch_software_versions = Channel.empty()
+        // Mix in versions from each process
+        ch_software_versions = ch_software_versions
+            | mix(GTF_TO_PRED.out.versions)
+            | mix(PRED_TO_BED.out.versions)
+            | mix(RAW_FASTQC.out.versions)
+            | mix(TRIMGALORE.out.versions)
+            | mix(ALIGN_STAR.out.versions)
+            | mix(SORT_AND_INDEX_BAM.out.versions)
+            | mix(INFER_EXPERIMENT.out.versions)
+            | mix(GENEBODY_COVERAGE.out.versions)
+            | mix(INNER_DISTANCE.out.versions)
+            | mix(READ_DISTRIBUTION.out.versions)
+            | mix(COUNT_ALIGNED.out.versions)
+            | mix(RAW_READS_MULTIQC.out.versions)
+            | mix(DGE_DESEQ2.out.versions)
+            | mix(VV_RAW_READS.out.versions)
+            | mix(ch_nextflow_version)
+        // Process the versions:
+        ch_software_versions 
+            | unique  
+            | collectFile(
+                newLine: true, 
+                cache: false
+            )
+            | set { ch_final_software_versions }
+        // Convert software versions combined yaml to markdown table
+        SOFTWARE_VERSIONS(ch_outdir, ch_final_software_versions)
 
         GENERATE_PROTOCOL(ch_outdir,
             ch_meta,

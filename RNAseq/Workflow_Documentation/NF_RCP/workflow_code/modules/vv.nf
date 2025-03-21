@@ -30,6 +30,7 @@ process VV_RAW_READS {
     path("00-RawData/FastQC_Reports/raw_multiqc${params.assay_suffix}_data.zip"),  emit: VVed_raw_zipped_multiqc_data
     path("00-RawData/FastQC_Reports/raw_multiqc${params.assay_suffix}.html"),       emit: VVed_raw_multiqc_html
     path("VV_log.csv"),                                                              optional: params.skip_vv, emit: log
+    path("versions.yml"), emit: versions
 
   script:
     """
@@ -40,6 +41,9 @@ process VV_RAW_READS {
     if ${ !params.skip_vv } ; then
       vv_raw_reads.py --runsheet ${runsheet} --outdir .
     fi
+
+    echo '"${task.process}":' > versions.yml
+    echo "    dp_tools: \$(pip show dp_tools | grep Version | sed 's/Version: //')" >> versions.yml
     """
 }
 

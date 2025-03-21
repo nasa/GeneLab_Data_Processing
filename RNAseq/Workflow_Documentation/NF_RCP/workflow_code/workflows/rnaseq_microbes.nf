@@ -37,17 +37,6 @@ include { MULTIQC as COUNT_MULTIQC } from '../modules/multiqc.nf'
 include { MULTIQC as ALL_MULTIQC } from '../modules/multiqc.nf'
 include { PARSE_QC_METRICS } from '../modules/parse_qc_metrics.nf'
 
-// include { CLEAN_MULTIQC as CLEAN_RAW_READS_MULTIQC} from '../modules/clean_multiqc.nf'
-// include { CLEAN_MULTIQC as CLEAN_TRIMMED_READS_MULTIQC } from '../modules/clean_multiqc.nf'
-// include { CLEAN_MULTIQC as CLEAN_TRIMMING_MULTIQC } from '../modules/clean_multiqc.nf'
-// include { CLEAN_MULTIQC as CLEAN_ALIGN_MULTIQC } from '../modules/clean_multiqc.nf'
-// include { CLEAN_MULTIQC as CLEAN_GENEBODY_COVERAGE_MULTIQC } from '../modules/clean_multiqc.nf'
-// include { CLEAN_MULTIQC as CLEAN_INFER_EXPERIMENT_MULTIQC } from '../modules/clean_multiqc.nf'
-// include { CLEAN_MULTIQC as CLEAN_INNER_DISTANCE_MULTIQC } from '../modules/clean_multiqc.nf'
-// include { CLEAN_MULTIQC as CLEAN_READ_DISTRIBUTION_MULTIQC } from '../modules/clean_multiqc.nf'
-// include { CLEAN_MULTIQC as CLEAN_COUNT_MULTIQC } from '../modules/clean_multiqc.nf'
-// include { CLEAN_MULTIQC as CLEAN_ALL_MULTIQC } from '../modules/clean_multiqc.nf'
-
 // include { QUALIMAP_BAM_QC } from '../modules/qualimap.nf'
 // include { QUALIMAP_RNASEQ_QC } from '../modules/qualimap.nf'
 include { GET_GTF_FEATURES } from '../modules/get_gtf_features.nf'
@@ -137,8 +126,17 @@ workflow RNASEQ_MICROBES {
 
         // Get samples from runsheet
         samples = PARSE_RUNSHEET.out.samples
+        runsheet_path = PARSE_RUNSHEET.out.runsheet
+        
         //samples | view
 
+        // Stage the raw or truncated reads.
+        STAGE_RAW_READS( samples )
+        //STAGE_RAW_READS( ch_outdir.map { it + "/00-RawData/Fastq" }, samples )
+        raw_reads = STAGE_RAW_READS.out.raw_reads
+        samples_txt = STAGE_RAW_READS.out.samples_txt
+        //samples_txt | view
+        
         // Get dataset-wide metadata
         samples | first 
                 | map { meta, reads -> meta }
@@ -194,12 +192,6 @@ workflow RNASEQ_MICROBES {
         )
         genome_bed = PRED_TO_BED.out.genome_bed
 
-        // Stage the raw or truncated reads.
-        STAGE_RAW_READS( samples )
-        //STAGE_RAW_READS( ch_outdir.map { it + "/00-RawData/Fastq" }, samples )
-        raw_reads = STAGE_RAW_READS.out.raw_reads
-        samples_txt = STAGE_RAW_READS.out.samples_txt
-        //samples_txt | view
 
         // Run FastQC on raw reads
         RAW_FASTQC( raw_reads )
@@ -304,38 +296,6 @@ workflow RNASEQ_MICROBES {
         COUNT_MULTIQC(samples_txt, FEATURECOUNTS.out.summary, ch_multiqc_config, "featureCounts_")
         
 
-        // Software Version Capturing
-        nf_version = '"NEXTFLOW":\n    nextflow: '.concat("${nextflow.version}\n")
-        ch_nextflow_version = Channel.value(nf_version)
-        ch_software_versions = Channel.empty()
-        // Mix in versions from each process
-        ch_software_versions = ch_software_versions
-            | mix(ISA_TO_RUNSHEET.out.versions)  
-            | mix(GTF_TO_PRED.out.versions)
-            | mix(PRED_TO_BED.out.versions)
-            | mix(RAW_FASTQC.out.versions)
-            | mix(TRIMGALORE.out.versions)
-            | mix(ALIGN_BOWTIE2.out.versions)
-            | mix(SAM_TO_BAM.out.versions)
-            | mix(INFER_EXPERIMENT.out.versions)
-            | mix(GENEBODY_COVERAGE.out.versions)
-            | mix(INNER_DISTANCE.out.versions)
-            | mix(READ_DISTRIBUTION.out.versions)
-            | mix(FEATURECOUNTS.out.versions)
-            | mix(RAW_READS_MULTIQC.out.versions)
-            | mix(DGE_DESEQ2.out.versions)
-            | mix(ch_nextflow_version)
-        // Process the versions:
-        ch_software_versions 
-            | unique  
-            | collectFile(
-                newLine: true, 
-                cache: false
-            )
-            | set { ch_final_software_versions }
-        // Convert software versions combined yaml to markdown table
-        SOFTWARE_VERSIONS(ch_outdir, ch_final_software_versions)
-
         // Parse QC metrics
         all_multiqc_output = RAW_READS_MULTIQC.out.data
             | concat( TRIMMED_READS_MULTIQC.out.data )
@@ -356,17 +316,6 @@ workflow RNASEQ_MICROBES {
             all_multiqc_output,
             DGE_DESEQ2.out.norm_counts | map{ it -> it[1] }
         )
-
-        // Clean paths in outputs before VVing & publishing
-        // CLEAN_RAW_READS_MULTIQC(RAW_READS_MULTIQC.out.zipped_data, "raw")
-        // CLEAN_TRIMMED_READS_MULTIQC(TRIMMED_READS_MULTIQC.out.zipped_data, "trimmed")
-        // CLEAN_TRIMMING_MULTIQC(TRIMMING_MULTIQC.out.zipped_data, "trimming")
-        // CLEAN_ALIGN_MULTIQC(ALIGN_MULTIQC.out.zipped_data, "align")
-        // CLEAN_INFER_EXPERIMENT_MULTIQC(INFER_EXPERIMENT_MULTIQC.out.zipped_data, "infer_exp")
-        // CLEAN_GENEBODY_COVERAGE_MULTIQC(GENEBODY_COVERAGE_MULTIQC.out.zipped_data, "geneBody_cov")
-        // CLEAN_INNER_DISTANCE_MULTIQC(INNER_DISTANCE_MULTIQC.out.zipped_data, "inner_dist")
-        // CLEAN_READ_DISTRIBUTION_MULTIQC(READ_DISTRIBUTION_MULTIQC.out.zipped_data, "read_dist")
-        // CLEAN_COUNT_MULTIQC(COUNT_MULTIQC.out.zipped_data, "featureCounts")
 
         VV_RAW_READS(
             dp_tools_plugin,
@@ -451,6 +400,37 @@ workflow RNASEQ_MICROBES {
             ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
         )
 
+        // Software Version Capturing
+        nf_version = '"NEXTFLOW":\n    nextflow: '.concat("${nextflow.version}\n")
+        ch_nextflow_version = Channel.value(nf_version)
+        ch_software_versions = Channel.empty()
+        // Mix in versions from each process
+        ch_software_versions = ch_software_versions
+            | mix(GTF_TO_PRED.out.versions)
+            | mix(PRED_TO_BED.out.versions)
+            | mix(RAW_FASTQC.out.versions)
+            | mix(TRIMGALORE.out.versions)
+            | mix(ALIGN_BOWTIE2.out.versions)
+            | mix(SAM_TO_BAM.out.versions)
+            | mix(INFER_EXPERIMENT.out.versions)
+            | mix(GENEBODY_COVERAGE.out.versions)
+            | mix(INNER_DISTANCE.out.versions)
+            | mix(READ_DISTRIBUTION.out.versions)
+            | mix(FEATURECOUNTS.out.versions)
+            | mix(RAW_READS_MULTIQC.out.versions)
+            | mix(DGE_DESEQ2.out.versions)
+            | mix(VV_RAW_READS.out.versions)
+            | mix(ch_nextflow_version)
+        // Process the versions:
+        ch_software_versions 
+            | unique  
+            | collectFile(
+                newLine: true, 
+                cache: false
+            )
+            | set { ch_final_software_versions }
+        // Convert software versions combined yaml to markdown table
+        SOFTWARE_VERSIONS(ch_outdir, ch_final_software_versions)
 
         GENERATE_PROTOCOL(ch_outdir,
             ch_meta,
