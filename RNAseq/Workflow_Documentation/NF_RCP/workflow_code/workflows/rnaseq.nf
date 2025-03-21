@@ -278,15 +278,18 @@ workflow RNASEQ {
         rsem_counts = COUNT_ALIGNED.out.counts | map { it[1] } | collect
         QUANTIFY_RSEM_GENES( samples_txt, rsem_counts )
 
+        dge_script = "${projectDir}/bin/dge_deseq2.Rmd"
+        dge_annotations_script = "${projectDir}/bin/add_gene_annotations.Rmd"
+        
         // Normalize counts, DGE 
-        DGE_DESEQ2( ch_meta, runsheet_path, COUNT_ALIGNED.out.genes_results | toSortedList, "" )
+        DGE_DESEQ2( ch_meta, runsheet_path, COUNT_ALIGNED.out.genes_results | toSortedList, dge_script, "" )
         // Add annotations to DGE table
-        ADD_GENE_ANNOTATIONS( ch_meta, gene_annotations_url, DGE_DESEQ2.out.dge_table, "" )
+        ADD_GENE_ANNOTATIONS( ch_meta, gene_annotations_url, DGE_DESEQ2.out.dge_table, dge_annotations_script, "" )
         annotated_dge_table = ADD_GENE_ANNOTATIONS.out.annotated_dge_table
 
         // For rRNArm counts: Normalize counts, DGE, Add annotations to DGE table
-        DGE_DESEQ2_RRNA_RM( ch_meta, runsheet_path, REMOVE_RRNA.out.genes_results_rrnarm | toSortedList, "_rRNArm" )
-        ADD_GENE_ANNOTATIONS_RRNA_RM( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2_RRNA_RM.out.dge_table, "_rRNArm" )
+        DGE_DESEQ2_RRNA_RM( ch_meta, runsheet_path, REMOVE_RRNA.out.genes_results_rrnarm | toSortedList, dge_script, "_rRNArm" )
+        ADD_GENE_ANNOTATIONS_RRNA_RM( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2_RRNA_RM.out.dge_table, dge_annotations_script, "_rRNArm" )
         annotated_dge_table_rrna_rm = ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
 
 
