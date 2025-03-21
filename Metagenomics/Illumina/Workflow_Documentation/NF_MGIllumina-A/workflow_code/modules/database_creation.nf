@@ -279,5 +279,5 @@ workflow make_databases {
 
 
 workflow {
-     make_databases(Channel.of(params.database.CAT_DB_LINK), Channel.of(params.database.GTDBTK_LINK))
+     make_databases(Channel.of(params.CAT_DB_LINK), Channel.of(params.GTDBTK_LINK))
 }

@@ -299,9 +299,9 @@ workflow read_based {
 workflow {
 
     read_based(filtered_reads_ch,
-               params.database.chocophlan_dir,
-               params.database.uniref_dir, 
-               params.database.metaphlan_db_dir,
-               params.database.utilities_dir)
+               params.chocophlan_dir,
+               params.uniref_dir, 
+               params.metaphlan_db_dir,
+               params.utilities_dir)
 
 }

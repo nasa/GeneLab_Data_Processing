@@ -1,14 +1,13 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
 
-// color defs
+// Terminal text color definitions
 c_back_bright_red = "\u001b[41;1m";
-c_bright_green = "\u001b[32;1m";
-c_blue = "\033[0;34m";
-c_reset = "\033[0m";
+c_bright_green    = "\u001b[32;1m";
+c_blue            = "\033[0;34m";
+c_reset           = "\033[0m";
 
 params.help = false
-params.debug = false
 
 
 /**************************************************
@@ -52,41 +51,41 @@ if(params.help){
   println("      --file_association_extra [STRING] Extra parameters and arguments to GL-gen-metagenomics-file-associations-table command. Run 'GL-gen-metagenomics-file-associations-table --help' for extra parameters that can be set. Example '--single-ended --R1-used-as-single-ended-data'. Default: '--use-sample-names-from-assay-table' ")
   println()
   println("Files:")
-  println("    --files.main  [PATH] The main workflow script used for processing. Default: ./main.nf")
-  println("    --files.config  [PATH] The main workflow configuration file used for processing. Default: ./nextflow.config")
-  println("    --files.samples  [PATH] A single column file with sample ids on each line generated after running the processing pipeline. Default: ./unique-sample-IDs.txt")
-  println("    --files.assay_table  [PATH] GLDS assay table generated after running the processing pipeline with accession number as input.")
+  println("    --main  [PATH] The main workflow script used for processing. Default: ./main.nf")
+  println("    --nextflow_config  [PATH] The main workflow configuration file used for processing. Default: ./nextflow.config")
+  println("    --samples  [PATH] A single column file with sample ids on each line generated after running the processing pipeline. Default: ./unique-sample-IDs.txt")
+  println("    --assay_table  [PATH] GLDS assay table generated after running the processing pipeline with accession number as input.")
   println("                   Example, ../Genelab/a_OSD-574_metagenomic-sequencing_whole-genome-shotgun-sequencing_illumina.txt. Default: empty string")
-  println("    --files.isa_zip  [PATH] Genelab ISA zip files containing an assay atable for the OSD accession. This is only required if --files.assay_table is not set.")
+  println("    --isa_zip  [PATH] Genelab ISA zip files containing an assay atable for the OSD accession. This is only required if --files.assay_table is not set.")
   println("                   Example, ../Genelab/OSD-574_metadata_OSD-574-ISA.zip. Default: empty string")
-  println("    --files.runsheet  [PATH] A 3-column (single-end) or 4-column (paired-end) input file (sample_id, forward, [reverse,] paired) used to run the processing pipeline. This is the value set to the paremater --csv_file when run the processing pipeline with a csv file as input otherwise it is the GLfile.csv in the GeneLab directory if --GLDS_accession was used as input. Example '../GeneLab/GLfile.csv'.  Default: empty string")
-  println("    --files.software_versions  [PATH] A file generated after running the processing pipeline listing the software versions used. Default: ../Metadata/software_versions.txt")
+  println("    --runsheet  [PATH] A 3-column (single-end) or 4-column (paired-end) input file (sample_id, forward, [reverse,] paired) used to run the processing pipeline. This is the value set to the paremater --input_file when run the processing pipeline with a csv file as input otherwise it is the GLfile.csv in the GeneLab directory if --GLDS_accession was used as input. Example '../GeneLab/GLfile.csv'.  Default: empty string")
+  println("    --software_versions  [PATH] A file generated after running the processing pipeline listing the software versions used. Default: ../Metadata/software_versions.txt")
   println()
   println("Directories:")
-  println("    --directories.config  [PATH] A directory containing configuration files used in the processing pipeline. Only relevent in Metagenomics and AmpIllumina workflows. Default: ./config/")
-  println("    --directories.bin  [PATH] A directory containing scripts used by nextflow. Default: ./bin/")
-  println("    --directories.envs  [PATH] A directory containing conda yaml files. Default: ./envs/")
-  println("    --directories.config  [PATH] A directory containing config files. Default: ./config/")
-  println("    --directories.modules  [PATH] A directory containing nextflow module scripts. Default: ./modules/")
-  println("    --directories.Raw_Sequence_Data [PATH] A directory containing raw sequence and raw sequence outputs. Default: ../Raw_Sequence_Data/")
-  println("    --directories.FastQC_Outputs [PATH] A directory containing fastqc and multiqc zip reports. Default: ../FastQC_Outputs/")
-  println("    --directories.Filtered_Sequence_Data  [PATH] A directory containing the outputs of read filtering after running the processing pipeline. Default: ../Filtered_Sequence_Data/")  
-  println("    --directories.Read_based_Processing  [PATH] A directory containing the outputs of read based processing after running the processing pipeline. Default: ../Read_based_Processing/")
-  println("    --directories.Assembly_based_Processing  [PATH] A directory containing the outputs of assembly based processing after running the processing pipeline. Default: ../Assembly_based_Processing/")
-  println("    --directories.Assemblies  [PATH] A directory containing sample contig assemblies after running the processing pipeline. Default: ../Assembly_based_Processing/assemblies/")
-  println("    --directories.Genes  [PATH] A directory containing sample predicted genes after running the processing pipeline. Default: ../Assembly_based_Processing/predicted-genes/")
-  println("    --directories.Annotations_And_Tax  [PATH] A directory containing sample gene and contig annotations after running the processing pipeline. Default: ../Assembly_based_Processing/annotations-and-taxonomy/")
-  println("    --directories.Mapping  [PATH] A directory containing sample read mapping (bam) files after running the processing pipeline. Default: ../Assembly_based_Processing/read-mapping/")
-  println("    --directories.Combined_Output  [PATH] A directory containing assembly summaries and reports across samples after running the processing pipeline. Default: ../Assembly_based_Processing/combined-outputs/")
-  println("    --directories.Bins  [PATH] A directory containing metagenome bins after running the processing pipeline. Default: ../Assembly_based_Processing/bins/")
-  println("    --directories.MAGS  [PATH] A directory containing metagenome assembled genomes (MAGS) after running the processing pipeline. Default: ../Assembly_based_Processing/MAGs/")
-  println("    --directories.Output_dir  [PATH] Specifies the directory where outputs of this post-processing workflow will be published. Default: ../Post_Processing/")
+  println("    --bin  [PATH] A directory containing scripts used by nextflow. Default: ./bin/")
+  println("    --envs  [PATH] A directory containing conda yaml files. Default: ./envs/")
+  println("    --config_dir  [PATH] A directory containing config files. Default: ./config/")
+  println("    --modules  [PATH] A directory containing nextflow module scripts. Default: ./modules/")
+  println("    --Raw_Sequence_Data [PATH] A directory containing raw sequence and raw sequence outputs. Default: ../Raw_Sequence_Data/")
+  println("    --FastQC_Outputs [PATH] A directory containing fastqc and multiqc zip reports. Default: ../FastQC_Outputs/")
+  println("    --Filtered_Sequence_Data  [PATH] A directory containing the outputs of read filtering after running the processing pipeline. Default: ../Filtered_Sequence_Data/")  
+  println("    --Read_based_Processing  [PATH] A directory containing the outputs of read based processing after running the processing pipeline. Default: ../Read_based_Processing/")
+  println("    --Assembly_based_Processing  [PATH] A directory containing the outputs of assembly based processing after running the processing pipeline. Default: ../Assembly_based_Processing/")
+  println("    --Assemblies  [PATH] A directory containing sample contig assemblies after running the processing pipeline. Default: ../Assembly_based_Processing/assemblies/")
+  println("    --Genes  [PATH] A directory containing sample predicted genes after running the processing pipeline. Default: ../Assembly_based_Processing/predicted-genes/")
+  println("    --Annotations_And_Tax  [PATH] A directory containing sample gene and contig annotations after running the processing pipeline. Default: ../Assembly_based_Processing/annotations-and-taxonomy/")
+  println("    --Mapping  [PATH] A directory containing sample read mapping (bam) files after running the processing pipeline. Default: ../Assembly_based_Processing/read-mapping/")
+  println("    --Combined_Output  [PATH] A directory containing assembly summaries and reports across samples after running the processing pipeline. Default: ../Assembly_based_Processing/combined-outputs/")
+  println("    --Bins  [PATH] A directory containing metagenome bins after running the processing pipeline. Default: ../Assembly_based_Processing/bins/")
+  println("    --MAGS  [PATH] A directory containing metagenome assembled genomes (MAGS) after running the processing pipeline. Default: ../Assembly_based_Processing/MAGs/")
+  println("    --Output_dir  [PATH] Specifies the directory where outputs of this post-processing workflow will be published. Default: ../Post_Processing/")
   println()
   println("Optional arguments:")  
-  println("    --help  Print this help message and exit")
+  println("    --help [BOOLEAN] Print this help message and exit")
+  println("    --debug [BOOLEAN] Set to true if you'd like to see the values of your set parameters printed to the terminal. Default: false.")
   println()
   println("Paths to existing conda environments to use otherwise a new one will be created using the yaml file in envs/.")
-  println("      --conda.genelab [PATH] Path to a conda environment containing genelab-utils. Default: null.")
+  println("      --conda_genelab [PATH] Path to a conda environment containing genelab-utils. Default: null.")
   exit 0
 }
 
@@ -96,7 +95,7 @@ if(params.help){
 *************************************************/
 if(params.debug){
 
-log.info """
+log.info """${c_blue}
          GeneLab Post Processing Pipeline: $workflow.manifest.version
          
          You have set the following parameters:
@@ -126,31 +125,31 @@ log.info """
          File association Script Extra: ${params.file_association_extra}
 
          Files:
-         Main Workflow Script: ${params.files.main}
-         Nextflow Config File: ${params.files.config}
-         Samples: ${params.files.samples}
-         Assay Table: ${params.files.assay_table}
-         ISA Zip: ${params.files.isa_zip}
-         Input Runsheet: ${params.files.runsheet}
-         Software Versions: ${params.files.software_versions}
+         Main Workflow Script: ${params.main}
+         Nextflow Config File: ${params.nextflow_config}
+         Samples: ${params.samples}
+         Assay Table: ${params.assay_table}
+         ISA Zip: ${params.isa_zip}
+         Input Runsheet: ${params.runsheet}
+         Software Versions: ${params.software_versions}
 
          Directories:
-         Config: ${params.directories.config}
-         Bin: ${params.directories.bin}
-         Conda Environments: ${params.directories.envs}
-         Modules: ${params.directories.modules}
-         Raw Reads Directory: ${params.directories.Raw_Sequence_Data}
-         Filtered Sequence Data: ${params.directories.Filtered_Sequence_Data}
-         FastQC Outputs: ${params.directories.FastQC_Outputs}
-         Read-based Processing: ${params.directories.Read_based_Processing}
-         Assemblies: ${params.directories.Assemblies}
-         Genes: ${params.directories.Genes}
-         Annotations And Taxonomy: ${params.directories.Annotations_And_Tax}
-         Mapping: ${params.directories.Mapping}
-         Combined Output: ${params.directories.Combined_Output}
-         Bins: ${params.directories.Bins}
-         MAGS: ${params.directories.MAGS}
-         Pipeline Outputs: ${params.directories.Output_dir}
+         Config: ${params.config_dir}
+         Bin: ${params.bin}
+         Conda Environments: ${params.envs}
+         Modules: ${params.modules}
+         Raw Reads Directory: ${params.Raw_Sequence_Data}
+         Filtered Sequence Data: ${params.Filtered_Sequence_Data}
+         FastQC Outputs: ${params.FastQC_Outputs}
+         Read-based Processing: ${params.Read_based_Processing}
+         Assemblies: ${params.Assemblies}
+         Genes: ${params.Genes}
+         Annotations And Taxonomy: ${params.Annotations_And_Tax}
+         Mapping: ${params.Mapping}
+         Combined Output: ${params.Combined_Output}
+         Bins: ${params.Bins}
+         MAGS: ${params.MAGS}
+         Pipeline Outputs: ${params.Output_dir}
          """
 
 }
@@ -161,27 +160,36 @@ include { CLEAN_FASTQC_PATHS; PACKAGE_PROCESSING_INFO; GENERATE_README; VALIDATE
 
 workflow {
 
+        // Make sure accession numbers are set
+        if(!params.GLDS_accession || !params.OSD_accession){
+           error("""${c_back_bright_red}ACCESSION ERROR!. 
+                    Please supply both --GLDS_accession and --OSD_accession.
+                    They can be any string you choose but they must be set.
+                 ${c_reset}""")
+        }
+
+
        // ---------------------- Input channels -------------------------------- //
        // Input files
-       sample_ids_file     =  Channel.fromPath(params.files.samples, checkIfExists: true)
-       software_versions   =  Channel.fromPath(params.files.software_versions, checkIfExists: true)
+       sample_ids_file     =  Channel.fromPath(params.samples, checkIfExists: true)
+       software_versions   =  Channel.fromPath(params.software_versions, checkIfExists: true)
 
        // Directories
-       Bins                =  Channel.fromPath(params.directories.Bins,  type: 'dir', checkIfExists: true)
-       MAGS                =  Channel.fromPath(params.directories.MAGS,  type: 'dir', checkIfExists: true)
+       Bins                =  Channel.fromPath(params.Bins,  type: 'dir', checkIfExists: true)
+       MAGS                =  Channel.fromPath(params.MAGS,  type: 'dir', checkIfExists: true)
 
        // Input Value channels
        OSD_ch    =  Channel.of([params.name, params.email, params.output_prefix,
                                 params.OSD_accession, params.protocol_id,
-                                params.directories.FastQC_Outputs, 
-                                params.directories.Filtered_Sequence_Data,
-                                params.directories.Read_Based_Processing,
-                                params.directories.Assembly_Based_Processing,
-                                params.directories.Assemblies, 
-                                params.directories.Genes,
-                                params.directories.Annotations_And_Tax,
-                                params.directories.Mapping,
-                                params.directories.Combined_Output])
+                                params.FastQC_Outputs, 
+                                params.Filtered_Sequence_Data,
+                                params.Read_Based_Processing,
+                                params.Assembly_Based_Processing,
+                                params.Assemblies, 
+                                params.Genes,
+                                params.Annotations_And_Tax,
+                                params.Mapping,
+                                params.Combined_Output])
       
        GLDS_ch   =  Channel.of([params.GLDS_accession, params.V_V_guidelines_link, params.output_prefix,
                                 params.target_files, params.assay_suffix, params.logs,
@@ -195,12 +203,12 @@ workflow {
         file_label_ch = Channel.of([params.processing_zip_file, params.readme])
 
         // processed as paths but utilized as labels in the genberate curation association table script 
-        dir_label_ch = Channel.of([params.directories.Raw_Sequence_Data,
-                                   params.directories.Filtered_Sequence_Data,
-                                   params.directories.Read_Based_Processing,
-                                   params.directories.Assembly_Based_Processing,
-                                   params.directories.Annotations_And_Tax,
-                                   params.directories.Combined_Output])
+        dir_label_ch = Channel.of([params.Raw_Sequence_Data,
+                                   params.Filtered_Sequence_Data,
+                                   params.Read_Based_Processing,
+                                   params.Assembly_Based_Processing,
+                                   params.Annotations_And_Tax,
+                                   params.Combined_Output])
                                   .collect()
                                   .map{ Raw_Sequence_Data, Filtered_Sequence_Data, Read_Based_Processing,
                                         Assembly_Based_Processing, Annotations_And_Tax, Combined_Output -> 
@@ -214,19 +222,17 @@ workflow {
                                       }  
 
         // If the assay table is provided use it as the input table otherwise use the isa_zip
-        assay_table_ch = Channel.fromPath("${params.files.assay_table}" == "" ? "${params.files.isa_zip}" : "${params.files.assay_table}",
+        assay_table_ch = Channel.fromPath( params.assay_table ?  params.assay_table : params.isa_zip,
                                           checkIfExists: true)
 
         // Runsheet used to execute the processing workflow
-        runsheet_ch = Channel.fromPath(params.files.runsheet)
+        runsheet_ch = Channel.fromPath(params.runsheet, checkIfExists: true)
 
 
 
        // Files and directories to be packaged in processing_info.zip
-        files_and_dirs_ch = Channel.of(params.directories.config, params.directories.logs,
-                                       params.directories.bin, params.directories.modules,
-                                       params.directories.envs, params.files.main,
-                                       params.files.config, params.files.samples)
+        files_and_dirs_ch = Channel.of(params.config_dir, params.logs, params.bin, params.modules,
+                                       params.envs, params.main, params.nextflow_config, params.samples)
                                        .collect()
                                        .map{ config_dir, logs, bin, modules,  envs, main, config_file, samples ->
                                             tuple( file(config_dir, checkIfExists: true),
@@ -246,20 +252,19 @@ workflow {
         GENERATE_README(OSD_ch, PACKAGE_PROCESSING_INFO.out.zip, Bins, MAGS)
 
         
-        FastQC_Outputs_dir  =  Channel.fromPath(params.directories.FastQC_Outputs,
-                                                type: 'dir',  checkIfExists: true)
+        FastQC_Outputs_dir  =  Channel.fromPath(params.FastQC_Outputs, type: 'dir',  checkIfExists: true)
         CLEAN_FASTQC_PATHS(FastQC_Outputs_dir)
 
-        validation_dirs_ch =  Channel.of(params.directories.Filtered_Sequence_Data,
-                                         params.directories.Read_Based_Processing,
-                                         params.directories.Assembly_Based_Processing, 
-                                         params.directories.Assemblies,
-                                         params.directories.Mapping,
-                                         params.directories.Genes, 
-                                         params.directories.Annotations_And_Tax,
-                                         params.directories.Bins, 
-                                         params.directories.MAGS,
-                                         params.directories.Combined_Output)
+        validation_dirs_ch =  Channel.of(params.Filtered_Sequence_Data,
+                                         params.Read_Based_Processing,
+                                         params.Assembly_Based_Processing, 
+                                         params.Assemblies,
+                                         params.Mapping,
+                                         params.Genes, 
+                                         params.Annotations_And_Tax,
+                                         params.Bins, 
+                                         params.MAGS,
+                                         params.Combined_Output)
                             .concat(CLEAN_FASTQC_PATHS.out.clean_dir)
                             .collect()
                             .map{ filtered_sequence, read_based, assembly_based, assemblies, 
@@ -282,10 +287,11 @@ workflow {
                             sample_ids_file, 
                             GENERATE_README.out.readme,
                             PACKAGE_PROCESSING_INFO.out.zip) 
+
         // Generate md5sums
-        dirs_ch = Channel.of(params.directories.Read_Based_Processing,
-                             params.directories.Filtered_Sequence_Data,
-                             params.directories.Assembly_Based_Processing)
+        dirs_ch = Channel.of(params.Read_Based_Processing,
+                             params.Filtered_Sequence_Data,
+                             params.Assembly_Based_Processing)
                               .concat(CLEAN_FASTQC_PATHS.out.clean_dir)
                               .collect()
                               .map{ read_based, filtered_sequence, assembly_based, fastqc ->
@@ -298,12 +304,13 @@ workflow {
          GENERATE_MD5SUMS(PACKAGE_PROCESSING_INFO.out.zip,
                             GENERATE_README.out.readme, dirs_ch)
 
+
           // Generate curation file association table
-          curation_dirs_ch =   Channel.of(params.directories.Assemblies,
-                                          params.directories.Genes,
-                                          params.directories.Mapping,
-                                          params.directories.Bins,
-                                          params.directories.MAGS)
+          curation_dirs_ch =   Channel.of(params.Assemblies,
+                                          params.Genes,
+                                          params.Mapping,
+                                          params.Bins,
+                                          params.MAGS)
                               .concat(CLEAN_FASTQC_PATHS.out.clean_dir)
                               .collect()
                               .map{ assemblies, genes, mapping, bins, mags, fastqc ->
@@ -319,5 +326,23 @@ workflow {
                                   dir_label_ch, 
                                   curation_dirs_ch, 
                                   assay_table_ch, runsheet_ch)
+
+
+         // Write methods
          GENERATE_PROTOCOL(software_versions, params.protocol_id)
+}
+
+
+workflow.onComplete {
+
+    println("${c_bright_green}Pipeline completed at: $workflow.complete")
+    println("""Execution status: ${ workflow.success ? 'OK' : "${c_back_bright_red}failed" }""")
+    log.info ( workflow.success ? "\nDone! Workflow completed without any error\n" : "Oops .. something went wrong${c_reset}" )
+
+    if ( workflow.success ) {
+
+    println("Post-processing Outputs: ${params.Output_dir} ${c_reset}")
+    println()
+
+    }
 }
