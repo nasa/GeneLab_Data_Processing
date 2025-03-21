@@ -2,7 +2,7 @@
 nextflow.enable.dsl = 2
 
 process CLEAN_FASTQC_PATHS {
-    tag "Purging genelab paths from MultiQC zip files in ${params.directories.FastQC_Outputs}"
+    tag "Purging genelab paths from MultiQC zip files in ${params.FastQC_Outputs}"
     input:
         path(FastQC_Outputs_dir)
     output:
@@ -201,14 +201,14 @@ process GENERATE_CURATION_TABLE {
         // Directory paths
         tuple path(Assemblies), path(Genes), path(Mapping),
               path(Bins), path(MAGS), path(FastQC_Outputs) 
-        path(assay_table)
+        path(input_table)
         path(runsheet)
         
     output:
         path("${GLDS_accession}_${output_prefix}-associated-file-names.tsv"), emit: curation_table
 
     script:
-        def INPUT_TABLE = "${params.files.assay_table}" == "" ? "--isa-zip  ${assay_table}" : "--assay-table ${assay_table}"
+        def INPUT_TABLE = params.assay_table ? "--assay-table ${input_table}" : "--isa-zip  ${input_table}"
         """
         GL-gen-metagenomics-file-associations-table ${INPUT_TABLE} \\
                     --runsheet '${runsheet}' \\

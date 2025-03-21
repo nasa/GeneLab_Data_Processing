@@ -123,7 +123,7 @@ workflow quality_check {
 
 workflow {
 
-        Channel.fromPath(params.csv_file)
+        Channel.fromPath(params.input_file)
                .splitCsv()
                .map{ row -> row.paired == 'true' ? tuple( "${row.sample_id}", [file("${row.forward}", checkIfExists: true), file("${row.reverse}", checkIfExists: true)], row.paired) : 
                                                    tuple( "${row.sample_id}", [file("${row.forward}", checkIfExists: true)], row.paired)}

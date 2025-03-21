@@ -65,7 +65,7 @@ workflow assembly_based {
         CALL_GENES.out.genes | REMOVE_LINEWRAPS
         genes_ch = REMOVE_LINEWRAPS.out.genes
 
-        if (ko_db_dir != null){
+        if (ko_db_dir){
 
             KO_ANNOTATION(assembly_ch.join(genes_ch), ko_db_dir)
             KO_ANNOTATION.out.temp_table | FILTER_KFAMSCAN
@@ -81,14 +81,14 @@ workflow assembly_based {
 
         }
 
-        if (cat_db != null){         
+        if (cat_db){         
 
             TAX_CLASSIFICATION(assembly_ch.join(genes_ch), cat_db)
             taxonomy_ch = TAX_CLASSIFICATION.out.taxonomy
 
         }else{
 
-            SETUP_CAT_DB(params.database.CAT_DB_LINK)
+            SETUP_CAT_DB(params.CAT_DB_LINK)
             SETUP_CAT_DB.out.version | mix(software_versions_ch) | set{software_versions_ch}
             TAX_CLASSIFICATION(assembly_ch.join(genes_ch), SETUP_CAT_DB.out.cat_db)
             taxonomy_ch = TAX_CLASSIFICATION.out.taxonomy
@@ -100,7 +100,7 @@ workflow assembly_based {
                            .join(genes_ch))
         coverage_ch = GET_COV_AND_DET.out.coverages
 
-        // Combine contig annotation
+        // Combine contig annotations
         tax_and_cov_ch = COMBINE_GENE_ANNOTS_TAX_AND_COVERAGE(coverage_ch
                                                                 .join(annotations_ch)
                                                                 .join(taxonomy_ch)
@@ -136,13 +136,13 @@ workflow assembly_based {
    
          
         // Check Bins and Summarize MAGs
-        if(gtdbtk_db_dir != null){
+        if(gtdbtk_db_dir){
             summarize_mags(summarize_bins.out.bins_checkm_results,
                       bins_ch,
                       gtdbtk_db_dir, use_gtdbtk_scratch_location,
                       gene_coverage_annotation_and_tax_files_ch)
         }else{
-            SETUP_GTDBTK_DB(params.database.GTDBTK_LINK)
+            SETUP_GTDBTK_DB(params.GTDBTK_LINK)
             SETUP_GTDBTK_DB.out.version | mix(software_versions_ch) | set{software_versions_ch}
             summarize_mags(summarize_bins.out.bins_checkm_results,
                       bins_ch, 
