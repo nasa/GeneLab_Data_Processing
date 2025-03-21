@@ -632,18 +632,13 @@ def check_all_samples_in_multiqc(outdir, samples, log_path, assay_suffix="_GLbul
                     "check_all_samples_in_multiqc", 
                     "YELLOW",  # Changed to YELLOW since we can proceed even with this warning
                     f"Missing {len(missing_samples)} samples in RSEM MultiQC report", 
-                    f"Using flexible matching. Missing: {';'.join(missing_samples[:20])}"  # Limit to 20 sample names
+                    f"Missing: {';'.join(missing_samples[:20])}"  # Limit to 20 sample names
                 )
                 # Return True so we can continue with validation
                 return True
             else:
-                print(f"All samples found in RSEM MultiQC report using flexible matching")
+                print(f"All samples found in RSEM MultiQC report")
                 print(f"Successfully matched {len(matched_samples)} runsheet samples to MultiQC entries")
-                
-                # Show a few examples of matches
-                print("Example matches:")
-                for i, (sample, multiqc_name) in enumerate(list(matched_samples.items())[:3]):
-                    print(f"  - Runsheet: {sample} -> MultiQC: {multiqc_name}")
                 
                 log_check_result(
                     log_path, 
@@ -652,7 +647,7 @@ def check_all_samples_in_multiqc(outdir, samples, log_path, assay_suffix="_GLbul
                     "check_all_samples_in_multiqc", 
                     "GREEN", 
                     "All samples found in RSEM MultiQC report", 
-                    "Used flexible sample name matching"
+                    ""
                 )
                 return True
                 
