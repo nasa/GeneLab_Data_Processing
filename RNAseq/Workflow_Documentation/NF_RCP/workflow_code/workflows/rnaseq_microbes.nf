@@ -3,7 +3,6 @@ include { PARSE_ANNOTATIONS_TABLE } from '../modules/parse_annotations_table.nf'
 include { FETCH_ISA } from '../modules/fetch_isa.nf'
 include { ISA_TO_RUNSHEET } from '../modules/isa_to_runsheet.nf'
 include { GET_ACCESSIONS } from '../modules/get_accessions.nf'
-// include { PREPARE_REFERENCES } from './prepare_references.nf'
 include { DOWNLOAD_REFERENCES } from '../modules/download_references.nf'
 include { SUBSAMPLE_GENOME } from '../modules/subsample_genome.nf'
 include { DOWNLOAD_ERCC } from '../modules/download_ercc.nf'
@@ -24,21 +23,6 @@ include { GENEBODY_COVERAGE } from '../modules/rseqc.nf'
 include { INNER_DISTANCE } from '../modules/rseqc.nf'
 include { READ_DISTRIBUTION } from '../modules/rseqc.nf'
 include { ASSESS_STRANDEDNESS } from '../modules/assess_strandedness.nf'
-
-include { MULTIQC as RAW_READS_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as TRIMMED_READS_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as TRIMMING_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as ALIGN_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as GENEBODY_COVERAGE_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as INFER_EXPERIMENT_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as INNER_DISTANCE_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as READ_DISTRIBUTION_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as COUNT_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as ALL_MULTIQC } from '../modules/multiqc.nf'
-include { PARSE_QC_METRICS } from '../modules/parse_qc_metrics.nf'
-
-// include { QUALIMAP_BAM_QC } from '../modules/qualimap.nf'
-// include { QUALIMAP_RNASEQ_QC } from '../modules/qualimap.nf'
 include { GET_GTF_FEATURES } from '../modules/get_gtf_features.nf'
 include { FEATURECOUNTS } from '../modules/featurecounts.nf'
 include { QUANTIFY_FEATURECOUNTS_GENES } from '../modules/quantify_featurecounts_genes.nf'
@@ -48,17 +32,28 @@ include { DGE_DESEQ2 } from '../modules/dge_deseq2.nf'
 include { DGE_DESEQ2 as DGE_DESEQ2_RRNA_RM } from '../modules/dge_deseq2.nf'
 include { ADD_GENE_ANNOTATIONS } from '../modules/add_gene_annotations.nf'
 include { ADD_GENE_ANNOTATIONS as ADD_GENE_ANNOTATIONS_RRNA_RM } from '../modules/add_gene_annotations.nf'
-//include { EXTEND_DGE_TABLE } from '../modules/extend_dge_table.nf'
-//include { GENERATE_PCA_TABLE } from '../modules/generate_pca_table.nf'
-include { SOFTWARE_VERSIONS } from '../modules/software_versions.nf'
-include { validateParameters; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
+include { 
+    MULTIQC as RAW_READS_MULTIQC;
+    MULTIQC as TRIMMED_READS_MULTIQC;
+    MULTIQC as TRIMMING_MULTIQC;
+    MULTIQC as ALIGN_MULTIQC;
+    MULTIQC as GENEBODY_COVERAGE_MULTIQC;
+    MULTIQC as INFER_EXPERIMENT_MULTIQC;
+    MULTIQC as INNER_DISTANCE_MULTIQC;
+    MULTIQC as READ_DISTRIBUTION_MULTIQC;
+    MULTIQC as COUNT_MULTIQC
+    MULTIQC as ALL_MULTIQC
+} from '../modules/multiqc.nf'
+include { PARSE_QC_METRICS } from '../modules/parse_qc_metrics.nf'
 include { VV_RAW_READS;
     VV_TRIMMED_READS;
     VV_BOWTIE2_ALIGNMENT;
     VV_RSEQC;
     VV_FEATURECOUNTS;
     VV_DGE_DESEQ2 } from '../modules/vv.nf'
+include { SOFTWARE_VERSIONS } from '../modules/software_versions.nf'
 include { GENERATE_PROTOCOL } from '../modules/generate_protocol.nf'
+include { validateParameters; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
 
 def colorCodes = [
     c_line: "┅" * 70,
@@ -100,17 +95,11 @@ workflow RNASEQ_MICROBES {
         else {
             ch_outdir = ch_outdir.map { it + "/results" }
         }
-
-        // Ensure ch_outdir is a proper value channel that can be reused multiple times
         ch_outdir = ch_outdir.first()
 
-        // Initialize the isa_archive channel as Channel.empty() by default
         Channel.empty() | set { isa_archive }
-
-        // if runsheet_path is not provided, set it up from ISA input
-        // If ISA input is not provided, use the accession to get the ISA
-        if ( runsheet_path == null ) {
-            if ( isa_archive_path == null ) {
+        if ( runsheet_path == null ) { // if runsheet_path is not provided, set it up from ISA input
+            if ( isa_archive_path == null ) { // if isa_archive_path is not provided, fetch the ISA
                 FETCH_ISA( ch_outdir, osd_accession, glds_accession )
                 isa_archive = FETCH_ISA.out.isa_archive
             }
@@ -118,27 +107,17 @@ workflow RNASEQ_MICROBES {
             runsheet_path = ISA_TO_RUNSHEET.out.runsheet
         }
 
-        // Validate input parameters and runsheet
-        validateParameters()
+        // Validate input parameters and runsheet ; log.info paramsSummaryLog(workflow)
+        validateParameters() 
 
-        // Print summary of supplied parameters
-        // log.info paramsSummaryLog(workflow)
-
-        // Parse the runsheet
-        PARSE_RUNSHEET( runsheet_path )
-
-        // Get samples from runsheet
+        PARSE_RUNSHEET( runsheet_path ) 
         samples = PARSE_RUNSHEET.out.samples
         runsheet_path = PARSE_RUNSHEET.out.runsheet
-        
-        //samples | view
 
-        // Stage the raw or truncated reads.
-        STAGE_RAW_READS( samples )
-        //STAGE_RAW_READS( ch_outdir.map { it + "/00-RawData/Fastq" }, samples )
+        // Stage the full or truncated raw reads
+        STAGE_RAW_READS( samples ) 
         raw_reads = STAGE_RAW_READS.out.raw_reads
         samples_txt = STAGE_RAW_READS.out.samples_txt
-        //samples_txt | view
         
         // Get dataset-wide metadata
         samples | first 
@@ -179,7 +158,7 @@ workflow RNASEQ_MICROBES {
         .ifEmpty { genome_references_pre_ercc.value }  | set { genome_references }
         
         // Convert GTF file to RSeQC-compatible BED file
-        GTF_TO_PRED(
+        GTF_TO_PRED( 
             derived_store_path,
             organism_sci,
             reference_source,
@@ -195,20 +174,16 @@ workflow RNASEQ_MICROBES {
         )
         genome_bed = PRED_TO_BED.out.genome_bed
 
-
-        // Run FastQC on raw reads
-        RAW_FASTQC( raw_reads )
-        // Collect the raw read fastqc zip files
-        RAW_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] }
-        //RAW_FASTQC( ch_outdir.map { it + "/00-RawData/FastQC_Reports" }, raw_reads )
+        // Run FastQC on raw reads  
+        RAW_FASTQC( raw_reads ) 
+        RAW_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] } // Collect the raw read fastqc zip files
         | flatten
-        | collect        // Collect all zip files into a single list
-        | set { raw_fastqc_zip }     // Create a channel with all zip files
+        | collect // Collect all zip files into a single list
+        | set { raw_fastqc_zip } // Create a channel with all zip files
         
         // Get the max read length by parsing the raw read fastqc zip files
         GET_MAX_READ_LENGTH( raw_fastqc_zip )
         max_read_length = GET_MAX_READ_LENGTH.out.length | map { it.toString().toInteger() }
-        //max_read_length.view { "Max read length: $it" }
 
         // Trim raw reads
         TRIMGALORE( raw_reads )
@@ -218,7 +193,6 @@ workflow RNASEQ_MICROBES {
         // Run FastQC on trimmed reads
         TRIMMED_FASTQC( trimmed_reads )
         TRIMMED_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] } 
-        //TRIMMED_FASTQC( ch_outdir.map { it + "/01-TG_Preproc/FastQC_Reports" }, trimmed_reads )
         | flatten 
         | collect 
         | set { trimmed_fastqc_zip }
@@ -231,10 +205,10 @@ workflow RNASEQ_MICROBES {
         ALIGN_BOWTIE2( trimmed_reads, bowtie2_index_dir )
         bowtie2_alignment_logs = ALIGN_BOWTIE2.out.alignment_logs | collect
         
-        // Convert Bowtie2 SAM to BAM (query-name order, matching FASTQ input order )
+        // Convert Bowtie2 SAM to BAM
         SAM_TO_BAM( ALIGN_BOWTIE2.out.sam ) 
 
-        // Sort and index BAM files to convert from query-name order to genome coordinate order
+        // Sort and index BAM files 
         SORT_AND_INDEX_BAM( SAM_TO_BAM.out.bam )
         sorted_bam = SORT_AND_INDEX_BAM.out.sorted_bam
         bams = sorted_bam.map { it[1] } | toSortedList()
@@ -261,7 +235,7 @@ workflow RNASEQ_MICROBES {
         ASSESS_STRANDEDNESS( infer_expt_out )
         strandedness = ASSESS_STRANDEDNESS.out | map { it.text.split(":")[0] }
 
-        // Generate gene counts table from genome-coordinate sorted Bowtie2-aligned BAMs using featureCounts
+        // Create FeatureCounts table from BAMs
         GET_GTF_FEATURES( genome_references )
         gtf_features = GET_GTF_FEATURES.out.gtf_features.map { it.text.trim() }
         FEATURECOUNTS( ch_meta, genome_references, gtf_features, strandedness, bams )
@@ -278,14 +252,11 @@ workflow RNASEQ_MICROBES {
 
         // Normalize counts, DGE, Add annotations to DGE table
         DGE_DESEQ2( ch_meta, runsheet_path, counts, dge_script, "" )
-        ADD_GENE_ANNOTATIONS( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2.out.dge_table, dge_annotations_script, "" )
-        annotated_dge_table = ADD_GENE_ANNOTATIONS.out.annotated_dge_table
-        
+        ADD_GENE_ANNOTATIONS( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2.out.dge_table, dge_annotations_script, "" )        
         // For rRNArm counts: Normalize counts, DGE, Add annotations to DGE table
         DGE_DESEQ2_RRNA_RM( ch_meta, runsheet_path, REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm, dge_script, "_rRNArm" )
         ADD_GENE_ANNOTATIONS_RRNA_RM( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2_RRNA_RM.out.dge_table, dge_annotations_script, "_rRNArm" )
-        annotated_dge_table_rrna_rm = ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
-
+        
         // MultiQC
         ch_multiqc_config = params.multiqc_config ? Channel.fromPath( params.multiqc_config ) : Channel.fromPath("NO_FILE")
         RAW_READS_MULTIQC(samples_txt, raw_fastqc_zip, ch_multiqc_config, "raw_")
@@ -298,6 +269,18 @@ workflow RNASEQ_MICROBES {
         READ_DISTRIBUTION_MULTIQC(samples_txt, READ_DISTRIBUTION.out.log | map { it[1] } | collect, ch_multiqc_config, "read_dist_")
         COUNT_MULTIQC(samples_txt, FEATURECOUNTS.out.summary, ch_multiqc_config, "featureCounts_")
         
+        all_multiqc_input = raw_fastqc_zip
+            | concat( TRIMGALORE.out.reports )
+            | concat( trimmed_fastqc_zip )
+            | concat( bowtie2_alignment_logs )
+            | concat( GENEBODY_COVERAGE.out.log | map { it[1] } | collect )
+            | concat( INFER_EXPERIMENT.out.log | map { it[1] } | collect )
+            | concat( INNER_DISTANCE.out.log | map { it[1] } | collect )
+            | concat( READ_DISTRIBUTION.out.log | map { it[1] } | collect )
+            | concat( FEATURECOUNTS.out.summary )
+            | collect
+
+        ALL_MULTIQC(samples_txt, all_multiqc_input, ch_multiqc_config, "all_")
 
         // Parse QC metrics
         all_multiqc_output = RAW_READS_MULTIQC.out.data
@@ -309,8 +292,6 @@ workflow RNASEQ_MICROBES {
             | concat( READ_DISTRIBUTION_MULTIQC.out.data )
             | concat( COUNT_MULTIQC.out.data )
             | collect
-
-        // Generate QC metrics table
         PARSE_QC_METRICS(
             ch_outdir,
             osd_accession,
@@ -330,7 +311,6 @@ workflow RNASEQ_MICROBES {
             RAW_READS_MULTIQC.out.zipped_data,
             RAW_READS_MULTIQC.out.html
         )
-
         VV_TRIMMED_READS(
             dp_tools_plugin,
             ch_outdir,
@@ -344,20 +324,18 @@ workflow RNASEQ_MICROBES {
             TRIMMING_MULTIQC.out.zipped_data,
             TRIMMING_MULTIQC.out.html
         )
-
         VV_BOWTIE2_ALIGNMENT(
             dp_tools_plugin,
             ch_outdir,
             ch_meta,
             runsheet_path,
-            ALIGN_BOWTIE2.out.alignment_logs | collect,                       // log files
-            ALIGN_BOWTIE2.out.unmapped_reads | collect,                       // unmapped reads
-            ALIGN_MULTIQC.out.zipped_data,                                  // MultiQC report
+            ALIGN_BOWTIE2.out.alignment_logs | collect,
+            ALIGN_BOWTIE2.out.unmapped_reads | collect,
+            ALIGN_MULTIQC.out.zipped_data,
             ALIGN_MULTIQC.out.html,
-            SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[1] } | collect, // sorted BAM files
-            SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[2] } | collect  // BAM index files
+            SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[1] } | collect,
+            SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[2] } | collect
         )
-
         VV_RSEQC(
             dp_tools_plugin,
             ch_outdir,
@@ -373,7 +351,6 @@ workflow RNASEQ_MICROBES {
             READ_DISTRIBUTION_MULTIQC.out.zipped_data,
             READ_DISTRIBUTION_MULTIQC.out.html
         )
-
         VV_FEATURECOUNTS(
             dp_tools_plugin,
             ch_outdir,
@@ -385,7 +362,6 @@ workflow RNASEQ_MICROBES {
             COUNT_MULTIQC.out.zipped_data,
             COUNT_MULTIQC.out.html
         )
-
         VV_DGE_DESEQ2(
             dp_tools_plugin,
             ch_outdir,
@@ -445,5 +421,5 @@ workflow RNASEQ_MICROBES {
         )
 
     emit:
-        outdir = ch_outdir
+        SOFTWARE_VERSIONS.out.software_versions
 }

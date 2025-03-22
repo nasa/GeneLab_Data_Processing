@@ -3,7 +3,6 @@ include { PARSE_ANNOTATIONS_TABLE } from '../modules/parse_annotations_table.nf'
 include { FETCH_ISA } from '../modules/fetch_isa.nf'
 include { ISA_TO_RUNSHEET } from '../modules/isa_to_runsheet.nf'
 include { GET_ACCESSIONS } from '../modules/get_accessions.nf'
-// include { PREPARE_REFERENCES } from './prepare_references.nf'
 include { DOWNLOAD_REFERENCES } from '../modules/download_references.nf'
 include { SUBSAMPLE_GENOME } from '../modules/subsample_genome.nf'
 include { DOWNLOAD_ERCC } from '../modules/download_ercc.nf'
@@ -29,45 +28,33 @@ include { COUNT_ALIGNED } from '../modules/count_aligned.nf'
 include { EXTRACT_RRNA } from '../modules/extract_rrna.nf'
 include { REMOVE_RRNA } from '../modules/remove_rrna.nf'
 include { QUANTIFY_RSEM_GENES } from '../modules/quantify_rsem_genes.nf'
-include { PARSE_QC_METRICS } from '../modules/parse_qc_metrics.nf'
-
-include { MULTIQC as RAW_READS_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as TRIMMED_READS_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as TRIMMING_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as ALIGN_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as GENEBODY_COVERAGE_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as INFER_EXPERIMENT_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as INNER_DISTANCE_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as READ_DISTRIBUTION_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as COUNT_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as QUALIMAP_MULTIQC } from '../modules/multiqc.nf'
-include { MULTIQC as ALL_MULTIQC } from '../modules/multiqc.nf'
-//include { QUALIMAP_BAM_QC } from '../modules/qualimap.nf' not implemented
-//include { QUALIMAP_RNASEQ_QC } from '../modules/qualimap.nf' not implemented
-
 include { DGE_DESEQ2 } from '../modules/dge_deseq2.nf'
-include { DGE_DESEQ2 as DGE_DESEQ2_RRNA_RM } from '../modules/dge_deseq2.nf'
-
+include { DGE_DESEQ2 as DGE_DESEQ2_RRNA_RM } from '../modules/dge_deseq2.nf'   
 include { ADD_GENE_ANNOTATIONS } from '../modules/add_gene_annotations.nf'
 include { ADD_GENE_ANNOTATIONS as ADD_GENE_ANNOTATIONS_RRNA_RM } from '../modules/add_gene_annotations.nf'
-
-// include { EXTEND_DGE_TABLE } from '../modules/extend_dge_table.nf'
-// include { GENERATE_PCA_TABLE } from '../modules/generate_pca_table.nf'
-
-include { SOFTWARE_VERSIONS } from '../modules/software_versions.nf'
-
-
-include { validateParameters; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
-
-
+include { 
+    MULTIQC as RAW_READS_MULTIQC 
+    MULTIQC as TRIMMED_READS_MULTIQC 
+    MULTIQC as TRIMMING_MULTIQC 
+    MULTIQC as ALIGN_MULTIQC 
+    MULTIQC as GENEBODY_COVERAGE_MULTIQC 
+    MULTIQC as INFER_EXPERIMENT_MULTIQC 
+    MULTIQC as INNER_DISTANCE_MULTIQC 
+    MULTIQC as READ_DISTRIBUTION_MULTIQC 
+    MULTIQC as COUNT_MULTIQC 
+    MULTIQC as ALL_MULTIQC
+} from '../modules/multiqc.nf'
+include { PARSE_QC_METRICS } from '../modules/parse_qc_metrics.nf'
 include { VV_RAW_READS;
     VV_TRIMMED_READS;
     VV_STAR_ALIGNMENT;
     VV_RSEQC;
     VV_RSEM_COUNTS;
     VV_DGE_DESEQ2 } from '../modules/vv.nf'
+include { SOFTWARE_VERSIONS } from '../modules/software_versions.nf'
 include { GENERATE_PROTOCOL } from '../modules/generate_protocol.nf'
 
+include { validateParameters; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
 def colorCodes = [
     c_line: "┅" * 70,
     c_back_bright_red: "\u001b[41;1m",
@@ -108,17 +95,11 @@ workflow RNASEQ {
         else {
             ch_outdir = ch_outdir.map { it + "/results" }
         }
-
-        // Ensure ch_outdir is a proper value channel that can be reused multiple times
         ch_outdir = ch_outdir.first()
 
-        // Initialize the isa_archive channel as Channel.empty() by default
         Channel.empty() | set { isa_archive }
-
-        // if runsheet_path is not provided, set it up from ISA input
-        // If ISA input is not provided, use the accession to get the ISA
-        if ( runsheet_path == null ) {
-            if ( isa_archive_path == null ) {
+        if ( runsheet_path == null ) { // if runsheet_path is not provided, set it up from ISA input
+            if ( isa_archive_path == null ) { // If ISA input is not provided, use the accession to get the ISA
                 FETCH_ISA( ch_outdir, osd_accession, glds_accession )
                 isa_archive = FETCH_ISA.out.isa_archive
             }
@@ -126,36 +107,28 @@ workflow RNASEQ {
             runsheet_path = ISA_TO_RUNSHEET.out.runsheet
         }
 
-        // Validate input parameters and runsheet
+        // Validate input parameters and runsheet ; log.info paramsSummaryLog(workflow)
         validateParameters()
-
-        // Print summary of supplied parameters
-        //log.info paramsSummaryLog(workflow)
-
-        // Parse the runsheet
+        
         PARSE_RUNSHEET( runsheet_path )
-
         samples = PARSE_RUNSHEET.out.samples
         runsheet_path = PARSE_RUNSHEET.out.runsheet
 
-        // Stage the raw or truncated reads.
+        // Stage the raw or truncated reads
         STAGE_RAW_READS( samples )
         raw_reads = STAGE_RAW_READS.out.raw_reads
         samples_txt = STAGE_RAW_READS.out.samples_txt
-        //samples_txt | view
 
         //samples | view
         samples | first 
                 | map { meta, reads -> meta }
                 | set { ch_meta }
         
-        has_ercc = ch_meta.map { it.has_ercc }
 
         ch_meta | map { meta -> meta.organism_sci }
         | set { organism_sci }
 
         PARSE_ANNOTATIONS_TABLE( annotations_csv_url_string, organism_sci )
-        gene_annotations_url = PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url
 
         // Use manually provided reference genome files if provided. Reference source and version are optional.
         if ( params.reference_fasta && params.reference_gtf ) {
@@ -179,8 +152,8 @@ workflow RNASEQ {
         }
 
         // Add ERCC Fasta and GTF to genome files
-        DOWNLOAD_ERCC( has_ercc, reference_store_path ).ifEmpty([file("ERCC92.fa"), file("ERCC92.gtf")]) | set { ch_maybe_ercc_refs }
-        CONCAT_ERCC( reference_store_path, organism_sci, reference_source, reference_version, genome_references_pre_ercc, ch_maybe_ercc_refs, has_ercc )
+        DOWNLOAD_ERCC( ch_meta.map { it.has_ercc }, reference_store_path ).ifEmpty([file("ERCC92.fa"), file("ERCC92.gtf")]) | set { ch_maybe_ercc_refs }
+        CONCAT_ERCC( reference_store_path, organism_sci, reference_source, reference_version, genome_references_pre_ercc, ch_maybe_ercc_refs, ch_meta.map { it.has_ercc } )
         .ifEmpty { genome_references_pre_ercc.value }  | set { genome_references }
         
         // Convert GTF file to RSeQC-compatible BED file
@@ -200,19 +173,16 @@ workflow RNASEQ {
         )
         genome_bed = PRED_TO_BED.out.genome_bed
 
-        // Metadata and reference files are ready. Stage the raw reads, find the max read length, and build the STAR index.
-
-
+        // Run FastQC on raw reads  
         RAW_FASTQC( raw_reads )
-
-        RAW_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] }
+        RAW_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] } // Collect the raw read fastqc zip files
         | flatten
-        | collect        // Collect all zip files into a single list
-        | set { raw_fastqc_zip }     // Create a channel with all zip files
+        | collect // Collect all zip files into a single list
+        | set { raw_fastqc_zip } // Create a channel with all zip files
         
+        // Get the max read length by parsing the raw read fastqc zip files
         GET_MAX_READ_LENGTH( raw_fastqc_zip )
         max_read_length = GET_MAX_READ_LENGTH.out.length | map { it.toString().toInteger() }
-        //max_read_length.view { "Max read length: $it" }
 
         // Trim raw reads
         TRIMGALORE( raw_reads )
@@ -226,7 +196,6 @@ workflow RNASEQ {
         | collect
         | set { trimmed_fastqc_zip }
 
-
         // Build STAR genome index
         BUILD_STAR_INDEX(derived_store_path, organism_sci, reference_source, reference_version, genome_references, ch_meta, max_read_length )
         star_index_dir = BUILD_STAR_INDEX.out.index_dir
@@ -234,9 +203,8 @@ workflow RNASEQ {
         // STAR two-pass alignment
         ALIGN_STAR( trimmed_reads, star_index_dir )
         star_alignment_logs = ALIGN_STAR.out.alignment_logs | collect
-        transcriptome_aligned_bam = ALIGN_STAR.out.bam_to_transcriptome // Transcriptome-aligned bam
         
-        // Sort and index genome coordinate-aligned bam files
+        // Sort and index bam files
         SORT_AND_INDEX_BAM( ALIGN_STAR.out.bam_by_coord )
         sorted_bam = SORT_AND_INDEX_BAM.out.sorted_bam
 
@@ -262,23 +230,15 @@ workflow RNASEQ {
         ASSESS_STRANDEDNESS( infer_expt_out )
         strandedness = ASSESS_STRANDEDNESS.out | map { it.text.split(":")[0] }
 
-        // Run Qualimap BAM QC and rnaseq - not implemented
-        // QUALIMAP_BAM_QC( sorted_bam, genome_bed, strandedness )
-        // qualimap_bamqc_outputs = QUALIMAP_BAM_QC.out.results.toList()
-        // QUALIMAP_RNASEQ_QC( sorted_bam, genome_references | map { it[1] }, strandedness )
-        // qualimap_rnaseq_qc_outputs = QUALIMAP_RNASEQ_QC.out.results.toList()
-        // qualimap_outputs = qualimap_bamqc_outputs
-        //                     | concat (qualimap_rnaseq_qc_outputs )
-
-        // Quantify STAR gene counts
+        // Create STAR counts table, nonzero gene counts
         QUANTIFY_STAR_GENES( samples_txt, ALIGN_STAR.out.reads_per_gene | toSortedList, strandedness )
 
         // Build RSEM transcriptome index
         BUILD_RSEM_INDEX(derived_store_path, organism_sci, reference_source, reference_version, genome_references, ch_meta )
         rsem_index_dir = BUILD_RSEM_INDEX.out.index_dir
 
-        // Run RSEM on the transcriptome-aligned BAM from STAR to calculate transcript expression estimates and quantify gene counts
-        COUNT_ALIGNED( transcriptome_aligned_bam, rsem_index_dir, strandedness )
+        // Run RSEM on the transcriptome-aligned BAMs from STAR to calculate isoform-level transcript expression estimates and create a gene counts table
+        COUNT_ALIGNED( ALIGN_STAR.out.bam_to_transcriptome, rsem_index_dir, strandedness )
         EXTRACT_RRNA ( organism_sci, genome_references | map { it[1] })
         REMOVE_RRNA ( EXTRACT_RRNA.out.rrna_ids, COUNT_ALIGNED.out.genes_results )
         rsem_counts = COUNT_ALIGNED.out.counts | map { it[1] } | collect
@@ -287,17 +247,12 @@ workflow RNASEQ {
         dge_script = "${projectDir}/bin/dge_deseq2.Rmd"
         dge_annotations_script = "${projectDir}/bin/add_gene_annotations.Rmd"
         
-        // Normalize counts, DGE 
+        // Normalize counts, DGE, Add annotations to DGE table
         DGE_DESEQ2( ch_meta, runsheet_path, COUNT_ALIGNED.out.genes_results | toSortedList, dge_script, "" )
-        // Add annotations to DGE table
-        ADD_GENE_ANNOTATIONS( ch_meta, gene_annotations_url, DGE_DESEQ2.out.dge_table, dge_annotations_script, "" )
-        annotated_dge_table = ADD_GENE_ANNOTATIONS.out.annotated_dge_table
-
+        ADD_GENE_ANNOTATIONS( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2.out.dge_table, dge_annotations_script, "" )
         // For rRNArm counts: Normalize counts, DGE, Add annotations to DGE table
         DGE_DESEQ2_RRNA_RM( ch_meta, runsheet_path, REMOVE_RRNA.out.genes_results_rrnarm | toSortedList, dge_script, "_rRNArm" )
         ADD_GENE_ANNOTATIONS_RRNA_RM( ch_meta, PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url, DGE_DESEQ2_RRNA_RM.out.dge_table, dge_annotations_script, "_rRNArm" )
-        annotated_dge_table_rrna_rm = ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
-
 
         // MultiQC
         ch_multiqc_config = params.multiqc_config ? Channel.fromPath( params.multiqc_config ) : Channel.fromPath("NO_FILE")
@@ -310,6 +265,7 @@ workflow RNASEQ {
         INNER_DISTANCE_MULTIQC(samples_txt, INNER_DISTANCE.out.log | map { it[1] } | collect, ch_multiqc_config, "inner_dist_")
         READ_DISTRIBUTION_MULTIQC(samples_txt, READ_DISTRIBUTION.out.log | map { it[1] } | collect, ch_multiqc_config, "read_dist_")
         COUNT_MULTIQC(samples_txt, rsem_counts, ch_multiqc_config, "RSEM_count_")
+        
         all_multiqc_input = raw_fastqc_zip
                     | concat( trimgalore_reports )
                     | concat( trimmed_fastqc_zip )
@@ -318,10 +274,9 @@ workflow RNASEQ {
                     | concat( GENEBODY_COVERAGE.out.log | map { it[1] } | collect )
                     | concat( INNER_DISTANCE.out.log | map { it[1] } | collect )
                     | concat( READ_DISTRIBUTION.out.log | map { it[1] } | collect )
-                    // | concat(qualimap_outputs )
                     | concat( rsem_counts )
                     | collect
-        ALL_MULTIQC(samples_txt, all_multiqc_input, ch_multiqc_config, "all")
+        ALL_MULTIQC(samples_txt, all_multiqc_input, ch_multiqc_config, "all_")
 
         // Parse QC metrics
         all_multiqc_output = RAW_READS_MULTIQC.out.data
@@ -333,7 +288,6 @@ workflow RNASEQ {
             | concat( READ_DISTRIBUTION_MULTIQC.out.data )
             | concat( COUNT_MULTIQC.out.data )
             | collect
-
         PARSE_QC_METRICS(
             ch_outdir,
             osd_accession,
@@ -353,8 +307,6 @@ workflow RNASEQ {
             RAW_READS_MULTIQC.out.zipped_data,
             RAW_READS_MULTIQC.out.html
         )
-
-
         VV_TRIMMED_READS(
             dp_tools_plugin,
             ch_outdir,
@@ -368,7 +320,6 @@ workflow RNASEQ {
             TRIMMING_MULTIQC.out.zipped_data,
             TRIMMING_MULTIQC.out.html
         )
-
         VV_STAR_ALIGNMENT(
             dp_tools_plugin,
             ch_outdir,
@@ -380,7 +331,6 @@ workflow RNASEQ {
             ALIGN_MULTIQC.out.html,
             SORT_AND_INDEX_BAM.out.bam_only_files | collect,
         )
-
         VV_RSEQC(
             dp_tools_plugin,
             ch_outdir,
@@ -396,7 +346,6 @@ workflow RNASEQ {
             READ_DISTRIBUTION_MULTIQC.out.zipped_data,
             READ_DISTRIBUTION_MULTIQC.out.html
         )
-
         VV_RSEM_COUNTS(
             dp_tools_plugin,
             ch_outdir,
@@ -407,7 +356,6 @@ workflow RNASEQ {
             COUNT_MULTIQC.out.zipped_data,
             COUNT_MULTIQC.out.html
         )
-
         VV_DGE_DESEQ2(
             dp_tools_plugin,
             ch_outdir,
@@ -467,6 +415,5 @@ workflow RNASEQ {
         )
 
     emit:
-        PARSE_QC_METRICS.out.file
-        VV_DGE_DESEQ2.out.log
+        SOFTWARE_VERSIONS.out.software_versions
 }
