@@ -191,8 +191,7 @@
       "properties": {
         "limit_samples_to": {
           "type": "integer",
-          "description": "Only use the first n samples for the analysis",
-          "hidden": true
+          "description": "Only use the first n samples for the analysis"
         },
         "genome_subsample": {
           "type": "string",

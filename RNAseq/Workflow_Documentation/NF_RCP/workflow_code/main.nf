@@ -77,10 +77,7 @@ ch_outdir = params.outdir ? channel.fromPath(params.outdir, checkIfExists: true)
 
 // Main workflows
 workflow {
-    if (params.mode == 'stage-only') {
-        STAGE_ONLY()
-    }
-    else if (params.mode == 'microbes') {
+    if (params.mode == 'microbes') {
         RNASEQ_MICROBES(
             ch_outdir,
             ch_dp_tools_plugin,
