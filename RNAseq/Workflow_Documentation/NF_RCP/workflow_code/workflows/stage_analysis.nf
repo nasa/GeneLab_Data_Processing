@@ -47,6 +47,9 @@ workflow STAGE_ANALYSIS {
             if ( isa_archive_path == null ) { // if isa_archive_path is not provided, fetch the ISA
                 FETCH_ISA( ch_outdir, osd_accession, glds_accession )
                 isa_archive = FETCH_ISA.out.isa_archive
+            } else {
+                // isa_archive_path is already a channel, use it directly
+                isa_archive = isa_archive_path
             }
             ISA_TO_RUNSHEET( ch_outdir, osd_accession, glds_accession, isa_archive, dp_tools_plugin )
             runsheet_path = ISA_TO_RUNSHEET.out.runsheet
