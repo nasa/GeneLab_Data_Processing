@@ -221,9 +221,9 @@ fastqc -o /path/to/raw_fastqc/output/directory *.fastq.gz
 ### 1b. Compile Raw Data QC  
 
 ```bash
-multiqc --interactive -n raw_multiqc_GLbulkRNAseq -o /path/to/raw_multiqc/output/raw_multiqc_GLbulkRNAseq_report /path/to/directory/containing/raw_fastqc/files
+multiqc --interactive -n raw_multiqc_GLbulkRNAseq -o /path/to/raw_multiqc/output/directory /path/to/directory/containing/raw_fastqc/files
 
-zip -r raw_multiqc_GLbulkRNAseq_report.zip raw_multiqc_GLbulkRNAseq_report
+zip -r raw_multiqc_GLbulkRNAseq_data.zip raw_multiqc_GLbulkRNAseq_data
 ```
 
 **Parameter Definitions:**
@@ -239,9 +239,8 @@ zip -r raw_multiqc_GLbulkRNAseq_report.zip raw_multiqc_GLbulkRNAseq_report
 
 **Output Data:**
 
-* **raw_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **raw_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
-  * **raw_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
+* **raw_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+* **raw_multiqc_GLbulkRNAseq_data.zip** (zipped directory containing MultiQC output data)
 
 <br>
 
@@ -311,9 +310,9 @@ fastqc -o /path/to/trimmed_fastqc/output/directory *.fastq.gz
 ### 2c. Compile Trimmed Data QC  
 
 ```bash
-multiqc --interactive -n trimmed_multiqc_GLbulkRNAseq -o /path/to/trimmed_multiqc/output/trimmed_multiqc_GLbulkRNAseq_report /path/to/directory/containing/trimmed_fastqc/files
+multiqc --interactive -n trimmed_multiqc_GLbulkRNAseq -o /path/to/trimmed_multiqc/output/directory /path/to/directory/containing/trimmed_fastqc/files
 
-zip -r trimmed_multiqc_GLbulkRNAseq_report.zip /path/to/trimmed_multiqc/output/trimmed_multiqc_GLbulkRNAseq_report
+zip -r trimmed_multiqc_GLbulkRNAseq_data.zip trimmed_multiqc_GLbulkRNAseq_data
 ```
 
 **Parameter Definitions:**
@@ -329,9 +328,8 @@ zip -r trimmed_multiqc_GLbulkRNAseq_report.zip /path/to/trimmed_multiqc/output/t
 
 **Output Data:**
 
-* **trimmed_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **trimmed_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
-  * **trimmed_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
+* **trimmed_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+* **trimmed_multiqc_GLbulkRNAseq_data.zip** (zipped directory containing MultiQC output data)
 
 <br>
 
@@ -480,9 +478,9 @@ STAR --twopassMode Basic \
 ### 4b. Compile Alignment Logs
 
 ```bash
-multiqc --interactive -n align_multiqc_GLbulkRNAseq -o /path/to/align_multiqc/output/align_multiqc_GLbulkRNAseq_report /path/to/*Log.final.out/files
+multiqc --interactive -n align_multiqc_GLbulkRNAseq -o /path/to/align_multiqc/output/directory /path/to/*Log.final.out/files
 
-zip -r align_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/align_multiqc_GLbulkRNAseq_report
+zip -r align_multiqc_GLbulkRNAseq_data.zip align_multiqc_GLbulkRNAseq_data
 ```
 
 **Parameter Definitions:**
@@ -498,9 +496,8 @@ zip -r align_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/align
 
 **Output Data:**
 
-* **align_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **align_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
-  * **align_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
+* **align_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+* **align_multiqc_GLbulkRNAseq_data.zip** (zipped directory containing MultiQC output data)
 
 <br>
 
@@ -693,9 +690,9 @@ infer_experiment.py -r /path/to/annotation/BED/file \
 ### 6b. Compile Strandedness Reports
 
 ```bash
-multiqc --interactive -n infer_exp_multiqc_GLbulkRNAseq -o /path/to/infer_exp_multiqc/output/infer_exp_multiqc_GLbulkRNAseq_report /path/to/*.infer_expt.out/files
+multiqc --interactive -n infer_exp_multiqc_GLbulkRNAseq -o /path/to/infer_exp_multiqc/output/directory /path/to/*.infer_expt.out/files
 
-zip -r infer_exp_multiqc_GLbulkRNAseq_report.zip /path/to/infer_exp_multiqc/output/infer_exp_multiqc_GLbulkRNAseq_report
+zip -r infer_exp_multiqc_GLbulkRNAseq_data.zip infer_exp_multiqc_GLbulkRNAseq_data
 ```
 
 **Parameter Definitions:**
@@ -711,9 +708,8 @@ zip -r infer_exp_multiqc_GLbulkRNAseq_report.zip /path/to/infer_exp_multiqc/outp
 
 **Output Data:**
 
-* **infer_exp_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **infer_exp_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
-  * **infer_exp_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
+* **infer_exp_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+* **infer_exp_multiqc_GLbulkRNAseq_data.zip** (zipped directory containing MultiQC output data)
 
 <br>
 
@@ -749,9 +745,9 @@ geneBody_coverage.py -r /path/to/annotation/BED/file \
 ### 6d. Compile GeneBody Coverage Reports
 
 ```bash
-multiqc --interactive -n genebody_cov_multiqc_GLbulkRNAseq -o /path/to/geneBody_cov_multiqc/output/geneBody_cov_multiqc_GLbulkRNAseq_report /path/to/geneBody_coverage/output/files
+multiqc --interactive -n genebody_cov_multiqc_GLbulkRNAseq -o /path/to/geneBody_cov_multiqc/output/directory /path/to/geneBody_coverage/output/files
 
-zip -r genebody_cov_multiqc_GLbulkRNAseq_report.zip /path/to/genebody_cov_multiqc/output/genebody_cov_multiqc_GLbulkRNAseq_report
+zip -r genebody_cov_multiqc_GLbulkRNAseq_data.zip genebody_cov_multiqc_GLbulkRNAseq_data
 ```
 
 **Parameter Definitions:**
@@ -767,9 +763,8 @@ zip -r genebody_cov_multiqc_GLbulkRNAseq_report.zip /path/to/genebody_cov_multiq
 
 **Output Data:**
 
-* **genebody_cov_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **genebody_cov_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
-  * **genebody_cov_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
+* **genebody_cov_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+* **genebody_cov_multiqc_GLbulkRNAseq_data.zip** (zipped directory containing MultiQC output data)
 
 <br>
 
@@ -811,9 +806,9 @@ inner_distance.py -r /path/to/annotation/BED/file \
 ### 6f. Compile Inner Distance Reports
 
 ```bash
-multiqc --interactive -n inner_dist_multiqc_GLbulkRNAseq /path/to/align_multiqc/output/inner_dist_multiqc_GLbulkRNAseq_report /path/to/inner_dist/output/files
+multiqc --interactive -n inner_dist_multiqc_GLbulkRNAseq -o /path/to/inner_dist_multiqc/output/directory /path/to/inner_dist/output/files
 
-zip -r inner_dist_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/inner_dist_multiqc_GLbulkRNAseq_report
+zip -r inner_dist_multiqc_GLbulkRNAseq_data.zip inner_dist_multiqc_GLbulkRNAseq_data
 ```
 
 **Parameter Definitions:**
@@ -829,9 +824,8 @@ zip -r inner_dist_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/
 
 **Output Data:**
 
-* **inner_dist_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **inner_dist_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
-  * **inner_dist_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
+* **inner_dist_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+* **inner_dist_multiqc_GLbulkRNAseq_data.zip** (zipped directory containing MultiQC output data)
 
 <br>
 
@@ -864,9 +858,9 @@ read_distribution.py -r /path/to/annotation/BED/file \
 ### 6h. Compile Read Distribution Reports
 
 ```bash
-multiqc --interactive -n read_dist_multiqc_GLbulkRNAseq -o /path/to/read_dist_multiqc/output/read_dist_multiqc_GLbulkRNAseq_report /path/to/*.read_dist.out/files
+multiqc --interactive -n read_dist_multiqc_GLbulkRNAseq -o /path/to/read_dist_multiqc/output/directory /path/to/*.read_dist.out/files
 
-zip -r read_dist_multiqc_GLbulkRNAseq_report.zip /path/to/read_dist_multiqc/output/read_dist_multiqc_GLbulkRNAseq_report
+zip -r read_dist_multiqc_GLbulkRNAseq_data.zip read_dist_multiqc_GLbulkRNAseq_data
 ```
 
 **Parameter Definitions:**
@@ -882,9 +876,8 @@ zip -r read_dist_multiqc_GLbulkRNAseq_report.zip /path/to/read_dist_multiqc/outp
 
 **Output Data:**
 
-* **read_dist_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **read_dist_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
-  * **read_dist_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
+* **read_dist_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+* **read_dist_multiqc_GLbulkRNAseq_data.zip** (zipped directory containing MultiQC output data)
 
 <br>
 
@@ -980,9 +973,9 @@ rsem-calculate-expression --num-threads NumberOfThreads \
 ### 8b. Compile RSEM Count Logs
 
 ```bash
-multiqc --interactive -n RSEM_count_multiqc_GLbulkRNAseq -o /path/to/RSEM_count_multiqc/output/RSEM_count_multiqc_GLbulkRNAseq_report /path/to/*stat/files
+multiqc --interactive -n RSEM_count_multiqc_GLbulkRNAseq -o /path/to/RSEM_count_multiqc/output/directory /path/to/*stat/files
 
-zip -r RSEM_count_multiqc_GLbulkRNAseq_report.zip /path/to/raw_multiqc/output/RSEM_count_multiqc_GLbulkRNAseq_report
+zip -r RSEM_count_multiqc_GLbulkRNAseq_data.zip RSEM_count_multiqc_GLbulkRNAseq_data
 ```
 
 **Parameter Definitions:**
@@ -999,9 +992,8 @@ zip -r RSEM_count_multiqc_GLbulkRNAseq_report.zip /path/to/raw_multiqc/output/RS
 
 **Output Data:**
 
-* **RSEM_count_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **RSEM_count_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
-  * **RSEM_count_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
+* **RSEM_count_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+* **RSEM_count_multiqc_GLbulkRNAseq_data.zip** (zipped directory containing MultiQC output data)
 
 <br>
 

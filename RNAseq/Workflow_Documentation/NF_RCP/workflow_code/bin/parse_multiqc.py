@@ -461,7 +461,7 @@ def parse_rsem(assay_suffix):
 
 def parse_featurecounts(assay_suffix):
     try:
-        with open(f'featureCounts_multiqc{assay_suffix}_data/multiqc_data.json') as f:
+        with open(f'FeatureCounts_multiqc{assay_suffix}_data/multiqc_data.json') as f:
             j = json.loads(f.read())
 
         data = {}

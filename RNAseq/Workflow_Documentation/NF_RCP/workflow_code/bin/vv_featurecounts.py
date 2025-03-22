@@ -108,7 +108,7 @@ def check_featurecounts_files_existence(outdir, log_path, assay_suffix="_GLbulkR
     expected_files = [
         f"FeatureCounts{assay_suffix}.tsv",
         f"FeatureCounts{assay_suffix}.tsv.summary",
-        f"featureCounts_multiqc{assay_suffix}_data.zip"
+        f"FeatureCounts_multiqc{assay_suffix}_data.zip"
         # f"FeatureCounts_rRNArm{assay_suffix}.tsv"
     ]
     
@@ -136,7 +136,7 @@ def check_featurecounts_files_existence(outdir, log_path, assay_suffix="_GLbulkR
 def get_featurecounts_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
     """Extract featureCounts MultiQC stats for all samples and write to a stats file for analysis."""
     featurecounts_dir = os.path.join(outdir, "03-FeatureCounts")
-    multiqc_zip = os.path.join(featurecounts_dir, f"featureCounts_multiqc{assay_suffix}_data.zip")
+    multiqc_zip = os.path.join(featurecounts_dir, f"FeatureCounts_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
         print(f"WARNING: MultiQC data zip file not found: {multiqc_zip}")
@@ -154,7 +154,7 @@ def get_featurecounts_multiqc_stats(outdir, samples, log_path, assay_suffix="_GL
                 zip_ref.extractall(temp_dir)
             
             # Path to the MultiQC data JSON file (new structure)
-            json_path = os.path.join(temp_dir, f"featureCounts_multiqc{assay_suffix}_data", "multiqc_data.json")
+            json_path = os.path.join(temp_dir, f"FeatureCounts_multiqc{assay_suffix}_data", "multiqc_data.json")
             
             if not os.path.exists(json_path):
                 print(f"WARNING: No multiqc_data.json file found in the expected location")
