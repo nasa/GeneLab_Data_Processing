@@ -1,5 +1,9 @@
+/*
+    Aligns reads against Bowtie2 index, uses SAMtools to convert SAM to BAM
+    and filter out unmapped reads.
+*/
+
 process ALIGN_BOWTIE2 {
-  // Aligns reads against Bowtie2 index
   tag "Sample: ${ meta.id }"
 
   input:
@@ -7,7 +11,7 @@ process ALIGN_BOWTIE2 {
     path(bowtie2_index_dir)
 
   output:
-    tuple val(meta), path("${meta.id}.sam"), emit: sam
+    tuple val(meta), path("${meta.id}.bam"), emit: bam
     path("${ meta.id }.unmapped.fastq*"), emit: unmapped_reads, optional: true
     path("${ meta.id }.bowtie2.log"), emit: alignment_logs
     path("versions.yml"), emit: versions
@@ -26,10 +30,11 @@ process ALIGN_BOWTIE2 {
       --minins 10 \\
       --maxins 1000 \\
       ${unaligned} \\
-      -S ${meta.id}.sam \\
-      2> ${meta.id}.bowtie2.log
+      2> ${meta.id}.bowtie2.log | \\
+      samtools view -bS -F 4 --threads ${task.cpus} - > ${meta.id}.bam
 
     echo '"${task.process}":' > versions.yml
     echo "    bowtie2: \$(bowtie2 --version | head -n1 | awk '{print \$3}')" >> versions.yml
+    echo "    samtools: \$(samtools --version | head -n1 | awk '{print \$2}')" >> versions.yml
     """
 }

@@ -17,7 +17,6 @@ include { TRIMGALORE } from '../modules/trimgalore.nf'
 include { FASTQC as TRIMMED_FASTQC } from '../modules/fastqc.nf'
 include { BUILD_BOWTIE2_INDEX } from '../modules/build_bowtie2_index.nf'
 include { ALIGN_BOWTIE2 } from '../modules/align_bowtie2.nf'
-include { SAM_TO_BAM } from '../modules/sam_to_bam.nf'
 include { SORT_AND_INDEX_BAM } from '../modules/sort_and_index_bam.nf'
 include { INFER_EXPERIMENT } from '../modules/rseqc.nf'
 include { GENEBODY_COVERAGE } from '../modules/rseqc.nf'
@@ -183,15 +182,12 @@ workflow RNASEQ_MICROBES {
         BUILD_BOWTIE2_INDEX( derived_store_path, organism_sci, reference_source, reference_version, genome_references, ch_meta )
         bowtie2_index_dir = BUILD_BOWTIE2_INDEX.out.index_dir
 
-        // Align reads using Bowtie2
+        // Align reads using Bowtie2 (output as BAM)
         ALIGN_BOWTIE2( trimmed_reads, bowtie2_index_dir )
         bowtie2_alignment_logs = ALIGN_BOWTIE2.out.alignment_logs | collect
-        
-        // Convert Bowtie2 SAM to BAM
-        SAM_TO_BAM( ALIGN_BOWTIE2.out.sam ) 
 
         // Sort and index BAM files 
-        SORT_AND_INDEX_BAM( SAM_TO_BAM.out.bam )
+        SORT_AND_INDEX_BAM( ALIGN_BOWTIE2.out.bam )
         sorted_bam = SORT_AND_INDEX_BAM.out.sorted_bam
         bams = sorted_bam.map { it[1] } | toSortedList()
 
@@ -372,7 +368,6 @@ workflow RNASEQ_MICROBES {
             | mix(RAW_FASTQC.out.versions)
             | mix(TRIMGALORE.out.versions)
             | mix(ALIGN_BOWTIE2.out.versions)
-            | mix(SAM_TO_BAM.out.versions)
             | mix(INFER_EXPERIMENT.out.versions)
             | mix(GENEBODY_COVERAGE.out.versions)
             | mix(INNER_DISTANCE.out.versions)

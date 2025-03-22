@@ -7,7 +7,7 @@ process SAM_TO_BAM {
 
   output:
     tuple val(meta), path("${meta.id}.bam"), emit: bam
-    path("versions.yml"), emit: versions
+    // path("versions.yml"), emit: versions
 
   script:
     """
