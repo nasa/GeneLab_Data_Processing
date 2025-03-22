@@ -10,6 +10,7 @@ include { CONCAT_ERCC } from '../modules/concat_ercc.nf'
 include { GTF_TO_PRED } from '../modules/gtf_to_pred.nf'
 include { PRED_TO_BED } from '../modules/pred_to_bed.nf'
 include { STAGE_RAW_READS } from './stage_raw_reads.nf'
+include { STAGE_ANALYSIS } from './stage_analysis.nf'
 include { FASTQC as RAW_FASTQC } from '../modules/fastqc.nf'
 include { GET_MAX_READ_LENGTH } from '../modules/get_max_read_length.nf'
 include { TRIMGALORE } from '../modules/trimgalore.nf'
@@ -82,48 +83,28 @@ workflow RNASEQ {
         reference_store_path
         derived_store_path
     main:
-        // Parse accession, structure output directory as:
-        // params.outdir/
-        //   ├── [GLDS-#|results]/ # Main pipeline results
-        //   └── nextflow_info/    # Pipeline execution metadata
-        if ( accession ) {
-            GET_ACCESSIONS( accession, api_url )
-            osd_accession = GET_ACCESSIONS.out.accessions_txt.map { it.readLines()[0].trim() }
-            glds_accession = GET_ACCESSIONS.out.accessions_txt.map { it.readLines()[1].trim() }
-            ch_outdir = ch_outdir.combine(glds_accession).map { outdir, glds -> "$outdir/$glds" }
-        }
-        else {
-            ch_outdir = ch_outdir.map { it + "/results" }
-        }
-        ch_outdir = ch_outdir.first()
+        // Stage analysis setup (directory structure, inputs, and raw reads)
+        STAGE_ANALYSIS(
+            ch_outdir,
+            dp_tools_plugin,
+            accession,
+            isa_archive_path,
+            runsheet_path,
+            api_url
+        )
+        ch_outdir = STAGE_ANALYSIS.out.ch_outdir
+        samples = STAGE_ANALYSIS.out.samples
+        raw_reads = STAGE_ANALYSIS.out.raw_reads
+        samples_txt = STAGE_ANALYSIS.out.samples_txt
+        runsheet_path = STAGE_ANALYSIS.out.runsheet_path
+        isa_archive = STAGE_ANALYSIS.out.isa_archive
+        osd_accession = STAGE_ANALYSIS.out.osd_accession
+        glds_accession = STAGE_ANALYSIS.out.glds_accession
 
-        Channel.empty() | set { isa_archive }
-        if ( runsheet_path == null ) { // if runsheet_path is not provided, set it up from ISA input
-            if ( isa_archive_path == null ) { // If ISA input is not provided, use the accession to get the ISA
-                FETCH_ISA( ch_outdir, osd_accession, glds_accession )
-                isa_archive = FETCH_ISA.out.isa_archive
-            }
-            ISA_TO_RUNSHEET( ch_outdir, osd_accession, glds_accession, isa_archive, dp_tools_plugin )
-            runsheet_path = ISA_TO_RUNSHEET.out.runsheet
-        }
-
-        // Validate input parameters and runsheet ; log.info paramsSummaryLog(workflow)
-        validateParameters()
-        
-        PARSE_RUNSHEET( runsheet_path )
-        samples = PARSE_RUNSHEET.out.samples
-        runsheet_path = PARSE_RUNSHEET.out.runsheet
-
-        // Stage the raw or truncated reads
-        STAGE_RAW_READS( samples )
-        raw_reads = STAGE_RAW_READS.out.raw_reads
-        samples_txt = STAGE_RAW_READS.out.samples_txt
-
-        //samples | view
+        // Get dataset-wide metadata
         samples | first 
                 | map { meta, reads -> meta }
                 | set { ch_meta }
-        
 
         ch_meta | map { meta -> meta.organism_sci }
         | set { organism_sci }
