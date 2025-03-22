@@ -44,6 +44,7 @@ include { STAGE_ANALYSIS } from './workflows/stage_analysis.nf'
 
 include { GENERATE_MD5SUMS } from './modules/generate_md5sums.nf'
 include { UPDATE_ASSAY_TABLE } from './modules/update_assay_table.nf'
+include { PUBLISH_STAGED_ANALYSIS } from './modules/publish_staged_analysis.nf'
 
 ch_dp_tools_plugin = params.dp_tools_plugin ? 
     Channel.value(file(params.dp_tools_plugin)) : 
@@ -118,7 +119,8 @@ workflow {
     }
 }
 
-// Workflow that only runs the initial staging steps
+// Workflow that only runs the initial staging steps:
+//  Get the runsheet and raw reads (with debug parameters applied if applicable) and publish them to the output directory
 workflow STAGE_ONLY {
     main:
         STAGE_ANALYSIS(
@@ -128,6 +130,11 @@ workflow STAGE_ONLY {
             ch_isa_archive,
             ch_runsheet,
             ch_api_url
+        )
+        PUBLISH_STAGED_ANALYSIS(
+            STAGE_ANALYSIS.out.ch_outdir,
+            STAGE_ANALYSIS.out.runsheet_path,
+            STAGE_ANALYSIS.out.raw_reads.map { it -> it[1] }.collect()
         )
 }
 
