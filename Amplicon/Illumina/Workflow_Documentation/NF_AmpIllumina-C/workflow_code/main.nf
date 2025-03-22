@@ -1,11 +1,11 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-// color defs
+// Terminal text color definitions
 c_back_bright_red = "\u001b[41;1m";
-c_bright_green = "\u001b[32;1m";
-c_blue = "\033[0;34m";
-c_reset = "\033[0m";
+c_bright_green    = "\u001b[32;1m";
+c_blue            = "\033[0;34m";
+c_reset           = "\033[0m";
 
 
 params.help = false
@@ -488,6 +488,7 @@ workflow.onComplete {
     println("Filtered Reads location: ${params.filtered_reads_dir}")
     println("Software versions location: ${params.metadata_dir}")
     println("Final results (i.e. ASV count and taxonomy tables, diversity, and differential abundance testing): ${params.final_outputs_dir}")
-    println "Pipeline tracing/visualization files location:  ../Resource_Usage${c_reset}"
+    println("Pipeline tracing/visualization files location:  ../Resource_Usage${c_reset}")
+    println()
     }
 }
