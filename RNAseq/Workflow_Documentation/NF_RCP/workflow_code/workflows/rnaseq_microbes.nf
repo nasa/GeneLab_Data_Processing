@@ -104,6 +104,9 @@ workflow RNASEQ_MICROBES {
         // Ensure ch_outdir is a proper value channel that can be reused multiple times
         ch_outdir = ch_outdir.first()
 
+        // Initialize the isa_archive channel as Channel.empty() by default
+        Channel.empty() | set { isa_archive }
+
         // if runsheet_path is not provided, set it up from ISA input
         // If ISA input is not provided, use the accession to get the ISA
         if ( runsheet_path == null ) {
@@ -312,7 +315,7 @@ workflow RNASEQ_MICROBES {
             ch_outdir,
             osd_accession,
             ch_meta,
-            isa_archive,
+            isa_archive.ifEmpty(file("ISA.zip")),  // Use a placeholder if isa_archive is empty
             all_multiqc_output,
             DGE_DESEQ2.out.norm_counts | map{ it -> it[1] }
         )
