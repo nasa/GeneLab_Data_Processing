@@ -453,7 +453,7 @@ taxonomy_table <- taxonomy_table[common_ids,]
 
 
 # -------------------------Prepare feature tables -------------------------- #
-taxon_levels <- colnames(taxonomy_table)
+taxon_levels <- c("phylum", "class", "order", "family", "genus", "species") # Plot only phylum to species
 names(taxon_levels) <- taxon_levels
 taxon_tables <- map(.x = taxon_levels,
                     .f = make_feature_table,
@@ -468,9 +468,8 @@ dont_group <- c("phylum")
 # In percentage
 thresholds <- c(phylum=1,class=3, order=3, family=8, genus=8, species=9)
 # Convert from wide to long format
-# -1 drops the kingdom level since all the microbes are bacteria
-relAbundace_tbs_rare_grouped <- map2(.x = taxon_levels[-1],
-                                     .y = taxon_tables[-1], 
+relAbundace_tbs_rare_grouped <- map2(.x = taxon_levels,
+                                     .y = taxon_tables, 
                                      .f = function(taxon_level=.x,
                                                    taxon_table=.y){
                                       
@@ -506,10 +505,17 @@ x <-  'samples'
 y <- "relativeAbundance"
 facet_by <- reformulate(groups_colname)
 number_of_samples <- length(samples_order)
-plot_width <- 0.6 * number_of_samples
 
+if(number_of_samples >=  30 ){
+
+    plot_width <- 0.6 * number_of_samples
+
+}else{
+ 
+    plot_width <- 14
+}
 # Make sample plots
-walk2(.x = relAbundace_tbs_rare_grouped, .y = taxon_levels[-1], 
+walk2(.x = relAbundace_tbs_rare_grouped, .y = taxon_levels, 
                            .f = function(relAbundace_tb, taxon_level){
                              
                              df <- relAbundace_tb %>%
@@ -518,7 +524,7 @@ walk2(.x = relAbundace_tbs_rare_grouped, .y = taxon_levels[-1],
                           p <- ggplot(data =  df, mapping = aes(x= !!sym(x), y=!!sym(y) )) +
                                geom_col(aes(fill = !!sym(taxon_level) )) + 
                                facet_wrap(facet_by, scales = "free",
-                                          nrow = 1, labeller = label_wrap_gen()) +
+                                          nrow = 1, labeller = label_wrap_gen(width=10)) +
                                publication_format +
                                labs(x = x_lab , y = y_lab, fill= tools::toTitleCase(taxon_level)) + 
                                scale_fill_manual(values = custom_palette) +
@@ -545,7 +551,7 @@ thresholds <- c(phylum=1,class=2, order=2, family=2, genus=2, species=2)
 group_rare <- TRUE
 maximum_number_of_taxa <- 500
 
-group_relAbundace_tbs <- map2(.x = taxon_levels[-1], .y = taxon_tables[-1], 
+group_relAbundace_tbs <- map2(.x = taxon_levels, .y = taxon_tables, 
                                      .f = function(taxon_level=.x, taxon_table=.y){
                                        
                                        taxon_table <- as.data.frame(taxon_table %>% t()) 
@@ -585,7 +591,7 @@ y_lab <- "Relative abundance (%)"
 y <- "relativeAbundance"
 number_of_groups <- length(group_levels)
 plot_width <- 2.5 * number_of_groups
-walk2(.x = group_relAbundace_tbs, .y = taxon_levels[-1], 
+walk2(.x = group_relAbundace_tbs, .y = taxon_levels, 
                            .f = function(relAbundace_tb=.x, taxon_level=.y){
                              
                              p <- ggplot(data =  relAbundace_tb %>%

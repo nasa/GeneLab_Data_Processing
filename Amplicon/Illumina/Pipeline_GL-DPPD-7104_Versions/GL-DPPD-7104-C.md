@@ -27,26 +27,26 @@ Software Updates and Changes:
 | Program      | Previous Version | New Version   |
 |:-------------|:-----------------|:--------------|
 | FastQC       | 0.11.9           | 0.12.1        |
-| MultiQC      | 1.9              | 1.19          |
-| Cutadapt     | 2.3              | 4.6           |
-| R-base       | 4.1.1            | 4.4.1         |
-| DADA2        | 1.20.0           | 1.30.0        |
-| DECIPHER     | 2.20.0           | 2.30.0        |
-| biomformat   | 1.20.0           | 1.30.0        |
-| ANCOMBC      | N/A              | 2.6.0         |
+| MultiQC      | 1.9              | 1.27.1        |
+| Cutadapt     | 2.3              | 5.0           |
+| R-base       | 4.1.1            | 4.4.2         |
+| DADA2        | 1.20.0           | 1.34.0        |
+| DECIPHER     | 2.20.0           | 3.2.0         |
+| biomformat   | 1.20.0           | 1.34.0        |
+| ANCOMBC      | N/A              | 2.8.0         |
 | broom        | N/A              | 1.0.7         |
-| DescTools    | N/A              | 0.99.57       |
-| DESeq2       | N/A              | 1.42.0        |
-| FSA          | N/A              | 0.9.5         |
+| DescTools    | N/A              | 0.99.59       |
+| DESeq2       | N/A              | 1.46.0        |
+| FSA          | N/A              | 0.9.6         |
 | ggdendro     | N/A              | 0.2.0         |
 | ggrepel      | N/A              | 0.9.6         |
 | glue         | N/A              | 1.8.0         |
-| mia          | N/A              | 1.12.0        |
-| phyloseq     | N/A              | 1.46.0        |
-| rcolorbrewer | N/A              | 1.1_3         |
-| taxize       | N/A              | 0.9.100.1     |
+| mia          | N/A              | 1.14.0        |
+| phyloseq     | N/A              | 1.50.0        |
+| rcolorbrewer | N/A              | 1.1.3         |
+| taxize       | N/A              | 0.10.0        |
 | tidyverse    | N/A              | 2.0.0         |
-| vegan        | N/A              | 2.6.4         |
+| vegan        | N/A              | 2.6._10       |
 
 - Added new processing steps in R to generate processed data outputs for alpha and beta diversity, 
   taxonomic summary plots, and differential abundance:
@@ -57,11 +57,11 @@ Software Updates and Changes:
     ANCOMBC 1 ([Step 10a](#10a-ancombc-1)), ANCOMBC 2 ([Step 10b](#10b-ancombc-2)), and Deseq2 ([Step 10c](#10c-deseq2))
 - Assay-specific suffixes were added where needed for OSDR ("_GLAmpSeq")
 - Updated reference files:
-  - ITS UNITE: "UNITE\_v2023\_July2023.RData" from [DECIPHER](https://www2.decipher.codes/data/Downloads/TrainingSets/)
+  - ITS UNITE: "UNITE\_v2024\_July2024.RData" from [DECIPHER](https://www2.decipher.codes/data/Downloads/TrainingSets/)
 - Added persistent reference links to DECIPHER databases on Figshare and replaced reference links to 
   DECIPHER [website]([http://www2.decipher.codes/Classification/TrainingSets/](https://www2.decipher.codes/data/Downloads/TrainingSets/)) 
-  - [SILVA SSU r138](https://figshare.com/ndownloader/files/46245217)
-  - [UNITE v2023](https://figshare.com/ndownloader/files/49181545)
+  - [SILVA SSU r138](https://figshare.com/ndownloader/files/52846199)
+  - [UNITE v2024](https://figshare.com/ndownloader/files/52846346)
   - [PR2 v4.13](https://figshare.com/ndownloader/files/46241917)
 
 ---
@@ -113,35 +113,35 @@ Software Updates and Changes:
 |Program|Version|Relevant Links|
 |:------|:-----:|:-------------|
 |FastQC|0.12.1|[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
-|MultiQC|1.19|[https://multiqc.info/](https://multiqc.info/)|
-|Cutadapt|4.6|[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
-|R-base|4.4.1|[https://www.r-project.org/](https://www.r-project.org/)|
-|DADA2|1.30.0|[https://www.bioconductor.org/packages/release/bioc/html/dada2.html](https://www.bioconductor.org/packages/release/bioc/html/dada2.html)|
-|DECIPHER|2.30.0|[https://bioconductor.org/packages/release/bioc/html/DECIPHER.html](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html)|
-|biomformat|1.30.0|[https://github.com/joey711/biomformat](https://github.com/joey711/biomformat)|
-|ANCOMBC|2.6.0|[https://github.com/FrederickHuangLin/ANCOMBC](https://github.com/FrederickHuangLin/ANCOMBC)|
+|MultiQC|1.27.1|[https://multiqc.info/](https://multiqc.info/)|
+|Cutadapt|5.0|[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
+|R-base|4.4.2|[https://www.r-project.org/](https://www.r-project.org/)|
+|DADA2|1.34.0|[https://www.bioconductor.org/packages/release/bioc/html/dada2.html](https://www.bioconductor.org/packages/release/bioc/html/dada2.html)|
+|DECIPHER|3.20.0|[https://bioconductor.org/packages/release/bioc/html/DECIPHER.html](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html)|
+|biomformat|1.34.0|[https://github.com/joey711/biomformat](https://github.com/joey711/biomformat)|
+|ANCOMBC|2.8.0|[https://github.com/FrederickHuangLin/ANCOMBC](https://github.com/FrederickHuangLin/ANCOMBC)|
 |broom|1.0.7|[https://CRAN.R-project.org/package=broom](https://CRAN.R-project.org/package=broom)|
-|DescTools|0.99.57|[https://andrisignorell.github.io/DescTools/](https://andrisignorell.github.io/DescTools/)|
-|DESeq2|1.42.0|[https://bioconductor.org/packages/release/bioc/html/DESeq2.html](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)|
-|FSA|0.9.5|[https://CRAN.R-project.org/package=FSA](https://CRAN.R-project.org/package=FSA)|
+|DescTools|0.99.59|[https://andrisignorell.github.io/DescTools/](https://andrisignorell.github.io/DescTools/)|
+|DESeq2|1.46.0|[https://bioconductor.org/packages/release/bioc/html/DESeq2.html](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)|
+|FSA|0.9.6|[https://CRAN.R-project.org/package=FSA](https://CRAN.R-project.org/package=FSA)|
 |ggdendro|0.2.0|[https://CRAN.R-project.org/package=ggdendro](https://CRAN.R-project.org/package=ggdendro)|
 |ggrepel|0.9.6|[https://CRAN.R-project.org/package=ggrepel](https://CRAN.R-project.org/package=ggrepel)|
 |glue|1.8.0|[https://glue.tidyverse.org/](https://glue.tidyverse.org/)|
-|mia|1.12.0|[https://github.com/microbiome/mia](https://github.com/microbiome/mia)|
-|phyloseq|1.46.0|[https://bioconductor.org/packages/release/bioc/html/phyloseq.html](https://bioconductor.org/packages/release/bioc/html/phyloseq.html)|
-|rcolorbrewer|1.1_3|[https://CRAN.R-project.org/package=RColorBrewer](https://CRAN.R-project.org/package=RColorBrewer)|
-|taxize|0.9.100.1|[https://docs.ropensci.org/taxize/](https://docs.ropensci.org/taxize/)|
+|mia|1.14.0|[https://github.com/microbiome/mia](https://github.com/microbiome/mia)|
+|phyloseq|1.50.0|[https://bioconductor.org/packages/release/bioc/html/phyloseq.html](https://bioconductor.org/packages/release/bioc/html/phyloseq.html)|
+|rcolorbrewer|1.1.3|[https://CRAN.R-project.org/package=RColorBrewer](https://CRAN.R-project.org/package=RColorBrewer)|
+|taxize|0.10.0|[https://docs.ropensci.org/taxize/](https://docs.ropensci.org/taxize/)|
 |tidyverse|2.0.0|[https://CRAN.R-project.org/package=tidyverse](https://CRAN.R-project.org/package=tidyverse)|
-|vegan|2.6.4|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
+|vegan|2.6_4|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
 
 # Reference databases used
 <update figshare links once the updated DBs are downloaded>
   
 |Program used|Database|DECIPHER Link|GeneLab Figshare Link|GeneLab Download Date|
 |:-----------|:------:|:------------|--------------------:|--------------------:|
-|DECIPHER| SILVA SSU r138_2 | [https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData) |[SILVA_SSU_r138_2019.RData](https://figshare.com/ndownloader/files/46245217)| <insert download date> |
-|DECIPHER| UNITE v2024 | [https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData) | [UNITE_v2023_July2023.RData](https://figshare.com/ndownloader/files/49181545)| <insert download date> |
-|DECIPHER| PR2 v4.13 | [https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData) | [PR2_v4_13_March2021.RData](https://figshare.com/ndownloader/files/46241917)| <insert download date> |
+|DECIPHER| SILVA SSU r138_2 | [https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData) |[SILVA_SSU_r138_2_2024.RData](https://figshare.com/ndownloader/files/52846199)| 03/06/2025 |
+|DECIPHER| UNITE v2024 | [https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData) | [UNITE_v2024_April2024.RData](https://figshare.com/ndownloader/files/52846346)| 03/06/2025 |
+|DECIPHER| PR2 v4.13 | [https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData) | [PR2_v4_13_March2021.RData](https://figshare.com/ndownloader/files/46241917)| 05/10/2025 |
 ---
 
 # General processing overview with example commands  
@@ -2017,7 +2017,9 @@ assay_suffix <- "_GLAmpSeq"
 output_prefix <- ""
 
 # -------------------------Prepare feature tables -------------------------- #
-taxon_levels <- colnames(taxonomy_table)
+# For ITS and 18S datasets the taxonomy columns may alo kingdom and divison levels which will break the code.
+# To avoid this, we limit plotting to phylum:species levels only.
+taxon_levels <- c("phylum", "class", "order", "family", "genus", "species") # Plot only phylum to species
 names(taxon_levels) <- taxon_levels
 taxon_tables <- map(.x = taxon_levels,
                     .f = make_feature_table,
@@ -2032,9 +2034,8 @@ dont_group <- c("phylum")
 # phylum 1%, class 3%, order 3%, family 8%, genus 8% and species 9%
 thresholds <- c(phylum=1,class=3, order=3, family=8, genus=8, species=9)
 # Convert from wide to long format
-# -1 drops the kingdom level since all the microbes are bacteria
-relAbundace_tbs_rare_grouped <- map2(.x = taxon_levels[-1],
-                                     .y = taxon_tables[-1], 
+relAbundace_tbs_rare_grouped <- map2(.x = taxon_levels,
+                                     .y = taxon_tables, 
                                      .f = function(taxon_level=.x,
                                                    taxon_table=.y){
                                       
@@ -2069,10 +2070,19 @@ x <- 'samples'
 y <- "relativeAbundance"
 facet_by <- reformulate(groups_colname)
 number_of_samples <- length(samples_order)
-plot_width <- 0.6 * number_of_samples
+
+
+if(number_of_samples >=  30 ){
+
+    plot_width <- 0.6 * number_of_samples
+
+}else{
+ 
+    plot_width <- 14
+}
 
 # Make sample plots
-walk2(.x = relAbundace_tbs_rare_grouped, .y = taxon_levels[-1], 
+walk2(.x = relAbundace_tbs_rare_grouped, .y = taxon_levels, 
                            .f = function(relAbundace_tb, taxon_level){
                              
                              df <- relAbundace_tb %>%
@@ -2081,7 +2091,7 @@ walk2(.x = relAbundace_tbs_rare_grouped, .y = taxon_levels[-1],
                           p <- ggplot(data = df, mapping = aes(x= !!sym(x), y=!!sym(y) )) +
                                geom_col(aes(fill = !!sym(taxon_level) )) + 
                                facet_wrap(facet_by, scales = "free", 
-                               nrow = 1, labeller = label_wrap_gen()) +
+                               nrow = 1, labeller = label_wrap_gen(width=10)) +
                                publication_format +
                                labs(x = x_lab , y = y_lab, fill= tools::toTitleCase(taxon_level)) + 
                                scale_fill_manual(values = custom_palette) +
@@ -2105,7 +2115,7 @@ thresholds <- c(phylum=1,class=2, order=2, family=2, genus=2, species=2)
 group_rare <- TRUE # should rare taxa be grouped ?
 maximum_number_of_taxa <- 500 # If the number of taxa is more than this then rare taxa will be grouped anyway. 
 
-group_relAbundace_tbs <- map2(.x = taxon_levels[-1], .y = taxon_tables[-1], 
+group_relAbundace_tbs <- map2(.x = taxon_levels, .y = taxon_tables, 
                                      .f = function(taxon_level=.x, taxon_table=.y){
                                        
                                        taxon_table <- as.data.frame(taxon_table %>% t()) 
@@ -2144,7 +2154,7 @@ y_lab <- "Relative abundance (%)"
 y <- "relativeAbundance"
 number_of_groups <- length(group_levels)
 plot_width <- 2.5 * number_of_groups
-walk2(.x = group_relAbundace_tbs, .y = taxon_levels[-1], 
+walk2(.x = group_relAbundace_tbs, .y = taxon_levels, 
                            .f = function(relAbundace_tb=.x, taxon_level=.y){
                              
                              p <- ggplot(data =  relAbundace_tb %>%
