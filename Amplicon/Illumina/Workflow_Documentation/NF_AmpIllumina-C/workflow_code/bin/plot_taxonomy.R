@@ -270,7 +270,7 @@ group_low_abund_taxa <- function(abund_table, threshold=0.05,
   while(TRUE){
     
     for (column in seq_along(abund_table)){
-      if(max(abund_table[,column]) < threshold ){
+      if(max(abund_table[,column], na.rm = TRUE) < threshold ){
         taxa_to_group[index] <- column
         index = index + 1
       }
@@ -564,7 +564,7 @@ group_relAbundace_tbs <- map2(.x = taxon_levels, .y = taxon_tables,
                                          group_rare <- TRUE
                                        }
                                        
-                                       if(group_rare){
+                                       if(group_rare && !(taxon_level %in% dont_group)){
                                          taxon_table <- group_low_abund_taxa(taxon_table %>%  
                                                                                as.data.frame(check.names=FALSE,
                                                                                              stringAsFactor=FALSE),

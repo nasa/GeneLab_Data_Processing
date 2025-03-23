@@ -1123,7 +1123,7 @@ library(tidyverse)
     while(TRUE){
 
       for (column in seq_along(abund_table)){
-        if(max(abund_table[, column]) < threshold ){
+        if(max(abund_table[, column], na.rm = TRUE) < threshold ){
           taxa_to_group[index] <- column
           index = index + 1
         }
@@ -2128,7 +2128,7 @@ group_relAbundace_tbs <- map2(.x = taxon_levels, .y = taxon_tables,
                                          group_rare <- TRUE
                                        }
                                        
-                                       if(group_rare){
+                                       if(group_rare && !(taxon_level %in% dont_group)){
                                          taxon_table <- group_low_abund_taxa(taxon_table %>%
                                                                                as.data.frame(check.names=FALSE,
                                                                                              stringAsFactor=FALSE),
@@ -2517,8 +2517,8 @@ walk(group_levels, function(group_level){
   # Calculate means and standard deviations for the current comparison
   temp_df <- normalized_table %>% select(!!feature, all_of(Samples)) %>% 
     rowwise() %>%
-    mutate(!!mean_col := mean(c_across(where(is.numeric))),
-           !!std_col := sd(c_across(where(is.numeric))) ) %>% 
+    mutate(!!mean_col := mean(c_across(where(is.numeric)), na.rm = TRUE),
+           !!std_col := sd(c_across(where(is.numeric)), na.rm = TRUE) ) %>% 
     select(!!feature,!!sym(mean_col), !!sym(std_col))
   
   # Merge the current comparison's means and stdandard deviations
@@ -2535,8 +2535,8 @@ normalized_table <- normalized_table %>%
 # Compute globally/ASV normalized means and standard deviations 
 All_mean_sd <- normalized_table %>%
   rowwise() %>%
-  mutate(All.Mean=mean(c_across(where(is.numeric))),
-         All.Stdev=sd(c_across(where(is.numeric))) ) %>%
+  mutate(All.Mean=mean(c_across(where(is.numeric)), na.rm = TRUE),
+         All.Stdev=sd(c_across(where(is.numeric)), na.rm = TRUE) ) %>%
   select(!!feature, All.Mean, All.Stdev)
 
 # Merge the taxonomy table to the stats table
@@ -2553,7 +2553,6 @@ merged_df <- merged_df %>%
   left_join(merged_df) %>%
   left_join(All_mean_sd) %>%
   left_join(group_means_df, by = feature) %>%
-  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>%
   mutate(across(where(is.matrix), as.numeric))
 
 # Write out results of differential abundance using ANCOMBC 1
@@ -2813,8 +2812,8 @@ walk(group_levels, function(group_level){
   
   temp_df <- normalized_table %>% select(!!feature, all_of(Samples)) %>% 
     rowwise() %>%
-    mutate(!!mean_col := mean(c_across(where(is.numeric))),
-           !!std_col := sd(c_across(where(is.numeric))) ) %>% 
+    mutate(!!mean_col := mean(c_across(where(is.numeric)), na.rm = TRUE),
+           !!std_col := sd(c_across(where(is.numeric)), na.rm = TRUE) ) %>% 
     select(!!feature,!!sym(mean_col), !!sym(std_col))
   
   group_means_df <<- group_means_df %>% left_join(temp_df)
@@ -2829,8 +2828,8 @@ normalized_table <- normalized_table %>%
 # Calculate global mean and standard deviation
 All_mean_sd <- normalized_table %>%
   rowwise() %>%
-  mutate(All.Mean=mean(c_across(where(is.numeric))),
-         All.Stdev=sd(c_across(where(is.numeric))) ) %>% 
+  mutate(All.Mean=mean(c_across(where(is.numeric)), na.rm = TRUE),
+         All.Stdev=sd(c_across(where(is.numeric)), na.rm = TRUE) ) %>% 
   select(!!feature, All.Mean, All.Stdev)
 
 # Append the taxonomy table to the ncbi and stats table
@@ -2846,8 +2845,7 @@ merged_df <- merged_df %>%
   left_join(normalized_table, by = feature) %>%
   left_join(merged_df) %>% 
   left_join(All_mean_sd) %>% 
-  left_join(group_means_df, by = feature) %>% 
-  mutate(across(where(is.numeric), ~round(.x, digits=3)))
+  left_join(group_means_df, by = feature)
 
 # Writing out results of differential abundance using ANCOMBC2...
 output_file <- glue("{diff_abund_out_dir}{output_prefix}ancombc2_differential_abundance{assay_suffix}.csv")
@@ -3117,7 +3115,7 @@ df2 <- data.frame(best_taxonomy = df$best_taxonomy %>%
          .after = best_taxonomy)
 
 df <- df %>%
-  left_join(df2, join_by("best_taxonomy")) %>% 
+  left_join(df2, join_by("best_taxonomy")) %>% `
   right_join(merged_stats_df)
 
 # -------- Retrieve deseq normalized table from the deseq model
@@ -3157,8 +3155,8 @@ walk(group_levels, function(group_level){
   # Calculate the means and standard deviations for the current group 
   temp_df <- normalized_table %>% select(!!feature, all_of(Samples)) %>% 
     rowwise() %>%
-    mutate(!!mean_col := mean(c_across(where(is.numeric))),
-           !!std_col := sd(c_across(where(is.numeric))) ) %>% 
+    mutate(!!mean_col := mean(c_across(where(is.numeric)), na.rm = TRUE),
+           !!std_col := sd(c_across(where(is.numeric)), na.rm = TRUE) ) %>% 
     select(!!feature,!!sym(mean_col), !!sym(std_col))
   
   group_means_df <<- group_means_df %>% left_join(temp_df)
@@ -3173,8 +3171,8 @@ normalized_table <- normalized_table %>%
 # Calculate mean global means and standard deviations
 All_mean_sd <- normalized_table %>%
   rowwise() %>%
-  mutate(All.Mean=mean(c_across(where(is.numeric))),
-         All.Stdev=sd(c_across(where(is.numeric))) ) %>% 
+  mutate(All.Mean=mean(c_across(where(is.numeric)), na.rm = TRUE),
+         All.Stdev=sd(c_across(where(is.numeric)), na.rm = TRUE) ) %>% 
   select(!!feature, All.Mean, All.Stdev)
 
 # Add taxonomy
@@ -3191,7 +3189,6 @@ merged_df <- merged_df %>%
   left_join(merged_df) %>%  # append the stats table
   left_join(All_mean_sd) %>%  # append the global/ASV means and stds
   left_join(group_means_df, by = feature) %>% # append the group means and stds
-  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>%  # round numeric columns
   mutate(across(where(is.matrix), as.numeric)) # convert meatrix columns to numeric columns
 
 # Defining the output file

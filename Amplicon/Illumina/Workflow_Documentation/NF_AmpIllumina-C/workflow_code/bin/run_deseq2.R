@@ -528,8 +528,8 @@ walk(group_levels, function(group_level){
   
   temp_df <- normalized_table %>% select(!!feature, all_of(Samples)) %>% 
     rowwise() %>%
-    mutate(!!mean_col := mean(c_across(where(is.numeric))),
-           !!std_col := sd(c_across(where(is.numeric))) ) %>% 
+    mutate(!!mean_col := mean(c_across(where(is.numeric)), na.rm = TRUE),
+           !!std_col := sd(c_across(where(is.numeric)), na.rm = TRUE) ) %>% 
     select(!!feature,!!sym(mean_col), !!sym(std_col))
   
   group_means_df <<- group_means_df %>% left_join(temp_df)
@@ -544,8 +544,8 @@ normalized_table <- normalized_table %>%
 
 All_mean_sd <- normalized_table %>%
   rowwise() %>%
-  mutate(All.Mean=mean(c_across(where(is.numeric))),
-         All.Stdev=sd(c_across(where(is.numeric))) ) %>% 
+  mutate(All.Mean=mean(c_across(where(is.numeric)), na.rm = TRUE),
+         All.Stdev=sd(c_across(where(is.numeric)), na.rm = TRUE) ) %>% 
   select(!!feature, All.Mean, All.Stdev)
 
 # Add taxonomy
