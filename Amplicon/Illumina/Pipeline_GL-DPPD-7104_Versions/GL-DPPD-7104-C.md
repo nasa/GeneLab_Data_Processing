@@ -57,7 +57,7 @@ Software Updates and Changes:
     ANCOMBC 1 ([Step 10a](#10a-ancombc-1)), ANCOMBC 2 ([Step 10b](#10b-ancombc-2)), and Deseq2 ([Step 10c](#10c-deseq2))
 - Assay-specific suffixes were added where needed for OSDR ("_GLAmpSeq")
 - Updated reference files:
-  - ITS UNITE: "UNITE\_v2024\_July2024.RData" from [DECIPHER](https://www2.decipher.codes/data/Downloads/TrainingSets/)
+  - ITS UNITE: "UNITE\_v2024\_April2024.RData" from [DECIPHER](https://www2.decipher.codes/data/Downloads/TrainingSets/)
 - Added persistent reference links to DECIPHER databases on Figshare and replaced reference links to 
   DECIPHER [website]([http://www2.decipher.codes/Classification/TrainingSets/](https://www2.decipher.codes/data/Downloads/TrainingSets/)) 
   - [SILVA SSU r138](https://figshare.com/ndownloader/files/52846199)
