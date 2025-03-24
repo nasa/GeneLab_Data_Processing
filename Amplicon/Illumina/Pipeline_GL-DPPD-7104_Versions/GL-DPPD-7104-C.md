@@ -141,7 +141,7 @@ Software Updates and Changes:
 |:-----------|:------:|:------------|--------------------:|--------------------:|
 |DECIPHER| SILVA SSU r138_2 | [https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData) |[SILVA_SSU_r138_2_2024.RData](https://figshare.com/ndownloader/files/52846199)| 03/06/2025 |
 |DECIPHER| UNITE v2024 | [https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData) | [UNITE_v2024_April2024.RData](https://figshare.com/ndownloader/files/52846346)| 03/06/2025 |
-|DECIPHER| PR2 v4.13 | [https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData) | [PR2_v4_13_March2021.RData](https://figshare.com/ndownloader/files/46241917)| 05/10/2025 |
+|DECIPHER| PR2 v4.13 | [https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData) | [PR2_v4_13_March2021.RData](https://figshare.com/ndownloader/files/46241917)| 05/10/2024 |
 ---
 
 # General processing overview with example commands  
@@ -490,7 +490,7 @@ seqtab.nochim <- removeBimeraDenovo(unqs=seqtab, method=“consensus”, multith
 dna <- DNAStringSet(getSequences(seqtab.nochim))
 
 ## Downloading the reference R taxonomy object: ##
-download.file( url="https://figshare.com/ndownloader/files/46245217", destfile=“SILVA_SSU_r138_2_2024.RData”)
+download.file( url="https://figshare.com/ndownloader/files/52846199", destfile=“SILVA_SSU_r138_2_2024.RData”)
 
 ## Loading taxonomy object: ##
 load(“SILVA_SSU_r138_2_2024.RData”)
@@ -693,12 +693,10 @@ library(tidyverse)
 
   ```R
   expandy <- function(vec, ymin=NULL) {
-    # vec [NUMERIC] - a numeric vector of y valuesx.
+    # vec [NUMERIC] - a numeric vector of y values.
 
     max.val <- max(vec, na.rm=TRUE) + 0.1
-    min.log <- floor(log10(max.val))
     
-    # expand_limits(y=c(ymin, ceiling(max.val/10^min.log)*10^min.log))
     expand_limits(y=c(ymin, max.val))
   }
   ```
@@ -938,7 +936,7 @@ library(tidyverse)
   ```
 
   **Function Parameter Definitions:**
-  - `ps=` - phyloseq object contructed from feature, taxonomy, and metadata tables
+  - `ps=` - phyloseq object constructed from feature, taxonomy, and metadata tables
   - `stats_res=` - named list containing the variance and adonis test results as dataframes, generated using [run_stats()](#run_stats)
   - `distance_method=` - string specifying the method used to calculate the distance between samples; values can be "euclidean" (Euclidean distance) or "bray" (Bray-Curtis dissimilarity)
   - `groups_colname=` - string specifying the name of the column in the metadata dataframe to use for specifying sample groups
@@ -951,7 +949,7 @@ library(tidyverse)
 
 #### remove_rare_features()
 <details>
-  <summary>filter out rare features from a feature table by occurrance in a fraction of samples depending on the supplied cut-off</summary>
+  <summary>filter out rare features from a feature table by occurrence in a fraction of samples depending on the supplied cut-off</summary>
 
   ```R
   remove_rare_features <- function(feature_table, cut_off_percent=0.75){
@@ -1015,7 +1013,7 @@ library(tidyverse)
 
 #### format_taxonomy_table()
 <details>
-  <summary>reformat taxonomy table by appending a suffix to a known name</summary>
+  <summary>reformat taxonomy table by appending a suffix to a known name in the previous cell</summary>
 
   ```R
   format_taxonomy_table <- function(taxonomy, stringToReplace="Other", suffix=";Other") {
@@ -1158,7 +1156,7 @@ library(tidyverse)
   ```
   **Function Parameter Definitions:**
   - `abund_table=` - relative abundance matrix with taxa as columns and samples as rows
-  - `threshold=0.05` - a number between 0.001 and 1 specifying the threshold for filtering out rare taxa
+  - `threshold=0.05` - a number between 0.001 and 1 specifying the threshold for grouping rare taxa
   - `rare_taxa=FALSE` - boolean specifying if only rare taxa should be returned, if set to TRUE then a table with only the rare taxa will be returned
   
   **Returns:** a dataframe containing a relative abundance matrix with taxa as columns and samples as rows
@@ -1197,8 +1195,8 @@ library(tidyverse)
   - `convertToRelativeAbundance=FALSE` - a boolean specifying whether or not the value in the taxon table should be converted to per sample relative abundance values
   
   **Returns:** a named list containing two dataframes: `taxon_table` and `metadata`
-    - a dataframe 
-    - dataframe containing 
+    - a dataframe of aggregated feature counts by group
+    - a dataframe containing group specific metadata for the aggregated feature count
 </details>
 
 #### get_ncbi_ids()
@@ -1227,7 +1225,7 @@ library(tidyverse)
   - `taxonomy=` - string specifying the taxonomy name that will be used to search for the respective NCBI ID
   - `target_region=` - amplicon target region to analyze; options are "16S", "18S", or "ITS"
 
-  **Returns:** a character vector containing the NCBI taxonomic identifiers; if none are found, returns NA
+  **Returns:** an integer of NCBI taxonomic identifiers; if none is found, returns NA
 </details>
 
 #### find_bad_taxa()
@@ -1302,7 +1300,7 @@ library(tidyverse)
 
 #### gm_mean()
 <details>
-  <summary>calculates the geometrics mean</summary>
+  <summary>calculates the geometric mean</summary>
 
   ```R
     gm_mean <- function(x, na.rm=TRUE) {
@@ -1748,7 +1746,7 @@ write_csv(x = diversity_table,
 **Output Data:**
 
 * **alpha_diversity/<output_prefix>statistics_table_GLAmpSeq.csv** (a comma-separated table containing the z-score, p-value, and adjusted p-value statistics for each pairwise comparison for all metrics evaluated, Observed, Chao1, Shannon, and Simpson)
-* **alpha_diversity/<output_prefix>summary_table_GLAmpSeq.csv** (a comma-separated table containing the sample number and mean +/- standard deviation of each metric (Observed, Chao1, Shannon, and Simpson) for each group)
+* **alpha_diversity/<output_prefix>summary_table_GLAmpSeq.csv** (a comma-separated table containing the sample number and mean +/- standard error of each metric (Observed, Chao1, Shannon, and Simpson) for each group)
 
 <br>
 
@@ -2002,7 +2000,7 @@ walk2(.x = normalization_methods, .y = distance_methods,
 
 ## 9. Taxonomy Plots
 
-Taxonomy summaries provide insights into the composition of microbial communities at various taxonomic levels.
+Taxonomy summaries provide insights into the composition of microbial communities at various taxonomy levels.
 
 ```R
 taxonomy_plots_out_dir <- "taxonomy_plots/"
@@ -2017,8 +2015,8 @@ assay_suffix <- "_GLAmpSeq"
 output_prefix <- ""
 
 # -------------------------Prepare feature tables -------------------------- #
-# For ITS and 18S datasets the taxonomy columns may alo kingdom and divison levels which will break the code.
-# To avoid this, we limit plotting to phylum:species levels only.
+# For ITS and 18S datasets the taxonomy columns may also contain kingdom and divison taxonomy levels
+# which will break the code. To avoid this, we only plot the phylum to species levels.
 taxon_levels <- c("phylum", "class", "order", "family", "genus", "species") # Plot only phylum to species
 names(taxon_levels) <- taxon_levels
 taxon_tables <- map(.x = taxon_levels,
@@ -2381,11 +2379,11 @@ merged_stats_df <- merged_stats_df %>%
   mutate(!!feature := SortMixed(!!sym(feature)))
 
 # ------ Get comparison names
-# Since all column groups i.e. LnFC, pval, W, etc. have the same
+# Since all column groups i.e. lnFC, pval, W, etc. have the same
 # suffixes as comparison names, we only need to extract the comparion names
 # from one of them. Here we extract them from the "lnFC" prefixed columns
 comp_names <- merged_stats_df %>% 
-  select(starts_with("lnFC")) %>%
+  select(starts_with("lnFC_", ignore.case = FALSE)) %>%
   colnames() %>% str_remove_all("lnFC_")
 names(comp_names) <- comp_names
 
@@ -2619,7 +2617,6 @@ write_csv(merged_df %>%
     - test statistic from the primary result (Wstat)
     - P-value (pvalue)
     - Adjusted p-value (qvalue)
-    - logical value indicating differential abundance based on the qvalue cutoff of 0.05 (diff)
   - All.mean (mean across all samples)
   - All.stdev (standard deviation across all samples) 
   - For each group:
@@ -2728,10 +2725,8 @@ new_colnames <- map_chr(output$res_pair %>% colnames,
 new_colnames[match("taxon", new_colnames)] <- feature
 
 
-# Round numeric values and rename columns
-paired_stats_df <- output$res_pair %>% 
-  mutate(across(where(is.numeric), ~round(.x, digits=3))) %>%
-  set_names(new_colnames)
+# Rename columns
+paired_stats_df <- output$res_pair %>% set_names(new_colnames)
 
 # Get the unique comparison names 
 uniq_comps <- str_replace_all(new_colnames, ".+_(\\(.+\\))", "\\1") %>% unique()
@@ -2985,7 +2980,6 @@ volcano_plots <- map(uniq_comps, function(comparison){
     - test statistic from the primary result (Wstat)
     - P-value (pvalue)
     - Adjusted p-value (qvalue)
-    - logical value indicating differential abundance based on the qvalue cutoff of 0.05 (diff)
   - All.mean (mean across all samples)
   - All.stdev (standard deviation across all samples) 
   - For each group:
@@ -3115,7 +3109,7 @@ df2 <- data.frame(best_taxonomy = df$best_taxonomy %>%
          .after = best_taxonomy)
 
 df <- df %>%
-  left_join(df2, join_by("best_taxonomy")) %>% `
+  left_join(df2, join_by("best_taxonomy")) %>%
   right_join(merged_stats_df)
 
 # -------- Retrieve deseq normalized table from the deseq model
