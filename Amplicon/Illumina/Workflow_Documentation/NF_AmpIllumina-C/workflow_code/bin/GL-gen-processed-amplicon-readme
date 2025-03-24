@@ -1,0 +1,200 @@
+#!/usr/bin/env python
+
+"""
+This is a program for generating a README.txt file for GeneLab processed amplicon datasets.
+"""
+
+import os
+import sys
+import argparse
+import textwrap
+import zipfile
+import re
+
+
+parser = argparse.ArgumentParser(description = "This program generates the corresponding README file for GeneLab processed amplicon dataset. It is intended to \
+                                             be run before running `GL-validate-processed-amplicon-data` and after processing_info.zip has been created.")
+
+required = parser.add_argument_group('required arguments')
+required.add_argument("-g", "--GLDS-ID", help = 'GLDS ID (e.g. "GLDS-69")', action = "store", required = True)
+parser.add_argument("--output", help = 'Name of output file (default: "README.txt", with appended prefix if one is provided)', default = "README.txt")
+parser.add_argument("--name", help = 'Name of individual who performed the processing (default: "Michael D. Lee")', default = "Michael D. Lee")
+parser.add_argument("--email", help = 'Email address of individual who performed the processing (default: "Mike.Lee@nasa.gov")', default = "Mike.Lee@nasa.gov")
+parser.add_argument("--protocol_ID", help = 'Protocol document ID followed (default: assay dependent)', default = "GL-DPPD-7104-B")
+parser.add_argument("--assay_suffix", help = "Genelab assay suffix", action = "store", default = "_GLAmpSeq")
+parser.add_argument("--primers-already-trimmed", help = "Add this flag if primers were trimmed prior to GeneLab processing, \
+                    therefore there are no trimmed sequence data", action = "store_true")
+parser.add_argument("--processing_zip_file", help = "Specifies the location of processing_info.zip", 
+                    action = "store", default = "processing_info.zip")
+parser.add_argument("--raw-reads-dir", help = "Specifies the location of the raw reads directory if they are to be included", action = "store", default = "")
+parser.add_argument("--fastqc_dir", help = "Specifies the location of fastqc and multiqc reports directory", 
+                    action = "store", default = "FastQC_Outputs/")
+parser.add_argument("--filtered_reads_dir", help = "Specifies the location of the filtered reads directory", 
+                    action = "store", default = "Filtered_Sequence_Data/")
+parser.add_argument("--trimmed_reads_dir", help = "Specifies the location of the trimmed reads directory", 
+                    action = "store", default = "Trimmed_Sequence_Data/")
+parser.add_argument("--final_outputs_dir", help = "Specifies the location of the final outputs directory", 
+                    action = "store", default = "Final_Outputs/")
+
+
+if len(sys.argv)==1:
+    parser.print_help(sys.stderr)
+    sys.exit(0)
+
+args = parser.parse_args()
+
+# Setting some colors
+tty_colors = {
+    'green' : '\033[0;32m%s\033[0m',
+    'yellow' : '\033[0;33m%s\033[0m',
+    'red' : '\033[0;31m%s\033[0m'
+}
+
+
+### Functions ###
+def color_text(text, color='green'):
+    if sys.stdout.isatty():
+        return tty_colors[color] % text
+    else:
+        return text
+
+
+def wprint(text):
+    """ Print wrapper """
+
+    print(textwrap.fill(text, width=80, initial_indent="  ", 
+          subsequent_indent="  ", break_on_hyphens=False))
+
+
+def report_failure(message, color = "yellow"):
+    print("")
+    wprint(color_text(message, color))
+    print("\nREADME-generation failed.\n")
+
+    sys.exit(1)
+
+
+def check_for_file_and_contents(file_path):
+    """ Used by get_processing_zip_contents function """
+
+    if not os.path.exists(file_path):
+        report_failure("The expected file '" + str(file_path) + "' does not exist.")
+    if not os.path.getsize(file_path) > 0:
+        report_failure("The file '" + str(file_path) + "' is empty.")
+
+
+def get_processing_zip_contents(processing_zip_file):
+    """ This gets the filenames that are in the processing_info.zip to add them to the readme """
+    # Check that the zip file exists and that it is not empty
+
+    check_for_file_and_contents(processing_zip_file)
+
+    with zipfile.ZipFile(processing_zip_file) as zip_obj:
+
+        entries = zip_obj.namelist()
+        entries.sort()
+
+    return(entries)
+
+
+def write_header(output, GLDS_ID, name, email, protocol_ID):
+
+    header = ["################################################################################\n",
+              "{:<77} {:>0}".format("## This directory holds processed data for NASA " + str(GLDS_ID), "##\n"),
+              "{:<77} {:>0}".format("## https://genelab-data.ndc.nasa.gov/genelab/accession/" + str(GLDS_ID) + "/", "##\n"),
+              "{:<77} {:>0}".format("##", "##\n"),
+              "{:<77} {:>0}".format("## Processed by " + str(name) + " (" + str(email) + ")", "##\n"),
+              "{:<77} {:>0}".format("## Based on " + str(protocol_ID),  "##\n"),
+              "################################################################################\n\n",
+              "Summary of contents:\n\n"]
+
+    output.writelines(header)
+
+
+def write_amplicon_body(output, output_file, assay_suffix, processing_zip_file,
+                        processing_zip_contents, fastqc_dir, raw_reads_dir,
+                        trimmed_reads_dir, filtered_reads_dir, final_outputs_dir, primers_already_trimmed):
+
+    # This README file
+    output.write("    {:<41} {:>0}".format("- " + str(output_file), "- this file\n\n"))
+
+    # Fastqc info
+    output.write("    {:<41} {:>0}".format("- " + str(fastqc_dir), "- multiQC summary reports of FastQC runs\n\n"))
+
+    # Raw reads
+    if raw_reads_dir != "":
+        output.write("    {:<41} {:>0}".format("- " + str(raw_reads_dir), "- initial read fastq files\n\n"))
+
+    # Primer-trimmed reads if there are any
+    if not primers_already_trimmed:
+        output.write("    {:<41} {:>0}".format("- " + str(trimmed_reads_dir), "- primer-trimmed fastq files\n\n"))
+
+    # Quality-filtered reads
+    output.write("    {:<41} {:>0}".format("- " + str(filtered_reads_dir), "- quality-filtered fastq files\n\n"))
+
+    # Outputs
+    output.write("    {:<41} {:>0}".format("- " + str(final_outputs_dir), "- primary output files (may or may not have additional prefix)\n"))
+    output.write("        {:<37} {:>0}".format(f"- alpha_diversity/", "- directory containing alpha diversity plots and statistics tables\n"))
+    output.write("        {:<37} {:>0}".format(f"- beta_diversity/", "- directory containing beta diversity plots and statistics tables\n"))
+    output.write("        {:<37} {:>0}".format(f"- differential_abundance/", "- directory containing the results (tables and plots) of differential abundance testing using one of or all of ANCOMBC1, ANCOMBC2 and DESeq2 \n"))
+    output.write("        {:<37} {:>0}".format(f"- taxonomy_plots/", "- directory containing sample-wise and group-wise taxonomy relative abundance stacked bar plots from phylum to specie level\n"))
+    output.write("        {:<37} {:>0}".format(f"- *{assay_suffix}.fasta", "- fasta file of recovered sequences\n"))
+    output.write("        {:<37} {:>0}".format(f"- *counts{assay_suffix}.tsv", "- count table of sequences across samples\n"))
+    output.write("        {:<37} {:>0}".format(f"- *taxonomy{assay_suffix}.tsv", "- assigned taxonomy of recovered sequences\n"))
+    output.write("        {:<37} {:>0}".format(f"- *taxonomy-and-count{assay_suffix}.tsv", "- combined table of counts and taxonomy\n"))
+    output.write("        {:<37} {:>0}".format(f"- *taxonomy-and-count{assay_suffix}.biom.zip", "- biom-formatted output of counts and taxonomy\n"))
+    output.write("        {:<37} {:>0}".format(f"- *read-count-tracking{assay_suffix}.tsv", "- read counts at each processing step\n\n"))
+
+    # Processing info
+    output.write("    {:<41} {:>0}".format("- " + str(processing_zip_file), "- zip archive holding info related to processing\n"))
+    for item in processing_zip_contents:
+
+        num_levels = item.count("/")
+
+        if num_levels > 1 and not item.endswith("/"):
+            out_item = re.sub(r'^.*/', '', str(item))
+        elif num_levels == 1 and not item.endswith("/"):
+            out_item = re.sub(r'^.*/', '', str(item))
+        elif num_levels > 1:
+            out_item = re.sub(r'^[^/]*/', '', str(item))
+        else:
+            out_item = str(item)
+
+        if item.endswith('/'):
+            num_levels -= 1
+
+        num_spaces = num_levels * 4
+
+        output.write("        " + " " * num_spaces + "- " + out_item + "\n")
+
+    output.write("\n")
+
+
+
+def main():
+    ### Variable setup ###
+    assay_suffix = str(args.assay_suffix)
+    fastqc_dir = str(args.fastqc_dir)
+    filtered_reads_dir = str(args.filtered_reads_dir)
+    processing_zip_file = str(args.processing_zip_file)
+
+    output_file = str(args.output)
+    raw_reads_dir = str(args.raw_reads_dir)
+    trimmed_reads_dir = str(args.trimmed_reads_dir)
+    final_outputs_dir = str(args.final_outputs_dir)
+
+    processing_zip_contents = get_processing_zip_contents(processing_zip_file)
+
+    with open(output_file, "w") as output:
+
+        write_header(output, args.GLDS_ID, args.name, args.email, args.protocol_ID)
+
+        write_amplicon_body(output, output_file, assay_suffix, processing_zip_file,
+                        processing_zip_contents, fastqc_dir, raw_reads_dir,
+                        trimmed_reads_dir, filtered_reads_dir, final_outputs_dir, 
+                        args.primers_already_trimmed)
+
+
+
+if __name__ == "__main__":
+    main()
