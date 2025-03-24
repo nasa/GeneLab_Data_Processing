@@ -10,7 +10,6 @@
 
 **Submitted by:**  
 Alexis Torres (GeneLab Data Processing Team)  
-Crystal Han (GeneLab Data Processing Team)
 
 **Approved by:**  
 Barbara Novak (GeneLab Data Processing Lead)  
