@@ -1,6 +1,6 @@
 ---
 title: "Affymetrix Processing"
-subtitle: "Workflow Version: NF_MAAffymetrix_1.0.5"
+subtitle: "`r paste0('Workflow Version: NF_MAAffymetrix_', params$workflow_version)`"
 date: now
 title-block-banner: true
 format:
@@ -14,12 +14,14 @@ format:
         number-sections: true
 
 params:
+  workflow_version: NULL
   id: NULL # str, used to name output files
   runsheet: NULL # str, path to runsheet
   biomart_attribute: NULL # str, used as a fallback value if 'Array Design REF' column is not found in the runsheet
-  annotation_file_path: NULL # str, Annotation file from 'genelab_annots_link' column of https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv
+  annotation_file_path: NULL # str, Annotation file from 'genelab_annots_link' column of GeneLab Annotations file
   ensembl_version: NULL # str, Used to determine ensembl version
   local_annotation_dir: NULL
+  annotation_config_path: NULL
   DEBUG_limit_biomart_query: NULL # int, If supplied, only the first n probeIDs are queried
   run_DE: 'true'
 
@@ -44,7 +46,11 @@ if (is.null(params$runsheet)) {
   stop("PARAMETERIZATION ERROR: Must supply runsheet path")
 }
 
-runsheet = params$runsheet # <path/to/runsheet>
+runsheet <- params$runsheet # <path/to/runsheet>
+
+# If using custom annotation, local_annotation_dir is path to directory containing annotation file and annotation_config_path is path/url to config file
+local_annotation_dir <- params$local_annotation_dir # <path/to/annotation_dir>
+annotation_config_path <- params$annotation_config_path # <path/to/config_file>
 
 message(params)
 
@@ -65,7 +71,7 @@ dir.create(DIR_DGE)
 original_par <- par()
 options(preferRaster=TRUE) # use Raster when possible to avoid antialiasing artifacts in images
 
-options(timeout=1000)
+options(timeout=1000) # ensure enough time for data downloads
 ```
 
 ## Load Metadata and Raw Data
@@ -114,7 +120,7 @@ DT::datatable(df_rs)
 print("Here are the expected comparison groups")
 # NON_DPPD:END
 print("Loading Raw Data...") # NON_DPPD
-allTrue <- function(i_vector) {
+all_true <- function(i_vector) {
   if ( length(i_vector) == 0 ) {
     stop(paste("Input vector is length zero"))
   }
@@ -122,13 +128,13 @@ allTrue <- function(i_vector) {
 }
 
 # Define paths to raw data files
-runsheetPathsAreURIs <- function(df_runsheet) {
-  allTrue(stringr::str_starts(df_runsheet$`Array Data File Path`, "https"))
+runsheet_paths_are_URIs <- function(df_runsheet) {
+  all_true(stringr::str_starts(df_runsheet$`Array Data File Path`, "https"))
 }
 
 
 # Download raw data files
-downloadFilesFromRunsheet <- function(df_runsheet) {
+download_files_from_runsheet <- function(df_runsheet) {
   urls <- df_runsheet$`Array Data File Path`
   destinationFiles <- df_runsheet$`Array Data File Name`
 
@@ -145,9 +151,9 @@ downloadFilesFromRunsheet <- function(df_runsheet) {
 }
 
 
-if ( runsheetPathsAreURIs(df_rs) ) {
+if ( runsheet_paths_are_URIs(df_rs) ) {
   print("Determined Raw Data Locations are URIS")
-  local_paths <- retry_with_delay(downloadFilesFromRunsheet, df_rs)
+  local_paths <- retry_with_delay(download_files_from_runsheet, df_rs)
 } else {
   print("Or Determined Raw Data Locations are local paths")
   local_paths <- df_rs$`Array Data File Path`
@@ -155,7 +161,7 @@ if ( runsheetPathsAreURIs(df_rs) ) {
 
 
 # uncompress files if needed
-if ( allTrue(stringr::str_ends(local_paths, ".gz")) ) {
+if ( all_true(stringr::str_ends(local_paths, ".gz")) ) {
   print("Determined these files are gzip compressed... uncompressing now")
   # This does the uncompression
   lapply(local_paths, R.utils::gunzip, remove = FALSE, overwrite = TRUE)
@@ -180,9 +186,9 @@ DT::datatable(df_local_paths)
 # Retry with delay here to accomodate oligo's automatic loading of annotation packages and occasional internet related failures to load
 raw_data <- retry_with_delay(
               oligo::read.celfiles,
-                df_local_paths$`Local Paths`,
-                sampleNames = df_local_paths$`Sample Name`# Map column names as Sample Names (instead of default filenames)
-              )
+              df_local_paths$`Local Paths`,
+              sampleNames = df_local_paths$`Sample Name`# Map column names as Sample Names (instead of default filenames)
+            )
 
 print(str(raw_data))
 
@@ -196,6 +202,9 @@ message(paste0("Number of Probes: ", dim(raw_data)[1])) # NON_DPPD
 DT::datatable(raw_data$targets, caption = "Sample to File Mapping")
 DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data file embedded probes to genes table")
 # NON_DPPD:END
+
+annotation_file_path <- params$annotation_file_path
+ensembl_version <- params$ensembl_version
 ```
 
 ## QA For Raw Data
@@ -461,9 +470,9 @@ par(original_par)
 #| message: false
 # Call RMA but skip normalize and background correction since those have already been applied
 probeset_level_data <- oligo::rma(norm_data, 
-                                    normalize=FALSE, 
-                                    background=FALSE,
-                                    )
+                                  normalize=FALSE, 
+                                  background=FALSE
+                                  )
 
 # Summarize background-corrected and normalized data
 print("Summarized Probeset Level Data Below") # NON_DPPD
@@ -479,15 +488,13 @@ DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data
 # NON_DPPD:END
 ```
 
-## Perform Probeset Differential Expression and Annotation
+## Probeset Annotations
 
-### Probeset Differential Expression (DE)
-
-#### Add Probeset Annotations
+### Get Probeset Annotations
 
 ``` {r retrieve-probeset-annotations}
 #| message: false
-shortenedOrganismName <- function(long_name) {
+shortened_organism_name <- function(long_name) {
   #' Convert organism names like 'Homo Sapiens' into 'hsapiens'
   tokens <- long_name %>% stringr::str_split(" ", simplify = TRUE)
   genus_name <- tokens[1]
@@ -499,7 +506,7 @@ shortenedOrganismName <- function(long_name) {
   return(short_name)
 }
 
-getBioMartAttribute <- function(df_rs) {
+get_biomart_attribute <- function(df_rs) {
   #' Returns resolved biomart attribute source from runsheet
   # NON_DPPD:START
   #' this either comes from the runsheet or as a fall back, the parameters injected during render
@@ -554,151 +561,185 @@ get_ensembl_genomes_mappings_from_ftp <- function(organism, ensembl_genomes_port
   return(mapping)
 }
 
+# Convert list of multi-mapped genes to string
+list_to_unique_piped_string <- function(str_list) {
+  #! convert lists into strings denoting unique elements separated by '|' characters
+  #! e.g. c("GO1","GO2","GO2","G03") -> "GO1|GO2|GO3"
+  return(toString(unique(str_list)) %>% stringr::str_replace_all(pattern = stringr::fixed(", "), replacement = "|"))
+}
 
-organism <- shortenedOrganismName(unique(df_rs$organism))
 
-if (organism %in% c('ecoli', 'paeruginosa')) {
-  expected_attribute_name <- 'ProbesetID'
+organism <- shortened_organism_name(unique(df_rs$organism))
+annot_key <- ifelse(organism %in% c("athaliana"), 'TAIR', 'ENSEMBL')
 
-  annot_file <- c(
-    'ecoli' = 'E_coli_2.na36.annot.csv',
-    'paeruginosa' = 'Pae_G1a.na36.annot.csv'
-  )
-
-  df_mapping <- read.csv(
-    file.path(params$local_annotation_dir, annot_file[[organism]]),
-    skip = 13, header = TRUE, na.strings = c('NA', '---')
-  )[c('Probe.Set.ID', 'Entrez.Gene', 'Gene.Symbol', 'Gene.Title', 'Ensembl', 'RefSeq.Transcript.ID', 'RefSeq.Protein.ID', 'Gene.Ontology.Biological.Process', 'Gene.Ontology.Cellular.Component', 'Gene.Ontology.Molecular.Function')]
-
-  # Clean columns
-  df_mapping$Gene.Symbol <- purrr::map_chr(stringr::str_split(df_mapping$Gene.Symbol, stringr::fixed(' /// ')), ~paste0(unique(.), collapse = "|")) %>% stringr::str_replace('NA', NA_character_)
-  df_mapping$Gene.Title <- purrr::map_chr(stringr::str_split(df_mapping$Gene.Title, stringr::fixed(' /// ')), ~paste0(unique(.), collapse = "|")) %>% stringr::str_replace('NA', NA_character_)
-  df_mapping$Entrez.Gene <- purrr::map_chr(stringr::str_split(df_mapping$Entrez.Gene, stringr::fixed(' /// ')), ~paste0(unique(.), collapse = "|")) %>% stringr::str_replace('NA', NA_character_)
-  df_mapping$Ensembl <- purrr::map_chr(stringr::str_split(df_mapping$Ensembl, stringr::fixed(' /// ')), ~paste0(unique(.), collapse = "|")) %>% stringr::str_replace('NA', NA_character_)
-
-  df_mapping$RefSeq <- paste(df_mapping$RefSeq.Transcript.ID, df_mapping$RefSeq.Protein.ID)
-  df_mapping$RefSeq <- purrr::map_chr(stringr::str_extract_all(df_mapping$RefSeq, '[A-Z]+_[\\d.]+'), ~paste0(unique(.), collapse = "|")) %>% stringr::str_replace('^$', NA_character_)
-
-  df_mapping$GO <- paste(df_mapping$Gene.Ontology.Biological.Process, df_mapping$Gene.Ontology.Cellular.Component, df_mapping$Gene.Ontology.Molecular.Function)
-  df_mapping$GO <- purrr::map_chr(stringr::str_extract_all(df_mapping$GO, '\\d{7}'), ~paste0('GO:', unique(.), collapse = "|")) %>% stringr::str_replace('^GO:$', NA_character_)
-
-  df_mapping <- df_mapping[c('Probe.Set.ID', 'Entrez.Gene', 'Gene.Symbol', 'Gene.Title', 'Ensembl', 'RefSeq', 'GO')]
-  names(df_mapping) <- c('ProbesetID', 'ENTREZID', 'SYMBOL', 'GENENAME', 'ENSEMBL', 'REFSEQ', 'GOSLIM_IDS')
-
-  df_mapping$STRING_id <- NA_character_
-} else if (organism %in% c("athaliana")) {
-  ensembl_genomes_version = params$ensembl_version
+if (organism %in% c("athaliana")) {
+  ENSEMBL_VERSION = ensembl_version
   ensembl_genomes_portal = "plants"
-  print(glue::glue("Using ensembl genomes ftp to get specific version of probeset id mapping table. Ensembl genomes portal: {ensembl_genomes_portal}, version: {ensembl_genomes_version}"))
-  expected_attribute_name <- getBioMartAttribute(df_rs)
+  print(glue::glue("Using ensembl genomes ftp to get specific version of probeset id mapping table. Ensembl genomes portal: {ensembl_genomes_portal}, version: {ENSEMBL_VERSION}"))
+  expected_attribute_name <- get_biomart_attribute(df_rs)
   df_mapping <- retry_with_delay(
-    get_ensembl_genomes_mappings_from_ftp,
+      get_ensembl_genomes_mappings_from_ftp,
       organism = organism,
       ensembl_genomes_portal = ensembl_genomes_portal,
-      ensembl_genomes_version = ensembl_genomes_version,
+      ensembl_genomes_version = ENSEMBL_VERSION,
       biomart_attribute = expected_attribute_name
     )
 
   # TAIR from the mapping tables tend to be in the format 'AT1G01010.1' but the raw data has 'AT1G01010'
   # So here we remove the '.NNN' from the mapping table where .NNN is any number
   df_mapping$ensembl_gene_id <- stringr::str_replace_all(df_mapping$ensembl_gene_id, "\\.\\d+$", "")
+
+  use_custom_annot <- FALSE
 } else {
   # Use biomart from main Ensembl website which archives keep each release on the live service
   # locate dataset
-  expected_dataset_name <- shortenedOrganismName(unique(df_rs$organism)) %>% stringr::str_c("_gene_ensembl")
+  expected_dataset_name <- shortened_organism_name(unique(df_rs$organism)) %>% stringr::str_c("_gene_ensembl")
   print(paste0("Expected dataset name: '", expected_dataset_name, "'"))
   message(paste0("Expected dataset name: '", expected_dataset_name, "'")) # NON_DPPD
 
+  expected_attribute_name <- get_biomart_attribute(df_rs)
+  print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
+  message(paste0("Expected attribute name: '", expected_attribute_name, "'")) # NON_DPPD
 
   # Specify Ensembl version used in current GeneLab reference annotations
-  ENSEMBL_VERSION <- params$ensembl_version
+  ENSEMBL_VERSION <- ensembl_version
   print(paste0("Searching for Ensembl Version: ", ENSEMBL_VERSION)) # NON_DPPD
 
   print(glue::glue("Using Ensembl biomart to get specific version of mapping table. Ensembl version: {ENSEMBL_VERSION}"))
 
-  ensembl <- biomaRt::useEnsembl(biomart = "genes", 
-                                dataset = expected_dataset_name,
-                                version = ENSEMBL_VERSION)
-  print(ensembl)
+  # Check if organism/array design is supported in biomart
+  use_custom_annot <- TRUE
 
-  expected_attribute_name <- getBioMartAttribute(df_rs)
-  print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
-  message(paste0("Expected attribute name: '", expected_attribute_name, "'")) # NON_DPPD
-
-  # Some probe_ids for affy_hta_2_0 may end in .hg.1 instead of .hg (how it is in biomaRt), leading to 0 results returned
-  if (expected_attribute_name == 'affy_hta_2_0') {
-    rownames(probeset_level_data) <- stringr::str_replace(rownames(probeset_level_data), '\\.hg\\.1$', '.hg')
-  }
-
-  probe_ids <- rownames(probeset_level_data)
-
-  # DEBUG:START
-  if ( is.integer(params$DEBUG_limit_biomart_query) ) {
-    warning(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
-    message(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
-    probe_ids <- probe_ids[1:params$DEBUG_limit_biomart_query]
-  }
-  # DEBUG:END
-
-  # Create probe map
-  # Run Biomart Queries in chunks to prevent request timeouts
-  #   Note: If timeout is occuring (possibly due to larger load on biomart), reduce chunk size
-  CHUNK_SIZE= 1500
-  probe_id_chunks <- split(probe_ids, ceiling(seq_along(probe_ids) / CHUNK_SIZE))
-  df_mapping <- data.frame()
-  for (i in seq_along(probe_id_chunks)) {
-    probe_id_chunk <- probe_id_chunks[[i]]
-    print(glue::glue("Running biomart query chunk {i} of {length(probe_id_chunks)}. Total probes IDS in query ({length(probe_id_chunk)})"))
-    message(glue::glue("Running biomart query chunk {i} of {length(probe_id_chunks)}. Total probes IDS in query ({length(probe_id_chunk)})")) # NON_DPPD
-    chunk_results <- biomaRt::getBM(
-        attributes = c(
-            expected_attribute_name,
-            "ensembl_gene_id"
-            ), 
-            filters = expected_attribute_name, 
-            values = probe_id_chunk, 
-            mart = ensembl)
-
-    if (nrow(chunk_results) > 0) {
-      df_mapping <- df_mapping %>% dplyr::bind_rows(chunk_results)
+  ensembl <- biomaRt::useEnsembl(biomart = "genes", version = ENSEMBL_VERSION)
+  ensembl_datasets <- biomaRt::listDatasets(ensembl)
+  if (expected_dataset_name %in% ensembl_datasets$dataset) {
+    ensembl <- biomaRt::useEnsembl(biomart = "genes", dataset = expected_dataset_name, version = ENSEMBL_VERSION)
+    ensembl_attributes <- biomaRt::listAttributes(ensembl)
+    if (expected_attribute_name %in% ensembl_attributes$name) {
+      use_custom_annot <- FALSE
     }
-    
-    Sys.sleep(10) # Slight break between requests to prevent back-to-back requests
+  }
+
+  if (use_custom_annot) {
+    unloadNamespace("biomaRt")
+  } else {
+
+    ensembl <- biomaRt::useEnsembl(biomart = "genes", 
+                                  dataset = expected_dataset_name,
+                                  version = ENSEMBL_VERSION)
+    print(ensembl)
+
+    # Some probe_ids for affy_hta_2_0 may end in .hg.1 instead of .hg (how it is in biomaRt), leading to 0 results returned
+    if (expected_attribute_name == 'affy_hta_2_0') {
+      rownames(probeset_level_data) <- stringr::str_replace(rownames(probeset_level_data), '\\.hg\\.1$', '.hg')
+    }
+
+    probe_ids <- rownames(probeset_level_data)
+
+    # DEBUG:START
+    if ( is.integer(params$DEBUG_limit_biomart_query) ) {
+      warning(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
+      message(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
+      probe_ids <- probe_ids[1:params$DEBUG_limit_biomart_query]
+    }
+    # DEBUG:END
+
+    # Create probe map
+    # Run Biomart Queries in chunks to prevent request timeouts
+    #   Note: If timeout is occuring (possibly due to larger load on biomart), reduce chunk size
+    CHUNK_SIZE= 1500
+    probe_id_chunks <- split(probe_ids, ceiling(seq_along(probe_ids) / CHUNK_SIZE))
+    df_mapping <- data.frame()
+    for (i in seq_along(probe_id_chunks)) {
+      probe_id_chunk <- probe_id_chunks[[i]]
+      print(glue::glue("Running biomart query chunk {i} of {length(probe_id_chunks)}. Total probes IDS in query ({length(probe_id_chunk)})"))
+      message(glue::glue("Running biomart query chunk {i} of {length(probe_id_chunks)}. Total probes IDS in query ({length(probe_id_chunk)})")) # NON_DPPD
+      chunk_results <- biomaRt::getBM(
+          attributes = c(
+              expected_attribute_name,
+              "ensembl_gene_id"
+              ), 
+              filters = expected_attribute_name, 
+              values = probe_id_chunk, 
+              mart = ensembl)
+
+      if (nrow(chunk_results) > 0) {
+        df_mapping <- df_mapping %>% dplyr::bind_rows(chunk_results)
+      }
+      
+      Sys.sleep(10) # Slight break between requests to prevent back-to-back requests
+    }
+
   }
 }
 
 # At this point, we have df_mapping from either the biomart live service or the ensembl genomes ftp archive depending on the organism
-```
+# If no df_mapping obtained (e.g., organism not supported in biomart), use custom annotations; otherwise, merge in-house annotations to df_mapping
 
-``` {r reformat-merge-probe-annotations}
-# Convert list of multi-mapped genes to string
-listToUniquePipedString <- function(str_list) {
-  #! convert lists into strings denoting unique elements separated by '|' characters
-  #! e.g. c("GO1","GO2","GO2","G03") -> "GO1|GO2|GO3"
-  return(toString(unique(str_list)) %>% stringr::str_replace_all(pattern = stringr::fixed(", "), replacement = "|"))
-}
+if (use_custom_annot) {
+  expected_attribute_name <- 'ProbesetID'
 
-annot_key = ifelse(organism %in% c("athaliana"), 'TAIR', 'ENSEMBL')
+  annot_type <- 'NO_CUSTOM_ANNOT'
+  if (!is.null(local_annotation_dir) && !is.null(annotation_config_path)) {
+    config_df <- read.csv(annotation_config_path, row.names=1)
+    if (unique(df_rs$`biomart_attribute`) %in% row.names(config_df)) {
+      annot_config <- config_df[unique(df_rs$`biomart_attribute`), ]
+      annot_type <- annot_config$annot_type[[1]]
+    } else {
+      warning(paste0("No entry for '", unique(df_rs$`biomart_attribute`), "' in provided config file: ", annotation_config_path))
+    }
+  } else {
+    warning("Need to provide both local_annotation_dir and annotation_config_path to use custom annotation.")
+  }
 
-if (organism %in% c('ecoli')) {
-  unique_probe_ids <- df_mapping %>%
+  if (annot_type == '3prime-IVT') {
+    unique_probe_ids <- read.csv(
+      file.path(local_annotation_dir, annot_config$annot_filename[[1]]),
+      skip = 13, header = TRUE, na.strings = c('NA', '---')
+    )[c('Probe.Set.ID', 'Entrez.Gene', 'Gene.Symbol', 'Gene.Title', 'Ensembl', 'RefSeq.Transcript.ID', 'RefSeq.Protein.ID', 'Gene.Ontology.Biological.Process', 'Gene.Ontology.Cellular.Component', 'Gene.Ontology.Molecular.Function')]
+
+    # Clean columns
+    unique_probe_ids$Gene.Symbol <- purrr::map_chr(stringr::str_split(unique_probe_ids$Gene.Symbol, stringr::fixed(' /// ')), ~paste0(unique(.), collapse = "|")) %>% stringr::str_replace('NA', NA_character_)
+    unique_probe_ids$Gene.Title <- purrr::map_chr(stringr::str_split(unique_probe_ids$Gene.Title, stringr::fixed(' /// ')), ~paste0(unique(.), collapse = "|")) %>% stringr::str_replace('NA', NA_character_)
+    unique_probe_ids$Entrez.Gene <- purrr::map_chr(stringr::str_split(unique_probe_ids$Entrez.Gene, stringr::fixed(' /// ')), ~paste0(unique(.), collapse = "|")) %>% stringr::str_replace('NA', NA_character_)
+    unique_probe_ids$Ensembl <- purrr::map_chr(stringr::str_split(unique_probe_ids$Ensembl, stringr::fixed(' /// ')), ~paste0(unique(.), collapse = "|")) %>% stringr::str_replace('NA', NA_character_)
+
+    unique_probe_ids$RefSeq <- paste(unique_probe_ids$RefSeq.Transcript.ID, unique_probe_ids$RefSeq.Protein.ID)
+    unique_probe_ids$RefSeq <- purrr::map_chr(stringr::str_extract_all(unique_probe_ids$RefSeq, '[A-Z]+_[\\d.]+'), ~paste0(unique(.), collapse = "|")) %>% stringr::str_replace('^$', NA_character_)
+
+    unique_probe_ids$GO <- paste(unique_probe_ids$Gene.Ontology.Biological.Process, unique_probe_ids$Gene.Ontology.Cellular.Component, unique_probe_ids$Gene.Ontology.Molecular.Function)
+    unique_probe_ids$GO <- purrr::map_chr(stringr::str_extract_all(unique_probe_ids$GO, '\\d{7}'), ~paste0('GO:', unique(.), collapse = "|")) %>% stringr::str_replace('^GO:$', NA_character_)
+
+    unique_probe_ids <- unique_probe_ids[c('Probe.Set.ID', 'Entrez.Gene', 'Gene.Symbol', 'Gene.Title', 'Ensembl', 'RefSeq', 'GO')]
+    names(unique_probe_ids) <- c('ProbesetID', 'ENTREZID', 'SYMBOL', 'GENENAME', 'ENSEMBL', 'REFSEQ', 'GOSLIM_IDS')
+
+    unique_probe_ids$STRING_id <- NA_character_
+
+    gene_col <- 'ENSEMBL'
+    if (sum(!is.na(unique_probe_ids$ENTREZID)) > sum(!is.na(unique_probe_ids$ENSEMBL))) {
+      gene_col <- 'ENTREZID'
+    }
+    if (sum(!is.na(unique_probe_ids$SYMBOL)) > max(sum(!is.na(unique_probe_ids$ENTREZID)), sum(!is.na(unique_probe_ids$ENSEMBL)))) {
+      gene_col <- 'SYMBOL'
+    }
+
+    unique_probe_ids <- unique_probe_ids %>%
                         dplyr::mutate( 
-                          count_ENTREZID_mappings = 1 + stringr::str_count(ENTREZID, stringr::fixed("|"))
+                          count_gene_mappings = 1 + stringr::str_count(get(gene_col), stringr::fixed("|")),
+                          gene_mapping_source = gene_col
                         )
-
-  primary_key <- 'ENTREZID'
-  primary_key_count <- 'count_ENTREZID_mappings'
-} else if (organism %in% c('paeruginosa')) {
-  unique_probe_ids <- df_mapping %>%
-                        dplyr::mutate( 
-                          count_SYMBOL_mappings = 1 + stringr::str_count(SYMBOL, stringr::fixed("|"))
-                        )
-
-  primary_key <- 'SYMBOL'
-  primary_key_count <- 'count_SYMBOL_mappings'
+  } else if (annot_type == 'custom') {
+    unique_probe_ids <- read.csv(
+      file.path(local_annotation_dir, annot_config$annot_filename[[1]]),
+      header = TRUE, na.strings = c('NA', '')
+    )
+  } else {
+    annot_cols <- c('ProbesetID', 'ENTREZID', 'SYMBOL', 'GENENAME', 'ENSEMBL', 'REFSEQ', 'GOSLIM_IDS', 'STRING_id', 'count_gene_mappings', 'gene_mapping_source')
+    unique_probe_ids <- setNames(data.frame(matrix(NA_character_, nrow = 1, ncol = length(annot_cols))), annot_cols)
+  }
 } else {
   annot <- read.table(
-      as.character(params$annotation_file_path),
+      as.character(annotation_file_path),
       sep = "\t",
       header = TRUE,
       quote = "",
@@ -710,37 +751,37 @@ if (organism %in% c('ecoli')) {
                         dplyr::mutate(dplyr::across(!!sym(expected_attribute_name), as.character)) %>% # Ensure probeset ids treated as character type
                         dplyr::group_by(!!sym(expected_attribute_name)) %>% 
                         dplyr::summarise(
-                          ENSEMBL = listToUniquePipedString(ensembl_gene_id)
+                          ENSEMBL = list_to_unique_piped_string(ensembl_gene_id)
                           ) %>%
                         # Count number of ensembl IDS mapped
                         dplyr::mutate( 
-                          count_ENSEMBL_mappings = 1 + stringr::str_count(ENSEMBL, stringr::fixed("|"))
+                          count_gene_mappings = 1 + stringr::str_count(ENSEMBL, stringr::fixed("|")),
+                          gene_mapping_source = annot_key
                         ) %>%
                         dplyr::left_join(annot, by = c("ENSEMBL" = annot_key))
-
-
-  primary_key <- 'ENSEMBL'
-  primary_key_count <- 'count_ENSEMBL_mappings'
 }
+```
 
+``` {r reformat-merge-probe-annotations}
 probeset_expression_matrix <- oligo::exprs(probeset_level_data)
 
-probeset_expression_matrix.biomart_mapped <- probeset_expression_matrix %>% 
+probeset_expression_matrix.gene_mapped <- probeset_expression_matrix %>% 
   as.data.frame() %>%
   tibble::rownames_to_column(var = "ProbesetID") %>% # Ensure rownames (probeset IDs) can be used as join key
   dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>%
-  dplyr::mutate( !!primary_key_count := ifelse(is.na(get(primary_key)), 0, get(primary_key_count)) )
+  dplyr::mutate( count_gene_mappings := ifelse(is.na(count_gene_mappings), 0, count_gene_mappings) ) %>%
+  dplyr::mutate( gene_mapping_source := unique(unique_probe_ids$gene_mapping_source) )
 ```
 
-### Summarize Probeset Mapping
+### Summarize Gene Mapping
 
 ``` {r summarize-remapping-vs-original-mapping}
 #| message: false
 # Pie Chart with Percentages
 slices <- c(
-    'Unique Mapping' = nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::filter(get(primary_key_count) == 1) %>% dplyr::distinct(ProbesetID)), 
-    'Multi Mapping' = nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::filter(get(primary_key_count) > 1) %>% dplyr::distinct(ProbesetID)), 
-    'No Mapping' = nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::filter(get(primary_key_count) == 0) %>% dplyr::distinct(ProbesetID))
+    'Unique Mapping' = nrow(probeset_expression_matrix.gene_mapped %>% dplyr::filter(count_gene_mappings == 1) %>% dplyr::distinct(ProbesetID)), 
+    'Multi Mapping' = nrow(probeset_expression_matrix.gene_mapped %>% dplyr::filter(count_gene_mappings > 1) %>% dplyr::distinct(ProbesetID)), 
+    'No Mapping' = nrow(probeset_expression_matrix.gene_mapped %>% dplyr::filter(count_gene_mappings == 0) %>% dplyr::distinct(ProbesetID))
 )
 pct <- round(slices/sum(slices)*100)
 chart_names <- names(slices)
@@ -748,17 +789,104 @@ chart_names <- glue::glue("{names(slices)} ({slices})") # add count to labels
 chart_names <- paste(chart_names, pct) # add percents to labels
 chart_names <- paste(chart_names,"%",sep="") # ad % to labels
 pie(slices,labels = chart_names, col=rainbow(length(slices)),
-    main=glue::glue("Mapping to Primary Keytype\n {nrow(probeset_expression_matrix.biomart_mapped %>% dplyr::distinct(ProbesetID))} Total Unique Probesets")
+    main=glue::glue("Mapping to Primary Keytype\n {nrow(probeset_expression_matrix.gene_mapped %>% dplyr::distinct(ProbesetID))} Total Unique Probesets")
     )
 
 print(glue::glue("Unique Mapping Count: {slices[['Unique Mapping']]}"))
 message(glue::glue("Unique Mapping Count: {slices[['Unique Mapping']]}")) # NON_DPPD
 ```
 
+### Generate Annotated Raw and Normalized Expression Tables
+
+```{r save-tables}
+## Reorder columns before saving to file
+ANNOTATIONS_COLUMN_ORDER = c(
+  annot_key,
+  "SYMBOL",
+  "GENENAME",
+  "REFSEQ",
+  "ENTREZID",
+  "STRING_id",
+  "GOSLIM_IDS"
+)
+
+SAMPLE_COLUMN_ORDER <- df_rs$`Sample Name`
+
+probeset_expression_matrix.gene_mapped <- probeset_expression_matrix.gene_mapped %>% dplyr::rename( !!annot_key := ENSEMBL )
+
+## Output column subset file with just normalized probeset level expression values
+write.csv(
+  probeset_expression_matrix.gene_mapped[c(
+  ANNOTATIONS_COLUMN_ORDER,
+  "ProbesetID",
+  "count_gene_mappings",
+  "gene_mapping_source",
+  SAMPLE_COLUMN_ORDER)
+  ], file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_probeset_GLmicroarray.csv"), row.names = FALSE)
+
+## Determine column order for probe level tables
+
+PROBE_INFO_COLUMN_ORDER = c(
+  "ProbesetID",
+  "ProbeID",
+  "count_gene_mappings",
+  "gene_mapping_source"
+)
+
+FINAL_COLUMN_ORDER <- c(
+  ANNOTATIONS_COLUMN_ORDER, 
+  PROBE_INFO_COLUMN_ORDER, 
+  SAMPLE_COLUMN_ORDER
+)
+
+## Generate raw intensity matrix that includes annotations
+
+background_corrected_data_annotated <- oligo::exprs(background_corrected_data) %>% 
+  as.data.frame() %>%
+  tibble::rownames_to_column(var = "fid") %>% # Ensure rownames (probeset IDs) can be used as join key
+  dplyr::mutate(dplyr::across(fid, as.integer)) %>% # Ensure fid is integer type, consistent with getProbeInfo typing
+  dplyr::right_join(oligo::getProbeInfo(background_corrected_data), by = "fid") %>% # Add 'man_fsetid' via mapping based on fid
+  dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
+  dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
+  dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>% # Join with biomaRt ENSEMBL mappings
+  dplyr::mutate( count_gene_mappings := ifelse(is.na(count_gene_mappings), 0, count_gene_mappings) ) %>% # Convert NA mapping to 0
+  dplyr::mutate( gene_mapping_source := unique(unique_probe_ids$gene_mapping_source) ) %>%
+  dplyr::rename( !!annot_key := ENSEMBL )
+
+## Perform reordering
+background_corrected_data_annotated <- background_corrected_data_annotated %>% 
+  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
+
+write.csv(background_corrected_data_annotated, file.path(DIR_RAW_DATA, "raw_intensities_probe_GLmicroarray.csv"), row.names = FALSE)
+
+## Generate normalized expression matrix that includes annotations
+norm_data_matrix_annotated <- oligo::exprs(norm_data) %>% 
+  as.data.frame() %>%
+  tibble::rownames_to_column(var = "fid") %>% # Ensure rownames (probeset IDs) can be used as join key
+  dplyr::mutate(dplyr::across(fid, as.integer)) %>% # Ensure fid is integer type, consistent with getProbeInfo typing
+  dplyr::right_join(oligo::getProbeInfo(norm_data), by = "fid") %>% # Add 'man_fsetid' via mapping based on fid
+  dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
+  dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
+  dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>%
+  dplyr::mutate( count_gene_mappings := ifelse(is.na(count_gene_mappings), 0, count_gene_mappings) ) %>% # Convert NA mapping to 0
+  dplyr::mutate( gene_mapping_source := unique(unique_probe_ids$gene_mapping_source) ) %>%
+  dplyr::rename( !!annot_key := ENSEMBL ) 
+
+norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
+  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
+
+write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe_GLmicroarray.csv"), row.names = FALSE)
+```
+
+## Perform Probeset Differential Expression (DE)
+
 ### Generate Design Matrix
 
 ``` {r generate-design-matrix}
-runsheetToDesignMatrix <- function(runsheet_path) {
+#| include: !expr params$run_DE
+#| eval: !expr params$run_DE
+
+runsheet_to_design_matrix <- function(runsheet_path) {
     df <- read.csv(runsheet, check.names = FALSE) %>% 
               dplyr::mutate_all(function(x) iconv(x, "latin1", "ASCII", sub="")) # Convert all characters to ascii, when not possible, remove the character    # get only Factor Value columns
     factors = as.data.frame(df[,grep("Factor.Value", colnames(df), ignore.case=TRUE)])
@@ -801,14 +929,12 @@ runsheetToDesignMatrix <- function(runsheet_path) {
 
 
 # Loading metadata from runsheet csv file
-design_data <- runsheetToDesignMatrix(runsheet)
+design_data <- runsheet_to_design_matrix(runsheet)
 design <- design_data$matrix
 
-if (params$run_DE) {
-    # Write SampleTable.csv and contrasts.csv file
-    write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable_GLmicroarray.csv"), row.names = FALSE)
-    write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts_GLmicroarray.csv"))
-}
+# Write SampleTable.csv and contrasts.csv file
+write.csv(design_data$groups, file.path(DIR_DGE, "SampleTable_GLmicroarray.csv"), row.names = FALSE)
+write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts_GLmicroarray.csv"))
 ```
 
 ### Perform Individual Probeset Level DE
@@ -817,7 +943,7 @@ if (params$run_DE) {
 #| include: !expr params$run_DE
 #| eval: !expr params$run_DE
 
-lmFitPairwise <- function(norm_data, design) {
+lm_fit_pairwise <- function(norm_data, design) {
     #' Perform all pairwise comparisons
 
     #' Approach based on limma manual section 17.4 (version 3.52.4)
@@ -836,7 +962,7 @@ lmFitPairwise <- function(norm_data, design) {
 }
 
 # Calculate results
-res <- lmFitPairwise(probeset_level_data, design)
+res <- lm_fit_pairwise(probeset_level_data, design)
 DT::datatable(limma::topTable(res)) # NON_DPPD
 
 # Print DE table, without filtering
@@ -847,89 +973,7 @@ limma::write.fit(res, adjust = 'BH',
                 sep = ",")
 ```
 
-### Add Additional Columns and Format DE Table 
-
-```{r save-tables}
-## Reorder columns before saving to file
-ANNOTATIONS_COLUMN_ORDER = c(
-  annot_key,
-  "SYMBOL",
-  "GENENAME",
-  "REFSEQ",
-  "ENTREZID",
-  "STRING_id",
-  "GOSLIM_IDS"
-)
-
-SAMPLE_COLUMN_ORDER <- design_data$group %>% dplyr::pull(sample)
-
-probeset_expression_matrix.biomart_mapped <- probeset_expression_matrix.biomart_mapped %>% dplyr::rename( !!annot_key := ENSEMBL )
-
-## Output column subset file with just normalized probeset level expression values
-write.csv(
-  probeset_expression_matrix.biomart_mapped[c(
-  ANNOTATIONS_COLUMN_ORDER,
-  "ProbesetID",
-  primary_key_count,
-  SAMPLE_COLUMN_ORDER)
-  ], file.path(DIR_NORMALIZED_EXPRESSION, "normalized_expression_probeset_GLmicroarray.csv"), row.names = FALSE)
-
-if (params$run_DE) {
-    ### Generate and export PCA table for GeneLab visualization plots
-    PCA_raw <- prcomp(t(exprs(probeset_level_data)), scale = FALSE) # Note: expression at the Probeset level is already log2 transformed
-    write.csv(PCA_raw$x, file.path(DIR_DGE, "visualization_PCA_table_GLmicroarray.csv"))
-}
-
-## Determine column order for probe level tables
-
-PROBE_INFO_COLUMN_ORDER = c(
-  "ProbesetID",
-  "ProbeID",
-  primary_key_count
-)
-
-FINAL_COLUMN_ORDER <- c(
-  ANNOTATIONS_COLUMN_ORDER, 
-  PROBE_INFO_COLUMN_ORDER, 
-  SAMPLE_COLUMN_ORDER
-  )
-
-## Generate raw intensity matrix that includes annotations
-
-background_corrected_data_annotated <- oligo::exprs(background_corrected_data) %>% 
-  as.data.frame() %>%
-  tibble::rownames_to_column(var = "fid") %>% # Ensure rownames (probeset IDs) can be used as join key
-  dplyr::mutate(dplyr::across(fid, as.integer)) %>% # Ensure fid is integer type, consistent with getProbeInfo typing
-  dplyr::right_join(oligo::getProbeInfo(background_corrected_data), by = "fid") %>% # Add 'man_fsetid' via mapping based on fid
-  dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
-  dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
-  dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>% # Join with biomaRt ENSEMBL mappings
-  dplyr::mutate( !!primary_key_count := ifelse(is.na(get(primary_key)), 0, get(primary_key_count)) ) %>% # Convert NA mapping to 0
-  dplyr::rename( !!annot_key := ENSEMBL )
-
-## Perform reordering
-background_corrected_data_annotated <- background_corrected_data_annotated %>% 
-  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
-
-write.csv(background_corrected_data_annotated, file.path(DIR_RAW_DATA, "raw_intensities_probe_GLmicroarray.csv"), row.names = FALSE)
-
-## Generate normalized expression matrix that includes annotations
-norm_data_matrix_annotated <- oligo::exprs(norm_data) %>% 
-  as.data.frame() %>%
-  tibble::rownames_to_column(var = "fid") %>% # Ensure rownames (probeset IDs) can be used as join key
-  dplyr::mutate(dplyr::across(fid, as.integer)) %>% # Ensure fid is integer type, consistent with getProbeInfo typing
-  dplyr::right_join(oligo::getProbeInfo(norm_data), by = "fid") %>% # Add 'man_fsetid' via mapping based on fid
-  dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
-  dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
-  dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>%
-  dplyr::mutate( !!primary_key_count := ifelse(is.na(get(primary_key)), 0, get(primary_key_count)) ) %>% # Convert NA mapping to 0
-  dplyr::rename( !!annot_key := ENSEMBL ) 
-
-norm_data_matrix_annotated <- norm_data_matrix_annotated %>% 
-  dplyr::relocate(dplyr::all_of(FINAL_COLUMN_ORDER))
-
-write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_intensities_probe_GLmicroarray.csv"), row.names = FALSE)
-```
+### Add Annotation and Stats Columns and Format DE Table
 
 ``` {r save-de-table}
 #| message: false
@@ -940,9 +984,9 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 # Read in DE table 
 df_interim <- read.csv("INTERIM.csv")
 
-# Bind columns from biomart mapped expression table
+# Bind columns from gene mapped expression table
 df_interim <- df_interim %>% 
-  dplyr::bind_cols(probeset_expression_matrix.biomart_mapped)
+  dplyr::bind_cols(probeset_expression_matrix.gene_mapped)
 
 # Reformat column names
 reformat_names <- function(colname, group_name_mapping) {
@@ -1036,7 +1080,8 @@ df_interim <- df_interim %>% dplyr::select(-any_of(colnames_to_remove))
 
 PROBE_INFO_COLUMN_ORDER = c(
   "ProbesetID",
-  primary_key_count
+  "count_gene_mappings",
+  "gene_mapping_source"
 )
 
 generate_prefixed_column_order <- function(subjects, prefixes) {
@@ -1071,27 +1116,22 @@ ALL_SAMPLE_STATS_COLUMNS_ORDER <- c(
   "F.p.value"
 )
 
-GROUP_MEAN_COLUMNS_ORDER <- generate_prefixed_column_order(
+GROUP_MEAN_STDEV_COLUMNS_ORDER <- generate_prefixed_column_order(
   subjects = unique(design_data$groups$group),
   prefixes = c(
-    "Group.Mean_"
-    )
-  )
-GROUP_STDEV_COLUMNS_ORDER <- generate_prefixed_column_order(
-  subjects = unique(design_data$groups$group),
-  prefixes = c(
+    "Group.Mean_",
     "Group.Stdev_"
-    )
   )
+)
+
 FINAL_COLUMN_ORDER <- c(
   ANNOTATIONS_COLUMN_ORDER, 
   PROBE_INFO_COLUMN_ORDER, 
   SAMPLE_COLUMN_ORDER, 
   STAT_COLUMNS_ORDER, 
   ALL_SAMPLE_STATS_COLUMNS_ORDER, 
-  GROUP_MEAN_COLUMNS_ORDER,
-  GROUP_STDEV_COLUMNS_ORDER
-  )
+  GROUP_MEAN_STDEV_COLUMNS_ORDER
+)
 
 ## Assert final column order includes all columns from original table
 if (!setequal(FINAL_COLUMN_ORDER, colnames(df_interim))) {
@@ -1171,19 +1211,11 @@ get_versions <- function() {
 ## Note Libraries that were NOT used during processing
 versions_buffer <- get_versions()
 
-if (organism %in% c("athaliana")) {
+if (organism %in% c("athaliana") || use_custom_annot) {
   versions_buffer <- glue::glue_collapse(c(
     versions_buffer,
     glue::glue("- name: biomaRt"),
-    glue::glue("  version: (Not used for plant datasets)"),
-    glue::glue("  homepage: https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html"),
-    glue::glue("  workflow task: PROCESS_AFFYMETRIX")
-    ), sep = "\n")
-} else if (organism %in% c('ecoli', 'paeruginosa')) {
-  versions_buffer <- glue::glue_collapse(c(
-    versions_buffer,
-    glue::glue("- name: biomaRt"),
-    glue::glue("  version: (Not used for bacteria datasets)"),
+    glue::glue("  version: (Not used for this dataset)"),
     glue::glue("  homepage: https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html"),
     glue::glue("  workflow task: PROCESS_AFFYMETRIX")
     ), sep = "\n")
