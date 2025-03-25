@@ -172,7 +172,6 @@ nextflow run NF_RCP_2.0.0/main.nf \
 ```bash
 nextflow run NF_RCP_2.0.0/main.nf \ 
    -profile singularity \
-   --accession output_directory \
    --runsheet_path </path/to/runsheet> 
 ```
 
@@ -183,9 +182,7 @@ nextflow run NF_RCP_2.0.0/main.nf \
 * `NF_RCP_2.0.0/main.nf` - Instructs Nextflow to run the NF_RCP workflow 
 
 * `-profile` - Specifies the configuration profile(s) to load, `singularity` instructs Nextflow to setup and use singularity for all software called in the workflow
-
-* `--accession [OSD-###|GLDS-###]` – specifies the OSDR dataset to process through the RCP workflow (replace ### with the OSD or GLDS number)  
-  > Note: The primary output directory will be named after the accession input, e.g. "OSD-194" or "GLDS-194"
+  > Note: The output directory will be named `OSD-#` when using a OSDR or GLDS accession as input, or `results` when running the workflow with only a runsheet as input.
 
 
 <br>
