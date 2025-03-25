@@ -242,7 +242,6 @@ The outputs from the Analysis Staging and V&V Pipeline Subworkflows are describe
    - Output:
      - \*_bulkRNASeq_v1_runsheet.csv (table containing metadata required for processing, including the raw reads files location)
      - \*-ISA.zip (the ISA archive of the OSD datasets to be processed, downloaded from the OSDR)
-     - \*_metadata_table.txt (table that includes additional information about the OSD dataset, not used for processing)
    
    
 **V&V Pipeline Subworkflow**
@@ -252,9 +251,9 @@ The outputs from the Analysis Staging and V&V Pipeline Subworkflows are describe
      - VV_Logs/VV_log_final_only_issues_GLbulkRNAseq.tsv (table containing V&V flags ONLY for checks that produced a flag code >= 30)
      - VV_Logs/VV_log_VV_RAW_READS_GLbulkRNAseq.tsv (table containing V&V flags ONLY for raw reads checks)
      - VV_Logs/VV_log_VV_TRIMMED_READS_GLbulkRNAseq.tsv (table containing V&V flags for trimmed reads checks ONLY)
-     - VV_Logs/VV_log_VV_STAR_ALIGNMENTS_GLbulkRNAseq.tsv (table containing V&V flags for alignment file checks ONLY)
+     - VV_Logs/VV_log_VV_ALIGNMENT_GLbulkRNAseq.tsv (table containing V&V flags for alignment file checks ONLY)
      - VV_Logs/VV_log_VV_RSEQC_GLbulkRNAseq.tsv (table containing V&V flags for RSeQC file checks ONLY)
-     - VV_Logs/VV_log_VV_RSEM_COUNTS_GLbulkRNAseq.tsv (table containing V&V flags for RSEM raw count file checks ONLY) 
+     - VV_Logs/VV_log_VV_COUNTS_GLbulkRNAseq.tsv (table containing V&V flags for gene quantification file checks ONLY) 
      - VV_Logs/VV_log_VV_DESEQ2_ANALYSIS_GLbulkRNAseq.tsv (table containing V&V flags for DESeq2 Analysis output checks ONLY)
 
 <br>
@@ -265,9 +264,9 @@ Standard Nextflow resource usage logs are also produced as follows:
 **Nextflow Resource Usage Logs**
 
    - Output:
-     - nextflow_logs/execution_report_{timestamp}.html (an html report that includes metrics about the workflow execution including computational resources and exact workflow process commands)
-     - nextflow_logs/execution_timeline_{timestamp}.html (an html timeline for all processes executed in the workflow)
-     - nextflow_logs/execution_trace_{timestamp}.txt (an execution tracing file that contains information about each process executed in the workflow, including: submission time, start time, completion time, cpu and memory used, machine-readable output)
+     - nextflow_info/execution_report_{timestamp}.html (an html report that includes metrics about the workflow execution including computational resources and exact workflow process commands)
+     - nextflow_info/execution_timeline_{timestamp}.html (an html timeline for all processes executed in the workflow)
+     - nextflow_info/execution_trace_{timestamp}.txt (an execution tracing file that contains information about each process executed in the workflow, including: submission time, start time, completion time, cpu and memory used, machine-readable output)
      - nextflow_info/pipeline_dag_{timestamp}.html (a visualization of the workflow process DAG)
 
 <br>
