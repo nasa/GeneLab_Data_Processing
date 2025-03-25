@@ -25,8 +25,8 @@ done < <(sed -n '/|/p' "$software_versions_file" | sed 's/^ *|//;s/|$//')
 # Print the extracted versions
 env | grep "_VERSION"
 
-# Get organism
-organism=$2
+# Determine mapped sections
+source meta.sh
 
 # List of organisms
 organism_list=("Homo sapiens" "Mus musculus" "Rattus norvegicus" "Drosophila melanogaster" "Caenorhabditis elegans" "Danio rerio" "Saccharomyces cerevisiae")
@@ -34,6 +34,8 @@ organism_list=("Homo sapiens" "Mus musculus" "Rattus norvegicus" "Drosophila mel
 # Check the value of 'organism' variable and set 'GENE_MAPPING_STEP' accordingly
 if [[ $organism == "Arabidopsis thaliana" ]]; then
     GENE_MAPPING_STEP="Ensembl gene ID mappings were retrieved for each probe using the Plants Ensembl database ftp server (plants.ensembl.org, release 54)."
+elif [[ $biomart_attribute == "AGILENT SurePrint G3 GE 8x60k v3" ]]; then
+    GENE_MAPPING_STEP="Gene annotations were retrieved for each probe from Agilent (https://earray.chem.agilent.com/earray/array/displayViewArrayDesign.do?eArrayAction=view&arraydesignid=ADID40392, created May 2024, accessed November 2024)."
 elif [[ " ${organism_list[*]} " == *"${organism//\"/}"* ]]; then
     GENE_MAPPING_STEP="Ensembl gene ID mappings were retrieved for each probe using biomaRt (version ${biomaRt_VERSION}), Ensembl database (ensembl.org, release 107)."
 else
@@ -61,8 +63,22 @@ else
     GENE_ANNOTATION_DB="TBD"
 fi
 
+# Check if DGE was performed
+if $2; then
+    DE_STEP=""
+else
+    DE_STEP="Differential expression analysis was performed in R (version ${R_VERSION}) using limma (version ${limma_VERSION}); all groups were compared pairwise for each probe to generate a moderated t-statistic and associated p- and adjusted p-value."
+fi
+
+# Gene annotations
+if [[ $biomart_attribute == "AGILENT SurePrint G3 GE 8x60k v3" ]]; then
+    ANNOT_STEP=""  # Already covered in GENE_MAPPING_STEP
+else
+    ANNOT_STEP="Gene annotations were assigned using the custom annotation tables generated in-house as detailed in GL-DPPD-7110 ([https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110.md]), with STRINGdb (version 2.8.4), PANTHER.db (version 1.0.11), and ${GENE_ANNOTATION_DB} (version 3.15.0)."
+fi
+
 # Read the template file
-template="Data were processed as described in GL-DPPD-7112 ([https://github.com/nasa/GeneLab_Data_Processing/blob/master/Microarray/Agilent_1-channel/Pipeline_GL-DPPD-7112_Versions/GL-DPPD-7112.md]), using NF_MAAgilent1ch version $1 ([https://github.com/nasa/GeneLab_Data_Processing/tree/NF_MAAgilent1ch_$1/Microarray/Agilent_1-channel/Workflow_Documentation/NF_MAAgilent1ch]). In short, a RunSheet containing raw data file location and processing metadata from the study's *ISA.zip file was generated using dp_tools (version ${dp_tools_VERSION}). The raw array data files were loaded into R (version ${R_VERSION}) using limma (version ${limma_VERSION}). Raw data quality assurance density, pseudo image, MA, and foreground-background plots were generated using limma (version ${limma_VERSION}), and boxplots were generated using ggplot2 (version ${ggplot2_VERSION}). The raw intensity data was background corrected and normalized across arrays via the limma (version ${limma_VERSION}) quantile method. Normalized data quality assurance density, pseudo image, and MA plots were generated using limma (version ${limma_VERSION}), and boxplots were generated using ggplot2 (version ${ggplot2_VERSION}). ${GENE_MAPPING_STEP} Differential expression analysis was performed in R (version ${R_VERSION}) using limma (version ${limma_VERSION}); all groups were compared pairwise for each probe to generate a moderated t-statistic and associated p- and adjusted p-value. Gene annotations were assigned using the custom annotation tables generated in-house as detailed in GL-DPPD-7110 ([https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable_1.0.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110.md]), with STRINGdb (version 2.8.4), PANTHER.db (version 1.0.11), and ${GENE_ANNOTATION_DB} (version 3.15.0)."
+template="Data were processed as described in GL-DPPD-7112-A ([https://github.com/nasa/GeneLab_Data_Processing/blob/master/Microarray/Agilent_1-channel/Pipeline_GL-DPPD-7112_Versions/GL-DPPD-7112-A.md]), using NF_MAAgilent1ch version $1 ([https://github.com/nasa/GeneLab_Data_Processing/tree/NF_MAAgilent1ch_$1/Microarray/Agilent_1-channel/Workflow_Documentation/NF_MAAgilent1ch]). In short, a RunSheet containing raw data file location and processing metadata from the study's *ISA.zip file was generated using dp_tools (version ${dp_tools_VERSION}). The raw array data files were loaded into R (version ${R_VERSION}) using limma (version ${limma_VERSION}). Raw data quality assurance density, pseudo image, MA, and foreground-background plots were generated using limma (version ${limma_VERSION}), and boxplots were generated using ggplot2 (version ${ggplot2_VERSION}). The raw intensity data was background corrected and normalized across arrays via the limma (version ${limma_VERSION}) quantile method. Normalized data quality assurance density, pseudo image, and MA plots were generated using limma (version ${limma_VERSION}), and boxplots were generated using ggplot2 (version ${ggplot2_VERSION}). ${GENE_MAPPING_STEP} ${DE_STEP} ${ANNOT_STEP}"
 
 # Output the filled template
 echo "$template" > PROTOCOL_GLmicroarray.txt

@@ -6,13 +6,13 @@ process VV_AGILE1CH {
     saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }_GLmicroarray.tsv.MANUAL_CHECKS_PENDING" }
   // V&V'ed data publishing
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
-    pattern: '00-RawData',
+    pattern: '00-RawData/**',
     mode: params.publish_dir_mode
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
-    pattern: '01-limma_NormExp',
+    pattern: '01-limma_NormExp/**',
     mode: params.publish_dir_mode
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
-    pattern: '02-limma_DGE',
+    pattern: '02-limma_DGE/**',
     mode: params.publish_dir_mode
   publishDir "${ params.outputDir }/${ params.gldsAccession }",
     pattern: 'Metadata/**',
@@ -22,18 +22,15 @@ process VV_AGILE1CH {
 
   input:
     path("VV_INPUT/Metadata/*") // While files from processing are staged, we instead want to use the files located in the publishDir for QC
-    tuple path("VV_INPUT/02-limma_DGE"),
-          path("VV_INPUT/01-limma_NormExp"),
-          path("VV_INPUT/00-RawData")
-     // "While files from processing are staged, we instead want to use the files located in the publishDir for QC
+    path("VV_INPUT/*") // "While files from processing are staged, we instead want to use the files located in the publishDir for QC
     val(skipVV) // Skips running V&V but will still publish the files
-    path("dp_tools__agilent_1_channel")
+    path(dp_tools_path)
   
   output:
     path("Metadata/*_runsheet.csv"), emit: VVed_runsheet
-    tuple path("02-limma_DGE"),
-          path("01-limma_NormExp"),
-          path("00-RawData"), emit: VVed_de_data
+    path("02-limma_DGE/*"), emit: VVed_DGE, optional: true
+    path("01-limma_NormExp/*"), emit: VVed_NormExp
+    path("00-RawData/*"), emit: VVed_rawData
     path("VV_report_GLmicroarray.tsv.MANUAL_CHECKS_PENDING"), optional: params.skipVV, emit: log
     path("versions.yml"), emit: versions
 
@@ -45,7 +42,7 @@ process VV_AGILE1CH {
 
     # Run V&V unless user requests to skip V&V
     if ${ !skipVV} ; then
-      dpt validation run dp_tools__agilent_1_channel . Metadata/*_runsheet.csv
+      dpt validation run ${ dp_tools_path } . Metadata/*_runsheet.csv
       mv VV_report.tsv.MANUAL_CHECKS_PENDING VV_report_GLmicroarray.tsv.MANUAL_CHECKS_PENDING
     fi
 

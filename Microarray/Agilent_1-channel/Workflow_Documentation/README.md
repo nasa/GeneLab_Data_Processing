@@ -6,7 +6,7 @@
 
 |Pipeline Version|Current Workflow Version (for respective pipeline version)|Nextflow Version|
 |:---------------|:---------------------------------------------------------|:---------------|
-|*[GL-DPPD-7112.md](../Pipeline_GL-DPPD-7112_Versions/GL-DPPD-7112.md)|[NF_MAAgilent1ch_1.0.4](NF_MAAgilent1ch)|23.10.1|
+|*[GL-DPPD-7112-A.md](../Pipeline_GL-DPPD-7112_Versions/GL-DPPD-7112-A.md)|[NF_MAAgilent1ch_1.0.5](NF_MAAgilent1ch)|24.10.5|
 
 *Current GeneLab Pipeline/Workflow Implementation
 
