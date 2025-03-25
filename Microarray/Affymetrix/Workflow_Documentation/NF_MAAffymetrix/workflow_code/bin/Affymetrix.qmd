@@ -120,7 +120,7 @@ DT::datatable(df_rs)
 print("Here are the expected comparison groups")
 # NON_DPPD:END
 print("Loading Raw Data...") # NON_DPPD
-allTrue <- function(i_vector) {
+all_true <- function(i_vector) {
   if ( length(i_vector) == 0 ) {
     stop(paste("Input vector is length zero"))
   }
@@ -128,13 +128,13 @@ allTrue <- function(i_vector) {
 }
 
 # Define paths to raw data files
-runsheetPathsAreURIs <- function(df_runsheet) {
-  allTrue(stringr::str_starts(df_runsheet$`Array Data File Path`, "https"))
+runsheet_paths_are_URIs <- function(df_runsheet) {
+  all_true(stringr::str_starts(df_runsheet$`Array Data File Path`, "https"))
 }
 
 
 # Download raw data files
-downloadFilesFromRunsheet <- function(df_runsheet) {
+download_files_from_runsheet <- function(df_runsheet) {
   urls <- df_runsheet$`Array Data File Path`
   destinationFiles <- df_runsheet$`Array Data File Name`
 
@@ -151,9 +151,9 @@ downloadFilesFromRunsheet <- function(df_runsheet) {
 }
 
 
-if ( runsheetPathsAreURIs(df_rs) ) {
+if ( runsheet_paths_are_URIs(df_rs) ) {
   print("Determined Raw Data Locations are URIS")
-  local_paths <- retry_with_delay(downloadFilesFromRunsheet, df_rs)
+  local_paths <- retry_with_delay(download_files_from_runsheet, df_rs)
 } else {
   print("Or Determined Raw Data Locations are local paths")
   local_paths <- df_rs$`Array Data File Path`
@@ -161,7 +161,7 @@ if ( runsheetPathsAreURIs(df_rs) ) {
 
 
 # uncompress files if needed
-if ( allTrue(stringr::str_ends(local_paths, ".gz")) ) {
+if ( all_true(stringr::str_ends(local_paths, ".gz")) ) {
   print("Determined these files are gzip compressed... uncompressing now")
   # This does the uncompression
   lapply(local_paths, R.utils::gunzip, remove = FALSE, overwrite = TRUE)
@@ -186,9 +186,9 @@ DT::datatable(df_local_paths)
 # Retry with delay here to accomodate oligo's automatic loading of annotation packages and occasional internet related failures to load
 raw_data <- retry_with_delay(
               oligo::read.celfiles,
-                df_local_paths$`Local Paths`,
-                sampleNames = df_local_paths$`Sample Name`# Map column names as Sample Names (instead of default filenames)
-              )
+              df_local_paths$`Local Paths`,
+              sampleNames = df_local_paths$`Sample Name`# Map column names as Sample Names (instead of default filenames)
+            )
 
 print(str(raw_data))
 
@@ -470,9 +470,9 @@ par(original_par)
 #| message: false
 # Call RMA but skip normalize and background correction since those have already been applied
 probeset_level_data <- oligo::rma(norm_data, 
-                                    normalize=FALSE, 
-                                    background=FALSE
-                                    )
+                                  normalize=FALSE, 
+                                  background=FALSE
+                                  )
 
 # Summarize background-corrected and normalized data
 print("Summarized Probeset Level Data Below") # NON_DPPD
@@ -494,7 +494,7 @@ DT::datatable(head(raw_data$genes, n = 20), caption = "First 20 rows of raw data
 
 ``` {r retrieve-probeset-annotations}
 #| message: false
-shortenedOrganismName <- function(long_name) {
+shortened_organism_name <- function(long_name) {
   #' Convert organism names like 'Homo Sapiens' into 'hsapiens'
   tokens <- long_name %>% stringr::str_split(" ", simplify = TRUE)
   genus_name <- tokens[1]
@@ -506,7 +506,7 @@ shortenedOrganismName <- function(long_name) {
   return(short_name)
 }
 
-getBioMartAttribute <- function(df_rs) {
+get_biomart_attribute <- function(df_rs) {
   #' Returns resolved biomart attribute source from runsheet
   # NON_DPPD:START
   #' this either comes from the runsheet or as a fall back, the parameters injected during render
@@ -562,23 +562,23 @@ get_ensembl_genomes_mappings_from_ftp <- function(organism, ensembl_genomes_port
 }
 
 # Convert list of multi-mapped genes to string
-listToUniquePipedString <- function(str_list) {
+list_to_unique_piped_string <- function(str_list) {
   #! convert lists into strings denoting unique elements separated by '|' characters
   #! e.g. c("GO1","GO2","GO2","G03") -> "GO1|GO2|GO3"
   return(toString(unique(str_list)) %>% stringr::str_replace_all(pattern = stringr::fixed(", "), replacement = "|"))
 }
 
 
-organism <- shortenedOrganismName(unique(df_rs$organism))
+organism <- shortened_organism_name(unique(df_rs$organism))
 annot_key <- ifelse(organism %in% c("athaliana"), 'TAIR', 'ENSEMBL')
 
 if (organism %in% c("athaliana")) {
   ENSEMBL_VERSION = ensembl_version
   ensembl_genomes_portal = "plants"
   print(glue::glue("Using ensembl genomes ftp to get specific version of probeset id mapping table. Ensembl genomes portal: {ensembl_genomes_portal}, version: {ENSEMBL_VERSION}"))
-  expected_attribute_name <- getBioMartAttribute(df_rs)
+  expected_attribute_name <- get_biomart_attribute(df_rs)
   df_mapping <- retry_with_delay(
-    get_ensembl_genomes_mappings_from_ftp,
+      get_ensembl_genomes_mappings_from_ftp,
       organism = organism,
       ensembl_genomes_portal = ensembl_genomes_portal,
       ensembl_genomes_version = ENSEMBL_VERSION,
@@ -593,11 +593,11 @@ if (organism %in% c("athaliana")) {
 } else {
   # Use biomart from main Ensembl website which archives keep each release on the live service
   # locate dataset
-  expected_dataset_name <- shortenedOrganismName(unique(df_rs$organism)) %>% stringr::str_c("_gene_ensembl")
+  expected_dataset_name <- shortened_organism_name(unique(df_rs$organism)) %>% stringr::str_c("_gene_ensembl")
   print(paste0("Expected dataset name: '", expected_dataset_name, "'"))
   message(paste0("Expected dataset name: '", expected_dataset_name, "'")) # NON_DPPD
 
-  expected_attribute_name <- getBioMartAttribute(df_rs)
+  expected_attribute_name <- get_biomart_attribute(df_rs)
   print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
   message(paste0("Expected attribute name: '", expected_attribute_name, "'")) # NON_DPPD
 
@@ -751,7 +751,7 @@ if (use_custom_annot) {
                         dplyr::mutate(dplyr::across(!!sym(expected_attribute_name), as.character)) %>% # Ensure probeset ids treated as character type
                         dplyr::group_by(!!sym(expected_attribute_name)) %>% 
                         dplyr::summarise(
-                          ENSEMBL = listToUniquePipedString(ensembl_gene_id)
+                          ENSEMBL = list_to_unique_piped_string(ensembl_gene_id)
                           ) %>%
                         # Count number of ensembl IDS mapped
                         dplyr::mutate( 
@@ -886,7 +886,7 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 #| include: !expr params$run_DE
 #| eval: !expr params$run_DE
 
-runsheetToDesignMatrix <- function(runsheet_path) {
+runsheet_to_design_matrix <- function(runsheet_path) {
     df <- read.csv(runsheet, check.names = FALSE) %>% 
               dplyr::mutate_all(function(x) iconv(x, "latin1", "ASCII", sub="")) # Convert all characters to ascii, when not possible, remove the character    # get only Factor Value columns
     factors = as.data.frame(df[,grep("Factor.Value", colnames(df), ignore.case=TRUE)])
@@ -929,7 +929,7 @@ runsheetToDesignMatrix <- function(runsheet_path) {
 
 
 # Loading metadata from runsheet csv file
-design_data <- runsheetToDesignMatrix(runsheet)
+design_data <- runsheet_to_design_matrix(runsheet)
 design <- design_data$matrix
 
 # Write SampleTable.csv and contrasts.csv file
@@ -943,7 +943,7 @@ write.csv(design_data$contrasts, file.path(DIR_DGE, "contrasts_GLmicroarray.csv"
 #| include: !expr params$run_DE
 #| eval: !expr params$run_DE
 
-lmFitPairwise <- function(norm_data, design) {
+lm_fit_pairwise <- function(norm_data, design) {
     #' Perform all pairwise comparisons
 
     #' Approach based on limma manual section 17.4 (version 3.52.4)
@@ -962,7 +962,7 @@ lmFitPairwise <- function(norm_data, design) {
 }
 
 # Calculate results
-res <- lmFitPairwise(probeset_level_data, design)
+res <- lm_fit_pairwise(probeset_level_data, design)
 DT::datatable(limma::topTable(res)) # NON_DPPD
 
 # Print DE table, without filtering
