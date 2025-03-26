@@ -123,57 +123,53 @@ def check_directory_structure(outdir):
     return True
 
 def initialize_vv_log(outdir):
-    """Initialize the validation log file."""
-    # Create the validation log file directly in the output directory
-    log_path = os.path.join(outdir, "VV_log.csv")
+    """Initialize or append to the VV_log.csv file."""
+    vv_log_path = os.path.join(outdir, "VV_log.csv")
     
-    # Check if the log file already exists
-    if not os.path.exists(log_path):
-        # Initialize with header
-        with open(log_path, 'w') as f:
-            f.write("component,sample_id,check_name,status,message,details\n")
+    if not os.path.exists(vv_log_path):
+        with open(vv_log_path, 'w') as f:
+            f.write("component,sample_id,check_name,status,flag_code,message,details\n")
     
-    print(f"Validation log initialized at: {log_path}")
-    return log_path
+    return vv_log_path
 
 def log_check_result(log_path, component, sample_id, check_name, status, message="", details=""):
     """Log check result to the VV_log.csv file."""
-    # Properly escape and format fields for CSV
     def escape_field(field, is_details=False):
-        # Convert to string if not already
-        field = str(field)
-        
-        # Replace newlines with semicolons to keep CSV valid
+        if not isinstance(field, str):
+            field = str(field)
         field = field.replace('\n', '; ')
-        
-        # For details field, replace commas with semicolons to avoid CSV quoting
         if is_details and ',' in field:
             field = field.replace(', ', '; ')
-        
-        # If the field contains commas or quotes (but not just semicolons), wrap it in quotes
         if ',' in field or '"' in field:
-            # Double any quotes within the field
             field = field.replace('"', '""')
-            # Wrap in quotes
             field = f'"{field}"'
         return field
+
+    # Map status strings to flag codes
+    flag_codes = {
+        "GREEN": "20",
+        "YELLOW": "30",
+        "RED": "50",
+        "HALT": "80"
+    }
+
+    # Get flag code based on status
+    flag_code = flag_codes.get(status, "80")
     
-    # Format all fields
     component = escape_field(component)
     sample_id = escape_field(sample_id)
     check_name = escape_field(check_name)
     status = escape_field(status)
     message = escape_field(message)
-    details = escape_field(details, True)  # Specify this is a details field
+    details = escape_field(details, True)
     
-    # Write the formatted line
     with open(log_path, 'a') as f:
-        f.write(f"{component},{sample_id},{check_name},{status},{message},{details}\n")
+        f.write(f"{component},{sample_id},{check_name},{status},{flag_code},{message},{details}\n")
 
 def check_gene_body_coverage_existence(outdir, samples, log_path):
-    """Check if gene body coverage files exist for all samples."""
+    """Check if gene body coverage files exist."""
     component = "rseqc"
-    check_name = "check_geneBody_coverage_files"
+    check_name = "check_gene_body_coverage_existence"
     print(f"Checking for gene body coverage files...")
     
     # Get the expected directory path
@@ -181,10 +177,9 @@ def check_gene_body_coverage_existence(outdir, samples, log_path):
     
     # Check if the directory exists
     if not os.path.exists(rseqc_dir):
-        print(f"ERROR: Gene body coverage directory not found: {rseqc_dir}")
-        log_check_result(log_path, component, "all", check_name, "RED", 
+        log_check_result(log_path, component, "all", check_name, "HALT", 
                          "Gene body coverage directory not found", f"Directory: {rseqc_dir}")
-        return "RED"
+        return "HALT"
     
     # Check MultiQC report existence
     multiqc_glob = os.path.join(rseqc_dir, "geneBody_cov_multiqc*_data.zip")
@@ -226,10 +221,10 @@ def check_gene_body_coverage_existence(outdir, samples, log_path):
         print(f"WARNING: Missing {len(missing_files)} gene body coverage file(s)")
         print("\n".join(missing_files[:5]) + ("..." if len(missing_files) > 5 else ""))
         
-        log_check_result(log_path, component, "all", check_name, "RED", 
-                         f"Missing {len(missing_files)} gene body coverage file(s)", 
+        log_check_result(log_path, component, "all", check_name, "HALT", 
+                         f"Missing {len(missing_files)} required files", 
                          "\n".join(missing_files[:20]) + ("..." if len(missing_files) > 20 else ""))
-        status = "RED"
+        status = "HALT"
     else:
         print(f"All gene body coverage files exist for {len(samples)} samples")
         log_check_result(log_path, component, "all", check_name, "GREEN", 
@@ -239,9 +234,9 @@ def check_gene_body_coverage_existence(outdir, samples, log_path):
     return status
 
 def check_infer_experiment_existence(outdir, samples, log_path):
-    """Check if infer experiment files exist for all samples."""
+    """Check if infer experiment files exist."""
     component = "rseqc"
-    check_name = "check_infer_experiment_files"
+    check_name = "check_infer_experiment_existence"
     print(f"Checking for infer experiment files...")
     
     # Get the expected directory path
@@ -250,9 +245,9 @@ def check_infer_experiment_existence(outdir, samples, log_path):
     # Check if the directory exists
     if not os.path.exists(rseqc_dir):
         print(f"ERROR: Infer experiment directory not found: {rseqc_dir}")
-        log_check_result(log_path, component, "all", check_name, "RED", 
+        log_check_result(log_path, component, "all", check_name, "HALT", 
                          "Infer experiment directory not found", f"Directory: {rseqc_dir}")
-        return "RED"
+        return "HALT"
     
     # Check MultiQC report existence
     multiqc_glob = os.path.join(rseqc_dir, "infer_exp_multiqc*_data.zip")
@@ -260,9 +255,9 @@ def check_infer_experiment_existence(outdir, samples, log_path):
     
     if not multiqc_files:
         print(f"WARNING: No infer experiment MultiQC data found in {rseqc_dir}")
-        log_check_result(log_path, component, "all", "check_infer_experiment_multiqc", "RED", 
+        log_check_result(log_path, component, "all", "check_infer_experiment_multiqc", "HALT", 
                          "Infer experiment MultiQC data not found", f"Searched: {multiqc_glob}")
-        status = "RED"
+        status = "HALT"
     else:
         print(f"Found infer experiment MultiQC data: {os.path.basename(multiqc_files[0])}")
         log_check_result(log_path, component, "all", "check_infer_experiment_multiqc", "GREEN", 
@@ -285,10 +280,10 @@ def check_infer_experiment_existence(outdir, samples, log_path):
         print(f"WARNING: Missing {len(missing_files)} infer experiment file(s)")
         print("\n".join(missing_files[:5]) + ("..." if len(missing_files) > 5 else ""))
         
-        log_check_result(log_path, component, "all", check_name, "RED", 
+        log_check_result(log_path, component, "all", check_name, "HALT", 
                          f"Missing {len(missing_files)} infer experiment file(s)", 
                          "\n".join(missing_files[:20]) + ("..." if len(missing_files) > 20 else ""))
-        status = "RED"
+        status = "HALT"
     else:
         print(f"All infer experiment files exist for {len(samples)} samples")
         log_check_result(log_path, component, "all", check_name, "GREEN", 
@@ -308,20 +303,18 @@ def check_read_distribution_existence(outdir, samples, log_path):
     
     # Check if the directory exists
     if not os.path.exists(rseqc_dir):
-        print(f"ERROR: Read distribution directory not found: {rseqc_dir}")
-        log_check_result(log_path, component, "all", check_name, "RED", 
-                         "Read distribution directory not found", f"Directory: {rseqc_dir}")
-        return "RED"
+        log_check_result(log_path, component, "all", check_name, "HALT", 
+                        "Read distribution directory not found", f"Directory: {rseqc_dir}")
+        return "HALT"
     
     # Check MultiQC report existence
     multiqc_glob = os.path.join(rseqc_dir, "read_dist_multiqc*_data.zip")
     multiqc_files = glob.glob(multiqc_glob)
     
     if not multiqc_files:
-        print(f"WARNING: No read distribution MultiQC data found in {rseqc_dir}")
-        log_check_result(log_path, component, "all", "check_read_distribution_multiqc", "RED", 
-                         "Read distribution MultiQC data not found", f"Searched: {multiqc_glob}")
-        status = "RED"
+        log_check_result(log_path, component, "all", "check_read_distribution_multiqc", "HALT", 
+                        "Read distribution MultiQC data not found", f"Searched: {multiqc_glob}")
+        status = "HALT"
     else:
         print(f"Found read distribution MultiQC data: {os.path.basename(multiqc_files[0])}")
         log_check_result(log_path, component, "all", "check_read_distribution_multiqc", "GREEN", 
@@ -344,10 +337,10 @@ def check_read_distribution_existence(outdir, samples, log_path):
         print(f"WARNING: Missing {len(missing_files)} read distribution file(s)")
         print("\n".join(missing_files[:5]) + ("..." if len(missing_files) > 5 else ""))
         
-        log_check_result(log_path, component, "all", check_name, "RED", 
-                         f"Missing {len(missing_files)} read distribution file(s)", 
-                         "\n".join(missing_files[:20]) + ("..." if len(missing_files) > 20 else ""))
-        status = "RED"
+        log_check_result(log_path, component, "all", check_name, "HALT", 
+                        f"Missing {len(missing_files)} required files", 
+                        "\n".join(missing_files[:20]) + ("..." if len(missing_files) > 20 else ""))
+        status = "HALT"
     else:
         print(f"All read distribution files exist for {len(samples)} samples")
         log_check_result(log_path, component, "all", check_name, "GREEN", 
@@ -357,7 +350,7 @@ def check_read_distribution_existence(outdir, samples, log_path):
     return status
 
 def check_inner_distance_existence(outdir, samples, log_path):
-    """Check if inner distance files exist for all samples (paired-end only)."""
+    """Check if inner distance files exist."""
     component = "rseqc"
     check_name = "check_inner_distance_files"
     print(f"Checking for inner distance files...")
@@ -367,20 +360,18 @@ def check_inner_distance_existence(outdir, samples, log_path):
     
     # Check if the directory exists
     if not os.path.exists(rseqc_dir):
-        print(f"ERROR: Inner distance directory not found: {rseqc_dir}")
-        log_check_result(log_path, component, "all", check_name, "RED", 
+        log_check_result(log_path, component, "all", check_name, "HALT", 
                          "Inner distance directory not found", f"Directory: {rseqc_dir}")
-        return "RED"
+        return "HALT"
     
     # Check MultiQC report existence
     multiqc_glob = os.path.join(rseqc_dir, "inner_dist_multiqc*_data.zip")
     multiqc_files = glob.glob(multiqc_glob)
     
     if not multiqc_files:
-        print(f"WARNING: No inner distance MultiQC data found in {rseqc_dir}")
-        log_check_result(log_path, component, "all", "check_inner_distance_multiqc", "RED", 
+        log_check_result(log_path, component, "all", "check_inner_distance_multiqc", "HALT", 
                          "Inner distance MultiQC data not found", f"Searched: {multiqc_glob}")
-        status = "RED"
+        status = "HALT"
     else:
         print(f"Found inner distance MultiQC data: {os.path.basename(multiqc_files[0])}")
         log_check_result(log_path, component, "all", "check_inner_distance_multiqc", "GREEN", 
@@ -409,15 +400,11 @@ def check_inner_distance_existence(outdir, samples, log_path):
     
     # Log result based on missing files
     if missing_files:
-        print(f"WARNING: Missing {len(missing_files)} inner distance file(s)")
-        print("\n".join(missing_files[:5]) + ("..." if len(missing_files) > 5 else ""))
-        
-        log_check_result(log_path, component, "all", check_name, "RED", 
+        log_check_result(log_path, component, "all", check_name, "HALT", 
                          f"Missing {len(missing_files)} inner distance file(s)", 
                          "\n".join(missing_files[:20]) + ("..." if len(missing_files) > 20 else ""))
-        status = "RED"
+        status = "HALT"
     else:
-        print(f"All inner distance files exist for {len(samples)} samples")
         log_check_result(log_path, component, "all", check_name, "GREEN", 
                          "All inner distance files exist")
         status = "GREEN"
@@ -425,14 +412,14 @@ def check_inner_distance_existence(outdir, samples, log_path):
     return status
 
 def get_genebody_coverage_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
-    """Extract gene body coverage MultiQC stats for all samples and write to a stats file for analysis."""
+    """Extract gene body coverage stats from MultiQC."""
     rseqc_dir = os.path.join(outdir, "RSeQC_Analyses", "02_geneBody_coverage")
     multiqc_zip = os.path.join(rseqc_dir, f"geneBody_cov_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
-        print(f"WARNING: Gene body coverage MultiQC data zip file not found: {multiqc_zip}")
-        log_check_result(log_path, "rseqc", "all", "get_genebody_coverage_multiqc_stats", "RED", 
-                         "Gene body coverage MultiQC data not found", "")
+        log_check_result(log_path, "rseqc", "all", "get_genebody_coverage_stats", "HALT", 
+                        "MultiQC data not found",
+                        f"Expected at {multiqc_zip}")
         return None
     
     print(f"Extracting stats from Gene body coverage MultiQC data: {multiqc_zip}")
@@ -448,9 +435,8 @@ def get_genebody_coverage_multiqc_stats(outdir, samples, log_path, assay_suffix=
             json_path = os.path.join(temp_dir, f"geneBody_cov_multiqc{assay_suffix}_data", "multiqc_data.json")
             
             if not os.path.exists(json_path):
-                print(f"WARNING: No multiqc_data.json file found in the expected location")
-                log_check_result(log_path, "rseqc", "all", "get_genebody_coverage_multiqc_stats", "RED", 
-                               "multiqc_data.json not found in zip", "")
+                log_check_result(log_path, "rseqc", "all", "get_genebody_coverage_multiqc_stats", "HALT", 
+                       "multiqc_data.json not found in zip", "")
                 return None
             
             # Parse the MultiQC data
@@ -502,10 +488,10 @@ def get_genebody_coverage_multiqc_stats(outdir, samples, log_path, assay_suffix=
             missing_samples = [s for s in samples if s not in genebody_data]
             
             if missing_samples:
-                print(f"WARNING: Missing gene body coverage data for {len(missing_samples)} samples")
-                log_check_result(log_path, "rseqc", "all", "get_genebody_coverage_multiqc_stats", "YELLOW", 
-                               f"Missing gene body coverage data for {len(missing_samples)} samples", 
-                               "\n".join(missing_samples[:20]) + ("..." if len(missing_samples) > 20 else ""))
+                log_check_result(log_path, "rseqc", "all", "get_genebody_coverage_stats", "RED", 
+                                f"Missing {len(missing_samples)} samples in MultiQC data", 
+                                "; ".join(missing_samples))
+                return genebody_data
             else:
                 print(f"Found gene body coverage data for all {len(samples)} samples")
                 log_check_result(log_path, "rseqc", "all", "get_genebody_coverage_multiqc_stats", "GREEN", 
@@ -730,8 +716,7 @@ def get_infer_experiment_multiqc_stats(outdir, samples, log_path, assay_suffix="
             json_path = os.path.join(temp_dir, f"infer_exp_multiqc{assay_suffix}_data", "multiqc_data.json")
             
             if not os.path.exists(json_path):
-                print(f"WARNING: No multiqc_data.json file found in the expected location")
-                log_check_result(log_path, component, "all", check_name, "RED", 
+                log_check_result(log_path, component, "all", check_name, "HALT", 
                                "multiqc_data.json not found in zip", "")
                 return None
             
@@ -780,13 +765,7 @@ def get_infer_experiment_multiqc_stats(outdir, samples, log_path, assay_suffix="
             return None
 
 def report_infer_experiment_issues(outdir, infer_exp_data, log_path):
-    """
-    Report issues with infer experiment metrics.
-    Checks for outliers in:
-    - pct_sense (percentage of reads mapped to sense strand)
-    - pct_antisense (percentage of reads mapped to antisense strand)
-    - pct_undetermined (percentage of reads with undetermined strandedness)
-    """
+    """Report issues in infer experiment results."""
     if infer_exp_data is None or len(infer_exp_data) == 0:
         print("No infer experiment data available, skipping outlier detection")
         return "GREEN"
@@ -883,17 +862,7 @@ def report_infer_experiment_issues(outdir, infer_exp_data, log_path):
         return "GREEN"
 
 def detect_coverage_bin_outliers(outdir, genebody_data, log_path):
-    """
-    Detect outliers in the coverage bin data for each sample.
-    
-    Args:
-        outdir: Output directory
-        genebody_data: Dictionary containing gene body coverage data
-        log_path: Path to the validation log
-    
-    Returns:
-        Status: "RED", "YELLOW", "GREEN", or "SKIPPED" based on outlier detection
-    """
+    """Detect outliers in coverage bins."""
     if not genebody_data:
         log_check_result(log_path, "rseqc", "all", "genebody_coverage_bins", "SKIPPED", "No gene body coverage data available")
         return "SKIPPED"
@@ -1096,7 +1065,6 @@ def get_inner_distance_multiqc_stats(outdir, samples, log_path, assay_suffix="_G
             json_path = os.path.join(tmpdirname, f"inner_dist_multiqc{assay_suffix}_data", "multiqc_data.json")
             
             if not os.path.exists(json_path):
-                print(f"ERROR: No multiqc_data.json file found in the expected location")
                 log_check_result(log_path, component, "all", check_name, "RED", 
                                 "No multiqc_data.json found in expected location", "")
                 return None
@@ -1427,7 +1395,6 @@ def get_read_distribution_multiqc_stats(outdir, samples, log_path, assay_suffix=
             json_path = os.path.join(tmpdirname, f"read_dist_multiqc{assay_suffix}_data", "multiqc_data.json")
             
             if not os.path.exists(json_path):
-                print(f"ERROR: No multiqc_data.json file found in the expected location")
                 log_check_result(log_path, component, "all", check_name, "RED", 
                                 "No multiqc_data.json found in expected location", "")
                 return None

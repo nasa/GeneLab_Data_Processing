@@ -89,18 +89,18 @@ def initialize_vv_log(outdir):
     
     # Check if file exists
     if not os.path.exists(vv_log_path):
-        # Create new file with header
+        # Create new file with header - both status (color) and flag_code (number)
         with open(vv_log_path, 'w') as f:
-            f.write("component,sample_id,check_name,status,message,details\n")
+            f.write("component,sample_id,check_name,status,flag_code,message,details\n")
     
     return vv_log_path
 
 def log_check_result(log_path, component, sample_id, check_name, status, message="", details=""):
     """Log check result to the VV_log.csv file."""
-    # Properly escape and format fields for CSV
     def escape_field(field, is_details=False):
         # Convert to string if not already
-        field = str(field)
+        if not isinstance(field, str):
+            field = str(field)
         
         # Replace newlines with semicolons to keep CSV valid
         field = field.replace('\n', '; ')
@@ -116,18 +116,29 @@ def log_check_result(log_path, component, sample_id, check_name, status, message
             # Wrap in quotes
             field = f'"{field}"'
         return field
+
+    # Map status (color) to flag_code (number)
+    flag_codes = {
+        "GREEN": "20",   # Using strings for consistency in CSV
+        "YELLOW": "30",
+        "RED": "50",
+        "HALT": "80"
+    }
+
+    # Get numeric flag code based on status color
+    flag_code = flag_codes.get(status, "80")  # Default to HALT if unknown status
     
     # Format all fields
     component = escape_field(component)
     sample_id = escape_field(sample_id)
     check_name = escape_field(check_name)
-    status = escape_field(status)
+    status = escape_field(status)  # The color (GREEN/YELLOW/RED/HALT)
     message = escape_field(message)
-    details = escape_field(details, True)  # Specify this is a details field
+    details = escape_field(details, True)
     
-    # Write the formatted line
+    # Write both status (color) and flag_code (number)
     with open(log_path, 'a') as f:
-        f.write(f"{component},{sample_id},{check_name},{status},{message},{details}\n")
+        f.write(f"{component},{sample_id},{check_name},{status},{flag_code},{message},{details}\n")
 
 def check_raw_fastq_existence(outdir, samples, paired_end, log_path):
     """Check if the expected FASTQ files exist for each sample."""
@@ -157,7 +168,7 @@ def check_raw_fastq_existence(outdir, samples, paired_end, log_path):
         print(f"WARNING: The following FASTQ files are missing:")
         for file in missing_files:
             print(f"  - {file}")
-        log_check_result(log_path, "raw_reads", "all", "check_raw_fastq_existence", "RED", 
+        log_check_result(log_path, "raw_reads", "all", "check_raw_fastq_existence", "HALT", 
                          f"Missing {len(missing_files)} FASTQ files", ",".join(missing_files))
         return False
     
@@ -196,7 +207,7 @@ def check_gzip_integrity(outdir, samples, paired_end, log_path):
                     print(f"Error: {result.stderr.decode('utf-8')}")
     
     if failed_files:
-        log_check_result(log_path, "raw_reads", "all", "check_gzip_integrity", "RED", 
+        log_check_result(log_path, "raw_reads", "all", "check_gzip_integrity", "HALT", 
                          f"Integrity check failed for {len(failed_files)} of {len(all_files)} files", 
                          ",".join(failed_files))
         return False
@@ -208,7 +219,7 @@ def check_gzip_integrity(outdir, samples, paired_end, log_path):
         return True
     else:
         print("No FASTQ files found to check for GZIP integrity")
-        log_check_result(log_path, "raw_reads", "all", "check_gzip_integrity", "YELLOW", 
+        log_check_result(log_path, "raw_reads", "all", "check_gzip_integrity", "HALT", 
                          "No FASTQ files found to check", "")
         return False
 
@@ -278,7 +289,7 @@ def validate_fastq_format(outdir, samples, paired_end, log_path, max_lines=20000
         print(f"WARNING: The following FASTQ files are invalid:")
         for file in invalid_files:
             print(f"  - {file}")
-        log_check_result(log_path, "raw_reads", "all", "validate_fastq_format", "RED", 
+        log_check_result(log_path, "raw_reads", "all", "validate_fastq_format", "HALT", 
                         f"Invalid format in {len(invalid_files)} of {len(all_files)} files", 
                         ",".join(invalid_files))
         return False
@@ -290,7 +301,7 @@ def validate_fastq_format(outdir, samples, paired_end, log_path, max_lines=20000
         return True
     else:
         print("No FASTQ files found to validate")
-        log_check_result(log_path, "raw_reads", "all", "validate_fastq_format", "YELLOW", 
+        log_check_result(log_path, "raw_reads", "all", "validate_fastq_format", "HALT", 
                         "No files found to validate", "")
         return False
 
@@ -325,7 +336,7 @@ def check_raw_fastqc_existence(outdir, samples, paired_end, log_path):
         print(f"WARNING: The following FastQC output files are missing:")
         for file in missing_files:
             print(f"  - {file}")
-        log_check_result(log_path, "raw_reads", "all", "check_raw_fastqc_existence", "RED", 
+        log_check_result(log_path, "raw_reads", "all", "check_raw_fastqc_existence", "HALT", 
                          f"Missing {len(missing_files)} FastQC output files", ",".join(missing_files))
         return False
     
@@ -338,7 +349,6 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
     """Check if all samples are included in the MultiQC report."""
     fastqc_dir = os.path.join(outdir, "00-RawData", "FastQC_Reports")
     multiqc_data_zip = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}_data.zip")
-    multiqc_html = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}.html")
     
     if not os.path.exists(multiqc_data_zip):
         print(f"WARNING: MultiQC data zip file not found: {multiqc_data_zip}")
@@ -414,7 +424,7 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
             return False
 
 def get_raw_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
-    """Extract raw MultiQC stats for all samples and write to a stats file for analysis."""
+    """Extract raw MultiQC stats for all samples."""
     fastqc_dir = os.path.join(outdir, "00-RawData", "FastQC_Reports")
     multiqc_data_zip = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}_data.zip")
     multiqc_html = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}.html")
@@ -471,6 +481,21 @@ def get_raw_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffix="_
                 clean_data[sample] = {}
                 for col, value in sample_data.items():
                     clean_data[sample][column_mapping[col]] = value
+            
+            # Check for missing samples in MultiQC stats
+            missing_samples = []
+            for sample in samples:
+                if sample not in fastqc_data:
+                    missing_samples.append(sample)
+            
+            if missing_samples:
+                print(f"WARNING: {len(missing_samples)} samples missing from MultiQC stats:")
+                for sample in missing_samples[:10]:
+                    print(f"  - {sample}")
+                log_check_result(log_path, "raw_reads", "all", "get_raw_multiqc_stats", "RED", 
+                               f"Missing {len(missing_samples)} samples in MultiQC stats", 
+                               ",".join(missing_samples[:20]))
+                return clean_data  # Still return data for partial analysis
             
             return clean_data
             
@@ -679,21 +704,40 @@ def report_multiqc_outliers(outdir, multiqc_data, log_path):
     
     return len(outlier_details) > 0
 
-def check_paired_read_counts(multiqc_data, log_path):
+def check_paired_read_counts(multiqc_data, log_path, paired_end):
     """Check if R1 and R2 read counts match for paired-end samples."""
     if not multiqc_data:
         print("No MultiQC data to analyze read count comparison")
+        log_check_result(log_path, "raw_reads", "all", "check_paired_read_counts", "RED", 
+                        "No MultiQC data available", "Cannot perform read count comparison")
         return False
     
     # Check if we have paired-end data by looking for _r keys
     has_paired_data = any("raw_total_sequences_r" in sample_data for sample_data in multiqc_data.values())
     
-    if not has_paired_data:
-        print("No paired-end data detected, skipping read count comparison")
-        log_check_result(log_path, "raw_reads", "all", "check_paired_read_counts", "GREEN", 
-                        "No paired-end data to check", "Single-end sequencing detected based on MultiQC metrics")
-        return True
+    # Check if there's a mismatch between runsheet and actual data
+    is_paired_in_runsheet = paired_end[0]  # From runsheet
+    if is_paired_in_runsheet and not has_paired_data:
+        print("WARNING: Runsheet specifies paired-end but data appears to be single-end")
+        log_check_result(log_path, "raw_reads", "all", "check_paired_read_counts", "RED", 
+                        "Paired-end/single-end mismatch", 
+                        "Runsheet specifies paired-end but data appears to be single-end")
+        return False
+    elif not is_paired_in_runsheet and has_paired_data:
+        print("WARNING: Runsheet specifies single-end but data appears to be paired-end")
+        log_check_result(log_path, "raw_reads", "all", "check_paired_read_counts", "RED", 
+                        "Paired-end/single-end mismatch", 
+                        "Runsheet specifies single-end but data appears to be paired-end")
+        return False
     
+    # Only report as GREEN for single-end data
+    if not is_paired_in_runsheet and not has_paired_data:
+        print("Single-end data detected (as specified in runsheet)")
+        log_check_result(log_path, "raw_reads", "all", "check_paired_read_counts", "GREEN", 
+                        "Single-end data confirmed", "Data matches runsheet specification")
+        return True
+
+    # Rest of the function remains the same for paired-end checks
     mismatched_samples = []
     
     # Compare forward and reverse read counts for each sample
@@ -890,7 +934,7 @@ def main():
         report_multiqc_outliers(args.outdir, multiqc_data, vv_log_path)
         
         # 8. Check paired read counts match (for paired-end data)
-        check_paired_read_counts(multiqc_data, vv_log_path)
+        check_paired_read_counts(multiqc_data, vv_log_path, paired_end_values)
 
     # 9. Report read depth stats
     if multiqc_data:

@@ -85,19 +85,46 @@ def initialize_vv_log(outdir):
     """Initialize or append to the VV_log.csv file."""
     vv_log_path = os.path.join(outdir, "VV_log.csv")
     
-    # Check if file exists
     if not os.path.exists(vv_log_path):
-        # Create new file with header
         with open(vv_log_path, 'w') as f:
-            f.write("component,sample_id,check_name,status,message,details\n")
+            f.write("component,sample_id,check_name,status,flag_code,message,details\n")
     
     return vv_log_path
 
 
 def log_check_result(log_path, component, sample_id, check_name, status, message="", details=""):
     """Log check result to the VV_log.csv file."""
+    def escape_field(field, is_details=False):
+        if not isinstance(field, str):
+            field = str(field)
+        field = field.replace('\n', '; ')
+        if is_details and ',' in field:
+            field = field.replace(', ', '; ')
+        if ',' in field or '"' in field:
+            field = field.replace('"', '""')
+            field = f'"{field}"'
+        return field
+
+    # Map status strings to flag codes
+    flag_codes = {
+        "GREEN": "20",
+        "YELLOW": "30",
+        "RED": "50",
+        "HALT": "80"
+    }
+
+    # Get flag code based on status
+    flag_code = flag_codes.get(status, "80")
+    
+    component = escape_field(component)
+    sample_id = escape_field(sample_id)
+    check_name = escape_field(check_name)
+    status = escape_field(status)
+    message = escape_field(message)
+    details = escape_field(details, True)
+    
     with open(log_path, 'a') as f:
-        f.write(f"{component},{sample_id},{check_name},{status},{message},{details}\n")
+        f.write(f"{component},{sample_id},{check_name},{status},{flag_code},{message},{details}\n")
 
 
 def check_featurecounts_files_existence(outdir, log_path, assay_suffix="_GLbulkRNAseq"):
@@ -122,7 +149,7 @@ def check_featurecounts_files_existence(outdir, log_path, assay_suffix="_GLbulkR
         print(f"WARNING: The following expected featureCounts files are missing:")
         for file_name in missing_files:
             print(f"  - {file_name}")
-        log_check_result(log_path, "featurecounts", "all", "check_featurecounts_files_existence", "RED", 
+        log_check_result(log_path, "featurecounts", "all", "check_featurecounts_files_existence", "HALT", 
                        f"Missing {len(missing_files)} expected featureCounts files", 
                        ",".join(missing_files))
         return False
@@ -210,7 +237,7 @@ def get_featurecounts_multiqc_stats(outdir, samples, log_path, assay_suffix="_GL
                     print(f"  - {sample}")
                 log_check_result(log_path, "featurecounts", "all", "get_featurecounts_multiqc_stats", "RED", 
                                f"Missing {len(missing_samples)} samples in featureCounts stats", 
-                               ",".join(missing_samples))
+                               ",".join(missing_samples[:20]))
                 return fc_data
             
             print("All samples found in featureCounts stats")
@@ -340,7 +367,7 @@ def report_multiqc_outliers(outdir, multiqc_data, log_path):
                     print(f"  {code} outlier: {detail}")
                     log_check_result(log_path, "featurecounts", sample, f"outlier_{metric_key}", code, 
                                    f"{stdev_multiples:.2f} stdevs from median", 
-                                   f"value={value:.2f}, median={median_value:.2f}, stdev={stdev:.2f}")
+                                   f"value={value:.2f}; median={median_value:.2f}; stdev={stdev:.2f}")
                     break  # Once we've identified the highest threshold, we can stop
     
     # Summarize results

@@ -132,33 +132,45 @@ def initialize_vv_log(outdir):
     """Initialize or append to the VV_log.csv file."""
     vv_log_path = os.path.join(outdir, "VV_log.csv")
     
-    # Create new file with header - force creation of header
-    with open(vv_log_path, 'w') as f:
-        f.write("component,sample_id,check_name,status,message,details\n")
+    if not os.path.exists(vv_log_path):
+        with open(vv_log_path, 'w') as f:
+            f.write("component,sample_id,check_name,status,flag_code,message,details\n")
     
     return vv_log_path
 
 def log_check_result(log_path, component, sample_id, check_name, status, message="", details=""):
     """Log check result to the VV_log.csv file."""
     def escape_field(field, is_details=False):
-        # Convert to string if not already
-        field_str = str(field)
-        
-        # For details field, replace commas with semicolons to avoid CSV quoting
-        if is_details and ',' in field_str:
-            field_str = field_str.replace(', ', '; ')
-        
-        # Always apply consistent format - minimal quoting
-        if any(c in field_str for c in ',"\n'):
-            # If the field contains commas, quotes, or newlines, wrap in quotes and escape internal quotes
-            return '"' + field_str.replace('"', '""') + '"'
-        
-        # Don't quote simple fields without special characters
-        return field_str
+        if not isinstance(field, str):
+            field = str(field)
+        field = field.replace('\n', '; ')
+        if is_details and ',' in field:
+            field = field.replace(', ', '; ')
+        if ',' in field or '"' in field:
+            field = field.replace('"', '""')
+            field = f'"{field}"'
+        return field
+
+    # Map status strings to flag codes
+    flag_codes = {
+        "GREEN": "20",
+        "YELLOW": "30",
+        "RED": "50",
+        "HALT": "80"
+    }
+
+    # Get flag code based on status
+    flag_code = flag_codes.get(status, "80")
+    
+    component = escape_field(component)
+    sample_id = escape_field(sample_id)
+    check_name = escape_field(check_name)
+    status = escape_field(status)
+    message = escape_field(message)
+    details = escape_field(details, True)
     
     with open(log_path, 'a') as f:
-        f.write(f"{escape_field(component)},{escape_field(sample_id)},{escape_field(check_name)},"
-                f"{escape_field(status)},{escape_field(message)},{escape_field(details, True)}\n")
+        f.write(f"{component},{sample_id},{check_name},{status},{flag_code},{message},{details}\n")
 
 def check_deseq2_normcounts_existence(outdir, log_path, assay_suffix="_GLbulkRNAseq", mode="default"):
     """Check if DESeq2 normalized counts files exist.
@@ -204,7 +216,7 @@ def check_deseq2_normcounts_existence(outdir, log_path, assay_suffix="_GLbulkRNA
     
     if missing_files:
         print(f"WARNING: Missing DESeq2 normalized counts files: {', '.join(missing_files)}")
-        log_check_result(log_path, component, "all", "check_deseq2_normcounts_existence", "RED", 
+        log_check_result(log_path, component, "all", "check_deseq2_normcounts_existence", "HALT", 
                          f"Missing DESeq2 normalized counts files", f"Missing files: {missing_files}")
         return False
     else:
@@ -249,7 +261,7 @@ def check_deseq2_dge_existence(outdir, log_path, assay_suffix="_GLbulkRNAseq"):
     
     if missing_files:
         print(f"WARNING: Missing DESeq2 DGE files: {', '.join(missing_files)}")
-        log_check_result(log_path, component, "all", "check_deseq2_dge_existence", "RED", 
+        log_check_result(log_path, component, "all", "check_deseq2_dge_existence", "HALT", 
                          f"Missing DESeq2 DGE files", f"Missing files: {missing_files}")
         return False
     else:
@@ -317,7 +329,7 @@ def check_sample_table_against_runsheet(outdir, runsheet_path, log_path, assay_s
     # Check if sample table exists
     if not os.path.exists(sample_table_path):
         print(f"WARNING: Sample table not found: {sample_table_path}")
-        log_check_result(log_path, component_name, "all", check_name, "RED", 
+        log_check_result(log_path, component_name, "all", check_name, "HALT", 
                         f"Sample table not found", f"Expected at: {sample_table_path}")
         return False
     
@@ -443,7 +455,7 @@ def check_sample_table_for_correct_group_assignments(outdir, runsheet_path, log_
     # Check if sample table exists
     if not os.path.exists(sample_table_path):
         print(f"WARNING: Sample table not found: {sample_table_path}")
-        log_check_result(log_path, component_name, "all", check_name, "RED", 
+        log_check_result(log_path, component_name, "all", check_name, "HALT", 
                         f"Sample table not found", f"Expected at: {sample_table_path}")
         return False
     
@@ -802,7 +814,7 @@ def check_contrasts_table_headers(outdir, runsheet_path, log_path, assay_suffix=
     # Check if contrasts table exists
     if not os.path.exists(contrasts_table_path):
         message = f"Contrasts table not found"
-        log_check_result(log_path, component_name, "all", check_name, "RED", 
+        log_check_result(log_path, component_name, "all", check_name, "HALT", 
                         message, f"Expected at: {contrasts_table_path}")
         return False
     
@@ -910,7 +922,7 @@ def check_contrasts_table_rows(outdir, log_path, assay_suffix="_GLbulkRNAseq",
     # Check if contrasts table exists
     if not os.path.exists(contrasts_table_path):
         message = f"Contrasts table not found"
-        log_check_result(log_path, component_name, "all", check_name, "RED", 
+        log_check_result(log_path, component_name, "all", check_name, "HALT", 
                         message, f"Expected at: {contrasts_table_path}")
         return False
     
@@ -1073,7 +1085,7 @@ def check_dge_table_annotation_columns_exist(outdir, runsheet_path, log_path, as
     # Check if the DGE table exists
     if not os.path.exists(dge_table_path):
         message = f"DGE table not found"
-        log_check_result(log_path, component_name, "all", check_name, "RED", 
+        log_check_result(log_path, component_name, "all", check_name, "HALT", 
                         message, f"Expected at: {dge_table_path}")
         return False
     
@@ -2487,7 +2499,7 @@ def check_ercc_presence(outdir, runsheet_path, log_path, assay_suffix="_GLbulkRN
             files_missing.append(f"Normalized counts file: {norm_path}")
         
         if files_missing:
-            log_check_result(log_path, component, "all", check_name, "RED", 
+            log_check_result(log_path, component, "all", check_name, "HALT", 
                            "Required count files not found", "; ".join(files_missing))
             return False
         

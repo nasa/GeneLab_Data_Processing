@@ -138,7 +138,7 @@ def log_check_result(log_path, component, sample_id, check_name, status, message
         f.write(f"{component},{sample_id},{check_name},{status},{message},{details}\n")
 
 def check_trimmed_fastq_existence(outdir, samples, paired_end, log_path):
-    """Check if the expected FASTQ files exist for each sample."""
+    """Check if the expected trimmed FASTQ files exist for each sample."""
     fastq_dir = os.path.join(outdir, "01-TG_Preproc", "Fastq")
     missing_files = []
     
@@ -162,20 +162,19 @@ def check_trimmed_fastq_existence(outdir, samples, paired_end, log_path):
                 missing_files.append(single_file)
     
     if missing_files:
-        print(f"WARNING: The following FASTQ files are missing:")
-        for file in missing_files:
-            print(f"  - {file}")
-        log_check_result(log_path, "trimmed_reads", "all", "check_trimmed_fastq_existence", "RED", 
-                         f"Missing {len(missing_files)} FASTQ files", ",".join(missing_files))
+        print(f"WARNING: Missing {len(missing_files)} trimmed FASTQ files")
+        log_check_result(log_path, "trimmed_reads", "all", "check_trimmed_fastq_existence", "HALT", 
+                         f"Missing {len(missing_files)} trimmed FASTQ files", 
+                         ",".join(missing_files))
         return False
     
-    print(f"All expected FASTQ files found for {len(samples)} samples")
+    print(f"Found all expected trimmed FASTQ files ({len(samples)} samples)")
     log_check_result(log_path, "trimmed_reads", "all", "check_trimmed_fastq_existence", "GREEN", 
-                     f"All FASTQ files found", "")
+                     "All trimmed FASTQ files found", "")
     return True
 
 def check_gzip_integrity(outdir, samples, paired_end, log_path):
-    """Check GZIP integrity for all FASTQ files using gzip -t."""
+    """Check GZIP integrity for trimmed FASTQ files."""
     fastq_dir = os.path.join(outdir, "01-TG_Preproc", "Fastq")
     failed_files = []
     all_files = []
@@ -204,20 +203,18 @@ def check_gzip_integrity(outdir, samples, paired_end, log_path):
                     print(f"Error: {result.stderr.decode('utf-8')}")
     
     if failed_files:
-        log_check_result(log_path, "trimmed_reads", "all", "check_gzip_integrity", "RED", 
+        log_check_result(log_path, "trimmed_reads", "all", "check_gzip_integrity", "HALT", 
                          f"Integrity check failed for {len(failed_files)} of {len(all_files)} files", 
                          ",".join(failed_files))
         return False
     
     if all_files:
-        print(f"GZIP integrity check passed for all {len(all_files)} FASTQ files")
         log_check_result(log_path, "trimmed_reads", "all", "check_gzip_integrity", "GREEN", 
                          f"Integrity check passed for all {len(all_files)} files", "")
         return True
     else:
-        print("No FASTQ files found to check for GZIP integrity")
-        log_check_result(log_path, "trimmed_reads", "all", "check_gzip_integrity", "YELLOW", 
-                         "No FASTQ files found to check", "")
+        log_check_result(log_path, "trimmed_reads", "all", "check_gzip_integrity", "HALT", 
+                         "No trimmed FASTQ files found to check", "")
         return False
 
 def validate_fastq_format(outdir, samples, paired_end, log_path, max_lines=200000000):
@@ -286,21 +283,21 @@ def validate_fastq_format(outdir, samples, paired_end, log_path, max_lines=20000
         print(f"WARNING: The following FASTQ files are invalid:")
         for file in invalid_files:
             print(f"  - {file}")
-        log_check_result(log_path, "trimmed_reads", "all", "validate_fastq_format", "RED", 
+        log_check_result(log_path, "trimmed_reads", "all", "validate_fastq_format", "HALT", 
                         f"Invalid format in {len(invalid_files)} of {len(all_files)} files", 
                         ",".join(invalid_files))
         return False
     
-    if all_files:
-        print(f"All {len(all_files)} FASTQ files are valid")
-        log_check_result(log_path, "trimmed_reads", "all", "validate_fastq_format", "GREEN", 
-                        "All files valid", "")
-        return True
-    else:
+    if not all_files:
         print("No FASTQ files found to validate")
-        log_check_result(log_path, "trimmed_reads", "all", "validate_fastq_format", "YELLOW", 
-                        "No files found to validate", "")
+        log_check_result(log_path, "trimmed_reads", "all", "validate_fastq_format", "HALT", 
+                        "No trimmed FASTQ files found to validate", "")
         return False
+
+    print(f"All {len(all_files)} FASTQ files are valid")
+    log_check_result(log_path, "trimmed_reads", "all", "validate_fastq_format", "GREEN", 
+                    "All files valid", "")
+    return True
 
 def check_trimmed_fastqc_existence(outdir, samples, paired_end, log_path):
     """Check if FastQC output files exist for each sample."""
@@ -333,7 +330,7 @@ def check_trimmed_fastqc_existence(outdir, samples, paired_end, log_path):
         print(f"WARNING: The following FastQC output files are missing:")
         for file in missing_files:
             print(f"  - {file}")
-        log_check_result(log_path, "trimmed_reads", "all", "check_trimmed_fastqc_existence", "RED", 
+        log_check_result(log_path, "trimmed_reads", "all", "check_trimmed_fastqc_existence", "HALT", 
                          f"Missing {len(missing_files)} FastQC output files", ",".join(missing_files))
         return False
     
@@ -686,8 +683,8 @@ def report_multiqc_outliers(outdir, multiqc_data, log_path):
     
     return len(outlier_details) > 0
 
-def check_paired_read_counts(multiqc_data, log_path):
-    """Check if R1 and R2 read counts match for paired-end samples."""
+def check_paired_read_counts(multiqc_data, log_path, paired_end):
+    """Check if R1 and R2 read counts match."""
     if not multiqc_data:
         print("No MultiQC data to analyze read count comparison")
         log_check_result(log_path, "trimmed_reads", "all", "check_paired_read_counts", "GREEN", 
@@ -697,11 +694,14 @@ def check_paired_read_counts(multiqc_data, log_path):
     # Check if we have paired-end data by looking for _r keys
     has_paired_data = any("trimmed_total_sequences_r" in sample_data for sample_data in multiqc_data.values())
     
-    if not has_paired_data:
-        print("No paired-end data detected, skipping read count comparison")
-        log_check_result(log_path, "trimmed_reads", "all", "check_paired_read_counts", "GREEN", 
-                        "No paired-end data to check", "Single-end sequencing detected based on MultiQC metrics")
-        return True
+    # Check for PE/SE mismatch
+    is_paired_in_runsheet = paired_end[0]
+    if is_paired_in_runsheet and not has_paired_data:
+        print("WARNING: Runsheet specifies paired-end but data appears to be single-end")
+        log_check_result(log_path, "trimmed_reads", "all", "check_paired_read_counts", "RED", 
+                        "Paired-end/single-end mismatch", 
+                        "Runsheet specifies paired-end but data appears to be single-end")
+        return False
     
     mismatched_samples = []
     print("\n==== DEBUG: PAIRED READ COUNT COMPARISONS ====")
@@ -741,15 +741,11 @@ def check_paired_read_counts(multiqc_data, log_path):
     print("==== END DEBUG ====\n")
     
     if mismatched_samples:
-        print(f"Found {len(mismatched_samples)} samples with mismatched read counts:")
-        for sample, message in mismatched_samples:
-            print(f"  - {sample}: {message}")
         log_check_result(log_path, "trimmed_reads", "all", "check_paired_read_counts", "RED", 
                         f"Found {len(mismatched_samples)} samples with mismatched read counts", 
                         ",".join([s[0] for s in mismatched_samples]))
         return False
     else:
-        print("All paired-end samples have matching read counts (difference ≤ 0.1%)")
         log_check_result(log_path, "trimmed_reads", "all", "check_paired_read_counts", "GREEN", 
                         "All paired-end read counts match (difference ≤ 0.1%)", "")
         return True
@@ -782,7 +778,7 @@ def check_trimming_report_existence(outdir, samples, paired_end, log_path):
         print(f"WARNING: The following trimming report files are missing:")
         for file in missing_files:
             print(f"  - {file}")
-        log_check_result(log_path, "trimmed_reads", "all", "check_trimming_report_existence", "RED", 
+        log_check_result(log_path, "trimmed_reads", "all", "check_trimming_report_existence", "HALT", 
                          f"Missing {len(missing_files)} trimming report files", ",".join(missing_files))
         return False
     
@@ -880,11 +876,7 @@ def check_trimming_multiqc_samples(outdir, samples, log_path, assay_suffix="_GLb
             return False
 
 def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.001, assay_suffix="_GLbulkRNAseq"):
-    """Check if adapter sequences were present in at least 0.1% of reads.
-    
-    This checks that the adapter trimming actually found adapters to trim, which validates
-    that adapters were present in the input data.
-    """
+    """Check if adapter sequences were present."""
     trimming_dir = os.path.join(outdir, "01-TG_Preproc", "Trimming_Reports")
     multiqc_data_zip = os.path.join(trimming_dir, f"trimming_multiqc{assay_suffix}_data.zip")
     multiqc_html = os.path.join(trimming_dir, f"trimming_multiqc{assay_suffix}.html")
@@ -1009,7 +1001,7 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
                 for sample in low_adapter_samples:
                     print(f"  - {sample}")
                 print(f"Adapter presence stats: {stats_message}")
-                log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "YELLOW", 
+                log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "RED", 
                                 f"Low adapter presence in {len(low_adapter_samples)} samples; {stats_message}", 
                                 "; ".join(low_adapter_samples))
                 return False
@@ -1018,13 +1010,14 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
             print(f"Adapter presence stats: {stats_message}")
             log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "GREEN", 
                             f"Adapter presence ≥{threshold:.2%}; {stats_message}", 
-                            f"Checked {len(all_checked_samples)} samples: minimum adapter ratio: {min(all_adapter_ratios):.2%}")
+                            f"Checked {len(all_checked_samples)} samples; minimum adapter ratio: {min(all_adapter_ratios):.2%}")
             return True
             
         except Exception as e:
-            print(f"Error checking adapter presence: {str(e)}")
+            print(f"ERROR checking adapter presence: {str(e)}")
             log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "RED", 
-                           f"Error checking adapter presence: {str(e)}", "")
+                           f"Failed to analyze adapter presence: {str(e)}", 
+                           "Check trimming reports and MultiQC data for completeness")
             return False
 
 def report_read_depth_stats(multiqc_data, log_path):
@@ -1253,7 +1246,7 @@ def main():
         report_multiqc_outliers(args.outdir, multiqc_data, vv_log_path)
         
         # 8. Check paired read counts match (for paired-end data)
-        check_paired_read_counts(multiqc_data, vv_log_path)
+        check_paired_read_counts(multiqc_data, vv_log_path, paired_end_values)
     
     # 9. Check for trimming report files existence
     check_trimming_report_existence(args.outdir, sample_names, paired_end_values, vv_log_path)

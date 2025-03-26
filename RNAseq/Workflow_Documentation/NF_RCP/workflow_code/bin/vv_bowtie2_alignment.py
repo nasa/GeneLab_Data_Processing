@@ -80,51 +80,45 @@ def initialize_vv_log(outdir):
     """Initialize or append to the VV_log.csv file."""
     vv_log_path = os.path.join(outdir, "VV_log.csv")
     
-    # Check if file exists
     if not os.path.exists(vv_log_path):
-        # Create new file with header
         with open(vv_log_path, 'w') as f:
-            f.write("component,sample_id,check_name,status,message,details\n")
+            f.write("component,sample_id,check_name,status,flag_code,message,details\n")
     
     return vv_log_path
 
 def log_check_result(log_path, component, sample_id, check_name, status, message="", details=""):
     """Log check result to the VV_log.csv file."""
-    # Properly escape and format fields for CSV
     def escape_field(field, is_details=False):
-        # Convert to string if not already
-        field = str(field)
-        
-        # Replace newlines with semicolons to keep CSV valid
+        if not isinstance(field, str):
+            field = str(field)
         field = field.replace('\n', '; ')
-        
-        # For details field, replace commas with semicolons to avoid CSV quoting
         if is_details and ',' in field:
             field = field.replace(', ', '; ')
-        
-        # Also replace commas in message fields that contain percentages
-        if '%' in field and ',' in field:
-            field = field.replace(', ', '; ')
-        
-        # If the field contains commas or quotes (but not just semicolons), wrap it in quotes
         if ',' in field or '"' in field:
-            # Double any quotes within the field
             field = field.replace('"', '""')
-            # Wrap in quotes
             field = f'"{field}"'
         return field
+
+    # Map status strings to flag codes
+    flag_codes = {
+        "GREEN": "20",
+        "YELLOW": "30",
+        "RED": "50",
+        "HALT": "80"
+    }
+
+    # Get flag code based on status
+    flag_code = flag_codes.get(status, "80")  # Default to HALT if unknown status
     
-    # Format all fields
     component = escape_field(component)
     sample_id = escape_field(sample_id)
     check_name = escape_field(check_name)
     status = escape_field(status)
     message = escape_field(message)
-    details = escape_field(details, True)  # Specify this is a details field
+    details = escape_field(details, True)
     
-    # Write the formatted line
     with open(log_path, 'a') as f:
-        f.write(f"{component},{sample_id},{check_name},{status},{message},{details}\n")
+        f.write(f"{component},{sample_id},{check_name},{status},{flag_code},{message},{details}\n")
 
 def check_gzip_integrity(outdir, samples, paired_end, log_path):
     """Check GZIP integrity for all FASTQ files using gzip -t."""
@@ -286,49 +280,66 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
     
     if not os.path.exists(multiqc_zip):
         print(f"WARNING: MultiQC data not found at: {multiqc_zip}")
-        log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
+        log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "HALT", 
                         "MultiQC data not found", multiqc_zip)
         return False
     
-    print(f"Checking samples in MultiQC data: {multiqc_zip}")
-    
-    # Create a temporary directory to extract files
-    with tempfile.TemporaryDirectory() as temp_dir:
-        try:
-            # Extract the zip file
+    try:
+        # Extract and check the data
+        with tempfile.TemporaryDirectory() as temp_dir:
             with zipfile.ZipFile(multiqc_zip, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
             
-            # Path to the MultiQC data JSON file (new structure)
             json_path = os.path.join(temp_dir, f"align_multiqc{assay_suffix}_data", "multiqc_data.json")
             
             if not os.path.exists(json_path):
-                print(f"WARNING: No multiqc_data.json file found in the expected location")
                 log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
                                "multiqc_data.json not found in zip", "")
                 return False
             
-            # Parse the JSON file
             with open(json_path) as f:
                 multiqc_data = json.load(f)
             
-            # Check for samples in report_data_sources
-            if 'report_data_sources' not in multiqc_data:
-                print(f"WARNING: No report_data_sources found in MultiQC data")
+            # Look for Bowtie2 data in general stats
+            if not multiqc_data.get('report_general_stats_data'):
                 log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
-                               "No report_data_sources in MultiQC data", "")
+                               "No general stats data in MultiQC data", "")
                 return False
             
-            # Look for Bowtie2 section
-            if 'Bowtie 2 / HiSAT2' not in multiqc_data['report_data_sources']:
-                print(f"WARNING: No Bowtie2 data found in MultiQC data")
-                log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
-                               "No Bowtie2 data in MultiQC data", "")
-                return False
+            # Get samples from general stats
+            multiqc_samples = set()
+            for stats_section in multiqc_data['report_general_stats_data']:
+                for sample in stats_section.keys():
+                    # Clean sample name if needed
+                    base_sample = os.path.basename(sample)
+                    multiqc_samples.add(base_sample)
             
-            # Get samples from the Bowtie2 section
-            bowtie_data = multiqc_data['report_data_sources']['Bowtie 2 / HiSAT2']['all_sections']
-            multiqc_samples = set(bowtie_data.keys())
+            # Check for PE/SE mismatch
+            is_paired_in_runsheet = paired_end[0]
+            has_paired_data = False
+            
+            # Check multiple indicators of paired data:
+            # 1. Check unmapped files
+            unmapped_dir = os.path.join(outdir, "02-Bowtie2_Alignment")
+            has_paired_files = any(os.path.exists(os.path.join(unmapped_dir, sample, f"{sample}.unmapped.fastq.2.gz")) 
+                                 for sample in samples)
+            
+            # 2. Check stats data for paired indicators
+            for stats_section in multiqc_data['report_general_stats_data']:
+                for sample_stats in stats_section.values():
+                    if any('paired' in key.lower() for key in sample_stats.keys()):
+                        has_paired_data = True
+                        break
+                if has_paired_data:
+                    break
+            
+            has_paired_data = has_paired_data or has_paired_files
+            
+            if is_paired_in_runsheet and not has_paired_data:
+                log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
+                               "Paired-end/single-end mismatch", 
+                               "Runsheet specifies paired-end but data appears to be single-end")
+                return False
             
             # Check for missing samples
             missing_samples = []
@@ -337,25 +348,20 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
                     missing_samples.append(sample)
             
             if missing_samples:
-                print(f"WARNING: The following samples are missing from the MultiQC data:")
-                for sample in missing_samples:
-                    print(f"  - {sample}")
                 log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
                                f"Missing {len(missing_samples)} samples in MultiQC data", 
                                "; ".join(missing_samples))
                 return False
             
-            print(f"All {len(samples)} samples found in MultiQC data")
             log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "GREEN", 
                            f"All {len(samples)} samples found in data", 
                            f"Checked presence of {len(samples)} samples in Bowtie2 section of MultiQC data")
             return True
             
-        except Exception as e:
-            print(f"Error checking MultiQC data: {str(e)}")
-            log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
-                           f"Error checking MultiQC data: {str(e)}", "")
-            return False
+    except Exception as e:
+        log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
+                       f"Error checking MultiQC data: {str(e)}", "")
+        return False
 
 def get_bowtie2_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
     """Get alignment statistics from MultiQC data."""
@@ -432,7 +438,7 @@ def get_bowtie2_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffi
             return None
 
 def report_multiqc_outliers(outdir, multiqc_data, log_path):
-    """Report statistical outliers in MultiQC statistics using standard deviations."""
+    """Identify and report outliers in MultiQC statistics."""
     metrics = ['total_reads', 'overall_alignment_rate', 'aligned_none', 'aligned_one', 'aligned_multi']
     outlier_samples = set()
     
@@ -461,6 +467,11 @@ def report_multiqc_outliers(outdir, multiqc_data, log_path):
                 sample_values[metric][sample] = stats[metric]
     
     # Calculate statistics and check for outliers
+    thresholds = [
+        {"code": "RED", "stdev_threshold": 4, "middle_fcn": "median"},     # Check severe outliers first
+        {"code": "YELLOW", "stdev_threshold": 2, "middle_fcn": "median"}   # Then check minor outliers
+    ]
+    
     for metric in metrics:
         if not metric_values[metric]:
             continue
@@ -623,6 +634,21 @@ def add_bowtie2_group_stats(outdir, multiqc_data, log_path):
                 detail_str
             )
     
+    for metric, stats in stats_summary.items():
+        if metric == "overall_alignment_rate":
+            if stats['median'] < 50:
+                status = "RED"
+                flag_code = "50"
+            elif stats['median'] < 70:
+                status = "YELLOW"
+                flag_code = "30"
+            else:
+                status = "GREEN"
+                flag_code = "20"
+        else:
+            status = "GREEN"
+            flag_code = "20"
+    
     return True
 
 def check_bowtie2_existence(outdir, samples, paired_end, log_path):
@@ -669,7 +695,7 @@ def check_bowtie2_existence(outdir, samples, paired_end, log_path):
         print(f"WARNING: Missing alignment files:")
         for file in missing_files:
             print(f"  - {file}")
-        log_check_result(log_path, "alignment", "all", "check_bowtie2_existence", "RED", 
+        log_check_result(log_path, "alignment", "all", "check_bowtie2_existence", "HALT", 
                         f"Missing {len(missing_files)} files", "; ".join(missing_files))
         return False
 
@@ -759,10 +785,32 @@ def validate_unmapped_fastq(outdir, samples, paired_end, log_path, max_lines=200
                         "; ".join(invalid_files))
         return False
 
+    if not all_files:
+        print("No unmapped FASTQ files found to validate")
+        log_check_result(log_path, "alignment", "all", "validate_unmapped_fastq", "HALT", 
+                        "No unmapped FASTQ files found to validate", "")
+        return False
+
     print(f"All unmapped FASTQ files are valid")
     log_check_result(log_path, "alignment", "all", "validate_unmapped_fastq", "GREEN", 
                     "All files valid", f"Validated {len(all_files)} unmapped FASTQ files; Checked for valid FASTQ format and complete records")
     return True
+
+def check_mapping_rates(outdir, star_data, log_path):
+    """Check if mapping rates meet expected thresholds."""
+    # ... [existing code] ...
+    
+    # Define thresholds
+    thresholds = {
+        "total_mapped": [
+            {"code": "YELLOW", "type": "lower", "value": 70},
+            {"code": "RED", "type": "lower", "value": 50}
+        ],
+        "multi_mapped": [
+            {"code": "YELLOW", "type": "lower", "value": 30},
+            {"code": "RED", "type": "lower", "value": 15}
+        ]
+    }
 
 def main():
     """Main function to process runsheet and validate raw reads."""
