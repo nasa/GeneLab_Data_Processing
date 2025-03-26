@@ -1293,7 +1293,7 @@ library(tidyverse)
   - [find_bad_taxa()](#find_bad_taxa)
 
   **Function Parameter Definitions:**
-  - `data=` - specifies the treeSummarizedExperiment containing the feature, taxonomy and metdata to be analyzed using ancombc2
+  - `data=` - specifies the treeSummarizedExperiment containing the feature, taxonomy and metadata to be analyzed using ancombc2
   - `...` - Other arguments passed on to ancombc2
 
   **Returns:** an ancombc2 result, or an empty result as returned by [find_bad_taxa()](#find_bad_taxa)
