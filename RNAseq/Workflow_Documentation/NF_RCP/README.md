@@ -4,7 +4,7 @@
 
 ### Implementation Tools <!-- omit in toc -->
 
-The current GeneLab RNAseq consensus processing pipeline (RCP), [GL-DPPD-7101-G](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md) and the GeneLab Prokaryotic RNAseq consensus pipeline [GL-DPPD-7115](../../Pipeline_GL-DPPD-7115_Versions/GL-DPPD-7115.md), are implemented as a single [Nextflow](https://nextflow.io/) DSL2 workflow that utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) to run all tools in containers. This unified workflow (NF_RCP) can process both eukaryotic and prokaryotic RNAseq data through a configurable parameter (`--mode`) and is run using the command line interface (CLI) of any unix-based system. While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow.   
+The current GeneLab RNAseq consensus processing pipeline (RCP) for eukaryotic organisms, [GL-DPPD-7101-G](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md) and the GeneLab RNAseq consensus pipeline [GL-DPPD-7115](../../Pipeline_GL-DPPD-7115_Versions/GL-DPPD-7115.md), are implemented as a single [Nextflow](https://nextflow.io/) DSL2 workflow that utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) to run all tools in containers. This workflow (NF_RCP) is run using the command line interface (CLI) of any unix-based system. While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow.   
 
 ### Workflow & Subworkflows <!-- omit in toc -->
 
@@ -12,9 +12,19 @@ The current GeneLab RNAseq consensus processing pipeline (RCP), [GL-DPPD-7101-G]
 
 - **Click image to expand**
 
+<details open>
+<summary>NF_RCP workflow for GL-DPPD-7101-G (Eukaryotes)</summary>
 <p align="center">
-<a href="../../images/NF_RCP-F_rnaseq_workflow.png"><img src="../../images/NF_RCP-F_rnaseq_workflow.png"></a>
+<a href="../../images/NF_RCP_euk_wf_diagram.svg"><img src="../../images/NF_RCP_euk_wf_diagram.svg"></a>
 </p>
+</details>
+
+<details>
+<summary>NF_RCP workflow for GL-DPPD-7115 (Prokaryotes)</summary>
+<p align="center">
+<a href="../../images/NF_RCP_prok_wf_diagram.svg"><img src="../../images/NF_RCP_prok_wf_diagram.svg"></a>
+</p>
+</details>
 
 ---
 The NF_RCP workflow is composed of three subworkflows as shown in the image above.
