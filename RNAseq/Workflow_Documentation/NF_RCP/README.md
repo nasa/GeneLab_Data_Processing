@@ -4,7 +4,7 @@
 
 ### Implementation Tools <!-- omit in toc -->
 
-The current GeneLab RNAseq consensus processing pipeline (RCP), [GL-DPPD-7101-G](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) to run all tools in containers. This workflow (NF_RCP) is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow.   
+The current GeneLab RNAseq consensus processing pipeline (RCP), [GL-DPPD-7101-G](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md) and the GeneLab Prokaryotic RNAseq consensus pipeline [GL-DPPD-7115](../../Pipeline_GL-DPPD-7115_Versions/GL-DPPD-7115.md), are implemented as a single [Nextflow](https://nextflow.io/) DSL2 workflow that utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) to run all tools in containers. This unified workflow (NF_RCP) can process both eukaryotic and prokaryotic RNAseq data through a configurable parameter (`--mode`) and is run using the command line interface (CLI) of any unix-based system. While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow.   
 
 ### Workflow & Subworkflows <!-- omit in toc -->
 
@@ -30,7 +30,11 @@ document](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md):
 2. **RNAseq Consensus Pipeline Subworkflow**
 
    - Description:
-     - This subworkflow uses the staged raw data and metadata parameters from the Analysis Staging Subworkflow to generate processed data using [version G of the GeneLab RCP](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md).
+     - This subworkflow uses the staged raw data and metadata parameters from the Analysis Staging Subworkflow to generate processed data using either:
+       - [Version G of the GeneLab RCP](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md) when the `--mode` parameter is omitted (default)
+       - [The GeneLab Prokaryotic RCP](../../Pipeline_GL-DPPD-7115_Versions/GL-DPPD-7115.md) when using `--mode microbes`
+       
+       The selection impacts the choice of aligner and read counter tools used in the pipeline.
 
 3. **V&V Pipeline Subworkflow**
 
@@ -60,6 +64,7 @@ document](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md):
    4a. [Approach 1: Run the workflow on a GeneLab RNAseq dataset with automatic retrieval of Ensembl reference fasta and gtf files](#4a-approach-1-run-the-workflow-on-a-genelab-rnaseq-dataset-with-automatic-retrieval-of-ensembl-reference-fasta-and-gtf-files)  
    4b. [Approach 2: Run the workflow on a GeneLab RNAseq dataset using local Ensembl reference fasta and gtf files](#4b-approach-2-run-the-workflow-on-a-genelab-rnaseq-dataset-using-local-reference-fasta-and-gtf-files)  
    4c. [Approach 3: Run the workflow on a non-GLDS dataset using a user-created runsheet](#4c-approach-3-run-the-workflow-on-a-non-glds-dataset-using-a-user-created-runsheet)  
+   4d. [Approach 4: Run the workflow on a GeneLab prokaryotic RNAseq dataset](#4d-approach-4-run-the-workflow-on-a-genelab-prokaryotic-rnaseq-dataset)  
 5. [Additional Output Files](#5-additional-output-files)  
 
 <br>
@@ -134,7 +139,7 @@ export NXF_SINGULARITY_CACHEDIR=$(pwd)/singularity
 
 ### 4. Run the Workflow
 
-While in the location containing the `NF_RCP_2.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are three examples of how to run the NF_RCP workflow:
+While in the location containing the `NF_RCP_2.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are four examples of how to run the NF_RCP workflow:
 > Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --ensemblVersion) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
 
 <br>
@@ -177,19 +182,30 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 <br>
 
+#### 4d. Approach 4: Run the workflow on a GeneLab prokaryotic RNAseq dataset
+
+```bash
+nextflow run NF_RCP_2.0.0/main.nf \ 
+   -profile singularity \
+   --mode microbes \
+   --accession OSD-185
+```
+
+<br>
+
 **Required Parameters For All Approaches:**
 
 * `NF_RCP_2.0.0/main.nf` - Instructs Nextflow to run the NF_RCP workflow 
 
 * `-profile` - Specifies the configuration profile(s) to load, `singularity` instructs Nextflow to setup and use singularity for all software called in the workflow
-  > Note: The output directory will be named `OSD-#` when using a OSDR or GLDS accession as input, or `results` when running the workflow with only a runsheet as input.
+  > Note: The output directory will be named `GLDS-#` when using a OSDR or GLDS accession as input, or `results` when running the workflow with only a runsheet as input.
 
 
 <br>
 
 **Additional Required Parameters For [Approach 2](#4b-approach-2-run-the-workflow-on-a-genelab-rnaseq-dataset-using-local-ensembl-reference-fasta-and-gtf-files):**
 
-* `--reference_version` - specifies the Ensembl version to use for the reference genome (Ensembl release `107` is used in this example) 
+* `--reference_version` - specifies the Ensembl version to use for the reference genome (Ensembl release `107` is used in this example); only needed when using Ensembl as the reference source
 
 * `--reference_source` - specifies the source of the reference files used (the source indicated in the Approach 2 example is `ensembl`) 
 
@@ -215,7 +231,10 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 * `--runsheet_path` - specifies the path to a local runsheet (Default: a runsheet is automatically generated using the metadata on the GeneLab Repository for the OSD dataset being processed)
   > This is required when prcessing a non-OSD dataset as indicated in [Approach 3 above](#4c-approach-3-run-the-workflow-on-a-non-glds-dataset-using-a-user-created-runsheet)
-   
+
+* `--mode` - specifies which pipeline to use: set to `default` to run GL-DPPD-7101-G pipeline or set to `microbes` for the GL-DPPD-7115 prokaryotic pipeline (Default value: `default`)
+  > This allows the workflow to process either eukaryotic (default) or prokaryotic RNAseq data using the appropriate pipeline
+
 <br>
 
 **Additional Optional Parameters:**
@@ -247,14 +266,14 @@ The outputs from the Analysis Staging and V&V Pipeline Subworkflows are describe
 **V&V Pipeline Subworkflow**
 
    - Output:
-     - VV_Logs/VV_log_final_GLbulkRNAseq.tsv (table containing V&V flags for all checks performed)
-     - VV_Logs/VV_log_final_only_issues_GLbulkRNAseq.tsv (table containing V&V flags ONLY for checks that produced a flag code >= 30)
-     - VV_Logs/VV_log_VV_RAW_READS_GLbulkRNAseq.tsv (table containing V&V flags ONLY for raw reads checks)
-     - VV_Logs/VV_log_VV_TRIMMED_READS_GLbulkRNAseq.tsv (table containing V&V flags for trimmed reads checks ONLY)
-     - VV_Logs/VV_log_VV_ALIGNMENT_GLbulkRNAseq.tsv (table containing V&V flags for alignment file checks ONLY)
-     - VV_Logs/VV_log_VV_RSEQC_GLbulkRNAseq.tsv (table containing V&V flags for RSeQC file checks ONLY)
-     - VV_Logs/VV_log_VV_COUNTS_GLbulkRNAseq.tsv (table containing V&V flags for gene quantification file checks ONLY) 
-     - VV_Logs/VV_log_VV_DESEQ2_ANALYSIS_GLbulkRNAseq.tsv (table containing V&V flags for DESeq2 Analysis output checks ONLY)
+     - VV_Logs/VV_log_final_GLbulkRNAseq.csv (table containing V&V flags for all checks performed)
+     - VV_Logs/VV_log_final_only_issues_GLbulkRNAseq.csv (table containing V&V flags ONLY for checks that produced a flag code >= 30)
+     - VV_Logs/VV_log_VV_RAW_READS_GLbulkRNAseq.csv (table containing V&V flags ONLY for raw reads checks)
+     - VV_Logs/VV_log_VV_TRIMMED_READS_GLbulkRNAseq.csv (table containing V&V flags for trimmed reads checks ONLY)
+     - VV_Logs/VV_log_VV_ALIGNMENT_GLbulkRNAseq.csv (table containing V&V flags for alignment file checks ONLY)
+     - VV_Logs/VV_log_VV_RSEQC_GLbulkRNAseq.csv (table containing V&V flags for RSeQC file checks ONLY)
+     - VV_Logs/VV_log_VV_COUNTS_GLbulkRNAseq.csv (table containing V&V flags for gene quantification file checks ONLY) 
+     - VV_Logs/VV_log_VV_DESEQ2_ANALYSIS_GLbulkRNAseq.csv (table containing V&V flags for DESeq2 Analysis output checks ONLY)
 
 <br>
 
