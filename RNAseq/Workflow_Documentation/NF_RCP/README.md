@@ -221,7 +221,7 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 * `--skip_vv` - skip the automated V&V processes (Default: the automated V&V processes are active) 
 
-* `--outdir` - specifies the directory to save the raw and processed data files (Default: files are saved in a folder named `results` created in the launch directory)  
+* `--outdir` - specifies the base directory where the output directory will be created (Default: output directory is created in the launch directory)  
 
 * `--force_single_end` - forces the analysis to use single end processing; for paired end datasets, this means only R1 is used; for single end datasets, this should have no effect  
 
