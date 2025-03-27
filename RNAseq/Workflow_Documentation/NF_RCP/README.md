@@ -259,8 +259,8 @@ The outputs from the Analysis Staging and V&V Pipeline Subworkflows are describe
 **Analysis Staging Subworkflow**
 
    - Output:
-     - \*_bulkRNASeq_v1_runsheet.csv (table containing metadata required for processing, including the raw reads files location)
-     - \*-ISA.zip (the ISA archive of the OSD datasets to be processed, downloaded from the OSDR)
+     - Metadata/\*_bulkRNASeq_v1_runsheet.csv (table containing metadata required for processing, including the raw reads files location)
+     - Metadata/\*-ISA.zip (the ISA archive of the OSD datasets to be processed, downloaded from the OSDR)
    
    
 **V&V Pipeline Subworkflow**
@@ -274,6 +274,14 @@ The outputs from the Analysis Staging and V&V Pipeline Subworkflows are describe
      - VV_Logs/VV_log_VV_RSEQC_GLbulkRNAseq.csv (table containing V&V flags for RSeQC file checks ONLY)
      - VV_Logs/VV_log_VV_COUNTS_GLbulkRNAseq.csv (table containing V&V flags for gene quantification file checks ONLY) 
      - VV_Logs/VV_log_VV_DESEQ2_ANALYSIS_GLbulkRNAseq.csv (table containing V&V flags for DESeq2 Analysis output checks ONLY)
+
+**Processing Information Archive**
+
+   - Output:
+     - GeneLab/processing_info_GLbulkRNAseq.zip (Archive containing workflow execution metadata)
+       - processing_info/samples.txt (single column list of all sample names in the dataset)
+       - processing_info/nextflow_log_GLbulkRNAseq.txt (Nextflow execution logs captured via `nextflow log`)
+       - processing_info/nextflow_run_command_GLbulkRNAseq.txt (Exact command line used to initiate the workflow)
 
 <br>
 
