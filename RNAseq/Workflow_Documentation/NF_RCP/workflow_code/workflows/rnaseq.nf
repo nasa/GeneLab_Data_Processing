@@ -51,6 +51,7 @@ include { VV_RAW_READS;
     VV_STAR_ALIGNMENT;
     VV_RSEQC;
     VV_RSEM_COUNTS;
+    VV_DGE_DESEQ2;
     VV_CONCAT_FILTER } from '../modules/vv.nf'
 include { SOFTWARE_VERSIONS } from '../modules/software_versions.nf'
 include { GENERATE_PROTOCOL } from '../modules/generate_protocol.nf'
