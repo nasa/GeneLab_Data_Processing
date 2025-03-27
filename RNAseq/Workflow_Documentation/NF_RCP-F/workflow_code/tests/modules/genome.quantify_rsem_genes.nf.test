@@ -1,0 +1,53 @@
+nextflow_process {
+
+    name "Test Process QUANTIFY_RSEM_GENES"
+    script "modules/genome.nf"
+    process "QUANTIFY_RSEM_GENES"
+
+    test("Baseline_ON_GLDS194:Should run without failures") {
+
+        when {
+            params {
+                // define parameters here. Example:
+                // outdir = "tests/results"
+            }
+            process {
+                """
+                // define inputs of the process here. Example:
+                input[0] = file("test-datasets-extended/testdata/GLDS-194/mock/samples.txt")
+                input[1] = file("test-datasets-extended/testdata/GLDS-194/03-RSEM_Counts/*.genes.results")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out.publishables).match()
+        }
+
+    }
+
+    test("Issue_60_Test_ON_Mock:Should run without failures") {
+
+        when {
+            params {
+                // define parameters here. Example:
+                // outdir = "tests/results"
+            }
+            process {
+                """
+                // define inputs of the process here. Example:
+                input[0] = file("test-datasets-extended/testdata/mocks/overlapping_samplenames/samples.txt")
+                input[1] = file("test-datasets-extended/testdata/mocks/overlapping_samplenames/*.genes.results")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out.publishables).match()
+        }
+
+    }
+
+}
