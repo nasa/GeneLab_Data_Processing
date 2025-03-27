@@ -3269,6 +3269,7 @@ walk(pairwise_comp_df, function(col){
 * [gm_mean()](#gm_mean)
 
 **Parameter Definitions:**
+* *pipeline uses default values for `DESeq()` analysis* 
 
 **Input Data:**
 
