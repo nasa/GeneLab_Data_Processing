@@ -50,7 +50,8 @@ include { VV_RAW_READS;
     VV_BOWTIE2_ALIGNMENT;
     VV_RSEQC;
     VV_FEATURECOUNTS;
-    VV_DGE_DESEQ2 } from '../modules/vv.nf'
+    VV_DGE_DESEQ2;
+    VV_CONCAT_FILTER } from '../modules/vv.nf'
 include { SOFTWARE_VERSIONS } from '../modules/software_versions.nf'
 include { GENERATE_PROTOCOL } from '../modules/generate_protocol.nf'
 include { validateParameters; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
@@ -356,6 +357,12 @@ workflow RNASEQ_MICROBES {
             DGE_DESEQ2_RRNA_RM.out.contrasts,
             ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
         )
+        VV_CONCAT_FILTER( ch_outdir, VV_RAW_READS.out.log | mix( VV_TRIMMED_READS.out.log, // Concatenate and filter V&V logs
+                                                    VV_BOWTIE2_ALIGNMENT.out.log,
+                                                    VV_RSEQC.out.log,
+                                                    VV_FEATURECOUNTS.out.log,
+                                                    VV_DGE_DESEQ2.out.log,
+                                                    ) | collect )
 
         // Software Version Capturing
         nf_version = '"NEXTFLOW":\n    nextflow: '.concat("${nextflow.version}\n")

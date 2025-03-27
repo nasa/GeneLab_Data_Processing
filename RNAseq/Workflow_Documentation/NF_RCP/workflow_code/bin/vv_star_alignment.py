@@ -88,7 +88,7 @@ def initialize_vv_log(outdir):
     if not os.path.exists(vv_log_path):
         # Create new file with header
         with open(vv_log_path, 'w') as f:
-            f.write("component,sample_id,check_name,status,message,details\n")
+            f.write("component,sample_id,check_name,status,flag_code,message,details\n")
     
     return vv_log_path
 
@@ -114,6 +114,17 @@ def log_check_result(log_path, component, sample_id, check_name, status, message
             
         return field
     
+    # Map status strings to flag codes
+    flag_codes = {
+        "GREEN": "20",   # Using strings for consistency in CSV
+        "YELLOW": "30",
+        "RED": "50",
+        "HALT": "80"
+    }
+
+    # Get numeric flag code based on status color
+    flag_code = flag_codes.get(status, "80")  # Default to HALT if unknown status
+    
     with open(log_path, 'a') as f:
         component = escape_field(component)
         sample_id = escape_field(sample_id)
@@ -122,7 +133,7 @@ def log_check_result(log_path, component, sample_id, check_name, status, message
         message = escape_field(message)
         details = escape_field(details, is_details=True)
         
-        f.write(f"{component},{sample_id},{check_name},{status},{message},{details}\n")
+        f.write(f"{component},{sample_id},{check_name},{status},{flag_code},{message},{details}\n")
 
 
 def check_star_output_existence(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
@@ -190,7 +201,7 @@ def check_star_output_existence(outdir, samples, paired_end, log_path, assay_suf
                 "STAR_alignment", 
                 sample, 
                 "check_star_output_existence", 
-                "RED", 
+                "HALT", 
                 f"Missing {len(missing_files)} expected STAR output files", 
                 ",".join(missing_files)
             )
@@ -202,7 +213,7 @@ def check_star_output_existence(outdir, samples, paired_end, log_path, assay_suf
                 "STAR_alignment", 
                 "all", 
                 "check_star_output_existence", 
-                "RED", 
+                "HALT", 
                 f"Missing {len(missing_dataset_files)} expected dataset-level STAR output files", 
                 ",".join(missing_dataset_files)
             )
@@ -272,7 +283,7 @@ def check_bam_file_integrity(outdir, samples, log_path):
                 "STAR_alignment", 
                 sample, 
                 "check_bam_file_integrity", 
-                "RED", 
+                "HALT", 
                 f"{len(failed_bams)} BAM files failed integrity check", 
                 ",".join(failed_bams)
             )
@@ -304,7 +315,7 @@ def get_star_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
             "STAR_alignment", 
             "all", 
             "get_star_multiqc_stats", 
-            "RED", 
+            "HALT", 
             "STAR MultiQC data not found", 
             f"Expected at {multiqc_zip}"
         )
@@ -329,7 +340,7 @@ def get_star_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
                     "STAR_alignment", 
                     "all", 
                     "get_star_multiqc_stats", 
-                    "RED", 
+                    "HALT", 
                     "multiqc_data.json not found in MultiQC zip", 
                     f"Expected at {json_path}"
                 )
@@ -350,7 +361,7 @@ def get_star_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
                     "STAR_alignment", 
                     "all", 
                     "get_star_multiqc_stats", 
-                    "RED", 
+                    "HALT", 
                     "No general stats data in MultiQC data", 
                     ""
                 )
@@ -383,7 +394,7 @@ def get_star_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
                     "STAR_alignment", 
                     "all", 
                     "get_star_multiqc_stats", 
-                    "RED", 
+                    "HALT", 
                     "No STAR metrics found in MultiQC data", 
                     ""
                 )
@@ -432,7 +443,7 @@ def get_star_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
                 "STAR_alignment", 
                 "all", 
                 "get_star_multiqc_stats", 
-                "RED", 
+                "HALT", 
                 f"Error extracting STAR stats: {str(e)}", 
                 ""
             )
@@ -448,7 +459,7 @@ def report_star_alignment_outliers(outdir, star_data, log_path):
             "STAR_alignment", 
             "all", 
             "report_star_alignment_outliers", 
-            "RED", 
+            "HALT", 
             "No STAR data to analyze for outliers", 
             ""
         )
@@ -566,7 +577,7 @@ def check_mapping_rates(outdir, star_data, log_path):
             "STAR_alignment", 
             "all", 
             "check_mapping_rates", 
-            "RED", 
+            "HALT", 
             "No STAR data to analyze mapping rates", 
             ""
         )

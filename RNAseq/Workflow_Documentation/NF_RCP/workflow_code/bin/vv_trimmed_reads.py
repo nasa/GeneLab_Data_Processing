@@ -93,9 +93,9 @@ def initialize_vv_log(outdir):
     
     # Check if file exists
     if not os.path.exists(vv_log_path):
-        # Create new file with header
+        # Create new file with header - both status (color) and flag_code (number)
         with open(vv_log_path, 'w') as f:
-            f.write("component,sample_id,check_name,status,message,details\n")
+            f.write("component,sample_id,check_name,status,flag_code,message,details\n")
     
     return vv_log_path
 
@@ -104,7 +104,8 @@ def log_check_result(log_path, component, sample_id, check_name, status, message
     # Properly escape and format fields for CSV
     def escape_field(field, is_details=False):
         # Convert to string if not already
-        field = str(field)
+        if not isinstance(field, str):
+            field = str(field)
         
         # Replace newlines with semicolons to keep CSV valid
         field = field.replace('\n', '; ')
@@ -125,6 +126,17 @@ def log_check_result(log_path, component, sample_id, check_name, status, message
             field = f'"{field}"'
         return field
     
+    # Map status (color) to flag_code (number)
+    flag_codes = {
+        "GREEN": "20",   # Using strings for consistency in CSV
+        "YELLOW": "30",
+        "RED": "50",
+        "HALT": "80"
+    }
+
+    # Get numeric flag code based on status color
+    flag_code = flag_codes.get(status, "80")  # Default to HALT if unknown status
+    
     # Format all fields
     component = escape_field(component)
     sample_id = escape_field(sample_id)
@@ -135,7 +147,7 @@ def log_check_result(log_path, component, sample_id, check_name, status, message
     
     # Write the formatted line
     with open(log_path, 'a') as f:
-        f.write(f"{component},{sample_id},{check_name},{status},{message},{details}\n")
+        f.write(f"{component},{sample_id},{check_name},{status},{flag_code},{message},{details}\n")
 
 def check_trimmed_fastq_existence(outdir, samples, paired_end, log_path):
     """Check if the expected trimmed FASTQ files exist for each sample."""

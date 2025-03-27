@@ -86,43 +86,57 @@ def initialize_vv_log(outdir):
     
     # Check if file exists
     if not os.path.exists(vv_log_path):
-        # Create new file with header
+        # Create new file with header - both status (color) and flag_code (number)
         with open(vv_log_path, 'w') as f:
-            f.write("component,sample_id,check_name,status,message,details\n")
+            f.write("component,sample_id,check_name,status,flag_code,message,details\n")
     
     return vv_log_path
 
 
 def log_check_result(log_path, component, sample_id, check_name, status, message="", details=""):
     """Log check result to the VV_log.csv file."""
-    
     def escape_field(field, is_details=False):
         # Convert to string if not already
         if not isinstance(field, str):
             field = str(field)
         
-        # Replace commas with semicolons to avoid CSV quoting
-        field = field.replace(',', ';')
+        # Replace newlines with semicolons to keep CSV valid
+        field = field.replace('\n', '; ')
         
-        # Remove any quotes to prevent issues with CSV format
-        field = field.replace('"', '')
-        field = field.replace("'", "")
+        # For details field, replace commas with semicolons to avoid CSV quoting
+        if is_details and ',' in field:
+            field = field.replace(', ', '; ')
         
-        # If it's the details field, truncate to 1000 chars if too long
-        if is_details and len(field) > 1000:
-            field = field[:997] + "..."
-        
+        # If the field contains commas or quotes (but not just semicolons), wrap it in quotes
+        if ',' in field or '"' in field:
+            # Double any quotes within the field
+            field = field.replace('"', '""')
+            # Wrap in quotes
+            field = f'"{field}"'
         return field
+
+    # Map status (color) to flag_code (number)
+    flag_codes = {
+        "GREEN": "20",   # Using strings for consistency in CSV
+        "YELLOW": "30",
+        "RED": "50",
+        "HALT": "80"
+    }
+
+    # Get numeric flag code based on status color
+    flag_code = flag_codes.get(status, "80")  # Default to HALT if unknown status
     
+    # Format all fields
+    component = escape_field(component)
+    sample_id = escape_field(sample_id)
+    check_name = escape_field(check_name)
+    status = escape_field(status)  # The color (GREEN/YELLOW/RED/HALT)
+    message = escape_field(message)
+    details = escape_field(details, True)
+    
+    # Write both status (color) and flag_code (number)
     with open(log_path, 'a') as f:
-        component = escape_field(component)
-        sample_id = escape_field(sample_id)
-        check_name = escape_field(check_name)
-        status = escape_field(status)
-        message = escape_field(message)
-        details = escape_field(details, is_details=True)
-        
-        f.write(f"{component},{sample_id},{check_name},{status},{message},{details}\n")
+        f.write(f"{component},{sample_id},{check_name},{status},{flag_code},{message},{details}\n")
 
 
 def check_rsem_output_existence(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
@@ -179,7 +193,7 @@ def check_rsem_output_existence(outdir, samples, log_path, assay_suffix="_GLbulk
                 "RSEM_counts", 
                 sample, 
                 "check_rsem_output_existence", 
-                "RED", 
+                "HALT", 
                 f"Missing {len(missing_files)} expected RSEM output files", 
                 ",".join(missing_files)
             )
@@ -191,7 +205,7 @@ def check_rsem_output_existence(outdir, samples, log_path, assay_suffix="_GLbulk
                 "RSEM_counts", 
                 "all", 
                 "check_rsem_output_existence", 
-                "RED", 
+                "HALT", 
                 f"Missing {len(missing_dataset_files)} expected dataset-level RSEM output files", 
                 ",".join(missing_dataset_files)
             )
@@ -266,7 +280,7 @@ def get_rsem_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
             "RSEM_counts", 
             "all", 
             "get_rsem_multiqc_stats", 
-            "RED", 
+            "HALT", 
             "RSEM MultiQC data not found", 
             f"Expected at {multiqc_zip}"
         )
@@ -291,7 +305,7 @@ def get_rsem_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
                     "RSEM_counts", 
                     "all", 
                     "get_rsem_multiqc_stats", 
-                    "RED", 
+                    "HALT", 
                     "multiqc_data.json not found in MultiQC zip", 
                     f"Expected at {json_path}"
                 )
@@ -500,7 +514,7 @@ def check_all_samples_in_multiqc(outdir, samples, log_path, assay_suffix="_GLbul
             "RSEM_counts", 
             "all", 
             "check_all_samples_in_multiqc", 
-            "RED", 
+            "HALT", 
             "RSEM MultiQC data not found", 
             f"Expected at {multiqc_zip}"
         )
@@ -526,7 +540,7 @@ def check_all_samples_in_multiqc(outdir, samples, log_path, assay_suffix="_GLbul
                     "RSEM_counts", 
                     "all", 
                     "check_all_samples_in_multiqc", 
-                    "RED", 
+                    "HALT", 
                     "multiqc_sources.txt not found in MultiQC zip", 
                     f"Expected at {sources_file}"
                 )

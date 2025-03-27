@@ -51,7 +51,7 @@ include { VV_RAW_READS;
     VV_STAR_ALIGNMENT;
     VV_RSEQC;
     VV_RSEM_COUNTS;
-    VV_DGE_DESEQ2 } from '../modules/vv.nf'
+    VV_CONCAT_FILTER } from '../modules/vv.nf'
 include { SOFTWARE_VERSIONS } from '../modules/software_versions.nf'
 include { GENERATE_PROTOCOL } from '../modules/generate_protocol.nf'
 
@@ -353,6 +353,13 @@ workflow RNASEQ {
             DGE_DESEQ2_RRNA_RM.out.contrasts,
             ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
         )
+        VV_CONCAT_FILTER( ch_outdir,
+            VV_RAW_READS.out.log | mix( VV_TRIMMED_READS.out.log, // Concatenate and filter V&V logs
+                                                    VV_STAR_ALIGNMENT.out.log,
+                                                    VV_RSEQC.out.log,
+                                                    VV_RSEM_COUNTS.out.log,
+                                                    VV_DGE_DESEQ2.out.log,
+                                                    ) | collect )
 
         // Software Version Capturing
         nf_version = '"NEXTFLOW":\n    nextflow: '.concat("${nextflow.version}\n")

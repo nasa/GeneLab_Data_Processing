@@ -99,7 +99,7 @@ process VV_BOWTIE2_ALIGNMENT {
   publishDir "${ publishdir }",
     pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
+    saveAs: { "VV_Logs/VV_log_ALIGNMENT${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
     pattern: '02-Bowtie2_Alignment/**',
@@ -204,7 +204,7 @@ process VV_FEATURECOUNTS {
   publishDir "${ publishdir }",
     pattern: "VV_log.csv",
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
+    saveAs: { "VV_Logs/VV_log_COUNTS${ params.assay_suffix }.csv" }
   publishDir "${ publishdir }",
     pattern: '03-FeatureCounts/**',
     mode: params.publish_dir_mode
@@ -242,7 +242,7 @@ process VV_DGE_DESEQ2 {
   publishDir "${ publishdir }",
     pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
+    saveAs: { "VV_Logs/VV_log_DESEQ2_ANALYSIS${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
     pattern: '{04-*,05-*}',
@@ -287,7 +287,7 @@ process VV_STAR_ALIGNMENT {
   publishDir "${ publishdir }",
     pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
+    saveAs: { "VV_Logs/VV_log_ALIGNMENT${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
     pattern: '02-STAR_Alignment/**',
@@ -327,7 +327,7 @@ process VV_RSEM_COUNTS {
   publishDir "${ publishdir }",
     pattern:  "VV_log.csv" ,
     mode: params.publish_dir_mode,
-    saveAs: { "VV_Logs/VV_log_${ task.process.tokenize(':').last() }${ params.assay_suffix }.csv" }
+    saveAs: { "VV_Logs/VV_log_COUNTS${ params.assay_suffix }.csv" }
   // V&V'ed data publishing
   publishDir "${ publishdir }",
     pattern: '03-RSEM_Counts/**',
@@ -419,20 +419,21 @@ process VV_DESEQ2_ANALYSIS {
 }
 
 process VV_CONCAT_FILTER {
-  publishDir "${ params.outputDir }/${ params.gldsAccession }/VV_Logs",
+  publishDir "${publishdir}/VV_Logs",
     mode: params.publish_dir_mode
 
   label 'VV'
 
   input:
+    val(publishdir)
     path("VV_in.csv")
 
   output:
-    tuple path("VV_log_final_GLbulkRNAseq.csv"), path("VV_log_final_only_issues_GLbulkRNAseq.csv")
+    tuple path("VV_log_final${params.assay_suffix}.csv"), path("VV_log_final_only_issues${params.assay_suffix}.csv")
 
   script:
     """
     concat_logs.py
-    filter_to_only_issues.py
+    filter_to_only_issues.py --assay_suffix ${params.assay_suffix}
     """
 }
