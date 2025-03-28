@@ -37,6 +37,7 @@ import glob
 import pandas as pd
 import shutil
 import tempfile
+import json
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Extract RNA-Seq assay table from ISA.zip')
@@ -311,6 +312,175 @@ def extract_and_find_assay(outdir, glds_accession):
         print(f"Using RNA-Seq assay file: {assay_path}")
         # Return both the dataframe and the filename
         return pd.read_csv(assay_path, sep='\t'), matched_file
+
+def add_read_counts(df, outdir, glds_accession, assay_suffix, runsheet_df=None):
+    """Add the read counts column to the dataframe.
+    
+    Args:
+        df: The assay table dataframe
+        outdir: The output directory
+        glds_accession: The GLDS accession number
+        assay_suffix: The assay suffix for MultiQC report files
+        runsheet_df: Optional runsheet dataframe with sample information
+        
+    Returns:
+        The modified dataframe
+    """
+    column_name = "Parameter Value[Read Count]"
+    
+    # Determine if paired-end from runsheet
+    is_paired_end = is_paired_end_data(runsheet_df)
+    print(f"Data is {'paired-end' if is_paired_end else 'single-end'} based on runsheet")
+    
+    # Path to raw MultiQC data zip
+    fastqc_dir = os.path.join(outdir, "00-RawData", "FastQC_Reports")
+    multiqc_data_zip = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}_data.zip")
+    
+    if not os.path.exists(multiqc_data_zip):
+        print(f"WARNING: MultiQC data zip file not found at {multiqc_data_zip}")
+        # If zip not found, just add placeholder values
+        df[column_name] = "N/A"
+        column_changes.append(f"Added: {column_name} (with placeholder values)")
+        return df
+    
+    print(f"Found MultiQC data zip: {multiqc_data_zip}")
+    
+    # Find the sample name column in the assay table
+    sample_col = next((col for col in df.columns if 'Sample Name' in col), None)
+    if not sample_col:
+        print("Warning: Could not find Sample Name column in assay table")
+        # If no sample column, just add placeholder values
+        df[column_name] = "N/A"
+        column_changes.append(f"Added: {column_name} (with placeholder values)")
+        return df
+    
+    # Get sample names from assay table
+    assay_sample_names = df[sample_col].tolist()
+    
+    # Get read counts from MultiQC data
+    read_counts = {}
+    
+    # Create a temporary directory to extract files
+    with tempfile.TemporaryDirectory() as temp_dir:
+        try:
+            # Extract the zip file
+            with zipfile.ZipFile(multiqc_data_zip, 'r') as zip_ref:
+                zip_ref.extractall(temp_dir)
+            
+            # Expected path to the JSON file in the extracted data directory
+            expected_dir = f"raw_multiqc{assay_suffix}_data"
+            json_path = os.path.join(temp_dir, expected_dir, "multiqc_data.json")
+            
+            # Check if JSON file exists in the expected location
+            if not os.path.exists(json_path):
+                # Fallback: try to find it elsewhere
+                print(f"JSON not found at expected path: {json_path}, searching elsewhere...")
+                
+                # Try directly in the temp directory
+                direct_path = os.path.join(temp_dir, "multiqc_data.json")
+                if os.path.exists(direct_path):
+                    json_path = direct_path
+                else:
+                    # Search all subdirectories
+                    for root, dirs, files in os.walk(temp_dir):
+                        if "multiqc_data.json" in files:
+                            json_path = os.path.join(root, "multiqc_data.json")
+                            print(f"Found JSON at: {json_path}")
+                            break
+            
+            if not os.path.exists(json_path):
+                print(f"ERROR: Could not find multiqc_data.json in the extracted zip")
+                # Add placeholder values
+                df[column_name] = "N/A"
+                column_changes.append(f"Added: {column_name} (with placeholder values)")
+                return df
+            
+            print(f"Using MultiQC data from: {json_path}")
+            
+            # Parse the MultiQC JSON
+            with open(json_path, 'r') as f:
+                multiqc_data = json.load(f)
+            
+            # First, try to extract directly from report_general_stats_data
+            if 'report_general_stats_data' in multiqc_data and multiqc_data['report_general_stats_data']:
+                stats_module = multiqc_data['report_general_stats_data'][0]  # Use first module
+                print("Extracting read counts directly from report_general_stats_data")
+                
+                for sample_name, sample_data in stats_module.items():
+                    if 'total_sequences' in sample_data:
+                        read_count = int(sample_data['total_sequences'])
+                        print(f"Found count for {sample_name}: {read_count}")
+                        read_counts[sample_name] = read_count
+            
+            # Fallback to FastQC module specific extraction if needed
+            elif ('report_data_sources' in multiqc_data and 
+                'FastQC' in multiqc_data['report_data_sources']):
+                
+                # Find the index for FastQC in the general stats data
+                fastqc_index = None
+                for i, module_data in enumerate(multiqc_data.get('report_general_stats_data', [])):
+                    if module_data and any('total_sequences' in sample_data for sample_data in module_data.values()):
+                        fastqc_index = i
+                        break
+                
+                if fastqc_index is not None:
+                    fastqc_stats = multiqc_data['report_general_stats_data'][fastqc_index]
+                    
+                    # Process each sample to extract read counts
+                    for sample_name, sample_data in fastqc_stats.items():
+                        if 'total_sequences' in sample_data:
+                            read_count = int(sample_data['total_sequences'])
+                            print(f"Found count for {sample_name}: {read_count}")
+                            read_counts[sample_name] = read_count
+            
+            if not read_counts:
+                print("WARNING: Could not extract any read counts from MultiQC data")
+                
+            # Debug output to show read counts found
+            print(f"Successfully extracted {len(read_counts)} read counts:")
+            for sample_name, count in read_counts.items():
+                print(f"  - {sample_name}: {count}")
+                
+        except Exception as e:
+            print(f"Error extracting read counts from MultiQC data: {str(e)}")
+            # If error occurs, add placeholder values
+            df[column_name] = "N/A"
+            column_changes.append(f"Added: {column_name} (with placeholder values)")
+            return df
+    
+    # Debug output to show sample names in assay table
+    print("Sample names in assay table:")
+    for sample_name in assay_sample_names:
+        print(f"  - {sample_name}")
+    
+    # Generate read count values for each sample in the assay table
+    values = []
+    for assay_sample in assay_sample_names:
+        print(f"Looking for read count for sample: {assay_sample}")
+        
+        # Try direct match first
+        if assay_sample in read_counts:
+            print(f"Direct match found for {assay_sample}")
+            values.append(str(read_counts[assay_sample]))
+        else:
+            # Try a more flexible match if direct match fails
+            found_match = False
+            for mqc_sample, count in read_counts.items():
+                # Check if assay sample name is contained in MultiQC sample name or vice versa
+                if assay_sample in mqc_sample or mqc_sample in assay_sample:
+                    values.append(str(count))
+                    found_match = True
+                    print(f"Flexible match found: {assay_sample} -> {mqc_sample} = {count}")
+                    break
+            
+            if not found_match:
+                print(f"WARNING: No read count found for sample {assay_sample}")
+                values.append("N/A")
+    
+    # Add the column to the dataframe
+    df = update_column(df, column_name, values)
+    
+    return df
 
 def add_parameter_column(df, column_name, value, prefix=None):
     """Add a parameter column to the dataframe if it doesn't exist already.
@@ -971,6 +1141,9 @@ def main():
         ercc_used = has_ercc_spikes(runsheet_df)
         
         # Following the original star workflow order:
+        
+        # 0. Add read counts from MultiQC report (new)
+        assay_df = add_read_counts(assay_df, args.outdir, args.glds_accession, args.assay_suffix, runsheet_df)
         
         # 1. Trimmed Sequence Data column
         assay_df = add_trimmed_data_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
