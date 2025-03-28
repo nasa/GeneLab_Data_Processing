@@ -12,9 +12,19 @@ The current GeneLab RNAseq consensus processing pipeline (RCP) for eukaryotic or
 
 - **Click image to expand**
 
+<details open>
+<summary>NF_RCP workflow for GL-DPPD-7101-G (Eukaryotes)</summary>
 <p align="center">
-<a href="../../images/NF_RCP_metro_map_sections.png"><img src="../../images/NF_RCP_metro_map_sections.png"></a>
+<a href="../../images/NF_RCP_euk_wf_diagram.png"><img src="../../images/NF_RCP_euk_wf_diagram.png"></a>
 </p>
+</details>
+
+<details>
+<summary>NF_RCP workflow for GL-DPPD-7115 (Prokaryotes)</summary>
+<p align="center">
+<a href="../../images/NF_RCP_prok_wf_diagram.png"><img src="../../images/NF_RCP_prok_wf_diagram.png"></a>
+</p>
+</details>
 
 ---
 The NF_RCP workflow is composed of three subworkflows as shown in the image above.
