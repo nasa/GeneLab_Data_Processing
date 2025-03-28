@@ -13,7 +13,7 @@ The current GeneLab RNAseq consensus processing pipeline (RCP) for eukaryotic or
 - **Click image to expand**
 
 <p align="center">
-<a href="../../images/NF_RCP_metro_map_sections.svg"><img src="../../images/NF_RCP_metro_map_sections.png"></a>
+<a href="../../images/NF_RCP_metro_map_sections.png"><img src="../../images/NF_RCP_metro_map_sections.png"></a>
 </p>
 
 ---
