@@ -4,7 +4,7 @@
 
 ### Implementation Tools <!-- omit in toc -->
 
-The current GeneLab RNAseq consensus processing pipeline (RCP) for eukaryotic organisms, [GL-DPPD-7101-G](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md) and the GeneLab RNAseq consensus pipeline [GL-DPPD-7115](../../Pipeline_GL-DPPD-7115_Versions/GL-DPPD-7115.md), are implemented as a single [Nextflow](https://nextflow.io/) DSL2 workflow that utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) to run all tools in containers. This workflow (NF_RCP) is run using the command line interface (CLI) of any unix-based system. While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow.   
+The current GeneLab RNAseq consensus processing pipeline (RCP) for eukaryotic organisms ([GL-DPPD-7101-G](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md)) and prokaryotic organisms ([GL-DPPD-7115](../../Pipeline_GL-DPPD-7115_Versions/GL-DPPD-7115.md)) are implemented as a single [Nextflow](https://nextflow.io/) DSL2 workflow that utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) to run all tools in containers. This workflow (NF_RCP) is run using the command line interface (CLI) of any unix-based system. While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow.   
 
 ### Workflow & Subworkflows <!-- omit in toc -->
 
@@ -28,14 +28,13 @@ The current GeneLab RNAseq consensus processing pipeline (RCP) for eukaryotic or
 
 ---
 The NF_RCP workflow is composed of three subworkflows as shown in the image above.
-Below is a description of each subworkflow and the additional output files generated that are not already indicated in the [GL-DPPD-7101-G pipeline 
-document](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md):
+Below is a description of each subworkflow and the additional output files generated that are not already indicated in the [GL-DPPD-7101-G](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md) and [GL-DPPD-7115](../../Pipeline_GL-DPPD-7115_Versions/GL-DPPD-7115.md) pipeline documents:
 
 1. **Analysis Staging Subworkflow**
 
    - Description:
      - This subworkflow extracts the metadata parameters (e.g. organism, library layout) needed for processing from the OSD/GLDS ISA archive and retrieves the raw reads files hosted on the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
-       > *OSD/GLDS ISA archive*: ISA directory containing Investigation, Study, and Assay (ISA) metadata files for a respective GLDS dataset - the *ISA.zip file is located in the [OSDR](https://osdr.nasa.gov/bio/repo/) under 'Files' -> 'Study Metadata Files' for any GeneLab Data Set (GLDS) in the OSDR.
+       > *OSD/GLDS ISA archive*: ISA directory containing Investigation, Study, and Assay (ISA) metadata files for a respective GLDS dataset - the *ISA.zip file is located under 'Files' -> 'Study Metadata Files' for any GeneLab Data Set (GLDS) in the [OSDR](https://osdr.nasa.gov/bio/repo/).
 
 2. **RNAseq Consensus Pipeline Subworkflow**
 
@@ -71,10 +70,9 @@ document](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md):
 2. [Download the Workflow Files](#2-download-the-workflow-files)  
 3. [Fetch Singularity Images](#3-fetch-singularity-images)  
 4. [Run the Workflow](#4-run-the-workflow)  
-   4a. [Approach 1: Run the workflow on a GeneLab RNAseq dataset with automatic retrieval of Ensembl reference fasta and gtf files](#4a-approach-1-run-the-workflow-on-a-genelab-rnaseq-dataset-with-automatic-retrieval-of-ensembl-reference-fasta-and-gtf-files)  
-   4b. [Approach 2: Run the workflow on a GeneLab RNAseq dataset using local Ensembl reference fasta and gtf files](#4b-approach-2-run-the-workflow-on-a-genelab-rnaseq-dataset-using-local-reference-fasta-and-gtf-files)  
-   4c. [Approach 3: Run the workflow on a non-GLDS dataset using a user-created runsheet](#4c-approach-3-run-the-workflow-on-a-non-glds-dataset-using-a-user-created-runsheet)  
-   4d. [Approach 4: Run the workflow on a GeneLab prokaryotic RNAseq dataset](#4d-approach-4-run-the-workflow-on-a-genelab-prokaryotic-rnaseq-dataset)  
+   4a. [Approach 1: Run the workflow on a GeneLab RNAseq dataset with automatic retrieval of reference fasta and gtf files](#4a-approach-1-run-the-workflow-on-a-genelab-rnaseq-dataset-with-automatic-retrieval-of-reference-fasta-and-gtf-files)  
+   4b. [Approach 2: Run the workflow on a GeneLab RNAseq dataset using local reference fasta and gtf files](#4b-approach-2-run-the-workflow-on-a-genelab-rnaseq-dataset-using-local-reference-fasta-and-gtf-files)  
+   4c. [Approach 3: Run the workflow on a non-GeneLab dataset using a user-created runsheet](#4c-approach-3-run-the-workflow-on-a-non-genelab-dataset-using-a-user-created-runsheet)  
 5. [Additional Output Files](#5-additional-output-files)  
 
 <br>
@@ -150,17 +148,19 @@ export NXF_SINGULARITY_CACHEDIR=$(pwd)/singularity
 ### 4. Run the Workflow
 
 While in the location containing the `NF_RCP_2.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are four examples of how to run the NF_RCP workflow:
-> Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --ensemblVersion) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
+> Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --reference_version) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
 
 <br>
 
-#### 4a. Approach 1: Run the workflow on a GeneLab RNAseq dataset with automatic retrieval of Ensembl reference fasta and gtf files
+#### 4a. Approach 1: Run the workflow on a GeneLab RNAseq dataset with automatic retrieval of reference fasta and gtf files
 
 ```bash
 nextflow run NF_RCP_2.0.0/main.nf \ 
    -profile singularity \
    --accession OSD-194 
 ```
+
+> Note: For prokaryotic RNAseq datasets, add the parameter `--mode microbes` to run the workflow using the prokaryotic pipeline ([GL-DPPD-7115](../../Pipeline_GL-DPPD-7115_Versions/GL-DPPD-7115.md)). The default value of this parameter is `default`, which will use the eukaryotic pipeline ([GL-DPPD-7101-G](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md)).
 
 <br>
 
@@ -172,7 +172,7 @@ nextflow run NF_RCP_2.0.0/main.nf \
 nextflow run NF_RCP_2.0.0/main.nf \ 
    -profile singularity \
    --accession OSD-194 \
-   --reference_version 107 \
+   --reference_version 112 \
    --reference_source ensembl \ 
    --reference_fasta </path/to/fasta> \ 
    --reference_gtf </path/to/gtf> 
@@ -180,7 +180,7 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 <br>
 
-#### 4c. Approach 3: Run the workflow on a non-OSD dataset using a user-created runsheet
+#### 4c. Approach 3: Run the workflow on a non-GeneLab dataset using a user-created runsheet
 
 > Note: Specifications for creating a runsheet manually are described [here](examples/runsheet/README.md).
 
@@ -192,30 +192,25 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 <br>
 
-#### 4d. Approach 4: Run the workflow on a GeneLab prokaryotic RNAseq dataset
-
-```bash
-nextflow run NF_RCP_2.0.0/main.nf \ 
-   -profile singularity \
-   --mode microbes \
-   --accession OSD-185
-```
-
-<br>
-
 **Required Parameters For All Approaches:**
 
 * `NF_RCP_2.0.0/main.nf` - Instructs Nextflow to run the NF_RCP workflow 
 
 * `-profile` - Specifies the configuration profile(s) to load, `singularity` instructs Nextflow to setup and use singularity for all software called in the workflow
-  > Note: The output directory will be named `GLDS-#` when using a OSDR or GLDS accession as input, or `results` when running the workflow with only a runsheet as input.
+  > Note: The output directory will be named `GLDS-#` when using a OSD or GLDS accession as input, or `results` when running the workflow with only a runsheet as input.
 
 
 <br>
 
-**Additional Required Parameters For [Approach 2](#4b-approach-2-run-the-workflow-on-a-genelab-rnaseq-dataset-using-local-ensembl-reference-fasta-and-gtf-files):**
+**Additional Required Parameters For [Approach 1](#4a-approach-1-run-the-workflow-on-a-genelab-rnaseq-dataset-with-automatic-retrieval-of-reference-fasta-and-gtf-files):**
 
-* `--reference_version` - specifies the Ensembl version to use for the reference genome (Ensembl release `107` is used in this example); only needed when using Ensembl as the reference source
+* `--accession` - The OSD or GLDS ID for the dataset to be processed, eg. `GLDS-194` or `OSD-194`
+
+<br>
+
+**Additional Required Parameters For [Approach 2](#4b-approach-2-run-the-workflow-on-a-genelab-rnaseq-dataset-using-local-reference-fasta-and-gtf-files):**
+
+* `--reference_version` - specifies the reference source version to use for the reference genome (Ensembl release `112` is used in this example); only needed when using Ensembl as the reference source
 
 * `--reference_source` - specifies the source of the reference files used (the source indicated in the Approach 2 example is `ensembl`) 
 
@@ -235,12 +230,12 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 * `--force_single_end` - forces the analysis to use single end processing; for paired end datasets, this means only R1 is used; for single end datasets, this should have no effect  
 
-* `--reference_store_path` - specifies the directory to store the Ensembl fasta and gtf files (Default: within the directory structure created by default in the launch directory)  
+* `--reference_store_path` - specifies the directory to store the reference fasta and gtf files (Default: within the directory structure created by default in the launch directory)  
 
-* `--derived_store_path` - specifies the directory to store the tool-specific indices created during processing (Default: within the directory structure created by default in the launch directory) 
+* `--derived_store_path` - specifies the directory to store the tool-specific indices created during processing (Default: within the directory structure created by default in the launch directory) `
 
-* `--runsheet_path` - specifies the path to a local runsheet (Default: a runsheet is automatically generated using the metadata on the GeneLab Repository for the OSD dataset being processed)
-  > This is required when prcessing a non-OSD dataset as indicated in [Approach 3 above](#4c-approach-3-run-the-workflow-on-a-non-glds-dataset-using-a-user-created-runsheet)
+* `--runsheet_path` - specifies the path to a local runsheet (Default: a runsheet is automatically generated using the metadata on the OSDR for the dataset being processed)
+  > This is required when prcessing a non-OSDR dataset as indicated in [Approach 3 above](#4c-approach-3-run-the-workflow-on-a-non-genelab-dataset-using-a-user-created-runsheet)
 
 * `--mode` - specifies which pipeline to use: set to `default` to run GL-DPPD-7101-G pipeline or set to `microbes` for the GL-DPPD-7115 prokaryotic pipeline (Default value: `default`)
   > This allows the workflow to process either eukaryotic (default) or prokaryotic RNAseq data using the appropriate pipeline
