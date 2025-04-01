@@ -26,10 +26,19 @@ process PARSE_ANNOTATIONS_TABLE {
     def organisms = [:]
     println "${colorCodes.c_yellow}Fetching table from ${annotations_csv_url_string}${colorCodes.c_reset}"
     
-    // download data to memory
-    annotations_csv_url_string.toURL().splitEachLine(",") {fields ->
-          organisms[fields[1]] = fields
+    // Check if input is a URL or a local file path
+    if (annotations_csv_url_string.startsWith('http://') || annotations_csv_url_string.startsWith('https://')) {
+      // For URLs: use toURL() method
+      annotations_csv_url_string.toURL().splitEachLine(",") {fields ->
+            organisms[fields[1]] = fields
+      }
+    } else {
+      // For local files: use File class
+      new File(annotations_csv_url_string).splitEachLine(",") {fields ->
+            organisms[fields[1]] = fields
+      }
     }
+    
     // extract required fields
     organism_key = organism_sci.capitalize().replace("_"," ")
     fasta_url = organisms[organism_key][5]

@@ -75,7 +75,9 @@ Staging:
             Sample name is used as a unique sample identifier during processing
           Example: Atha_Col-0_Root_WT_Ctrl_45min_Rep1_GSM502538
 
-        - ISA Field Name: Label
+        - ISA Field Name:
+            - Label
+            - Parameter Value[label]
           ISA Table Source: Sample
           Runsheet Column Name: Label
           Processing Usage: >-

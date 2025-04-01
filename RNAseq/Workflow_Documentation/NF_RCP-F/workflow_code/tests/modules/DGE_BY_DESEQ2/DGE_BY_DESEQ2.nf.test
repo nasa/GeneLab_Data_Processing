@@ -1,0 +1,71 @@
+nextflow_process {
+
+    name "Test Process DGE_BY_DESEQ2"
+    script "modules/DGE_BY_DESEQ2/main.nf"
+    process "DGE_BY_DESEQ2"
+    
+    test("GLDS-194") {
+        tag 'DGE_BY_DESEQ2'
+
+        when {
+            params {
+                // define parameters here. Example:
+                use_dummy_gene_counts = true
+            }
+            process {
+                """
+                // define inputs of the process here. Example:
+                input[0] = file("test-datasets/testdata/GLDS-194/Metadata/GLDS-194_bulkRNASeq_v1_runsheet.csv")
+                input[1] = file("test-datasets/testdata/GLDS-194/03-RSEM_Counts/*.genes.results")
+                input[2] = [ primary_keytype:'ENSEMBL', has_ercc:true ]
+                input[3] = file("https://figshare.com/ndownloader/files/36597114")
+                input[4] = file("${ baseDir }/bin/dge_annotation_R_scripts.zip")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(
+                process.out.summary,
+                process.out.norm_counts,
+                process.out.summary_ercc,
+                process.out.norm_counts_ercc,
+                process.out.version
+            ).match()
+        }
+
+    }
+
+    test("GLDS-321:55_.ISSUE") {
+        tag 'DGE_BY_DESEQ2'
+
+        when {
+            params {
+                // define parameters here. Example:
+                use_dummy_gene_counts = true
+            }
+            process {
+                """
+                // define inputs of the process here. Example:
+                input[0] = file("test-datasets/testdata/GLDS-321/Metadata/GLDS-321_bulkRNASeq_v1_runsheet.csv")
+                input[1] = file("test-datasets/testdata/GLDS-321/03-RSEM_Counts/*.genes.results")
+                input[2] = [ primary_keytype:'TAIR', has_ercc:false ]
+                input[3] = file("https://figshare.com/ndownloader/files/36597132")
+                input[4] = file("${ baseDir }/bin/dge_annotation_R_scripts.zip")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(
+                process.out.summary,
+                process.out.norm_counts,
+                process.out.version,
+            ).match()
+        }
+
+    }
+
+}

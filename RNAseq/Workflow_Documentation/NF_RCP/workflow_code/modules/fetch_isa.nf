@@ -14,6 +14,6 @@ process FETCH_ISA {
 
     script:
     """
-    python $projectDir/bin/fetch_isa.py --osd ${osd_accession} --outdir .
+    fetch_isa.py --osd ${osd_accession} --outdir .
     """
 }

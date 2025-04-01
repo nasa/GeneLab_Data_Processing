@@ -12,14 +12,48 @@ process DOWNLOAD_REFERENCES {
     val(gtf_url)
   
   output:
-    tuple path("{*.fa,*.fna}"), path("*.gtf")       , emit: reference_files
+    tuple path("{*.fa,*.fna}"), path("*.gtf"), emit: reference_files
 
   script:
   """
-  wget ${fasta_url}
-  gunzip *.gz
+  # Create temp directories for processing
+  mkdir -p temp_fasta temp_gtf
 
-  wget ${gtf_url}
-  gunzip *.gz
+  # Handle fasta file
+  if [[ "${fasta_url}" == http* ]]; then
+    cd temp_fasta
+    wget "${fasta_url}"
+    
+    # Handle decompression if needed
+    if ls *.gz &> /dev/null; then
+      gunzip *.gz
+    fi
+    # Move processed files to main directory
+    mv *.fa *.fna ../ 2>/dev/null || true
+    cd ..
+  else
+    # It's a file path - just copy it directly to main directory
+    cp "${fasta_url}" ./
+  fi
+
+  # Handle gtf file
+  if [[ "${gtf_url}" == http* ]]; then
+    cd temp_gtf
+    wget "${gtf_url}"
+    
+    # Handle decompression if needed
+    if ls *.gz &> /dev/null; then
+      gunzip *.gz
+    fi
+    # Move processed files to main directory
+    mv *.gtf ../ 2>/dev/null || true
+    cd ..
+  else
+    # It's a file path - just copy it directly to main directory
+    cp "${gtf_url}" ./
+  fi
+
+  # Clean up temp directories
+  rm -rf temp_fasta temp_gtf
   """
 }

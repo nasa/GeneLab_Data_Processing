@@ -11,6 +11,7 @@ params:
     annotation_file_path: "" # path to the annotation file
     gene_id_type: "" # Denotes the name of the identifier column (e.g. ENSEMBL, TAIR)
     table_sep: "," # delimiter for input tables
+    output_filename_label: "" # prefix for output file names
     output_filename_suffix: "" # suffix for output file names
 ---
 
@@ -71,8 +72,7 @@ write.csv(
     df2, 
     row.names = FALSE, 
     file = file.path(params$output_directory, 
-        paste0("differential_expression", params$output_filename_suffix, ".csv")
-    )
+        paste0("differential_expression", params$output_filename_label, params$output_filename_suffix, ".csv"))
 )
 ```
 

@@ -14,7 +14,9 @@ process PARSE_QC_METRICS {
         path("qc_metrics${params.assay_suffix}.csv"), emit: file
 
     script:
+        def assay_suffix = params.assay_suffix ? "--assay_suffix ${params.assay_suffix}" : ""
+        def mode_param = params.mode ? "--mode ${params.mode}" : ""
         """
-        parse_multiqc.py --osd-num ${ osd_accession } ${ meta.paired_end ? '--paired' : '' }
+        parse_multiqc.py --osd-num ${ osd_accession } ${ assay_suffix } ${ meta.paired_end ? '--paired' : '' } ${ mode_param }
         """
 }

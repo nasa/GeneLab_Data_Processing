@@ -15,6 +15,6 @@ process GET_ACCESSIONS {
 
     script:
     """
-    python $projectDir/bin/get_accessions.py --accession "${accession}" --api_url "${api_url}" > accessions.txt
+    get_accessions.py --accession "${accession}" --api_url "${api_url}" > accessions.txt
     """
 }

@@ -10,17 +10,19 @@ def colorCodes = [
     c_reset: "\033[0m"
 ]
 
-// Command for: 'run main.nf --version'
+// Command for: 'nextflow run main.nf --version'
 if (params.version) {
-    println("${workflow.manifest.name} ${workflow.manifest.version}")
+    println """${workflow.manifest.name}
+Workflow Version: ${workflow.manifest.version}"""
     exit 0
 }
 
 // Print the pipeline version on start
 println """
-${colorCodes.c_bright_green}${colorCodes.c_line}
-${workflow.manifest.name} ${workflow.manifest.version}
-${colorCodes.c_line}${colorCodes.c_reset}
+${colorCodes.c_bright_green}
+${workflow.manifest.name}
+Workflow Version: ${workflow.manifest.version}
+${colorCodes.c_reset}
 """.stripIndent()
 
 // Debug warning
@@ -38,6 +40,11 @@ println("${colorCodes.c_reset}")
 
 include { RNASEQ } from './workflows/rnaseq.nf'
 include { RNASEQ_MICROBES } from './workflows/rnaseq_microbes.nf'
+include { STAGE_ANALYSIS } from './workflows/stage_analysis.nf'
+
+include { GENERATE_MD5SUMS } from './modules/generate_md5sums.nf'
+include { UPDATE_ASSAY_TABLE } from './modules/update_assay_table.nf'
+include { PUBLISH_STAGED_ANALYSIS } from './modules/publish_staged_analysis.nf'
 
 ch_dp_tools_plugin = params.dp_tools_plugin ? 
     Channel.value(file(params.dp_tools_plugin)) : 
@@ -107,4 +114,31 @@ workflow {
             ch_derived_store_path
         )
     }
+}
+
+// Workflow that only runs the initial staging steps:
+//  Get the runsheet and raw reads (with debug parameters applied if applicable) and publish them to the output directory
+workflow STAGE_ONLY {
+    main:
+        STAGE_ANALYSIS(
+            ch_outdir,
+            ch_dp_tools_plugin,
+            ch_accession,
+            ch_isa_archive,
+            ch_runsheet,
+            ch_api_url
+        )
+        PUBLISH_STAGED_ANALYSIS(
+            STAGE_ANALYSIS.out.ch_outdir,
+            STAGE_ANALYSIS.out.runsheet_path,
+            STAGE_ANALYSIS.out.raw_reads.map { it -> it[1] }.collect()
+        )
+}
+
+workflow POST_PROCESSING {
+  main:
+    ch_processed_directory = Channel.fromPath("${ params.outdir }/${ params.accession }", checkIfExists: true)
+    ch_runsheet = Channel.fromPath("${ params.outdir }/${ params.accession }/Metadata/*_runsheet.csv", checkIfExists: true)
+    UPDATE_ASSAY_TABLE(ch_processed_directory)
+    GENERATE_MD5SUMS(ch_processed_directory)
 }

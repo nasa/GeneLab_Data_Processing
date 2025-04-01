@@ -1,0 +1,3 @@
+DGE_BY_DESEQ2:
+  - RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/modules/DGE_BY_DESEQ2/**
+  - RNAseq/Workflow_Documentation/NF_RCP-F/workflow_code/tests/modules/DGE_BY_DESEQ2/**

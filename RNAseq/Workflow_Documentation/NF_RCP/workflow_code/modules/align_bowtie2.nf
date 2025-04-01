@@ -1,5 +1,9 @@
+/*
+    Aligns reads against Bowtie2 index, uses SAMtools to convert SAM to BAM
+    and filter out unmapped reads.
+*/
+
 process ALIGN_BOWTIE2 {
-  // Aligns reads against Bowtie2 index
   tag "Sample: ${ meta.id }"
 
   input:
@@ -7,28 +11,30 @@ process ALIGN_BOWTIE2 {
     path(bowtie2_index_dir)
 
   output:
-    tuple val(meta), path("${meta.id}.sam"), emit: sam
-    path("${ meta.id }.Unmapped.fastq*"), emit: unmapped_reads, optional: true
+    tuple val(meta), path("${meta.id}.bam"), emit: bam
+    path("${ meta.id }.unmapped.fastq*"), emit: unmapped_reads, optional: true
     path("${ meta.id }.bowtie2.log"), emit: alignment_logs
     path("versions.yml"), emit: versions
 
   script:
-    def unaligned = meta.paired_end ? "--un-conc-gz ${meta.id}.Unmapped.fastq.gz" : "--un-gz ${meta.id}.Unmapped.fastq.gz"
+    def unaligned = meta.paired_end ? "--un-conc-gz ${meta.id}.unmapped.fastq.gz" : "--un-gz ${meta.id}.unmapped.fastq.gz"
     def readArgs = meta.paired_end ? "-1 ${reads[0]} -2 ${reads[1]}" : "-U ${reads}"
 
     """
     INDEX=\$(find -L ${bowtie2_index_dir} -name "*.rev.1.bt2" | sed "s/\\.rev.1.bt2\$//")
 
     bowtie2 -x "\$INDEX" \\
+      -a \\
       ${readArgs} \\
       --threads ${task.cpus} \\
       --minins 10 \\
       --maxins 1000 \\
       ${unaligned} \\
-      -S ${meta.id}.sam \\
-      2> ${meta.id}.bowtie2.log
+      2> ${meta.id}.bowtie2.log | \\
+      samtools view -bS -F 4 --threads ${task.cpus} - > ${meta.id}.bam
 
     echo '"${task.process}":' > versions.yml
     echo "    bowtie2: \$(bowtie2 --version | head -n1 | awk '{print \$3}')" >> versions.yml
+    echo "    samtools: \$(samtools --version | head -n1 | awk '{print \$2}')" >> versions.yml
     """
 }

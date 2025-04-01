@@ -1,13 +1,18 @@
 process SOFTWARE_VERSIONS {
+    publishDir "${ch_outdir}/GeneLab",
+        mode: params.publish_dir_mode,
+        pattern: "software_versions${params.assay_suffix}.md"
+
     input:
-        path versions_file
+        val(ch_outdir)
+        path(versions_file)
     
     output:
-        path "software_versions_GLbulkRNAseq.md", emit: software_versions
-        path "software_versions_GLbulkRNAseq.yaml", emit: software_versions_yaml
+        path "software_versions${params.assay_suffix}.md", emit: software_versions
+        path "software_versions${params.assay_suffix}.yaml", emit: software_versions_yaml
 
     script:
     """
-    software_versions.py ${versions_file} software_versions_GLbulkRNAseq.md --assay rnaseq
+    software_versions.py ${versions_file} software_versions${params.assay_suffix}.md --assay rnaseq
     """
 }
