@@ -239,6 +239,8 @@ Standard nextflow resource usage logs are also produced as follows:
 
 ### 7. Post Processing
 
+> Please note that to run the post-processing workflow successfully, you MUST run the processing workflow above via the [launch.sh](workflow_code/launch.sh) script first. Please see the [script](workflow_code/launch.sh) for how to run it and make sure to edit the place holders before running it.
+
 For options and detailed help on how to run the post-processing workflow, run the following command:
 
 ```bash
