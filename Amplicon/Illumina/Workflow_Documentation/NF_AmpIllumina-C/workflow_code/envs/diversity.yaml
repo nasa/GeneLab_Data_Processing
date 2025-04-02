@@ -19,7 +19,10 @@ dependencies:
     - r-ggdendro=0.2.0
     - r-broom=1.0.7
     - r-dendextend=1.19.0
+    - r-hexbin=1.28.3
     - bioconductor-phyloseq=1.50.0
     - bioconductor-mia=1.14.0
     - bioconductor-ancombc=2.8.0
+    - bioconductor-deseq2=1.46.0
+    - bioconductor-vsn=3.74.0
     - bioconductor-deseq2=1.46.0

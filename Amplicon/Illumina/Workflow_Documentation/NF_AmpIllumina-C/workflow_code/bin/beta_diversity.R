@@ -153,6 +153,8 @@ library(RColorBrewer)
 library(broom)
 library(ggrepel)
 library(tidyverse)
+library(vsn)
+library(hexbin)
 
 
 
@@ -509,6 +511,28 @@ ps <- transform_phyloseq(feature_table, metadata,
 
 # Extract normalized count table
 count_tab <- otu_table(ps)
+
+# VSD validation check point
+if(normalization_method == "vst"){
+  
+  # visualize the sd vs the rank of the mean plot
+  # the red line should be flat meaning that vst of the samples
+  # accros ASVs was successful
+  mead_sd_plot <- meanSdPlot(t(count_tab))$gg + 
+    theme_bw() +
+    labs(title = "MEAN-SD VST validation Plot",
+         x="Rank Of Mean",
+         y="Standard Deviation") + 
+    theme(axis.text = element_text(face = "bold", size = 12),
+          axis.title = element_text(face = "bold", size = 14),
+          title = element_text(face = "bold", size = 14))
+  
+  # Save VSD validation plot
+  ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}vsd_validation_plot.png"),
+         plot = mead_sd_plot, width = 14, height = 10, dpi = 300, units = "in")
+}
+
+
 
 # Calculate distance between samples
 dist_obj <- vegdist(t(count_tab), method = distance_method)
