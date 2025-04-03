@@ -276,6 +276,46 @@ expandy <- function(vec, ymin=NULL) {
 }
 
 
+# Function to plot ASV sparsity
+plotSparsity <- function (x, normalized = TRUE, feature="ASV", ...) {
+  
+  # A modification of DESeq2::plotSparsity to generate a ggplot
+  # rather than a base R plot
+  # Please see DESeq2::plotSparsity for a complete description
+  
+  # x	- a matrix or DESeqDataSet
+  # normalized	whether to normalize the counts from a DESeqDataSEt. Default: TRUE
+  # feature a string specify which feature type ("ASV", "OTU", "gene"). Default: "ASV"
+  # ...	passed to ggplot
+  
+  
+  if (is(x, "DESeqDataSet")) {
+    x <- counts(x, normalized = normalized)
+  }
+  
+  rs <- MatrixGenerics::rowSums(x)
+  rmx <- apply(x, 1, max)
+
+  # Prepare plot dataframe
+  df <- data.frame(rs=rs, rmx=rmx) %>% 
+    mutate(x=rs, y=rmx/rs) %>% 
+    filter(x>0)
+    
+  # Plot
+  ggplot(data = df, aes(x=x, y=y), ...) +
+    geom_point(size=3) +
+    scale_x_log10() + 
+    scale_y_continuous(limits = c(0,1)) +
+    theme_bw() +
+    labs(title = glue("Concentration of {feature} counts over total sum of {feature} counts"),
+         x=glue("Sum of counts per {feature}"),
+         y=glue("Max {feature} count / Sum of {feature} counts")) + 
+    theme(axis.text = element_text(face = "bold", size = 12),
+          axis.title = element_text(face = "bold", size = 14),
+          title = element_text(face = "bold", size = 14))
+}
+
+
 
 # ------ Collecting the required input variables ---------- #
 
@@ -431,6 +471,12 @@ deseq_modeled <- tryCatch({
   DESeq(deseq_obj)
 })
 
+# Make ASV Sparsity plot
+sparsity_plot <- plotSparsity(deseq_modeled) 
+
+# Save VSD Sparsity plot
+ggsave(filename = glue("{diff_abund_out_dir}/{output_prefix}asv_sparsity_plot.png"),
+       plot = sparsity_plot, width = 14, height = 10, dpi = 300, units = "in")
 
 # Get unique group comparison as a matrix
 pairwise_comp.m <- utils::combn(metadata[,group] %>% unique, 2)
