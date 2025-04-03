@@ -145,7 +145,7 @@ profiles {{
     singularity {{
         singularity.enabled    = true
         singularity.autoMounts = true
-        // Uncomment to use to as the defaut cache directory location
+        // Uncomment to use to as the default cache directory location
         //singularity.cacheDir   = "{singularity_cacheDir}" // local location of singularity images
         params.containerEngine = "singularity"
     }}
