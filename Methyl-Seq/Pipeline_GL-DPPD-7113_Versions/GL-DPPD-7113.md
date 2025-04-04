@@ -87,6 +87,7 @@ Samrawit Gebre (OSDR Project Manager)
 |Bioconductor | 3.20   |[https://bioconductor.org](https://bioconductor.org)
 |methylKit    | 1.32.0 |[https://bioconductor.org/packages/release/bioc/html/methylKit.html](https://bioconductor.org/packages/release/bioc/html/methylKit.html)|
 |genomation   | 1.38.0 |[https://bioconductor.org/packages/release/bioc/html/genomation.html](https://bioconductor.org/packages/release/bioc/html/genomation.html)|
+|dp_tools     | 1.3.4  |[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 
 ---
 
