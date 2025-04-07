@@ -17,9 +17,9 @@ The current GeneLab Illumina amplicon sequencing data processing pipeline (AmpIl
 3. [Fetch Singularity Images](#3-fetch-singularity-images)  
 
 4. [Run the workflow directly with nextflow](#4-run-the-workflow-directly-with-nextflow)  
-   4a. [Approach 1: Run slurm jobs in singularity containers with OSD accession as input](#4a-approach-1-run-slurm-jobs-in-singularity-containers-with-osd-accession-as-input)   
+   4a. [Approach 1: Run slurm jobs in singularity containers with OSD accession as input](#4a-approach-1-run-slurm-jobs-in-singularity-containers-with-osd-accession-as-input)  
    4b. [Approach 2: Run slurm jobs in singularity containers with a csv file as input](#4b-approach-2-run-slurm-jobs-in-singularity-containers-with-a-csv-file-as-input)  
-   4c. [Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environments](#4c-approach-run-jobs-locally-in-conda-environments-and-specify-the-path-to-one-or-more-existing-conda-environments)  
+   4c. [Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environments](#4c-approach-3-run-jobs-locally-in-conda-environments-and-specify-the-path-to-one-or-more-existing-conda-environments)  
    4d. [Modify parameters and cpu resources in the nextflow config file](#4d-modify-parameters-and-cpu-resources-in-the-nextflow-config-file)  
 
 5. [Run the workflow indirectly using the python wrapper script](#5-run-the-workflow-indirectly-using-the-python-wrapper-script)  
@@ -32,7 +32,7 @@ The current GeneLab Illumina amplicon sequencing data processing pipeline (AmpIl
    6a. [Main outputs](#6a-main-outputs)  
    6b. [Resource logs](#6b-resource-logs)  
 
-7. [Post Processing](#6-post-processing)   
+7. [Post Processing](#6-post-processing)  
 
 <br>
 
@@ -229,7 +229,7 @@ Standard nextflow resource usage logs are also produced as follows:
 - Output:
   - Resource_Usage/execution_report_{timestamp}.html (an html report that includes metrics about the workflow execution including computational resources and exact workflow process commands)
   - Resource_Usage/execution_timeline_{timestamp}.html (an html timeline for all processes executed in the workflow)
-  - Resource_Usage/execution_trace_{timestamp}.txt (an execution tracing file that contains information about each process executed in the workflow, including: submission time, start time, completion time, cpu and memory used, machine-readable output)
+  - Resource_Usage/execution_trace_{timestamp}.txt (an execution tracing file that contains information about each process executed in the workflow, including: submission time,` start time, completion time, cpu and memory used, machine-readable output)
 
 > Further details about these logs can also found within [this Nextflow documentation page](https://www.nextflow.io/docs/latest/tracing.html#execution-report).
 
