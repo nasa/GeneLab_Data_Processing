@@ -181,6 +181,14 @@ if (params$DEBUG_MODE_ADD_DUMMY_COUNTS) {
     }
     print(sprintf("DEBUG: %s: Replacing original counts with random values from 0 to 5000", Sys.time()))
 }
+
+# Save a copy of the original counts before any filtering
+if (params$microbes) {
+    original_counts <- counts
+} else {
+    original_txi_counts <- txi.rsem$counts
+}
+
 if (params$microbes) {
 } else {
     ## Add 1 to genes with lengths of zero - needed to make DESeqDataSet object
@@ -305,9 +313,9 @@ normCounts <- as.data.frame(counts(dds, normalized = TRUE))
 VSTCounts <- as.data.frame(assay(vst(dds)))
 write.csv(
     if (params$microbes) {
-        counts
+        original_counts
     } else {
-        txi.rsem$counts
+        original_txi_counts
     },
     file = file.path(params$output_directory,
                      paste0(if(params$microbes) "FeatureCounts_Unnormalized_Counts" 
