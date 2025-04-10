@@ -1,0 +1,42 @@
+{
+    "GLDS-321:55_.ISSUE": {
+        "content": [
+            [
+                "summary.txt:md5,2ae67caf20a32f00b87e0f340a4c505b"
+            ],
+            [
+                [
+                    "Normalized_Counts.csv:md5,c148732be1d0b1bb61278bfef612f07b",
+                    "RSEM_Unnormalized_Counts.csv:md5,fd101e235076c3ae66c513bc96017b33"
+                ]
+            ],
+            [
+                "versions.txt:md5,5fac4f3186014a43b8aa3b41d66b2311"
+            ]
+        ],
+        "timestamp": "2023-07-11T22:30:32+0000"
+    },
+    "GLDS-194": {
+        "content": [
+            [
+                "summary.txt:md5,6c202fd3c11a747e40a49d1369e8875f"
+            ],
+            [
+                [
+                    "Normalized_Counts.csv:md5,b4ba348d5446f8ba546a46b966087c1b",
+                    "RSEM_Unnormalized_Counts.csv:md5,931c6070b5e19909929c5a217713500b"
+                ]
+            ],
+            [
+                "ERCCnorm_summary.txt:md5,1f77ed6cd1a8435038859b0361f6b047"
+            ],
+            [
+                "ERCC_Normalized_Counts.csv:md5,b1d9d5a546a23b6709a9f8c60548b6a7"
+            ],
+            [
+                "versions.txt:md5,1865b6b8900d83ec7881f58fe301da11"
+            ]
+        ],
+        "timestamp": "2023-07-11T22:30:32+0000"
+    }
+}

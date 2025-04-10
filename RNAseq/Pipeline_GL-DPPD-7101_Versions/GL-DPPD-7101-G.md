@@ -4,7 +4,7 @@
 
 ---
 
-**Date:** February 19, 2025  
+**Date:** April 10, 2025  
 **Revision:** G  
 **Document Number:** GL-DPPD-7101-G  
 
@@ -221,9 +221,9 @@ fastqc -o /path/to/raw_fastqc/output/directory *.fastq.gz
 ### 1b. Compile Raw Data QC  
 
 ```bash
-multiqc --interactive -n raw_multiqc_GLbulkRNAseq -o /path/to/raw_multiqc/output/raw_multiqc_GLbulkRNAseq_report /path/to/directory/containing/raw_fastqc/files
+multiqc --interactive -n raw_multiqc_GLbulkRNAseq -o /path/to/raw_multiqc/output/directory /path/to/directory/containing/raw_fastqc/files
 
-zip -r raw_multiqc_GLbulkRNAseq_report.zip raw_multiqc_GLbulkRNAseq_report
+zip -r raw_multiqc_GLbulkRNAseq_data.zip raw_multiqc_GLbulkRNAseq_data
 ```
 
 **Parameter Definitions:**
@@ -239,9 +239,8 @@ zip -r raw_multiqc_GLbulkRNAseq_report.zip raw_multiqc_GLbulkRNAseq_report
 
 **Output Data:**
 
-* **raw_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **raw_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
-  * **raw_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
+* **raw_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+* **raw_multiqc_GLbulkRNAseq_data.zip** (zipped directory containing MultiQC output data)
 
 <br>
 
@@ -311,9 +310,9 @@ fastqc -o /path/to/trimmed_fastqc/output/directory *.fastq.gz
 ### 2c. Compile Trimmed Data QC  
 
 ```bash
-multiqc --interactive -n trimmed_multiqc_GLbulkRNAseq -o /path/to/trimmed_multiqc/output/trimmed_multiqc_GLbulkRNAseq_report /path/to/directory/containing/trimmed_fastqc/files
+multiqc --interactive -n trimmed_multiqc_GLbulkRNAseq -o /path/to/trimmed_multiqc/output/directory /path/to/directory/containing/trimmed_fastqc/files
 
-zip -r trimmed_multiqc_GLbulkRNAseq_report.zip /path/to/trimmed_multiqc/output/trimmed_multiqc_GLbulkRNAseq_report
+zip -r trimmed_multiqc_GLbulkRNAseq_data.zip trimmed_multiqc_GLbulkRNAseq_data
 ```
 
 **Parameter Definitions:**
@@ -329,9 +328,8 @@ zip -r trimmed_multiqc_GLbulkRNAseq_report.zip /path/to/trimmed_multiqc/output/t
 
 **Output Data:**
 
-* **trimmed_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **trimmed_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
-  * **trimmed_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
+* **trimmed_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+* **trimmed_multiqc_GLbulkRNAseq_data.zip** (zipped directory containing MultiQC output data)
 
 <br>
 
@@ -480,9 +478,9 @@ STAR --twopassMode Basic \
 ### 4b. Compile Alignment Logs
 
 ```bash
-multiqc --interactive -n align_multiqc_GLbulkRNAseq -o /path/to/align_multiqc/output/align_multiqc_GLbulkRNAseq_report /path/to/*Log.final.out/files
+multiqc --interactive -n align_multiqc_GLbulkRNAseq -o /path/to/align_multiqc/output/directory /path/to/*Log.final.out/files
 
-zip -r align_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/align_multiqc_GLbulkRNAseq_report
+zip -r align_multiqc_GLbulkRNAseq_data.zip align_multiqc_GLbulkRNAseq_data
 ```
 
 **Parameter Definitions:**
@@ -498,9 +496,8 @@ zip -r align_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/align
 
 **Output Data:**
 
-* **align_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **align_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
-  * **align_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
+* **align_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+* **align_multiqc_GLbulkRNAseq_data.zip** (zipped directory containing MultiQC output data)
 
 <br>
 
@@ -667,7 +664,7 @@ genePredToBed /path/to/annotation/genePred/file \
 ```bash
 infer_experiment.py -r /path/to/annotation/BED/file \
  -i /path/to/*Aligned.sortedByCoord_sorted.out.bam \
- -s 15000000 > /path/to/*infer_expt.out
+ -s 15000000 > /path/to/*.infer_expt.out
 ```
 
 **Parameter Definitions:**
@@ -676,7 +673,7 @@ infer_experiment.py -r /path/to/annotation/BED/file \
 - `-i` – specifies the path to the input bam file(s)
 - `-s` – specifies the number of reads to be sampled from the input bam file(s), 15M reads are sampled
 - `>` – redirects standard output to specified file
-- `/path/to/*infer_expt.out` – specifies the location and name of the file containing the infer_experiment standard output
+- `/path/to/*.infer_expt.out` – specifies the location and name of the file containing the infer_experiment standard output
 
 **Input Data:**
 
@@ -686,16 +683,16 @@ infer_experiment.py -r /path/to/annotation/BED/file \
 
 **Output Data:**
 
-- *infer_expt.out (file containing the infer_experiment standard output)
+- *.infer_expt.out (file containing the infer_experiment standard output)
 
 <br>
 
 ### 6b. Compile Strandedness Reports
 
 ```bash
-multiqc --interactive -n infer_exp_multiqc_GLbulkRNAseq -o /path/to/infer_exp_multiqc/output/infer_exp_multiqc_GLbulkRNAseq_report /path/to/*infer_expt.out/files
+multiqc --interactive -n infer_exp_multiqc_GLbulkRNAseq -o /path/to/infer_exp_multiqc/output/directory /path/to/*.infer_expt.out/files
 
-zip -r infer_exp_multiqc_GLbulkRNAseq_report.zip /path/to/infer_exp_multiqc/output/infer_exp_multiqc_GLbulkRNAseq_report
+zip -r infer_exp_multiqc_GLbulkRNAseq_data.zip infer_exp_multiqc_GLbulkRNAseq_data
 ```
 
 **Parameter Definitions:**
@@ -703,17 +700,16 @@ zip -r infer_exp_multiqc_GLbulkRNAseq_report.zip /path/to/infer_exp_multiqc/outp
 - `--interactive` – force reports to use interactive plots
 - `-n` – prefix name for output files
 - `-o` – the output directory to store results
-- `/path/to/*infer_expt.out/files` – the directory holding the *infer_expt.out output files from the [read strandedness step](#6a-determine-read-strandedness), provided as a positional argument
+- `/path/to/*.infer_expt.out/files` – the directory holding the *.infer_expt.out output files from the [read strandedness step](#6a-determine-read-strandedness), provided as a positional argument
 
 **Input Data:**
 
-- *infer_expt.out (file containing the infer_experiment standard output, output from [Step 6a](#6a-determine-read-strandedness))
+- *.infer_expt.out (file containing the infer_experiment standard output, output from [Step 6a](#6a-determine-read-strandedness))
 
 **Output Data:**
 
-* **infer_exp_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **infer_exp_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
-  * **infer_exp_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
+* **infer_exp_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+* **infer_exp_multiqc_GLbulkRNAseq_data.zip** (zipped directory containing MultiQC output data)
 
 <br>
 
@@ -749,9 +745,9 @@ geneBody_coverage.py -r /path/to/annotation/BED/file \
 ### 6d. Compile GeneBody Coverage Reports
 
 ```bash
-multiqc --interactive -n genebody_cov_multiqc_GLbulkRNAseq -o /path/to/geneBody_cov_multiqc/output/geneBody_cov_multiqc_GLbulkRNAseq_report /path/to/geneBody_coverage/output/files
+multiqc --interactive -n genebody_cov_multiqc_GLbulkRNAseq -o /path/to/geneBody_cov_multiqc/output/directory /path/to/geneBody_coverage/output/files
 
-zip -r genebody_cov_multiqc_GLbulkRNAseq_report.zip /path/to/genebody_cov_multiqc/output/genebody_cov_multiqc_GLbulkRNAseq_report
+zip -r genebody_cov_multiqc_GLbulkRNAseq_data.zip genebody_cov_multiqc_GLbulkRNAseq_data
 ```
 
 **Parameter Definitions:**
@@ -767,9 +763,8 @@ zip -r genebody_cov_multiqc_GLbulkRNAseq_report.zip /path/to/genebody_cov_multiq
 
 **Output Data:**
 
-* **genebody_cov_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **genebody_cov_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
-  * **genebody_cov_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
+* **genebody_cov_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+* **genebody_cov_multiqc_GLbulkRNAseq_data.zip** (zipped directory containing MultiQC output data)
 
 <br>
 
@@ -811,9 +806,9 @@ inner_distance.py -r /path/to/annotation/BED/file \
 ### 6f. Compile Inner Distance Reports
 
 ```bash
-multiqc --interactive -n inner_dist_multiqc_GLbulkRNAseq /path/to/align_multiqc/output/inner_dist_multiqc_GLbulkRNAseq_report /path/to/inner_dist/output/files
+multiqc --interactive -n inner_dist_multiqc_GLbulkRNAseq -o /path/to/inner_dist_multiqc/output/directory /path/to/inner_dist/output/files
 
-zip -r inner_dist_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/inner_dist_multiqc_GLbulkRNAseq_report
+zip -r inner_dist_multiqc_GLbulkRNAseq_data.zip inner_dist_multiqc_GLbulkRNAseq_data
 ```
 
 **Parameter Definitions:**
@@ -829,9 +824,8 @@ zip -r inner_dist_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/
 
 **Output Data:**
 
-* **inner_dist_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **inner_dist_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
-  * **inner_dist_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
+* **inner_dist_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+* **inner_dist_multiqc_GLbulkRNAseq_data.zip** (zipped directory containing MultiQC output data)
 
 <br>
 
@@ -839,7 +833,7 @@ zip -r inner_dist_multiqc_GLbulkRNAseq_report.zip /path/to/align_multiqc/output/
 
 ```bash
 read_distribution.py -r /path/to/annotation/BED/file \
- -i /path/to/*Aligned.sortedByCoord_sorted.out.bam > /path/to/*read_dist.out
+ -i /path/to/*Aligned.sortedByCoord_sorted.out.bam > /path/to/*.read_dist.out
 ```
 
 **Parameter Definitions:**
@@ -847,7 +841,7 @@ read_distribution.py -r /path/to/annotation/BED/file \
 - `-r` – specifies the path to the reference annotation BED file
 - `-i` – specifies the path to the input bam file(s)
 - `>` – redirects standard output to specified file
-- `/path/to/*read_dist.out` – specifies the location and name of the file containing the read_distribution standard output
+- `/path/to/*.read_dist.out` – specifies the location and name of the file containing the read_distribution standard output
 
 **Input Data:**
 
@@ -857,16 +851,16 @@ read_distribution.py -r /path/to/annotation/BED/file \
 
 **Output Data:**
 
-- *read_dist.out (file containing the read distribution standard output)
+- *.read_dist.out (file containing the read distribution standard output)
 
 <br>
 
 ### 6h. Compile Read Distribution Reports
 
 ```bash
-multiqc --interactive -n read_dist_multiqc_GLbulkRNAseq -o /path/to/read_dist_multiqc/output/read_dist_multiqc_GLbulkRNAseq_report /path/to/*read_dist.out/files
+multiqc --interactive -n read_dist_multiqc_GLbulkRNAseq -o /path/to/read_dist_multiqc/output/directory /path/to/*.read_dist.out/files
 
-zip -r read_dist_multiqc_GLbulkRNAseq_report.zip /path/to/read_dist_multiqc/output/read_dist_multiqc_GLbulkRNAseq_report
+zip -r read_dist_multiqc_GLbulkRNAseq_data.zip read_dist_multiqc_GLbulkRNAseq_data
 ```
 
 **Parameter Definitions:**
@@ -874,17 +868,16 @@ zip -r read_dist_multiqc_GLbulkRNAseq_report.zip /path/to/read_dist_multiqc/outp
 - `--interactive` - force reports to use interactive plots
 - `-n` - prefix name for output files
 - `-o` – the output directory to store results
-- `/path/to/*read_dist.out/files` – the directory holding the *read_dist.out output files from [Step 6g](#6g-assess-read-distribution) provided as a positional argument
+- `/path/to/*.read_dist.out/files` – the directory holding the *.read_dist.out output files from [Step 6g](#6g-assess-read-distribution) provided as a positional argument
 
 **Input Data:**
 
-- *read_dist.out (files containing the read_distribution standard output, output from [Step 6g](#6g-assess-read-distribution))
+- *.read_dist.out (files containing the read_distribution standard output, output from [Step 6g](#6g-assess-read-distribution))
 
 **Output Data:**
 
-* **read_dist_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **read_dist_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
-  * **read_dist_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
+* **read_dist_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+* **read_dist_multiqc_GLbulkRNAseq_data.zip** (zipped directory containing MultiQC output data)
 
 <br>
 
@@ -980,9 +973,9 @@ rsem-calculate-expression --num-threads NumberOfThreads \
 ### 8b. Compile RSEM Count Logs
 
 ```bash
-multiqc --interactive -n RSEM_count_multiqc_GLbulkRNAseq -o /path/to/RSEM_count_multiqc/output/RSEM_count_multiqc_GLbulkRNAseq_report /path/to/*stat/files
+multiqc --interactive -n RSEM_count_multiqc_GLbulkRNAseq -o /path/to/RSEM_count_multiqc/output/directory /path/to/*stat/files
 
-zip -r RSEM_count_multiqc_GLbulkRNAseq_report.zip /path/to/raw_multiqc/output/RSEM_count_multiqc_GLbulkRNAseq_report
+zip -r RSEM_count_multiqc_GLbulkRNAseq_data.zip RSEM_count_multiqc_GLbulkRNAseq_data
 ```
 
 **Parameter Definitions:**
@@ -999,9 +992,8 @@ zip -r RSEM_count_multiqc_GLbulkRNAseq_report.zip /path/to/raw_multiqc/output/RS
 
 **Output Data:**
 
-* **RSEM_count_multiqc_GLbulkRNAseq_report.zip** (zip containing the following)
-  * **RSEM_count_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
-  * **RSEM_count_multiqc_GLbulkRNAseq_data** (directory containing MultiQC output data)
+* **RSEM_count_multiqc_GLbulkRNAseq.html** (MultiQC output html summary)
+* **RSEM_count_multiqc_GLbulkRNAseq_data.zip** (zipped directory containing MultiQC output data)
 
 <br>
 
@@ -1062,10 +1054,10 @@ sessionInfo()
 
 ```bash
 ### Extract unique rRNA ENSEMBL gene IDs from GTF file ###
-grep "rRNA" /path/to/annotation/gtf/file \
+grep -E 'gene_biotype "rRNA"|gene_type "rRNA"|gbkey "rRNA"' /path/to/annotation/gtf/file \
     | grep -o 'gene_id "[^"]*"' \
     | sed 's/gene_id "\(.*\)"/\1/' \
-    | sort -u > *_rrna_ensembl_ids.txt
+    | sort -u > rrna_ids.txt
 ```
 
 **Input Data:**
@@ -1183,48 +1175,42 @@ library(tximport)
 library(DESeq2)
 library(BiocParallel)
 
-### Define which organism is used in the study - this should be consistent with the species name in the "species" column of the GL-DPPD-7110-A_annotations.csv file ###
+### Define a system-specific BiocParallelParam object to run DGE R script functions in parallel when applicable ###
+BPPARAM <- SerialParam()
 
+### Define which organism is used in the study - this should be consistent with the species name in the "species" column of the GL-DPPD-7110-A_annotations.csv file ###
 organism <- "organism_that_samples_were_derived_from"
 
-
 ### Define the location of the input data and where the output data will be printed to ###
-
 runsheet_path="/path/to/directory/containing/runsheet.csv/file" ## This is the runsheet created in Step 9a above
 work_dir="/path/to/working/directory/where/script/is/executed/from" 
 input_counts="/path/to/directory/containing/RSEM/counts/files"
 norm_output="/path/to/normalized/counts/output/directory"
 DGE_output="/path/to/DGE/output/directory"
 
-
 ### Pull in the GeneLab annotation table (GL-DPPD-7110-A_annotations.csv) file ###
-
 org_table_link <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
 
 org_table <- read.table(org_table_link, sep = ",", header = TRUE)
 
-
 ### Define the link to the GeneLab annotation table for the organism of interest ###
-
 annotations_link <- org_table[org_table$species == organism, "genelab_annots_link"]
 
-
 ### Set your working directory to the directory where you will execute your DESeq2 script from ###
-
 setwd(file.path(work_dir))
-
 ```
 
 **Input Data:**
 
-
 * {GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv (runsheet, output from [Step 9a](#9a-create-sample-runsheet))
 * `organism` (name of organism samples were derived from, found in the species column of [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file)
+- `BPPARAM` (system-specific BiocParallelParam object for parallel processing configuration, by default this is set to `SerialParam()`)
 
 **Output Data:**
 
 * `runsheet_path` (variable containing path to runsheet created in [Step 9a](#9a-create-sample-runsheet)) 
 * `annotations_link` (variable containing URL to GeneLab gene annotation table for the organism)
+- `BPPARAM` (variable containing BiocParallelParam object for parallel processing configuration)
 
 <br>
 
@@ -1244,20 +1230,14 @@ compare_csv_from_runsheet <- function(runsheet_path) {
     return(result)
 }
 
-
 ### Load metadata from runsheet csv file ###
-
 compare_csv <- compare_csv_from_runsheet(runsheet_path)
 
-
 ### Create data frame containing all samples and respective factors ###
-
 study <- compare_csv[, -1, drop=FALSE] # Exclude sample_id
 rownames(study) <- compare_csv$sample_id
 
-
 ### Format groups and indicate the group that each sample belongs to ###
-
 group <- if (ncol(study) >= 2) {
     apply(study, 1, paste, collapse = " & ")
 } else {
@@ -1268,16 +1248,15 @@ group <- sub("^BLOCKER_", "", make.names(paste0("BLOCKER_", group))) # group nam
 names(group) <- group_names
 rm(group_names)
 
-
 ### Format contrasts table, defining pairwise comparisons for all groups ###
+contrast.names <- combn(levels(factor(names(group))),2)
 
-contrast.names <- combn(levels(factor(names(group))),2) ## generate matrix of pairwise group combinations for comparison
+## generate matrix of pairwise group combinations for comparison
 contrasts <- apply(contrast.names, MARGIN=2, function(col) sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", stringr::str_sub(col, 2, -2))))) # limited make.names call for each group (also removes leading parentheses)
 contrast.names <- c(paste(contrast.names[1,],contrast.names[2,],sep = "v"),paste(contrast.names[2,],contrast.names[1,],sep = "v")) ## format combinations for output table files names
 contrasts <- cbind(contrasts,contrasts[c(2,1),])
 colnames(contrasts) <- contrast.names
 rm(contrast.names) 
-
 ```
 
 **Input Data:**
@@ -1324,6 +1303,7 @@ txi.rsem$length[txi.rsem$length == 0] <- 1
 ```
 
 **Input Data:**
+
 * *genes.results (RSEM counts per gene, output from [Step 8a](#8a-count-aligned-reads-with-rsem) or from [Step 8dii](#8dii-filter-rrna-genes-from-rsem-genes-results) when using rRNA-removed count data)
 * `study` (data frame containing sample condition values, output from [Step 9c](#9c-create-study-group-and-contrasts))
 
@@ -1391,7 +1371,7 @@ handle_technical_replicates <- function(sampleTable) {
     return(new_sampleTable)
 }
 
-# Apply the technical replicate handling
+### Apply the technical replicate handling to the sample table ###
 sampleTable <- handle_technical_replicates(sampleTable)
 
 # Update the counts matrix to match the new sample table
@@ -1421,7 +1401,7 @@ if (length(grep("ERCC-", rownames(dds))) != 0) {
 }
 
 ### Perform DESeq analysis ###
-dds <- DESeq(dds, parallel = TRUE, BPPARAM = MulticoreParam(workers = 4))
+dds <- DESeq(dds, parallel = TRUE, BPPARAM = BPPARAM)
 
 ### Generate normalized counts ###
 normCounts <- as.data.frame(counts(dds, normalized = TRUE))
@@ -1440,6 +1420,7 @@ res_lrt <- results(dds_lrt)
 
 * `group` (named vector specifying the group or set of factor levels for each sample, output from [Step 9c](#9c-configure-metadata-sample-grouping-and-group-comparisons))
 * `txi.rsem` (imported RSEM data containing counts matrix, output from [Step 9d](#9d-import-rsem-genecounts))
+- `BPPARAM` (system-specific BiocParallelParam object for parallel processing configuration, output from [Step 9b](#9b-environment-set-up))
 
 **Output Data:**
 
@@ -1457,7 +1438,8 @@ res_lrt <- results(dds_lrt)
 
 ```R
 ### Initialize output table with normalized counts ###
-output_table <- tibble::rownames_to_column(normCounts, var = "ENSEMBL")
+gene_id_type <- "ENSEMBL"
+output_table <- tibble::rownames_to_column(normCounts, var = gene_id_type)
 
 ### Iterate through Wald Tests to generate pairwise comparisons of all groups ###
 compute_contrast <- function(i) {
@@ -1477,7 +1459,7 @@ compute_contrast <- function(i) {
 }
 
 ### Use bplapply to compute results in parallel ###
-res_list <- bplapply(1:dim(contrasts)[2], compute_contrast, BPPARAM = MulticoreParam(workers = 4))
+res_list <- bplapply(1:dim(contrasts)[2], compute_contrast, BPPARAM = BPPARAM)
 
 ### Combine the list of data frames into a single data frame ###
 res_df <- do.call(cbind, res_list)
@@ -1487,56 +1469,73 @@ output_table <- cbind(output_table, res_df)
 
 ### Add summary statistics ###
 output_table$All.mean <- rowMeans(normCounts, na.rm = TRUE)
-output_table$All.stdev <- rowSds(as.matrix(normCounts), na.rm = TRUE)
+output_table$All.stdev <- rowSds(as.matrix(normCounts), na.rm = TRUE, useNames = FALSE)
 output_table$LRT.p.value <- res_lrt@listData$padj
 
 ### Add group-wise statistics ###
 tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- names(group)
+tcounts$group <- sampleTable$condition[match(rownames(tcounts), rownames(sampleTable))]
 
-# Calculate group means and standard deviations
-group_means <- as.data.frame(t(aggregate(. ~ group, data = tcounts, mean)))
-group_stdev <- as.data.frame(t(aggregate(. ~ group, data = tcounts, sd)))
+### Aggregate group means and standard deviations ###
+agg_means <- aggregate(. ~ group, data = tcounts, FUN = mean, na.rm = TRUE)
+agg_stdev <- aggregate(. ~ group, data = tcounts, FUN = sd, na.rm = TRUE)
 
-# Remove group name rows
-group_means <- group_means[-1,]
-group_stdev <- group_stdev[-1,]
+### Save group names ###
+group_ids <- agg_means$group
 
-# For each group, add mean and stdev columns
-for (group_name in names(group)) {
-    mean_col <- paste0("Group.Mean_(", group_name, ")")
-    stdev_col <- paste0("Group.Stdev_(", group_name, ")")
-    output_table[[mean_col]] <- group_means[, paste0("Group.Mean_", group_means['group',])]
-    output_table[[stdev_col]] <- group_stdev[, paste0("Group.Stdev_", group_stdev['group',])]
+### Remove the 'group' column and transpose to match expected structure ###
+group_means <- as.data.frame(t(agg_means[-1]))
+group_stdev <- as.data.frame(t(agg_stdev[-1]))
+
+### Get cleaned group names ###
+orig_group_names <- group_names[match(group_ids, group)]
+
+#### Interleave means and stdevs for each group ###
+group_stats <- data.frame(matrix(ncol = 0, nrow = nrow(group_means)))
+for (i in seq_along(group_ids)) {
+    # Create column names with cleaned group names
+    mean_colname <- paste0("Group.Mean_", orig_group_names[i])
+    stdev_colname <- paste0("Group.Stdev_", orig_group_names[i])
+    # Add columns
+    group_stats[[mean_colname]] <- group_means[,i]
+    group_stats[[stdev_colname]] <- group_stdev[,i]
 }
+
+### Add computed group means and standard deviations to output_table ###
+output_table <- cbind(output_table, group_stats)
 
 ### Read in GeneLab annotation table for the organism of interest ###
 annot <- read.table(annotations_link, 
     sep = "\t", 
     header = TRUE, 
     quote = "", 
-    comment.char = "", 
-    row.names = 1
+    comment.char = ""
 )
 
 ### Combine annotations table and the DGE table ###
-output_table <- merge(annot, output_table, by='row.names', all.y=TRUE)
-output_table <- annot %>%
+# If gene ID column is missing from either table, just write the original DGE table
+if (!(gene_id_type %in% colnames(annot)) || !(gene_id_type %in% colnames(output_table))) {
+  warning(paste("Gene ID column", gene_id_type, "not found in both tables."))
+} else {
+  ### Combine annotations with data
+  output_table <- annot %>%
     merge(output_table,
-        by = params$gene_id_type,
-        all.y = TRUE
+          by = gene_id_type,
+          all.y = TRUE 
     ) %>%
-    select(all_of(params$gene_id_type), everything())
-
+    select(all_of(gene_id_type), everything())  # Make sure main gene ID is first column
+}
 ```
 
 **Input Data:**
 
+- `gene_id_type` (Gene identifier type, e.g. ENSEMBL, used to merge the annotations with the DGE results)
 * `normCounts` (data frame of normalized counts, output from [Step 9e](#9e-perform-dge-analysis))
 * `res_lrt` (results object from likelihood ratio test, output from [Step 9e](#9e-perform-dge-analysis))
 * `contrasts` (matrix defining pairwise comparisons, output from [Step 9c](#9c-configure-metadata-sample-grouping-and-group-comparisons))
 * `dds` (DESeq2 data object containing normalized counts, experimental design, and differential expression results, output from [Step 9e](#9e-perform-dge-analysis))
 * `annotations_link` (variable containing URL to GeneLab annotation table, output from [Step 9b](#9b-environment-set-up))
+- `BPPARAM` (system-specific BiocParallelParam object for parallel processing configuration, output from [Step 9b](#9b-environment-set-up))
 
 **Output Data:**
 

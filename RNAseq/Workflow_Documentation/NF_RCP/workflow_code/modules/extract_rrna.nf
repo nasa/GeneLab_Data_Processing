@@ -12,9 +12,13 @@ process EXTRACT_RRNA {
 
     script:
         """
-        grep "rRNA" ${gtf_file} \
+        # Use grep with OR patterns to find all rRNA genes
+        grep -E 'gene_biotype "rRNA"|gene_type "rRNA"|gbkey "rRNA"' ${gtf_file} \
             | grep -o 'gene_id "[^"]*"' \
             | sed 's/gene_id "\\(.*\\)"/\\1/' \
-            | sort -u > ${organism_sci}_rrna_ids.txt
+            | sort -u > ${organism_sci}_rrna_ids.txt || touch ${organism_sci}_rrna_ids.txt
+        
+        # Report count
+        echo "Found \$(wc -l < ${organism_sci}_rrna_ids.txt) rRNA genes for ${organism_sci}" >&2
         """
 }

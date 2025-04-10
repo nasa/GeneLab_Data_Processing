@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import requests
 import argparse
@@ -25,21 +25,25 @@ def get_osd_and_glds(accession, api_url):
     # Check if the accession is OSD or GLDS
     if accession.startswith('OSD-'):
         osd_accession = accession
-        # Find the GLDS identifiers associated with this OSD accession
-        for hit in data.get("hits", {}).get("hits", []):
-            source = hit.get("_source", {})
-            if source.get("Accession") == osd_accession:
-                identifiers = source.get("Identifiers", "")
+        
+        # Find this OSD in the data
+        # Search in wildcard endpoint results
+        for osd_id, osd_data in data.items():
+            if osd_id == accession:
+                metadata = osd_data.get("metadata", {})
+                identifiers = metadata.get("identifiers", "")
                 glds_accessions = re.findall(r'GLDS-\d+', identifiers)
                 break
+    
     elif accession.startswith('GLDS-'):
         glds_accessions = [accession]
-        # Find the OSD accession associated with this GLDS accession
-        for hit in data.get("hits", {}).get("hits", []):
-            source = hit.get("_source", {})
-            identifiers = source.get("Identifiers", "")
+        
+        # Find the OSD associated with this GLDS
+        for osd_id, osd_data in data.items():
+            metadata = osd_data.get("metadata", {})
+            identifiers = metadata.get("identifiers", "")
             if accession in identifiers:
-                osd_accession = source.get("Accession")
+                osd_accession = metadata.get("accession")
                 break
     else:
         print("Invalid accession format. Please use 'OSD-###' or 'GLDS-###'.", file=sys.stderr)

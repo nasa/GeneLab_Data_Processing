@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-G_2.0.0/RNAseq/Workflow_Documentation/NF_RCP) - 2025-01-28
+## [2.0.0](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP_2.0.0/RNAseq/Workflow_Documentation/NF_RCP) - 2025-04-10
 
 ### Added
 
@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added "_GLbulkRNAseq" suffix to output files
 - RSeQC inner_distance minimum value now dynamically set based on read length
 - DESeq2 analysis now handles technical replicates
+- MultiQC reports replaced with separate data zip and html files
 
 ### Removed
 

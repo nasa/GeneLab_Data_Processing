@@ -1,5 +1,13 @@
 # Workflow change log
 
+## [1.2.3](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_AmpIllumina-B_1.2.3/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B)
+- Fixed broken decipher reference database links to the following:
+  - 16S: https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2019.RData
+  - ITS: https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2023_July2023.RData
+  - 18S: https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData
+- Visualizations default setting is now set to TRUE
+  - Disable with optional `run_workflow.py` argument `--visualizations FALSE` or setting `config.yaml` `enable_visualizations` to "FALSE"
+
 ## [1.2.2](https://github.com/nasa/GeneLab_Data_Processing/tree/SW_AmpIllumina-B_1.2.2/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B)
 - Visualizations are now optional with the default being off.
   - Enable with optional `run_workflow.py` argument `--visualizations TRUE` or setting `config.yaml` `enable_visualizations` to "TRUE"

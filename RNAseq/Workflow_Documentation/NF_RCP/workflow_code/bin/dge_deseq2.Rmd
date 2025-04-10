@@ -8,6 +8,7 @@ params:
   cpus: 1
   work_dir: "." # directory where the script will run
   output_directory: "." # directory for output files
+  output_filename_label: "" # label for output file names
   output_filename_suffix: "" # suffix for output file names
   runsheet_path: NULL # path to the runsheet file
   input_counts: NULL # directory containing RSEM gene results OR FeatureCounts table for microbes mode
@@ -15,6 +16,7 @@ params:
   microbes: FALSE # set this to TRUE to use Bowtie 2 input
   DEBUG_MODE_LIMIT_GENES: FALSE # debugging option to limit the number of genes
   DEBUG_MODE_ADD_DUMMY_COUNTS: FALSE # debugging option to add dummy counts
+  parallel_config: NULL # parallel configuration string (e.g. "MulticoreParam(workers = params$cpus)")
 ---
 
 ## Substeps {.tabset}
@@ -57,13 +59,10 @@ library(dplyr)
 library(tximport)
 library(DESeq2)
 library(BiocParallel)
-# Set up parallel backend
-if (params$cpus > 1) {
-    if (.Platform$OS.type == "windows") {
-        BPPARAM <- SnowParam(workers = params$cpus)
-    } else {
-        BPPARAM <- MulticoreParam(workers = params$cpus)
-    }
+# Set up parallel backend if params$parallel_config is defined, otherwise set BPPARAM <- SerialParam()
+# See https://rdrr.io/bioc/BiocParallel/man/register.html
+if (!is.null(params$parallel_config) && params$parallel_config != "") {
+    BPPARAM <- eval(parse(text = params$parallel_config))
 } else {
     BPPARAM <- SerialParam()
 }
@@ -123,7 +122,7 @@ if (params$microbes) {
         stop(paste("FeatureCounts file not found at:", params$input_counts))
     }
     # Load featureCounts data with tab separator
-    featurecounts <- read.csv(params$input_counts, header = TRUE, sep = "\t", skip = 1)
+    featurecounts <- read.csv(params$input_counts, header = TRUE, sep = "\t", skip = 1, check.names = FALSE)
     # Create counts matrix: remove metadata columns, remove possible .bam from column names
     row.names(featurecounts) <- featurecounts$Geneid
     counts <- featurecounts[,-c(1:6)]
@@ -134,15 +133,26 @@ if (params$microbes) {
     # Load RSEM data for default mode
     files <- list.files(
         path = params$input_counts, 
-        pattern = ".genes.results", 
+        pattern = ".genes.results$", 
         full.names = TRUE
     )
-    samples = rownames(study)
+
+    # Remove "_rRNA_removed" from filenames for matching
+    clean_filenames <- sub("_rRNA_removed", "", basename(files))
+
+    samples <- rownames(study)
+
     # Reorder files based on sample names
-    reordering <- sapply(samples, function(x) grep(paste0(x, ".genes.results$"), files, value = FALSE))
+    reordering <- sapply(samples, function(x) {
+        grep(paste0("^", x, "\\.genes.results$"), clean_filenames, value = FALSE)
+    })
+
     files <- files[reordering]
     names(files) <- samples
+
+    # Import data using tximport
     txi.rsem <- tximport(files, type = "rsem", txIn = FALSE, txOut = FALSE)
+
     if (dim(txi.rsem$counts)[2] != nrow(study)) {
         stop("Sample count mismatch between imported gene results and runsheet")
     }
@@ -171,6 +181,14 @@ if (params$DEBUG_MODE_ADD_DUMMY_COUNTS) {
     }
     print(sprintf("DEBUG: %s: Replacing original counts with random values from 0 to 5000", Sys.time()))
 }
+
+# Save a copy of the original counts before any filtering
+if (params$microbes) {
+    original_counts <- counts
+} else {
+    original_txi_counts <- txi.rsem$counts
+}
+
 if (params$microbes) {
 } else {
     ## Add 1 to genes with lengths of zero - needed to make DESeqDataSet object
@@ -188,59 +206,62 @@ rownames(sampleTable) <- if (params$microbes) {
     colnames(txi.rsem$counts)
 }
 # Handle technical replicates
-handle_technical_replicates <- function(sampleTable) {
-    # Extract base names and tech rep numbers
+# Identify technical replicates by name pattern
+tech_rep_pattern <- "_techrep(\\d+)$"
+all_samples <- rownames(sampleTable)
+has_tech_rep <- grepl(tech_rep_pattern, all_samples)
+
+# Only process if we have technical replicates
+if (any(has_tech_rep)) {
+    # Get sample base names and tech replicate numbers
     sample_info <- data.frame(
-        full_name = rownames(sampleTable),
-        condition = sampleTable$condition,
+        name = all_samples,
         stringsAsFactors = FALSE
     )
     
-    # Identify technical replicates
-    tech_rep_pattern <- "_techrep(\\d+)$"
-    has_tech_rep <- grepl(tech_rep_pattern, sample_info$full_name)
+    # For samples with tech reps, extract base name and replicate number
+    sample_info$base_name <- ifelse(has_tech_rep, 
+                                   sub(tech_rep_pattern, "", all_samples),
+                                   all_samples)
     
-    if (!any(has_tech_rep)) {
-        return(sampleTable)  # No technical replicates found
-    }
+    sample_info$tech_rep <- rep(1, length(all_samples))
+    sample_info$tech_rep[has_tech_rep] <- as.integer(sub(".*_techrep", "", all_samples[has_tech_rep]))
     
-    # Extract base names and tech rep numbers
-    sample_info$base_name <- sub(tech_rep_pattern, "", sample_info$full_name)
-    sample_info$tech_rep <- as.numeric(sub(".*_techrep", "", sample_info$full_name))
-    sample_info$tech_rep[!has_tech_rep] <- 1
+    # Count how many tech reps each base sample has
+    base_samples <- unique(sample_info$base_name)
+    tech_rep_counts <- sapply(base_samples, function(b) {
+        sum(sample_info$base_name == b)
+    })
     
-    # Group samples by base name and keep track of which ones to keep
-    samples_to_keep <- c()
-    unique_base_names <- unique(sample_info$base_name)
+    # Find the minimum number of tech reps across all samples
+    min_tech_reps <- min(tech_rep_counts)
     
-    for (base_name in unique_base_names) {
-        base_samples <- which(sample_info$base_name == base_name)
-        if (length(base_samples) == 1) {
-            # Single sample, keep as is
-            samples_to_keep <- c(samples_to_keep, base_samples)
+    # Keep all regular samples (no tech reps) and the minimum number of tech reps for each base sample
+    samples_to_keep <- character(0)
+    
+    for (base in base_samples) {
+        indices <- which(sample_info$base_name == base)
+        if (length(indices) == 1) {
+            # Regular sample, no tech reps
+            samples_to_keep <- c(samples_to_keep, sample_info$name[indices])
         } else {
-            # Multiple samples (tech reps), keep only the minimum number
-            tech_rep_samples <- base_samples[order(sample_info$tech_rep[base_samples])]
-            samples_to_keep <- c(samples_to_keep, tech_rep_samples[1])  # Keep only first tech rep
+            # Has tech reps, keep the minimum number in order
+            ordered_indices <- indices[order(sample_info$tech_rep[indices])]
+            samples_to_keep <- c(samples_to_keep, sample_info$name[ordered_indices[1:min_tech_reps]])
         }
     }
     
-    # Create new sample table with only the kept samples
-    new_sampleTable <- data.frame(
-        condition = sample_info$condition[samples_to_keep],
-        row.names = sample_info$base_name[samples_to_keep],
-        stringsAsFactors = FALSE
-    )
+    # Update sample table and counts to keep only selected samples
+    sampleTable <- sampleTable[samples_to_keep, , drop=FALSE]
     
-    return(new_sampleTable)
-}
-# Apply the technical replicate handling
-sampleTable <- handle_technical_replicates(sampleTable)
-# Update the counts matrix to match the new sample table
-if (params$microbes) {
-    counts <- counts[, rownames(sampleTable)]
-} else {
-    txi.rsem$counts <- txi.rsem$counts[, rownames(sampleTable)]
+    # Update the counts matrix to match the new sample table
+    if (params$microbes) {
+        counts <- counts[, samples_to_keep]
+    } else {
+        txi.rsem$counts <- txi.rsem$counts[, samples_to_keep]
+        txi.rsem$abundance <- txi.rsem$abundance[, samples_to_keep]
+        txi.rsem$length <- txi.rsem$length[, samples_to_keep]
+    }
 }
 ```
 
@@ -292,24 +313,26 @@ normCounts <- as.data.frame(counts(dds, normalized = TRUE))
 VSTCounts <- as.data.frame(assay(vst(dds)))
 write.csv(
     if (params$microbes) {
-        counts
+        original_counts
     } else {
-        txi.rsem$counts
+        original_txi_counts
     },
     file = file.path(params$output_directory,
                      paste0(if(params$microbes) "FeatureCounts_Unnormalized_Counts" 
                            else "RSEM_Unnormalized_Counts",
-                           params$output_filename_suffix, ".csv"))
+                           params$output_filename_label, params$output_filename_suffix, ".csv"))
 )
 write.csv(
     normCounts,
     file = file.path(params$output_directory,
-                     paste0("Normalized_Counts", params$output_filename_suffix, ".csv"))
+                     paste0("Normalized_Counts",
+                           params$output_filename_label, params$output_filename_suffix, ".csv"))
 )
 write.csv(
     VSTCounts,
     file = file.path(params$output_directory,
-                     paste0("VST_Normalized_Counts", params$output_filename_suffix, ".csv"))
+                     paste0("VST_Normalized_Counts",
+                           params$output_filename_label, params$output_filename_suffix, ".csv"))
 )
 ```
 
@@ -367,16 +390,21 @@ tcounts$group <- sampleTable$condition[match(rownames(tcounts), rownames(sampleT
 agg_means <- aggregate(. ~ group, data = tcounts, FUN = mean, na.rm = TRUE)
 agg_stdev <- aggregate(. ~ group, data = tcounts, FUN = sd, na.rm = TRUE)
 # Extract group names
-group_names <- agg_means$group
+group_ids <- agg_means$group
 # Remove the 'group' column and transpose to match expected structure
 group_means <- as.data.frame(t(agg_means[-1]))
 group_stdev <- as.data.frame(t(agg_stdev[-1]))
+# Get cleaned group names
+orig_group_names <- group_names[match(group_ids, group)]
 # Interleave means and stdevs for each group
 group_stats <- data.frame(matrix(ncol = 0, nrow = nrow(group_means)))
-for (i in seq_along(group_names)) {
-    group <- group_names[i]
-    group_stats[paste0("Group.Mean_(", group, ")")] <- group_means[,i]
-    group_stats[paste0("Group.Stdev_(", group, ")")] <- group_stdev[,i]
+for (i in seq_along(group_ids)) {
+    # Create column names with cleaned group names
+    mean_colname <- paste0("Group.Mean_", orig_group_names[i])
+    stdev_colname <- paste0("Group.Stdev_", orig_group_names[i])
+    # Add columns
+    group_stats[[mean_colname]] <- group_means[,i]
+    group_stats[[stdev_colname]] <- group_stdev[,i]
 }
 ### Add computed group means and standard deviations to output_table ###
 output_table <- cbind(output_table, group_stats)
@@ -389,18 +417,18 @@ dir.create(dirname(paste0(params$output_directory)), recursive = TRUE)
 write.csv(
     contrasts,
     file = file.path(params$output_directory, 
-                     paste0("contrasts", params$output_filename_suffix, ".csv"))
+                     paste0("contrasts", params$output_filename_label, params$output_filename_suffix, ".csv"))
 )
 write.csv(
     output_table,
     row.names = FALSE,
     file = file.path(params$output_directory, 
-                     paste0("differential_expression_no_annotations", params$output_filename_suffix, ".csv"))
+                     paste0("differential_expression_no_annotations", params$output_filename_label, params$output_filename_suffix, ".csv"))
 )
 write.csv(
     sampleTable,
     file = file.path(params$output_directory, 
-                     paste0("SampleTable", params$output_filename_suffix, ".csv"))
+                     paste0("SampleTable", params$output_filename_label, params$output_filename_suffix, ".csv"))
 )
 # Create summary file based on output_table
 output <- capture.output(summary(output_table))
