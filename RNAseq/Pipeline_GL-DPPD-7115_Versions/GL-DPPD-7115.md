@@ -758,7 +758,7 @@ featureCounts -p \
   --fraction \
   -T NumberOfThreads \
   -a /path/to/annotation/gtf/file \
-  -t \${GTF_FEATURES} \
+  -t ${GTF_FEATURES} \
   -s 1 \
   -o /path/to/featurecounts/output/directory/FeatureCounts_GLbulkRNAseq.tsv \
   /path/to/*_sorted.bam
