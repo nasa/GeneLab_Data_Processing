@@ -471,7 +471,7 @@ STAR --twopassMode Basic \
   - SJ.out.tab
 - *_STARtmp (directory containing the following:)
   - BAMsort (directory containing subdirectories that are empty – this was the location for temp files that were automatically removed after successful completion)
-- **\*Unmapped.out.mate1.fastq.gz, \*Unmapped.out.mate2.fastq.gz** (unmapped and partially mapped reads in fastq format)
+- **\*Unmapped.out.mate1, \*Unmapped.out.mate2** (unmapped and partially mapped reads in fastq format)
 
 <br>
 

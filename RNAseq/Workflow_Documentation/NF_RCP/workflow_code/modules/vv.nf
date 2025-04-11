@@ -304,7 +304,7 @@ process VV_STAR_ALIGNMENT {
     path("INPUT/02-STAR_Alignment/*") // STAR alignment counts tables
     path("INPUT/02-STAR_Alignment/*") // zipped multiqc data directory
     path("INPUT/02-STAR_Alignment/*") // multiqc HTML report
-    path("VV_INPUT/02-STAR_Alignment/*") // reindexed, sorted bam/bed files
+    path("INPUT/02-STAR_Alignment/*") // reindexed, sorted bam/bed files
 
   output:
     path("02-STAR_Alignment/**")
