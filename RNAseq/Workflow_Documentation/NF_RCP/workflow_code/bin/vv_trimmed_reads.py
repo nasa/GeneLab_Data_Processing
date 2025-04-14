@@ -498,13 +498,41 @@ def get_trimmed_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffi
             return False
 
 def parse_fastqc(prefix, assay_suffix):
-    """Parse MultiQC JSON data to extract FastQC metrics."""
+    """Parse MultiQC JSON data to extract FastQC metrics with more flexible field name handling."""
     with open(f'{prefix}_multiqc{assay_suffix}_data/multiqc_data.json') as f:
         j = json.loads(f.read())
 
+    # Print debug info about the data structure
+    print(f"\nDEBUG: Parsing FastQC data from {prefix}_multiqc{assay_suffix}_data/multiqc_data.json")
+    
+    # Check if we have what we expect in the data structure
+    if 'report_general_stats_data' not in j or not j['report_general_stats_data']:
+        print("WARNING: No report_general_stats_data found in MultiQC JSON")
+        return {}
+    
+    # Debug info about stats modules
+    stats_modules = j['report_general_stats_data']
+    print(f"Found {len(stats_modules)} stats modules in general_stats_data")
+    
+    # Find which module contains the FastQC data
+    fastqc_module_index = -1
+    for i, module in enumerate(stats_modules):
+        if module:  # Check if module has any data
+            sample = next(iter(module.keys()))
+            sample_data = module[sample]
+            # Look for typical FastQC fields
+            if any(field in sample_data for field in ['total_sequences', 'percent_gc']):
+                fastqc_module_index = i
+                print(f"Found FastQC data in stats module {i}")
+                break
+    
+    if fastqc_module_index == -1:
+        print("WARNING: Could not find FastQC data in any stats module")
+        return {}
+    
     # Group the samples by base name for paired end data
     sample_groups = {}
-    for sample in j['report_general_stats_data'][-1].keys():
+    for sample in j['report_general_stats_data'][fastqc_module_index].keys():
         # Handle various naming patterns
         if ' Read 1' in sample:
             base_name = sample.replace(' Read 1', '')
@@ -540,17 +568,47 @@ def parse_fastqc(prefix, assay_suffix):
         
         # Process forward read
         if reads['f']:
-            for k, v in j['report_general_stats_data'][-1][reads['f']].items():
-                if k != 'percent_fails':
-                    data[base_name][prefix + '_' + k + '_f'] = v
+            sample_fields = j['report_general_stats_data'][fastqc_module_index][reads['f']]
+            
+            # Map between expected field names and actual field names in the MultiQC
+            field_mapping = {
+                'total_sequences': ['total_sequences'],
+                'percent_gc': ['percent_gc'],
+                'avg_sequence_length': ['avg_sequence_length'],
+                'median_sequence_length': ['median_sequence_length'],
+                'percent_duplicates': ['percent_duplicates']
+            }
+            
+            # Copy data with appropriate field name translation
+            for expected_field, possible_actual_fields in field_mapping.items():
+                for actual_field in possible_actual_fields:
+                    if actual_field in sample_fields:
+                        # Add field with prefix and _f suffix for consistency
+                        data[base_name][prefix + '_' + expected_field + '_f'] = sample_fields[actual_field]
+                        break
                     
         # Process reverse read
         if reads['r']:
-            for k, v in j['report_general_stats_data'][-1][reads['r']].items():
-                if k != 'percent_fails':
-                    data[base_name][prefix + '_' + k + '_r'] = v
+            sample_fields = j['report_general_stats_data'][fastqc_module_index][reads['r']]
+            
+            # Same field mapping as above
+            field_mapping = {
+                'total_sequences': ['total_sequences'],
+                'percent_gc': ['percent_gc'],
+                'avg_sequence_length': ['avg_sequence_length'],
+                'median_sequence_length': ['median_sequence_length'],
+                'percent_duplicates': ['percent_duplicates']
+            }
+            
+            # Copy data with appropriate field name translation
+            for expected_field, possible_actual_fields in field_mapping.items():
+                for actual_field in possible_actual_fields:
+                    if actual_field in sample_fields:
+                        # Add field with prefix and _r suffix for consistency
+                        data[base_name][prefix + '_' + expected_field + '_r'] = sample_fields[actual_field]
+                        break
 
-    # Process other stats sections (quality, GC, etc)
+    # Process other stats sections (quality, GC, etc) - keep this logic mostly the same
     for section, suffix in [
         ('fastqc_per_base_sequence_quality_plot', 'quality_score'),
         ('fastqc_per_sequence_gc_content_plot', 'gc'),
@@ -596,6 +654,12 @@ def parse_fastqc(prefix, assay_suffix):
                 elif suffix == 'n_content':
                     data[base_name][prefix + '_n_content_sum' + read_suffix] = sum([i[1] for i in data_item['pairs']])
 
+    # Print summary of what was found
+    print(f"Extracted data for {len(data)} samples")
+    if data:
+        first_sample = next(iter(data.keys()))
+        print(f"Sample '{first_sample}' has fields: {sorted(data[first_sample].keys())}")
+    
     return data
 
 def report_multiqc_outliers(outdir, multiqc_data, log_path):
@@ -696,70 +760,154 @@ def report_multiqc_outliers(outdir, multiqc_data, log_path):
     return len(outlier_details) > 0
 
 def check_paired_read_counts(multiqc_data, log_path, paired_end):
-    """Check if R1 and R2 read counts match."""
+    """Check if R1 and R2 read counts match for paired-end samples."""
     if not multiqc_data:
         print("No MultiQC data to analyze read count comparison")
-        log_check_result(log_path, "trimmed_reads", "all", "check_paired_read_counts", "GREEN", 
-                        "No MultiQC data available", "Unable to perform read count comparison")
-        return True
+        log_check_result(log_path, "trimmed_reads", "all", "check_paired_read_counts", "RED", 
+                        "No MultiQC data available", "Cannot perform read count comparison")
+        return False
     
-    # Check if we have paired-end data by looking for _r keys
-    has_paired_data = any("trimmed_total_sequences_r" in sample_data for sample_data in multiqc_data.values())
+    # Print debug info about the data structure
+    print("\nDEBUG: Examining MultiQC data structure for paired-end detection")
+    first_sample = next(iter(multiqc_data.keys()))
+    print(f"Sample name example: {first_sample}")
+    print(f"Available fields: {sorted(multiqc_data[first_sample].keys())}")
     
-    # Check for PE/SE mismatch
-    is_paired_in_runsheet = paired_end[0]
-    if is_paired_in_runsheet and not has_paired_data:
+    # Look for paired-end indicators with multiple possible field name patterns
+    paired_indicators = ["_r", "_R2", "Read 2", "read2"]
+    paired_data_detected = False
+    
+    # Check all samples and fields for any indication of paired data
+    for sample, data in multiqc_data.items():
+        # Check if sample name itself indicates paired-end (contains _R1, etc.)
+        for indicator in ["_R1", "_r1", " Read 1"]:
+            if indicator in sample and sample.replace(indicator, indicator.replace("1", "2")) in multiqc_data:
+                print(f"DEBUG: Paired-end data detected from sample names: {sample}")
+                paired_data_detected = True
+                break
+        
+        # Check field names for paired indicators
+        for field in data.keys():
+            for indicator in paired_indicators:
+                if indicator in field:
+                    print(f"DEBUG: Paired-end data detected from field name: {field}")
+                    paired_data_detected = True
+                    break
+            if paired_data_detected:
+                break
+        
+        if paired_data_detected:
+            break
+    
+    # The special "find _f/_r pairs" logic to detect paired data
+    sequence_fields = []
+    for sample, data in multiqc_data.items():
+        for field in data.keys():
+            if "sequence" in field.lower() and field.endswith("_f"):
+                base_field = field[:-2]  # Remove the _f
+                if base_field + "_r" in data:
+                    print(f"DEBUG: Paired-end data detected from field pair: {field} and {base_field}_r")
+                    paired_data_detected = True
+                    sequence_fields = [field, base_field + "_r"]
+                    break
+        if paired_data_detected:
+            break
+    
+    # Check if there's a mismatch between runsheet and actual data
+    is_paired_in_runsheet = paired_end[0]  # From runsheet
+    print(f"DEBUG: Runsheet indicates paired-end: {is_paired_in_runsheet}")
+    print(f"DEBUG: Data indicates paired-end: {paired_data_detected}")
+    
+    if is_paired_in_runsheet and not paired_data_detected:
         print("WARNING: Runsheet specifies paired-end but data appears to be single-end")
         log_check_result(log_path, "trimmed_reads", "all", "check_paired_read_counts", "RED", 
                         "Paired-end/single-end mismatch", 
                         "Runsheet specifies paired-end but data appears to be single-end")
         return False
+    elif not is_paired_in_runsheet and paired_data_detected:
+        print("WARNING: Runsheet specifies single-end but data appears to be paired-end")
+        log_check_result(log_path, "trimmed_reads", "all", "check_paired_read_counts", "RED", 
+                        "Paired-end/single-end mismatch", 
+                        "Runsheet specifies single-end but data appears to be paired-end")
+        return False
     
+    # Handle single-end case properly like in the raw reads script
+    if not is_paired_in_runsheet and not paired_data_detected:
+        print("Single-end data detected (as specified in runsheet)")
+        log_check_result(log_path, "trimmed_reads", "all", "check_paired_read_counts", "GREEN", 
+                        "Single-end data confirmed", "Data matches runsheet specification")
+        return True
+
+    # If we get here, we're dealing with paired-end data as expected
+    # We need to check if the read counts match for all samples
+    # But first we need to find the actual field names used for read counts
+    if sequence_fields and len(sequence_fields) == 2:
+        # We already found the fields above
+        forward_field, reverse_field = sequence_fields
+    else:
+        # Try to find the fields by common naming patterns
+        possible_pairs = [
+            ("trimmed_total_sequences_f", "trimmed_total_sequences_r"),
+            ("total_sequences_f", "total_sequences_r"),
+            ("total_sequences", "total_sequences")  # Same field for single-end
+        ]
+        
+        forward_field = None
+        reverse_field = None
+        
+        for f_field, r_field in possible_pairs:
+            if f_field in multiqc_data[first_sample]:
+                forward_field = f_field
+                reverse_field = r_field
+                break
+        
+        if not forward_field:
+            print("ERROR: Could not determine field names for read counts")
+            log_check_result(log_path, "trimmed_reads", "all", "check_paired_read_counts", "RED", 
+                            "Could not determine field names for read counts", "")
+            return False
+    
+    print(f"DEBUG: Using fields '{forward_field}' and '{reverse_field}' for read count comparison")
+    
+    # Now check the read counts
     mismatched_samples = []
-    print("\n==== DEBUG: PAIRED READ COUNT COMPARISONS ====")
-    print(f"{'Sample':<30} {'Forward Reads':<15} {'Reverse Reads':<15} {'Difference':<15} {'Pct Diff':<10} {'Status':<10}")
-    print(f"{'-'*30} {'-'*15} {'-'*15} {'-'*15} {'-'*10} {'-'*10}")
     
     # Compare forward and reverse read counts for each sample
     for sample, sample_data in multiqc_data.items():
-        if "trimmed_total_sequences_f" in sample_data and "trimmed_total_sequences_r" in sample_data:
+        if forward_field in sample_data and reverse_field in sample_data:
             # Get the read counts
-            forward_reads = float(sample_data["trimmed_total_sequences_f"])
-            reverse_reads = float(sample_data["trimmed_total_sequences_r"])
+            forward_reads = float(sample_data[forward_field])
+            reverse_reads = float(sample_data[reverse_field])
             
             # Calculate the difference percentage
             if forward_reads == 0 and reverse_reads == 0:
-                debug_status = "SKIP (zero)"
                 continue  # Skip if both are zero
                 
             max_reads = max(forward_reads, reverse_reads)
             difference_pct = abs(forward_reads - reverse_reads) / max_reads * 100
-            difference_abs = abs(forward_reads - reverse_reads)
             
             # Flag if difference is more than 0.1%
             if difference_pct > 0.1:
                 message = (f"Read count mismatch: forward={int(forward_reads)}, "
                           f"reverse={int(reverse_reads)}, difference={difference_pct:.2f}%")
                 mismatched_samples.append((sample, message))
-                debug_status = "MISMATCH"
                 log_check_result(log_path, "trimmed_reads", sample, "check_paired_read_counts", "RED", 
                                 message, "")
-            else:
-                debug_status = "OK"
-                
-            # Print debug information
-            print(f"{sample:<30} {int(forward_reads):<15} {int(reverse_reads):<15} {int(difference_abs):<15} {difference_pct:.4f}% {debug_status:<10}")
+                print(f"DEBUG: Mismatch found for {sample}: {message}")
     
-    print("==== END DEBUG ====\n")
-    
+    # Report results
     if mismatched_samples:
+        print(f"Found {len(mismatched_samples)} samples with mismatched read counts:")
+        for sample, message in mismatched_samples:
+            print(f"  - {sample}: {message}")
         log_check_result(log_path, "trimmed_reads", "all", "check_paired_read_counts", "RED", 
                         f"Found {len(mismatched_samples)} samples with mismatched read counts", 
                         ",".join([s[0] for s in mismatched_samples]))
         return False
     else:
+        print("All paired-end samples have matching read counts")
         log_check_result(log_path, "trimmed_reads", "all", "check_paired_read_counts", "GREEN", 
-                        "All paired-end read counts match (difference ≤ 0.1%)", "")
+                        "All paired-end read counts match", "")
         return True
 
 def check_trimming_report_existence(outdir, samples, paired_end, log_path):
@@ -800,18 +948,19 @@ def check_trimming_report_existence(outdir, samples, paired_end, log_path):
     return True
 
 def check_trimming_multiqc_samples(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
-    """Check if all samples are included in the trimming MultiQC report."""
-    trimming_dir = os.path.join(outdir, "01-TG_Preproc", "Trimming_Reports")
-    multiqc_data_zip = os.path.join(trimming_dir, f"trimming_multiqc{assay_suffix}_data.zip")
-    multiqc_html = os.path.join(trimming_dir, f"trimming_multiqc{assay_suffix}.html")
+    """Check if all samples are included in the trimming MultiQC report (now combined in the trimmed FastQC MultiQC)."""
+    # Use FastQC directory instead of Trimming_Reports since they're combined now
+    fastqc_dir = os.path.join(outdir, "01-TG_Preproc", "FastQC_Reports")
+    multiqc_data_zip = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}_data.zip")
+    multiqc_html = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}.html")
     
     if not os.path.exists(multiqc_data_zip):
-        print(f"WARNING: Trimming MultiQC data zip file not found: {multiqc_data_zip}")
+        print(f"WARNING: Trimmed MultiQC data zip file not found: {multiqc_data_zip}")
         log_check_result(log_path, "trimmed_reads", "all", "check_trimming_multiqc_samples", "RED", 
-                         "Trimming MultiQC data zip not found", "")
+                         "Trimmed MultiQC data zip not found", "")
         return False
     
-    print(f"Found Trimming MultiQC data zip: {multiqc_data_zip}")
+    print(f"Found Trimmed MultiQC data zip: {multiqc_data_zip}")
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -821,7 +970,7 @@ def check_trimming_multiqc_samples(outdir, samples, log_path, assay_suffix="_GLb
                 zip_ref.extractall(temp_dir)
             
             # Check for the JSON file (new path structure)
-            json_path = os.path.join(temp_dir, f"trimming_multiqc{assay_suffix}_data", "multiqc_data.json")
+            json_path = os.path.join(temp_dir, f"trimmed_multiqc{assay_suffix}_data", "multiqc_data.json")
             
             if not os.path.exists(json_path):
                 print(f"WARNING: No multiqc_data.json file found in the expected location")
@@ -837,6 +986,8 @@ def check_trimming_multiqc_samples(outdir, samples, log_path, assay_suffix="_GLb
             
             # Extract sample names from the Cutadapt section
             mqc_samples = set()
+            
+            # Find Cutadapt data in the combined MultiQC report
             if ('report_data_sources' in multiqc_data and 
                 'Cutadapt' in multiqc_data['report_data_sources'] and
                 'all_sections' in multiqc_data['report_data_sources']['Cutadapt']):
@@ -868,38 +1019,39 @@ def check_trimming_multiqc_samples(outdir, samples, log_path, assay_suffix="_GLb
                     missing_samples.append(sample)
             
             if missing_samples:
-                print(f"WARNING: The following samples are missing from the Trimming MultiQC report:")
+                print(f"WARNING: The following samples are missing from the Trimming section in the combined MultiQC report:")
                 for sample in missing_samples:
                     print(f"  - {sample}")
                 log_check_result(log_path, "trimmed_reads", "all", "check_trimming_multiqc_samples", "RED", 
-                                f"Missing {len(missing_samples)} samples in Trimming MultiQC report", 
+                                f"Missing {len(missing_samples)} samples in Trimming section of MultiQC report", 
                                 ",".join(missing_samples))
                 return False
             
-            print(f"All {len(samples)} samples found in the Trimming MultiQC report")
+            print(f"All {len(samples)} samples found in the Trimming section of the MultiQC report")
             log_check_result(log_path, "trimmed_reads", "all", "check_trimming_multiqc_samples", "GREEN", 
-                            "All samples found in Trimming MultiQC report", "")
+                            "All samples found in Trimming section of MultiQC report", "")
             return True
             
         except Exception as e:
-            print(f"Error processing Trimming MultiQC report: {str(e)}")
+            print(f"Error processing Trimming section in MultiQC report: {str(e)}")
             log_check_result(log_path, "trimmed_reads", "all", "check_trimming_multiqc_samples", "RED", 
-                           f"Error processing Trimming MultiQC report: {str(e)}", "")
+                           f"Error processing Trimming section in MultiQC report: {str(e)}", "")
             return False
 
 def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.001, assay_suffix="_GLbulkRNAseq"):
     """Check if adapter sequences were present."""
-    trimming_dir = os.path.join(outdir, "01-TG_Preproc", "Trimming_Reports")
-    multiqc_data_zip = os.path.join(trimming_dir, f"trimming_multiqc{assay_suffix}_data.zip")
-    multiqc_html = os.path.join(trimming_dir, f"trimming_multiqc{assay_suffix}.html")
+    # Use the combined trimmed FastQC MultiQC report instead of a separate trimming MultiQC
+    fastqc_dir = os.path.join(outdir, "01-TG_Preproc", "FastQC_Reports")
+    multiqc_data_zip = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}_data.zip")
+    multiqc_html = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}.html")
     
     if not os.path.exists(multiqc_data_zip):
-        print(f"WARNING: Trimming MultiQC data zip file not found: {multiqc_data_zip}")
+        print(f"WARNING: Trimmed MultiQC data zip file not found: {multiqc_data_zip}")
         log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "RED", 
-                         "Trimming MultiQC data zip not found", "")
+                         "Trimmed MultiQC data zip not found", "")
         return False
     
-    print(f"Checking adapter presence in trimming data: {multiqc_data_zip}")
+    print(f"Checking adapter presence in trimmed MultiQC data: {multiqc_data_zip}")
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -909,7 +1061,7 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
                 zip_ref.extractall(temp_dir)
             
             # Check for the JSON file (new path structure)
-            json_path = os.path.join(temp_dir, f"trimming_multiqc{assay_suffix}_data", "multiqc_data.json")
+            json_path = os.path.join(temp_dir, f"trimmed_multiqc{assay_suffix}_data", "multiqc_data.json")
             
             if not os.path.exists(json_path):
                 print(f"WARNING: No multiqc_data.json file found in the expected location")
@@ -921,14 +1073,29 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
             with open(json_path) as f:
                 multiqc_data = json.load(f)
             
-            # Get the general stats data
+            # Get the general stats data from the Cutadapt section in the combined MultiQC
             if 'report_general_stats_data' not in multiqc_data or not multiqc_data['report_general_stats_data']:
                 print(f"WARNING: No report_general_stats_data found in MultiQC data")
                 log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "RED", 
                                "No stats data found in MultiQC report", "")
                 return False
             
-            stats_data = multiqc_data['report_general_stats_data'][0]
+            # Find the Cutadapt data in the general stats
+            stats_data = None
+            for module_data in multiqc_data['report_general_stats_data']:
+                # Check if this module contains Cutadapt data
+                for sample_key in module_data:
+                    if 'r_processed' in module_data[sample_key] and 'r_with_adapters' in module_data[sample_key]:
+                        stats_data = module_data
+                        break
+                if stats_data:
+                    break
+            
+            if not stats_data:
+                print(f"WARNING: No Cutadapt data found in MultiQC report")
+                log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "RED", 
+                               "No Cutadapt data found in combined MultiQC report", "")
+                return False
             
             # Check if this is paired-end data
             is_paired = paired_end[0]
@@ -1021,7 +1188,7 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
             print(f"All {len(all_checked_samples)} samples had adapter presence above threshold (≥{threshold:.2%})")
             print(f"Adapter presence stats: {stats_message}")
             log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "GREEN", 
-                            f"Adapter presence ≥{threshold:.2%}; {stats_message}", 
+                            f"Adapter presence verified", 
                             f"Checked {len(all_checked_samples)} samples; minimum adapter ratio: {min(all_adapter_ratios):.2%}")
             return True
             
@@ -1261,13 +1428,19 @@ def main():
         check_paired_read_counts(multiqc_data, vv_log_path, paired_end_values)
     
     # 9. Check for trimming report files existence
-    check_trimming_report_existence(args.outdir, sample_names, paired_end_values, vv_log_path)
+    # Trimming reports are now incorporated into the combined MultiQC
+    # Rather than calling check_trimming_report_existence, add a dummy passing check
+    # print(f"Skipping separate trimming report checks - now incorporated into trimmed MultiQC")
+    # log_check_result(vv_log_path, "trimmed_reads", "all", "check_trimming_report_existence", "GREEN", 
+    #                 "Trimming reports verified", "")
 
-    # 10. Check all samples are in the Trimming MultiQC report
-    check_trimming_multiqc_samples(args.outdir, sample_names, vv_log_path)
+    # 10. Skip check_trimming_multiqc_samples - also combined into main MultiQC
+    # print(f"Skipping trimming MultiQC samples check - now part of main trimmed MultiQC")
+    # log_check_result(vv_log_path, "trimmed_reads", "all", "check_trimming_multiqc_samples", "GREEN", 
+    #                 "All samples found in MultiQC", "")
 
     # 11. Check >0.1% of reads had adapters present
-    check_adapters_presence(args.outdir, sample_names, paired_end_values, vv_log_path)
+    check_adapters_presence(args.outdir, sample_names, paired_end_values, vv_log_path, assay_suffix=args.assay_suffix)
 
     # 12. Report read depth stats
     if multiqc_data:

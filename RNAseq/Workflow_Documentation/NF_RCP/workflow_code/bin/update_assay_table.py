@@ -1196,8 +1196,8 @@ def main():
         # 2. Trimmed Sequence Data/MultiQC Reports column
         assay_df = add_trimmed_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
         
-        # 3. Trimmed Sequence Data/Trimming Reports column
-        assay_df = add_trimming_reports_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
+        # 3. Trimmed Sequence Data/Trimming Reports column - commented out as trimming reports are now in MultiQC
+        # assay_df = add_trimming_reports_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
         
         # 4. Aligned Sequence Data column
         assay_df = add_aligned_sequence_data_column(assay_df, glds_prefix, runsheet_df=runsheet_df, mode=args.mode)
