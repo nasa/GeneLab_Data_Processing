@@ -862,6 +862,22 @@ def add_raw_counts_multiqc_column(df, glds_prefix, assay_suffix, mode=""):
     
     return df
 
+def add_raw_multiqc_reports_column(df, glds_prefix, assay_suffix):
+    """Add the raw sequence data MultiQC reports column to the dataframe."""
+    column_name = "Parameter Value[MultiQC File Names]"
+    
+    # Create the multiqc report filenames - both data zip and html
+    multiqc_html = f"raw_multiqc{assay_suffix}.html"
+    multiqc_data = f"raw_multiqc{assay_suffix}_data.zip"
+    
+    # Join the files with commas
+    combined_files = f"{multiqc_data},{multiqc_html}"
+    
+    # Add the column to the dataframe with the same value for all rows
+    df = update_column(df, column_name, combined_files)
+    
+    return df
+
 def add_raw_counts_tables_column(df, glds_prefix, assay_suffix, mode=""):
     """Add the Raw Counts Tables column to the dataframe."""
     column_name = "Parameter Value[Raw Counts Tables]"
@@ -891,9 +907,7 @@ def add_raw_counts_tables_rrnarm_column(df, glds_prefix, assay_suffix, mode=""):
         counts_file = f"{glds_prefix}FeatureCounts_Unnormalized_Counts_rRNArm{assay_suffix}.csv"
     else:
         # Default mode (STAR/RSEM)
-        rsem_file = f"{glds_prefix}RSEM_Unnormalized_Counts_rRNArm{assay_suffix}.csv"
-        star_file = f"{glds_prefix}STAR_Unnormalized_Counts_rRNArm{assay_suffix}.csv"
-        counts_file = f"{rsem_file},{star_file}"
+        counts_file = f"{glds_prefix}RSEM_Unnormalized_Counts_rRNArm{assay_suffix}.csv"
     
     # Add the column to the dataframe with the same value for all rows
     df = update_column(df, column_name, counts_file)
@@ -907,7 +921,7 @@ def add_normalized_counts_data_column(df, glds_prefix, assay_suffix):
     # Create the normalized counts filenames - same for all samples
     normalized_files = [
         f"{glds_prefix}Normalized_Counts{assay_suffix}.csv",
-        f"{glds_prefix}VST_Normalized_Counts{assay_suffix}.csv"
+        f"{glds_prefix}VST_Counts{assay_suffix}.csv"
     ]
     
     # Join the files with commas
@@ -925,7 +939,7 @@ def add_normalized_counts_data_rrnarm_column(df, glds_prefix, assay_suffix):
     # Create the normalized counts filenames with rRNArm - same for all samples
     normalized_files = [
         f"{glds_prefix}Normalized_Counts_rRNArm{assay_suffix}.csv",
-        f"{glds_prefix}VST_Normalized_Counts_rRNArm{assay_suffix}.csv"
+        f"{glds_prefix}VST_Counts_rRNArm{assay_suffix}.csv"
     ]
     
     # Join the files with commas
@@ -1144,6 +1158,9 @@ def main():
         
         # 0. Add read counts from MultiQC report (new)
         assay_df = add_read_counts(assay_df, args.outdir, args.glds_accession, args.assay_suffix, runsheet_df)
+        
+        # 0.5. Add Raw MultiQC reports column (new)
+        assay_df = add_raw_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
         
         # 1. Trimmed Sequence Data column
         assay_df = add_trimmed_data_column(assay_df, glds_prefix, runsheet_df=runsheet_df)

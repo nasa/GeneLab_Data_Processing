@@ -331,7 +331,7 @@ write.csv(
 write.csv(
     VSTCounts,
     file = file.path(params$output_directory,
-                     paste0("VST_Normalized_Counts",
+                     paste0("VST_Counts",
                            params$output_filename_label, params$output_filename_suffix, ".csv"))
 )
 ```
