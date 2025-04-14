@@ -333,6 +333,7 @@ workflow RNASEQ_MICROBES {
             ch_meta,
             runsheet_path,
             FEATURECOUNTS.out.counts,
+            REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm,
             FEATURECOUNTS.out.summary,
             QUANTIFY_FEATURECOUNTS_GENES.out.num_non_zero_genes,
             COUNT_MULTIQC.out.zipped_data,

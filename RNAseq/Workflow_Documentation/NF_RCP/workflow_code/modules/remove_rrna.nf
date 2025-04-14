@@ -17,7 +17,7 @@ process REMOVE_RRNA {
         path genes_results_file
 
     output:
-        path("*_rRNA_removed.genes.results"), emit: genes_results_rrnarm
+        path("*_rRNArm.genes.results"), emit: genes_results_rrnarm
         path("*_rRNA_counts.txt"), emit: rrnarm_summary
 
     script:

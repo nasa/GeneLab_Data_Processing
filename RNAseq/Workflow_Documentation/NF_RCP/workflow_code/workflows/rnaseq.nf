@@ -331,6 +331,7 @@ workflow RNASEQ {
             runsheet_path,
             COUNT_ALIGNED.out.only_counts | collect,
             QUANTIFY_RSEM_GENES.out.publishables,
+            REMOVE_RRNA.out.genes_results_rrnarm | collect,
             COUNT_MULTIQC.out.zipped_data,
             COUNT_MULTIQC.out.html
         )
