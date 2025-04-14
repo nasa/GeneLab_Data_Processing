@@ -813,6 +813,7 @@ def add_raw_counts_data_column(df, glds_prefix, assay_suffix, mode=""):
             # Microbes mode (FeatureCounts) - same for all samples
             feature_counts_files = [
                 f"{glds_prefix}FeatureCounts{assay_suffix}.tsv",
+                f"{glds_prefix}FeatureCounts_rRNArm{assay_suffix}.tsv",
                 f"{glds_prefix}FeatureCounts{assay_suffix}.tsv.summary"
             ]
             # Join the files with commas
@@ -827,7 +828,8 @@ def add_raw_counts_data_column(df, glds_prefix, assay_suffix, mode=""):
                 # For RSEM, each sample has genes and isoforms result files
                 rsem_files = [
                     f"{glds_prefix}{sample}.genes.results",
-                    f"{glds_prefix}{sample}.isoforms.results"
+                    f"{glds_prefix}{sample}.isoforms.results",
+                    f"{glds_prefix}{sample}_rRNArm.genes.results"
                 ]
                 values.append(",".join(rsem_files))
     
