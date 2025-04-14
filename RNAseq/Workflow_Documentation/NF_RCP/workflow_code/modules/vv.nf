@@ -70,8 +70,6 @@ process VV_TRIMMED_READS {
     path("INPUT/01-TG_Preproc/FastQC_Reports/*") // Trimmed reads multiqc zipped data directory
     path("INPUT/01-TG_Preproc/FastQC_Reports/*") // Trimmed reads multiqc HTML report
     path("INPUT/01-TG_Preproc/Trimming_Reports/*") // Trimming reports
-    path("INPUT/01-TG_Preproc/Trimming_Reports/*") // Trimming multiqc zipped data directory
-    path("INPUT/01-TG_Preproc/Trimming_Reports/*") // Trimming multiqc HTML report
 
   output:
     path("01-TG_Preproc/Fastq"),                                                              emit: VVed_trimmed_reads
@@ -79,8 +77,7 @@ process VV_TRIMMED_READS {
     path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc${params.assay_suffix}_data.zip"),    emit: VVed_trimmed_zipped_multiqc_data
     path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc${params.assay_suffix}.html"),       emit: VVed_trimmed_multiqc_html
     path("01-TG_Preproc/Trimming_Reports/*trimming_report.txt"), emit: VVed_trimming_reports
-    path("01-TG_Preproc/Trimming_Reports/trimming_multiqc${params.assay_suffix}_data.zip"), emit: VVed_trimming_zipped_multiqc_data
-    path("01-TG_Preproc/Trimming_Reports/trimming_multiqc${params.assay_suffix}.html"),    emit: VVed_trimming_multiqc_html
+
     path("VV_log.csv"),                                                                       optional: params.skip_vv, emit: log
 
   script:

@@ -35,7 +35,6 @@ include { ADD_GENE_ANNOTATIONS as ADD_GENE_ANNOTATIONS_RRNA_RM } from '../module
 include { 
     MULTIQC as RAW_READS_MULTIQC;
     MULTIQC as TRIMMED_READS_MULTIQC;
-    MULTIQC as TRIMMING_MULTIQC;
     MULTIQC as ALIGN_MULTIQC;
     MULTIQC as GENEBODY_COVERAGE_MULTIQC;
     MULTIQC as INFER_EXPERIMENT_MULTIQC;
@@ -240,7 +239,6 @@ workflow RNASEQ_MICROBES {
         // MultiQC
         ch_multiqc_config = params.multiqc_config ? Channel.fromPath( params.multiqc_config ) : Channel.fromPath("NO_FILE")
         RAW_READS_MULTIQC(samples_txt, raw_fastqc_zip, ch_multiqc_config, "raw_")
-        TRIMMING_MULTIQC(samples_txt, trimgalore_reports, ch_multiqc_config, "trimming_")
         TRIMMED_READS_MULTIQC(samples_txt, trimmed_fastqc_zip | concat( TRIMGALORE.out.reports ) | collect, ch_multiqc_config, "trimmed_")
         ALIGN_MULTIQC(samples_txt, bowtie2_alignment_logs, ch_multiqc_config, "align_")
         INFER_EXPERIMENT_MULTIQC(samples_txt, INFER_EXPERIMENT.out.log | map { it[1] } | collect, ch_multiqc_config, "infer_exp_")
@@ -300,9 +298,7 @@ workflow RNASEQ_MICROBES {
             trimmed_fastqc_zip,
             TRIMMED_READS_MULTIQC.out.zipped_data,
             TRIMMED_READS_MULTIQC.out.html,
-            TRIMGALORE.out.reports | collect,
-            TRIMMING_MULTIQC.out.zipped_data,
-            TRIMMING_MULTIQC.out.html
+            TRIMGALORE.out.reports | collect
         )
         VV_BOWTIE2_ALIGNMENT(
             dp_tools_plugin,
