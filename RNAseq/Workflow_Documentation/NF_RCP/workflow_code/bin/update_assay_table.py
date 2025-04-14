@@ -38,6 +38,7 @@ import pandas as pd
 import shutil
 import tempfile
 import json
+import re
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Extract RNA-Seq assay table from ISA.zip')
@@ -1136,6 +1137,33 @@ def clean_comma_space(df):
     print("Removed spaces after commas in all string columns")
     return df
 
+def clean_column_names(df):
+    """Clean column names by removing any .# suffixes pandas adds to duplicates.
+    
+    Args:
+        df: The DataFrame to clean column names
+        
+    Returns:
+        The DataFrame with cleaned column names
+    """
+    # Create a mapping of old_name -> new_name (without .# suffix)
+    name_mapping = {}
+    for col in df.columns:
+        # Use regex to match column names with .digits suffix
+        if re.search(r'\.\d+$', col):
+            # Remove the .# suffix
+            base_name = re.sub(r'\.\d+$', '', col)
+            name_mapping[col] = base_name
+    
+    # Rename columns using the mapping if any found
+    if name_mapping:
+        print(f"Cleaning {len(name_mapping)} column names by removing .# suffixes:")
+        for old_name, new_name in name_mapping.items():
+            print(f"  - {old_name} -> {new_name}")
+        df = df.rename(columns=name_mapping)
+    
+    return df
+
 def main():
     args = parse_args()
     
@@ -1220,6 +1248,9 @@ def main():
         
         # Clean comma-space in all string columns
         assay_df = clean_comma_space(assay_df)
+        
+        # Clean column names by removing any .# suffixes pandas adds
+        assay_df = clean_column_names(assay_df)
         
         # Use the filename we found in extract_and_find_assay
         orig_filename = assay_filename
