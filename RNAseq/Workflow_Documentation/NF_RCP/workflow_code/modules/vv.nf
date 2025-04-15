@@ -354,7 +354,8 @@ process VV_RSEM_COUNTS {
     # This allows detection as output files for publishing
     mv INPUT/* . || true
 
-    sort_into_subdirectories.py --from 03-RSEM_Counts --to 03-RSEM_Counts --runsheet ${runsheet} --glob '.*'
+    # Run the simplified sorting script to organize files into sample subdirectories
+    sort_into_subdirectories_by_sample.py 03-RSEM_Counts 03-RSEM_Counts
 
     # Run V&V unless user requests to skip V&V
     if ${ !params.skip_vv } ; then
