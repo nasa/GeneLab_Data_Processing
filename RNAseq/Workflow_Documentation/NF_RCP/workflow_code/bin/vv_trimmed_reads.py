@@ -71,6 +71,7 @@ def check_directory_structure(outdir):
     trimmed_data_path = os.path.join(outdir, "01-TG_Preproc")
     fastq_path = os.path.join(trimmed_data_path, "Fastq")
     fastqc_path = os.path.join(trimmed_data_path, "FastQC_Reports")
+    multiqc_path = os.path.join(trimmed_data_path, "MultiQC_Reports")
     
     missing_dirs = []
     
@@ -80,6 +81,8 @@ def check_directory_structure(outdir):
         missing_dirs.append(str(fastq_path))
     if not os.path.exists(fastqc_path):
         missing_dirs.append(str(fastqc_path))
+    if not os.path.exists(multiqc_path):
+        missing_dirs.append(str(multiqc_path))
     
     if missing_dirs:
         print(f"WARNING: The following directories are missing: {', '.join(missing_dirs)}")
@@ -353,9 +356,9 @@ def check_trimmed_fastqc_existence(outdir, samples, paired_end, log_path):
 
 def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
     """Check if all samples are included in the MultiQC report."""
-    fastqc_dir = os.path.join(outdir, "01-TG_Preproc", "FastQC_Reports")
-    multiqc_data_zip = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}_data.zip")
-    multiqc_html = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}.html")
+    multiqc_dir = os.path.join(outdir, "01-TG_Preproc", "MultiQC_Reports")
+    multiqc_data_zip = os.path.join(multiqc_dir, f"trimmed_multiqc{assay_suffix}_data.zip")
+    multiqc_html = os.path.join(multiqc_dir, f"trimmed_multiqc{assay_suffix}.html")
     
     if not os.path.exists(multiqc_data_zip):
         print(f"WARNING: MultiQC data zip file not found: {multiqc_data_zip}")
@@ -432,9 +435,9 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
 
 def get_trimmed_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
     """Extract trimmed MultiQC stats for all samples and write to a stats file for analysis."""
-    fastqc_dir = os.path.join(outdir, "01-TG_Preproc", "FastQC_Reports")
-    multiqc_data_zip = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}_data.zip")
-    multiqc_html = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}.html")
+    multiqc_dir = os.path.join(outdir, "01-TG_Preproc", "MultiQC_Reports")
+    multiqc_data_zip = os.path.join(multiqc_dir, f"trimmed_multiqc{assay_suffix}_data.zip")
+    multiqc_html = os.path.join(multiqc_dir, f"trimmed_multiqc{assay_suffix}.html")
     
     if not os.path.exists(multiqc_data_zip):
         print(f"WARNING: MultiQC data zip file not found: {multiqc_data_zip}")
@@ -949,10 +952,10 @@ def check_trimming_report_existence(outdir, samples, paired_end, log_path):
 
 def check_trimming_multiqc_samples(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
     """Check if all samples are included in the trimming MultiQC report (now combined in the trimmed FastQC MultiQC)."""
-    # Use FastQC directory instead of Trimming_Reports since they're combined now
-    fastqc_dir = os.path.join(outdir, "01-TG_Preproc", "FastQC_Reports")
-    multiqc_data_zip = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}_data.zip")
-    multiqc_html = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}.html")
+    # Use MultiQC_Reports directory instead of FastQC_Reports
+    multiqc_dir = os.path.join(outdir, "01-TG_Preproc", "MultiQC_Reports")
+    multiqc_data_zip = os.path.join(multiqc_dir, f"trimmed_multiqc{assay_suffix}_data.zip")
+    multiqc_html = os.path.join(multiqc_dir, f"trimmed_multiqc{assay_suffix}.html")
     
     if not os.path.exists(multiqc_data_zip):
         print(f"WARNING: Trimmed MultiQC data zip file not found: {multiqc_data_zip}")
@@ -1041,8 +1044,8 @@ def check_trimming_multiqc_samples(outdir, samples, log_path, assay_suffix="_GLb
 def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.001, assay_suffix="_GLbulkRNAseq"):
     """Check if adapter sequences were present in raw reads and properly removed during trimming."""
     # Use the combined trimmed FastQC MultiQC report
-    fastqc_dir = os.path.join(outdir, "01-TG_Preproc", "FastQC_Reports")
-    multiqc_data_zip = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}_data.zip")
+    multiqc_dir = os.path.join(outdir, "01-TG_Preproc", "MultiQC_Reports")
+    multiqc_data_zip = os.path.join(multiqc_dir, f"trimmed_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_data_zip):
         print(f"WARNING: Trimmed MultiQC data zip file not found: {multiqc_data_zip}")

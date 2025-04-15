@@ -21,14 +21,14 @@ process VV_RAW_READS {
     path(runsheet)                             // Runsheet
     path("INPUT/00-RawData/Fastq/*")           // Raw reads
     path("INPUT/00-RawData/FastQC_Reports/*")  // Raw FastQC reports 
-    path("INPUT/00-RawData/FastQC_Reports/*")  // Zipped Raw MultiQC data directory
-    path("INPUT/00-RawData/FastQC_Reports/*")  // Raw MultiQC HTML report
+    path("INPUT/00-RawData/MultiQC_Reports/*")  // Zipped Raw MultiQC data directory
+    path("INPUT/00-RawData/MultiQC_Reports/*")  // Raw MultiQC HTML report
 
   output:
     path("00-RawData/Fastq"),                                                        emit: VVed_raw_reads
     path("00-RawData/FastQC_Reports/*{_fastqc.html,_fastqc.zip}"),                   emit: VVed_raw_fastqc
-    path("00-RawData/FastQC_Reports/raw_multiqc${params.assay_suffix}_data.zip"),  emit: VVed_raw_zipped_multiqc_data
-    path("00-RawData/FastQC_Reports/raw_multiqc${params.assay_suffix}.html"),       emit: VVed_raw_multiqc_html
+    path("00-RawData/MultiQC_Reports/raw_multiqc${params.assay_suffix}_data.zip"),  emit: VVed_raw_zipped_multiqc_data
+    path("00-RawData/MultiQC_Reports/raw_multiqc${params.assay_suffix}.html"),       emit: VVed_raw_multiqc_html
     path("VV_log.csv"),                                                              optional: params.skip_vv, emit: log
     path("versions.yml"), emit: versions
 
@@ -67,15 +67,15 @@ process VV_TRIMMED_READS {
     path(runsheet)              // Runsheet
     path("INPUT/01-TG_Preproc/Fastq/*")   // Trimmed reads
     path("INPUT/01-TG_Preproc/FastQC_Reports/*")  // Trimmed FastQC reports
-    path("INPUT/01-TG_Preproc/FastQC_Reports/*") // Trimmed reads multiqc zipped data directory
-    path("INPUT/01-TG_Preproc/FastQC_Reports/*") // Trimmed reads multiqc HTML report
+    path("INPUT/01-TG_Preproc/MultiQC_Reports/*") // Trimmed reads multiqc zipped data directory
+    path("INPUT/01-TG_Preproc/MultiQC_Reports/*") // Trimmed reads multiqc HTML report
     path("INPUT/01-TG_Preproc/Trimming_Reports/*") // Trimming reports
 
   output:
     path("01-TG_Preproc/Fastq"),                                                              emit: VVed_trimmed_reads
     path("01-TG_Preproc/FastQC_Reports/*{_fastqc.html,_fastqc.zip}"),                         emit: VVed_trimmed_fastqc
-    path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc${params.assay_suffix}_data.zip"),    emit: VVed_trimmed_zipped_multiqc_data
-    path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc${params.assay_suffix}.html"),       emit: VVed_trimmed_multiqc_html
+    path("01-TG_Preproc/MultiQC_Reports/trimmed_multiqc${params.assay_suffix}_data.zip"),    emit: VVed_trimmed_zipped_multiqc_data
+    path("01-TG_Preproc/MultiQC_Reports/trimmed_multiqc${params.assay_suffix}.html"),       emit: VVed_trimmed_multiqc_html
     path("01-TG_Preproc/Trimming_Reports/*trimming_report.txt"), emit: VVed_trimming_reports
 
     path("VV_log.csv"),                                                                       optional: params.skip_vv, emit: log

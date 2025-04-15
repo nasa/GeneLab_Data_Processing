@@ -67,6 +67,7 @@ def check_directory_structure(outdir):
     raw_data_path = os.path.join(outdir, "00-RawData")
     fastq_path = os.path.join(raw_data_path, "Fastq")
     fastqc_path = os.path.join(raw_data_path, "FastQC_Reports")
+    multiqc_path = os.path.join(raw_data_path, "MultiQC_Reports")
     
     missing_dirs = []
     
@@ -76,6 +77,8 @@ def check_directory_structure(outdir):
         missing_dirs.append(str(fastq_path))
     if not os.path.exists(fastqc_path):
         missing_dirs.append(str(fastqc_path))
+    if not os.path.exists(multiqc_path):
+        missing_dirs.append(str(multiqc_path))
     
     if missing_dirs:
         print(f"WARNING: The following directories are missing: {', '.join(missing_dirs)}")
@@ -347,8 +350,8 @@ def check_raw_fastqc_existence(outdir, samples, paired_end, log_path):
 
 def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
     """Check if all samples are included in the MultiQC report."""
-    fastqc_dir = os.path.join(outdir, "00-RawData", "FastQC_Reports")
-    multiqc_data_zip = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}_data.zip")
+    multiqc_dir = os.path.join(outdir, "00-RawData", "MultiQC_Reports")
+    multiqc_data_zip = os.path.join(multiqc_dir, f"raw_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_data_zip):
         print(f"WARNING: MultiQC data zip file not found: {multiqc_data_zip}")
@@ -425,9 +428,9 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
 
 def get_raw_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
     """Extract raw MultiQC stats for all samples."""
-    fastqc_dir = os.path.join(outdir, "00-RawData", "FastQC_Reports")
-    multiqc_data_zip = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}_data.zip")
-    multiqc_html = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}.html")
+    multiqc_dir = os.path.join(outdir, "00-RawData", "MultiQC_Reports")
+    multiqc_data_zip = os.path.join(multiqc_dir, f"raw_multiqc{assay_suffix}_data.zip")
+    multiqc_html = os.path.join(multiqc_dir, f"raw_multiqc{assay_suffix}.html")
     
     if not os.path.exists(multiqc_data_zip):
         print(f"WARNING: MultiQC data zip file not found: {multiqc_data_zip}")
