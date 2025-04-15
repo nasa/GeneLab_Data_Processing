@@ -516,11 +516,12 @@ def add_parameter_column(df, column_name, value, prefix=None):
 
 def add_unmapped_reads_column(df, glds_prefix, runsheet_df=None, mode=""):
     """Add the Unmapped Reads column to the dataframe."""
-    column_name = "Parameter Value[Unmapped Reads]"
+    # Update column name to be under Aligned Sequence Data folder
+    column_name = "Parameter Value[Aligned Sequence Data/Unmapped Reads]"
     
     # Determine if paired-end from runsheet
-    is_paired_end = is_paired_end_data(runsheet_df)
-    print(f"Data is {'paired-end' if is_paired_end else 'single-end'} based on runsheet")
+    is_paired = is_paired_end_data(runsheet_df)
+    print(f"Data is {'paired-end' if is_paired else 'single-end'} based on runsheet")
     
     # Find the sample name column in the assay table
     sample_col = next((col for col in df.columns if 'Sample Name' in col), None)
@@ -530,13 +531,13 @@ def add_unmapped_reads_column(df, glds_prefix, runsheet_df=None, mode=""):
         # If no sample column, just use placeholder values
         if mode == "microbes":
             # Microbes mode (Bowtie2)
-            if is_paired_end:
+            if is_paired:
                 values = [f"{glds_prefix}sample{i+1}.unmapped.fastq.1.gz,{glds_prefix}sample{i+1}.unmapped.fastq.2.gz" for i in range(len(df))]
             else:
                 values = [f"{glds_prefix}sample{i+1}.unmapped.fastq.gz" for i in range(len(df))]
         else:
             # Default mode (STAR)
-            if is_paired_end:
+            if is_paired:
                 values = [f"{glds_prefix}sample{i+1}_Unmapped.out.mate1,{glds_prefix}sample{i+1}_Unmapped.out.mate2" for i in range(len(df))]
             else:
                 values = [f"{glds_prefix}sample{i+1}_Unmapped.out.mate1" for i in range(len(df))]
@@ -563,7 +564,7 @@ def add_unmapped_reads_column(df, glds_prefix, runsheet_df=None, mode=""):
             
             if mode == "microbes":
                 # Microbes mode (Bowtie2)
-                if is_paired_end:
+                if is_paired:
                     # For paired-end data, create entries with both .1 and .2 files
                     values.append(f"{glds_prefix}{sample}.unmapped.fastq.1.gz,{glds_prefix}{sample}.unmapped.fastq.2.gz")
                 else:
@@ -571,7 +572,7 @@ def add_unmapped_reads_column(df, glds_prefix, runsheet_df=None, mode=""):
                     values.append(f"{glds_prefix}{sample}.unmapped.fastq.gz")
             else:
                 # Default mode (STAR)
-                if is_paired_end:
+                if is_paired:
                     # For paired-end data with STAR
                     values.append(f"{glds_prefix}{sample}_Unmapped.out.mate1,{glds_prefix}{sample}_Unmapped.out.mate2")
                 else:
@@ -1204,7 +1205,7 @@ def main():
         # 4. Aligned Sequence Data column
         assay_df = add_aligned_sequence_data_column(assay_df, glds_prefix, runsheet_df=runsheet_df, mode=args.mode)
         
-        # 5. Unmapped Reads column (moved here as requested)
+        # 5. Aligned Sequence Data/Unmapped Reads column 
         assay_df = add_unmapped_reads_column(assay_df, glds_prefix, runsheet_df=runsheet_df, mode=args.mode)
         
         # 6. Aligned Sequence Data/Alignment Logs column
