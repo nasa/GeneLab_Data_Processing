@@ -358,7 +358,7 @@ process VV_RSEM_COUNTS {
     sort_into_subdirectories.py --from 03-RSEM_Counts --to 03-RSEM_Counts --runsheet ${runsheet} --glob '.*'
     
     # Explicitly sort the rRNArm files into sample directories
-    sort_into_subdirectories.py --from 03-RSEM_Counts --to 03-RSEM_Counts --glob '*_rRNArm*'
+    sort_into_subdirectories.py --from 03-RSEM_Counts --to 03-RSEM_Counts --runsheet ${runsheet} --glob '*_rRNArm*'
 
     # Run V&V unless user requests to skip V&V
     if ${ !params.skip_vv } ; then
