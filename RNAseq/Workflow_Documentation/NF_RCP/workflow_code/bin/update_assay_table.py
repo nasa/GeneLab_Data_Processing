@@ -889,29 +889,19 @@ def add_raw_counts_tables_column(df, glds_prefix, assay_suffix, mode=""):
     # Create the unnormalized counts filename based on mode
     if mode == "microbes":
         # Microbes mode (FeatureCounts)
-        counts_file = f"{glds_prefix}FeatureCounts_Unnormalized_Counts{assay_suffix}.csv"
+        counts_files = [
+            f"{glds_prefix}FeatureCounts_Unnormalized_Counts{assay_suffix}.csv",
+            f"{glds_prefix}FeatureCounts_Unnormalized_Counts_rRNArm{assay_suffix}.csv"
+        ]
+        counts_file = ",".join(counts_files)
     else:
         # Default mode (STAR/RSEM)
-        rsem_file = f"{glds_prefix}RSEM_Unnormalized_Counts{assay_suffix}.csv"
-        star_file = f"{glds_prefix}STAR_Unnormalized_Counts{assay_suffix}.csv"
-        counts_file = f"{rsem_file},{star_file}"
-    
-    # Add the column to the dataframe with the same value for all rows
-    df = update_column(df, column_name, counts_file)
-    
-    return df
-
-def add_raw_counts_tables_rrnarm_column(df, glds_prefix, assay_suffix, mode=""):
-    """Add the Raw Counts Tables rRNArm column to the dataframe."""
-    column_name = "Parameter Value[Raw Counts Tables rRNArm]"
-    
-    # Create the unnormalized counts filename based on mode
-    if mode == "microbes":
-        # Microbes mode (FeatureCounts)
-        counts_file = f"{glds_prefix}FeatureCounts_Unnormalized_Counts_rRNArm{assay_suffix}.csv"
-    else:
-        # Default mode (STAR/RSEM)
-        counts_file = f"{glds_prefix}RSEM_Unnormalized_Counts_rRNArm{assay_suffix}.csv"
+        counts_files = [
+            f"{glds_prefix}RSEM_Unnormalized_Counts{assay_suffix}.csv",
+            f"{glds_prefix}STAR_Unnormalized_Counts{assay_suffix}.csv",
+            f"{glds_prefix}RSEM_Unnormalized_Counts_rRNArm{assay_suffix}.csv"
+        ]
+        counts_file = ",".join(counts_files)
     
     # Add the column to the dataframe with the same value for all rows
     df = update_column(df, column_name, counts_file)
@@ -923,25 +913,10 @@ def add_normalized_counts_data_column(df, glds_prefix, assay_suffix):
     column_name = "Parameter Value[Normalized Counts Data]"
     
     # Create the normalized counts filenames - same for all samples
+    # Include both regular and rRNArm files (4 total files)
     normalized_files = [
         f"{glds_prefix}Normalized_Counts{assay_suffix}.csv",
-        f"{glds_prefix}VST_Counts{assay_suffix}.csv"
-    ]
-    
-    # Join the files with commas
-    combined_files = ",".join(normalized_files)
-    
-    # Add the column to the dataframe with the same value for all rows
-    df = update_column(df, column_name, combined_files)
-    
-    return df
-
-def add_normalized_counts_data_rrnarm_column(df, glds_prefix, assay_suffix):
-    """Add the Normalized Counts Data rRNArm column to the dataframe."""
-    column_name = "Parameter Value[Normalized Counts Data rRNArm]"
-    
-    # Create the normalized counts filenames with rRNArm - same for all samples
-    normalized_files = [
+        f"{glds_prefix}VST_Counts{assay_suffix}.csv",
         f"{glds_prefix}Normalized_Counts_rRNArm{assay_suffix}.csv",
         f"{glds_prefix}VST_Counts_rRNArm{assay_suffix}.csv"
     ]
@@ -959,28 +934,11 @@ def add_differential_expression_column(df, glds_prefix, assay_suffix):
     column_name = "Parameter Value[Differential Expression Analysis Data]"
     
     # Create the differential expression filenames - same for all samples
+    # Include both regular files and the rRNArm differential expression file (4 total)
     de_files = [
         f"{glds_prefix}SampleTable{assay_suffix}.csv",
         f"{glds_prefix}contrasts{assay_suffix}.csv",
-        f"{glds_prefix}differential_expression{assay_suffix}.csv"
-    ]
-    
-    # Join the files with commas
-    combined_files = ",".join(de_files)
-    
-    # Add the column to the dataframe with the same value for all rows
-    df = update_column(df, column_name, combined_files)
-    
-    return df
-
-def add_differential_expression_rrnarm_column(df, glds_prefix, assay_suffix):
-    """Add the Differential Expression Analysis Data rRNArm column to the dataframe."""
-    column_name = "Parameter Value[Differential Expression Analysis Data rRNArm]"
-    
-    # Create the differential expression filenames with rRNArm - same for all samples
-    de_files = [
-        f"{glds_prefix}SampleTable_rRNArm{assay_suffix}.csv",
-        f"{glds_prefix}contrasts_rRNArm{assay_suffix}.csv",
+        f"{glds_prefix}differential_expression{assay_suffix}.csv",
         f"{glds_prefix}differential_expression_rRNArm{assay_suffix}.csv"
     ]
     
@@ -1231,17 +1189,6 @@ def main():
         
         # 13. Differential Expression Analysis Data column
         assay_df = add_differential_expression_column(assay_df, glds_prefix, args.assay_suffix)
-        
-        # All rRNArm columns
-        
-        # 14. Raw Counts Tables rRNArm column
-        assay_df = add_raw_counts_tables_rrnarm_column(assay_df, glds_prefix, args.assay_suffix, args.mode)
-        
-        # 15. Normalized Counts Data rRNArm column
-        assay_df = add_normalized_counts_data_rrnarm_column(assay_df, glds_prefix, args.assay_suffix)
-        
-        # 16. Differential Expression Analysis Data rRNArm column
-        assay_df = add_differential_expression_rrnarm_column(assay_df, glds_prefix, args.assay_suffix)
         
         # ERCC column (conditionally added only if ERCC spike-ins are used)
         if ercc_used:

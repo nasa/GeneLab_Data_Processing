@@ -347,8 +347,6 @@ workflow RNASEQ {
             ADD_GENE_ANNOTATIONS.out.annotated_dge_table,
             DGE_DESEQ2_RRNA_RM.out.norm_counts,
             DGE_DESEQ2_RRNA_RM.out.vst_norm_counts,
-            DGE_DESEQ2_RRNA_RM.out.sample_table,
-            DGE_DESEQ2_RRNA_RM.out.contrasts,
             ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
         )
         VV_CONCAT_FILTER( ch_outdir, VV_RAW_READS.out.log | mix( VV_TRIMMED_READS.out.log, // Concatenate and filter V&V logs

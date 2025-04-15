@@ -1654,12 +1654,47 @@ def check_dge_table_group_columns_constraints(outdir, runsheet_path, log_path, a
             "Group.Mean_", "Group.Stdev_"
         ]
         
-        groups = []
-        for condition in unique_conditions:
-            # Convert condition to R-friendly group name parentheses format
-            group_name = f"({condition.replace('.', ' ')})"
-            groups.append(group_name)
+        # We need to extract actual column patterns directly from the DGE file
+        # to handle whatever format is being used
+        group_mean_cols = [col for col in df_dge.columns if col.startswith("Group.Mean_")]
+        if not group_mean_cols:
+            log_check_result(log_path, component_name, "all", check_name, "RED", 
+                           "No Group.Mean_ columns found in DGE table", 
+                           f"Expected columns not found")
+            return False
         
+        # Now extract the group part from these actual column names to build our expectations
+        groups = []
+        for col in group_mean_cols:
+            # Extract the part between parentheses, including the parentheses
+            match = re.search(r'(\(.+?\))', col)
+            if match:
+                group = match.group(1)
+                groups.append(group)
+        
+        if not groups:
+            # Fallback: try to derive group names from conditions in a way that matches actual columns
+            groups = []
+            for condition in unique_conditions:
+                # Convert dots to ampersands in a way that maintains existing structure
+                if "..." in condition:
+                    # Handle R-style dotted format
+                    parts = condition.split("...")
+                    group_name = f"({' & '.join(parts)})"
+                else:
+                    # Handle already-clean format
+                    parts = condition.replace(".", " ").split()
+                    if len(parts) > 1:
+                        # For multi-word conditions, format as "A B & C" 
+                        # This is a guess at the format being used
+                        last_part = parts[-1]
+                        first_parts = " ".join(parts[:-1])
+                        group_name = f"({first_parts} & {last_part})"
+                    else:
+                        # Single word condition
+                        group_name = f"({condition})"
+                groups.append(group_name)
+
         expected_columns = []
         for prefix in expected_group_prefixes:
             for group in groups:

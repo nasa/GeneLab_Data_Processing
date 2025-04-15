@@ -258,11 +258,9 @@ process VV_DGE_DESEQ2 {
     path("INPUT/05-DESeq2_DGE/*") // sample table
     path("INPUT/05-DESeq2_DGE/*") // contrasts
     path("INPUT/05-DESeq2_DGE/*") // annotated dge table
-    path("INPUT/04-DESeq2_NormCounts_rRNArm/*") // (rrna rm) unnormed counts, normed counts
-    path("INPUT/04-DESeq2_NormCounts_rRNArm/*") // (rrna rm) vst norm counts
-    path("INPUT/05-DESeq2_DGE_rRNArm/*") // (rrna rm) sample table
-    path("INPUT/05-DESeq2_DGE_rRNArm/*") // (rrna rm) contrasts
-    path("INPUT/05-DESeq2_DGE_rRNArm/*") // (rrna rm) annotated dge table
+    path("INPUT/04-DESeq2_NormCounts/*") // (rrna rm) unnormed counts, normed counts
+    path("INPUT/04-DESeq2_NormCounts/*") // (rrna rm) vst norm counts
+    path("INPUT/05-DESeq2_DGE/*") // (rrna rm) annotated dge table
 
   output:
     path("04-*")
