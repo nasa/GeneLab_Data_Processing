@@ -137,8 +137,8 @@ if (params$microbes) {
         full.names = TRUE
     )
 
-    # Remove "_rRNA_removed" from filenames for matching
-    clean_filenames <- sub("_rRNA_removed", "", basename(files))
+    # Remove "_rRNArm" from filenames for matching
+    clean_filenames <- sub("_rRNArm", "", basename(files))
 
     samples <- rownames(study)
 
