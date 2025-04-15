@@ -724,8 +724,8 @@ def add_trimmed_multiqc_reports_column(df, glds_prefix, assay_suffix):
     column_name = "Parameter Value[Trimmed Sequence Data/MultiQC Reports]"
     
     # Create the multiqc report filenames - both data zip and html
-    multiqc_html = f"trimmed_multiqc{assay_suffix}.html"
-    multiqc_data = f"trimmed_multiqc{assay_suffix}_data.zip"
+    multiqc_html = f"{glds_prefix}trimmed_multiqc{assay_suffix}.html"
+    multiqc_data = f"{glds_prefix}trimmed_multiqc{assay_suffix}_data.zip"
     
     # Join the files with commas
     combined_files = f"{multiqc_data},{multiqc_html}"
@@ -740,8 +740,8 @@ def add_align_multiqc_reports_column(df, glds_prefix, assay_suffix):
     column_name = "Parameter Value[Aligned Sequence Data/MultiQC Reports]"
     
     # Create the alignment multiqc report filenames - both data zip and html
-    multiqc_html = f"align_multiqc{assay_suffix}.html"
-    multiqc_data = f"align_multiqc{assay_suffix}_data.zip"
+    multiqc_html = f"{glds_prefix}align_multiqc{assay_suffix}.html"
+    multiqc_data = f"{glds_prefix}align_multiqc{assay_suffix}_data.zip"
     
     # Join the files with commas
     combined_files = f"{multiqc_data},{multiqc_html}"
@@ -758,8 +758,8 @@ def add_rseqc_multiqc_reports_column(df, glds_prefix, assay_suffix):
     # Create the four RSeQC multiqc report filenames - data zip and html for each
     multiqc_reports = []
     for report_type in ["geneBody_cov", "infer_exp", "inner_dist", "read_dist"]:
-        data_zip = f"{report_type}_multiqc{assay_suffix}_data.zip"
-        html = f"{report_type}_multiqc{assay_suffix}.html"
+        data_zip = f"{glds_prefix}{report_type}_multiqc{assay_suffix}_data.zip"
+        html = f"{glds_prefix}{report_type}_multiqc{assay_suffix}.html"
         multiqc_reports.extend([data_zip, html])
     
     # Join the reports with commas
@@ -851,12 +851,12 @@ def add_raw_counts_multiqc_column(df, glds_prefix, assay_suffix, mode=""):
     # Create the appropriate multiqc report filenames based on mode - both data zip and html
     if mode == "microbes":
         # Microbes mode (FeatureCounts)
-        multiqc_html = f"featureCounts_multiqc{assay_suffix}.html"
-        multiqc_data = f"featureCounts_multiqc{assay_suffix}_data.zip"
+        multiqc_html = f"{glds_prefix}featureCounts_multiqc{assay_suffix}.html"
+        multiqc_data = f"{glds_prefix}featureCounts_multiqc{assay_suffix}_data.zip"
     else:
         # Default mode (RSEM)
-        multiqc_html = f"RSEM_count_multiqc{assay_suffix}.html"
-        multiqc_data = f"RSEM_count_multiqc{assay_suffix}_data.zip"
+        multiqc_html = f"{glds_prefix}RSEM_count_multiqc{assay_suffix}.html"
+        multiqc_data = f"{glds_prefix}RSEM_count_multiqc{assay_suffix}_data.zip"
     
     # Join the files with commas
     combined_files = f"{multiqc_data},{multiqc_html}"
@@ -871,8 +871,8 @@ def add_raw_multiqc_reports_column(df, glds_prefix, assay_suffix):
     column_name = "Parameter Value[MultiQC File Names]"
     
     # Create the multiqc report filenames - both data zip and html
-    multiqc_html = f"raw_multiqc{assay_suffix}.html"
-    multiqc_data = f"raw_multiqc{assay_suffix}_data.zip"
+    multiqc_html = f"{glds_prefix}raw_multiqc{assay_suffix}.html"
+    multiqc_data = f"{glds_prefix}raw_multiqc{assay_suffix}_data.zip"
     
     # Join the files with commas
     combined_files = f"{multiqc_data},{multiqc_html}"
@@ -1199,8 +1199,8 @@ def main():
         # 2. Trimmed Sequence Data/MultiQC Reports column
         assay_df = add_trimmed_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
         
-        # 3. Trimmed Sequence Data/Trimming Reports column - commented out as trimming reports are now in MultiQC
-        # assay_df = add_trimming_reports_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
+        # 3. Trimmed Sequence Data/Trimming Reports column
+        assay_df = add_trimming_reports_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
         
         # 4. Aligned Sequence Data column
         assay_df = add_aligned_sequence_data_column(assay_df, glds_prefix, runsheet_df=runsheet_df, mode=args.mode)

@@ -89,7 +89,7 @@ DESeq2 Analysis Workflow
 
 - Added parallel rRNA-removed DGE analysis:
   - Create filtered RSEM count files with rRNA features removed:
-    - {sample}_rRNA_removed.genes.results
+    - {sample}_rRNArm.genes.results
   - Normalize rRNA-removed counts
   - Perform DGE analysis using rRNA-removed counts
   - Output additional set of rRNA-removed counts and DGE results
@@ -1076,7 +1076,7 @@ grep -E 'gene_biotype "rRNA"|gene_type "rRNA"|gbkey "rRNA"' /path/to/annotation/
 ### Filter out rRNA entries ###
 awk 'NR==FNR {ids[$1]=1; next} !($1 in ids)' \
     *rrna_ensembl_ids.txt \
-    *.genes.results > *_rRNA_removed.genes.results
+    *.genes.results > *_rRNArm.genes.results
 
 ### Count removed rRNA entries ###
 rRNA_count=$(awk 'NR==FNR {ids[$1]=1; next} $1 in ids' \
@@ -1090,7 +1090,7 @@ echo "*: ${rRNA_count} rRNA entries removed." > *_rRNA_counts.txt
 - *rrna_ensembl_ids.txt (file containing list of gene IDs with rRNA features, output from [Step 8di](#8di-extract-rrna-gene-ids-from-gtf))
 
 **Output Data:**
-- **\*rRNA_removed.genes.results** (RSEM gene counts with rRNA entries removed)
+- **\*rRNArm.genes.results** (RSEM gene counts with rRNA entries removed)
 - *rRNA_counts.txt (Summary of number of rRNA entries removed)
 
 <br>
@@ -1101,7 +1101,7 @@ echo "*: ${rRNA_count} rRNA entries removed." > *_rRNA_counts.txt
 
 > Note: DGE Analysis is performed twice with different sets of input files:
 > 1. Using RSEM genes.results files (*genes.results, output from [Step 8a](#8a-count-aligned-reads-with-rsem))
-> 2. Using rRNA-removed RSEM genes.results files (*rRNA_removed.genes.results, output from [Step 8dii](#8dii-filter-rrna-genes-from-rsem-genes-results))
+> 2. Using rRNA-removed RSEM genes.results files (*rRNArm.genes.results, output from [Step 8dii](#8dii-filter-rrna-genes-from-rsem-genes-results))
 
 <br>
 

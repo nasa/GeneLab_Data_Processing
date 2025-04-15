@@ -4,6 +4,7 @@ from pathlib import Path
 import shutil
 import sys
 import argparse
+import re
 
 import pandas as pd
 
@@ -19,10 +20,9 @@ args = parser.parse_args()
 # Determine samples list
 df = pd.read_csv(args.runsheet_path)
 samples = list(df["Sample Name"])
-print(samples)
+print(f"Found {len(samples)} samples in runsheet")
 
-# For a given directory, sort all files into {sample: str, [files: str]}
-files_by_sample = dict()
+# First handle standard files
 for sample in samples:
     pattern = f"{sample}{args.glob_suffix}"
     print(f"Looking for files matching: {pattern}")
@@ -32,5 +32,29 @@ for sample in samples:
     for file in files_for_this_sample:
         dest = Path(args.to_dir) / sample / file.name
         print(f"Moving {file} to {dest}")
-        dest.parent.mkdir( parents=True, exist_ok=True )
+        dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(file, dest)
+
+# Now explicitly handle rRNArm files that might not match the standard pattern
+rrnarm_files = list(Path(args.from_dir).glob("*_rRNArm.genes.results"))
+if rrnarm_files:
+    print(f"Found {len(rrnarm_files)} rRNArm files to process")
+    
+    for file in rrnarm_files:
+        # Extract the sample name from the rRNArm file
+        filename = file.name
+        # The pattern is typically {sample}_rRNArm.genes.results
+        match = re.match(r'(.+?)_rRNArm\.genes\.results', filename)
+        
+        if match:
+            sample_prefix = match.group(1)
+            # Look for exact match in samples list
+            if sample_prefix in samples:
+                dest = Path(args.to_dir) / sample_prefix / filename
+                print(f"Moving rRNArm file {file} to {dest}")
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(file, dest)
+            else:
+                print(f"WARNING: No exact sample match found for rRNArm file: {filename}")
+        else:
+            print(f"WARNING: Could not parse sample name from rRNArm file: {filename}")
