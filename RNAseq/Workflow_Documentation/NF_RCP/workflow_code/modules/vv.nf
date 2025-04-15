@@ -356,6 +356,9 @@ process VV_RSEM_COUNTS {
 
     # Run the simplified sorting script to organize files into sample subdirectories
     sort_into_subdirectories_by_sample.py 03-RSEM_Counts 03-RSEM_Counts
+    
+    # Explicitly sort the rRNArm files into sample directories
+    sort_into_subdirectories.py --from 03-RSEM_Counts --to 03-RSEM_Counts --glob '*_rRNArm.genes.results'
 
     # Run V&V unless user requests to skip V&V
     if ${ !params.skip_vv } ; then
