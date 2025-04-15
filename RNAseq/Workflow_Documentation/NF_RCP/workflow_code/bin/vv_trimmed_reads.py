@@ -1039,11 +1039,10 @@ def check_trimming_multiqc_samples(outdir, samples, log_path, assay_suffix="_GLb
             return False
 
 def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.001, assay_suffix="_GLbulkRNAseq"):
-    """Check if adapter sequences were present."""
-    # Use the combined trimmed FastQC MultiQC report instead of a separate trimming MultiQC
+    """Check if adapter sequences were present in raw reads and properly removed during trimming."""
+    # Use the combined trimmed FastQC MultiQC report
     fastqc_dir = os.path.join(outdir, "01-TG_Preproc", "FastQC_Reports")
     multiqc_data_zip = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}_data.zip")
-    multiqc_html = os.path.join(fastqc_dir, f"trimmed_multiqc{assay_suffix}.html")
     
     if not os.path.exists(multiqc_data_zip):
         print(f"WARNING: Trimmed MultiQC data zip file not found: {multiqc_data_zip}")
@@ -1051,8 +1050,8 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
                          "Trimmed MultiQC data zip not found", "")
         return False
     
-    print(f"Checking adapter presence in trimmed MultiQC data: {multiqc_data_zip}")
-    
+    print(f"Checking adapter presence in trimming report data within MultiQC: {multiqc_data_zip}")
+
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
         try:
@@ -1102,12 +1101,11 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
             
             # Keep track of samples with low adapter presence
             low_adapter_samples = []
-            all_checked_samples = []
-            
-            # Collect all adapter ratios for statistics
-            all_adapter_ratios = []
+            sample_adapter_ratios = {}  # Store adapter ratios by sample
             
             for sample in samples:
+                sample_ratios = []  # Collect ratios for both R1 and R2 if paired
+                
                 if is_paired:
                     # For paired end data, look for "Read 1" and "Read 2" entries
                     r1_key = f"{sample} Read 1"
@@ -1130,11 +1128,7 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
                         
                         if r_processed > 0:
                             adapter_ratio_r1 = r_with_adapters / r_processed
-                            all_adapter_ratios.append(adapter_ratio_r1)
-                            all_checked_samples.append(f"{r1_key} ({adapter_ratio_r1:.2%})")
-                            
-                            if adapter_ratio_r1 < threshold:
-                                low_adapter_samples.append(f"{r1_key} ({adapter_ratio_r1:.2%})")
+                            sample_ratios.append(adapter_ratio_r1)
                     
                     # Check R2
                     if 'r_processed' in stats_data[r2_key] and 'r_with_adapters' in stats_data[r2_key]:
@@ -1143,11 +1137,7 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
                         
                         if r_processed > 0:
                             adapter_ratio_r2 = r_with_adapters / r_processed
-                            all_adapter_ratios.append(adapter_ratio_r2)
-                            all_checked_samples.append(f"{r2_key} ({adapter_ratio_r2:.2%})")
-                            
-                            if adapter_ratio_r2 < threshold:
-                                low_adapter_samples.append(f"{r2_key} ({adapter_ratio_r2:.2%})")
+                            sample_ratios.append(adapter_ratio_r2)
                 else:
                     # For single end data
                     if sample not in stats_data:
@@ -1160,17 +1150,28 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
                         
                         if r_processed > 0:
                             adapter_ratio = r_with_adapters / r_processed
-                            all_adapter_ratios.append(adapter_ratio)
-                            all_checked_samples.append(f"{sample} ({adapter_ratio:.2%})")
-                            
-                            if adapter_ratio < threshold:
-                                low_adapter_samples.append(f"{sample} ({adapter_ratio:.2%})")
+                            sample_ratios.append(adapter_ratio)
+                
+                # Calculate the average ratio for this sample (combining R1 and R2 for paired-end)
+                if sample_ratios:
+                    avg_ratio = sum(sample_ratios) / len(sample_ratios)
+                    sample_adapter_ratios[sample] = avg_ratio
+                    
+                    # Check if below threshold
+                    if avg_ratio < threshold:
+                        low_adapter_samples.append(f"{sample} ({avg_ratio:.2%})")
+            
+            # Get all adapter ratios as a flat list for statistics
+            all_adapter_ratios = list(sample_adapter_ratios.values())
             
             # Calculate statistics if we have data
             if all_adapter_ratios:
                 mean_adapter_ratio = sum(all_adapter_ratios) / len(all_adapter_ratios)
+                median_adapter_ratio = np.median(all_adapter_ratios)
+                min_adapter_ratio = min(all_adapter_ratios)
+                max_adapter_ratio = max(all_adapter_ratios)
                 stdev_adapter_ratio = np.std(all_adapter_ratios) if len(all_adapter_ratios) > 1 else 0
-                stats_message = f"Mean % of reads with adapters: {mean_adapter_ratio:.2%}; StdDev: {stdev_adapter_ratio:.2%}"
+                stats_message = f"Mean: {mean_adapter_ratio:.2%}; Median: {median_adapter_ratio:.2%}; Range: {min_adapter_ratio:.2%} - {max_adapter_ratio:.2%}; StdDev: {stdev_adapter_ratio:.2%}"
             else:
                 stats_message = "No adapter ratio data available"
             
@@ -1181,15 +1182,15 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
                     print(f"  - {sample}")
                 print(f"Adapter presence stats: {stats_message}")
                 log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "RED", 
-                                f"Low adapter presence in {len(low_adapter_samples)} samples; {stats_message}", 
-                                "; ".join(low_adapter_samples))
+                                f"Adapter content: {min_adapter_ratio:.2%} - {max_adapter_ratio:.2%} (below threshold)", 
+                                f"{stats_message}; From {len(sample_adapter_ratios)} samples")
                 return False
             
-            print(f"All {len(all_checked_samples)} samples had adapter presence above threshold (≥{threshold:.2%})")
+            print(f"All {len(sample_adapter_ratios)} samples had adapter content above threshold (≥{threshold:.2%}) in raw reads")
             print(f"Adapter presence stats: {stats_message}")
             log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "GREEN", 
-                            f"Adapter presence verified", 
-                            f"Checked {len(all_checked_samples)} samples; minimum adapter ratio: {min(all_adapter_ratios):.2%}")
+                            f"Adapter content: {min_adapter_ratio:.2%} - {max_adapter_ratio:.2%}", 
+                            f"{stats_message}; From {len(sample_adapter_ratios)} samples")
             return True
             
         except Exception as e:
