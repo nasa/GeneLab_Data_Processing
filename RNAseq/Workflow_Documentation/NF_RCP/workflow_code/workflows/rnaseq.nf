@@ -305,9 +305,9 @@ workflow RNASEQ {
             runsheet_path,
             ALIGN_STAR.out.publishables | collect,
             QUANTIFY_STAR_GENES.out.publishables | collect,
-            ALIGN_MULTIQC.out.zipped_data,
-            ALIGN_MULTIQC.out.html,
             SORT_AND_INDEX_BAM.out.bam_only_files | collect,
+            ALIGN_MULTIQC.out.zipped_data,
+            ALIGN_MULTIQC.out.html
         )
         VV_RSEQC(
             dp_tools_plugin,

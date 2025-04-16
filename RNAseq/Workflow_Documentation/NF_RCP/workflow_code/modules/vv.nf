@@ -113,8 +113,8 @@ process VV_BOWTIE2_ALIGNMENT {
     path("INPUT/02-Bowtie2_Alignment/*") // (unmapped reads *.Unmapped.fastq.gz)
     path("INPUT/02-Bowtie2_Alignment/*") // (sorted BAMs *_sorted.bam)
     path("INPUT/02-Bowtie2_Alignment/*") // (sorted BAM index files *_sorted.bam.bai)
-    path("INPUT/02-Bowtie2_Alignment/*") // (zipped multiqc data directory)
-    path("INPUT/02-Bowtie2_Alignment/*") // (multiqc HTML report)
+    path("INPUT/02-Bowtie2_Alignment/MultiQC_Reports/*") // (zipped multiqc data directory)
+    path("INPUT/02-Bowtie2_Alignment/MultiQC_Reports/*") // (multiqc HTML report)
     
   output:
     path("02-Bowtie2_Alignment/**")
@@ -298,9 +298,9 @@ process VV_STAR_ALIGNMENT {
     path(runsheet)
     path("INPUT/02-STAR_Alignment/*") // direct STAR alignment output
     path("INPUT/02-STAR_Alignment/*") // STAR alignment counts tables
-    path("INPUT/02-STAR_Alignment/*") // zipped multiqc data directory
-    path("INPUT/02-STAR_Alignment/*") // multiqc HTML report
     path("INPUT/02-STAR_Alignment/*") // reindexed, sorted bam/bed files
+    path("INPUT/02-STAR_Alignment/MultiQC_Reports/*") // multiqc HTML report
+    path("INPUT/02-STAR_Alignment/MultiQC_Reports/*") // zipped multiqc data directory
 
   output:
     path("02-STAR_Alignment/**")

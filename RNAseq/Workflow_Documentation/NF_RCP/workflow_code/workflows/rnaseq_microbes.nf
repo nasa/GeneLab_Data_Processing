@@ -307,10 +307,10 @@ workflow RNASEQ_MICROBES {
             runsheet_path,
             ALIGN_BOWTIE2.out.alignment_logs | collect,
             ALIGN_BOWTIE2.out.unmapped_reads | collect,
-            ALIGN_MULTIQC.out.zipped_data,
-            ALIGN_MULTIQC.out.html,
             SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[1] } | collect,
-            SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[2] } | collect
+            SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[2] } | collect,
+            ALIGN_MULTIQC.out.zipped_data,
+            ALIGN_MULTIQC.out.html
         )
         VV_RSEQC(
             dp_tools_plugin,
