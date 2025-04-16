@@ -721,7 +721,7 @@ def add_trimmed_data_column(df, glds_prefix, runsheet_df=None):
     Returns:
         The modified dataframe
     """
-    column_name = "Parameter Value[Trimmed Sequence Data]"
+    column_name = "Parameter Value[Trimmed Sequence Data/Fastq]"
     alternative_names = [
         "Parameter Value[Trimmed Sequence Data Fastqc File]"
     ]
