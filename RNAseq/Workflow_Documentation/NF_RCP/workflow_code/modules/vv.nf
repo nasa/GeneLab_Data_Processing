@@ -152,14 +152,14 @@ process VV_RSEQC {
       val(meta)
       path(runsheet)
       path("INPUT/RSeQC_Analyses/*")                      // direct logs
-      path("INPUT/RSeQC_Analyses/02_geneBody_coverage/*") // genebody coverage multiqc data directory
-      path("INPUT/RSeQC_Analyses/02_geneBody_coverage/*") // genebody coverage multiqc HTML report
-      path("INPUT/RSeQC_Analyses/03_infer_experiment/*")  // infer experiment multiqc data directory
-      path("INPUT/RSeQC_Analyses/03_infer_experiment/*")  // infer experiment multiqc HTML report
-      path("INPUT/RSeQC_Analyses/04_inner_distance/*")    // inner distance multiqc data directory
-      path("INPUT/RSeQC_Analyses/04_inner_distance/*")    // inner distance multiqc HTML report
-      path("INPUT/RSeQC_Analyses/05_read_distribution/*") // read distribution multiqc data directory
-      path("INPUT/RSeQC_Analyses/05_read_distribution/*") // read distribution multiqc HTML report
+      path("INPUT/RSeQC_Analyses/MultiQC_Reports/*") // genebody coverage multiqc data zip
+      path("INPUT/RSeQC_Analyses/MultiQC_Reports/*") // genebody coverage multiqc HTML report
+      path("INPUT/RSeQC_Analyses/MultiQC_Reports/*") // infer experiment multiqc data zip
+      path("INPUT/RSeQC_Analyses/MultiQC_Reports/*") // infer experiment multiqc HTML report
+      path("INPUT/RSeQC_Analyses/MultiQC_Reports/*") // inner distance multiqc data zip
+      path("INPUT/RSeQC_Analyses/MultiQC_Reports/*") // inner distance multiqc HTML report
+      path("INPUT/RSeQC_Analyses/MultiQC_Reports/*") // read distribution multiqc data zip
+      path("INPUT/RSeQC_Analyses/MultiQC_Reports/*") // read distribution multiqc HTML report
 
   output:
       path("RSeQC_Analyses/**"), emit: rseqc_outputs
@@ -168,6 +168,14 @@ process VV_RSEQC {
   script:
     """
     mv INPUT/* . || true
+
+    # Create all necessary RSeQC subdirectories
+    mkdir -p RSeQC_Analyses/02_geneBody_coverage
+    mkdir -p RSeQC_Analyses/03_infer_experiment
+    mkdir -p RSeQC_Analyses/05_read_distribution
+    
+    # Create inner distance directory only for paired-end data
+    ${ meta.paired_end ? 'mkdir -p RSeQC_Analyses/04_inner_distance' : '# Skip inner distance for single-end data' }
 
     sort_into_subdirectories.py --from RSeQC_Analyses --to RSeQC_Analyses/02_geneBody_coverage --runsheet ${runsheet} --glob '.geneBodyCoverage.txt'
     sort_into_subdirectories.py --from RSeQC_Analyses --to RSeQC_Analyses/02_geneBody_coverage --runsheet ${runsheet} --glob '.geneBodyCoverage.curves.pdf'
