@@ -72,30 +72,137 @@ def find_column_case_insensitive(df, column_name):
     # If no match found
     return None
 
-def update_column(df, column_name, values):
-    """Add or update a column in the dataframe, with case-insensitive matching.
+def find_matching_columns(df, column_name):
+    """Find columns that match the functional purpose of the column_name.
+    
+    This looks for columns that might be different in title casing or wording,
+    but serve the same purpose as the column we're adding.
+    
+    Args:
+        df: The DataFrame to search in
+        column_name: The new column name to match against
+        
+    Returns:
+        List of existing column names that match the same purpose
+    """
+    # Extract the key parts from the column name
+    # Convert to lowercase for case-insensitive matching
+    col_lower = column_name.lower()
+    matching_cols = []
+    
+    # Handle "Parameter Value[...]" columns by extracting the content inside brackets
+    if "parameter value[" in col_lower:
+        # Extract content inside brackets
+        match = re.search(r'\[(.*?)\]', col_lower)
+        if match:
+            key_part = match.group(1)
+            
+            # Check if the key part has path components (contains '/')
+            key_has_path = '/' in key_part
+            key_path_parts = key_part.split('/') if key_has_path else [key_part]
+            key_main_part = key_path_parts[0].strip()
+            
+            # Find all columns with parameter value pattern
+            for col in df.columns:
+                col_l = col.lower()
+                if "parameter value[" in col_l:
+                    # Extract the content inside brackets
+                    col_match = re.search(r'\[(.*?)\]', col_l)
+                    if col_match:
+                        col_key = col_match.group(1)
+                        
+                        # Check if column key has path components
+                        col_has_path = '/' in col_key
+                        col_path_parts = col_key.split('/') if col_has_path else [col_key]
+                        col_main_part = col_path_parts[0].strip()
+                        
+                        # More precise matching logic:
+                        # 1. If both have paths, they should match completely or be subsets
+                        # 2. If one has a path and the other doesn't, only match main parts
+                        # 3. If neither has a path, match on content similarity
+                        
+                        # Exact case-insensitive match - always catches this
+                        if col_l == col_lower:
+                            matching_cols.append(col)
+                            continue
+                            
+                        # For columns with paths like "Trimmed Sequence Data/MultiQC Reports"
+                        if key_has_path and col_has_path:
+                            # If adding "X/Y", only match other "X/Y" patterns, not just "X"
+                            if key_main_part == col_main_part and len(key_path_parts) == len(col_path_parts):
+                                # For same path depth, match on similarity of last component
+                                last_key_part = key_path_parts[-1].strip()
+                                last_col_part = col_path_parts[-1].strip()
+                                
+                                # Match if the last parts are similar
+                                if (last_key_part in last_col_part or last_col_part in last_key_part or
+                                    ("multiqc" in last_key_part and "multiqc" in last_col_part)):
+                                    matching_cols.append(col)
+                            
+                        # If adding a main section (no path) like "Trimmed Sequence Data"
+                        elif not key_has_path and not col_has_path:
+                            # Only match other main sections, not subsections
+                            if (key_main_part in col_main_part or col_main_part in key_main_part):
+                                matching_cols.append(col)
+                                
+                        # If one has a path and the other doesn't, only match if:
+                        # 1. We're adding a main section and finding old subsections of it
+                        # 2. But not vice versa - don't delete main sections when adding subsections
+                        elif not key_has_path and col_has_path:
+                            # Adding main section, find old subsections
+                            if key_main_part == col_main_part:
+                                matching_cols.append(col)
+                                
+            return matching_cols
+    
+    # For other types of columns, just return case-insensitive match
+    return [col for col in df.columns if col.lower() == col_lower]
+
+def update_column(df, column_name, values, alternative_names=None):
+    """Add or update a column in the dataframe, with more flexible matching.
     
     Args:
         df: The DataFrame to update
         column_name: The column name to add or update
         values: The values to set
+        alternative_names: Optional list of alternative column names that should be considered matches
         
     Returns:
         The updated DataFrame
     """
-    # Find if column exists (case-insensitive)
-    existing_col = find_column_case_insensitive(df, column_name)
+    # Keep track of columns to remove
+    columns_to_remove = []
     
+    # Find exact case-insensitive match first
+    existing_col = find_column_case_insensitive(df, column_name)
     if existing_col:
-        # Column exists (might be different case)
-        print(f"Updating column: {existing_col}")
-        df[existing_col] = values
-        column_changes.append(f"Updated: {existing_col}")
-    else:
-        # Column doesn't exist
-        print(f"Adding new column: {column_name}")
-        df[column_name] = values
-        column_changes.append(f"Added: {column_name}")
+        columns_to_remove.append(existing_col)
+    
+    # Look for explicit alternative names provided
+    if alternative_names:
+        for alt_name in alternative_names:
+            alt_match = find_column_case_insensitive(df, alt_name)
+            if alt_match and alt_match not in columns_to_remove:
+                columns_to_remove.append(alt_match)
+    
+    # If no explicit alternatives were provided, use the pattern matching approach
+    elif not alternative_names:
+        matching_columns = find_matching_columns(df, column_name)
+        for match_col in matching_columns:
+            if match_col not in columns_to_remove:
+                columns_to_remove.append(match_col)
+    
+    # Remove all identified columns
+    if columns_to_remove:
+        for col in columns_to_remove:
+            print(f"Removing existing column: {col}")
+            df = df.drop(columns=[col])
+            column_changes.append(f"Removed: {col}")
+    
+    # Add the new column
+    print(f"Adding new column: {column_name}")
+    df[column_name] = values
+    column_changes.append(f"Added: {column_name}")
     
     return df
 
@@ -315,7 +422,7 @@ def extract_and_find_assay(outdir, glds_accession):
         return pd.read_csv(assay_path, sep='\t'), matched_file
 
 def add_read_counts(df, outdir, glds_accession, assay_suffix, runsheet_df=None):
-    """Add the read counts column to the dataframe.
+    """Add the read depth column to the dataframe if it doesn't exist.
     
     Args:
         df: The assay table dataframe
@@ -327,15 +434,25 @@ def add_read_counts(df, outdir, glds_accession, assay_suffix, runsheet_df=None):
     Returns:
         The modified dataframe
     """
-    column_name = "Parameter Value[Read Count]"
+    column_name = "Parameter Value[Read Depth]"
+    alternative_names = []
+    
+    # Check if column already exists (case-insensitive)
+    existing_col = find_column_case_insensitive(df, column_name)
+    if existing_col:
+        print(f"Column {existing_col} already exists, preserving existing values")
+        return df
+    
+    # If we get here, the column doesn't exist and needs to be added
     
     # Determine if paired-end from runsheet
     is_paired_end = is_paired_end_data(runsheet_df)
     print(f"Data is {'paired-end' if is_paired_end else 'single-end'} based on runsheet")
     
-    # Path to raw MultiQC data zip
-    fastqc_dir = os.path.join(outdir, "00-RawData", "FastQC_Reports")
-    multiqc_data_zip = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}_data.zip")
+    # Path to raw MultiQC data zip - UPDATED from FastQC_Reports to MultiQC_Reports
+    raw_data_dir = os.path.join(outdir, "00-RawData")
+    multiqc_dir = os.path.join(raw_data_dir, "MultiQC_Reports")
+    multiqc_data_zip = os.path.join(multiqc_dir, f"raw_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_data_zip):
         print(f"WARNING: MultiQC data zip file not found at {multiqc_data_zip}")
@@ -478,8 +595,11 @@ def add_read_counts(df, outdir, glds_accession, assay_suffix, runsheet_df=None):
                 print(f"WARNING: No read count found for sample {assay_sample}")
                 values.append("N/A")
     
-    # Add the column to the dataframe
-    df = update_column(df, column_name, values)
+    # Add the column to the dataframe - but don't use update_column
+    # since we want to add it without replacing anything
+    print(f"Adding new column: {column_name}")
+    df[column_name] = values
+    column_changes.append(f"Added: {column_name}")
     
     return df
 
@@ -518,6 +638,7 @@ def add_unmapped_reads_column(df, glds_prefix, runsheet_df=None, mode=""):
     """Add the Unmapped Reads column to the dataframe."""
     # Update column name to be under Aligned Sequence Data folder
     column_name = "Parameter Value[Aligned Sequence Data/Unmapped Reads]"
+    alternative_names = []
     
     # Determine if paired-end from runsheet
     is_paired = is_paired_end_data(runsheet_df)
@@ -601,6 +722,9 @@ def add_trimmed_data_column(df, glds_prefix, runsheet_df=None):
         The modified dataframe
     """
     column_name = "Parameter Value[Trimmed Sequence Data]"
+    alternative_names = [
+        "Parameter Value[Trimmed Sequence Data Fastqc File]"
+    ]
     
     # Determine if paired-end from runsheet
     is_paired_end = is_paired_end_data(runsheet_df)
@@ -644,13 +768,8 @@ def add_trimmed_data_column(df, glds_prefix, runsheet_df=None):
                 # For single-end data
                 values.append(f"{glds_prefix}{sample}_trimmed.fastq.gz")
     
-    # Add the column to the dataframe
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = values
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = values
+    # Add the column to the dataframe with alternative names
+    df = update_column(df, column_name, values, alternative_names)
     
     return df
 
@@ -666,6 +785,7 @@ def add_trimming_reports_column(df, glds_prefix, runsheet_df=None):
         The modified dataframe
     """
     column_name = "Parameter Value[Trimmed Sequence Data/Trimming Reports]"
+    alternative_names = ["Parameter Value[Trimmed Report]"]
     
     # Determine if paired-end from runsheet
     is_paired_end = is_paired_end_data(runsheet_df)
@@ -722,6 +842,7 @@ def add_trimming_reports_column(df, glds_prefix, runsheet_df=None):
 def add_trimmed_multiqc_reports_column(df, glds_prefix, assay_suffix):
     """Add the trimmed sequence data MultiQC reports column to the dataframe."""
     column_name = "Parameter Value[Trimmed Sequence Data/MultiQC Reports]"
+    alternative_names = ["Parameter Value[Trimmed Sequence Data Multiqc File]"]
     
     # Create the multiqc report filenames - both data zip and html
     multiqc_html = f"{glds_prefix}trimmed_multiqc{assay_suffix}.html"
@@ -731,13 +852,14 @@ def add_trimmed_multiqc_reports_column(df, glds_prefix, assay_suffix):
     combined_files = f"{multiqc_data},{multiqc_html}"
     
     # Add the column to the dataframe with the same value for all rows
-    df = update_column(df, column_name, combined_files)
+    df = update_column(df, column_name, combined_files, alternative_names)
     
     return df
 
 def add_align_multiqc_reports_column(df, glds_prefix, assay_suffix):
     """Add the aligned sequence data MultiQC reports column to the dataframe."""
     column_name = "Parameter Value[Aligned Sequence Data/MultiQC Reports]"
+    alternative_names = []
     
     # Create the alignment multiqc report filenames - both data zip and html
     multiqc_html = f"{glds_prefix}align_multiqc{assay_suffix}.html"
@@ -747,13 +869,14 @@ def add_align_multiqc_reports_column(df, glds_prefix, assay_suffix):
     combined_files = f"{multiqc_data},{multiqc_html}"
     
     # Add the column to the dataframe with the same value for all rows
-    df = update_column(df, column_name, combined_files)
+    df = update_column(df, column_name, combined_files, alternative_names)
     
     return df
 
 def add_rseqc_multiqc_reports_column(df, glds_prefix, assay_suffix):
     """Add the RSeQC MultiQC reports column to the dataframe."""
     column_name = "Parameter Value[RSeQC/MultiQC Reports]"
+    alternative_names = []
     
     # Create the four RSeQC multiqc report filenames - data zip and html for each
     multiqc_reports = []
@@ -766,13 +889,14 @@ def add_rseqc_multiqc_reports_column(df, glds_prefix, assay_suffix):
     combined_reports = ",".join(multiqc_reports)
     
     # Add the column to the dataframe with the same value for all rows
-    df = update_column(df, column_name, combined_reports)
+    df = update_column(df, column_name, combined_reports, alternative_names)
     
     return df
 
 def add_raw_counts_data_column(df, glds_prefix, assay_suffix, mode=""):
     """Add the Raw Counts Data column to the dataframe."""
     column_name = "Parameter Value[Raw Counts Data]"
+    alternative_names = []
     
     # Find the sample name column in the assay table
     sample_col = next((col for col in df.columns if 'Sample Name' in col), None)
@@ -847,6 +971,7 @@ def add_raw_counts_data_column(df, glds_prefix, assay_suffix, mode=""):
 def add_raw_counts_multiqc_column(df, glds_prefix, assay_suffix, mode=""):
     """Add the Raw Counts Data MultiQC reports column to the dataframe."""
     column_name = "Parameter Value[Raw Counts Data/MultiQC Reports]"
+    alternative_names = []
     
     # Create the appropriate multiqc report filenames based on mode - both data zip and html
     if mode == "microbes":
@@ -862,13 +987,18 @@ def add_raw_counts_multiqc_column(df, glds_prefix, assay_suffix, mode=""):
     combined_files = f"{multiqc_data},{multiqc_html}"
     
     # Add the column to the dataframe with the same value for all rows
-    df = update_column(df, column_name, combined_files)
+    df = update_column(df, column_name, combined_files, alternative_names)
     
     return df
 
 def add_raw_multiqc_reports_column(df, glds_prefix, assay_suffix):
     """Add the raw sequence data MultiQC reports column to the dataframe."""
     column_name = "Parameter Value[MultiQC File Names]"
+    alternative_names = [
+        "Parameter Value[MultiQC Reports]",
+        "Parameter Value[Raw MultiQC Reports]",
+        "Parameter Value[Raw Data MultiQC Reports]"
+    ]
     
     # Create the multiqc report filenames - both data zip and html
     multiqc_html = f"{glds_prefix}raw_multiqc{assay_suffix}.html"
@@ -878,13 +1008,14 @@ def add_raw_multiqc_reports_column(df, glds_prefix, assay_suffix):
     combined_files = f"{multiqc_data},{multiqc_html}"
     
     # Add the column to the dataframe with the same value for all rows
-    df = update_column(df, column_name, combined_files)
+    df = update_column(df, column_name, combined_files, alternative_names)
     
     return df
 
 def add_raw_counts_tables_column(df, glds_prefix, assay_suffix, mode=""):
     """Add the Raw Counts Tables column to the dataframe."""
     column_name = "Parameter Value[Raw Counts Tables]"
+    alternative_names = []
     
     # Create the unnormalized counts filename based on mode
     if mode == "microbes":
@@ -904,13 +1035,14 @@ def add_raw_counts_tables_column(df, glds_prefix, assay_suffix, mode=""):
         counts_file = ",".join(counts_files)
     
     # Add the column to the dataframe with the same value for all rows
-    df = update_column(df, column_name, counts_file)
+    df = update_column(df, column_name, counts_file, alternative_names)
     
     return df
 
 def add_normalized_counts_data_column(df, glds_prefix, assay_suffix):
     """Add the Normalized Counts Data column to the dataframe."""
     column_name = "Parameter Value[Normalized Counts Data]"
+    alternative_names = []
     
     # Create the normalized counts filenames - same for all samples
     # Include both regular and rRNArm files (4 total files)
@@ -925,13 +1057,14 @@ def add_normalized_counts_data_column(df, glds_prefix, assay_suffix):
     combined_files = ",".join(normalized_files)
     
     # Add the column to the dataframe with the same value for all rows
-    df = update_column(df, column_name, combined_files)
+    df = update_column(df, column_name, combined_files, alternative_names)
     
     return df
 
 def add_differential_expression_column(df, glds_prefix, assay_suffix):
     """Add the Differential Expression Analysis Data column to the dataframe."""
     column_name = "Parameter Value[Differential Expression Analysis Data]"
+    alternative_names = []
     
     # Create the differential expression filenames - same for all samples
     # Include both regular files and the rRNArm differential expression file (4 total)
@@ -946,14 +1079,15 @@ def add_differential_expression_column(df, glds_prefix, assay_suffix):
     combined_files = ",".join(de_files)
     
     # Add the column to the dataframe with the same value for all rows
-    df = update_column(df, column_name, combined_files)
+    df = update_column(df, column_name, combined_files, alternative_names)
     
     return df
 
 def add_aligned_sequence_data_column(df, glds_prefix, runsheet_df=None, mode=""):
     """Add the aligned sequence data column to the dataframe."""
     # Title Case column name
-    column_name = "Parameter Value[Aligned Sequence Data]"
+    column_name = "Parameter Value[Aligned Sequence Data/Fastq]"
+    alternative_names = ["Parameter Value[Aligned Sequence Data]"]
     
     # Find the sample name column in the assay table
     sample_col = next((col for col in df.columns if 'Sample Name' in col), None)
@@ -1023,6 +1157,7 @@ def add_aligned_sequence_data_column(df, glds_prefix, runsheet_df=None, mode="")
 def add_alignment_logs_column(df, glds_prefix, runsheet_df=None, mode=""):
     """Add the Alignment Logs column to the dataframe."""
     column_name = "Parameter Value[Aligned Sequence Data/Alignment Logs]"
+    alternative_names = ["Parameter Value[Alignment Logs]"]
     
     # Find the sample name column in the assay table
     sample_col = next((col for col in df.columns if 'Sample Name' in col), None)
@@ -1077,12 +1212,13 @@ def add_alignment_logs_column(df, glds_prefix, runsheet_df=None, mode=""):
 def add_ercc_analyses_column(df, glds_prefix, assay_suffix):
     """Add the ERCC Analyses column to the dataframe."""
     column_name = "Parameter Value[ERCC Analyses]"
+    alternative_names = []
     
     # Create the ercc analyses filename - same for all samples
     ercc_analyses_file = f"{glds_prefix}ERCC_analysis{assay_suffix}.html"
     
     # Add the column to the dataframe with the same value for all rows
-    df = update_column(df, column_name, ercc_analyses_file)
+    df = update_column(df, column_name, ercc_analyses_file, alternative_names)
     
     return df
 
@@ -1143,58 +1279,100 @@ def main():
         # Check if ERCC spike-ins are used
         ercc_used = has_ercc_spikes(runsheet_df)
         
-        # Following the original star workflow order:
+        # Organize by section with MultiQC reports at the end of each section
         
-        # 0. Add read counts from MultiQC report (new)
+        # =====================================================
+        # SECTION 1: RAW DATA
+        # =====================================================
+        print("\n=== PROCESSING RAW DATA SECTION ===")
+        
+        # Add read depth from MultiQC report (preserve if exists)
         assay_df = add_read_counts(assay_df, args.outdir, args.glds_accession, args.assay_suffix, runsheet_df)
         
-        # 0.5. Add Raw MultiQC reports column (new)
+        # Add Raw MultiQC reports column
         assay_df = add_raw_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
         
-        # 1. Trimmed Sequence Data column
+        # =====================================================
+        # SECTION 2: TRIMMED SEQUENCE DATA
+        # =====================================================
+        print("\n=== PROCESSING TRIMMED SEQUENCE DATA SECTION ===")
+        
+        # Add Trimmed Sequence Data column
         assay_df = add_trimmed_data_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
         
-        # 2. Trimmed Sequence Data/MultiQC Reports column
-        assay_df = add_trimmed_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
-        
-        # 3. Trimmed Sequence Data/Trimming Reports column
+        # Add Trimming Reports column
         assay_df = add_trimming_reports_column(assay_df, glds_prefix, runsheet_df=runsheet_df)
         
-        # 4. Aligned Sequence Data column
+        # Add Trimmed Sequence Data MultiQC Reports column at the end of section
+        assay_df = add_trimmed_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
+        
+        # =====================================================
+        # SECTION 3: ALIGNED SEQUENCE DATA
+        # =====================================================
+        print("\n=== PROCESSING ALIGNED SEQUENCE DATA SECTION ===")
+        
+        # Add Aligned Sequence Data column
         assay_df = add_aligned_sequence_data_column(assay_df, glds_prefix, runsheet_df=runsheet_df, mode=args.mode)
         
-        # 5. Aligned Sequence Data/Unmapped Reads column 
+        # Add Unmapped Reads column
         assay_df = add_unmapped_reads_column(assay_df, glds_prefix, runsheet_df=runsheet_df, mode=args.mode)
         
-        # 6. Aligned Sequence Data/Alignment Logs column
+        # Add Alignment Logs column
         assay_df = add_alignment_logs_column(assay_df, glds_prefix, runsheet_df=runsheet_df, mode=args.mode)
         
-        # 7. Aligned Sequence Data/MultiQC Reports column
+        # Add Aligned Sequence Data MultiQC Reports column at the end of section
         assay_df = add_align_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
         
-        # 8. RSeQC/MultiQC Reports column
+        # =====================================================
+        # SECTION 4: RSeQC
+        # =====================================================
+        print("\n=== PROCESSING RSeQC SECTION ===")
+        
+        # Add RSeQC MultiQC Reports column
         assay_df = add_rseqc_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
         
-        # 9. Raw Counts Data column
+        # =====================================================
+        # SECTION 5: RAW COUNTS DATA
+        # =====================================================
+        print("\n=== PROCESSING RAW COUNTS DATA SECTION ===")
+        
+        # Add Raw Counts Data column
         assay_df = add_raw_counts_data_column(assay_df, glds_prefix, args.assay_suffix, args.mode)
         
-        # 10. Raw Counts Data/MultiQC Reports column
-        assay_df = add_raw_counts_multiqc_column(assay_df, glds_prefix, args.assay_suffix, args.mode)
-        
-        # 11. Raw Counts Tables column
+        # Add Raw Counts Tables column
         assay_df = add_raw_counts_tables_column(assay_df, glds_prefix, args.assay_suffix, args.mode)
         
-        # 12. Normalized Counts Data column
+        # Add Raw Counts Data MultiQC Reports column at the end of section
+        assay_df = add_raw_counts_multiqc_column(assay_df, glds_prefix, args.assay_suffix, args.mode)
+        
+        # =====================================================
+        # SECTION 6: NORMALIZED COUNTS DATA
+        # =====================================================
+        print("\n=== PROCESSING NORMALIZED COUNTS DATA SECTION ===")
+        
+        # Add Normalized Counts Data column
         assay_df = add_normalized_counts_data_column(assay_df, glds_prefix, args.assay_suffix)
         
-        # 13. Differential Expression Analysis Data column
+        # =====================================================
+        # SECTION 7: DIFFERENTIAL EXPRESSION
+        # =====================================================
+        print("\n=== PROCESSING DIFFERENTIAL EXPRESSION SECTION ===")
+        
+        # Add Differential Expression Analysis Data column
         assay_df = add_differential_expression_column(assay_df, glds_prefix, args.assay_suffix)
         
-        # ERCC column (conditionally added only if ERCC spike-ins are used)
+        # =====================================================
+        # SECTION 8: ERCC ANALYSIS (CONDITIONAL)
+        # =====================================================
         if ercc_used:
-            print("Adding ERCC Analyses column")
-            # 17. ERCC Analyses column
+            print("\n=== PROCESSING ERCC ANALYSIS SECTION ===")
+            # Add ERCC Analyses column
             assay_df = add_ercc_analyses_column(assay_df, glds_prefix, args.assay_suffix)
+        
+        # =====================================================
+        # FINALIZE
+        # =====================================================
+        print("\n=== FINALIZING ASSAY TABLE ===")
         
         # Clean comma-space in all string columns
         assay_df = clean_comma_space(assay_df)
