@@ -895,8 +895,8 @@ def add_rseqc_multiqc_reports_column(df, glds_prefix, assay_suffix):
 
 def add_raw_counts_data_column(df, glds_prefix, assay_suffix, mode=""):
     """Add the Raw Counts Data column to the dataframe."""
-    column_name = "Parameter Value[Raw Counts Data]"
-    alternative_names = []
+    column_name = "Parameter Value[Raw Counts Data/Count Data]"
+    alternative_names = ["Parameter Value[Raw Counts Data]"]
     
     # Find the sample name column in the assay table
     sample_col = next((col for col in df.columns if 'Sample Name' in col), None)
@@ -1086,7 +1086,7 @@ def add_differential_expression_column(df, glds_prefix, assay_suffix):
 def add_aligned_sequence_data_column(df, glds_prefix, runsheet_df=None, mode=""):
     """Add the aligned sequence data column to the dataframe."""
     # Title Case column name
-    column_name = "Parameter Value[Aligned Sequence Data/Fastq]"
+    column_name = "Parameter Value[Aligned Sequence Data/Aligned Data]"
     alternative_names = ["Parameter Value[Aligned Sequence Data]"]
     
     # Find the sample name column in the assay table
