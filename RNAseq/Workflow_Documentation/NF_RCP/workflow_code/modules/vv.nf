@@ -217,8 +217,8 @@ process VV_FEATURECOUNTS {
     path("INPUT/03-FeatureCounts/*") // featurecounts counts (rRNArm)
     path("INPUT/03-FeatureCounts/*") // featurecounts summary
     path("INPUT/03-FeatureCounts/*") // featurecounts num non zero genes
-    path("INPUT/03-FeatureCounts/*") // featurecounts multiqc zipped data directory
-    path("INPUT/03-FeatureCounts/*") // featurecounts multiqc HTML report
+    path("INPUT/03-FeatureCounts/MultiQC_Reports/*") // featurecounts multiqc zipped data directory
+    path("INPUT/03-FeatureCounts/MultiQC_Reports/*") // featurecounts multiqc HTML report
 
   output:
     path("03-FeatureCounts/**")
@@ -339,8 +339,8 @@ process VV_RSEM_COUNTS {
     path("INPUT/03-RSEM_Counts/*") // RSEM sample wise output
     path("INPUT/03-RSEM_Counts/*") // RSEM sample.genes.results (rRNArm)
     path("INPUT/03-RSEM_Counts/*") // RSEM dataset output
-    path("INPUT/03-RSEM_Counts/*") // zipped multiqc data directory
-    path("INPUT/03-RSEM_Counts/*") // multiqc HTML report
+    path("INPUT/03-RSEM_Counts/MultiQC_Reports/*") // zipped multiqc data directory
+    path("INPUT/03-RSEM_Counts/MultiQC_Reports/*") // multiqc HTML report
     
   output:
     path("03-RSEM_Counts/**")
