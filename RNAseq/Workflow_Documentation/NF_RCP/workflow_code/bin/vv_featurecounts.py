@@ -134,9 +134,14 @@ def check_featurecounts_files_existence(outdir, log_path, assay_suffix="_GLbulkR
     # Define expected files
     expected_files = [
         f"FeatureCounts{assay_suffix}.tsv",
-        f"FeatureCounts{assay_suffix}.tsv.summary",
-        f"FeatureCounts_multiqc{assay_suffix}_data.zip"
+        f"FeatureCounts{assay_suffix}.tsv.summary"
         # f"FeatureCounts_rRNArm{assay_suffix}.tsv"
+    ]
+    
+    # Define MultiQC files in the MultiQC_Reports subdirectory
+    multiqc_files = [
+        f"MultiQC_Reports/FeatureCounts_multiqc{assay_suffix}_data.zip",
+        f"MultiQC_Reports/FeatureCounts_multiqc{assay_suffix}.html"
     ]
     
     missing_files = []
@@ -163,7 +168,8 @@ def check_featurecounts_files_existence(outdir, log_path, assay_suffix="_GLbulkR
 def get_featurecounts_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
     """Extract featureCounts MultiQC stats for all samples and write to a stats file for analysis."""
     featurecounts_dir = os.path.join(outdir, "03-FeatureCounts")
-    multiqc_zip = os.path.join(featurecounts_dir, f"FeatureCounts_multiqc{assay_suffix}_data.zip")
+    multiqc_dir = os.path.join(featurecounts_dir, "MultiQC_Reports")
+    multiqc_zip = os.path.join(multiqc_dir, f"FeatureCounts_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
         print(f"WARNING: MultiQC data zip file not found: {multiqc_zip}")

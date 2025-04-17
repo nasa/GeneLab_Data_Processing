@@ -86,15 +86,30 @@ def main(osd_num, paired_end, assay_suffix, mode):
         'num_uniquely_aligned', 'pct_uniquely_aligned', 'pct_multi_aligned', 'pct_filtered', 'pct_unalignable'
     ]
 
+    # Make a set of fieldnames for fast lookup
+    fieldnames_set = set(fieldnames)
+
     output_filename = f'qc_metrics{assay_suffix}.csv'
     with open(output_filename, mode='w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
 
         for sample in samples:
-            fields = {k: v for d in [i[sample] for i in multiqc_data if sample in i] for k, v in d.items()}
-
-            writer.writerow({'osd_num': 'OSD-' + osd_num, 'sample': sample, **metadata, **fields})
+            # Collect all fields for this sample
+            all_fields = {}
+            for data_source in multiqc_data:
+                if sample in data_source:
+                    for k, v in data_source[sample].items():
+                        # Only keep fields that are in the fieldnames list
+                        if k in fieldnames_set:
+                            all_fields[k] = v
+                        else:
+                            # Optionally add debug output to see which fields are being skipped
+                            # print(f"Skipping field not in fieldnames: {k}")
+                            pass
+            
+            # Write the row with filtered fields
+            writer.writerow({'osd_num': 'OSD-' + osd_num, 'sample': sample, **metadata, **all_fields})
 
 
 def get_metadata(osd_num):

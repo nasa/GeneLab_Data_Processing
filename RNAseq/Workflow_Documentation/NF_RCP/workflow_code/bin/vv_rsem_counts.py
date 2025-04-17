@@ -155,8 +155,13 @@ def check_rsem_output_existence(outdir, samples, log_path, assay_suffix="_GLbulk
     # Dataset-level files (directly in the RSEM directory)
     dataset_files = [
         "RSEM_NumNonZeroGenes{assay_suffix}.csv",
-        "RSEM_Unnormalized_Counts{assay_suffix}.csv",
-        "RSEM_count_multiqc{assay_suffix}_data.zip"
+        "RSEM_Unnormalized_Counts{assay_suffix}.csv"
+    ]
+    
+    # MultiQC files in the MultiQC_Reports subdirectory
+    multiqc_files = [
+        "MultiQC_Reports/RSEM_count_multiqc{assay_suffix}_data.zip",
+        "MultiQC_Reports/RSEM_count_multiqc{assay_suffix}.html"
     ]
     
     missing_files_by_sample = {}
@@ -271,7 +276,8 @@ def parse_rsem(multiqc_data_dir, assay_suffix="_GLbulkRNAseq"):
 def get_rsem_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
     """Extract RSEM metrics from MultiQC data."""
     rsem_dir = os.path.join(outdir, '03-RSEM_Counts')
-    multiqc_zip = os.path.join(rsem_dir, f"RSEM_count_multiqc{assay_suffix}_data.zip")
+    multiqc_dir = os.path.join(rsem_dir, "MultiQC_Reports")
+    multiqc_zip = os.path.join(multiqc_dir, f"RSEM_count_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
         print(f"WARNING: MultiQC data zip file not found: {multiqc_zip}")
@@ -505,7 +511,8 @@ def report_rsem_outliers(outdir, rsem_data, log_path):
 def check_all_samples_in_multiqc(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
     """Check if all samples are present in the RSEM MultiQC data."""
     rsem_dir = os.path.join(outdir, '03-RSEM_Counts')
-    multiqc_zip = os.path.join(rsem_dir, f"RSEM_count_multiqc{assay_suffix}_data.zip")
+    multiqc_dir = os.path.join(rsem_dir, "MultiQC_Reports")
+    multiqc_zip = os.path.join(multiqc_dir, f"RSEM_count_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
         print(f"WARNING: MultiQC data zip file not found: {multiqc_zip}")

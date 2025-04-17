@@ -276,7 +276,8 @@ def check_raw_fastqc_existence(outdir, samples, paired_end, log_path):
 def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
     """Check if all samples are present in the MultiQC report."""
     align_dir = os.path.join(outdir, "02-Bowtie2_Alignment")
-    multiqc_zip = os.path.join(align_dir, f"align_multiqc{assay_suffix}_data.zip")
+    multiqc_dir = os.path.join(align_dir, "MultiQC_Reports")
+    multiqc_zip = os.path.join(multiqc_dir, f"align_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
         print(f"WARNING: MultiQC data not found at: {multiqc_zip}")
@@ -366,7 +367,8 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
 def get_bowtie2_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
     """Get alignment statistics from MultiQC data."""
     align_dir = os.path.join(outdir, "02-Bowtie2_Alignment")
-    multiqc_zip = os.path.join(align_dir, f"align_multiqc{assay_suffix}_data.zip")
+    multiqc_dir = os.path.join(align_dir, "MultiQC_Reports")
+    multiqc_zip = os.path.join(multiqc_dir, f"align_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
         print(f"WARNING: MultiQC data not found at: {multiqc_zip}")
@@ -658,7 +660,8 @@ def check_bowtie2_existence(outdir, samples, paired_end, log_path):
     is_paired = paired_end[0]  # Assuming all samples have same paired_end value
 
     # First check for MultiQC data
-    multiqc_file = os.path.join(align_dir, "align_multiqc_GLbulkRNAseq_data.zip")
+    multiqc_dir = os.path.join(align_dir, "MultiQC_Reports")
+    multiqc_file = os.path.join(multiqc_dir, "align_multiqc_GLbulkRNAseq_data.zip")
     if not os.path.exists(multiqc_file):
         missing_files.append(multiqc_file)
 

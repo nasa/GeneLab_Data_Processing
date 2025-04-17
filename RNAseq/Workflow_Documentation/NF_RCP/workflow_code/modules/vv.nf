@@ -21,14 +21,14 @@ process VV_RAW_READS {
     path(runsheet)                             // Runsheet
     path("INPUT/00-RawData/Fastq/*")           // Raw reads
     path("INPUT/00-RawData/FastQC_Reports/*")  // Raw FastQC reports 
-    path("INPUT/00-RawData/FastQC_Reports/*")  // Zipped Raw MultiQC data directory
-    path("INPUT/00-RawData/FastQC_Reports/*")  // Raw MultiQC HTML report
+    path("INPUT/00-RawData/MultiQC_Reports/*")  // Zipped Raw MultiQC data directory
+    path("INPUT/00-RawData/MultiQC_Reports/*")  // Raw MultiQC HTML report
 
   output:
     path("00-RawData/Fastq"),                                                        emit: VVed_raw_reads
     path("00-RawData/FastQC_Reports/*{_fastqc.html,_fastqc.zip}"),                   emit: VVed_raw_fastqc
-    path("00-RawData/FastQC_Reports/raw_multiqc${params.assay_suffix}_data.zip"),  emit: VVed_raw_zipped_multiqc_data
-    path("00-RawData/FastQC_Reports/raw_multiqc${params.assay_suffix}.html"),       emit: VVed_raw_multiqc_html
+    path("00-RawData/MultiQC_Reports/raw_multiqc${params.assay_suffix}_data.zip"),  emit: VVed_raw_zipped_multiqc_data
+    path("00-RawData/MultiQC_Reports/raw_multiqc${params.assay_suffix}.html"),       emit: VVed_raw_multiqc_html
     path("VV_log.csv"),                                                              optional: params.skip_vv, emit: log
     path("versions.yml"), emit: versions
 
@@ -67,20 +67,17 @@ process VV_TRIMMED_READS {
     path(runsheet)              // Runsheet
     path("INPUT/01-TG_Preproc/Fastq/*")   // Trimmed reads
     path("INPUT/01-TG_Preproc/FastQC_Reports/*")  // Trimmed FastQC reports
-    path("INPUT/01-TG_Preproc/FastQC_Reports/*") // Trimmed reads multiqc zipped data directory
-    path("INPUT/01-TG_Preproc/FastQC_Reports/*") // Trimmed reads multiqc HTML report
+    path("INPUT/01-TG_Preproc/MultiQC_Reports/*") // Trimmed reads multiqc zipped data directory
+    path("INPUT/01-TG_Preproc/MultiQC_Reports/*") // Trimmed reads multiqc HTML report
     path("INPUT/01-TG_Preproc/Trimming_Reports/*") // Trimming reports
-    path("INPUT/01-TG_Preproc/Trimming_Reports/*") // Trimming multiqc zipped data directory
-    path("INPUT/01-TG_Preproc/Trimming_Reports/*") // Trimming multiqc HTML report
 
   output:
     path("01-TG_Preproc/Fastq"),                                                              emit: VVed_trimmed_reads
     path("01-TG_Preproc/FastQC_Reports/*{_fastqc.html,_fastqc.zip}"),                         emit: VVed_trimmed_fastqc
-    path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc${params.assay_suffix}_data.zip"),    emit: VVed_trimmed_zipped_multiqc_data
-    path("01-TG_Preproc/FastQC_Reports/trimmed_multiqc${params.assay_suffix}.html"),       emit: VVed_trimmed_multiqc_html
+    path("01-TG_Preproc/MultiQC_Reports/trimmed_multiqc${params.assay_suffix}_data.zip"),    emit: VVed_trimmed_zipped_multiqc_data
+    path("01-TG_Preproc/MultiQC_Reports/trimmed_multiqc${params.assay_suffix}.html"),       emit: VVed_trimmed_multiqc_html
     path("01-TG_Preproc/Trimming_Reports/*trimming_report.txt"), emit: VVed_trimming_reports
-    path("01-TG_Preproc/Trimming_Reports/trimming_multiqc${params.assay_suffix}_data.zip"), emit: VVed_trimming_zipped_multiqc_data
-    path("01-TG_Preproc/Trimming_Reports/trimming_multiqc${params.assay_suffix}.html"),    emit: VVed_trimming_multiqc_html
+
     path("VV_log.csv"),                                                                       optional: params.skip_vv, emit: log
 
   script:
@@ -116,8 +113,8 @@ process VV_BOWTIE2_ALIGNMENT {
     path("INPUT/02-Bowtie2_Alignment/*") // (unmapped reads *.Unmapped.fastq.gz)
     path("INPUT/02-Bowtie2_Alignment/*") // (sorted BAMs *_sorted.bam)
     path("INPUT/02-Bowtie2_Alignment/*") // (sorted BAM index files *_sorted.bam.bai)
-    path("INPUT/02-Bowtie2_Alignment/*") // (zipped multiqc data directory)
-    path("INPUT/02-Bowtie2_Alignment/*") // (multiqc HTML report)
+    path("INPUT/02-Bowtie2_Alignment/MultiQC_Reports/*") // (zipped multiqc data directory)
+    path("INPUT/02-Bowtie2_Alignment/MultiQC_Reports/*") // (multiqc HTML report)
     
   output:
     path("02-Bowtie2_Alignment/**")
@@ -155,14 +152,14 @@ process VV_RSEQC {
       val(meta)
       path(runsheet)
       path("INPUT/RSeQC_Analyses/*")                      // direct logs
-      path("INPUT/RSeQC_Analyses/02_geneBody_coverage/*") // genebody coverage multiqc data directory
-      path("INPUT/RSeQC_Analyses/02_geneBody_coverage/*") // genebody coverage multiqc HTML report
-      path("INPUT/RSeQC_Analyses/03_infer_experiment/*")  // infer experiment multiqc data directory
-      path("INPUT/RSeQC_Analyses/03_infer_experiment/*")  // infer experiment multiqc HTML report
-      path("INPUT/RSeQC_Analyses/04_inner_distance/*")    // inner distance multiqc data directory
-      path("INPUT/RSeQC_Analyses/04_inner_distance/*")    // inner distance multiqc HTML report
-      path("INPUT/RSeQC_Analyses/05_read_distribution/*") // read distribution multiqc data directory
-      path("INPUT/RSeQC_Analyses/05_read_distribution/*") // read distribution multiqc HTML report
+      path("INPUT/RSeQC_Analyses/MultiQC_Reports/*") // genebody coverage multiqc data zip
+      path("INPUT/RSeQC_Analyses/MultiQC_Reports/*") // genebody coverage multiqc HTML report
+      path("INPUT/RSeQC_Analyses/MultiQC_Reports/*") // infer experiment multiqc data zip
+      path("INPUT/RSeQC_Analyses/MultiQC_Reports/*") // infer experiment multiqc HTML report
+      path("INPUT/RSeQC_Analyses/MultiQC_Reports/*") // inner distance multiqc data zip
+      path("INPUT/RSeQC_Analyses/MultiQC_Reports/*") // inner distance multiqc HTML report
+      path("INPUT/RSeQC_Analyses/MultiQC_Reports/*") // read distribution multiqc data zip
+      path("INPUT/RSeQC_Analyses/MultiQC_Reports/*") // read distribution multiqc HTML report
 
   output:
       path("RSeQC_Analyses/**"), emit: rseqc_outputs
@@ -171,6 +168,14 @@ process VV_RSEQC {
   script:
     """
     mv INPUT/* . || true
+
+    # Create all necessary RSeQC subdirectories
+    mkdir -p RSeQC_Analyses/02_geneBody_coverage
+    mkdir -p RSeQC_Analyses/03_infer_experiment
+    mkdir -p RSeQC_Analyses/05_read_distribution
+    
+    # Create inner distance directory only for paired-end data
+    ${ meta.paired_end ? 'mkdir -p RSeQC_Analyses/04_inner_distance' : '# Skip inner distance for single-end data' }
 
     sort_into_subdirectories.py --from RSeQC_Analyses --to RSeQC_Analyses/02_geneBody_coverage --runsheet ${runsheet} --glob '.geneBodyCoverage.txt'
     sort_into_subdirectories.py --from RSeQC_Analyses --to RSeQC_Analyses/02_geneBody_coverage --runsheet ${runsheet} --glob '.geneBodyCoverage.curves.pdf'
@@ -217,10 +222,11 @@ process VV_FEATURECOUNTS {
     val(meta)
     path(runsheet)
     path("INPUT/03-FeatureCounts/*") // featurecounts counts
+    path("INPUT/03-FeatureCounts/*") // featurecounts counts (rRNArm)
     path("INPUT/03-FeatureCounts/*") // featurecounts summary
     path("INPUT/03-FeatureCounts/*") // featurecounts num non zero genes
-    path("INPUT/03-FeatureCounts/*") // featurecounts multiqc zipped data directory
-    path("INPUT/03-FeatureCounts/*") // featurecounts multiqc HTML report
+    path("INPUT/03-FeatureCounts/MultiQC_Reports/*") // featurecounts multiqc zipped data directory
+    path("INPUT/03-FeatureCounts/MultiQC_Reports/*") // featurecounts multiqc HTML report
 
   output:
     path("03-FeatureCounts/**")
@@ -260,11 +266,9 @@ process VV_DGE_DESEQ2 {
     path("INPUT/05-DESeq2_DGE/*") // sample table
     path("INPUT/05-DESeq2_DGE/*") // contrasts
     path("INPUT/05-DESeq2_DGE/*") // annotated dge table
-    path("INPUT/04-DESeq2_NormCounts_rRNArm/*") // (rrna rm) unnormed counts, normed counts
-    path("INPUT/04-DESeq2_NormCounts_rRNArm/*") // (rrna rm) vst norm counts
-    path("INPUT/05-DESeq2_DGE_rRNArm/*") // (rrna rm) sample table
-    path("INPUT/05-DESeq2_DGE_rRNArm/*") // (rrna rm) contrasts
-    path("INPUT/05-DESeq2_DGE_rRNArm/*") // (rrna rm) annotated dge table
+    path("INPUT/04-DESeq2_NormCounts/*") // (rrna rm) unnormed counts, normed counts
+    path("INPUT/04-DESeq2_NormCounts/*") // (rrna rm) vst norm counts
+    path("INPUT/05-DESeq2_DGE/*") // (rrna rm) annotated dge table
 
   output:
     path("04-*")
@@ -302,9 +306,9 @@ process VV_STAR_ALIGNMENT {
     path(runsheet)
     path("INPUT/02-STAR_Alignment/*") // direct STAR alignment output
     path("INPUT/02-STAR_Alignment/*") // STAR alignment counts tables
-    path("INPUT/02-STAR_Alignment/*") // zipped multiqc data directory
-    path("INPUT/02-STAR_Alignment/*") // multiqc HTML report
-    path("VV_INPUT/02-STAR_Alignment/*") // reindexed, sorted bam/bed files
+    path("INPUT/02-STAR_Alignment/*") // reindexed, sorted bam/bed files
+    path("INPUT/02-STAR_Alignment/MultiQC_Reports/*") // multiqc HTML report
+    path("INPUT/02-STAR_Alignment/MultiQC_Reports/*") // zipped multiqc data directory
 
   output:
     path("02-STAR_Alignment/**")
@@ -341,9 +345,10 @@ process VV_RSEM_COUNTS {
     val(meta)
     path(runsheet)
     path("INPUT/03-RSEM_Counts/*") // RSEM sample wise output
+    path("INPUT/03-RSEM_Counts/*") // RSEM sample.genes.results (rRNArm)
     path("INPUT/03-RSEM_Counts/*") // RSEM dataset output
-    path("INPUT/03-RSEM_Counts/*") // zipped multiqc data directory
-    path("INPUT/03-RSEM_Counts/*") // multiqc HTML report
+    path("INPUT/03-RSEM_Counts/MultiQC_Reports/*") // zipped multiqc data directory
+    path("INPUT/03-RSEM_Counts/MultiQC_Reports/*") // multiqc HTML report
     
   output:
     path("03-RSEM_Counts/**")
@@ -355,7 +360,11 @@ process VV_RSEM_COUNTS {
     # This allows detection as output files for publishing
     mv INPUT/* . || true
 
+    # Run the simplified sorting script to organize files into sample subdirectories
     sort_into_subdirectories.py --from 03-RSEM_Counts --to 03-RSEM_Counts --runsheet ${runsheet} --glob '.*'
+    
+    # Explicitly sort the rRNArm files into sample directories
+    sort_into_subdirectories.py --from 03-RSEM_Counts --to 03-RSEM_Counts --runsheet ${runsheet} --glob '*_rRNArm*'
 
     # Run V&V unless user requests to skip V&V
     if ${ !params.skip_vv } ; then

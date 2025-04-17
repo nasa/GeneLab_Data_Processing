@@ -163,8 +163,12 @@ def check_star_output_existence(outdir, samples, paired_end, log_path, assay_suf
     # Dataset-level files (directly in the alignment directory)
     dataset_files = [
         "STAR_NumNonZeroGenes{assay_suffix}.csv",
-        "STAR_Unnormalized_Counts{assay_suffix}.csv",
-        "align_multiqc{assay_suffix}_data.zip"
+        "STAR_Unnormalized_Counts{assay_suffix}.csv"
+    ]
+    
+    # MultiQC files in the MultiQC_Reports subdirectory
+    multiqc_files = [
+        "MultiQC_Reports/align_multiqc{assay_suffix}_data.zip"
     ]
     
     missing_files_by_sample = {}
@@ -306,7 +310,8 @@ def check_bam_file_integrity(outdir, samples, log_path):
 def get_star_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
     """Extract STAR alignment metrics from MultiQC data."""
     alignment_dir = os.path.join(outdir, '02-STAR_Alignment')
-    multiqc_zip = os.path.join(alignment_dir, f"align_multiqc{assay_suffix}_data.zip")
+    multiqc_dir = os.path.join(alignment_dir, "MultiQC_Reports")
+    multiqc_zip = os.path.join(multiqc_dir, f"align_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
         print(f"WARNING: MultiQC data zip file not found: {multiqc_zip}")
