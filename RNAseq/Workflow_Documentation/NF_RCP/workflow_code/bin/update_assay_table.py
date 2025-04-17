@@ -976,8 +976,8 @@ def add_raw_counts_multiqc_column(df, glds_prefix, assay_suffix, mode=""):
     # Create the appropriate multiqc report filenames based on mode - both data zip and html
     if mode == "microbes":
         # Microbes mode (FeatureCounts)
-        multiqc_html = f"{glds_prefix}featureCounts_multiqc{assay_suffix}.html"
-        multiqc_data = f"{glds_prefix}featureCounts_multiqc{assay_suffix}_data.zip"
+        multiqc_html = f"{glds_prefix}FeatureCounts_multiqc{assay_suffix}.html"
+        multiqc_data = f"{glds_prefix}FeatureCounts_multiqc{assay_suffix}_data.zip"
     else:
         # Default mode (RSEM)
         multiqc_html = f"{glds_prefix}RSEM_count_multiqc{assay_suffix}.html"
