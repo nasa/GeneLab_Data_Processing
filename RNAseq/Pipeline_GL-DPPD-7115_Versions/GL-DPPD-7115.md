@@ -352,7 +352,9 @@ bowtie2 -x /path/to/bowtie2/index \
 
 - *\.sam (alignments in SAM format)
 - **\*.bowtie2.log** (log file containing alignment statistics)
-- **\*.unmapped.fastq.gz** (unmapped reads in FASTQ format)
+- Unmapped reads (unmapped reads in FASTQ format)
+    - **\*.unmapped.fastq.gz** (single-end)
+    -  `**\*.unmapped.fastq.1.gz, .unmapped.fastq.2.gz** (paired-end)
 
 <br>
 
