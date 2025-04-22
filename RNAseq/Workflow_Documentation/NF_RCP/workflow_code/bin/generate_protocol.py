@@ -277,14 +277,14 @@ def generate_protocol_content(args, software_versions):
     
     # Define organism to annotation package mapping using scientific names
     organism_annotation_packages = {
-        "Arabidopsis thaliana": ("org.At.tair.db", "3.19.1"),
-        "Caenorhabditis elegans": ("org.Ce.eg.db", "3.19.1"),
-        "Drosophila melanogaster": ("org.Dm.eg.db", "3.19.1"),
-        "Danio rerio": ("org.Dr.eg.db", "3.19.1"),
-        "Homo sapiens": ("org.Hs.eg.db", "3.19.1"),
-        "Mus musculus": ("org.Mm.eg.db", "3.19.1"),
-        "Rattus norvegicus": ("org.Rn.eg.db", "3.19.1"),
-        "Saccharomyces cerevisiae": ("org.Sc.sgd.db", "3.19.1")
+        "arabidopsis_thaliana": ("org.At.tair.db", "3.19.1"),
+        "caenorhabditis_elegans": ("org.Ce.eg.db", "3.19.1"),
+        "drosophila_melanogaster": ("org.Dm.eg.db", "3.19.1"),
+        "danio_rerio": ("org.Dr.eg.db", "3.19.1"),
+        "homo_sapiens": ("org.Hs.eg.db", "3.19.1"),
+        "mus_musculus": ("org.Mm.eg.db", "3.19.1"),
+        "rattus_norvegicus": ("org.Rn.eg.db", "3.19.1"),
+        "saccharomyces_cerevisiae": ("org.Sc.sgd.db", "3.19.1")
     }
     
     # List of organisms that use custom annotation packages via AnnotationForge
@@ -318,7 +318,7 @@ def generate_protocol_content(args, software_versions):
     # Format the organism name for lookup
     organism_formatted = ""
     if hasattr(args, 'organism') and args.organism:
-        organism_formatted = args.organism.replace('_', ' ').title()
+        organism_formatted = args.organism.replace(' ', '_').replace('-', '_').lower()
     
     # Build gene annotations sentence
     gene_annotations_text = f"Gene annotations were assigned using the custom annotation tables generated in-house as detailed in GL-DPPD-7110-A (https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A.md), with STRINGdb (version {stringdb_version}) and PANTHER.db (version {pantherdb_version})"
