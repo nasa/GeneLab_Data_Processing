@@ -1,3 +1,4 @@
+vv_dge_deseq2.txt
 #!/usr/bin/env python
 
 import os
@@ -204,7 +205,7 @@ def check_deseq2_normcounts_existence(outdir, log_path, assay_suffix="_GLbulkRNA
     expected_files = [
         unnorm_file,
         f"Normalized_Counts{assay_suffix}.csv",
-        f"VST_Normalized_Counts{assay_suffix}.csv"
+        f"VST_Counts{assay_suffix}.csv"
     ]
     
     missing_files = []
@@ -2403,7 +2404,7 @@ def check_dge_table_log2fc_within_reason(outdir, runsheet_path, log_path, assay_
         
         # Determine status based on findings
         if all_suspect_signs:
-            status = "YELLOW"  # Changed from RED to YELLOW
+            status = "RED"  # Changed from RED to YELLOW
             message = "Log2fc signs do not match expected direction based on group means"
             
             # Collect all unique genes with wrong signs across all contrasts
@@ -2455,6 +2456,38 @@ def check_dge_table_log2fc_within_reason(outdir, runsheet_path, log_path, assay_
             
             # Create consolidated details message
             details = f"Found {total_wrong_signs} genes with incorrect log2fc signs across all comparisons ({total_wrong_signs}/{total_genes_checked} genes). Genes: {'; '.join(gene_examples)}. {low_count_wrong_sign_genes}/{total_wrong_signs} genes with incorrect signs had Group.Mean values below {SMALL_COUNTS_THRESHOLD}."
+            
+            # --- BEGIN PATCH: Dynamic Stdev/Mean ratio reporting ---
+            # Find all group mean and stdev columns
+            group_mean_cols = [col for col in df_dge_with_sum.columns if col.startswith('Group.Mean_')]
+            group_stdev_cols = [col for col in df_dge_with_sum.columns if col.startswith('Group.Stdev_')]
+            # Map group name (inside parens) to col name
+            def extract_group(col):
+                m = re.match(r'Group\.(Mean|Stdev)_\((.+)\)', col)
+                return m.group(2) if m else None
+            mean_map = {extract_group(col): col for col in group_mean_cols if extract_group(col)}
+            stdev_map = {extract_group(col): col for col in group_stdev_cols if extract_group(col)}
+            groups = set(mean_map) & set(stdev_map)
+            flagged_gene_df = df_dge_with_sum[df_dge_with_sum[gene_id_col].isin(wrong_sign_gene_ids)]
+            stdev_flagged = []
+            stdev_flagged_details = []
+            for idx, row in flagged_gene_df.iterrows():
+                gene = row[gene_id_col]
+                triggered = []
+                for group in groups:
+                    mean_val = row[mean_map[group]]
+                    stdev_val = row[stdev_map[group]]
+                    if pd.notnull(mean_val) and mean_val != 0 and pd.notnull(stdev_val):
+                        ratio = stdev_val / mean_val
+                        if ratio > 1:
+                            triggered.append(f"Stdev/Mean ({group}): {ratio:.2f}")
+                if triggered:
+                    stdev_flagged.append(gene)
+                    stdev_flagged_details.append(f"{gene}: {', '.join(triggered)}")
+            details += f" {len(stdev_flagged)}/{total_wrong_signs} genes with incorrect signs had at least one Stdev/Mean > 1."
+            if stdev_flagged_details:
+                details += " Genes and triggered ratios: " + "; ".join(stdev_flagged_details)
+            # --- END PATCH ---
             
             log_check_result(log_path, component_name, "all", check_name, status, message, details)
             return False
@@ -2524,7 +2557,7 @@ def check_ercc_presence(outdir, runsheet_path, log_path, assay_suffix="_GLbulkRN
             unnorm_path = os.path.join(outdir, f"RSEM_Unnormalized_Counts{assay_suffix}.csv")
             
         norm_path = os.path.join(outdir, f"Normalized_Counts{assay_suffix}.csv")
-        vst_norm_path = os.path.join(outdir, f"VST_Normalized_Counts{assay_suffix}.csv")
+        vst_norm_path = os.path.join(outdir, f"VST_Counts{assay_suffix}.csv")
         
         # Check if files exist
         files_missing = []
