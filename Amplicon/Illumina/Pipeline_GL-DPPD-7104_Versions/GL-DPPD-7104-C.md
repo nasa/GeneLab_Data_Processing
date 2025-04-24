@@ -2067,7 +2067,7 @@ walk2(.x = normalization_methods, .y = distance_methods,
 * **beta_diversity/<output_prefix><distance_method>_variance_table_GLAmpSeq.csv** (comma-separated table(s) containing the degrees of freedom (df), sum of squares (sumsq), mean square (meansq), F-statistic (statistic), and p-value for the groups (variation explained by experimental groups) and residual (unexplained variation) sources of variation (terms) for the specified distance analysis, Euclidean or Bray-Curtis)
 * **beta_diversity/<output_prefix><distance_method>_PCoA_without_labels_GLAmpSeq.png** (Principle Coordinates Analysis plots of VST transformed and rarefy transformed ASV counts for Euclidean and Bray-Curtis distance methods, respectively, without sample labels)
 * **beta_diversity/<output_prefix><distance_method>_PCoA_w_labels_GLAmpSeq.png** (Principle Coordinates Analysis plots of VST transformed and rarefy transformed ASV counts for Euclidean and Bray-Curtis distance methods, respectively, with sample labels)
-* beta_diversity/<output_prefix>vsd_validation_plot.png (VST transformation validation diagnostic plot)
+* **beta_diversity/<output_prefix>vsd_validation_plot.png** (VST transformation validation diagnostic plot)
 
 <br>
 
@@ -3383,7 +3383,7 @@ walk(pairwise_comp_df, function(col){
   - For each group:
     - Group.Mean_(group) (mean within group)
     - Group.Stdev_(group) (standard deviation within group))
-* differential_abundance/deseq2/<output_prefix>asv_sparsity_plot.png (a diagnostic plot of ASV sparsity to be used to assess if running DESeq2 is appropriate)
+* **differential_abundance/deseq2/<output_prefix>asv_sparsity_plot.png** (a diagnostic plot of ASV sparsity to be used to assess if running DESeq2 is appropriate)
 <br>
 
 ---
