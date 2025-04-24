@@ -1,7 +1,7 @@
 !/usr/bin/env bash
 set  -euo pipefail
 
-# Script to launch a nextflow workflow on N288 cluster
+# Script to launch a nextflow workflow on slurm cluster using singularity
 
 # Usage: bash ./launch.sh [mode] [main.nf]  [config] '[extra arguments]'
 # Examples
