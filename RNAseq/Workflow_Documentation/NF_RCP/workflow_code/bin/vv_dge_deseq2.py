@@ -1,4 +1,3 @@
-vv_dge_deseq2.txt
 #!/usr/bin/env python
 
 import os
@@ -2404,7 +2403,7 @@ def check_dge_table_log2fc_within_reason(outdir, runsheet_path, log_path, assay_
         
         # Determine status based on findings
         if all_suspect_signs:
-            status = "RED"  # Changed from RED to YELLOW
+            status = "YELLOW" 
             message = "Log2fc signs do not match expected direction based on group means"
             
             # Collect all unique genes with wrong signs across all contrasts

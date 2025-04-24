@@ -185,12 +185,20 @@ def check_rsem_output_existence(outdir, samples, log_path, assay_suffix="_GLbulk
             file_path = os.path.join(rsem_dir, file_name.format(assay_suffix=assay_suffix))
         else:
             file_path = os.path.join(rsem_dir, file_name)
-            
+        
         if not os.path.exists(file_path):
             missing_dataset_files.append(os.path.basename(file_path))
-    
+
+    # Check MultiQC files
+    multiqc_dir = os.path.join(rsem_dir, "MultiQC_Reports")
+    missing_multiqc_files = []
+    for file_name in multiqc_files:
+        file_path = os.path.join(multiqc_dir, file_name.format(assay_suffix=assay_suffix))
+        if not os.path.exists(file_path):
+            missing_multiqc_files.append(os.path.basename(file_path))
+
     # Log results
-    if missing_files_by_sample or missing_dataset_files:
+    if missing_files_by_sample or missing_dataset_files or missing_multiqc_files:
         # Log sample-specific missing files
         for sample, missing_files in missing_files_by_sample.items():
             log_check_result(
@@ -214,7 +222,19 @@ def check_rsem_output_existence(outdir, samples, log_path, assay_suffix="_GLbulk
                 f"Missing {len(missing_dataset_files)} expected dataset-level RSEM output files", 
                 ",".join(missing_dataset_files)
             )
-            
+        
+        # Log MultiQC files
+        if missing_multiqc_files:
+            log_check_result(
+                log_path,
+                "RSEM_counts",
+                "all",
+                "check_rsem_output_existence",
+                "HALT",
+                f"Missing {len(missing_multiqc_files)} expected MultiQC files",
+                ",".join(missing_multiqc_files)
+            )
+        
         print(f"WARNING: Some expected RSEM output files are missing")
         return False
     else:

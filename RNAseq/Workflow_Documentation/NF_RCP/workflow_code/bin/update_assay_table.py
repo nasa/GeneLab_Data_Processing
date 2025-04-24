@@ -595,11 +595,8 @@ def add_read_counts(df, outdir, glds_accession, assay_suffix, runsheet_df=None):
                 print(f"WARNING: No read count found for sample {assay_sample}")
                 values.append("N/A")
     
-    # Add the column to the dataframe - but don't use update_column
-    # since we want to add it without replacing anything
-    print(f"Adding new column: {column_name}")
-    df[column_name] = values
-    column_changes.append(f"Added: {column_name}")
+    # Add the column to the dataframe
+    df = update_column(df, column_name, values, alternative_names)
     
     return df
 
@@ -701,12 +698,7 @@ def add_unmapped_reads_column(df, glds_prefix, runsheet_df=None, mode=""):
                     values.append(f"{glds_prefix}{sample}_Unmapped.out.mate1")
     
     # Add the column to the dataframe
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = values
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = values
+    df = update_column(df, column_name, values, alternative_names)
     
     return df
 
@@ -830,12 +822,7 @@ def add_trimming_reports_column(df, glds_prefix, runsheet_df=None):
                 values.append(f"{glds_prefix}{sample}_raw.fastq.gz_trimming_report.txt")
     
     # Add the column to the dataframe
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = values
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = values
+    df = update_column(df, column_name, values, alternative_names)
     
     return df
 
@@ -869,7 +856,7 @@ def add_align_multiqc_reports_column(df, glds_prefix, assay_suffix):
     combined_files = f"{multiqc_data},{multiqc_html}"
     
     # Add the column to the dataframe with the same value for all rows
-    df = update_column(df, column_name, combined_files, alternative_names)
+    df = update_column(df, column_name, combined_files)
     
     return df
 
@@ -889,7 +876,7 @@ def add_rseqc_multiqc_reports_column(df, glds_prefix, assay_suffix):
     combined_reports = ",".join(multiqc_reports)
     
     # Add the column to the dataframe with the same value for all rows
-    df = update_column(df, column_name, combined_reports, alternative_names)
+    df = update_column(df, column_name, combined_reports)
     
     return df
 
@@ -959,12 +946,7 @@ def add_raw_counts_data_column(df, glds_prefix, assay_suffix, mode=""):
                 values.append(",".join(rsem_files))
     
     # Add the column to the dataframe
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = values
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = values
+    df = update_column(df, column_name, values, alternative_names)
     
     return df
 
@@ -1145,12 +1127,7 @@ def add_aligned_sequence_data_column(df, glds_prefix, runsheet_df=None, mode="")
             values.append(",".join(files))
     
     # Add the column to the dataframe
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = values
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = values
+    df = update_column(df, column_name, values, alternative_names)
     
     return df
 
@@ -1200,12 +1177,7 @@ def add_alignment_logs_column(df, glds_prefix, runsheet_df=None, mode=""):
                 values.append(f"{glds_prefix}{sample}_Log.final.out")
     
     # Add the column to the dataframe
-    if column_name not in df.columns:
-        print(f"Adding column: {column_name}")
-        df[column_name] = values
-    else:
-        print(f"Updating column: {column_name}")
-        df[column_name] = values
+    df = update_column(df, column_name, values, alternative_names)
     
     return df
 

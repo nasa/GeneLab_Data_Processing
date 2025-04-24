@@ -358,7 +358,6 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
     """Check if all samples are included in the MultiQC report."""
     multiqc_dir = os.path.join(outdir, "01-TG_Preproc", "MultiQC_Reports")
     multiqc_data_zip = os.path.join(multiqc_dir, f"trimmed_multiqc{assay_suffix}_data.zip")
-    multiqc_html = os.path.join(multiqc_dir, f"trimmed_multiqc{assay_suffix}.html")
     
     if not os.path.exists(multiqc_data_zip):
         print(f"WARNING: MultiQC data zip file not found: {multiqc_data_zip}")
@@ -437,7 +436,6 @@ def get_trimmed_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffi
     """Extract trimmed MultiQC stats for all samples and write to a stats file for analysis."""
     multiqc_dir = os.path.join(outdir, "01-TG_Preproc", "MultiQC_Reports")
     multiqc_data_zip = os.path.join(multiqc_dir, f"trimmed_multiqc{assay_suffix}_data.zip")
-    multiqc_html = os.path.join(multiqc_dir, f"trimmed_multiqc{assay_suffix}.html")
     
     if not os.path.exists(multiqc_data_zip):
         print(f"WARNING: MultiQC data zip file not found: {multiqc_data_zip}")
@@ -569,18 +567,18 @@ def parse_fastqc(prefix, assay_suffix):
     for base_name, reads in sample_groups.items():
         data[base_name] = {}
         
+        # Map between expected field names and actual field names in the MultiQC
+        field_mapping = {
+            'total_sequences': ['total_sequences'],
+            'percent_gc': ['percent_gc'],
+            'avg_sequence_length': ['avg_sequence_length'],
+            'median_sequence_length': ['median_sequence_length'],
+            'percent_duplicates': ['percent_duplicates']
+        }
+        
         # Process forward read
         if reads['f']:
             sample_fields = j['report_general_stats_data'][fastqc_module_index][reads['f']]
-            
-            # Map between expected field names and actual field names in the MultiQC
-            field_mapping = {
-                'total_sequences': ['total_sequences'],
-                'percent_gc': ['percent_gc'],
-                'avg_sequence_length': ['avg_sequence_length'],
-                'median_sequence_length': ['median_sequence_length'],
-                'percent_duplicates': ['percent_duplicates']
-            }
             
             # Copy data with appropriate field name translation
             for expected_field, possible_actual_fields in field_mapping.items():
@@ -589,19 +587,10 @@ def parse_fastqc(prefix, assay_suffix):
                         # Add field with prefix and _f suffix for consistency
                         data[base_name][prefix + '_' + expected_field + '_f'] = sample_fields[actual_field]
                         break
-                    
+        
         # Process reverse read
         if reads['r']:
             sample_fields = j['report_general_stats_data'][fastqc_module_index][reads['r']]
-            
-            # Same field mapping as above
-            field_mapping = {
-                'total_sequences': ['total_sequences'],
-                'percent_gc': ['percent_gc'],
-                'avg_sequence_length': ['avg_sequence_length'],
-                'median_sequence_length': ['median_sequence_length'],
-                'percent_duplicates': ['percent_duplicates']
-            }
             
             # Copy data with appropriate field name translation
             for expected_field, possible_actual_fields in field_mapping.items():
@@ -955,7 +944,6 @@ def check_trimming_multiqc_samples(outdir, samples, log_path, assay_suffix="_GLb
     # Use MultiQC_Reports directory instead of FastQC_Reports
     multiqc_dir = os.path.join(outdir, "01-TG_Preproc", "MultiQC_Reports")
     multiqc_data_zip = os.path.join(multiqc_dir, f"trimmed_multiqc{assay_suffix}_data.zip")
-    multiqc_html = os.path.join(multiqc_dir, f"trimmed_multiqc{assay_suffix}.html")
     
     if not os.path.exists(multiqc_data_zip):
         print(f"WARNING: Trimmed MultiQC data zip file not found: {multiqc_data_zip}")
@@ -1184,16 +1172,34 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
                 for sample in low_adapter_samples:
                     print(f"  - {sample}")
                 print(f"Adapter presence stats: {stats_message}")
-                log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "RED", 
-                                f"Adapter content: {min_adapter_ratio:.2%} - {max_adapter_ratio:.2%} (below threshold)", 
-                                f"{stats_message}; From {len(sample_adapter_ratios)} samples")
+                if all_adapter_ratios:
+                    log_check_result(
+                        log_path, "trimmed_reads", "all", "check_adapters_presence", "RED",
+                        f"Adapter content: {min_adapter_ratio:.2%} - {max_adapter_ratio:.2%} (below threshold)",
+                        f"{stats_message}; From {len(sample_adapter_ratios)} samples"
+                    )
+                else:
+                    log_check_result(
+                        log_path, "trimmed_reads", "all", "check_adapters_presence", "RED",
+                        "No adapter ratio data available",
+                        f"{stats_message}; From {len(sample_adapter_ratios)} samples"
+                    )
                 return False
             
             print(f"All {len(sample_adapter_ratios)} samples had adapter content above threshold (≥{threshold:.2%}) in raw reads")
             print(f"Adapter presence stats: {stats_message}")
-            log_check_result(log_path, "trimmed_reads", "all", "check_adapters_presence", "GREEN", 
-                            f"Adapter content: {min_adapter_ratio:.2%} - {max_adapter_ratio:.2%}", 
-                            f"{stats_message}; From {len(sample_adapter_ratios)} samples")
+            if all_adapter_ratios:
+                log_check_result(
+                    log_path, "trimmed_reads", "all", "check_adapters_presence", "GREEN",
+                    f"Adapter content: {min_adapter_ratio:.2%} - {max_adapter_ratio:.2%}",
+                    f"{stats_message}; From {len(sample_adapter_ratios)} samples"
+                )
+            else:
+                log_check_result(
+                    log_path, "trimmed_reads", "all", "check_adapters_presence", "GREEN",
+                    "No adapter ratio data available",
+                    f"{stats_message}; From {len(sample_adapter_ratios)} samples"
+                )
             return True
             
         except Exception as e:

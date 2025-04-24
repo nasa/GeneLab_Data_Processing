@@ -354,7 +354,7 @@ bowtie2 -x /path/to/bowtie2/index \
 - **\*.bowtie2.log** (log file containing alignment statistics)
 - Unmapped reads (unmapped reads in FASTQ format)
     - **\*.unmapped.fastq.gz** (single-end)
-    -  `**\*.unmapped.fastq.1.gz, .unmapped.fastq.2.gz** (paired-end)
+    -  **\*.unmapped.fastq.1.gz, .unmapped.fastq.2.gz** (paired-end)
 
 <br>
 

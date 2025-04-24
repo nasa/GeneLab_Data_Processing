@@ -430,7 +430,6 @@ def get_raw_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffix="_
     """Extract raw MultiQC stats for all samples."""
     multiqc_dir = os.path.join(outdir, "00-RawData", "MultiQC_Reports")
     multiqc_data_zip = os.path.join(multiqc_dir, f"raw_multiqc{assay_suffix}_data.zip")
-    multiqc_html = os.path.join(multiqc_dir, f"raw_multiqc{assay_suffix}.html")
     
     if not os.path.exists(multiqc_data_zip):
         print(f"WARNING: MultiQC data zip file not found: {multiqc_data_zip}")
