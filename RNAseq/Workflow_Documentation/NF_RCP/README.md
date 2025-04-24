@@ -150,6 +150,7 @@ export NXF_SINGULARITY_CACHEDIR=$(pwd)/singularity
 While in the location containing the `NF_RCP_2.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are four examples of how to run the NF_RCP workflow:
 > Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --reference_version) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
 
+> Note: To use Docker instead of Singularity, use `-profile docker` in the Nextflow run command. Nextflow will automatically pull images as needed.
 <br>
 
 #### 4a. Approach 1: Run the workflow on a GeneLab RNAseq dataset with automatic retrieval of reference fasta and gtf files
