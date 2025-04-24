@@ -220,7 +220,7 @@ python run_workflow.py --target-region 16S --accession GLDS-487 --profile slurm,
 
 #### 6a. Main outputs
 
-The outputs from this pipeline are documented in the [GL-DPPD-7104-B](../../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md) processing protocol.
+The outputs from this pipeline are documented in the [GL-DPPD-7104-C](../../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-C.md) processing protocol.
 
 #### 6b. Resource logs
 
