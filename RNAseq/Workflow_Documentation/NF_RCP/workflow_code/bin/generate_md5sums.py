@@ -80,6 +80,15 @@ def should_include(filepath, outdir):
     rsem_other_patterns = ['.cnt', '.model', '.theta']
     if any(basename.endswith(ext) for ext in rsem_other_patterns):
         return False
+    # Skip ISA.zip
+    if filepath.endswith("ISA.zip"):
+        return False
+    # Skip STAR_NumNonZeroGenes_GLbulkRNAseq.csv and RSEM_NumNonZeroGenes_GLbulkRNAseq.csv
+    if os.path.basename(filepath) in [
+        "STAR_NumNonZeroGenes_GLbulkRNAseq.csv",
+        "RSEM_NumNonZeroGenes_GLbulkRNAseq.csv"
+    ]:
+        return False
     return True
 
 def main():
@@ -136,6 +145,21 @@ def main():
     
     print(f"Added {raw_count} files to {raw_md5_file}")
     print(f"Added {processed_count} files to {processed_md5_file}")
+
+    def dedup_file(filename):
+        seen = set()
+        lines = []
+        with open(filename, 'r') as f:
+            for line in f:
+                key = line.split('\t', 1)[0]  # dedup by basename
+                if key not in seen:
+                    seen.add(key)
+                    lines.append(line)
+        with open(filename, 'w') as f:
+            f.writelines(lines)
+
+    dedup_file(raw_md5_file)
+    dedup_file(processed_md5_file)
 
 if __name__ == "__main__":
     main()
