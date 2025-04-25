@@ -35,13 +35,17 @@ suppressMessages(library(tibble))
 ```{r, load-annotation-table}
 ### Read in annotation table for the appropriate organism ###
 
-annot <- read.table(
-            params$annotation_file_path,
-            sep = "\t",
-            header = TRUE,
-            quote = "",
-            comment.char = "",
-        )
+if (is.null(params$annotation_file_path) || params$annotation_file_path == "" || params$annotation_file_path == "null") {
+    annot <- tibble::tibble()
+} else {
+    annot <- read.table(
+        params$annotation_file_path,
+        sep = "\t",
+        header = TRUE,
+        quote = "",
+        comment.char = ""
+    )
+}
 ```
 
 ```{r, load-table-to-annotate}
