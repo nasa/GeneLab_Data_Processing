@@ -53,8 +53,8 @@ if(params.help){
   println("      --file_association_extra [STRING] Extra parameters and arguments to GL-gen-amplicon-file-associations-table command. Run 'GL-gen-amplicon-file-associations-table --help' for extra parameters that can be set. Example '--single-ended --R1-used-as-single-ended-data'. Default: empty string ")
   println()
   println("Files:")
-  println("    --main  [PATH] The main workflow script used for processing. Default: ./main.nf")
-  println("    --nextflow_config  [PATH] The main workflow configuration file used for processing. Default: ./nextflow.config")
+  println("    --run_command  [PATH] File containing the nextflow run command used in processing. Default: ./processing_scripts/command.txt")
+  println("    --processing_commands  [PATH] File containing all the process names and scripts used during processing. Default: ./processing_scripts/nextflow_processing_info_GLAmpliseq.txt")
   println("    --samples  [PATH] A single column file with sample ids on each line generated after running the processing pipeline. Default: ./unique-sample-IDs.txt")
   println("You only need to supply one of --assay_table or --isa_zip. If you supply both it will use only the assay_table.")
   println("""  --assay_table  [PATH] GLDS assay table generated after running the processing pipeline with accession number as input.
@@ -65,10 +65,6 @@ if(params.help){
   println("    --software_versions  [PATH] A file generated after running the processing pipeline listing the software versions used. Default: ../Metadata/software_versions.txt")
   println()
   println("Directories:")
-  println("    --config_dir  [PATH] A directory containing configuration files used in the processing pipeline. Only relevent in Metagenomics and AmpIllumina workflows. Default: ./config/")
-  println("    --bin  [PATH] A directory containing scripts used by nextflow. Default: ./bin/")
-  println("    --envs  [PATH] A directory containing conda yaml files. Default: ./envs/")
-  println("    --modules  [PATH] A directory containing nextflow module scripts. Default: ./modules/")
   println("    --Raw_Sequence_Data [PATH] A directory containing raw sequence and raw sequence outputs. Default: ../Raw_Sequence_Data/")
   println("    --FastQC_Outputs [PATH] A directory containing fastqc and multiqc zip reports. Default: ../workflow_outputs/FastQC_Outputs/")
   println("    --Trimmed_Sequence_Data  [PATH] A directory containing the outputs of read trimming after running the processing pipeline. Default: ../workflow_outputs/Trimmed_Sequence_Data/")
@@ -125,8 +121,8 @@ log.info """${c_blue}
          File Association Script Extra: ${params.file_association_extra}
 
          Files:
-         Main Workflow Script: ${params.main}
-         Nextflow Config File: ${params.nextflow_config}
+         Nextflow Command: ${params.run_command}
+         Processing Commands : ${params.processing_commands}
          Samples: ${params.samples}
          Assay Table: ${params.assay_table}
          ISA Zip: ${params.isa_zip}
@@ -134,10 +130,6 @@ log.info """${c_blue}
          Software Versions: ${params.software_versions}
 
          Directories:
-         Config: ${params.config_dir}
-         Bin: ${params.bin}
-         Conda Environments: ${params.envs}
-         Modules: ${params.modules}
          Raw Reads Directory: ${params.Raw_Sequence_Data}
          Trimmed Reads Directory: ${params.Trimmed_Sequence_Data}
          Filtered Sequence Data: ${params.Filtered_Sequence_Data}
@@ -217,17 +209,13 @@ workflow {
 
 
         // Files and directories to be package in processing_info.zip
-        files_and_dirs_ch = Channel.of(params.config_dir, params.bin, params.modules, 
-                                       params.envs, params.main, params.nextflow_config, 
+        files_and_dirs_ch = Channel.of(params.run_command, params.processing_commands, 
                                        params.samples)
                                        .collect()
-                                       .map{ config_dir, bin, modules, envs, main, config_file, samples -> 
-                                            tuple( file(config_dir, checkIfExists: true),
-                                                   file(bin, checkIfExists: true),
-                                                   file(modules, checkIfExists: true),
-                                                   file(envs, checkIfExists: true),
-                                                   file(main, checkIfExists: true),
-                                                   file(config_file, checkIfExists: true),
+                                       .map{ run_command, processing_commands, samples -> 
+                                            tuple( 
+                                                   file(run_command, checkIfExists: true),
+                                                   file(processing_commands, checkIfExists: true),
                                                    file(samples, checkIfExists: true)
                                                  ) }
 

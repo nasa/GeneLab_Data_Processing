@@ -41,12 +41,14 @@ Software Updates and Changes:
 | ggdendro     | N/A              | 0.2.0         |
 | ggrepel      | N/A              | 0.9.6         |
 | glue         | N/A              | 1.8.0         |
+| hexbin       | N/A              | 1.28.3        |
 | mia          | N/A              | 1.14.0        |
 | phyloseq     | N/A              | 1.50.0        |
 | rcolorbrewer | N/A              | 1.1.3         |
 | taxize       | N/A              | 0.10.0        |
 | tidyverse    | N/A              | 2.0.0         |
 | vegan        | N/A              | 2.6._10       |
+| vsn          | N/A              | 3.74.0        |
 
 - Added new processing steps in R to generate processed data outputs for alpha and beta diversity, taxonomic summary plots, and differential abundance:
   - Alpha Diversity Analysis ([Step 7](#7-alpha-diversity-analysis))
@@ -128,12 +130,14 @@ Software Updates and Changes:
 |ggdendro|0.2.0|[https://CRAN.R-project.org/package=ggdendro](https://CRAN.R-project.org/package=ggdendro)|
 |ggrepel|0.9.6|[https://CRAN.R-project.org/package=ggrepel](https://CRAN.R-project.org/package=ggrepel)|
 |glue|1.8.0|[https://glue.tidyverse.org/](https://glue.tidyverse.org/)|
+|hexbin|1.28.3|[https://CRAN.R-project.org/package=hexbin](https://CRAN.R-project.org/package=hexbin)|
 |mia|1.14.0|[https://github.com/microbiome/mia](https://github.com/microbiome/mia)|
 |phyloseq|1.50.0|[https://bioconductor.org/packages/release/bioc/html/phyloseq.html](https://bioconductor.org/packages/release/bioc/html/phyloseq.html)|
 |rcolorbrewer|1.1.3|[https://CRAN.R-project.org/package=RColorBrewer](https://CRAN.R-project.org/package=RColorBrewer)|
 |taxize|0.10.0|[https://docs.ropensci.org/taxize/](https://docs.ropensci.org/taxize/)|
 |tidyverse|2.0.0|[https://CRAN.R-project.org/package=tidyverse](https://CRAN.R-project.org/package=tidyverse)|
 |vegan|2.6_4|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
+|vsn|3.74.0|[https://bioconductor.org/packages/release/bioc/html/vsn.html](https://bioconductor.org/packages/release/bioc/html/vsn.html)|
 
 # Reference databases used
 <update figshare links once the updated DBs are downloaded>
@@ -655,6 +659,8 @@ library(mia)
 library(utils)
 library(scales)
 library(tidyverse)
+library(vsn)
+library(hexbin)
 ```
 
 #### 6b.ii. Define Custom Functions
@@ -1314,6 +1320,54 @@ library(tidyverse)
   
   **Returns:** a numeric value representing the geometric mean
 </details>
+
+#### plotSparsity()
+<details>
+  <summary>Plots ASV sparsity. A modification of DESeq2::plotSparsity to generate a ggplot.</summary>
+
+  ```R
+    plotSparsity <- function (x, normalized = TRUE, feature="ASV", ...) {
+  
+  
+      if (is(x, "DESeqDataSet")) {
+
+            x <- counts(x, normalized = normalized)
+      }
+  
+      rs <- MatrixGenerics::rowSums(x)
+      rmx <- apply(x, 1, max)
+
+      # Prepare plot dataframe
+      df <- data.frame(rs=rs, rmx=rmx) %>% 
+               mutate(x=rs, y=rmx/rs) %>% 
+               filter(x>0)
+    
+      # Plot
+      ggplot(data = df, aes(x=x, y=y), ...) +
+        geom_point(size=3) +
+        scale_x_log10() + 
+        scale_y_continuous(limits = c(0,1)) +
+        theme_bw() +
+        labs(title = glue("Concentration of {feature} counts over total sum of {feature} counts"),
+             x=glue("Sum of counts per {feature}"),
+             y=glue("Max {feature} count / Sum of {feature} counts")) + 
+        theme(axis.text = element_text(face = "bold", size = 12),
+              axis.title = element_text(face = "bold", size = 14),
+              title = element_text(face = "bold", size = 14))
+
+  }
+    
+  ```
+  **Function Parameter Definitions:**
+  - `x=` -  a matrix or DESeqDataSet to plot
+  - `normalized=TRUE` - boolean specifying whether to normalize the counts from a DESeqDataSEt; default is TRUE
+  - `feature=` - a string specifying which feature type ("ASV", "OTU", "gene" etc.) is being plotted; Default is "ASV"
+  - `...=` - any named arguement(s) that can be passed to the ggplot2::ggplot function.
+
+  **Returns:** a sparsity plot of type ggplot
+</details>
+
+
 <br>
 
 #### 6b.iii. Set Variables
@@ -1928,6 +1982,26 @@ walk2(.x = normalization_methods, .y = distance_methods,
   # Extract normalized count table
   count_tab <- otu_table(ps)
 
+  # VSD validation check point
+  if(normalization_method == "vst"){
+  
+  # Visualize the sd vs the rank of the mean plot.
+  mead_sd_plot <- meanSdPlot(t(count_tab))$gg + 
+    theme_bw() +
+    labs(title = "MEAN-SD VST validation Plot",
+         x="Rank Of Mean",
+         y="Standard Deviation") + 
+    theme(axis.text = element_text(face = "bold", size = 12),
+          axis.title = element_text(face = "bold", size = 14),
+          title = element_text(face = "bold", size = 14))
+  
+  # Save VSD validation plot
+  ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}vsd_validation_plot.png"),
+         plot = mead_sd_plot, width = 14, height = 10, dpi = 300, units = "in")
+
+   }
+
+
   # Calculate distance between samples
   dist_obj <- vegdist(t(count_tab), method = distance_method)
 
@@ -1994,6 +2068,7 @@ walk2(.x = normalization_methods, .y = distance_methods,
 * **beta_diversity/<output_prefix><distance_method>_variance_table_GLAmpSeq.csv** (comma-separated table(s) containing the degrees of freedom (df), sum of squares (sumsq), mean square (meansq), F-statistic (statistic), and p-value for the groups (variation explained by experimental groups) and residual (unexplained variation) sources of variation (terms) for the specified distance analysis, Euclidean or Bray-Curtis)
 * **beta_diversity/<output_prefix><distance_method>_PCoA_without_labels_GLAmpSeq.png** (Principle Coordinates Analysis plots of VST transformed and rarefy transformed ASV counts for Euclidean and Bray-Curtis distance methods, respectively, without sample labels)
 * **beta_diversity/<output_prefix><distance_method>_PCoA_w_labels_GLAmpSeq.png** (Principle Coordinates Analysis plots of VST transformed and rarefy transformed ASV counts for Euclidean and Bray-Curtis distance methods, respectively, with sample labels)
+* **beta_diversity/<output_prefix>vsd_validation_plot.png** (VST transformation validation diagnostic plot)
 
 <br>
 
@@ -2209,7 +2284,9 @@ Where `taxon_level` is all of phylum, class, order, family, genus, and species.
 
 ## 10. Differential Abundance Testing
 
-Differential abundance testing aims to uncover specific taxa that exhibit notable variations across different conditions, complemented by visualizations like volcano plots to illustrate these disparities and their implications on ASV abundance and overall microbial community dynamics. ANCOMBC 1, ANCOMBC 2, and DESeq2 provide 3 different methods for calculating differential abundance.
+Differential abundance testing aims to uncover specific taxa that exhibit notable variations across different conditions, complemented by visualizations like volcano plots to illustrate these disparities and their implications on ASV abundance and overall microbial community dynamics. ANCOMBC 1, ANCOMBC 2, and DESeq2 provide 3 different methods for calculating differential abundance. ANCOMBC 1 and 2 were specifically designed to handle the compositional nature of microbiome data. ANCOMBC 2 is an improved version of ANCOMBC 1 particularly for datasets with high sparsity, small sample sizes, or longitudinal and correlated experimental designs. This pipeline also implements DESeq2 because it is a popular choice for differential abundance. DESeq2 assumes a negative binomial model and can have issues with sparse data, which is frequently true in microbiome datasets. Two diagnostic plots (VST validation and ASV sparsity plots) help assess whether DESeq2 is appropriate for a given dataset. The VST validation plot assesses whether VST is successfully stabilizing variance. The ASV sparsity plot helps users determine if their data is too sparse to use DESeq2 to assess differential abundance.
+
+> In general, we recommend using the ANCOMBC 2 differential abundance data, although all differential abundance data outputs should be evaluated in the context of the question(s) the user seeks to answer with these data.
 
 
 ### 10a. ANCOMBC 1
@@ -3054,6 +3131,12 @@ deseq_modeled <- tryCatch({
   DESeq(deseq_obj)
 })
 
+
+# Make ASV Sparsity plot
+sparsity_plot <- plotSparsity(deseq_modeled) 
+ggsave(filename = glue("{diff_abund_out_dir}/{output_prefix}asv_sparsity_plot.png"),
+       plot = sparsity_plot, width = 14, height = 10, dpi = 300, units = "in")
+
 # Get unique group comparison as a matrix
 pairwise_comp.m <- utils::combn(metadata[,groups_colname] %>% unique, 2)
 pairwise_comp_df <- pairwise_comp.m %>% as.data.frame 
@@ -3267,6 +3350,7 @@ walk(pairwise_comp_df, function(col){
 * [get_ncbi_ids()](#get_ncbi_ids)
 * [fix_names()](#fix_names)
 * [gm_mean()](#gm_mean)
+* [plotSparsity()](#plotSparsity)
 
 **Parameter Definitions:**
 * *pipeline uses default values for `DESeq()` analysis* 
@@ -3303,7 +3387,7 @@ walk(pairwise_comp_df, function(col){
   - For each group:
     - Group.Mean_(group) (mean within group)
     - Group.Stdev_(group) (standard deviation within group))
-
+* **differential_abundance/deseq2/<output_prefix>asv_sparsity_plot.png** (a diagnostic plot of ASV sparsity to be used to assess if running DESeq2 is appropriate)
 <br>
 
 ---
