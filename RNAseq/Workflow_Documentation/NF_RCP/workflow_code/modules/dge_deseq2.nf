@@ -19,7 +19,7 @@ process DGE_DESEQ2 {
         path("contrasts${output_label}${params.assay_suffix}.csv"),                                                    emit: contrasts
         path("SampleTable${output_label}${params.assay_suffix}.csv"),                                                  emit: sample_table      
         path("differential_expression_no_annotations${output_label}${params.assay_suffix}.csv"),                       emit: dge_table
-        path("VST_Normalized_Counts${output_label}${params.assay_suffix}.csv"),                                        emit: vst_norm_counts
+        path("VST_Counts${output_label}${params.assay_suffix}.csv"),                                        emit: vst_norm_counts
         path("summary.txt"),                                                                            emit: summary
         path("versions2.txt"),                                                                          emit: versions
 

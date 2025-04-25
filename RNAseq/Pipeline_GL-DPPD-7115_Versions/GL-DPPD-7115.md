@@ -246,7 +246,7 @@ fastqc -o /path/to/trimmed_fastqc/output/directory *.fastq.gz
 ### 2c. Compile Trimmed Data QC  
 
 ```bash
-multiqc --interactive -n trimmed_multiqc_GLbulkRNAseq -o /path/to/trimmed_multiqc/output/directory /path/to/directory/containing/trimmed_fastqc/files
+multiqc --interactive -n trimmed_multiqc_GLbulkRNAseq -o /path/to/trimmed_multiqc/output/directory /path/to/directory/containing/trimmed_fastqc/files /path/to/directory/containing/trimming_reports
 
 zip -r trimmed_multiqc_GLbulkRNAseq_data.zip trimmed_multiqc_GLbulkRNAseq_data
 ```
@@ -257,10 +257,12 @@ zip -r trimmed_multiqc_GLbulkRNAseq_data.zip trimmed_multiqc_GLbulkRNAseq_data
 - `-n` – prefix name for output files
 - `-o` – the output directory to store results
 - `/path/to/directory/containing/trimmed_fastqc/files` – the directory holding the output data from the fastqc run, provided as a positional argument
+- `/path/to/directory/containing/trimming_reports` – the directory containing the trimming reports from the trim/filter step, provided as a positional argument
 
 **Input Data:**
 
 - *fastqc.zip (FastQC data, output from [Step 2b](#2b-trimmed-data-qc))
+- *trimming_report.txt (trimming report, output from [Step 2a](#2a-trimfilter-raw-data))
 
 **Output Data:**
 
@@ -350,7 +352,9 @@ bowtie2 -x /path/to/bowtie2/index \
 
 - *\.sam (alignments in SAM format)
 - **\*.bowtie2.log** (log file containing alignment statistics)
-- **\*.unmapped.fastq.gz** (unmapped reads in FASTQ format)
+- Unmapped reads (unmapped reads in FASTQ format)
+    - **\*.unmapped.fastq.gz** (single-end)
+    -  **\*.unmapped.fastq.1.gz, .unmapped.fastq.2.gz** (paired-end)
 
 <br>
 

@@ -36,7 +36,6 @@ include { ADD_GENE_ANNOTATIONS as ADD_GENE_ANNOTATIONS_RRNA_RM } from '../module
 include { 
     MULTIQC as RAW_READS_MULTIQC 
     MULTIQC as TRIMMED_READS_MULTIQC 
-    MULTIQC as TRIMMING_MULTIQC 
     MULTIQC as ALIGN_MULTIQC 
     MULTIQC as GENEBODY_COVERAGE_MULTIQC 
     MULTIQC as INFER_EXPERIMENT_MULTIQC 
@@ -239,8 +238,7 @@ workflow RNASEQ {
         // MultiQC
         ch_multiqc_config = params.multiqc_config ? Channel.fromPath( params.multiqc_config ) : Channel.fromPath("NO_FILE")
         RAW_READS_MULTIQC(samples_txt, raw_fastqc_zip, ch_multiqc_config, "raw_")
-        TRIMMING_MULTIQC(samples_txt, trimgalore_reports, ch_multiqc_config, "trimming_")
-        TRIMMED_READS_MULTIQC(samples_txt, trimmed_fastqc_zip, ch_multiqc_config, "trimmed_")
+        TRIMMED_READS_MULTIQC(samples_txt, trimmed_fastqc_zip | concat( TRIMGALORE.out.reports ) | collect, ch_multiqc_config, "trimmed_")
         ALIGN_MULTIQC(samples_txt, star_alignment_logs, ch_multiqc_config, "align_")
         INFER_EXPERIMENT_MULTIQC(samples_txt, INFER_EXPERIMENT.out.log | map { it[1] } | collect, ch_multiqc_config, "infer_exp_")
         GENEBODY_COVERAGE_MULTIQC(samples_txt, GENEBODY_COVERAGE.out.log | map { it[1] } | collect, ch_multiqc_config, "geneBody_cov_")
@@ -298,9 +296,7 @@ workflow RNASEQ {
             trimmed_fastqc_zip,
             TRIMMED_READS_MULTIQC.out.zipped_data,
             TRIMMED_READS_MULTIQC.out.html,
-            TRIMGALORE.out.reports | collect,
-            TRIMMING_MULTIQC.out.zipped_data,
-            TRIMMING_MULTIQC.out.html
+            TRIMGALORE.out.reports | collect
         )
         VV_STAR_ALIGNMENT(
             dp_tools_plugin,
@@ -309,9 +305,9 @@ workflow RNASEQ {
             runsheet_path,
             ALIGN_STAR.out.publishables | collect,
             QUANTIFY_STAR_GENES.out.publishables | collect,
-            ALIGN_MULTIQC.out.zipped_data,
-            ALIGN_MULTIQC.out.html,
             SORT_AND_INDEX_BAM.out.bam_only_files | collect,
+            ALIGN_MULTIQC.out.zipped_data,
+            ALIGN_MULTIQC.out.html
         )
         VV_RSEQC(
             dp_tools_plugin,
@@ -335,6 +331,7 @@ workflow RNASEQ {
             runsheet_path,
             COUNT_ALIGNED.out.only_counts | collect,
             QUANTIFY_RSEM_GENES.out.publishables,
+            REMOVE_RRNA.out.genes_results_rrnarm | collect,
             COUNT_MULTIQC.out.zipped_data,
             COUNT_MULTIQC.out.html
         )
@@ -350,8 +347,6 @@ workflow RNASEQ {
             ADD_GENE_ANNOTATIONS.out.annotated_dge_table,
             DGE_DESEQ2_RRNA_RM.out.norm_counts,
             DGE_DESEQ2_RRNA_RM.out.vst_norm_counts,
-            DGE_DESEQ2_RRNA_RM.out.sample_table,
-            DGE_DESEQ2_RRNA_RM.out.contrasts,
             ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
         )
         VV_CONCAT_FILTER( ch_outdir, VV_RAW_READS.out.log | mix( VV_TRIMMED_READS.out.log, // Concatenate and filter V&V logs

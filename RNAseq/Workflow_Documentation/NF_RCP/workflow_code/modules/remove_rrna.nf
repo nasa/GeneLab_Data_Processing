@@ -17,7 +17,7 @@ process REMOVE_RRNA {
         path genes_results_file
 
     output:
-        path("*_rRNA_removed.genes.results"), emit: genes_results_rrnarm
+        path("*_rRNArm.genes.results"), emit: genes_results_rrnarm
         path("*_rRNA_counts.txt"), emit: rrnarm_summary
 
     script:
@@ -26,7 +26,7 @@ process REMOVE_RRNA {
         sample_id=\$(basename ${genes_results_file} .genes.results)
 
         # Define output file names
-        filtered_file="\${sample_id}_rRNA_removed.genes.results"
+        filtered_file="\${sample_id}_rRNArm.genes.results"
         counts_file="\${sample_id}_rRNA_counts.txt"
 
         echo "Processing: \${sample_id}"

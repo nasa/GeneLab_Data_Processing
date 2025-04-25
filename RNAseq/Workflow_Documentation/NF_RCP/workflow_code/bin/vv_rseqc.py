@@ -182,11 +182,12 @@ def check_gene_body_coverage_existence(outdir, samples, log_path):
         return "HALT"
     
     # Check MultiQC report existence
-    multiqc_glob = os.path.join(rseqc_dir, "geneBody_cov_multiqc*_data.zip")
+    multiqc_dir = os.path.join(outdir, "RSeQC_Analyses", "MultiQC_Reports")
+    multiqc_glob = os.path.join(multiqc_dir, "geneBody_cov_multiqc*_data.zip")
     multiqc_files = glob.glob(multiqc_glob)
     
     if not multiqc_files:
-        print(f"WARNING: No gene body coverage MultiQC data found in {rseqc_dir}")
+        print(f"WARNING: No gene body coverage MultiQC data found in {multiqc_dir}")
         log_check_result(log_path, component, "all", "check_genebody_coverage_multiqc", "RED", 
                          "geneBody coverage MultiQC data not found", f"Searched: {multiqc_glob}")
         status = "RED"
@@ -250,11 +251,12 @@ def check_infer_experiment_existence(outdir, samples, log_path):
         return "HALT"
     
     # Check MultiQC report existence
-    multiqc_glob = os.path.join(rseqc_dir, "infer_exp_multiqc*_data.zip")
+    multiqc_dir = os.path.join(outdir, "RSeQC_Analyses", "MultiQC_Reports")
+    multiqc_glob = os.path.join(multiqc_dir, "infer_exp_multiqc*_data.zip")
     multiqc_files = glob.glob(multiqc_glob)
     
     if not multiqc_files:
-        print(f"WARNING: No infer experiment MultiQC data found in {rseqc_dir}")
+        print(f"WARNING: No infer experiment MultiQC data found in {multiqc_dir}")
         log_check_result(log_path, component, "all", "check_infer_experiment_multiqc", "HALT", 
                          "Infer experiment MultiQC data not found", f"Searched: {multiqc_glob}")
         status = "HALT"
@@ -308,7 +310,8 @@ def check_read_distribution_existence(outdir, samples, log_path):
         return "HALT"
     
     # Check MultiQC report existence
-    multiqc_glob = os.path.join(rseqc_dir, "read_dist_multiqc*_data.zip")
+    multiqc_dir = os.path.join(outdir, "RSeQC_Analyses", "MultiQC_Reports")
+    multiqc_glob = os.path.join(multiqc_dir, "read_dist_multiqc*_data.zip")
     multiqc_files = glob.glob(multiqc_glob)
     
     if not multiqc_files:
@@ -365,7 +368,8 @@ def check_inner_distance_existence(outdir, samples, log_path):
         return "HALT"
     
     # Check MultiQC report existence
-    multiqc_glob = os.path.join(rseqc_dir, "inner_dist_multiqc*_data.zip")
+    multiqc_dir = os.path.join(outdir, "RSeQC_Analyses", "MultiQC_Reports")
+    multiqc_glob = os.path.join(multiqc_dir, "inner_dist_multiqc*_data.zip")
     multiqc_files = glob.glob(multiqc_glob)
     
     if not multiqc_files:
@@ -413,8 +417,8 @@ def check_inner_distance_existence(outdir, samples, log_path):
 
 def get_genebody_coverage_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAseq"):
     """Extract gene body coverage stats from MultiQC."""
-    rseqc_dir = os.path.join(outdir, "RSeQC_Analyses", "02_geneBody_coverage")
-    multiqc_zip = os.path.join(rseqc_dir, f"geneBody_cov_multiqc{assay_suffix}_data.zip")
+    multiqc_dir = os.path.join(outdir, "RSeQC_Analyses", "MultiQC_Reports")
+    multiqc_zip = os.path.join(multiqc_dir, f"geneBody_cov_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
         log_check_result(log_path, "rseqc", "all", "get_genebody_coverage_stats", "HALT", 
@@ -691,11 +695,9 @@ def get_infer_experiment_multiqc_stats(outdir, samples, log_path, assay_suffix="
     component = "rseqc"
     check_name = "infer_experiment_multiqc_stats"
     
-    # Get the infer experiment directory
-    infer_exp_dir = os.path.join(outdir, "RSeQC_Analyses", "03_infer_experiment")
-    
     # Find the MultiQC zip file
-    multiqc_zip = os.path.join(outdir, "RSeQC_Analyses", "03_infer_experiment", f"infer_exp_multiqc{assay_suffix}_data.zip")
+    multiqc_dir = os.path.join(outdir, "RSeQC_Analyses", "MultiQC_Reports")
+    multiqc_zip = os.path.join(multiqc_dir, f"infer_exp_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_zip):
         print(f"WARNING: Infer experiment MultiQC data zip file not found: {multiqc_zip}")
@@ -1041,7 +1043,8 @@ def get_inner_distance_multiqc_stats(outdir, samples, log_path, assay_suffix="_G
     inner_dist_dir = os.path.join(outdir, "RSeQC_Analyses", "04_inner_distance")
     
     # Find the MultiQC report zip file
-    multiqc_glob = os.path.join(inner_dist_dir, f"inner_dist_multiqc{assay_suffix}_data.zip")
+    multiqc_dir = os.path.join(outdir, "RSeQC_Analyses", "MultiQC_Reports")
+    multiqc_glob = os.path.join(multiqc_dir, f"inner_dist_multiqc{assay_suffix}_data.zip")
     multiqc_files = glob.glob(multiqc_glob)
     
     if not multiqc_files:
@@ -1179,7 +1182,8 @@ def report_inner_distance_issues(outdir, inner_dist_data, log_path):
     
     # Get the inner distance MultiQC report zip file
     inner_dist_dir = os.path.join(outdir, "RSeQC_Analyses", "04_inner_distance")
-    multiqc_report = os.path.join(inner_dist_dir, f"inner_dist_multiqc_GLbulkRNAseq_data.zip")
+    multiqc_dir = os.path.join(outdir, "RSeQC_Analyses", "MultiQC_Reports")
+    multiqc_report = os.path.join(multiqc_dir, f"inner_dist_multiqc_GLbulkRNAseq_data.zip")
     
     try:
         if os.path.exists(multiqc_report):
@@ -1371,7 +1375,8 @@ def get_read_distribution_multiqc_stats(outdir, samples, log_path, assay_suffix=
     read_dist_dir = os.path.join(outdir, "RSeQC_Analyses", "05_read_distribution")
     
     # Find the MultiQC report zip file
-    multiqc_glob = os.path.join(read_dist_dir, f"read_dist_multiqc{assay_suffix}_data.zip")
+    multiqc_dir = os.path.join(outdir, "RSeQC_Analyses", "MultiQC_Reports")
+    multiqc_glob = os.path.join(multiqc_dir, f"read_dist_multiqc{assay_suffix}_data.zip")
     multiqc_files = glob.glob(multiqc_glob)
     
     if not multiqc_files:

@@ -35,7 +35,6 @@ include { ADD_GENE_ANNOTATIONS as ADD_GENE_ANNOTATIONS_RRNA_RM } from '../module
 include { 
     MULTIQC as RAW_READS_MULTIQC;
     MULTIQC as TRIMMED_READS_MULTIQC;
-    MULTIQC as TRIMMING_MULTIQC;
     MULTIQC as ALIGN_MULTIQC;
     MULTIQC as GENEBODY_COVERAGE_MULTIQC;
     MULTIQC as INFER_EXPERIMENT_MULTIQC;
@@ -173,6 +172,7 @@ workflow RNASEQ_MICROBES {
         trimgalore_reports = TRIMGALORE.out.reports | collect
 
         // Run FastQC on trimmed reads
+
         TRIMMED_FASTQC( trimmed_reads )
         TRIMMED_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] } 
         | flatten 
@@ -239,8 +239,7 @@ workflow RNASEQ_MICROBES {
         // MultiQC
         ch_multiqc_config = params.multiqc_config ? Channel.fromPath( params.multiqc_config ) : Channel.fromPath("NO_FILE")
         RAW_READS_MULTIQC(samples_txt, raw_fastqc_zip, ch_multiqc_config, "raw_")
-        TRIMMING_MULTIQC(samples_txt, trimgalore_reports, ch_multiqc_config, "trimming_")
-        TRIMMED_READS_MULTIQC(samples_txt, trimmed_fastqc_zip, ch_multiqc_config, "trimmed_")
+        TRIMMED_READS_MULTIQC(samples_txt, trimmed_fastqc_zip | concat( TRIMGALORE.out.reports ) | collect, ch_multiqc_config, "trimmed_")
         ALIGN_MULTIQC(samples_txt, bowtie2_alignment_logs, ch_multiqc_config, "align_")
         INFER_EXPERIMENT_MULTIQC(samples_txt, INFER_EXPERIMENT.out.log | map { it[1] } | collect, ch_multiqc_config, "infer_exp_")
         GENEBODY_COVERAGE_MULTIQC(samples_txt, GENEBODY_COVERAGE.out.log | map { it[1] } | collect, ch_multiqc_config, "geneBody_cov_")
@@ -299,9 +298,7 @@ workflow RNASEQ_MICROBES {
             trimmed_fastqc_zip,
             TRIMMED_READS_MULTIQC.out.zipped_data,
             TRIMMED_READS_MULTIQC.out.html,
-            TRIMGALORE.out.reports | collect,
-            TRIMMING_MULTIQC.out.zipped_data,
-            TRIMMING_MULTIQC.out.html
+            TRIMGALORE.out.reports | collect
         )
         VV_BOWTIE2_ALIGNMENT(
             dp_tools_plugin,
@@ -310,10 +307,10 @@ workflow RNASEQ_MICROBES {
             runsheet_path,
             ALIGN_BOWTIE2.out.alignment_logs | collect,
             ALIGN_BOWTIE2.out.unmapped_reads | collect,
-            ALIGN_MULTIQC.out.zipped_data,
-            ALIGN_MULTIQC.out.html,
             SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[1] } | collect,
-            SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[2] } | collect
+            SORT_AND_INDEX_BAM.out.sorted_bam | map{ it -> it[2] } | collect,
+            ALIGN_MULTIQC.out.zipped_data,
+            ALIGN_MULTIQC.out.html
         )
         VV_RSEQC(
             dp_tools_plugin,
@@ -336,6 +333,7 @@ workflow RNASEQ_MICROBES {
             ch_meta,
             runsheet_path,
             FEATURECOUNTS.out.counts,
+            REMOVE_RRNA_FEATURECOUNTS.out.counts_rrnarm,
             FEATURECOUNTS.out.summary,
             QUANTIFY_FEATURECOUNTS_GENES.out.num_non_zero_genes,
             COUNT_MULTIQC.out.zipped_data,
@@ -353,8 +351,6 @@ workflow RNASEQ_MICROBES {
             ADD_GENE_ANNOTATIONS.out.annotated_dge_table,
             DGE_DESEQ2_RRNA_RM.out.norm_counts,
             DGE_DESEQ2_RRNA_RM.out.vst_norm_counts,
-            DGE_DESEQ2_RRNA_RM.out.sample_table,
-            DGE_DESEQ2_RRNA_RM.out.contrasts,
             ADD_GENE_ANNOTATIONS_RRNA_RM.out.annotated_dge_table
         )
         VV_CONCAT_FILTER( ch_outdir, VV_RAW_READS.out.log | mix( VV_TRIMMED_READS.out.log, // Concatenate and filter V&V logs

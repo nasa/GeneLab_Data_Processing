@@ -67,6 +67,7 @@ def check_directory_structure(outdir):
     raw_data_path = os.path.join(outdir, "00-RawData")
     fastq_path = os.path.join(raw_data_path, "Fastq")
     fastqc_path = os.path.join(raw_data_path, "FastQC_Reports")
+    multiqc_path = os.path.join(raw_data_path, "MultiQC_Reports")
     
     missing_dirs = []
     
@@ -76,6 +77,8 @@ def check_directory_structure(outdir):
         missing_dirs.append(str(fastq_path))
     if not os.path.exists(fastqc_path):
         missing_dirs.append(str(fastqc_path))
+    if not os.path.exists(multiqc_path):
+        missing_dirs.append(str(multiqc_path))
     
     if missing_dirs:
         print(f"WARNING: The following directories are missing: {', '.join(missing_dirs)}")
@@ -347,8 +350,8 @@ def check_raw_fastqc_existence(outdir, samples, paired_end, log_path):
 
 def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
     """Check if all samples are included in the MultiQC report."""
-    fastqc_dir = os.path.join(outdir, "00-RawData", "FastQC_Reports")
-    multiqc_data_zip = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}_data.zip")
+    multiqc_dir = os.path.join(outdir, "00-RawData", "MultiQC_Reports")
+    multiqc_data_zip = os.path.join(multiqc_dir, f"raw_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_data_zip):
         print(f"WARNING: MultiQC data zip file not found: {multiqc_data_zip}")
@@ -425,9 +428,8 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
 
 def get_raw_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffix="_GLbulkRNAseq"):
     """Extract raw MultiQC stats for all samples."""
-    fastqc_dir = os.path.join(outdir, "00-RawData", "FastQC_Reports")
-    multiqc_data_zip = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}_data.zip")
-    multiqc_html = os.path.join(fastqc_dir, f"raw_multiqc{assay_suffix}.html")
+    multiqc_dir = os.path.join(outdir, "00-RawData", "MultiQC_Reports")
+    multiqc_data_zip = os.path.join(multiqc_dir, f"raw_multiqc{assay_suffix}_data.zip")
     
     if not os.path.exists(multiqc_data_zip):
         print(f"WARNING: MultiQC data zip file not found: {multiqc_data_zip}")
@@ -868,6 +870,79 @@ def report_duplication_rate_stats(multiqc_data, log_path):
     
     log_check_result(log_path, "raw_reads", "all", "duplication_rate_stats", "GREEN", message, details)
 
+def report_gc_content_stats(multiqc_data, log_path):
+    """Report GC content statistics from MultiQC data, focusing on peak values and outliers."""
+    if not multiqc_data:
+        print("No MultiQC data to analyze GC content")
+        log_check_result(log_path, "raw_reads", "all", "gc_content_stats", "YELLOW", 
+                        "No data available", "Cannot report GC content statistics")
+        return
+
+    # Extract GC content percentages for all samples
+    gc_contents = []
+    search_fields = ['raw_percent_gc_f', 'percent_gc_f', 'percent_gc']
+    field_used = None
+    
+    for sample, data in multiqc_data.items():
+        # Try different possible field names
+        for field in search_fields:
+            if field in data:
+                gc_contents.append((sample, data[field]))
+                if not field_used:
+                    field_used = field
+                break
+    
+    if not gc_contents:
+        print(f"No GC content data found. Looked for fields: {search_fields}")
+        log_check_result(log_path, "raw_reads", "all", "gc_content_stats", "YELLOW", 
+                        f"No GC content data found. Tried fields: {', '.join(search_fields)}", "")
+        return
+    
+    # Extract just the GC percentages
+    gc_values = [gc for _, gc in gc_contents]
+    
+    # Find the most common GC percentage (peak)
+    # Round to nearest integer to identify the peak
+    gc_counts = {}
+    for gc in gc_values:
+        gc_int = int(round(gc))
+        gc_counts[gc_int] = gc_counts.get(gc_int, 0) + 1
+    
+    # Find the peak GC percentage (mode)
+    peak_gc = max(gc_counts.items(), key=lambda x: x[1])[0]
+    
+    # Calculate statistics
+    min_gc = min(gc_values)
+    max_gc = max(gc_values)
+    median_gc = median(gc_values)
+    
+    # Identify outliers (samples more than 2 standard deviations from median)
+    stddev_gc = np.std(gc_values) if len(gc_values) > 1 else 0
+    outliers = []
+    for sample, gc in gc_contents:
+        if abs(gc - median_gc) > 2 * stddev_gc:
+            deviation = abs(gc - median_gc) / stddev_gc
+            outliers.append(f"{sample} ({gc:.1f}%; {deviation:.2f} SD)")
+    
+    # Report results
+    print(f"GC content statistics (using field '{field_used}'):")
+    print(f"  Mode: {peak_gc}%")
+    print(f"  Range: {min_gc:.1f}% - {max_gc:.1f}%")
+    print(f"  Median: {median_gc:.1f}%")
+    
+    if outliers:
+        print(f"  Outliers ({len(outliers)}):")
+        for outlier in outliers:
+            print(f"    - {outlier}")
+    
+    # Log the result
+    message = f"GC content mode: {peak_gc}%"
+    details = f"Range: {min_gc:.1f}% - {max_gc:.1f}%; Median: {median_gc:.1f}%; From {len(gc_values)} samples"
+    if outliers:
+        details += f"; Outliers: {'; '.join(outliers)}"
+    
+    log_check_result(log_path, "raw_reads", "all", "gc_content_stats", "GREEN", message, details)
+
 def main():
     """Main function to process runsheet and validate raw reads."""
     parser = argparse.ArgumentParser(description='Validate raw reads based on runsheet information.')
@@ -943,6 +1018,10 @@ def main():
     # 10. Report duplication rate stats
     if multiqc_data:
         report_duplication_rate_stats(multiqc_data, vv_log_path)
+        
+    # 11. Report GC content stats (new)
+    if multiqc_data:
+        report_gc_content_stats(multiqc_data, vv_log_path)
 
 if __name__ == "__main__":
     main()
