@@ -2344,7 +2344,7 @@ def check_dge_table_log2fc_within_reason(outdir, runsheet_path, log_path, assay_
             except Exception as e:
                 print(f"[vv_dge_deseq2.py] ERROR writing log2fc_flag_characterization.csv: {e}")
             stdev_mean_ratio_gt1_count = len(set(stdev_flagged))
-            details = f"Found {len(wrong_sign_gene_ids)} genes with at least {SMALL_COUNTS_THRESHOLD} counts with a suspicious Log2FC sign. Of these genes, {stdev_mean_ratio_gt1_count} had a std dev to mean ratio value above 1."
+            details = f"Found {len(wrong_sign_gene_ids)} genes with at least {SMALL_COUNTS_THRESHOLD} counts with a suspicious Log2FC sign. Of these genes, {stdev_mean_ratio_gt1_count} had a group std dev to mean ratio value above 1."
             log_check_result(log_path, component_name, "all", check_name, "YELLOW", "Log2fc signs do not match expected direction based on group means", details)
             return False
         else:
