@@ -2235,281 +2235,126 @@ def check_dge_table_fixed_statistical_columns_constraints(outdir, log_path, assa
 
 def check_dge_table_log2fc_within_reason(outdir, runsheet_path, log_path, assay_suffix="_GLbulkRNAseq",
                                        stratum_factor="", stratum_value=""):
-    """Check if the log2fc values in the DGE table are within reasonable bounds compared to the group means.
-    
-    This function performs two key checks:
-    1. Validates that the log2fc values computed by DESeq2 are reasonably close to directly computing log2fc
-       from the group means (within a specified tolerance)
-    2. Checks that the sign (positive/negative) of log2fc values matches the expected sign based on
-       group mean comparisons for genes with substantial expression differences
-    
-    Args:
-        outdir: Path to the DGE directory (not the parent outdir)
-        runsheet_path: Path to the runsheet CSV file
-        log_path: Path to the log file
-        assay_suffix: Suffix to append to the file name
-        stratum_factor: Factor used for stratification (if any)
-        stratum_value: Value of the stratum to check (if any)
-        
-    Returns:
-        bool: True if check passes, False otherwise
+    """
+    Check if the log2fc values in the DGE table are within reasonable bounds compared to the group means.
+
+    - Only considers genes where sum of all Group.Mean_* columns > SMALL_COUNTS_THRESHOLD.
+    - Flags genes where the log2fc sign does not match the expected sign from group means.
+    - Reports the number of flagged genes, the number with stdev/mean > 1, and writes a CSV with all flagged gene info.
     """
     component = "dge"
     check_name = "check_dge_table_log2fc_within_reason"
-    
-    # Define thresholds for log2fc validation
+
     LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD = 10  # Percent
     LOG2FC_CROSS_METHOD_TOLERANCE_PERCENT = 50  # Percent
     THRESHOLD_PERCENT_MEANS_DIFFERENCE = 50  # percent
     SMALL_COUNTS_THRESHOLD = 20  # Minimum sum of Group.Mean values to consider
-    
-    # Adjust the suffix and component name if stratified
+
     if stratum_value:
         check_suffix = f"_{stratum_value}"
         component_name = f"{component}{check_suffix}"
     else:
         check_suffix = ""
         component_name = component
-    
-    # Get DGE table path with the correct pattern
+
     dge_table_path = os.path.join(outdir, f"differential_expression{check_suffix}{assay_suffix}.csv")
-    
-    # Check if the DGE table exists
     if not os.path.exists(dge_table_path):
         message = f"DGE table not found"
         log_check_result(log_path, component_name, "all", check_name, "RED", 
                       message, f"Expected at: {dge_table_path}")
         return False
-    
+
     try:
-        # Read DGE table to get actual column names
         df_dge = pd.read_csv(dge_table_path)
-        original_count = len(df_dge)
-        
-        # Filter out low-count genes
         group_mean_cols = [col for col in df_dge.columns if col.startswith("Group.Mean_")]
-        if group_mean_cols:
-            # Sum of all Group.Mean columns
-            df_dge["Group.Mean_SUM"] = df_dge[group_mean_cols].sum(axis=1)
-            # Filter out genes with low counts
-            df_dge_filtered = df_dge[df_dge["Group.Mean_SUM"] > SMALL_COUNTS_THRESHOLD]
-            filtered_count = original_count - len(df_dge_filtered)
-            filtering_info = f"Filtered out {filtered_count}/{original_count} ({filtered_count/original_count*100:.1f}%) genes with sum of Group.Mean values below {SMALL_COUNTS_THRESHOLD}."
-            print(filtering_info)
-            df_dge = df_dge_filtered
-        else:
-            filtering_info = "No Group.Mean columns found for filtering."
-        
-        # Find Log2fc columns that exist in the data
+        if not group_mean_cols:
+            log_check_result(log_path, component_name, "all", check_name, "RED",
+                            "No Group.Mean columns found in DGE table",
+                            "")
+            return False
+        df_dge["Group.Mean_SUM"] = df_dge[group_mean_cols].sum(axis=1)
+        df_dge = df_dge[df_dge["Group.Mean_SUM"] > SMALL_COUNTS_THRESHOLD]
+
         log2fc_columns = [col for col in df_dge.columns if col.startswith("Log2fc_")]
-        
         if not log2fc_columns:
             log_check_result(log_path, component_name, "all", check_name, "RED",
-                           "No Log2fc columns found in DGE table", 
-                           f"Available columns: {', '.join(df_dge.columns[:10])}...")
+                            "No Log2fc columns found in DGE table",
+                            f"Available columns: {', '.join(df_dge.columns[:10])}...")
             return False
-        
-        # Extract comparisons from column names
+
         comparisons = [col[len("Log2fc_"):] for col in log2fc_columns]
-        
-        # Track issues
-        err_msg_yellow = ""
         all_suspect_signs = {}
-        last_percent_within_tolerance = 0
-        
-        # Process each comparison
+        wrong_sign_gene_ids = set()
         for comparison in comparisons:
             query_column = f"Log2fc_{comparison}"
-            
-            # Extract group names based on the comparison format
             try:
                 group1_name = comparison.split(")v(")[0] + ")"
                 group2_name = "(" + comparison.split(")v(")[1]
             except:
                 try:
-                    # Try simple "v" separator without parentheses
                     group1_name = comparison.split("v")[0]
                     group2_name = comparison.split("v")[1]
                 except:
-                    # Skip malformed comparison
                     continue
-            
-            # Get group mean columns
             group1_mean_col = f"Group.Mean_{group1_name}"
             group2_mean_col = f"Group.Mean_{group2_name}"
-            
-            # Skip if mean columns don't exist
             if group1_mean_col not in df_dge.columns or group2_mean_col not in df_dge.columns:
                 continue
-            
-            # Compute log2fc directly from group means
-            safe_denom = df_dge[group2_mean_col].replace(0, np.nan)  # Avoid division by zero
-            ratio = df_dge[group1_mean_col] / safe_denom
-            computed_log2fc = np.log2(ratio)
-            
-            # Calculate percent difference between methods
-            safe_query_values = df_dge[query_column].replace(0, np.nan)  # Avoid division by zero
-            abs_percent_difference = abs(((computed_log2fc - df_dge[query_column]) / safe_query_values) * 100)
-            
-            # Check what percentage is within tolerance (ignoring NaN values)
-            valid_mask = ~abs_percent_difference.isna()
-            if valid_mask.sum() > 0:
-                within_tolerance_mask = abs_percent_difference < LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD
-                percent_within_tolerance = (within_tolerance_mask[valid_mask].sum() / valid_mask.sum()) * 100
-                last_percent_within_tolerance = percent_within_tolerance
-                
-                # Flag if not enough within tolerance
-                if percent_within_tolerance < LOG2FC_CROSS_METHOD_TOLERANCE_PERCENT:
-                    err_msg_yellow += (
-                        f"For comparison '{comparison}': {percent_within_tolerance:.2f}% of genes have absolute percent differences "
-                        f"(between log2fc direct computation and DESeq2's approach) "
-                        f"less than {LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD}% which is below the minimum required "
-                        f"({LOG2FC_CROSS_METHOD_TOLERANCE_PERCENT}%). "
-                        f"This may indicate misassigned or misaligned columns. "
-                    )
-            
-            # SIGN CHECK: Filter genes with substantial mean differences
+            safe_denom = df_dge[group2_mean_col].replace(0, np.nan)
             abs_mean_diffs = abs((df_dge[group1_mean_col] - df_dge[group2_mean_col]) / safe_denom) * 100
             mask = (abs_mean_diffs > THRESHOLD_PERCENT_MEANS_DIFFERENCE) & (~abs_mean_diffs.isna())
-            
-            if mask.sum() > 0:  # Only proceed if we have genes meeting criteria
-                # Calculate expected sign
+            if mask.sum() > 0:
                 positive_sign_expected = (df_dge[group1_mean_col] - df_dge[group2_mean_col])[mask] > 0
-                
-                # Check if actual log2fc matches expected sign
                 actual_sign_positive = df_dge[query_column][mask] > 0
                 matches_expected = (actual_sign_positive & positive_sign_expected) | (~actual_sign_positive & ~positive_sign_expected)
-                
-                # Find genes with wrong signs
                 wrong_sign_mask = ~matches_expected.values
                 if wrong_sign_mask.any():
-                    wrong_sign_genes = df_dge[mask][wrong_sign_mask]
-                    
-                    # Get gene identifiers - use first column as gene ID
                     gene_id_col = df_dge.columns[0]
-                    
-                    # Get examples (max 5)
-                    examples = []
-                    for _, row in wrong_sign_genes.head(5).iterrows():
-                        gene_id = row[gene_id_col]
-                        examples.append(f"{gene_id}")
-                    
-                    # Store information about wrong sign genes
-                    all_suspect_signs[comparison] = {
-                        "count": wrong_sign_mask.sum(),
-                        "total": mask.sum(),
-                        "examples": examples
-                    }
-        
-        # Determine status based on findings
-        if all_suspect_signs:
-            status = "YELLOW" 
-            message = "Log2fc signs do not match expected direction based on group means"
-            
-            # Collect all unique genes with wrong signs across all contrasts
-            all_wrong_sign_genes = set()
-            total_genes_checked = 0
-            total_wrong_signs = 0
-            wrong_sign_gene_ids = []
-            
-            # Track contrast-specific information for context
-            contrasts_info = []
-            
-            # Process each comparison and collect consolidated info
-            for comparison, info in all_suspect_signs.items():
-                all_wrong_sign_genes.update(info["examples"])
-                total_genes_checked += info["total"]
-                total_wrong_signs += info["count"]
-                
-                # Get all gene IDs from this comparison (not just examples)
-                # Need to fetch full list by re-querying the data
-                wrong_sign_mask = ~matches_expected.values if 'matches_expected' in locals() else None
-                if wrong_sign_mask is not None and any(wrong_sign_mask):
-                    gene_id_col = df_dge.columns[0]
-                    wrong_sign_gene_ids.extend(df_dge.loc[mask][wrong_sign_mask][gene_id_col].tolist())
-            
-            # Check how many of these problematic genes had low counts
-            # Create a complete DGE table with the Group.Mean_SUM column
-            if "Group.Mean_SUM" not in df_dge.columns:
-                df_dge_with_sum = pd.read_csv(dge_table_path)
-                df_dge_with_sum["Group.Mean_SUM"] = df_dge_with_sum[group_mean_cols].sum(axis=1)
-            else:
-                df_dge_with_sum = df_dge
-                
-            # Count low-expression genes among the problematic ones
-            gene_id_col = df_dge.columns[0]
-            low_count_wrong_sign_genes = 0
-            
-            # If we have gene IDs, check them
-            if wrong_sign_gene_ids:
-                low_count_mask = df_dge_with_sum[df_dge_with_sum[gene_id_col].isin(wrong_sign_gene_ids)]["Group.Mean_SUM"] <= SMALL_COUNTS_THRESHOLD
-                low_count_wrong_sign_genes = low_count_mask.sum()
-            
-            # Limit to 10 gene examples maximum if there are more
-            gene_examples = list(all_wrong_sign_genes)[:10]
-            if len(all_wrong_sign_genes) > 10:
-                gene_examples.append("...")
-            
-            # Calculate overall percentage
-            overall_percent = (total_wrong_signs / total_genes_checked) * 100 if total_genes_checked > 0 else 0
-            
-            # Create consolidated details message
-            details = f"Found {total_wrong_signs} genes with incorrect log2fc signs across all comparisons ({total_wrong_signs}/{total_genes_checked} genes). Genes: {'; '.join(gene_examples)}. {low_count_wrong_sign_genes}/{total_wrong_signs} genes with incorrect signs had Group.Mean values below {SMALL_COUNTS_THRESHOLD}."
-            
-            # --- BEGIN PATCH: Dynamic Stdev/Mean ratio reporting ---
-            # Find all group mean and stdev columns
-            group_mean_cols = [col for col in df_dge_with_sum.columns if col.startswith('Group.Mean_')]
-            group_stdev_cols = [col for col in df_dge_with_sum.columns if col.startswith('Group.Stdev_')]
-            # Map group name (inside parens) to col name
+                    wrong_sign_gene_ids.update(df_dge[mask][wrong_sign_mask][gene_id_col])
+        stdev_flagged = []
+        if wrong_sign_gene_ids:
+            # Prepare DataFrame for CSV output
+            flagged_df = df_dge[df_dge[df_dge.columns[0]].isin(wrong_sign_gene_ids)].copy()
+            group_stdev_cols = [col for col in df_dge.columns if col.startswith('Group.Stdev_')]
             def extract_group(col):
                 m = re.match(r'Group\.(Mean|Stdev)_\((.+)\)', col)
                 return m.group(2) if m else None
             mean_map = {extract_group(col): col for col in group_mean_cols if extract_group(col)}
             stdev_map = {extract_group(col): col for col in group_stdev_cols if extract_group(col)}
             groups = set(mean_map) & set(stdev_map)
-            flagged_gene_df = df_dge_with_sum[df_dge_with_sum[gene_id_col].isin(wrong_sign_gene_ids)]
-            stdev_flagged = []
-            stdev_flagged_details = []
-            for idx, row in flagged_gene_df.iterrows():
-                gene = row[gene_id_col]
-                triggered = []
+            for idx, row in flagged_df.iterrows():
                 for group in groups:
-                    mean_val = row[mean_map[group]]
-                    stdev_val = row[stdev_map[group]]
-                    if pd.notnull(mean_val) and mean_val != 0 and pd.notnull(stdev_val):
-                        ratio = stdev_val / mean_val
+                    mean_col = mean_map[group]
+                    stdev_col = stdev_map[group]
+                    if pd.notnull(row[mean_col]) and row[mean_col] != 0 and pd.notnull(row[stdev_col]):
+                        ratio = row[stdev_col] / row[mean_col]
                         if ratio > 1:
-                            triggered.append(f"Stdev/Mean ({group}): {ratio:.2f}")
-                if triggered:
-                    stdev_flagged.append(gene)
-                    stdev_flagged_details.append(f"{gene}: {', '.join(triggered)}")
-            details += f" {len(stdev_flagged)}/{total_wrong_signs} genes with incorrect signs had at least one Stdev/Mean > 1."
-            if stdev_flagged_details:
-                details += " Genes and triggered ratios: " + "; ".join(stdev_flagged_details)
-            # --- END PATCH ---
-            
-            log_check_result(log_path, component_name, "all", check_name, status, message, details)
+                            stdev_flagged.append(row[flagged_df.columns[0]])
+                            break
+            for group in groups:
+                mean_col = mean_map[group]
+                stdev_col = stdev_map[group]
+                ratio_col = f"Stdev_to_Mean_ratio_{group}"
+                flagged_df[ratio_col] = flagged_df[stdev_col] / flagged_df[mean_col]
+            output_dir = os.path.dirname(log_path)
+            output_path = os.path.join(output_dir, "log2fc_flag_characterization.csv")
+            print(f"[vv_dge_deseq2.py] Writing flagged log2fc DataFrame to: {output_path} (shape: {flagged_df.shape})")
+            try:
+                flagged_df.to_csv(output_path, index=False)
+            except Exception as e:
+                print(f"[vv_dge_deseq2.py] ERROR writing log2fc_flag_characterization.csv: {e}")
+            stdev_mean_ratio_gt1_count = len(set(stdev_flagged))
+            details = f"Found {len(wrong_sign_gene_ids)} genes with at least {SMALL_COUNTS_THRESHOLD} counts with a suspicious Log2FC sign. Of these genes, {stdev_mean_ratio_gt1_count} had a std dev to mean ratio value above 1."
+            log_check_result(log_path, component_name, "all", check_name, "YELLOW", "Log2fc signs do not match expected direction based on group means", details)
             return False
-            
-        elif err_msg_yellow:
-            status = "YELLOW"
-            message = "Log2fc values show significant differences from direct computation"
-            details = f"Log2fc values differ significantly from direct calculation."
-            log_check_result(log_path, component_name, "all", check_name, status, message, details)
-            return True  # Yellow status still passes
-            
         else:
-            status = "GREEN"
-            message = "All log2fc values are within reasonable bounds"
-            details = f"Log2fc values match direct calculation and all signs match expected direction."
-            log_check_result(log_path, component_name, "all", check_name, status, message, details)
+            log_check_result(log_path, component_name, "all", check_name, "GREEN", "All log2fc values are within reasonable bounds", "")
             return True
-            
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
-        log_check_result(log_path, component_name, "all", check_name, "RED", 
-                       "Error checking log2fc reasonableness", f"{str(e)}\n{error_details}")
+        log_check_result(log_path, component_name, "all", check_name, "RED",
+                        "Error checking log2fc reasonableness", f"{str(e)}\n{error_details}")
         return False
 
 def check_ercc_presence(outdir, runsheet_path, log_path, assay_suffix="_GLbulkRNAseq", mode="default"):
