@@ -1,7 +1,7 @@
 process BUILD_RSEM_INDEX {
   // Builds RSEM index, this is ercc-spike-in, organism, and ensembl version specific
   tag "Refs: ${ genome_fasta }, ${ genome_gtf }, Source: ${reference_source}${reference_source.toLowerCase().contains('ensembl') ? ', Version: ' + reference_version : ''}${ params.genome_subsample ? ', GenomeSubsample: ' + params.genome_subsample : ''}"
-  storeDir "${ derived_store_path }/RSEM_Indices/${ reference_source }/${reference_source.toLowerCase().contains('ensembl') ? reference_version + '/' : ''}${ meta.organism_sci } }"
+  storeDir "${ derived_store_path }/RSEM_Indices/${ reference_source }/${reference_source.toLowerCase().contains('ensembl') ? reference_version + '/' : ''}${ meta.organism_sci }"
 
   input:
     val(derived_store_path)
