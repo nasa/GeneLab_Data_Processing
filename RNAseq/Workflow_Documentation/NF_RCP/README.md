@@ -104,6 +104,8 @@ We recommend installing Singularity on a system wide level as per the associated
 
 > Note: Singularity is also available through [Anaconda](https://anaconda.org/conda-forge/singularity).
 
+> Note: Alternatively, Docker can be used in place of Singularity. See the [Docker CE installation documentation](https://docs.docker.com/engine/install/).
+
 <br>
 
 ---
@@ -151,6 +153,7 @@ While in the location containing the `NF_RCP_2.0.0` directory that was downloade
 > Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --reference_version) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
 
 > Note: To use Docker instead of Singularity, use `-profile docker` in the Nextflow run command. Nextflow will automatically pull images as needed.
+
 <br>
 
 #### 4a. Approach 1: Run the workflow on a GeneLab RNAseq dataset with automatic retrieval of reference fasta and gtf files
