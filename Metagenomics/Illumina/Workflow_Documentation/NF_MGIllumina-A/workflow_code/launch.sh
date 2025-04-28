@@ -25,7 +25,7 @@ EXTRA=${4:-''}  # extra arguments to the nextflow run command
 # SETUP START
 #==============================================================================
 eval "$(conda shell.bash hook)"
-conda activate /global/smf/miniconda38_admin/envs/nextflow_v24.10.5-0
+conda activate /path/to/conda/envs/nextflow
 export NXF_SINGULARITY_CACHEDIR=<PATH TO SINGULARITY IMAGES>
 export TOWER_ACCESS_TOKEN=<YOUR ACCESS TOKEN>
 export TOWER_WORKSPACE_ID=<YOUR WORKSPACE ID>
