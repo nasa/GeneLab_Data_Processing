@@ -403,7 +403,7 @@ workflow.onComplete {
 
     println("FastQC outputs location: ${params.fastqc_out_dir}")
     println("Read-based Analysis: ${params.read_based_dir}")
-    println("Assembly-based Analysis: ${params.assembly_based_dir}"))
+    println("Assembly-based Analysis: ${params.assembly_based_dir}")
     println("Software versions location: ${params.metadata_dir}")
     println("Pipeline tracing/visualization files location:  ../Resource_Usage${c_reset}")
     println()
