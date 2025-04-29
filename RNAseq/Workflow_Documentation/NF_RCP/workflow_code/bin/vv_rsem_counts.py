@@ -160,8 +160,8 @@ def check_rsem_output_existence(outdir, samples, log_path, assay_suffix="_GLbulk
     
     # MultiQC files in the MultiQC_Reports subdirectory
     multiqc_files = [
-        "MultiQC_Reports/RSEM_count_multiqc{assay_suffix}_data.zip",
-        "MultiQC_Reports/RSEM_count_multiqc{assay_suffix}.html"
+        "RSEM_count_multiqc{assay_suffix}_data.zip",
+        "RSEM_count_multiqc{assay_suffix}.html"
     ]
     
     missing_files_by_sample = {}
