@@ -31,7 +31,8 @@ if(params.help){
   println("  --OSD_accession [STRING]  A Genelab OSD accession number. Example OSD-574. Default: empty string")
   println("  --name [STRING] The analyst's full name. E.g. 'FirstName A. LastName'.  Default: FirstName A. LastName")
   println("  --email [STRING] The analyst's email address. E.g. 'mail@nasa.gov'.  Default: mail@nasa.gov")
-  println("  --logs [STRING]  Base directory name of directory containig per sample logs from processing - should always end with '/'. E.g. 'Logs/'.  Default: Logs/")
+  println("  --logs_dir_basename [STRING]  Base directory name of directory containing per sample logs from processing - should always end with '/'. E.g. 'Logs/'.  Default: Logs/")
+  println("  --runsheet_basename  [String] The runsheets base name. Example 'GLfile.csv' or 'PE_file.csv'. Default: null")
   println("  --assay_suffix [STRING]  Genelab's assay suffix. Default: _GLmetagenomics.")
   println("  --output_prefix [STRING] Unique name to tag onto output files. Default: empty string.")
   println("  --V_V_guidelines_link [URL] Genelab metagenomics data validation and verification guidelines link. Default: https://genelab-tools.arc.nasa.gov/confluence/pages/viewpage.action?pageId=8225175.")
@@ -51,21 +52,20 @@ if(params.help){
   println("      --file_association_extra [STRING] Extra parameters and arguments to GL-gen-metagenomics-file-associations-table command. Run 'GL-gen-metagenomics-file-associations-table --help' for extra parameters that can be set. Example '--single-ended --R1-used-as-single-ended-data'. Default: '--use-sample-names-from-assay-table' ")
   println()
   println("Files:")
-  println("    --main  [PATH] The main workflow script used for processing. Default: ./main.nf")
-  println("    --nextflow_config  [PATH] The main workflow configuration file used for processing. Default: ./nextflow.config")
+  println("    --run_command  [PATH] File containing the nextflow run command used in processing. Default: ./processing_scripts/command.txt")
+  println("    --processing_commands  [PATH] File containing all the process names and scripts used during processing. Default: ./processing_scripts/nextflow_processing_info_GLAmpliseq.txt")
   println("    --samples  [PATH] A single column file with sample ids on each line generated after running the processing pipeline. Default: ./unique-sample-IDs.txt")
   println("    --assay_table  [PATH] GLDS assay table generated after running the processing pipeline with accession number as input.")
   println("                   Example, ../Genelab/a_OSD-574_metagenomic-sequencing_whole-genome-shotgun-sequencing_illumina.txt. Default: empty string")
   println("    --isa_zip  [PATH] Genelab ISA zip files containing an assay atable for the OSD accession. This is only required if --files.assay_table is not set.")
   println("                   Example, ../Genelab/OSD-574_metadata_OSD-574-ISA.zip. Default: empty string")
-  println("    --runsheet  [PATH] A 3-column (single-end) or 4-column (paired-end) input file (sample_id, forward, [reverse,] paired) used to run the processing pipeline. This is the value set to the paremater --input_file when run the processing pipeline with a csv file as input otherwise it is the GLfile.csv in the GeneLab directory if --GLDS_accession was used as input. Example '../GeneLab/GLfile.csv'.  Default: empty string")
-  println("    --software_versions  [PATH] A file generated after running the processing pipeline listing the software versions used. Default: ../Metadata/software_versions.txt")
+  println("    --runsheet  [PATH] A 3-column (single-end) or 4-column (paired-end) input file (sample_id, forward, [reverse,] paired) used to run the processing pipeline. This is the value set to the paremater --input_file when run the processing pipeline with a csv file as input otherwise it is the GLfile.csv in the GeneLab directory if --GLDS_accession was used as input. Example '../GeneLab/GLfile.csv'.  Default: null")
+
+
+ println("    --software_versions  [PATH] A file generated after running the processing pipeline listing the software versions used. Default: ../Metadata/software_versions.txt")
   println()
   println("Directories:")
-  println("    --bin  [PATH] A directory containing scripts used by nextflow. Default: ./bin/")
-  println("    --envs  [PATH] A directory containing conda yaml files. Default: ./envs/")
-  println("    --config_dir  [PATH] A directory containing config files. Default: ./config/")
-  println("    --modules  [PATH] A directory containing nextflow module scripts. Default: ./modules/")
+  println("  --logs_dir [PATH]  Full or relative path to directory name of directory containing per sample logs from processing - should always end with '/'. E.g. 'Logs/'.  Default: Logs/")
   println("    --Raw_Sequence_Data [PATH] A directory containing raw sequence and raw sequence outputs. Default: ../Raw_Sequence_Data/")
   println("    --FastQC_Outputs [PATH] A directory containing fastqc and multiqc zip reports. Default: ../FastQC_Outputs/")
   println("    --Filtered_Sequence_Data  [PATH] A directory containing the outputs of read filtering after running the processing pipeline. Default: ../Filtered_Sequence_Data/")  
@@ -85,7 +85,7 @@ if(params.help){
   println("    --debug [BOOLEAN] Set to true if you'd like to see the values of your set parameters printed to the terminal. Default: false.")
   println()
   println("Paths to existing conda environments to use otherwise a new one will be created using the yaml file in envs/.")
-  println("      --conda_genelab [PATH] Path to a conda environment containing genelab-utils. Default: null.")
+  println("    --conda_genelab [PATH] Path to a conda environment containing genelab-utils. Default: null.")
   exit 0
 }
 
@@ -100,16 +100,19 @@ log.info """${c_blue}
          
          You have set the following parameters:
          Profile: ${workflow.profile} 
-         Analyst's Name : ${params.name}
-         Analyst's Email : ${params.email}
-         GLDS Accession : ${params.GLDS_accession}
-         OSD Accession : ${params.OSD_accession}
+         Analyst's Name: ${params.name}
+         Analyst's Email: ${params.email}
+         GLDS Accession: ${params.GLDS_accession}
+         OSD Accession: ${params.OSD_accession}
          Assay Suffix: ${params.assay_suffix}
          Output Prefix: ${params.output_prefix}
-         Logs: ${params.logs}
          V & V Link: ${params.V_V_guidelines_link}
          Target Files: ${params.target_files} 
          Nextflow Directory publishing mode: ${params.publishDir_mode}
+        
+         Base Names:
+         Run sheet: ${params.runsheet_basename}
+         Log Directory: ${params.logs_dir_basename}
 
          Suffixes:
          Raw Suffix: ${params.raw_suffix}
@@ -121,12 +124,12 @@ log.info """${c_blue}
 
          Extra scripts parameters:
          Readme Script Extra: ${params.readme_extra}
-         Validation Script Extra : ${params.validation_extra}
+         Validation Script Extra: ${params.validation_extra}
          File association Script Extra: ${params.file_association_extra}
 
          Files:
-         Main Workflow Script: ${params.main}
-         Nextflow Config File: ${params.nextflow_config}
+         Nextflow Command: ${params.run_command}
+         Processing Commands: ${params.processing_commands}
          Samples: ${params.samples}
          Assay Table: ${params.assay_table}
          ISA Zip: ${params.isa_zip}
@@ -134,10 +137,7 @@ log.info """${c_blue}
          Software Versions: ${params.software_versions}
 
          Directories:
-         Config: ${params.config_dir}
-         Bin: ${params.bin}
-         Conda Environments: ${params.envs}
-         Modules: ${params.modules}
+         Logs directory: ${params.logs_dir}
          Raw Reads Directory: ${params.Raw_Sequence_Data}
          Filtered Sequence Data: ${params.Filtered_Sequence_Data}
          FastQC Outputs: ${params.FastQC_Outputs}
@@ -192,7 +192,7 @@ workflow {
                                 params.Combined_Output])
       
        GLDS_ch   =  Channel.of([params.GLDS_accession, params.V_V_guidelines_link, params.output_prefix,
-                                params.target_files, params.assay_suffix, params.logs,
+                                params.target_files, params.assay_suffix, params.logs_dir_basename,
                                 params.raw_suffix, params.raw_R1_suffix, params.raw_R2_suffix,
                                 params.filtered_suffix, params.filtered_R1_suffix, params.filtered_R2_suffix])
 
@@ -231,17 +231,15 @@ workflow {
 
 
        // Files and directories to be packaged in processing_info.zip
-        files_and_dirs_ch = Channel.of(params.config_dir, params.logs, params.bin, params.modules,
-                                       params.envs, params.main, params.nextflow_config, params.samples)
+        files_and_dirs_ch = Channel.of(params.logs_dir, params.run_command, params.processing_commands,
+                                       params.software_versions, params.runsheet, params.samples)
                                        .collect()
-                                       .map{ config_dir, logs, bin, modules,  envs, main, config_file, samples ->
-                                            tuple( file(config_dir, checkIfExists: true),
-                                                   file(logs, checkIfExists: true),
-                                                   file(bin, checkIfExists: true),
-                                                   file(modules, checkIfExists: true),
-                                                   file(envs, checkIfExists: true),
-                                                   file(main, checkIfExists: true),
-                                                   file(config_file, checkIfExists: true),
+                                       .map{ logs, run_command, processing_commands, software_versions, runsheet, samples ->
+                                            tuple( file(logs, checkIfExists: true),
+                                                   file(run_command, checkIfExists: true),
+                                                   file(processing_commands, checkIfExists: true),
+                                                   file(software_versions, checkIfExists: true),
+                                                   file(runsheet, checkIfExists: true),
                                                    file(samples, checkIfExists: true)
                                                  ) }
 

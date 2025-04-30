@@ -381,11 +381,14 @@ workflow {
      // Software Version Capturing - combining all captured sofware versions
      nf_version = "Nextflow Version ".concat("${nextflow.version}")
      nextflow_version_ch = Channel.value(nf_version)
+     workflow_version = "MGIllimina ".concat("${workflow.manifest.version}")
+     workflow_version_ch =  Channel.value(workflow_version)
 
      //  Write software versions to file
      software_versions_ch | map { it.text.strip() }
                           | unique
                           | mix(nextflow_version_ch)
+                          | mix(workflow_version_ch)
                           | collectFile(name: "${params.metadata_dir}/software_versions.txt", newLine: true, cache: false)
                           | set{final_software_versions_ch}
 
