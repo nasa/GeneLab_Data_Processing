@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 This script generates a protocol text file for GeneLab RNA-seq data processing.
 It reads software versions from a YAML file and incorporates other parameters.
@@ -9,6 +9,8 @@ import yaml
 import os
 import sys
 from datetime import datetime
+import pandas as pd
+import re
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Generate protocol file for GeneLab RNA-seq pipeline')
@@ -38,6 +40,8 @@ def parse_args():
                         help='Path to the reference genome FASTA file')
     parser.add_argument('--reference_gtf', required=True,
                         help='Path to the reference genome GTF file')
+    parser.add_argument('--runsheet', required=False,
+                        help='Path to the runsheet CSV file')
     return parser.parse_args()
 
 def read_software_versions(yaml_file):
@@ -267,13 +271,52 @@ def generate_protocol_content(args, software_versions):
         # For standard workflow (include tximport)
         description += f"The runsheet was generated with dp_tools (version {dp_tools_version}) and the runsheet and quantification data were imported to R (version {r_version}) with tximport (version {tximport_version}) and normalized with DESeq2 (version {deseq2_version}) median of ratios method. "
     
+    # Parse runsheet for technical replicate handling
+    tech_rep_sentence = ""
+    if hasattr(args, 'runsheet') and args.runsheet and os.path.exists(args.runsheet):
+        try:
+            runsheet_df = pd.read_csv(args.runsheet)
+            if 'Sample Name' in runsheet_df.columns:
+                # Remove whitespace and NA
+                sample_names = runsheet_df['Sample Name'].dropna().astype(str).tolist()
+                # Remove trailing/leading whitespace
+                sample_names = [s.strip() for s in sample_names]
+                # Remove empty
+                sample_names = [s for s in sample_names if s]
+                # Find base names (remove _techrepN if present)
+                base_names = [re.sub(r'_techrep\d+$', '', s) for s in sample_names]
+                from collections import Counter
+                base_counts = Counter(base_names)
+                n_reps = list(base_counts.values())
+                unique_n = set(n_reps)
+                if all(x == 1 for x in n_reps):
+                    # No technical replicates at all
+                    tech_rep_sentence = ""
+                elif len(unique_n) == 1 and list(unique_n)[0] > 1:
+                    # All samples have the same number of tech reps
+                    tech_rep_sentence = ("Counts from all technical replicates for each sample were summed using DESeq2's collapseReplicates function. "
+                                         "These collapsed counts were then used for count normalization and differential expression analysis. ")
+                elif len(unique_n) > 1 and min(unique_n) > 1:
+                    # All samples have tech reps, but unequal number
+                    tech_rep_sentence = ("For each sample, counts from the first n technical replicates were summed using DESeq2's collapseReplicates function. "
+                                         "These collapsed counts were then used for count normalization and differential expression analysis. ")
+                else:
+                    # Some samples have tech reps, some don't
+                    tech_rep_sentence = ("For samples with technical replicates, only the first replicate was used for count normalization and differential expression analysis. ")
+        except Exception as e:
+            tech_rep_sentence = ""
+    # If no runsheet, leave tech_rep_sentence as empty
+    
     # Add ERCC normalization sentence if ERCC spike-ins were used
     if args.has_ercc.lower() == "true":
         description += ("The data were normalized twice, each time using a different size factor. "
-                        "The first used non-ERCC genes for size factor estimation, and the second used only ERCC group B genes to estimate the size factor*. "
+                        "The first used non-ERCC genes for size factor estimation, and the second used only ERCC group B genes to estimate the size factor. "
                         "Both sets of normalized gene counts were subject to differential expression analysis. ")
     else:
         description += "Normalized gene counts were subject to differential expression analysis. "
+    # Add tech rep sentence
+    if tech_rep_sentence:
+        description += tech_rep_sentence
     # Add differential expression analysis sentence
     description += f"Differential expression analysis was performed in R (version {r_version}) using DESeq2 (version {deseq2_version}); all groups were compared pairwise using the Wald test and the likelihood ratio test was used to generate the F statistic p-value. "
     
@@ -328,13 +371,32 @@ def generate_protocol_content(args, software_versions):
         organism_formatted = args.organism.replace(' ', '_').replace('-', '_').lower()
     
     # Build gene annotations sentence
-    gene_annotations_text = f"Gene annotations were assigned using the custom annotation tables generated in-house as detailed in GL-DPPD-7110-A (https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable-A_1.1.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A.md), with STRINGdb (version {stringdb_version}), PANTHER.db (version {pantherdb_version})"
-    # Add organism-specific annotation package if it's an officially supported organism
+    annotation_sources = []
+    # Only include STRINGdb if not in organisms_without_string
+    if organism_formatted not in organisms_without_string:
+        annotation_sources.append(f"STRINGdb (version {stringdb_version})")
+    # Only include PANTHER.db if not in organisms_without_panther
+    if organism_formatted not in organisms_without_panther:
+        annotation_sources.append(f"PANTHER.db (version {pantherdb_version})")
+    # Custom annotation package
+    custom_pkg = None
+    if hasattr(args, 'organism') and args.organism and args.organism in organisms_with_custom_annotations:
+        custom_pkg = "a custom annotation package generated in-house using AnnotationForge"
+        annotation_sources.append(custom_pkg)
+    # org.*.eg.db package
     if organism_formatted and organism_formatted in organism_annotation_packages:
         package_name, package_version = organism_annotation_packages[organism_formatted]
-        gene_annotations_text += f", {package_name} (version {package_version})"
-    # Complete the gene annotations sentence
-    gene_annotations_text += "."
+        annotation_sources.append(f"{package_name} (version {package_version})")
+    # Build the sentence
+    base_text = ("Gene annotations were assigned using the custom annotation tables generated in-house as detailed in GL-DPPD-7110-A "
+                 "(https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable-A_1.1.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A.md)")
+    if annotation_sources:
+        if len(annotation_sources) == 1:
+            gene_annotations_text = f"{base_text}, with {annotation_sources[0]}."
+        else:
+            gene_annotations_text = f"{base_text}, with {', '.join(annotation_sources[:-1])}, and {annotation_sources[-1]}."
+    else:
+        gene_annotations_text = f"{base_text}."
     description += gene_annotations_text
     
     # Add ERCC assessment sentence if ERCC spike-ins were used
