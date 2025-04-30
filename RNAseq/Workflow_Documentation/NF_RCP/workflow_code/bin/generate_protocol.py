@@ -267,8 +267,15 @@ def generate_protocol_content(args, software_versions):
         # For standard workflow (include tximport)
         description += f"The runsheet was generated with dp_tools (version {dp_tools_version}) and the runsheet and quantification data were imported to R (version {r_version}) with tximport (version {tximport_version}) and normalized with DESeq2 (version {deseq2_version}) median of ratios method. "
     
+    # Add ERCC normalization sentence if ERCC spike-ins were used
+    if args.has_ercc.lower() == "true":
+        description += ("The data were normalized twice, each time using a different size factor. "
+                        "The first used non-ERCC genes for size factor estimation, and the second used only ERCC group B genes to estimate the size factor*. "
+                        "Both sets of normalized gene counts were subject to differential expression analysis. ")
+    else:
+        description += "Normalized gene counts were subject to differential expression analysis. "
     # Add differential expression analysis sentence
-    description += f"Normalized gene counts were subject to differential expression analysis. Differential expression analysis was performed in R (version {r_version}) using DESeq2 (version {deseq2_version}); all groups were compared pairwise using the Wald test and the likelihood ratio test was used to generate the F statistic p-value. "
+    description += f"Differential expression analysis was performed in R (version {r_version}) using DESeq2 (version {deseq2_version}); all groups were compared pairwise using the Wald test and the likelihood ratio test was used to generate the F statistic p-value. "
     
     # Add gene annotations section
     # Define versions for annotation packages
@@ -321,13 +328,11 @@ def generate_protocol_content(args, software_versions):
         organism_formatted = args.organism.replace(' ', '_').replace('-', '_').lower()
     
     # Build gene annotations sentence
-    gene_annotations_text = f"Gene annotations were assigned using the custom annotation tables generated in-house as detailed in GL-DPPD-7110-A (https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A.md), with STRINGdb (version {stringdb_version}) and PANTHER.db (version {pantherdb_version})"
-    
+    gene_annotations_text = f"Gene annotations were assigned using the custom annotation tables generated in-house as detailed in GL-DPPD-7110-A (https://github.com/nasa/GeneLab_Data_Processing/blob/GL_RefAnnotTable-A_1.1.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A.md), with STRINGdb (version {stringdb_version}), PANTHER.db (version {pantherdb_version})"
     # Add organism-specific annotation package if it's an officially supported organism
     if organism_formatted and organism_formatted in organism_annotation_packages:
         package_name, package_version = organism_annotation_packages[organism_formatted]
-        gene_annotations_text += f", and {package_name} (version {package_version})"
-    
+        gene_annotations_text += f", {package_name} (version {package_version})"
     # Complete the gene annotations sentence
     gene_annotations_text += "."
     description += gene_annotations_text
