@@ -9,7 +9,7 @@ nextflow.enable.dsl = 2
 //params.prefix = "raw" // "filetered"
 //params.csv_file = "file.csv" 
 //params.swift_1S = false
-//params.adapters = "${baseDir}/config/bbtools_dapters.fa"
+//params.adapters = "${projectDir}/config/bbtools_dapters.fa"
 //params.multiqc_config = "config/multiqc.config"
 
 process FASTQC {
@@ -65,7 +65,7 @@ process BBDUK {
 
 
     tag "Quality filtering ${sample_id}-s reads.."
-    beforeScript "chmod +x ${baseDir}/bin/*"
+    beforeScript "chmod +x ${projectDir}/bin/*"
 
     input:
         tuple val(sample_id), path(reads), val(isPaired)
@@ -123,7 +123,7 @@ workflow quality_check {
 
 workflow {
 
-        Channel.fromPath(params.csv_file)
+        Channel.fromPath(params.input_file)
                .splitCsv()
                .map{ row -> row.paired == 'true' ? tuple( "${row.sample_id}", [file("${row.forward}", checkIfExists: true), file("${row.reverse}", checkIfExists: true)], row.paired) : 
                                                    tuple( "${row.sample_id}", [file("${row.forward}", checkIfExists: true)], row.paired)}

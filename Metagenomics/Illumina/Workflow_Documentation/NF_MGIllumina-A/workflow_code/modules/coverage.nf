@@ -19,8 +19,6 @@ process GET_COV_AND_DET {
         path("versions.txt"), emit: version 
     script:
         """
-        # get-cov-and-depth.sh ${sample_id} ${assembly} ${nt} ${bam} ${params.pileup_mem}
-
         # Only running if the assembly produced anything
         if [ -s ${assembly} ]; then
 

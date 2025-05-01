@@ -1,14 +1,14 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
 
-// color defs
+// Terminal text color defintions
 c_back_bright_red = "\u001b[41;1m";
-c_bright_green = "\u001b[32;1m";
-c_blue = "\033[0;34m";
-c_reset = "\033[0m";
+c_bright_green    = "\u001b[32;1m";
+c_blue            = "\033[0;34m";
+c_reset           = "\033[0m";
 
 params.help = false
-params.debug = false
+
 /**************************************************
 * HELP MENU  **************************************
 **************************************************/
@@ -17,19 +17,19 @@ if (params.help) {
   println("Nextflow Metagenomics Illumina Consensus Pipeline: $workflow.manifest.version")
   println("USAGE:")
   println("Example 1: Submit and run jobs with slurm in singularity containers.")
-  println("   > nextflow run main.nf -resume -profile slurm,singularity --csv_file PE_file.csv")
+  println("   > nextflow run main.nf -resume -profile slurm,singularity --input_file PE_file.csv")
   println()
   println("Example 2: : Submit and run jobs with slurm in conda environments.")
-  println("   > nextflow run main.nf -resume -profile slurm,conda --csv_file SE_file.csv")
+  println("   > nextflow run main.nf -resume -profile slurm,conda --input_file SE_file.csv")
   println()
   println("Example 3: Run jobs locally in conda environments, supply a GLDS accession, and specify the path to an existing conda environment.")
-  println("   > nextflow run main.nf -resume -profile conda --accession OSD-574 --conda.qc <path/to/existing/conda/environment>")
+  println("   > nextflow run main.nf -resume -profile mamba --accession OSD-574 --conda_megahit <path/to/existing/conda/environment>")
   println()
   println("Required arguments:")
   println("""-profile [STRING] Specifies the profile to be used to run the workflow. Options are [slurm, singularity, docker, and  conda].
 	                    singularity, docker and conda will run the pipeline locally using singularity, docker, and conda, respectively.
                       To combine profiles, separate two or more profiles with comma. For example, to combine slurm and singularity profiles, pass 'slurm,singularity' as argument. """)			 
-  println("--csv_file  [PATH] A 3-column (single-end) or 4-column (paired-end) input file (sample_id, forward, [reverse,] paired). Required only if a GLDS accession is not provided.")
+  println("--input_file  [PATH] A 3-column (single-end) or 4-column (paired-end) csv input file (sample_id, forward, [reverse,] paired). Required only if a GLDS accession is not provided. Default : null")
   println("   Please see the files: SE_file.csv and PE_file.csv for single-end and paired-end examples, respectively.")
   println("   The sample_id column should contain unique sample ids.")
   println("   The forward and reverse columns should contain the absolute or relative path to the sample's forward and reverse reads.")
@@ -86,7 +86,7 @@ if (params.help) {
   println("      --read_based_dir [PATH] Read-based analysis outputs directory.  Default: ../Read-based_Processing/.")
   println()
   println("Genelab specific arguements:")
-  println("      --accession [STRING]  A Genelab accession number if the --csv_file parameter is not set. If this parameter is set, it will ignore the --csv_file parameter.")
+  println("      --accession [STRING]  A Genelab accession number if the --input_file parameter is not set. If this parameter is set, it will ignore the --input_file parameter. Default: null.")
   println("      --RawFilePattern [STRING]  If we do not want to download all files (which we often won't), we can specify a pattern here to subset the total files.")
   println("                                 For example, if we know we want to download just the fastq.gz files, we can say 'fastq.gz'. We can also provide multiple patterns")
   println("                                 as a comma-separated list. For example, If we want to download the fastq.gz files that also have 'NxtaFlex', 'metagenomics', and 'raw' in") 
@@ -102,33 +102,33 @@ if (params.help) {
   println("    The strings below will be added to the end of the --database.cat_db path arguement provided below.")
   println("         --cat_taxonomy_dir [PATH] CAT taxonomy database directory. Default: 2021-01-07_taxonomy/.")
   println("         --cat_db_sub_dir [PATH] CAT database sub directory. Default: 2021-01-07_CAT_database/.")
-  println("         --database.CAT_DB_LINK [URL] CAT database online download link. Default: https://tbb.bio.uu.nl/bastiaan/CAT_prepare/CAT_prepare_20210107.tar.gz.")
+  println("         --CAT_DB_LINK [URL] CAT database online download link. Default: https://tbb.bio.uu.nl/bastiaan/CAT_prepare/CAT_prepare_20210107.tar.gz.")
   println("CAT database ")
-  println("         --database.cat_db [PATH] Path to CAT database. Example, /path/to/Reference_DBs/CAT_prepare_20210107/. Default: null.")
+  println("         --cat_db [PATH] Path to CAT database. Example, /path/to/Reference_DBs/CAT_prepare_20210107/. Default: null.")
   println("Humann database:")
-  println("      --database.metaphlan_db_dir [PATH] Path to metaphlan database. Example, /path/to/Reference_DBs/metaphlan4-db/. Default: null.")
-  println("      --database.chocophlan_dir [PATH] Path to Humann's chocophlan nucleotide database. Example, /path/to/Reference_DBs/humann3-db/chocophlan/. Default: null.")
-  println("      --database.uniref_dir [PATH] Path to Humann's Uniref protein database. Example, /path/to/Reference_DBs/humann3-db/uniref/. Default: null.")
-  println("      --database.utilities_dir [PATH] Path to Humann's untilities database. Example, /path/to/Reference_DBs/humann3-db/utility_mapping/.  Default: null.")
+  println("      --metaphlan_db_dir [PATH] Path to metaphlan database. Example, /path/to/Reference_DBs/metaphlan4-db/. Default: null.")
+  println("      --chocophlan_dir [PATH] Path to Humann's chocophlan nucleotide database. Example, /path/to/Reference_DBs/humann3-db/chocophlan/. Default: null.")
+  println("      --uniref_dir [PATH] Path to Humann's Uniref protein database. Example, /path/to/Reference_DBs/humann3-db/uniref/. Default: null.")
+  println("      --utilities_dir [PATH] Path to Humann's untilities database. Example, /path/to/Reference_DBs/humann3-db/utility_mapping/.  Default: null.")
   println("GTDBTK database:")
-  println("      --database.GTDBTK_LINK [URL] GTDBTK database online download link. Default: https://data.gtdb.ecogenomic.org/releases/release220/220.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r220_data.tar.gz.")
-  println("      --database.gtdbtk_db_dir  [PATH] Path to GTDBTK database. Example, /path/Reference_DBs/GTDB-tk-ref-db/. Default: null.")
+  println("      --GTDBTK_LINK [URL] GTDBTK database online download link. Default: https://data.gtdb.ecogenomic.org/releases/release220/220.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r220_data.tar.gz.")
+  println("      --gtdbtk_db_dir  [PATH] Path to GTDBTK database. Example, /path/Reference_DBs/GTDB-tk-ref-db/. Default: null.")
   println("kofam scan database database:")
-  println("      --database.ko_db_dir  [PATH] Path to kofam scan database. Example, /path/to/Reference_DBs/kofamscan_db/. Default: null.")
+  println("      --ko_db_dir  [PATH] Path to kofam scan database. Example, /path/to/Reference_DBs/kofamscan_db/. Default: null.")
   println()
   println("Paths to existing conda environments to use, otherwise, new ones will be created using the yaml files in envs/.")
-  println("      --conda.qc [PATH] Path to a conda environment containing fastqc, multiqc, zip and python. Default: null.")
-  println("      --conda.humann3 [PATH] Path to a conda environment with humann3 installed. Default: null.")
-  println("      --conda.cat  [PATH] Path to a conda environment containing CAT (Contig annotation tool). Default: null.")
-  println("      --conda.prodigal [PATH] Path to a conda environment with prodigal installed. Default: null.")
-  println("      --conda.metabat [PATH] Path to a conda environment containing metabat. Default: null.")
-  println("      --conda.gtdbtk [PATH] Path to a conda environment containing gtdbtk. Default: null.")
-  println("      --conda.kegg_decoder [PATH] Path to a conda environment with kegg_decoder installed. Default: null.")
-  println("      --conda.megahit  [PATH] Path to a conda environment containing megahit. Default: null.")
-  println("      --conda.bit [PATH] Path to a conda environment with bit installed. Default: null.")
-  println("      --conda.kofamscan [PATH] Path to a conda environment containing KOFAM SCAN. Default: null.")
-  println("      --conda.mapping [PATH] Path to a conda environment with bowtie and samtools installed. Default: null.")
-  println("      --conda.checkm [PATH] Path to a conda environment with checkm installed. Default: null.")
+  println("      --conda_qc [PATH] Path to a conda environment containing fastqc, multiqc, zip and python. Default: null.")
+  println("      --conda_humann3 [PATH] Path to a conda environment with humann3 installed. Default: null.")
+  println("      --conda_cat  [PATH] Path to a conda environment containing CAT (Contig annotation tool). Default: null.")
+  println("      --conda_prodigal [PATH] Path to a conda environment with prodigal installed. Default: null.")
+  println("      --conda_metabat [PATH] Path to a conda environment containing metabat. Default: null.")
+  println("      --conda_gtdbtk [PATH] Path to a conda environment containing gtdbtk. Default: null.")
+  println("      --conda_kegg_decoder [PATH] Path to a conda environment with kegg_decoder installed. Default: null.")
+  println("      --conda_megahit  [PATH] Path to a conda environment containing megahit. Default: null.")
+  println("      --conda_bit [PATH] Path to a conda environment with bit installed. Default: null.")
+  println("      --conda_kofamscan [PATH] Path to a conda environment containing KOFAM SCAN. Default: null.")
+  println("      --conda_mapping [PATH] Path to a conda environment with bowtie and samtools installed. Default: null.")
+  println("      --conda_checkm [PATH] Path to a conda environment with checkm installed. Default: null.")
   println()
   print("Advanced users can edit the nextflow.config file for more control over default settings such container choice, number of cpus, memory per task etc.")
   exit 0
@@ -139,12 +139,12 @@ if (params.help) {
 *************************************************/
 
 if (params.debug) {
-log.info """
+log.info """${c_blue}
          Nextflow Metagenomics Illumina Consensus Pipeline: $workflow.manifest.version
          
          You have set the following parameters:
          Profile: ${workflow.profile} 
-         Input csv file : ${params.csv_file}
+         Input csv file : ${params.input_file}
          GLDS or OSD Accession : ${params.accession}
          GLDS Raw File Pattern: ${params.RawFilePattern}         
          Workflow : ${params.workflow}
@@ -187,37 +187,38 @@ log.info """
          Additional Filename Prefix: ${params.additional_filename_prefix}
 
          Conda Environments:
-         qc: ${params.conda.qc}
-         humann3: ${params.conda.humann3}
-         CAT: ${params.conda.cat}
-         prodigal: ${params.conda.prodigal}
-         metabat: ${params.conda.metabat}
-         gtdbtk: ${params.conda.gtdbtk}
-         kegg decoder: ${params.conda.kegg_decoder}
-         megahit: ${params.conda.megahit}
-         bit: ${params.conda.bit}
-         kofamscan: ${params.conda.kofamscan}
-         mapping: ${params.conda.mapping}
-         checkm: ${params.conda.checkm}         
+         qc: ${params.conda_qc}
+         humann3: ${params.conda_humann3}
+         CAT: ${params.conda_cat}
+         prodigal: ${params.conda_prodigal}
+         metabat: ${params.conda_metabat}
+         gtdbtk: ${params.conda_gtdbtk}
+         kegg decoder: ${params.conda_kegg_decoder}
+         megahit: ${params.conda_megahit}
+         bit: ${params.conda_bit}
+         kofamscan: ${params.conda_kofamscan}
+         mapping: ${params.conda_mapping}
+         checkm: ${params.conda_checkm}         
 
          Databases:
          CAT Taxonomy: ${params.cat_taxonomy_dir}
          CAT DB sub directory: ${params.cat_db_sub_dir}
-         CAT URL: ${params.database.CAT_DB_LINK}
-         CAT DB: ${params.database.cat_db}
-         KOFAM Scan: ${params.database.ko_db_dir}
-         Metaphlan: ${params.database.metaphlan_db_dir}
-         Chocophlan: ${params.database.chocophlan_dir}
-         Uniref: ${params.database.uniref_dir}
-         Utilities: ${params.database.utilities_dir}
-         GTDBTK URL: ${params.database.GTDBTK_LINK}
-         GTDBTK DB: ${params.database.gtdbtk_db_dir}
-         """.stripIndent()
+         CAT URL: ${params.CAT_DB_LINK}
+         CAT DB: ${params.cat_db}
+         KOFAM Scan: ${params.ko_db_dir}
+         Metaphlan: ${params.metaphlan_db_dir}
+         Chocophlan: ${params.chocophlan_dir}
+         Uniref: ${params.uniref_dir}
+         Utilities: ${params.utilities_dir}
+         GTDBTK URL: ${params.GTDBTK_LINK}
+         GTDBTK DB: ${params.gtdbtk_db_dir}
+         ${c_reset}"""
 }
 
 // Create GLDS runsheet
 include { GET_RUNSHEET } from "./modules/create_runsheet.nf"
 
+// Make Humann3 database
 include { make_humann_db } from "./modules/database_creation.nf"
 
 // Read quality check and filtering
@@ -240,14 +241,9 @@ workflow run_read_based_analysis {
 
     main:
 
-       chocophlanDirExists = params.database.chocophlan_dir != null
-       unirefDirExists = params.database.uniref_dir != null
-       metaphlanDirExists = params.database.metaphlan_db_dir != null
-       utilitiesDirExists = params.database.utilities_dir != null
-
-     // if any of the four databases  
-     if(!chocophlanDirExists ||!unirefDirExists ||
-       !metaphlanDirExists || !utilitiesDirExists) {
+     // If any of the four databases does not exist i.e. the paramater is set to null  
+     if(!params.chocophlan_dir || !params.uniref_dir || 
+        !params.metaphlan_db_dir || !params.utilities_dir) {
               
          make_humann_db()
          read_based(filtered_ch, 
@@ -263,10 +259,10 @@ workflow run_read_based_analysis {
        }else{
 
          read_based(filtered_ch, 
-                    params.database.chocophlan_dir,
-                    params.database.uniref_dir,
-                    params.database.metaphlan_db_dir,
-                    params.database.utilities_dir)
+                    params.chocophlan_dir,
+                    params.uniref_dir,
+                    params.metaphlan_db_dir,
+                    params.utilities_dir)
 
          software_versions_ch =  read_based.out.versions
       }
@@ -287,9 +283,9 @@ workflow run_assembly_based_analysis {
     main:
         software_versions_ch = Channel.empty()
 
-        kofam_db = params.database.ko_db_dir
-        cat_db = params.database.cat_db
-        gtdbtk_db_dir = params.database.gtdbtk_db_dir
+        kofam_db = params.ko_db_dir
+        cat_db = params.cat_db
+        gtdbtk_db_dir = params.gtdbtk_db_dir
 
         // Run assembly based workflow 
         assembly_based(file_ch, filtered_ch, kofam_db, 
@@ -313,6 +309,15 @@ def deleteWS(string){
 
 // Main workflow
 workflow {
+
+    // Sanity check : Test input requirement
+    if (!params.accession &&  !params.input_file){
+     
+       error("""${c_back_bright_red}INPUT ERROR!
+              Please supply either an accession (OSD or Genelab number) or an input CSV file
+              by passing either to the --accession or --input_file parameter, respectively.
+              ${c_reset}""")
+    } 
         
      // Software Version Capturing - runsheet
      software_versions_ch = Channel.empty()
@@ -327,7 +332,7 @@ workflow {
        GET_RUNSHEET.out.version | mix(software_versions_ch) | set{software_versions_ch}
       }else{
  
-       Channel.fromPath(params.csv_file, checkIfExists: true)
+       Channel.fromPath(params.input_file, checkIfExists: true)
            .splitCsv(header:true)
            .set{file_ch}
       }
@@ -374,18 +379,37 @@ workflow {
 
 
      // Software Version Capturing - combining all captured sofware versions
-     nf_version = "Nextflow Version ".concat("${nextflow.version}\n<><><>\n")
+     nf_version = "Nextflow Version ".concat("${nextflow.version}")
      nextflow_version_ch = Channel.value(nf_version)
+     workflow_version = "MGIllimina ".concat("${workflow.manifest.version}")
+     workflow_version_ch =  Channel.value(workflow_version)
 
      //  Write software versions to file
-     software_versions_ch | map { it.text + "\n<><><>\n"}
+     software_versions_ch | map { it.text.strip() }
                           | unique
                           | mix(nextflow_version_ch)
+                          | mix(workflow_version_ch)
                           | collectFile(name: "${params.metadata_dir}/software_versions.txt", newLine: true, cache: false)
                           | set{final_software_versions_ch}
 
 }
 
+
+
 workflow.onComplete {
-	log.info ( workflow.success ? "\nDone! Workflow completed without any error\n" : "Oops .. something went wrong" )
+
+    println("${c_bright_green}Pipeline completed at: $workflow.complete")
+    println("""Execution status: ${ workflow.success ? 'OK' : "${c_back_bright_red}failed" }""")
+    log.info ( workflow.success ? "\nDone! Workflow completed without any error\n" : "Oops .. something went wrong${c_reset}" )
+
+    if ( workflow.success ) {
+
+    println("FastQC outputs location: ${params.fastqc_out_dir}")
+    println("Read-based Analysis: ${params.read_based_dir}")
+    println("Assembly-based Analysis: ${params.assembly_based_dir}")
+    println("Software versions location: ${params.metadata_dir}")
+    println("Pipeline tracing/visualization files location:  ../Resource_Usage${c_reset}")
+    println()
+    }
+
 }

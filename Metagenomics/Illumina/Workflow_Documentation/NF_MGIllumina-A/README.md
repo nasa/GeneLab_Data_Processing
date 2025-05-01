@@ -51,7 +51,10 @@ Nextflow can be installed either through [Anaconda](https://anaconda.org/biocond
 > conda install -c bioconda nextflow
 > nextflow self-update
 > ```
-
+> You may also install [mamba](https://mamba.readthedocs.io/en/latest/index.html) which is a faster implementation of conda like so:
+> ```bash
+> conda install -c conda-forge mamba
+> ```
 <br>
 
 #### 1b. Install Singularity
@@ -111,7 +114,7 @@ For options and detailed help on how to run the workflow, run the following comm
 nextflow run main.nf --help
 ```
 
-> Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --csv_file) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
+> Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --input_file) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
 
 <br>
 
@@ -126,7 +129,7 @@ nextflow run main.nf -resume -profile slurm,singularity --accession OSD-574
 #### 4b. Approach 2: Run slurm jobs in singularity containers with a csv file as input
 
 ```bash
-nextflow run main.nf -resume -profile slurm,singularity  --csv_file PE_file.csv
+nextflow run main.nf -resume -profile slurm,singularity  --input_file PE_file.csv
 ```
 
 <br>
@@ -134,7 +137,7 @@ nextflow run main.nf -resume -profile slurm,singularity  --csv_file PE_file.csv
 #### 4c. Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environment(s)
 
 ```bash
-nextflow run main.nf -resume -profile conda --csv_file SE_file.csv --conda.qc <path/to/existing/conda/environment>
+nextflow run main.nf -resume -profile mamba --input_file SE_file.csv --conda_megahit <path/to/existing/conda/environment>
 ```
 
 <br>
@@ -153,7 +156,7 @@ nextflow run main.nf -resume -profile conda --csv_file SE_file.csv --conda.qc <p
 
 *Required only if --accession is not passed as an argument*
 
-* `--csv_file` –  A single-end or paired-end input csv file containing assay metadata for each sample, including sample_id, forward, reverse, and/or paired. Please see the sample [SE_file.csv](workflow_code/SE_file.csv) and [PE_file.csv](workflow_code/PE_file.csv) in this repository for examples on how to format this file.
+* `--input_file` –  A single-end or paired-end input csv file containing assay metadata for each sample, including sample_id, forward, reverse, and/or paired. Please see the sample [SE_file.csv](workflow_code/SE_file.csv) and [PE_file.csv](workflow_code/PE_file.csv) in this repository for examples on how to format this file.
 
 > See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details on how to run nextflow.
 
@@ -163,7 +166,7 @@ nextflow run main.nf -resume -profile conda --csv_file SE_file.csv --conda.qc <p
 
 Additionally, the parameters and workflow resources can be directly specified in the nextflow.config file. For detailed instructions on how to modify and set parameters in the nextflow.config file, please see the [documentation here](https://www.nextflow.io/docs/latest/config.html).
 
-Once you've downloaded the workflow template, you can modify the parameters in the `params` scope and cpus/memory requirements in the `process` scope in your downloaded version of the [nextflow.config](workflow_code/nextflow.config) file as needed in order to match your dataset and system setup. For example, you can directly set the the full paths to available conda environments in the `conda` scope within the `params` scope. Additionally, if necessary, you'll need to modify each variable in the [nextflow.config](workflow_code/nextflow.config) file to be consistent with the study you want to process and the machine you're using.
+Once you've downloaded the workflow template, you can modify the parameters in the `params` scope and cpus/memory requirements in the `process` scope in your downloaded version of the [nextflow.config](workflow_code/nextflow.config) file as needed in order to match your dataset and system setup. Additionally, if necessary, you'll need to modify each variable in the [nextflow.config](workflow_code/nextflow.config) file to be consistent with the study you want to process and the machine you're using.
 
 <br>
 
