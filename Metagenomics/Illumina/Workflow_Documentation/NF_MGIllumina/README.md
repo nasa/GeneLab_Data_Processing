@@ -13,8 +13,8 @@ The current GeneLab Illumina metagenomics sequencing data processing pipeline (M
 
 ## Utilizing the Workflow
 
-1. [Install Nextflow and Singularity](#1-install-nextflow-and-singularity)  
-   1a. [Install Nextflow](#1a-install-nextflow)  
+1. [Installing Nextflow, Singularity, and conda](#1-install-nextflow-and-singularity)  
+   1a. [Install Nextflow and conda](#1a-install-nextflow-and-conda)  
    1b. [Install Singularity](#1b-install-singularity)  
 
 2. [Download the workflow files](#2-download-the-workflow-files)  
@@ -22,9 +22,9 @@ The current GeneLab Illumina metagenomics sequencing data processing pipeline (M
 3. [Fetch Singularity Images](#3-fetch-singularity-images)  
 
 4. [Run the workflow](#4-run-the-workflow)  
-   4a. [Approach 1: Run slurm jobs in Singularity containers with OSD accession as input](#4a-approach-1-run-slurm-jobs-in-singularity-containers-with-osd-accession-as-input)   
+   4a. [Approach 1: Run slurm jobs in Singularity containers with OSD or GLDS accession as input](#4a-approach-1-run-slurm-jobs-in-singularity-containers-with-osd-or-glds-accession-as-input)  
    4b. [Approach 2: Run slurm jobs in Singularity containers with a csv file as input](#4b-approach-2-run-slurm-jobs-in-singularity-containers-with-a-csv-file-as-input)  
-   4c. [Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environments](#4c-approach-run-jobs-locally-in-conda-environments-and-specify-the-path-to-one-or-more-existing-conda-environments)  
+   4c. [Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environments](#4c-approach-3-run-jobs-locally-in-conda-environments-and-specify-the-path-to-one-or-more-existing-conda-environments)  
    4d. [Modify parameters and cpu resources in the Nextflow config file](#4d-modify-parameters-and-cpu-resources-in-the-nextflow-config-file)  
 
 5. [Workflow outputs](#5-workflow-outputs)  
@@ -37,9 +37,9 @@ The current GeneLab Illumina metagenomics sequencing data processing pipeline (M
 
 ---
 
-### 1. Install Nextflow and Singularity
+### 1. Installing Nextflow, Singularity, and conda
 
-#### 1a. Install Nextflow
+#### 1a. Install Nextflow and conda
 
 Nextflow can be installed either through [Anaconda](https://anaconda.org/bioconda/nextflow) or as documented on the [Nextflow documentation page](https://www.nextflow.io/docs/latest/getstarted.html).
 
@@ -51,10 +51,13 @@ Nextflow can be installed either through [Anaconda](https://anaconda.org/biocond
 > conda install -c bioconda nextflow
 > nextflow self-update
 > ```
-> You may also install [mamba](https://mamba.readthedocs.io/en/latest/index.html) which is a faster implementation of conda like so:
+> You may also install [mamba](https://mamba.readthedocs.io/en/latest/index.html) first which is a faster implementation of conda and can be used as a drop-in replacement:
 > ```bash
 > conda install -c conda-forge mamba
+> conda install -c bioconda nextflow
+> nextflow self-update
 > ```
+
 <br>
 
 #### 1b. Install Singularity
@@ -65,7 +68,7 @@ We recommend installing Singularity on a system wide level as per the associated
 
 > Note: Singularity is also available through [Anaconda](https://anaconda.org/conda-forge/singularity).
 
-> Note: Alternately, Docker can be used in place of Singularity. To get started with Docker, see the [Docker CE installation documentation](https://docs.docker.com/engine/install/).
+> Note: Alternatively, Docker can be used in place of Singularity. To get started with Docker, see the [Docker CE installation documentation](https://docs.docker.com/engine/install/).
 
 <br>
 
@@ -73,11 +76,11 @@ We recommend installing Singularity on a system wide level as per the associated
 
 ### 2. Download the workflow files
 
-All files required for utilizing the NF_MGIllumina-A GeneLab workflow for processing metagenomics Illumina data are in the [workflow_code](workflow_code) directory. To get a copy of latest *NF_MGIllumina-A* version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
+All files required for utilizing the NF_MGIllumina GeneLab workflow for processing metagenomics Illumina data are in the [workflow_code](workflow_code) directory. To get a copy of latest *NF_MGIllumina* version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
 
 ```bash
-wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/NF_MGIllumina-A_1.0.0/NF_MGIllumina-A_1.0.0.zip
-unzip NF_MGIllumina-A_1.0.0.zip &&  cd NF_MGIllumina-A_1.0.0
+wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/NF_MGIllumina_1.0.0/NF_MGIllumina_1.0.0.zip
+unzip NF_MGIllumina_1.0.0.zip &&  cd NF_MGIllumina_1.0.0
 ```
 
 <br>
@@ -88,9 +91,9 @@ unzip NF_MGIllumina-A_1.0.0.zip &&  cd NF_MGIllumina-A_1.0.0
 
 Although Nextflow can fetch Singularity images from a url, doing so may cause issues as detailed [here](https://github.com/nextflow-io/nextflow/issues/1210).
 
-To avoid this issue, run the following command to fetch the Singularity images prior to running the NF_MGIllumina-A workflow:
+To avoid this issue, run the following command to fetch the Singularity images prior to running the NF_MGIllumina workflow:
 
-> Note: This command should be run from within the `NF_MGIllumina-A_1.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files) above.  
+> Note: This command should be run from within the `NF_MGIllumina_1.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files) above.  
 
 ```bash
 bash ./bin/prepull_singularity.sh nextflow.config
@@ -108,7 +111,7 @@ export NXF_SINGULARITY_CACHEDIR=$(pwd)/singularity
 
 ### 4. Run the Workflow
 
-> ***Note:** All the commands in this step must be run from within the `NF_MGIllumina-A_1.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files) above.*
+> ***Note:** All the commands in this step must be run from within the `NF_MGIllumina_1.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files) above.*
 
 For options and detailed help on how to run the workflow, run the following command:
 
@@ -148,7 +151,7 @@ nextflow run main.nf -resume -profile mamba --input_file SE_file.csv --conda_meg
 
 **Required Parameters For All Approaches:**
 
-* `-run main.nf` - Instructs Nextflow to run the NF_MGIllumina-A workflow 
+* `-run main.nf` - Instructs Nextflow to run the NF_MGIllumina workflow 
 
 * `-resume` - Resumes workflow execution using previously cached results
 
@@ -158,7 +161,7 @@ nextflow run main.nf -resume -profile mamba --input_file SE_file.csv --conda_meg
 * `--accession` – A Genelab / OSD accession number e.g. OSD-574.
    > *Required only if you would like to pull and process data directly from OSDR*
 
-* `--input_file` –  A single-end or paired-end input csv file containing assay metadata for each sample, including sample_id, forward, reverse, and/or paired. Please see the [CSV input file documentation](./examples/csv_samplefile/) in this repository for examples on how to format this file.
+* `--input_file` –  A single-end or paired-end input csv file containing assay metadata for each sample, including sample_id, forward, reverse, and/or paired. Please see the [runsheet documentation](./examples/runsheet) in this repository for examples on how to format this file.
    > *Required only if --accession is not passed as an argument*
 
 > See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details on how to run Nextflow.

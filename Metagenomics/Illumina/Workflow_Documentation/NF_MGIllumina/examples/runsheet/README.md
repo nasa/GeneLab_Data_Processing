@@ -1,16 +1,16 @@
-# CSV Sample File Specification
+# Runsheet File Specification
 
 ## Description
 
-* The sample file is a comma-separated file that contains the metadata required for processing 
-metagenomics sequence datasets through GeneLab's GeneLab Illumina metagenomics sequencing data 
+* The runsheet is a comma-separated file that contains the metadata required for processing 
+metagenomics sequence datasets through the GeneLab Illumina metagenomics sequencing data 
 processing pipeline (MGIllumina).
 
 
 ## Examples
 
-1. Samplefile for an example [paired-end dataset](paired_end_dataset/PE_file.csv)
-2. Samplefile for an example [single-end dataset](single_end_dataset/SE_file.csv)
+1. Runsheet for an example [paired-end dataset](paired_end_dataset/PE_file.csv)
+2. Runsheet for an example [single-end dataset](single_end_dataset/SE_file.csv)
 
 
 ## Required columns

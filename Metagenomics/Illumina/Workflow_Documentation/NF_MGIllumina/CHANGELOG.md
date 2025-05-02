@@ -6,12 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.0.0](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_MGIllumina_1.0.0/Metagenomics/Illumina/Workflow_Documentation/NF_MGIllumina-A)
+## [1.0.0](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_MGIllumina_1.0.0/Metagenomics/Illumina/Workflow_Documentation/NF_MGIllumina)
 
 ### Changed
 - Update to the latest pipeline version [GL-DPPD-7101-A](../../Pipeline_GL-DPPD-7107_Versions/GL-DPPD-7107-A.md) 
 of the GeneLab Metagenomics consensus processing pipeline.
-- Pipeline implementation as a Nextflow workflow [NF_MGIllumina-A](./) rather than Snakemake as in 
+- Pipeline implementation as a Nextflow workflow [NF_MGIllumina](./) rather than Snakemake as in 
 previous workflow versions.
 - Run checkm separately on each bin and combine results to improve performance
 

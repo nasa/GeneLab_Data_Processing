@@ -552,7 +552,7 @@ awk -F $'\t' ' BEGIN { OFS=FS } { if ( $3 == "lineage" ) { print $1,$3,$5,$6,$7,
 awk -F $'\t' ' BEGIN { OFS=FS } { if ( $2 == "classification" ) { print $1,$4,$6,$7,$8,$9,$10,$11,$12 } \
     else if ( $2 == "no taxid assigned" ) { print $1,"NA","NA","NA","NA","NA","NA","NA","NA" } \
     else { n=split($4,lineage,";"); print $1,lineage[n],$6,$7,$8,$9,$10,$11,$12 } } ' sample-1-contig-tax-out.tmp | \
-    sed sed 's/no support/NA/g' | sed 's/superkingdom/domain/' | sed 's/^# contig/contig_ID/' | \
+    sed 's/no support/NA/g' | sed 's/superkingdom/domain/' | sed 's/^# contig/contig_ID/' | \
     sed 's/lineage/taxid/' > sample-1-contig-tax-out.tsv
 
   # clearing intermediate files
@@ -993,7 +993,7 @@ cat MAGs-overview-header.tmp MAGs-overview-sorted.tmp \
 ### 15. Generating MAG-level functional summary overview
 
 #### 15a. Getting KO annotations per MAG
-This utilizes the helper script [`parse-MAG-annots.py`](../Workflow_Documentation/NF_MGIllumina-A/workflow_code/bin/parse-MAG-annots.py) 
+This utilizes the helper script [`parse-MAG-annots.py`](../Workflow_Documentation/NF_MGIllumina/workflow_code/bin/parse-MAG-annots.py) 
 
 ```bash
 for file in $( ls MAGs/*.fasta )

@@ -30,7 +30,7 @@ if (params.help) {
 	                    singularity, docker and conda will run the pipeline locally using singularity, docker, and conda, respectively.
                       To combine profiles, separate two or more profiles with comma. For example, to combine slurm and singularity profiles, pass 'slurm,singularity' as argument. """)			 
   println("--input_file  [PATH] A 3-column (single-end) or 4-column (paired-end) csv input file (sample_id, forward, [reverse,] paired). Required only if a GLDS accession is not provided. Default : null")
-  println("   Please see the files: SE_file.csv and PE_file.csv for single-end and paired-end examples, respectively.")
+  println("   Please see the files: examples/runsheet/single_end_dataset/SE_file.csv and examples/runsheet/paired_end_dataset/PE_file.csv for single-end and paired-end examples, respectively.")
   println("   The sample_id column should contain unique sample ids.")
   println("   The forward and reverse columns should contain the absolute or relative path to the sample's forward and reverse reads.")
   println("   The paired column should be true for paired-end or anything else for single-end reads.")
