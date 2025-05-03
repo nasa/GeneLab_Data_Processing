@@ -52,7 +52,7 @@ Barbara Novak (GeneLab Data Processing Lead)
     - [10. Getting coverage information and filtering based on detection](#10-getting-coverage-information-and-filtering-based-on-detection)
     - [11. Combining gene-level coverage, taxonomy, and functional annotations into one table for each sample](#11-combining-gene-level-coverage-taxonomy-and-functional-annotations-into-one-table-for-each-sample)
     - [12. Combining contig-level coverage and taxonomy into one table for each sample](#12-combining-contig-level-coverage-and-taxonomy-into-one-table-for-each-sample)
-    - [13. Generating normalized, gene-level-coverage summary tables of KO-annotations and taxonomy across samples](#13-generating-normalized-gene-level-coverage-summary-tables-of-ko-annotations-and-taxonomy-across-samples)
+    - [13. Generating normalized, gene- and contig-level coverage summary tables of KO-annotations and taxonomy across samples](#13-generating-normalized-gene--and-contig-level-coverage-summary-tables-of-ko-annotations-and-taxonomy-across-samples)
     - [14. **M**etagenome-**A**ssembled **G**enome (MAG) recovery](#14-metagenome-assembled-genome-mag-recovery)
     - [15. Generating MAG-level functional summary overview](#15-generating-mag-level-functional-summary-overview)
   - [**Read-based processing**](#read-based-processing)
@@ -97,7 +97,7 @@ fastqc -o raw_fastqc_output *raw.fastq.gz
 **Parameter Definitions:**
 
 * `-o` – the output directory to store results
-* `*raw.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces in between them
+* `*raw.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces in between them
 
 **Input data:**
 
@@ -259,7 +259,7 @@ megahit -1 sample-1_R1_filtered.fastq.gz -2 sample-1_R2_filtered.fastq.gz \
 
 **Input data:**
 
-* *fastq.gz (filtered/trimmed reads)
+* *fastq.gz (filtered/trimmed reads from [step 2](#2-quality-filteringtrimming) above)
 
 **Output data:**
 
@@ -288,7 +288,7 @@ bit-rename-fasta-headers -i sample-1-assembly/final.contigs.fa -w c_sample-1 -o 
 
 **Input data:**
 
-* sample-1-assembly/final.contigs.fa (assembly file)
+* sample-1-assembly/final.contigs.fa (assembly file from [step 4](#4-sample-assembly))
 
 **Output files:**
 
@@ -298,7 +298,7 @@ bit-rename-fasta-headers -i sample-1-assembly/final.contigs.fa -w c_sample-1 -o 
 #### 5b. Summarizing assemblies
 
 ```
-bit-summarize-assembly -o assembly-summaries.tsv *assembly.fasta
+bit-summarize-assembly -o assembly-summaries_GLmetagenomics.tsv *assembly.fasta
 ```
 
 **Parameter Definitions:**  
@@ -310,7 +310,7 @@ bit-summarize-assembly -o assembly-summaries.tsv *assembly.fasta
 
 **Input data:**
 
-* *-assembly.fasta (contig-renamed assembly files)
+* *-assembly.fasta (contig-renamed assembly files from [step 5a](#5a-renaming-contig-headers))
 
 **Output files:**
 
@@ -345,7 +345,7 @@ prodigal -a sample-1-genes.faa -d sample-1-genes.fasta -f gff -p meta -c -q \
 
 **Input data:**
 
-* sample-1-assembly.fasta (assembly file)
+* sample-1-assembly.fasta (contig-renamed assembly file from [step 5a](#5a-renaming-contig-headers))
 
 **Output data:**
 
@@ -392,12 +392,12 @@ exec_annotation -p profiles/ -k ko_list --cpu 15 -f detail-tsv -o sample-1-KO-ta
 
 *	`--report-unannotated` – specifies to generate an output for each entry
 
-*	`sample-1-genes.faa` – the input file is specified as a positional argument
+*	`sample-1-genes.faa` – the input file is specified as a positional argument 
 
 
 **Input data:**
 
-* sample-1-genes.faa (amino-acid fasta file)
+* sample-1-genes.faa (amino-acid fasta file, from [step 6](#6-gene-prediction))
 * profiles/ (reference directory holding the KO HMMs)
 * ko_list (reference list of KOs to scan for)
 
@@ -423,7 +423,7 @@ rm -rf sample-1-tmp-KO/ sample-1-KO-annots.tmp
 
 **Input data:**
 
-* sample-1-KO-tab.tmp (table of KO annotations assigned to gene IDs)
+* sample-1-KO-tab.tmp (table of KO annotations assigned to gene IDs from [step 7b](#7b-running-kegg-annotation))
 
 **Output data:**
 
@@ -445,7 +445,7 @@ tar -xvzf CAT_prepare_20200618.tar.gz
 ```
 CAT contigs -c sample-1-assembly.fasta -d CAT_prepare_20200618/2020-06-18_database/ \
             -t CAT_prepare_20200618/2020-06-18_taxonomy/ -p sample-1-genes.faa \
-            -o sample-1-tax-out.tmp -n 15 -r 3 --top 4 --I_know_what_Im_doing
+            -o sample-1-tax-out.tmp -n NumberOfThreads -r 3 --top 4 --I_know_what_Im_doing --no-stars
 ```
 
 **Parameter Definitions:**  
@@ -460,7 +460,7 @@ CAT contigs -c sample-1-assembly.fasta -d CAT_prepare_20200618/2020-06-18_databa
 
 *	`-o` – specifies the output prefix
 
-*	`-n` – specifies the number of cores to use
+*	`-n` – specifies the number of CPU cores to use
 
 *	`-r` – specifies the number of top protein hits to consider in assigning tax
 
@@ -468,11 +468,13 @@ CAT contigs -c sample-1-assembly.fasta -d CAT_prepare_20200618/2020-06-18_databa
 
 *	`--I_know_what_Im_doing` – allows us to alter the `--top` parameter
 
+* `--no-stars` - suppress marking of suggestive taxonomic assignments
+
 
 **Input data:**
 
-* sample-1-assembly.fasta (assembly file)
-* sample-1-genes.faa (gene-calls amino-acid fasta file)
+* sample-1-assembly.fasta (assembly file from [step 5a](#5a-renaming-contig-headers))
+* sample-1-genes.faa (gene-calls amino-acid fasta file from [step 6](#6-gene-prediction))
 
 **Output data:**
 
@@ -482,7 +484,7 @@ CAT contigs -c sample-1-assembly.fasta -d CAT_prepare_20200618/2020-06-18_databa
 #### 8c. Adding taxonomy info from taxids to genes
 ```
 CAT add_names -i sample-1-tax-out.tmp.ORF2LCA.txt -o sample-1-gene-tax-out.tmp \
-              -t CAT_prepare_20200618/2020-06-18_taxonomy/ --only_official
+              -t CAT_prepare_20200618/2020-06-18_taxonomy/ --only_official --exclude-scores
 ```
 
 **Parameter Definitions:**  
@@ -495,9 +497,11 @@ CAT add_names -i sample-1-tax-out.tmp.ORF2LCA.txt -o sample-1-gene-tax-out.tmp \
 
 *	`--only_official` – specifies to add only standard taxonomic ranks
 
+* `--exclude-scores` - specifies to exclude bit-score support scores in the lineage
+
 **Input data:**
 
-* sample-1-tax-out.tmp.ORF2LCA.txt (gene-calls taxonomy file)
+* sample-1-tax-out.tmp.ORF2LCA.txt (gene-calls taxonomy file from [step 8b](#8b-running-taxonomic-classification))
 
 **Output data:**
 
@@ -508,7 +512,7 @@ CAT add_names -i sample-1-tax-out.tmp.ORF2LCA.txt -o sample-1-gene-tax-out.tmp \
 #### 8d. Adding taxonomy info from taxids to contigs
 ```
 CAT add_names -i sample-1-tax-out.tmp.contig2classification.txt -o sample-1-contig-tax-out.tmp \
-              -t CAT-ref/2020-06-18_taxonomy/ --only_official
+              -t CAT-ref/2020-06-18_taxonomy/ --only_official --exclude-scores
 ```
 
 **Parameter Definitions:**  
@@ -521,10 +525,12 @@ CAT add_names -i sample-1-tax-out.tmp.contig2classification.txt -o sample-1-cont
 
 *	`--only_official` – specifies to add only standard taxonomic ranks
 
+* `--exclude-scores` - specifies to exclude bit-score support scores in the lineage
+
 
 **Input data:**
 
-* sample-1-tax-out.tmp.contig2classification.txt (contig taxonomy file)
+* sample-1-tax-out.tmp.contig2classification.txt (contig taxonomy file from [step 8b](#8b-running-taxonomic-classification))
 
 **Output data:**
 
@@ -533,21 +539,21 @@ CAT add_names -i sample-1-tax-out.tmp.contig2classification.txt -o sample-1-cont
 
 #### 8e. Formatting gene-level output with awk and sed
 ```
-awk -F $'\t' ' BEGIN { OFS=FS } { if ( $2 == "lineage" ) { print $1,$2,$4,$5,$6,$7,$8,$9,$10 } \
+awk -F $'\t' ' BEGIN { OFS=FS } { if ( $3 == "lineage" ) { print $1,$3,$5,$6,$7,$8,$9,$10,$11 } \
     else if ( $2 == "ORF has no hit to database" || $2 ~ /^no taxid found/ ) \
-    { print $1,"NA","NA","NA","NA","NA","NA","NA","NA" } else { n=split($2,lineage,";"); \
-    print $1,lineage[n],$4,$5,$6,$7,$8,$9,$10 } } ' sample-1-gene-tax-out.tmp | \
-    sed 's/not classified/NA/g' | sed 's/superkingdom/domain/' | sed 's/^# ORF/gene_ID/' | \
-    sed 's/lineage/taxid/' | sed 's/\*//g' > sample-1-gene-tax-out.tsv
+    { print $1,"NA","NA","NA","NA","NA","NA","NA","NA" } else { n=split($3,lineage,";"); \
+    print $1,lineage[n],$5,$6,$7,$8,$9,$10,$11 } } ' sample-1-gene-tax-out.tmp | \
+    sed no support/NA/g' | sed 's/superkingdom/domain/' | sed 's/# ORF/gene_ID/' | \
+    sed 's/lineage/taxid/'  > sample-1-gene-tax-out.tsv
 ```
 
 #### 8f. Formatting contig-level output with awk and sed
 ```
 awk -F $'\t' ' BEGIN { OFS=FS } { if ( $2 == "classification" ) { print $1,$4,$6,$7,$8,$9,$10,$11,$12 } \
-    else if ( $2 == "unclassified" ) { print $1,"NA","NA","NA","NA","NA","NA","NA","NA" } \
+    else if ( $2 == "no taxid assigned" ) { print $1,"NA","NA","NA","NA","NA","NA","NA","NA" } \
     else { n=split($4,lineage,";"); print $1,lineage[n],$6,$7,$8,$9,$10,$11,$12 } } ' sample-1-contig-tax-out.tmp | \
-    sed 's/not classified/NA/g' | sed 's/superkingdom/domain/' | sed 's/: [0-9\.]*//g' | sed 's/^# contig/contig_ID/' | \
-    sed 's/lineage/taxid/' | sed 's/\*//g' > sample-1-contig-tax-out.tsv
+    sed 's/no support/NA/g' | sed 's/superkingdom/domain/' | sed 's/^# contig/contig_ID/' | \
+    sed 's/lineage/taxid/' > sample-1-contig-tax-out.tsv
 
   # clearing intermediate files
 rm sample-1*.tmp*
@@ -555,8 +561,8 @@ rm sample-1*.tmp*
 
 **Input data:**
 
-* sample-1-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added)
-* sample-1-contig-tax-out.tmp (contig taxonomy file with lineage info added)
+* sample-1-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added from [step 8c](#8c-adding-taxonomy-info-from-taxids-to-genes))
+* sample-1-contig-tax-out.tmp (contig taxonomy file with lineage info added from [step 8d](#8d-adding-taxonomy-info-from-taxids-to-contigs))
 
 
 **Output data:**
@@ -585,16 +591,18 @@ bowtie2-build sample-1-assembly.fasta sample-1-assembly-bt-index
 #### 9b. Performing mapping, conversion to bam, and sorting
 ```
 bowtie2 --threads NumberOfThreads -x sample-1-assembly-bt-index -1 sample-1_R1_filtered.fastq.gz \
-        -2 sample-1_R2_filtered.fastq.gz 2> sample-1-mapping-info.txt | samtools view -b | samtools sort -@ NumberOfThreads > sample-1.bam
+        -2 sample-1_R2_filtered.fastq.gz --no-unal 2> sample-1-mapping-info.txt | samtools view -b | samtools sort -@ NumberOfThreads > sample-1.bam
 ```
 
 **Parameter Definitions:**  
 
 *	`--threads` – specifies the number of threads to run in parallel
 
-*	`-x` – specifies the prefix of the reference index files to map to (generated in the previous `bowtie2-build` step
+*	`-x` – specifies the prefix of the reference index files to map to (generated in [step 9a](#9a-building-reference-index))
 
 *	`-1 and -2` – specifies the forward and reverse reads to map (if single-end data, neither `-1` nor `-2` are provided, and the single-end reads are passed to `-r`)
+
+* `--no-unal` - suppress SAM records for unaligned reads
 
 * `2> sample-1-mapping-info.txt` – capture the printed summary results in a log file
 
@@ -612,12 +620,12 @@ samtools index -@ NumberOfThreads sample-1.bam
 **Parameter Definitions:**  
 *	`-@` – set number of threads to use 
 
-*	`sample-1.bam` - input bam file is provided as a positional argument as generated from the above mapping step
+*	`sample-1.bam` - input bam file is provided as a positional argument as generated in [step 9b](#9b-performing-mapping-conversion-to-bam-and-sorting)
 
 **Input data:**
 
-* sample-1-assembly.fasta (assembly file)
-* *.fastq.gz (filtered/trimmed reads)
+* sample-1-assembly.fasta (assembly file from [step 5](#5a-renaming-contig-headers))
+* *.fastq.gz (filtered/trimmed reads from [step 2](#2-quality-filteringtrimming))
 
 **Output data:**
 
@@ -674,8 +682,8 @@ rm sample-1-*.tmp
 
 **Input data:**
 
-* sample-1.bam (mapping file)
-* sample-1-genes.fasta (gene-calls nucleotide fasta file)
+* sample-1.bam (mapping file from [step 9b](#9b-performing-mapping-conversion-to-bam-and-sorting))
+* sample-1-genes.fasta (gene-calls nucleotide fasta file from [step 6](#6-gene-prediction))
 
 **Output data:**
 
@@ -705,9 +713,9 @@ rm sample-1*tmp sample-1-gene-coverages.tsv sample-1-annotations.tsv sample-1-ge
 
 **Input data:**
 
-* sample-1-gene-coverages.tsv (table with gene-level coverages from step 10)
-* sample-1-annotations.tsv (table of KO annotations assigned to gene IDs from step 7)
-* sample-1-gene-tax-out.tsv (gene-level taxonomic classifications from step 8)
+* sample-1-gene-coverages.tsv (table with gene-level coverages from [step 10b](#10b-filtering-gene-coverage-based-on-requiring-50-detection-and-parsing-down-to-just-gene-id-and-coverage))
+* sample-1-annotations.tsv (table of KO annotations assigned to gene IDs from [step 7c](#7c-filtering-output-to-retain-only-those-passing-the-ko-specific-score-and-top-hits))
+* sample-1-gene-tax-out.tsv (gene-level taxonomic classifications from [step 8f](#8f-formatting-contig-level-output-with-awk-and-sed))
 
 
 **Output data:**
@@ -737,8 +745,8 @@ rm sample-1*tmp sample-1-contig-coverages.tsv sample-1-contig-tax-out.tsv
 
 **Input data:**
 
-* sample-1-contig-coverages.tsv (table with contig-level coverages from step 10)
-* sample-1-contig-tax-out.tsv (contig-level taxonomic classifications from step 8)
+* sample-1-contig-coverages.tsv (table with contig-level coverages from [step 10b](#10b-filtering-gene-coverage-based-on-requiring-50-detection-and-parsing-down-to-just-gene-id-and-coverage))
+* sample-1-contig-tax-out.tsv (contig-level taxonomic classifications from [step 8f](#8f-formatting-contig-level-output-with-awk-and-sed))
 
 
 **Output data:**
@@ -749,10 +757,13 @@ rm sample-1*tmp sample-1-contig-coverages.tsv sample-1-contig-tax-out.tsv
 
 ---
 
-### 13. Generating normalized, gene-level-coverage summary tables of KO-annotations and taxonomy across samples
+### 13. Generating normalized, gene- and contig-level coverage summary tables of KO-annotations and taxonomy across samples
+
 > **Notes**  
 > * To combine across samples to generate these summary tables, we need the same "units". This is done for annotations based on the assigned KO terms, and all non-annotated functions are included together as "Not annotated". It is done for taxonomic classifications based on taxids (full lineages included in the table), and any not classified are included together as "Not classified". 
 > * The values we are working with are coverage per gene (so they are number of bases recruited to the gene normalized by the length of the gene). These have been normalized by making the total coverage of a sample 1,000,000 and setting each individual gene-level coverage its proportion of that 1,000,000 total. So basically percent, but out of 1,000,000 instead of 100 to make the numbers more friendly. 
+
+#### 13a. Generating gene-level coverage summary tables
 
 ```
 bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o Combined
@@ -767,12 +778,36 @@ bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o Combi
 
 **Input data:**
 
-* *-gene-coverage-annotation-and-tax.tsv (tables with combined gene coverage, annotation, and taxonomy info generated for individual samples from step 12)
+* *-gene-coverage-annotation-and-tax.tsv (tables with combined gene coverage, annotation, and taxonomy info generated for individual samples from [step 11](#11-combining-gene-level-coverage-taxonomy-and-functional-annotations-into-one-table-for-each-sample))
 
 **Output data:**
 
 * **Combined-gene-level-KO-function-coverages-CPM_GLmetagenomics.tsv** (table with all samples combined based on KO annotations; normalized to coverage per million genes covered)
 * **Combined-gene-level-taxonomy-coverages-CPM_GLmetagenomics.tsv** (table with all samples combined based on gene-level taxonomic classifications; normalized to coverage per million genes covered)
+* **Combined-gene-level-KO-function-coverages_GLmetagenomics.tsv** (table with all samples combined based on KO annotations)
+* **Combined-gene-level-taxonomy-coverages_GLmetagenomics.tsv** (table with all samples combined based on gene-level taxonomic classifications)
+
+
+#### 13b. Generating contig-level coverage summary tables
+
+```
+bit-GL-combine-contig-tax-tables *-contig-coverage-and-tax.tsv -o Combined
+```
+**Parameter Definitions:**  
+
+*	takes positional arguments specifying the input tsv files, can be provided as a space-delimited list of files, or with wildcards like above
+
+-	`-o` – specifies the output prefix
+
+
+**Input data:**
+
+* *-contig-coverage-annotation-and-tax.tsv (tables with combined contig coverage, annotation, and taxonomy info generated for individual samples from [step 12](#12-combining-contig-level-coverage-and-taxonomy-into-one-table-for-each-sample))
+
+**Output data:**
+
+* **Combined-contig-level-taxonomy-coverages-CPM_GLmetagenomics.tsv** (table with all samples combined based on contig-level taxonomic classifications; normalized to coverage per million genes covered)
+* **Combined-contig-level-taxonomy-coverages_GLmetagenomics.tsv** (table with all samples combined based on contig-level taxonomic classifications)
 
 <br>
 
@@ -795,11 +830,11 @@ zip -r sample-1-bins.zip sample-1-bins
 
 *  `--outputDepth` – specifies the output depth file
 *  `--percentIdentity` – minimum end-to-end percent identity of a mapped read to be included
-*  `--minContigLength` – minimum contig length to include
+*  `--minContigLength` – minimum contig length to include
 *  `--minContigDepth` – minimum contig depth to include
-*  `--referenceFasta` – the assembly fasta file generated in step 4
+*  `--referenceFasta` – the assembly fasta file generated in step 5a
 *  `sample-1.bam` – final positional arguments are the bam files generated in step 9
-*  `--inFile` - the assembly fasta file generated in step 4
+*  `--inFile` - the assembly fasta file generated in step 5a
 *  `--outFile` - the prefix of the identified bins output files
 *  `--abdFile` - the depth file generated by the previous `jgi_summarize_bam_contig_depths` command
 *  `-t` - specifies number of threads to use
@@ -807,8 +842,8 @@ zip -r sample-1-bins.zip sample-1-bins
 
 **Input data:**
 
-* sample-1-assembly.fasta (assembly fasta file created in step 4)
-* sample-1.bam (bam file created in step 9)
+* sample-1-assembly.fasta (assembly fasta file created in [step 5a](#5a-renaming-contig-headers))
+* sample-1.bam (bam file created in [step 9b](#9b-performing-mapping-conversion-to-bam-and-sorting))
 
 **Output data:**
 
@@ -834,7 +869,7 @@ checkm lineage_wf -f bins-overview_GLmetagenomics.tsv --tab_table -x fa ./ check
 
 **Input data:**
 
-* bin fasta files generated by step 14a
+* sample-1-bins/sample-1-bin\*.fasta (bin fasta files generated in [step 14a](#14a-binning-contigs))
 
 **Output data:**
 
@@ -868,7 +903,7 @@ done
 
 **Input data:**
 
-* bins-overview_GLmetagenomics.tsv (tab-delimited file with quality estimates per bin)
+* bins-overview_GLmetagenomics.tsv (tab-delimited file with quality estimates per bin from [step 14b](#14b-bin-quality-assessment))
 
 **Output data:**
 
@@ -894,11 +929,62 @@ gtdbtk classify_wf --genome_dir MAGs/ -x fa --out_dir gtdbtk-output-dir  --skip_
 
 **Input data:**
 
-* **MAGs/\*.fasta (directory holding high-quality MAGs)
+* MAGs/\*.fasta (directory holding high-quality MAGs from [step 14c](#14c-filtering-mags))
 
 **Output data:**
 
 * gtdbtk-output-dir/gtdbtk.\*.summary.tsv (files with assigned taxonomy and info)
+
+#### 14e. Generating overview table of all MAGs
+
+```bash
+# combine summaries
+for MAG in $(cut -f 1 assembly-summaries_GLmetagenomics.tsv | tail -n +2); do
+
+    grep -w -m 1 "^${MAG}" checkm-MAGs-overview.tsv | cut -f 12,13,14 \
+        >> checkm-estimates.tmp
+
+    grep -w "^${MAG}" gtdbtk-output-dir/gtdbtk.*.summary.tsv | \
+    cut -f 2 | sed 's/^.__//' | \
+    sed 's/;.__/\t/g' | \
+    awk 'BEGIN{ OFS=FS="\t" } { for (i=1; i<=NF; i++) if ( $i ~ /^ *$/ ) $i = "NA" }; 1' \
+        >> gtdb-taxonomies.tmp
+
+done
+
+# Add headers
+cat <(printf "est. completeness\test. redundancy\test. strain heterogeneity\n") checkm-estimates.tmp \
+    > checkm-estimates-with-headers.tmp
+
+cat <(printf "domain\tphylum\tclass\torder\tfamily\\tgenus\tspecies\n") gtdb-taxonomies.tmp \
+    > gtdb-taxonomies-with-headers.tmp
+
+paste assembly-summaries_GLmetagenomics.tsv \
+checkm-estimates-with-headers.tmp \
+gtdb-taxonomies-with-headers.tmp \
+    > MAGs-overview.tmp
+
+# Ordering by taxonomy
+head -n 1 MAGs-overview.tmp > MAGs-overview-header.tmp
+
+tail -n +2 MAGs-overview.tmp | sort -t \$'\t' -k 14,20 > MAGs-overview-sorted.tmp
+
+cat MAGs-overview-header.tmp MAGs-overview-sorted.tmp \
+    > MAGs-overview_GLmetagenomics.tsv
+
+```
+
+**Input data:**
+
+* assembly-summaries_GLmetagenomics.tsv (table of assembly summary statistics from [step 5b](#5b-summarizing-assemblies))
+* MAGs/\*.fasta (directory holding high-quality MAGs from [step 14c](#14c-filtering-mags))
+* checkm-MAGs-overview.tsv (tab-delimited file with quality estimates per MAG from [step 14c](#14c-filtering-mags))
+* gtdbtk-output-dir/gtdbtk.\*.summary.tsv (directory of files with assigned taxonomy and info from [step 14d](#14d-mag-taxonomic-classification))
+
+**Output data:**
+
+* **MAGs-overview_GLmetagenomics.tsv** (a tab-delimited overview of all recovered MAGs)
+
 
 <br>
 
@@ -907,7 +993,7 @@ gtdbtk classify_wf --genome_dir MAGs/ -x fa --out_dir gtdbtk-output-dir  --skip_
 ### 15. Generating MAG-level functional summary overview
 
 #### 15a. Getting KO annotations per MAG
-This utilizes the helper script [`parse-MAG-annots.py`](../Workflow_Documentation/SW_MGIllumina/workflow_code/scripts/parse-MAG-annots.py).
+This utilizes the helper script [`parse-MAG-annots.py`](../Workflow_Documentation/NF_MGIllumina/workflow_code/bin/parse-MAG-annots.py) 
 
 ```bash
 for file in $( ls MAGs/*.fasta )
@@ -929,7 +1015,7 @@ done
 
 **Parameter Definitions:**  
 
-*	`-i` – specifies the input sample gene-coverage-annotation-and-tax.tsv file generated in step 11 above
+*	`-i` – specifies the input sample gene-coverage-annotation-and-tax.tsv file generated in step 11
 
 *  `-w` – specifies the appropriate temporary file holding all the contigs in the current MAG
 
@@ -939,7 +1025,8 @@ done
 
 **Input data:**
 
-* \*-gene-coverage-annotation-and-tax.tsv (sample gene-coverage-annotation-and-tax.tsv file generated in step 11 above)
+* \*-gene-coverage-annotation-and-tax.tsv (sample gene-coverage-annotation-and-tax.tsv file generated in [step 11](#11-combining-gene-level-coverage-taxonomy-and-functional-annotations-into-one-table-for-each-sample))
+* MAGs/\*.fasta (directory holding high-quality MAGs from [step 14c](#14c-filtering-mags))
 
 **Output data:**
 
@@ -956,13 +1043,13 @@ KEGG-decoder -v interactive -i MAG-level-KO-annotations_GLmetagenomics.tsv -o MA
 
 *  `-v interactive` – specifies to create an interactive html output
  
-*	`-i` – specifies the input MAG-level-KO-annotations_GLmetagenomics.tsv file generated in step 15a above
+*	`-i` – specifies the input MAG-level-KO-annotations_GLmetagenomics.tsv file generated in [step 15a](#15a-getting-ko-annotations-per-mag)
 
 *	`-o` – specifies the output table
 
 **Input data:**
 
-* MAG-level-KO-annotations_GLmetagenomics.tsv (tab-delimited table holding MAGs and their KO annotations, generated in step 15a above)
+* MAG-level-KO-annotations_GLmetagenomics.tsv (tab-delimited table holding MAGs and their KO annotations, generated in [step 15a](#15a-getting-ko-annotations-per-mag))
 
 **Output data:**
 
@@ -971,7 +1058,6 @@ KEGG-decoder -v interactive -i MAG-level-KO-annotations_GLmetagenomics.tsv -o MA
 * **MAG-KEGG-Decoder-out_GLmetagenomics.html** (interactive heatmap html file of the above output table)
 
 <br>
-
 ---
 
 ## Read-based processing
@@ -1016,7 +1102,7 @@ humann --input sample-1-combined.fastq.gz --output sample-1-humann3-out-dir --th
   # they need to be in their own directories
 mkdir genefamily-results/ pathabundance-results/ pathcoverage-results/
 
-  # copying results from previous running humann3 step (14a) to get them all together in their own directories (as is needed)
+  # copying results from previous running humann3 step (16a) to get them all together in their own directories (as is needed)
 cp *-humann3-out-dir/*genefamilies.tsv genefamily-results/
 cp *-humann3-out-dir/*abundance.tsv pathabundance-results/
 cp *-humann3-out-dir/*coverage.tsv pathcoverage-results/
@@ -1105,14 +1191,14 @@ merge_metaphlan_tables.py *-humann3-out-dir/*_humann_temp/*_metaphlan_bugs_list.
 
 **Parameter Definitions:**  
 
-*	input metaphlan tables are provided as position arguments (produced during humann3 run above, step 14a)
+*	input metaphlan tables are provided as position arguments (produced during humann3 run in [step 16a](#16a-running-humann-which-also-runs-metaphlan)
 
 *  `>` – output is redirected from stdout to a file
 
 
 **Input data:**
 
-* *fastq.gz (filtered/trimmed reads from step 2, forward and reverse reads concatenated if paired-end)
+* *fastq.gz (filtered/trimmed reads from [step 2](#2-quality-filteringtrimming), forward and reverse reads concatenated if paired-end)
 
 **Output data:**
 
