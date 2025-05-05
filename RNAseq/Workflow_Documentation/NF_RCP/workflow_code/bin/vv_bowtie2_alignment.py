@@ -712,6 +712,7 @@ def validate_unmapped_fastq(outdir, samples, paired_end, log_path, max_lines=200
     """Validate unmapped FASTQ files from bowtie2 alignment."""
     align_dir = os.path.join(outdir, "02-Bowtie2_Alignment")
     invalid_files = []
+    empty_files = []
     all_files = []
     is_paired = paired_end[0]
 
@@ -732,7 +733,6 @@ def validate_unmapped_fastq(outdir, samples, paired_end, log_path, max_lines=200
             if os.path.exists(file_path):
                 all_files.append(file_path)
                 print(f"Validating unmapped FASTQ: {file_path}")
-                
                 try:
                     # Check GZIP integrity
                     result = subprocess.run(["gzip", "-t", file_path], capture_output=True)
@@ -747,11 +747,9 @@ def validate_unmapped_fastq(outdir, samples, paired_end, log_path, max_lines=200
                         line_count = 0
                         line_in_record = 0
                         has_valid_record = False
-                        
                         for line in f:
                             line_count += 1
                             line_in_record = (line_count - 1) % 4
-                            
                             # Check if header line (every 4th line, starting with line 1)
                             if line_in_record == 0:
                                 if not line.startswith('@'):
@@ -759,22 +757,18 @@ def validate_unmapped_fastq(outdir, samples, paired_end, log_path, max_lines=200
                                     print(f"Invalid FASTQ format in {file_path} at line {line_count}")
                                     break
                                 has_valid_record = True
-                            
                             # Stop after max_lines
                             if line_count >= max_lines:
                                 print(f"Reached {max_lines} lines limit for {file_path}")
                                 break
-                        
                         # Check if file is empty or has incomplete records
                         if not has_valid_record:
-                            invalid_files.append(file_path)
-                            print(f"Empty or invalid FASTQ file: {file_path}")
+                            empty_files.append(file_path)
+                            print(f"Empty FASTQ file: {file_path}")
                             continue
-                        
                         if line_count % 4 != 0:
                             invalid_files.append(file_path)
                             print(f"Incomplete FASTQ record in {file_path}")
-                                
                 except Exception as e:
                     invalid_files.append(file_path)
                     print(f"Error validating {file_path}: {str(e)}")
@@ -786,7 +780,16 @@ def validate_unmapped_fastq(outdir, samples, paired_end, log_path, max_lines=200
         log_check_result(log_path, "alignment", "all", "validate_unmapped_fastq", "RED", 
                         f"Invalid format in {len(invalid_files)} of {len(all_files)} files", 
                         "; ".join(invalid_files))
-        return False
+        # log empty files
+
+    if empty_files:
+        print(f"NOTE: The following unmapped FASTQ files are empty (valid, but contain no records):")
+        for file in empty_files:
+            print(f"  - {file}")
+        log_check_result(log_path, "alignment", "all", "validate_unmapped_fastq", "YELLOW", 
+                        f"Empty (but valid) FASTQ in {len(empty_files)} of {len(all_files)} files", 
+                        "; ".join(empty_files))
+        # log valid files
 
     if not all_files:
         print("No unmapped FASTQ files found to validate")
@@ -794,26 +797,31 @@ def validate_unmapped_fastq(outdir, samples, paired_end, log_path, max_lines=200
                         "No unmapped FASTQ files found to validate", "")
         return False
 
-    print(f"All unmapped FASTQ files are valid")
-    log_check_result(log_path, "alignment", "all", "validate_unmapped_fastq", "GREEN", 
-                    "All files valid", f"Validated {len(all_files)} unmapped FASTQ files; Checked for valid FASTQ format and complete records")
-    return True
+    if not invalid_files and not empty_files:
+        print(f"All unmapped FASTQ files are valid")
+        log_check_result(log_path, "alignment", "all", "validate_unmapped_fastq", "GREEN", 
+                        "All files valid", f"Validated {len(all_files)} unmapped FASTQ files; Checked for valid FASTQ format and complete records")
+        return True
 
-def check_mapping_rates(outdir, star_data, log_path):
-    """Check if mapping rates meet expected thresholds."""
-    # ... [existing code] ...
+    # If there were any invalid or empty files, return False (but not HALT)
+    return False
+
+# def check_mapping_rates(outdir, star_data, log_path):
+#     """Check if mapping rates meet expected thresholds."""
     
-    # Define thresholds
-    thresholds = {
-        "total_mapped": [
-            {"code": "YELLOW", "type": "lower", "value": 70},
-            {"code": "RED", "type": "lower", "value": 50}
-        ],
-        "multi_mapped": [
-            {"code": "YELLOW", "type": "lower", "value": 30},
-            {"code": "RED", "type": "lower", "value": 15}
-        ]
-    }
+#     # Not implemented for now; Determine thresholds
+    
+#     # Define thresholds
+#     thresholds = {
+#         "total_mapped": [
+#             {"code": "YELLOW", "type": "lower", "value": 70},
+#             {"code": "RED", "type": "lower", "value": 50}
+#         ],
+#         "multi_mapped": [
+#             {"code": "YELLOW", "type": "lower", "value": 30},
+#             {"code": "RED", "type": "lower", "value": 15}
+#         ]
+#     }
 
 def main():
     """Main function to process runsheet and validate raw reads."""
