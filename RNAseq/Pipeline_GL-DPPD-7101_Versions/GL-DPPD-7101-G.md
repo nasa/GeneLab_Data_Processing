@@ -421,7 +421,7 @@ STAR --twopassMode Basic \
  --outFileNamePrefix /path/to/STAR/output/directory/<sample_id> \
  --outReadsUnmapped Fastx \
  --readFilesIn /path/to/trimmed_forward_reads \
- --genomeLoad LoadAndKeep \
+ --genomeLoad LoadAndRemove \
  /path/to/trimmed_reverse_reads # only needed for PE studies
 
 ```
@@ -450,7 +450,7 @@ STAR --twopassMode Basic \
 - `--outSAMheaderHD` – indicates a header line for the sam/bam file
 - `--outFileNamePrefix` – specifies the path to and prefix for the output file names; for GeneLab the prefix is the sample id
 - `outReadsUnmapped` - specifies how to output unmapped and partially mapped reads (where only one mate of a paired-end read is mapped); the `Fastx` option outputs unmapped reads in separate fasta/fastq files named Unmapped.out.mate1 and Unmapped.out.mate2
-- `--genomeLoad` – controls how the genome index is loaded into memory; the `LoadAndKeep` option loads the genome into shared memory
+- `--genomeLoad` – controls how the genome index is loaded into memory; the `LoadAndRemove` specifies that the genome should be loaded into shared memory and marked for removal once all STAR jobs using it have finished.
 - `--readFilesIn` – path to input read 1 (forward read) and read 2 (reverse read); for paired-end reads, read 1 and read 2 should be separated by a space; for single-end reads only read 1 should be indicated
 
 **Input Data:**

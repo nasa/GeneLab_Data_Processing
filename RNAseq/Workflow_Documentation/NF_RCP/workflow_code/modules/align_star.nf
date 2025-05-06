@@ -39,7 +39,7 @@ process ALIGN_STAR {
     --quantMode TranscriptomeSAM GeneCounts\
     --outFileNamePrefix '${ meta.id }/${ meta.id }_' \
     --outReadsUnmapped Fastx \
-    --genomeLoad LoadAndKeep \
+    --genomeLoad LoadAndRemove \
     --readFilesIn ${ reads } 
 
     echo '"${task.process}":' > versions.yml
