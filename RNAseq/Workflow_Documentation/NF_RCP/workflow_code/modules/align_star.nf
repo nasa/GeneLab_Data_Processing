@@ -18,7 +18,7 @@ process ALIGN_STAR {
   script:
     """
     STAR --twopassMode Basic \
-    --limitBAMsortRAM ${ (task.memory.toBytes() * 0.8).round() } \
+    --limitBAMsortRAM ${task.memory.toBytes() - 100000000} \
     --outFilterType BySJout \
     --outSAMunmapped Within \
     --genomeDir ${ star_index_dir } \
