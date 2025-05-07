@@ -19,10 +19,9 @@ The current GeneLab Illumina metagenomics sequencing data processing pipeline (M
 2. [Download the workflow files](#2-download-the-workflow-files)  
 3. [Fetch Singularity Images](#3-fetch-singularity-images)  
 4. [Run the workflow](#4-run-the-workflow)  
-   4a. [Approach 1: Run jobs in Singularity containers with OSD or GLDS accession as input](#4a-approach-1-run-jobs-in-container-environments-with-osd-or-glds-accession-as-input)  
-   4b. [Approach 2: Run jobs in Singularity containers with a csv file as input](#4b-approach-2-run-jobs-in-container-environments-with-a-csv-file-as-input)  
-   4c. [Approach 3: Run jobs in conda environments and specify the path to one or more existing conda environments](#4c-approach-3-run-jobs-in-conda-environments-and-specify-the-path-to-one-or-more-existing-conda-environments)  
-   4d. [Modify parameters and cpu resources in the Nextflow config file](#4d-modify-parameters-and-cpu-resources-in-the-nextflow-config-file)  
+   4a. [Approach 1: Start with OSD or GLDS accession as input](#4a-approach-1-start-with-an-osd-or-glds-accession-as-input)    
+   4b. [Approach 2: Start with a runsheet csv file as input](#4b-approach-2-start-with-a-runsheet-csv-file-as-input)  
+   4c. [Modify parameters and compute resources in the Nextflow config file](#4c-modify-parameters-and-compute-resources-in-the-nextflow-config-file)
 5. [Workflow outputs](#5-workflow-outputs)  
    5a. [Main outputs](#5a-main-outputs)  
    5b. [Resource logs](#5b-resource-logs)  
@@ -120,7 +119,7 @@ Take care to use the proper number of hyphens for each argument.
 
 <br>
 
-#### 4a. Approach 1: Run jobs in container environments with OSD or GLDS accession as input
+#### 4a. Approach 1: Start with an OSD or GLDS accession as input
 
 ```bash
 nextflow run main.nf -resume -profile singularity --accession OSD-574
@@ -128,20 +127,11 @@ nextflow run main.nf -resume -profile singularity --accession OSD-574
 
 <br>
 
-#### 4b. Approach 2: Run jobs in container environments with a csv file as input
+#### 4b. Approach 2: Start with a runsheet csv file as input
 
 ```bash
 nextflow run main.nf -resume -profile singularity  --input_file PE_file.csv
 ```
-
-<br>
-
-#### 4c. Approach 3: Run jobs in conda environments and specify the path to one or more existing conda environment(s)
-
-```bash
-nextflow run main.nf -resume -profile mamba --input_file SE_file.csv --conda_megahit <path/to/existing/conda/environment>
-```
-> While this example uses a CSV input file, it can also be run using an accession number as in approach 4a.
 
 <br>
 
@@ -155,29 +145,30 @@ nextflow run main.nf -resume -profile mamba --input_file SE_file.csv --conda_meg
    * Software environment profile options (choose one):
       * `singularity` - instructs Nextflow to use Singularity container environments
       * `docker` - instructs Nextflow to use Docker container environments
-      * `mamba` - instructs Nextflow to use conda environments via the mamba package manager
-      * `conda` - instructs Nextflow to use conda environments via the conda package manager
-   * Other option:
+      * `conda` - instructs Nextflow to use conda environments via the conda package manager. By default, Nextflow will create environments at runtime using the yaml files in the [workflow_code/envs](workflow_code/envs/) folder. You can change this behavior by using the `--conda_*` workflow parameters or by editing the [nextflow.config](workflow_code/nextflow.config) file to specify a centralized conda environments directory via the `conda.cacheDir` parameter
+      * `mamba` - instructs Nextflow to use conda environments via the mamba package manager. 
+   * Other option (can be combined with the software environment option above):
       * `slurm` - instructs Nextflow to use the [Slurm cluster management and job scheduling system](https://slurm.schedmd.com/overview.html) to schedule and run the jobs on a Slurm HPC cluster.
 
 * `--accession` – A Genelab / OSD accession number e.g. OSD-574.
-   > *Required only if you would like to pull and process data directly from OSDR*
+   > *Required only if you would like to download and process data directly from OSDR*
 
-* `--input_file` –  A single-end or paired-end input csv file containing assay metadata for each sample, including sample_id, forward, reverse, and/or paired. Please see the [runsheet documentation](./examples/runsheet) in this repository for examples on how to format this file.
-   > *Required only if --accession is not passed as an argument*
+* `--input_file` –  A single-end or paired-end runsheet csv file containing assay metadata for each sample, including sample_id, forward, reverse, and/or paired. Please see the [runsheet documentation](./examples/runsheet) in this repository for examples on how to format this file.
+   > *Required only if `--accession` is not passed as an argument*
 
-* `--conda_megahit` - Path to an existing conda environment for the megahit software. Only used for `-profile mamba`.
-   > See `nextflow run main.nf --help` for additional conda environment options.
+<br> 
 
-> See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details on how to run Nextflow. 
+> See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details on how to run Nextflow.  
+> For additional information on editing the `nextflow.config` file, see [Step 4d](#4d-modify-parameters-and-cpu-resources-in-the-nextflow-config-file) below.   
+
 
 <br>
 
-#### 4d. Modify parameters and cpu resources in the nextflow config file
+#### 4c. Modify parameters and compute resources in the Nextflow config file
 
-Additionally, the parameters and workflow resources can be directly specified in the nextflow.config file. For detailed instructions on how to modify and set parameters in the nextflow.config file, please see the [documentation here](https://www.nextflow.io/docs/latest/config.html).
+Additionally, all parameters and workflow resources can be directly specified in the [nextflow.config](./workflow_code/nextflow.config) file. For detailed instructions on how to modify and set parameters in the config file, please see the [documentation here](https://www.nextflow.io/docs/latest/config.html).
 
-Once you've downloaded the workflow template, you can modify the parameters in the `params` scope and cpus/memory requirements in the `process` scope in your downloaded version of the [nextflow.config](workflow_code/nextflow.config) file as needed in order to match your dataset and system setup. Additionally, if necessary, you'll need to modify each variable in the [nextflow.config](workflow_code/nextflow.config) file to be consistent with the study you want to process and the machine you're using.
+Once you've downloaded the workflow template, you can modify the parameters in the `params` scope and cpus/memory requirements in the `process` scope in your downloaded version of the [nextflow.config](workflow_code/nextflow.config) file as needed in order to match your dataset and system setup. Additionally, if necessary, you can modify each variable in the [nextflow.config](workflow_code/nextflow.config) file to be consistent with the study you want to process and the computer you're using for processing.
 
 <br>
 
