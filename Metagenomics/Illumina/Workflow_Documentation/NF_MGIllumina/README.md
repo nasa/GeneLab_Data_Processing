@@ -4,7 +4,7 @@
 
 ### Implementation Tools
 
-The current GeneLab Illumina metagenomics sequencing data processing pipeline (MGIllumina-A), [GL-DPPD-7107-A.md](../../Pipeline_GL-DPPD-7107_Versions/GL-DPPD-7107-A.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) containers, [docker](https://docs.docker.com/get-started/) containers, or [conda](https://docs.conda.io/en/latest/) environments to install/run all tools. This workflow is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow. 
+The current GeneLab Illumina metagenomics sequencing data processing pipeline (MGIllumina-A), [GL-DPPD-7107-A.md](../../Pipeline_GL-DPPD-7107_Versions/GL-DPPD-7107-A.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) containers, [Docker](https://docs.docker.com/get-started/) containers, or [conda](https://docs.conda.io/en/latest/) environments to install/run all tools. This workflow is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow. 
 
 > **Note on reference databases**  
 > Many reference databases are relied upon throughout this workflow. They will be installed and setup automatically the first time the workflow is run. All together, after installed and unpacked, they will take up about about 340 GB of storage, but they may also require up to 500GB during installation and initial un-packing, so be sure there is enough room on your system before running the workflow.
@@ -13,24 +13,19 @@ The current GeneLab Illumina metagenomics sequencing data processing pipeline (M
 
 ## Utilizing the Workflow
 
-1. [Installing Nextflow, Singularity, and conda](#1-install-nextflow-and-singularity)  
+1. [Installing Nextflow, Singularity, and conda](#1-installing-nextflow-singularity-and-conda)  
    1a. [Install Nextflow and conda](#1a-install-nextflow-and-conda)  
    1b. [Install Singularity](#1b-install-singularity)  
-
 2. [Download the workflow files](#2-download-the-workflow-files)  
-
 3. [Fetch Singularity Images](#3-fetch-singularity-images)  
-
 4. [Run the workflow](#4-run-the-workflow)  
-   4a. [Approach 1: Run slurm jobs in Singularity containers with OSD or GLDS accession as input](#4a-approach-1-run-slurm-jobs-in-singularity-containers-with-osd-or-glds-accession-as-input)  
-   4b. [Approach 2: Run slurm jobs in Singularity containers with a csv file as input](#4b-approach-2-run-slurm-jobs-in-singularity-containers-with-a-csv-file-as-input)  
-   4c. [Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environments](#4c-approach-3-run-jobs-locally-in-conda-environments-and-specify-the-path-to-one-or-more-existing-conda-environments)  
+   4a. [Approach 1: Run jobs in Singularity containers with OSD or GLDS accession as input](#4a-approach-1-run-jobs-in-container-environments-with-osd-or-glds-accession-as-input)  
+   4b. [Approach 2: Run jobs in Singularity containers with a csv file as input](#4b-approach-2-run-jobs-in-container-environments-with-a-csv-file-as-input)  
+   4c. [Approach 3: Run jobs in conda environments and specify the path to one or more existing conda environments](#4c-approach-3-run-jobs-in-conda-environments-and-specify-the-path-to-one-or-more-existing-conda-environments)  
    4d. [Modify parameters and cpu resources in the Nextflow config file](#4d-modify-parameters-and-cpu-resources-in-the-nextflow-config-file)  
-
 5. [Workflow outputs](#5-workflow-outputs)  
    5a. [Main outputs](#5a-main-outputs)  
    5b. [Resource logs](#5b-resource-logs)  
-
 6. [Post Processing](#6-post-processing)  
 
 <br>
@@ -125,27 +120,28 @@ Take care to use the proper number of hyphens for each argument.
 
 <br>
 
-#### 4a. Approach 1: Run slurm jobs in Singularity containers with OSD or GLDS accession as input
+#### 4a. Approach 1: Run jobs in container environments with OSD or GLDS accession as input
 
 ```bash
-nextflow run main.nf -resume -profile slurm,singularity --accession OSD-574
+nextflow run main.nf -resume -profile singularity --accession OSD-574
 ```
 
 <br>
 
-#### 4b. Approach 2: Run slurm jobs in Singularity containers with a csv file as input
+#### 4b. Approach 2: Run jobs in container environments with a csv file as input
 
 ```bash
-nextflow run main.nf -resume -profile slurm,singularity  --input_file PE_file.csv
+nextflow run main.nf -resume -profile singularity  --input_file PE_file.csv
 ```
 
 <br>
 
-#### 4c. Approach 3: Run jobs locally in conda environments and specify the path to one or more existing conda environment(s)
+#### 4c. Approach 3: Run jobs in conda environments and specify the path to one or more existing conda environment(s)
 
 ```bash
 nextflow run main.nf -resume -profile mamba --input_file SE_file.csv --conda_megahit <path/to/existing/conda/environment>
 ```
+> While this example uses a CSV input file, it can also be run using an accession number as in approach 4a.
 
 <br>
 
@@ -155,8 +151,14 @@ nextflow run main.nf -resume -profile mamba --input_file SE_file.csv --conda_meg
 
 * `-resume` - Resumes workflow execution using previously cached results
 
-* `-profile` – Specifies the configuration profile(s) to load; `singularity` instructs Nextflow to setup and use Singularity for all software called in the workflow. 
-   > Note: Use `docker` to instruct Nextflow to use the Docker container environment instead.
+* `-profile` – Specifies the configuration profile(s) to load (multiple options can be provided as a comma-separated list)
+   * Software environment profile options (choose one):
+      * `singularity` - instructs Nextflow to use Singularity container environments
+      * `docker` - instructs Nextflow to use Docker container environments
+      * `mamba` - instructs Nextflow to use conda environments via the mamba package manager
+      * `conda` - instructs Nextflow to use conda environments via the conda package manager
+   * Other option:
+      * `slurm` - instructs Nextflow to use the [Slurm cluster management and job scheduling system](https://slurm.schedmd.com/overview.html) to schedule and run the jobs on a Slurm HPC cluster.
 
 * `--accession` – A Genelab / OSD accession number e.g. OSD-574.
    > *Required only if you would like to pull and process data directly from OSDR*
@@ -164,7 +166,10 @@ nextflow run main.nf -resume -profile mamba --input_file SE_file.csv --conda_meg
 * `--input_file` –  A single-end or paired-end input csv file containing assay metadata for each sample, including sample_id, forward, reverse, and/or paired. Please see the [runsheet documentation](./examples/runsheet) in this repository for examples on how to format this file.
    > *Required only if --accession is not passed as an argument*
 
-> See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details on how to run Nextflow.
+* `--conda_megahit` - Path to an existing conda environment for the megahit software. Only used for `-profile mamba`.
+   > See `nextflow run main.nf --help` for additional conda environment options.
+
+> See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details on how to run Nextflow. 
 
 <br>
 
@@ -214,7 +219,7 @@ nextflow run post_processing.nf --help
 To generate the post-processing files after running the main processing workflow successfully, modify and set the parameters in [post_processing.config](workflow_code/post_processing.config), then run the following command:
 
 ```bash
-nextflow -C post_processing.config run post_processing.nf -resume -profile slurm,singularity
+nextflow -C post_processing.config run post_processing.nf -resume -profile singularity
 ``` 
 
 The outputs of the post-processing workflow are described below:
