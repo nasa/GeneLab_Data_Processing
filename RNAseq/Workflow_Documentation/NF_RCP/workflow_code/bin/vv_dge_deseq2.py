@@ -65,6 +65,7 @@ def parse_runsheet(runsheet_path):
     try:
         # Try to read the runsheet using pandas
         df = pd.read_csv(runsheet_path)
+        df['Sample Name'] = df['Sample Name'].astype(str)
         
         # Check for required columns
         required_columns = ['Sample Name', 'paired_end']
