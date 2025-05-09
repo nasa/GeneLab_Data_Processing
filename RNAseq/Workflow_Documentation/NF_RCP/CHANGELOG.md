@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Separate results are generated for rRNA-removed DGE analysis, with new output directories:  
     - `04-DESeq2_NormCounts_rRNArm/`  
     - `05-DESeq2_DGE_rRNArm/`
+- Added reference table support for Pseudomonas aeruginosa [#37](https://github.com/nasa/GeneLab_Data_Processing/issues/37)
+- Added V&V check for adapter content removal using FastQC/MultiQC reports from trimmed reads [#42](https://github.com/nasa/GeneLab_Data_Processing/issues/42)
+- Added generation of a CSV file summarizing parsed metrics from tool logs and MultiQC reports [#84](https://github.com/nasa/GeneLab_Data_Processing/issues/84)
 
 ### Changed
 
@@ -55,14 +58,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Bacteria: Ensembl bacteria release 59
 - Added "_GLbulkRNAseq" suffix to output files
 - RSeQC inner_distance minimum value now dynamically set based on read length
-- DESeq2 analysis now handles technical replicates
+- DESeq2 analysis now handles technical replicates [#32](https://github.com/nasa/GeneLab_Data_Processing/issues/32)
 - MultiQC reports replaced with separate data zip and html files
+- Increased default memory allocation for the STAR alignment process to 40GB [#36](https://github.com/nasa/GeneLab_Data_Processing/issues/36)
+
+### Fixed
+
+- DGE validation script (`vv_dge_deseq2.py`) error with all-integer sample names [#112](https://github.com/nasa/GeneLab_Data_Processing/issues/112)
+- The `--accession` parameter (formerly `--gldsAccession`) is now optional for runsheet-based workflows; if omitted, outputs default to the 'results' directory [#35](https://github.com/nasa/GeneLab_Data_Processing/issues/35)
 
 ### Removed
 
 - ERCC-normalized DGE analysis and associated output files
-- GeneLab visualization output tables
-
+- GeneLab visualization output tables [#41](https://github.com/nasa/GeneLab_Data_Processing/issues/41)
 
 ## [1.0.4](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP-F_1.0.4/RNAseq/Workflow_Documentation/NF_RCP-F) - 2024-02-08
 
@@ -76,7 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   
 ### Changed
 
-- TrimGalore! will now use autodetect for adaptor type
+- TrimGalore! will now use autodetect for adaptor type [#20](https://github.com/nasa/GeneLab_Data_Processing/issues/20)
 - V&V migrated from dp_tools version 1.1.8 to 1.3.4 including:
   - Migration of V&V protocol code to this codebase instead of dp_tools
   - Fix for sample wise checks reusing same sample

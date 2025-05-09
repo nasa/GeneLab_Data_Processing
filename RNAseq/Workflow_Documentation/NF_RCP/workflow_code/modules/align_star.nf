@@ -18,7 +18,7 @@ process ALIGN_STAR {
   script:
     """
     STAR --twopassMode Basic \
-    --limitBAMsortRAM ${ (task.memory.toBytes() * 0.8).round() } \
+    --limitBAMsortRAM ${task.memory.toBytes() - 100000000} \
     --outFilterType BySJout \
     --outSAMunmapped Within \
     --genomeDir ${ star_index_dir } \
@@ -39,7 +39,8 @@ process ALIGN_STAR {
     --quantMode TranscriptomeSAM GeneCounts\
     --outFileNamePrefix '${ meta.id }/${ meta.id }_' \
     --outReadsUnmapped Fastx \
-    --readFilesIn ${ reads }
+    --genomeLoad LoadAndRemove \
+    --readFilesIn ${ reads } 
 
     echo '"${task.process}":' > versions.yml
     echo "    star: \$(STAR --version | sed 's/STAR_//')" >> versions.yml

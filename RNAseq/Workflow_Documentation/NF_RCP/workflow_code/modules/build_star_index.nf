@@ -44,7 +44,7 @@ process BUILD_STAR_INDEX {
 
     STAR --runThreadN ${task.cpus} \
     --runMode genomeGenerate \
-    --limitGenomeGenerateRAM ${ (task.memory.toBytes() * 0.8).round() } \
+    --limitGenomeGenerateRAM ${ task.memory.toBytes() - 100000000 } \
     --genomeSAindexNbases \$COMPUTED_GenomeSAindexNbases \
     --genomeDir ${ genome_fasta.baseName }_RL-${ max_read_length.toInteger() } \
     --genomeFastaFiles ${ genome_fasta } \

@@ -22,6 +22,7 @@ from packaging import version
 
 CONFIG = {
     "rnaseq": [
+        ["NF_RCP", "https://github.com/nasa/GeneLab_Data_Processing/tree/master/RNAseq"],
         ["Nextflow", "https://github.com/nextflow-io/nextflow"],
         ["dp_tools", "https://github.com/J-81/dp_tools"],
         ["FastQC", "https://www.bioinformatics.babraham.ac.uk/projects/fastqc/"],
@@ -74,11 +75,15 @@ def compare_versions(v1, v2):
         # Fallback for non-standard version strings
         return str(v1) > str(v2)
 
-def main(versions_json_path: Path, output_path: Path, assay: str = 'rnaseq'):
+def main(versions_json_path: Path, output_path: Path, assay: str = 'rnaseq', workflow: str = None, workflow_version: str = None):
     software_urls = {name: url for name, url in CONFIG[assay]}
     known_names = CONFIG[assay]
     
     processed_versions = {}
+    
+    # Add workflow version if provided
+    if workflow and workflow_version:
+        processed_versions[workflow] = workflow_version
     
     with versions_json_path.open() as f:
         data = yaml.safe_load(f)
@@ -155,7 +160,9 @@ if __name__ == "__main__":
     @click.argument('input', type=click.Path(exists=True))
     @click.argument('output', type=click.Path())
     @click.option('--assay', type=click.Choice(['rnaseq']), default='rnaseq')
-    def cli(input, output, assay):
-        main(Path(input), Path(output), assay)
+    @click.option('--workflow', type=str, help='Workflow name')
+    @click.option('--workflow_version', type=str, help='Workflow version')
+    def cli(input, output, assay, workflow, workflow_version):
+        main(Path(input), Path(output), assay, workflow, workflow_version)
 
     cli()

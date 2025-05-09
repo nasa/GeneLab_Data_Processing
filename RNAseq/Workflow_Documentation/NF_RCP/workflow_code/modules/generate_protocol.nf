@@ -10,6 +10,7 @@ process GENERATE_PROTOCOL {
         val(reference_source)
         val(reference_version)
         tuple(path(reference_fasta), path(reference_gtf))
+        path(runsheet)
 
     output:
         path("protocol${params.assay_suffix}.txt")
@@ -33,6 +34,7 @@ process GENERATE_PROTOCOL {
         ${ref_source} \
         ${ref_version} \
         --reference_fasta ${reference_fasta} \
-        --reference_gtf ${reference_gtf}
+        --reference_gtf ${reference_gtf} \
+        --runsheet ${runsheet}
         """
 }

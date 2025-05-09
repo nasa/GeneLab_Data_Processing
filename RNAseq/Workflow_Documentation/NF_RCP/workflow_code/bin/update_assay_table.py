@@ -974,13 +974,33 @@ def add_raw_counts_multiqc_column(df, glds_prefix, assay_suffix, mode=""):
     return df
 
 def add_raw_multiqc_reports_column(df, glds_prefix, assay_suffix):
-    """Add the raw sequence data MultiQC reports column to the dataframe."""
+    """Add the raw sequence data MultiQC reports column to the dataframe.
+    
+    This function will preserve any existing MultiQC reports column locations and replace the existing column with the updated header and value,
+    only adding the column if it doesn't exist.
+    
+    Args:
+        df: The DataFrame to update
+        glds_prefix: The GLDS prefix for filenames
+        assay_suffix: The assay suffix for filenames
+        
+    Returns:
+        The updated DataFrame
+    """
     column_name = "Parameter Value[MultiQC File Names]"
     alternative_names = [
         "Parameter Value[MultiQC Reports]",
         "Parameter Value[Raw MultiQC Reports]",
         "Parameter Value[Raw Data MultiQC Reports]"
     ]
+    
+    # Check if any of the alternative names exist in the dataframe
+    existing_col = None
+    for alt_name in alternative_names:
+        existing_col = find_column_case_insensitive(df, alt_name)
+        if existing_col:
+            print(f"Found existing MultiQC reports column: {existing_col}")
+            break
     
     # Create the multiqc report filenames - both data zip and html
     multiqc_html = f"{glds_prefix}raw_multiqc{assay_suffix}.html"
@@ -989,9 +1009,27 @@ def add_raw_multiqc_reports_column(df, glds_prefix, assay_suffix):
     # Join the files with commas
     combined_files = f"{multiqc_data},{multiqc_html}"
     
-    # Add the column to the dataframe with the same value for all rows
-    df = update_column(df, column_name, combined_files, alternative_names)
+    # If an existing column was found, preserve its location but update header and value
+    if existing_col:
+        print(f"Updating existing MultiQC reports column: {existing_col}")
+        # Get the current column index
+        col_index = df.columns.get_loc(existing_col)
+        # Remove the old column
+        df = df.drop(columns=[existing_col])
+        # Insert the new column at the same location
+        df.insert(col_index, column_name, combined_files)
+        column_changes.append(f"Updated: {existing_col} -> {column_name}")
+    else:
+        # Add the column to the dataframe with the same value for all rows
+        df[column_name] = combined_files
+        column_changes.append(f"Added: {column_name}")
     
+    return df
+
+def add_protocol_ref_column(df):
+    value = "GeneLab RNAseq data processing protocol"
+    df[df.columns.size] = value
+    df.columns.values[-1] = "Protocol REF"
     return df
 
 def add_raw_counts_tables_column(df, glds_prefix, assay_suffix, mode=""):
@@ -1196,13 +1234,18 @@ def add_ercc_analyses_column(df, glds_prefix, assay_suffix):
 
 def clean_comma_space(df):
     """Remove spaces after commas in all string columns of the dataframe."""
-    # Loop through all columns in the dataframe
     for col in df.columns:
-        # Only process string (object) columns
-        if df[col].dtype == 'object':
-            # Replace comma-space with just comma
-            df[col] = df[col].str.replace(", ", ",", regex=False)
-            
+        try:
+            # If there are duplicate columns, df[col] is a DataFrame, not Series
+            if hasattr(df[col], 'dtype') and df[col].dtype == 'object':
+                df[col] = df[col].str.replace(", ", ",", regex=False)
+        except Exception:
+            # If df[col] is a DataFrame (duplicate columns), apply to each
+            for c in range(df.columns.get_loc(col), len(df.columns)):
+                if df.columns[c] == col:
+                    s = df.iloc[:, c]
+                    if s.dtype == 'object':
+                        df.iloc[:, c] = s.str.replace(", ", ",", regex=False)
     print("Removed spaces after commas in all string columns")
     return df
 
@@ -1261,8 +1304,11 @@ def main():
         # Add read depth from MultiQC report (preserve if exists)
         assay_df = add_read_counts(assay_df, args.outdir, args.glds_accession, args.assay_suffix, runsheet_df)
         
-        # Add Raw MultiQC reports column
+        # Add Raw MultiQC reports column (preserve if exists)
         assay_df = add_raw_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
+        
+        # Add Protocol REF column at the end of the raw section
+        assay_df = add_protocol_ref_column(assay_df)
         
         # =====================================================
         # SECTION 2: TRIMMED SEQUENCE DATA
