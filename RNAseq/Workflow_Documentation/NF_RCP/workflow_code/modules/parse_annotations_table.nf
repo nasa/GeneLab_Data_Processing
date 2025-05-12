@@ -1,12 +1,3 @@
-def colorCodes = [
-    c_line: "┅" * 70,
-    c_back_bright_red: "\u001b[41;1m",
-    c_bright_green: "\u001b[32;1m",
-    c_blue: "\033[0;34m",
-    c_yellow: "\u001b[33;1m",
-    c_reset: "\033[0m"
-]
-
 process PARSE_ANNOTATIONS_TABLE {
   // Extracts data from this kind of table: 
   // https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv
@@ -23,6 +14,15 @@ process PARSE_ANNOTATIONS_TABLE {
     val(reference_version), emit: reference_version
   
   exec:
+    def colorCodes = [
+        c_line: "┅" * 70,
+        c_back_bright_red: "\u001b[41;1m",
+        c_bright_green: "\u001b[32;1m",
+        c_blue: "\033[0;34m",
+        c_yellow: "\u001b[33;1m",
+        c_reset: "\033[0m"
+    ]
+    
     def organisms = [:]
     println "${colorCodes.c_yellow}Fetching table from ${annotations_csv_url_string}${colorCodes.c_reset}"
     
