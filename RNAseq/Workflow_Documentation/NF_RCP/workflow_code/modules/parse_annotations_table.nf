@@ -13,7 +13,7 @@ process PARSE_ANNOTATIONS_TABLE {
     val(reference_source), emit: reference_source
     val(reference_version), emit: reference_version
   
-  exec:
+  script:
     def colorCodes = [
         c_line: "┅" * 70,
         c_back_bright_red: "\u001b[41;1m",
