@@ -650,15 +650,15 @@ def add_unmapped_reads_column(df, glds_prefix, runsheet_df=None, mode=""):
         if mode == "microbes":
             # Microbes mode (Bowtie2)
             if is_paired:
-                values = [f"{glds_prefix}sample{i+1}.unmapped.fastq.1.gz,{glds_prefix}sample{i+1}.unmapped.fastq.2.gz" for i in range(len(df))]
+                values = [f"{glds_prefix}sample{i+1}_R1_unmapped.fastq.gz,{glds_prefix}sample{i+1}_R2_unmapped.fastq.gz" for i in range(len(df))]
             else:
-                values = [f"{glds_prefix}sample{i+1}.unmapped.fastq.gz" for i in range(len(df))]
+                values = [f"{glds_prefix}sample{i+1}_R1_unmapped.fastq.gz" for i in range(len(df))]
         else:
             # Default mode (STAR)
             if is_paired:
-                values = [f"{glds_prefix}sample{i+1}_Unmapped.out.mate1,{glds_prefix}sample{i+1}_Unmapped.out.mate2" for i in range(len(df))]
+                values = [f"{glds_prefix}sample{i+1}_R1_unmapped.fastq.gz,{glds_prefix}sample{i+1}_R2_unmapped.fastq.gz" for i in range(len(df))]
             else:
-                values = [f"{glds_prefix}sample{i+1}_Unmapped.out.mate1" for i in range(len(df))]
+                values = [f"{glds_prefix}sample{i+1}_R1_unmapped.fastq.gz" for i in range(len(df))]
     else:
         # Get sample names from assay table
         assay_sample_names = df[sample_col].tolist()
@@ -684,18 +684,18 @@ def add_unmapped_reads_column(df, glds_prefix, runsheet_df=None, mode=""):
                 # Microbes mode (Bowtie2)
                 if is_paired:
                     # For paired-end data, create entries with both .1 and .2 files
-                    values.append(f"{glds_prefix}{sample}.unmapped.fastq.1.gz,{glds_prefix}{sample}.unmapped.fastq.2.gz")
+                    values.append(f"{glds_prefix}{sample}_R1_unmapped.fastq.gz,{glds_prefix}{sample}_R2_unmapped.fastq.gz")
                 else:
                     # For single-end data
-                    values.append(f"{glds_prefix}{sample}.unmapped.fastq.gz")
+                    values.append(f"{glds_prefix}{sample}_R1_unmapped.fastq.gz")
             else:
                 # Default mode (STAR)
                 if is_paired:
                     # For paired-end data with STAR
-                    values.append(f"{glds_prefix}{sample}_Unmapped.out.mate1,{glds_prefix}{sample}_Unmapped.out.mate2")
+                    values.append(f"{glds_prefix}{sample}_R1_unmapped.fastq.gz,{glds_prefix}{sample}_R2_unmapped.fastq.gz")
                 else:
                     # For single-end data with STAR
-                    values.append(f"{glds_prefix}{sample}_Unmapped.out.mate1")
+                    values.append(f"{glds_prefix}{sample}_R1_unmapped.fastq.gz")
     
     # Add the column to the dataframe
     df = update_column(df, column_name, values, alternative_names)

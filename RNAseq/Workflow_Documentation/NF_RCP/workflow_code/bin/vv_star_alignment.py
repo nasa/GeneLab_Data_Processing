@@ -154,11 +154,11 @@ def check_star_output_existence(outdir, samples, paired_end, log_path, assay_suf
     # Add mate-specific files if paired-end
     if paired_end:
         expected_patterns.extend([
-            "{sample}/{sample}_Unmapped.out.mate1", 
-            "{sample}/{sample}_Unmapped.out.mate2"
+            "{sample}/{sample}_R1_unmapped.fastq.gz", 
+            "{sample}/{sample}_R2_unmapped.fastq.gz"
         ])
     else:
-        expected_patterns.append("{sample}/{sample}_Unmapped.out.mate1")
+        expected_patterns.append("{sample}/{sample}_R1_unmapped.fastq.gz")
     
     # Dataset-level files (directly in the alignment directory)
     dataset_files = [

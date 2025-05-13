@@ -327,6 +327,11 @@ bowtie2 -x /path/to/bowtie2/index \
  # --un-gz <sample_id>.unmapped.fastq.gz \     # For single-end data
  -S /path/to/bowtie2/output/directory/<sample_id>.sam \
  2> /path/to/bowtie2/output/directory/<sample_id>.bowtie2.log
+
+# Rename unmapped reads
+mv <sample_id>.unmapped.fastq.1.gz <sample_id>_R1_unmapped.fastq.gz  # For paired-end data
+mv <sample_id>.unmapped.fastq.2.gz <sample_id>_R2_unmapped.fastq.gz  # For paired-end data
+# mv <sample_id>.unmapped.fastq.gz <sample_id>_R1_unmapped.fastq.gz  # For single-end data
 ```
 
 **Parameter Definitions:**
@@ -352,9 +357,7 @@ bowtie2 -x /path/to/bowtie2/index \
 
 - *\.sam (alignments in SAM format)
 - **\*.bowtie2.log** (log file containing alignment statistics)
-- Unmapped reads (unmapped reads in FASTQ format)
-    - **\*.unmapped.fastq.gz** (single-end)
-    -  **\*.unmapped.fastq.1.gz, .unmapped.fastq.2.gz** (paired-end)
+- **\*unmapped.fastq.gz** (unmapped and partially mapped reads)
 
 <br>
 

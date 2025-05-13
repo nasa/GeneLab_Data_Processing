@@ -12,7 +12,7 @@ process ALIGN_BOWTIE2 {
 
   output:
     tuple val(meta), path("${meta.id}.bam"), emit: bam
-    path("${ meta.id }.unmapped.fastq*"), emit: unmapped_reads, optional: true
+    path("${ meta.id}_R*_unmapped.fastq.gz"), emit: unmapped_reads, optional: true
     path("${ meta.id }.bowtie2.log"), emit: alignment_logs
     path("versions.yml"), emit: versions
 
@@ -32,6 +32,16 @@ process ALIGN_BOWTIE2 {
       ${unaligned} \\
       2> ${meta.id}.bowtie2.log | \\
       samtools view -bS -F 4 --threads ${task.cpus} - > ${meta.id}.bam
+
+    # Rename unmapped reads
+    if [ ${meta.paired_end} == true ]; then
+      # For paired-end data
+      mv "${meta.id}.unmapped.fastq.1.gz" "${meta.id}_R1_unmapped.fastq.gz"
+      mv "${meta.id}.unmapped.fastq.2.gz" "${meta.id}_R2_unmapped.fastq.gz"
+    else
+      # For single-end data
+      mv "${meta.id}.unmapped.fastq.gz" "${meta.id}_R1_unmapped.fastq.gz"
+    fi
 
     echo '"${task.process}":' > versions.yml
     echo "    bowtie2: \$(bowtie2 --version | head -n1 | awk '{print \$3}')" >> versions.yml
