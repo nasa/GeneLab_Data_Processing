@@ -9,7 +9,7 @@ import sys
 import argparse
 import textwrap
 import zipfile
-import re
+import pathlib
 
 
 parser = argparse.ArgumentParser(description = "This program generates the corresponding README file for GeneLab processed amplicon dataset. It is intended to \
@@ -18,8 +18,8 @@ parser = argparse.ArgumentParser(description = "This program generates the corre
 required = parser.add_argument_group('required arguments')
 required.add_argument("-g", "--GLDS-ID", help = 'GLDS ID (e.g. "GLDS-69")', action = "store", required = True)
 parser.add_argument("--output", help = 'Name of output file (default: "README.txt", with appended prefix if one is provided)', default = "README.txt")
-parser.add_argument("--name", help = 'Name of individual who performed the processing (default: "Michael D. Lee")', default = "Michael D. Lee")
-parser.add_argument("--email", help = 'Email address of individual who performed the processing (default: "Mike.Lee@nasa.gov")', default = "Mike.Lee@nasa.gov")
+parser.add_argument("--name", help = 'Name of individual who performed the processing (default: "Olabiyi A. Obayomi")', default = "Olabiyi A. Obayomi")
+parser.add_argument("--email", help = 'Email address of individual who performed the processing (default: "Olabiyi.A.Obayomi@nasa.gov")', default = "Olabiyi.A.Obayomi@nasa.gov")
 parser.add_argument("--protocol_ID", help = 'Protocol document ID followed (default: assay dependent)', default = "GL-DPPD-7104-B")
 parser.add_argument("-p", "--output-prefix", help = "Output additional file prefix if there is one", action = "store", default = "")
 parser.add_argument("--assay_suffix", help = "Genelab assay suffix", action = "store", default = "_GLAmpSeq")
@@ -88,16 +88,16 @@ def report_failure(message, color = "yellow"):
     sys.exit(1)
 
 
-def check_for_file_and_contents(file_path):
+def check_for_file_and_contents(file_path: pathlib.Path):
     """ Used by get_processing_zip_contents function """
 
-    if not os.path.exists(file_path):
+    if not file_path.exists():
         report_failure("The expected file '" + str(file_path) + "' does not exist.")
-    if not os.path.getsize(file_path) > 0:
+    if not file_path.stat().st_size > 0:
         report_failure("The file '" + str(file_path) + "' is empty.")
 
 
-def get_processing_zip_contents(processing_zip_file):
+def get_processing_zip_contents(processing_zip_file: pathlib.Path):
     """ This gets the filenames that are in the processing_info.zip to add them to the readme """
     # Check that the zip file exists and that it is not empty
 
@@ -127,7 +127,7 @@ def write_header(output, GLDS_ID, name, email, protocol_ID):
 
 
 def write_metagenomics_body(output, output_file, assay_suffix, output_prefix, processing_zip_file,
-                        processing_zip_contents, fastqc_dir, raw_reads_dir, filtered_reads_dir,
+                        fastqc_dir, raw_reads_dir, filtered_reads_dir,
                         read_based_dir, assembly_based_dir, assemblies_dir, mapping_dir, genes_dir,
                         annotations_and_tax_dir, bins_dir, MAGs_dir, combined_output_dir):
 
@@ -135,53 +135,53 @@ def write_metagenomics_body(output, output_file, assay_suffix, output_prefix, pr
     output.write("    {:<75} {:>0}".format("- " + str(output_file), "- this file\n\n"))
 
     # fastqc info
-    output.write("    {:<75} {:>0}".format("- " + str(fastqc_dir), "- multiQC summary reports of FastQC runs\n\n"))
+    output.write("    {:<75} {:>0}".format("- " + fastqc_dir.name.replace('_',' ') + os.sep, "- multiQC summary reports of FastQC runs\n\n"))
 
     # raw reads
-    if raw_reads_dir != "":
-        output.write("    {:<75} {:>0}".format("- " + str(raw_reads_dir), "- initial read fastq files\n\n"))
+    if raw_reads_dir.exists():
+        output.write("    {:<75} {:>0}".format("- " + raw_reads_dir.name.replace('_',' ') + os.sep, "- initial read fastq files\n\n"))
 
     # quality-filtered reads
-    output.write("    {:<75} {:>0}".format("- " + str(filtered_reads_dir), "- quality-filtered fastq files\n\n"))
+    output.write("    {:<75} {:>0}".format("- " + filtered_reads_dir.name.replace('_',' ') + os.sep, "- quality-filtered fastq files\n\n"))
 
     # outputs
-    output.write("    {:<75} {:>0}".format("- " + str(assembly_based_dir), "- results generated from assembly-based approach\n\n"))
+    output.write("    {:<75} {:>0}".format("- " + assembly_based_dir.name.replace('_',' ') + os.sep, "- results generated from assembly-based approach\n\n"))
 
     output.write("        {:<71} {:>0}".format(f"- {output_prefix}Assembly-based-processing-overview{assay_suffix}.tsv", "- Assembly-based overview per sample\n\n"))
     
-    output.write("        {:<71} {:>0}".format("- " + str(assemblies_dir), "- per-sample assembly files and info\n"))
+    output.write("        {:<71} {:>0}".format("- " + assemblies_dir.name.replace('_',' ') + os.sep, "- per-sample assembly files and info\n"))
     output.write("            {:<67} {:>0}".format("- *-assembly.fasta", "- fasta files of individual sample assemblies\n"))
     output.write("            {:<67} {:>0}".format(f"- {output_prefix}assembly-summaries{assay_suffix}.tsv", "- table of all assemblies' summary statistics\n"))
     output.write("            {:<67} {:>0}".format(f"- {output_prefix}Failed-assemblies{assay_suffix}.tsv", "- samples that didn't assemble any contigs (if any)\n\n"))
 
-    output.write("        {:<71} {:>0}".format("- " + str(genes_dir), "- per-sample predicted gene files\n"))
+    output.write("        {:<71} {:>0}".format("- " + genes_dir.name.replace('_',' ') + os.sep, "- per-sample predicted gene files\n"))
     output.write("            {:<67} {:>0}".format("- *.faa", "- gene amino-acid sequences\n"))
     output.write("            {:<67} {:>0}".format("- *.fasta", "- gene nucleotide sequences\n"))
     output.write("            {:<67} {:>0}".format("- *.gff", "- predicted genes in general feature format\n\n"))
 
-    output.write("        {:<71} {:>0}".format("- " + str(annotations_and_tax_dir), "- per-sample Kegg Orthology (KO) annotations, taxonomy, and coverages\n"))
+    output.write("        {:<71} {:>0}".format("- " + annotations_and_tax_dir.name.replace('_',' ') + os.sep, "- per-sample Kegg Orthology (KO) annotations, taxonomy, and coverages\n"))
     output.write("            {:<67} {:>0}".format("- *-gene-coverage-annotation-tax.tsv", "- tables with gene coverage, annotation, and taxonomy info\n"))
     output.write("            {:<67} {:>0}".format("- *-contig-coverage-and-tax.tsv", "- tables with contig coverage and taxonomy info\n\n"))
 
-    output.write("        {:<71} {:>0}".format("- " + str(mapping_dir), "- per-sample bam, coverage, and mapping info files\n"))
+    output.write("        {:<71} {:>0}".format("- " + mapping_dir.name.replace('_',' ') + os.sep, "- per-sample bam, coverage, and mapping info files\n"))
     output.write("            {:<67} {:>0}".format("- *.bam", "- bam files\n"))
     output.write("            {:<67} {:>0}".format("- *.tsv", "- coverage files used for metabat2 binning\n"))
     output.write("            {:<67} {:>0}".format("- *.txt", "- stdout from bowtie2 mapping\n\n"))
 
-    if os.path.exists(bins_dir):
-        output.write("        {:<71} {:>0}".format("- " + str(bins_dir), "- genomic bins recovered (if any)\n"))
+    if bins_dir.exists():
+        output.write("        {:<71} {:>0}".format("- " + bins_dir.name.replace('_',' ') + os.sep, "- genomic bins recovered (if any)\n"))
         output.write("            {:<67} {:>0}".format("- *.fasta", "- fasta files of bins recovered\n"))
         output.write("            {:<67} {:>0}".format(f"- {output_prefix}bins-overview{assay_suffix}.tsv", "- summary stats of bins recovered\n\n"))
 
-    if os.path.exists(MAGs_dir):
-        output.write("        {:<71} {:>0}".format("- " + str(MAGs_dir), "- high-quality Metagenome-Assembled Genomes recovered (if any; > 90% est. comp., < 10% est. redundancy)\n"))
+    if MAGs_dir.exists():
+        output.write("        {:<71} {:>0}".format("- " + MAGs_dir.name.replace('_',' ') + os.sep, "- high-quality Metagenome-Assembled Genomes recovered (if any; > 90% est. comp., < 10% est. redundancy)\n"))
         output.write("            {:<67} {:>0}".format("- *.fasta", "- fasta files of MAGs\n"))
         output.write("            {:<67} {:>0}".format(f"- {output_prefix}MAGs-overview{assay_suffix}.tsv", "- summary stats of MAGs including GTDB taxonomy\n"))
         output.write("            {:<67} {:>0}".format(f"- {output_prefix}MAG-level-KO-annotations{assay_suffix}.tsv", "- KO functional annotations associated with each MAG\n"))
         output.write("            {:<67} {:>0}".format(f"- {output_prefix}MAG-KEGG-Decoder*", "- KEGG-Decoder summaries of MAG functional annotations\n\n"))
 
 
-    output.write("        {:<71} {:>0}".format("- " + str(combined_output_dir), "- summary outputs with all samples combined\n"))
+    output.write("        {:<71} {:>0}".format("- " + combined_output_dir.name.replace('_',' ') + os.sep, "- summary outputs with all samples combined\n"))
     output.write("            {:<67} {:>0}".format(f"- {output_prefix}Combined-gene-level-KO-function-coverages{assay_suffix}.tsv", "- table of combined KO function coverages\n"))
     output.write("            {:<67} {:>0}".format(f"- {output_prefix}Combined-gene-level-KO-function-coverages-CPM{assay_suffix}.tsv", "- table of combined KO function coverages, normalized to coverage per million\n"))
     output.write("            {:<67} {:>0}".format(f"- {output_prefix}Combined-gene-level-taxonomy-coverages{assay_suffix}.tsv", "- table of combined, gene-level taxonomy coverages\n"))
@@ -189,7 +189,7 @@ def write_metagenomics_body(output, output_file, assay_suffix, output_prefix, pr
     output.write("            {:<67} {:>0}".format(f"- {output_prefix}Combined-contig-level-taxonomy-coverages{assay_suffix}.tsv", "- table of combined, contig-level taxonomy coverages\n"))
     output.write("            {:<67} {:>0}".format(f"- {output_prefix}Combined-contig-level-taxonomy-coverages-CPM{assay_suffix}.tsv", "- table of combined, contig-level taxonomy coverages, normalized to coverage per million\n\n"))
 
-    output.write("    {:<75} {:>0}".format("- " + str(read_based_dir), "- results generated from read-based approach\n"))
+    output.write("    {:<75} {:>0}".format("- " + read_based_dir.name.replace('_',' ') + os.sep, "- results generated from read-based approach\n"))
     output.write("        {:<71} {:>0}".format(f"- {output_prefix}Gene-families{assay_suffix}.tsv", "- gene-family abundances\n"))
     output.write("        {:<71} {:>0}".format(f"- {output_prefix}Gene-families-grouped-by-taxa{assay_suffix}.tsv", "- gene-family abundances grouped by taxa\n"))
     output.write("        {:<71} {:>0}".format(f"- {output_prefix}Gene-families-cpm{assay_suffix}.tsv", "- gene-family abundances normalized to copies-per-million\n"))
@@ -202,26 +202,26 @@ def write_metagenomics_body(output, output_file, assay_suffix, output_prefix, pr
     output.write("        {:<71} {:>0}".format(f"- {output_prefix}Metaphlan-taxonomy{assay_suffix}.tsv", "- metaphlan estimated taxonomic relative abundances\n\n"))
 
     # Processing info
-    output.write("    {:<75} {:>0}".format("- " + str(processing_zip_file), "- zip archive holding info related to processing\n"))
-    for item in processing_zip_contents:
+    output.write("    {:<75} {:>0}".format("- " + processing_zip_file.name, "- zip archive holding info related to processing\n"))
+    # for item in processing_zip_contents:
 
-        num_levels = item.count("/")
+    #     num_levels = item.count("/")
 
-        if num_levels > 1 and not item.endswith("/"):
-            out_item = re.sub(r'^.*/', '', str(item))
-        elif num_levels == 1 and not item.endswith("/"):
-            out_item = re.sub(r'^.*/', '', str(item))
-        elif num_levels > 1:
-            out_item = re.sub(r'^[^/]*/', '', str(item))
-        else:
-            out_item = str(item)
+    #     if num_levels > 1 and not item.endswith("/"):
+    #         out_item = re.sub(r'^.*/', '', str(item))
+    #     elif num_levels == 1 and not item.endswith("/"):
+    #         out_item = re.sub(r'^.*/', '', str(item))
+    #     elif num_levels > 1:
+    #         out_item = re.sub(r'^[^/]*/', '', str(item))
+    #     else:
+    #         out_item = str(item)
 
-        if item.endswith('/'):
-            num_levels -= 1
+    #     if item.endswith('/'):
+    #         num_levels -= 1
 
-        num_spaces = num_levels * 4
+    #     num_spaces = num_levels * 4
 
-        output.write("        " + " " * num_spaces + "- " + out_item + "\n")
+    #     output.write("        " + " " * num_spaces + "- " + out_item + "\n")
 
     output.write("\n")
 
@@ -234,21 +234,24 @@ def main():
     output_prefix = str(args.output_prefix)
     assay_suffix = str(args.assay_suffix)
     # Directories
-    raw_reads_dir = str(args.raw_reads_dir)
-    fastqc_dir = str(args.fastqc_dir)
-    filtered_reads_dir = str(args.filtered_reads_dir)
-    read_based_dir =  str(args.read_based_dir) 
-    assembly_based_dir = str(args.assembly_based_dir)
-    assemblies_dir = str(args.assemblies_dir)
-    genes_dir = str(args.genes_dir)
-    annotations_and_tax_dir = str(args.annotations_and_tax_dir)
-    mapping_dir = str(args.mapping_dir)
-    bins_dir = str(args.bins_dir)
-    MAGs_dir = str(args.MAGs_dir)
-    combined_output_dir = str(args.combined_output_dir)
+    if str(args.raw_reads_dir) != "":
+        raw_reads_dir = pathlib.Path(str(args.raw_reads_dir))
+    else:
+        raw_reads_dir = pathlib.Path(str(None))
+    fastqc_dir = pathlib.Path(args.fastqc_dir)
+    filtered_reads_dir = pathlib.Path(args.filtered_reads_dir)
+    read_based_dir =  pathlib.Path(args.read_based_dir) 
+    assembly_based_dir = pathlib.Path(args.assembly_based_dir)
+    assemblies_dir = pathlib.Path(args.assemblies_dir)
+    genes_dir = pathlib.Path(args.genes_dir)
+    annotations_and_tax_dir = pathlib.Path(args.annotations_and_tax_dir)
+    mapping_dir = pathlib.Path(args.mapping_dir)
+    bins_dir = pathlib.Path(args.bins_dir)
+    MAGs_dir = pathlib.Path(args.MAGs_dir)
+    combined_output_dir = pathlib.Path(args.combined_output_dir)
     # Files
-    processing_zip_file = str(args.processing_zip_file)
-    output_file = str(args.output)
+    processing_zip_file = pathlib.Path(args.processing_zip_file)
+    output_file = pathlib.Path(args.output)
     
     processing_zip_contents = get_processing_zip_contents(processing_zip_file)
 
@@ -257,7 +260,7 @@ def main():
         write_header(output, args.GLDS_ID, args.name, args.email, args.protocol_ID)
         
         write_metagenomics_body(output, output_file, assay_suffix, output_prefix, processing_zip_file,
-                        processing_zip_contents, fastqc_dir, raw_reads_dir, filtered_reads_dir,
+                        fastqc_dir, raw_reads_dir, filtered_reads_dir,
                         read_based_dir, assembly_based_dir, assemblies_dir, mapping_dir, genes_dir,
                         annotations_and_tax_dir, bins_dir, MAGs_dir, combined_output_dir)
 

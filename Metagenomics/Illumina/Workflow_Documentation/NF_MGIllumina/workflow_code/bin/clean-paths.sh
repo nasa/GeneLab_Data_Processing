@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-# only built for use on N288 cluster
+# only built for use on GeneLab cluster
 
 # example usage: bash clean-paths.sh <input-file> <workflow-dir>
 
@@ -29,9 +29,10 @@ elif [ `awk 'NR==1{print}' ${FILE} | grep -c forward` -gt 0 ]; then
      awk 'BEGIN{FS=OFS=","} NR==1{print} NR>1{split($2, f, "/"); print $1,f[length(f)],$3}' ${FILE} > temp && mv temp ${FILE}
 
 fi
- 
-sed -E 's|.*/GLDS_Datasets/(.+)|\1|g' ${FILE} \
+
+sed -E 's|/[^[:space:]():]*/GLDS_Datasets(/.+)|\1|g' ${FILE} \
     | sed -E 's|.+/miniconda.+/envs/[^/]*/||g' \
-    | sed -E 's|/[^ ]*/GLDS-|GLDS-|g' \
+    | sed -E 's|/[^[:space:]]*/OSD-|OSD-|g' \
+    | sed -E 's|/[^[:space:]]*/GLDS-|GLDS-|g' \
     | sed -E 's|/[a-z]{6}/[^ ]*|<path-removed-for-security-purposes>|g' \
     | sed -E "s|${ROOT_DIR}||g" > t && mv t  ${FILE}

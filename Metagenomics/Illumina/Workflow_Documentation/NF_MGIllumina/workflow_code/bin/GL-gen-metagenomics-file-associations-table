@@ -367,7 +367,6 @@ def create_association_table(header_colnames, assembly_overview_tab, fastqc, com
 
     # Initialize association table
     association_df       = pd.DataFrame(columns = header_colnames)
-    filtered_reads_count = combined_prefix + f"filtered-read-counts{assay_suffix}.tsv"
     # Create row
     for sample in unique_filename_prefixes:
         if sample_raw_prefix_dict != "":
@@ -377,6 +376,8 @@ def create_association_table(header_colnames, assembly_overview_tab, fastqc, com
                 raw_sample_name = re.sub("_R1_HRremoved$","", sample_raw_prefix_dict[sample])
             else:
                 raw_sample_name = re.sub("_HRremoved$","", sample_raw_prefix_dict[sample])
+        else:
+            raw_sample_name = sample
         # Single-end (Paired-end data where only the forward reads were analyzed)
         if single_ended and R1_used_as_single_ended_data:
             # If only forward read was used, still want to include both foward and reverse read names 
@@ -387,8 +388,7 @@ def create_association_table(header_colnames, assembly_overview_tab, fastqc, com
             if sample_raw_prefix_dict != "":
                 curr_raw_data = [raw_sample_name + raw_R1_suffix, raw_sample_name  + raw_R2_suffix]
 
-            curr_filt_data = [file_prefix + sample + filtered_R1_suffix, 
-                              filtered_reads_count]
+            curr_filt_data = [file_prefix + sample + filtered_R1_suffix]
         # Single-end without reverse reads
         elif single_ended:
             curr_raw_data = [raw_file_prefix + sample + raw_suffix]
@@ -397,8 +397,7 @@ def create_association_table(header_colnames, assembly_overview_tab, fastqc, com
                 curr_raw_data = [raw_sample_name + raw_suffix]
 
 
-            curr_filt_data = [file_prefix + sample + filtered_suffix, 
-                              filtered_reads_count]
+            curr_filt_data = [file_prefix + sample + filtered_suffix]
         # Paired-end
         else:
             curr_raw_data = [raw_file_prefix + sample + raw_R1_suffix,
@@ -408,8 +407,7 @@ def create_association_table(header_colnames, assembly_overview_tab, fastqc, com
                 curr_raw_data = [raw_sample_name + raw_R1_suffix, raw_sample_name  + raw_R2_suffix]
             
             curr_filt_data = [file_prefix + sample + filtered_R1_suffix, 
-                              file_prefix + sample + filtered_R2_suffix, 
-                              filtered_reads_count]
+                              file_prefix + sample + filtered_R2_suffix]
         # Get sample raw read count
         curr_read_count = get_read_count_from_df(sample, read_count_tab, raw_suffix,
                                                  raw_R1_suffix, single_ended, sample_raw_prefix_dict)
@@ -503,12 +501,7 @@ def main():
     raw_reads_dir = str(args.raw_reads_dir)
     filtered_reads_dir = str(args.filtered_reads_dir)
     assembly_based_dir = str(args.assembly_based_dir)
-    assemblies_dir = str(args.assemblies_dir)
-    genes_dir = str(args.genes_dir)
     annotations_and_tax_dir = str(args.annotations_and_tax_dir)
-    mapping_dir = str(args.mapping_dir)
-    bins_dir = str(args.bins_dir)
-    MAGs_dir = str(args.MAGs_dir)
     combined_output_dir = str(args.combined_output_dir)
     read_based_dir = str(args.read_based_dir)
     
@@ -575,14 +568,14 @@ def main():
 
     if os.path.exists(bins_overview_tab):
         bins_overview = [f"{combined_prefix}bins-overview{assay_suffix}.tsv"]
-        bins_dir_files = [file for file in os.listdir(args.bins_dir) if file.endswith(".fasta")]
+        bins_dir_files = [file for file in os.listdir(args.bins_dir) if file.endswith(".zip")]
     else:
         bins_overview = [""]
         bins_dir_files = [""]
 
     if os.path.exists(mags_overview_tab):
         MAGs_overview = [f"{combined_prefix}MAGs-overview{assay_suffix}.tsv"]
-        MAGs_dir_files = [file for file in os.listdir(args.MAGs_dir) if file.endswith(".fasta")]
+        MAGs_dir_files = [file for file in os.listdir(args.MAGs_dir) if file.endswith(".zip")]
     else:
         MAGs_overview = [""]
         MAGs_dir_files = [""]

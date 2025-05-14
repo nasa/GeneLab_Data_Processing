@@ -254,8 +254,8 @@ process GENERATE_MD5SUMS {
     script:
         """
         mkdir processing/ && \\
-        cp -r ${dirs.join(" ")} ${processing_info} ${README} \\
-              processing/
+        cp -a ${processing_info} ${README} processing/ && \\
+        ln -s ${dirs.join(" ")} processing/
 
         # Generate md5sums
         find -L processing/ -type f -exec md5sum '{}' \\; |
