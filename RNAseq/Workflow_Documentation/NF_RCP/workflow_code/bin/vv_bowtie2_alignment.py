@@ -685,7 +685,7 @@ def check_bowtie2_existence(outdir, samples, paired_end, log_path):
                 f"{sample}_R2_unmapped.fastq.gz"
             ])
         else:
-            required_files.append(f"{sample}_R1_unmapped.fastq.gz")
+            required_files.append(f"{sample}_unmapped.fastq.gz")
 
         # Check each required file
         for file_name in required_files:

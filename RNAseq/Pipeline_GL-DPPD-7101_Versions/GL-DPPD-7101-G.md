@@ -422,8 +422,9 @@ STAR --twopassMode Basic \
  --readFilesIn /path/to/trimmed_forward_reads \
  /path/to/trimmed_reverse_reads # only needed for PE studies
 
-mv <sample_id>_Unmapped.out.mate1 <sample_id>_R1_unmapped.fastq
-mv <sample_id>_Unmapped.out.mate2 <sample_id>_R2_unmapped.fastq  # only needed for PE studies
+mv <sample_id>_Unmapped.out.mate1 <sample_id>_R1_unmapped.fastq  # Only needed for PE studies
+mv <sample_id>_Unmapped.out.mate2 <sample_id>_R2_unmapped.fastq  # Only needed for PE studies
+# mv <sample_id>_Unmapped.out.mate1 <sample_id>_unmapped.fastq    # Only needed for SE studies
 gzip *_unmapped.fastq
 ```
 

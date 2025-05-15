@@ -158,7 +158,7 @@ def check_star_output_existence(outdir, samples, paired_end, log_path, assay_suf
             "{sample}/{sample}_R2_unmapped.fastq.gz"
         ])
     else:
-        expected_patterns.append("{sample}/{sample}_R1_unmapped.fastq.gz")
+        expected_patterns.append("{sample}/{sample}_unmapped.fastq.gz")
     
     # Dataset-level files (directly in the alignment directory)
     dataset_files = [

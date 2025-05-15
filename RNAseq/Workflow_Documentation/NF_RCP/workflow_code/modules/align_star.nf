@@ -47,7 +47,7 @@ process ALIGN_STAR {
       mv "${ meta.id }/${ meta.id }_Unmapped.out.mate1" "${ meta.id }/${ meta.id }_R1_unmapped.fastq"
       mv "${ meta.id }/${ meta.id }_Unmapped.out.mate2" "${ meta.id }/${ meta.id }_R2_unmapped.fastq"
     else
-      mv "${ meta.id }/${ meta.id }_Unmapped.out.mate1" "${ meta.id }/${ meta.id }_R1_unmapped.fastq"
+      mv "${ meta.id }/${ meta.id }_Unmapped.out.mate1" "${ meta.id }/${ meta.id }_unmapped.fastq"
     fi
     gzip ${ meta.id }/${ meta.id }_*_unmapped.fastq
 

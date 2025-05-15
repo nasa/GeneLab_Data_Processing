@@ -652,13 +652,13 @@ def add_unmapped_reads_column(df, glds_prefix, runsheet_df=None, mode=""):
             if is_paired:
                 values = [f"{glds_prefix}sample{i+1}_R1_unmapped.fastq.gz,{glds_prefix}sample{i+1}_R2_unmapped.fastq.gz" for i in range(len(df))]
             else:
-                values = [f"{glds_prefix}sample{i+1}_R1_unmapped.fastq.gz" for i in range(len(df))]
+                values = [f"{glds_prefix}sample{i+1}_unmapped.fastq.gz" for i in range(len(df))]
         else:
             # Default mode (STAR)
             if is_paired:
                 values = [f"{glds_prefix}sample{i+1}_R1_unmapped.fastq.gz,{glds_prefix}sample{i+1}_R2_unmapped.fastq.gz" for i in range(len(df))]
             else:
-                values = [f"{glds_prefix}sample{i+1}_R1_unmapped.fastq.gz" for i in range(len(df))]
+                values = [f"{glds_prefix}sample{i+1}_unmapped.fastq.gz" for i in range(len(df))]
     else:
         # Get sample names from assay table
         assay_sample_names = df[sample_col].tolist()

@@ -331,7 +331,7 @@ bowtie2 -x /path/to/bowtie2/index \
 # Rename unmapped reads
 mv <sample_id>.unmapped.fastq.1.gz <sample_id>_R1_unmapped.fastq.gz  # For paired-end data
 mv <sample_id>.unmapped.fastq.2.gz <sample_id>_R2_unmapped.fastq.gz  # For paired-end data
-# mv <sample_id>.unmapped.fastq.gz <sample_id>_R1_unmapped.fastq.gz  # For single-end data
+# mv <sample_id>.unmapped.fastq.gz <sample_id>_unmapped.fastq.gz      # For single-end data
 ```
 
 **Parameter Definitions:**
