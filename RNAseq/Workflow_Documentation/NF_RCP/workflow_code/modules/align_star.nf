@@ -12,7 +12,7 @@ process ALIGN_STAR {
     tuple val(meta), path("${ meta.id }/${ meta.id }_Aligned.sortedByCoord.out.bam"), emit: bam_by_coord
     tuple val(meta), path("${ meta.id }/${ meta.id }_Aligned.toTranscriptome.out.bam"), emit: bam_to_transcriptome
     path("${ meta.id }/${ meta.id }_ReadsPerGene.out.tab"), emit: reads_per_gene
-    path("${ meta.id }/${ meta.id }_*_unmapped.fastq.gz"), emit: unmapped_reads
+    path("${ meta.id }/${ meta.id }_*unmapped.fastq.gz"), emit: unmapped_reads
     path("versions.yml"), emit: versions
 
   script:

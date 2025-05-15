@@ -12,7 +12,7 @@ process ALIGN_BOWTIE2 {
 
   output:
     tuple val(meta), path("${meta.id}.bam"), emit: bam
-    path("${ meta.id}_R*_unmapped.fastq.gz"), emit: unmapped_reads, optional: true
+    path("${ meta.id}_*unmapped.fastq.gz"), emit: unmapped_reads
     path("${ meta.id }.bowtie2.log"), emit: alignment_logs
     path("versions.yml"), emit: versions
 
