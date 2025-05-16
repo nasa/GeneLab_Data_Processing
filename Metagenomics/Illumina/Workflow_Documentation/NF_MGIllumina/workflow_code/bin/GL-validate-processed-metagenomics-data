@@ -26,7 +26,7 @@ parser.add_argument("-p", "--output-prefix", help = "Output additional file pref
 parser.add_argument("-l", "--V_V_guidelines_link", help = "Validation and verification guidelines link", action = "store", 
                     default = "https://genelab-tools.arc.nasa.gov/confluence/pages/viewpage.action?pageId=8225175")
 parser.add_argument("--zip_targets", help = "A comma separated list of target files and/or directories to check in processing_info.zip",
-                     action = "store", default = "Snakefile,config.yaml,envs/,logs/,scripts/,unique-sample-IDs.txt")
+                     action = "store", default="nextflow_processing_info_GLmetagenomics.txt,command.txt,unique-sample-IDs.txt,software_versions.txt,GLfile.csv,Logs/")
 parser.add_argument("--assay_suffix", help = "Genelab assay suffix", action = "store", default = "_GLmetagenomics")
 parser.add_argument("--raw_suffix", help = "Raw reads suffix", action = "store", default ="_HRremoved_raw.fastq.gz")
 parser.add_argument("--raw_R1_suffix", help = "Raw forward reads suffix", action = "store", default = "_R1_HRremoved_raw.fastq.gz")
@@ -104,7 +104,7 @@ def wprint(text):
           subsequent_indent="  ", break_on_hyphens=False))
     
 
-def report_failure(validation_log,  message, color = "yellow", write_log = True):
+def report_failure(validation_log,  message, color = "red", write_log = True):
     print("")
     wprint(color_text(message, color))
     print("\nValidation failed.\n")
@@ -296,12 +296,17 @@ def check_assembly_based_genes_file(validation_log, sample, file_path, failed_as
     Just checks the file isn't empty if it exists
     """
 
-    if os.path.exists(file_path) and sample not in failed_assemblies_list:
+    if sample not in failed_assemblies_list:
+        if os.path.exists(file_path):
 
-        if not os.path.getsize(file_path) > 0:
-
-            report_failure(validation_log, "The expected file '" + str(file_path) + \
-                           "' exists, but appears to be empty when it shouldn't be.")
+            if os.path.getsize(file_path) == 0:
+                return False
+            else:
+                return True
+        else:
+            report_failure(validation_log, "The expected file '" + str(file_path) + "' does not exist.")
+    else:
+        return False
 
 
 def check_assemblies(validation_log, sample_names, failed_assemblies_list,
@@ -335,7 +340,8 @@ def check_genes(validation_log, sample_names, failed_assemblies_list, genes_dir,
     """ A function to find samples predicted genes associated files """
 
     # If any assembly failed, these files won't exist for that assembly 
-    # (they also may not exist if an assembly produced contigs too but not genes were called)
+    # (they also may not exist if an assembly produced contigs too but no genes were found)
+    samples_without_genes = set()
     for sample in sample_names:
 
         if sample not in failed_assemblies_list:
@@ -345,16 +351,20 @@ def check_genes(validation_log, sample_names, failed_assemblies_list, genes_dir,
                 curr_file_path = os.path.join(genes_dir, sample + suffix)
 
                 # Checking that the file is present and not empty
-                check_assembly_based_genes_file(validation_log, sample, curr_file_path,
+                sample_has_genes = check_assembly_based_genes_file(validation_log, sample, curr_file_path,
                                                  failed_assemblies_list, assembly = False)
 
-            # Checking fasta format for those that exist
-            for suffix in gene_fasta_suffixes:
+                # Checking fasta format for those that exist
+                if sample_has_genes:
+                    for suffix in gene_fasta_suffixes:
 
-                curr_fasta_path = os.path.join(genes_dir, sample + suffix)
+                        curr_fasta_path = os.path.join(genes_dir, sample + suffix)
 
-                if os.path.exists(curr_fasta_path) and os.path.getsize(curr_fasta_path) > 0:
-                    check_general_fasta_format(validation_log, curr_fasta_path)
+                        if os.path.exists(curr_fasta_path) and os.path.getsize(curr_fasta_path) > 0:
+                            check_general_fasta_format(validation_log, curr_fasta_path)
+                else:
+                    samples_without_genes.add(sample)
+    return samples_without_genes
 
 
 def check_contig_annotation(validation_log, sample_names, annotations_and_tax_dir, annotations_suffixes):
@@ -540,12 +550,12 @@ def get_read_count_stats(validation_log, prefix, multiqc_zip, multiqc_stats_file
 
     Min, Max, Mean, Median = gen_stats(counts)
 
-
     print(f"\n  {prefix.title()} read count summary:")
     print("    {:<10} {:>0}".format("Min:", Min))
     print("    {:<10} {:>0}".format("Max:", Max))
     print("    {:<10} {:>0}".format("Mean:", Mean))
     print("    {:<10} {:>0}".format("Median:", Median))
+    print("\n")
 
     with open(validation_log, "a") as log:
 
@@ -554,6 +564,7 @@ def get_read_count_stats(validation_log, prefix, multiqc_zip, multiqc_stats_file
         log.write("\n    {:<10} {:>0}".format("Max:", Max))
         log.write("\n    {:<10} {:>0}".format("Mean:", Mean))
         log.write("\n    {:<10} {:>0}".format("Median:", Median))
+        log.write("\n")
 
 
 def main():
@@ -667,6 +678,7 @@ def main():
     raw_multiqc_zip = os.path.join(fastqc_dir, raw_multiqc_zip)
     raw_prefix = "raw"
 
+    append_message_to_log(validation_log, f"  Checking fastqc/multiqc outputs:")
     if not args.skip_raw_multiqc:
         check_multiqc_outputs(validation_log, sample_names, raw_multiqc_zip, 
                               raw_multiqc_stats_file_path, raw_R1_suffix,
@@ -688,12 +700,14 @@ def main():
         append_message_to_log(validation_log, f"    - all expected fastq read files were found in {args.raw_reads_dir}")
 
     # Filtered reads
+    append_message_to_log(validation_log, f"  Checking filtered reads:")
     check_fastq_files(validation_log, sample_names, filtered_reads_dir, 
                       filtered_suffix, filtered_R1_suffix, 
                       filtered_R2_suffix, args.single_ended)
     append_message_to_log(validation_log, f"    - all expected fastq read files were found in {filtered_reads_dir}")
 
     # -------- Read-based approach files checking  --------#
+    append_message_to_log(validation_log, f"  Checking Read-based approach outputs:")
     check_read_based_outputs(validation_log, expected_read_based_outputs, read_based_dir)
     for file in expected_read_based_outputs:
         append_message_to_log(validation_log, f"    - {file} was found in {read_based_dir}")
@@ -701,30 +715,39 @@ def main():
 
     # ------------- Aseembly-based approach files checking  ---------#
     # Get list of samples for which assembly failed
+    append_message_to_log(validation_log, f"  Checking Assembly-based approach outputs:")
     failed_assemblies_list = get_failed_assemblies(failed_assemblies)
 
     # Check assemblies
+    append_message_to_log(validation_log, f"  Checking assemblies:")
     check_assemblies(validation_log, sample_names, failed_assemblies_list,
                      assembly_suffix, assemblies_dir, assembly_summary) 
     mod_assemblies_dir = modify_symbolic_link(assemblies_dir) if os.path.islink(assemblies_dir) else assemblies_dir
     if len(failed_assemblies_list) > 0:
-        append_message_to_log(validation_log, f"    - all samples except {', '.join(failed_assemblies_list)} had assemblies found in {mod_assemblies_dir}")
+        append_message_to_log(validation_log, f"    - the following samples did not generate assemblies in {mod_assemblies_dir}: {', '.join(failed_assemblies_list)}")
+        append_message_to_log(validation_log, f"    - all other samples had assemblies found in {mod_assemblies_dir}")
     else:
         append_message_to_log(validation_log, f"    - all samples had assemblies found in {mod_assemblies_dir}")
     append_message_to_log(validation_log, f"    - {assembly_summary} was found in {mod_assemblies_dir}")
     append_message_to_log(validation_log, f"    - all expected assembly files for  assembly-based analysis were found in the {mod_assemblies_dir} directory")
 
     # Check genes
-    check_genes(validation_log, sample_names, failed_assemblies_list,
-                genes_dir, predicted_gene_file_suffixes, gene_fasta_suffixes)
+    append_message_to_log(validation_log, f"  Checking predicted genes:")
+    failed_genes_set = check_genes(validation_log, sample_names, failed_assemblies_list,
+                                   genes_dir, predicted_gene_file_suffixes, gene_fasta_suffixes)
     mod_genes_dir = modify_symbolic_link(genes_dir) if os.path.islink(genes_dir) else genes_dir
 
     checked_suffixes = predicted_gene_file_suffixes + gene_fasta_suffixes
     for suffix in checked_suffixes:
         append_message_to_log(validation_log, f"    - *{suffix} predicted genes files were found in {mod_genes_dir}")
-    append_message_to_log(validation_log, f"    - all expected predicted genes files for assembly-based analysis were found in the {mod_genes_dir} directory")
+    if len(failed_genes_set) > 0:
+        append_message_to_log(validation_log, f"    - the following samples with valid assemblies had empty predicted genes files in the {mod_genes_dir} directory: {', '.join(failed_genes_set)}")
+        append_message_to_log(validation_log, f"    - all other expected predicted genes files for assembly-based analysis were found in the {mod_genes_dir} directory")
+    else:
+        append_message_to_log(validation_log, f"    - all expected predicted genes files for assembly-based analysis were found in the {mod_genes_dir} directory")
 
      # Check contig annotation
+    append_message_to_log(validation_log, f"  Checking contig annotations:")
     check_contig_annotation(validation_log, sample_names, annotations_and_tax_dir, annotations_suffixes)
     mod_annotations_and_tax_dir = modify_symbolic_link(annotations_and_tax_dir) if os.path.islink(annotations_and_tax_dir) else annotations_and_tax_dir
 
@@ -733,6 +756,7 @@ def main():
     append_message_to_log(validation_log, f"    - all expected annotation files for assembly-based analysis were found in the {mod_annotations_and_tax_dir} directory")
 
     # Check read mapping
+    append_message_to_log(validation_log, f"  Checking read mapping:")
     check_mapping(validation_log, sample_names, mapping_dir, failed_assemblies_list,
                   mapping_dir_suffixes_all_have, mapping_info_suffix)
     mod_mapping_dir = modify_symbolic_link(mapping_dir) if os.path.islink(mapping_dir) else mapping_dir
@@ -742,6 +766,7 @@ def main():
     append_message_to_log(validation_log, f"    - all expected read mapping files for assembly-based analysis were found in the {mod_mapping_dir} directory")
 
     # Combined contigs annotation outputs
+    append_message_to_log(validation_log, f"  Checking combined contig annotations:")
     check_combined_outputs(validation_log, combined_output_dir, expected_assembly_combined_outputs)
     mod_combined_output_dir = modify_symbolic_link(combined_output_dir) if os.path.islink(combined_output_dir) else combined_output_dir
     for file in expected_assembly_combined_outputs:
@@ -749,7 +774,9 @@ def main():
     append_message_to_log(validation_log, f"    - all expected contig annotation summary files for assembly-based analysis were found in the {mod_combined_output_dir} directory")
     
     # Check bins - Only if there were bins recovered
+    append_message_to_log(validation_log, f"  Checking bins:")
     output_files_present = get_files_in_dir(bins_dir)
+    output_fasta_bins = []
     if output_files_present:
         bins_summary = f"{output_prefix}bins-overview{assay_suffix}.tsv"
         output_fasta_bins = [filename for filename in output_files_present if filename.endswith(".fasta")]
@@ -761,6 +788,7 @@ def main():
         append_message_to_log(validation_log, f"    - No bin was recovered for any sample")
 
     # Check MAGS - only if there were MAGs recovered
+    append_message_to_log(validation_log, f"  Checking MAGs:")
     output_files_present = get_files_in_dir(MAGs_dir)
     if output_files_present:
         output_fasta_MAGs = [filename for filename in output_files_present if filename.endswith(".fasta")]
@@ -778,6 +806,7 @@ def main():
     append_message_to_log(validation_log, f"    - all expected files were found in the {assembly_based_dir} directory")
 
     # Check processing info
+    append_message_to_log(validation_log, f"  Checking processing info zip:")
     check_metagenomics_processing_zip(validation_log, sample_names, processing_zip_file, 
                                       expected_zip_contents, expected_log_file_suffixes, logs_dir)
     for file in expected_zip_contents:
