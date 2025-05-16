@@ -367,6 +367,9 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
     
     print(f"Found MultiQC data zip: {multiqc_data_zip}")
     
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
+    
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
         try:
@@ -397,6 +400,8 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
                 
                 fastqc_sections = multiqc_data['report_data_sources']['FastQC']['all_sections']
                 for mqc_sample in fastqc_sections.keys():
+                    # Convert to string to ensure compatibility with numeric sample names
+                    mqc_sample = str(mqc_sample)
                     # For paired-end data, remove _R1 and _R2 suffixes
                     base_sample = mqc_sample.replace("_trimmed_fastqc", "").replace("_fastqc", "")
                     if is_paired:
@@ -444,6 +449,9 @@ def get_trimmed_multiqc_stats(outdir, samples, paired_end, log_path, assay_suffi
         return False
     
     print(f"Extracting stats from MultiQC data: {multiqc_data_zip}")
+    
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -534,6 +542,9 @@ def parse_fastqc(prefix, assay_suffix):
     # Group the samples by base name for paired end data
     sample_groups = {}
     for sample in j['report_general_stats_data'][fastqc_module_index].keys():
+        # Convert sample to string to handle numeric sample names
+        sample = str(sample)
+        
         # Handle various naming patterns
         if ' Read 1' in sample:
             base_name = sample.replace(' Read 1', '')
@@ -608,7 +619,7 @@ def parse_fastqc(prefix, assay_suffix):
     ]:
         if section in j['report_plot_data']:
             for data_item in j['report_plot_data'][section]['datasets'][0]['lines']:
-                sample = data_item['name']
+                sample = str(data_item['name'])  # Convert to string to handle numeric sample names
                 
                 # Determine if it's forward or reverse read
                 read_suffix = '_f'  # Default to forward
@@ -953,6 +964,9 @@ def check_trimming_multiqc_samples(outdir, samples, log_path, assay_suffix="_GLb
     
     print(f"Found Trimmed MultiQC data zip: {multiqc_data_zip}")
     
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
+    
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
         try:
@@ -1043,6 +1057,9 @@ def check_adapters_presence(outdir, samples, paired_end, log_path, threshold=0.0
     
     print(f"Checking adapter presence in trimming report data within MultiQC: {multiqc_data_zip}")
 
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
+    
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
         try:
@@ -1388,8 +1405,8 @@ def main():
     # Parse the runsheet
     runsheet_df = parse_runsheet(args.runsheet)
     
-    # Extract sample names
-    sample_names = runsheet_df['Sample Name'].tolist()
+    # Extract sample names and convert to strings to handle numeric sample names
+    sample_names = [str(sample) for sample in runsheet_df['Sample Name'].tolist()]
     
     # Check consistency of paired_end, has_ERCC, and organism values
     paired_end_values = runsheet_df['paired_end'].unique()

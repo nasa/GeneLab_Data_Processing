@@ -71,8 +71,8 @@ def parse_runsheet(runsheet_path):
             print(f"Error: Runsheet missing required columns: {', '.join(missing_columns)}")
             sys.exit(1)
         
-        # Extract sample names
-        sample_names = df['Sample Name'].tolist()
+        # Extract sample names and convert to strings to handle numeric sample names
+        sample_names = [str(sample) for sample in df['Sample Name'].tolist()]
         
         # Extract metadata - store raw values, handle type conversion when using
         metadata = {
@@ -172,6 +172,9 @@ def check_gene_body_coverage_existence(outdir, samples, log_path):
     check_name = "check_gene_body_coverage_existence"
     print(f"Checking for gene body coverage files...")
     
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
+    
     # Get the expected directory path
     rseqc_dir = os.path.join(outdir, "RSeQC_Analyses", "02_geneBody_coverage")
     
@@ -240,6 +243,9 @@ def check_infer_experiment_existence(outdir, samples, log_path):
     check_name = "check_infer_experiment_existence"
     print(f"Checking for infer experiment files...")
     
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
+    
     # Get the expected directory path
     rseqc_dir = os.path.join(outdir, "RSeQC_Analyses", "03_infer_experiment")
     
@@ -300,6 +306,9 @@ def check_read_distribution_existence(outdir, samples, log_path):
     check_name = "check_read_distribution_files"
     print(f"Checking for read distribution files...")
     
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
+    
     # Get the expected directory path
     rseqc_dir = os.path.join(outdir, "RSeQC_Analyses", "05_read_distribution")
     
@@ -357,6 +366,9 @@ def check_inner_distance_existence(outdir, samples, log_path):
     component = "rseqc"
     check_name = "check_inner_distance_files"
     print(f"Checking for inner distance files...")
+    
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
     
     # Get the expected directory path
     rseqc_dir = os.path.join(outdir, "RSeQC_Analyses", "04_inner_distance")
@@ -427,6 +439,9 @@ def get_genebody_coverage_multiqc_stats(outdir, samples, log_path, assay_suffix=
         return None
     
     print(f"Extracting stats from Gene body coverage MultiQC data: {multiqc_zip}")
+    
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -706,6 +721,9 @@ def get_infer_experiment_multiqc_stats(outdir, samples, log_path, assay_suffix="
         return None
     
     print(f"Extracting stats from infer experiment MultiQC data: {multiqc_zip}")
+    
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -1039,6 +1057,9 @@ def get_inner_distance_multiqc_stats(outdir, samples, log_path, assay_suffix="_G
     check_name = "inner_distance_multiqc_stats"
     print(f"Extracting inner distance stats from MultiQC...")
     
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
+    
     # Get the RSeQC inner distance directory
     inner_dist_dir = os.path.join(outdir, "RSeQC_Analyses", "04_inner_distance")
     
@@ -1094,8 +1115,8 @@ def get_inner_distance_multiqc_stats(outdir, samples, log_path, assay_suffix="_G
                     for dist_data in plot_data:
                         sample_name = dist_data['name']
                         
-                        # Remove any file extension or path from the sample name
-                        sample_name = os.path.basename(sample_name)
+                        # Convert sample name to string to ensure compatibility with numeric sample names
+                        sample_name = str(os.path.basename(sample_name))
                         if '.' in sample_name:
                             sample_name = sample_name.split('.')[0]
                         
@@ -1370,6 +1391,9 @@ def get_read_distribution_multiqc_stats(outdir, samples, log_path, assay_suffix=
     component = "rseqc"
     check_name = "read_distribution_multiqc_stats"
     print(f"Extracting read distribution stats from MultiQC...")
+    
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
     
     # Get the RSeQC read distribution directory
     read_dist_dir = os.path.join(outdir, "RSeQC_Analyses", "05_read_distribution")

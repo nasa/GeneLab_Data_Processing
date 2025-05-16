@@ -143,6 +143,9 @@ def check_rsem_output_existence(outdir, samples, log_path, assay_suffix="_GLbulk
     """Check if all expected RSEM output files exist for each sample."""
     rsem_dir = os.path.join(outdir, '03-RSEM_Counts')
     
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
+    
     # Expected file patterns for each sample in sample-specific subdirectories
     expected_patterns = [
         "{sample}/{sample}.genes.results",
@@ -271,9 +274,11 @@ def parse_rsem(multiqc_data_dir, assay_suffix="_GLbulkRNAseq"):
         
         for sample, count_data in j['report_saved_raw_data']['multiqc_rsem'].items():
             sample_name = sample
-            # Clean up sample name if needed
+            # Clean up sample name if needed and ensure it's a string
             if "/" in sample:
-                sample_name = sample.split("/")[-1]
+                sample_name = str(sample.split("/")[-1])
+            else:
+                sample_name = str(sample)
             
             total_reads = count_data['Unique'] + count_data['Multi'] + count_data['Filtered'] + count_data['Unalignable']
             
@@ -313,6 +318,9 @@ def get_rsem_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
         return False
     
     print(f"Extracting RSEM stats from MultiQC data: {multiqc_zip}")
+    
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -546,6 +554,9 @@ def check_all_samples_in_multiqc(outdir, samples, log_path, assay_suffix="_GLbul
             f"Expected at {multiqc_zip}"
         )
         return False
+    
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
     
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -829,8 +840,8 @@ def main():
     # Parse the runsheet
     runsheet_df = parse_runsheet(args.runsheet)
     
-    # Extract sample names
-    sample_names = runsheet_df['Sample Name'].tolist()
+    # Extract sample names and convert to strings to handle numeric sample names
+    sample_names = [str(sample) for sample in runsheet_df['Sample Name'].tolist()]
     
     # Extract paired_end status
     paired_end = runsheet_df['paired_end'].iloc[0] if len(runsheet_df) > 0 else False

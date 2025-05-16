@@ -41,6 +41,10 @@ def parse_runsheet(runsheet_path):
         # Try to read the runsheet using pandas
         df = pd.read_csv(runsheet_path)
         
+        # Ensure sample names are strings
+        if 'Sample Name' in df.columns:
+            df['Sample Name'] = df['Sample Name'].astype(str)
+        
         # Check for required columns
         required_columns = ['Sample Name', 'paired_end', 'has_ERCC', 'organism']
         missing_columns = [col for col in required_columns if col not in df.columns]
@@ -321,7 +325,7 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
             # Check multiple indicators of paired data:
             # 1. Check unmapped files
             unmapped_dir = os.path.join(outdir, "02-Bowtie2_Alignment")
-            has_paired_files = any(os.path.exists(os.path.join(unmapped_dir, sample, f"{sample}_R2_unmapped.fastq.gz")) 
+            has_paired_files = any(os.path.exists(os.path.join(unmapped_dir, str(sample), f"{sample}_R2_unmapped.fastq.gz")) 
                                  for sample in samples)
             
             # 2. Check stats data for paired indicators
@@ -344,8 +348,10 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
             # Check for missing samples
             missing_samples = []
             for sample in samples:
-                if sample not in multiqc_samples:
-                    missing_samples.append(sample)
+                # Convert sample to string for consistent comparison
+                sample_str = str(sample)
+                if sample_str not in multiqc_samples:
+                    missing_samples.append(sample_str)
             
             if missing_samples:
                 log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
@@ -665,6 +671,9 @@ def check_bowtie2_existence(outdir, samples, paired_end, log_path):
         missing_files.append(multiqc_file)
 
     for sample in samples:
+        # Ensure sample is a string
+        sample = str(sample)
+        
         # Check sample directory
         sample_dir = os.path.join(align_dir, sample)
         if not os.path.exists(sample_dir):
@@ -743,8 +752,8 @@ def main():
     # Parse the runsheet
     runsheet_df = parse_runsheet(args.runsheet)
     
-    # Extract sample names
-    sample_names = runsheet_df['Sample Name'].tolist()
+    # Extract sample names and convert to strings
+    sample_names = [str(sample) for sample in runsheet_df['Sample Name'].tolist()]
     
     # Check consistency of paired_end, has_ERCC, and organism values
     paired_end_values = runsheet_df['paired_end'].unique()

@@ -65,6 +65,8 @@ def parse_runsheet(runsheet_path):
     try:
         # Try to read the runsheet using pandas
         df = pd.read_csv(runsheet_path)
+        # Convert all column names to strings to handle numeric columns
+        df.columns = df.columns.astype(str)
         df['Sample Name'] = df['Sample Name'].astype(str)
         
         # Check for required columns
@@ -337,6 +339,8 @@ def check_sample_table_against_runsheet(outdir, runsheet_path, log_path, assay_s
     try:
         # Data specific preprocess
         df_rs = pd.read_csv(runsheet_path)
+        # Convert all column names to strings to handle numeric columns
+        df_rs.columns = df_rs.columns.astype(str)
         
         # Filter runsheet by stratum if needed
         if stratum_factor and stratum_value:
@@ -359,17 +363,24 @@ def check_sample_table_against_runsheet(outdir, runsheet_path, log_path, assay_s
                                    f"Stratum: {stratum_factor}={filter_value}")
                     return False
         
+        # Ensure Sample Name column is treated as string
+        df_rs['Sample Name'] = df_rs['Sample Name'].astype(str)
         df_rs = df_rs.set_index("Sample Name").sort_index()
+        
+        # Read sample table and convert index to string
         df_sample = pd.read_csv(sample_table_path, index_col=0).sort_index()
-
+        # Convert index to string type to ensure proper comparison
+        df_sample.index = df_sample.index.astype(str)
+        
         # First check if there are any technical replicates in the runsheet
         tech_rep_pattern = "_techrep\\d+$"
-        has_tech_reps = any(re.search(tech_rep_pattern, sample) for sample in df_rs.index)
+        # Convert index to list of strings to ensure regex works properly
+        has_tech_reps = any(re.search(tech_rep_pattern, str(sample)) for sample in df_rs.index)
         
         if has_tech_reps:
             # Function to get base sample name (remove _techrepX if present)
             def get_base_name(sample_name):
-                return re.sub(tech_rep_pattern, "", sample_name)
+                return re.sub(tech_rep_pattern, "", str(sample_name))
             
             # Apply the function to get base sample names
             runsheet_base_names = set(get_base_name(sample) for sample in df_rs.index)
@@ -383,9 +394,13 @@ def check_sample_table_against_runsheet(outdir, runsheet_path, log_path, assay_s
             print(f"Tech replicates detected in runsheet - checking base sample names")
         else:
             # No tech reps detected - use exact sample name matching
+            # Ensure both sets are strings
+            rs_index_set = set(str(idx) for idx in df_rs.index)
+            sample_index_set = set(str(idx) for idx in df_sample.index)
+            
             extra_samples = {
-                "unique_to_runsheet": set(df_rs.index) - set(df_sample.index),
-                "unique_to_sampleTable": set(df_sample.index) - set(df_rs.index),
+                "unique_to_runsheet": rs_index_set - sample_index_set,
+                "unique_to_sampleTable": sample_index_set - rs_index_set,
             }
             
             print(f"No tech replicates detected - checking exact sample names")
@@ -405,7 +420,8 @@ def check_sample_table_against_runsheet(outdir, runsheet_path, log_path, assay_s
                             f"Samples mismatched", f"Mismatched samples: {[f'{entry}:{v}' for entry, v in extra_samples.items() if v]}")
             return False
         else:
-            samples_list = sorted(list(df_sample.index))
+            # Ensure samples list contains strings
+            samples_list = sorted([str(idx) for idx in df_sample.index])
             samples_count = len(samples_list)
             print(f"All {samples_count} samples accounted for based on runsheet")
             
@@ -419,7 +435,9 @@ def check_sample_table_against_runsheet(outdir, runsheet_path, log_path, assay_s
             return True
     
     except Exception as e:
-        print(f"ERROR checking sample table against runsheet: {str(e)}")
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"ERROR checking sample table against runsheet: {str(e)}\n{error_details}")
         log_check_result(log_path, component_name, "all", check_name, "RED", 
                         f"Error checking sample table", f"Error: {str(e)}")
         return False
@@ -463,9 +481,17 @@ def check_sample_table_for_correct_group_assignments(outdir, runsheet_path, log_
     try:
         # Data specific preprocess
         df_sample = pd.read_csv(sample_table_path, index_col=0).sort_index()
+        # Convert all column names to strings to handle numeric columns
+        df_sample.columns = df_sample.columns.astype(str)
+        # Convert index to string type to ensure proper comparison
+        df_sample.index = df_sample.index.astype(str)
         
         # Get factor values from runsheet
         df_rs = pd.read_csv(runsheet_path, dtype=str)
+        # Convert all column names to strings to handle numeric columns
+        df_rs.columns = df_rs.columns.astype(str)
+        # Ensure Sample Name is string
+        df_rs['Sample Name'] = df_rs['Sample Name'].astype(str)
         
         # Filter runsheet by stratum if needed
         if stratum_factor and stratum_value:
@@ -515,24 +541,29 @@ def check_sample_table_for_correct_group_assignments(outdir, runsheet_path, log_
                            f"Stratification factor '{stratum_factor}' was the only Factor Value column")
             return True
         
-        df_rs = df_rs[factor_cols].loc[df_sample.index].sort_index()
+        # Get sample indices as strings from both DataFrames
+        common_indices = set(str(idx) for idx in df_rs.index) & set(str(idx) for idx in df_sample.index)
+        
+        # Use only common indices from both DataFrames
+        df_rs_filtered = df_rs.loc[[idx for idx in df_rs.index if str(idx) in common_indices]]
+        df_sample_filtered = df_sample.loc[[idx for idx in df_sample.index if str(idx) in common_indices]]
         
         # Create expected conditions based on runsheet
-        expected_conditions_based_on_runsheet = df_rs.apply(
+        expected_conditions_based_on_runsheet = df_rs_filtered[factor_cols].apply(
             lambda x: "...".join(x), axis="columns"
         ).apply(r_style_make_names)
         
         # Check if conditions match
-        mismatched_rows = expected_conditions_based_on_runsheet != df_sample["condition"]
+        mismatched_rows = expected_conditions_based_on_runsheet != df_sample_filtered["condition"]
         
         if not any(mismatched_rows):
             # Group samples by condition for reporting
             condition_to_samples = {}
-            for sample, row in df_sample.iterrows():
+            for sample, row in df_sample_filtered.iterrows():
                 condition = row['condition']
                 if condition not in condition_to_samples:
                     condition_to_samples[condition] = []
-                condition_to_samples[condition].append(sample)
+                condition_to_samples[condition].append(str(sample))
             
             # Format the details about group assignments
             group_details = []
@@ -542,7 +573,7 @@ def check_sample_table_for_correct_group_assignments(outdir, runsheet_path, log_
             # Include stratum info in the message if applicable
             stratum_info = f" for {stratum_factor}={stratum_value}" if stratum_factor and stratum_value else ""
             
-            print(f"Conditions are formatted and assigned correctly for all {len(df_sample)} samples{stratum_info}")
+            print(f"Conditions are formatted and assigned correctly for all {len(df_sample_filtered)} samples{stratum_info}")
             log_check_result(log_path, component_name, "all", check_name, "GREEN", 
                             f"Conditions are formatted and assigned correctly{stratum_info}", 
                             f"Sample to group assignments: {'; '.join(group_details)}")
@@ -550,7 +581,7 @@ def check_sample_table_for_correct_group_assignments(outdir, runsheet_path, log_
         else:
             print("WARNING: Mismatch in expected conditions based on runsheet")
             mismatch_description = (
-                df_sample[mismatched_rows]["condition"]
+                df_sample_filtered[mismatched_rows]["condition"]
                 + " <--SAMPLETABLE : RUNSHEET--> "
                 + expected_conditions_based_on_runsheet[mismatched_rows]
             ).to_dict()
@@ -563,7 +594,9 @@ def check_sample_table_for_correct_group_assignments(outdir, runsheet_path, log_
             return False
     
     except Exception as e:
-        print(f"ERROR checking sample table group assignments: {str(e)}")
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"ERROR checking sample table group assignments: {str(e)}\n{error_details}")
         log_check_result(log_path, component_name, "all", check_name, "RED", 
                         f"Error checking group assignments", f"Error: {str(e)}")
         return False
@@ -822,6 +855,9 @@ def check_contrasts_table_headers(outdir, runsheet_path, log_path, assay_suffix=
     try:
         # Get expected groups from runsheet
         df_rs = pd.read_csv(runsheet_path)
+        # Convert all column names to strings to handle numeric columns
+        df_rs.columns = df_rs.columns.astype(str)
+            
         df_rs_factor_cols = df_rs[[col for col in df_rs.columns if col.startswith("Factor Value[")]]
         
         # Filter runsheet by stratum if needed
@@ -930,6 +966,8 @@ def check_contrasts_table_rows(outdir, log_path, assay_suffix="_GLbulkRNAseq",
     try:
         # Read the contrasts table
         df_contrasts = pd.read_csv(contrasts_table_path, index_col=0)
+        # Convert all column names to strings to handle numeric columns
+        df_contrasts.columns = df_contrasts.columns.astype(str)
         
         def _get_groups_from_comparisons(s: str) -> set:
             """Extracts group names from a comparison string like 'G1vG2'.
@@ -1054,6 +1092,10 @@ def check_dge_table_annotation_columns_exist(outdir, runsheet_path, log_path, as
     # First get sample names from runsheet to identify which columns are samples
     try:
         df_rs = pd.read_csv(runsheet_path)
+        # Convert all column names to strings to handle numeric columns
+        df_rs.columns = df_rs.columns.astype(str)
+        # Ensure Sample Name column is string
+        df_rs['Sample Name'] = df_rs['Sample Name'].astype(str)
         
         # Filter runsheet by stratum if needed
         if stratum_factor and stratum_value:
@@ -1072,12 +1114,14 @@ def check_dge_table_annotation_columns_exist(outdir, runsheet_path, log_path, as
                             f"Stratum factor: {stratum_factor}, Stratum value: {stratum_value}")
             return False
         
-        # Get sample names
-        sample_names = set(df_rs['Sample Name'])
+        # Get sample names as strings
+        sample_names = set(str(name) for name in df_rs['Sample Name'])
         
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
         log_check_result(log_path, component_name, "all", check_name, "RED", 
-                        "Error parsing runsheet", str(e))
+                        "Error parsing runsheet", f"{str(e)}\n{error_details}")
         return False
     
     # Get DGE table paths with the correct pattern
@@ -1093,6 +1137,8 @@ def check_dge_table_annotation_columns_exist(outdir, runsheet_path, log_path, as
     try:
         # Read the DGE table
         df_dge = pd.read_csv(dge_table_path)
+        # Convert all column names to strings to handle numeric columns
+        df_dge.columns = df_dge.columns.astype(str)
         
         # Identify columns that are not sample names
         all_columns = list(df_dge.columns)
@@ -1101,11 +1147,20 @@ def check_dge_table_annotation_columns_exist(outdir, runsheet_path, log_path, as
         gene_id_column = all_columns[0]
         
         # Identify sample columns by finding which column names match sample names from runsheet
-        sample_columns = [col for col in all_columns if col in sample_names]
+        # Ensure both are strings for comparison
+        sample_columns = [col for col in all_columns if str(col) in sample_names]
         
         # If we can't find any sample columns based on runsheet, fallback to heuristic
         if not sample_columns:
-            # Heuristic: Look for columns that follow a common pattern for sample names
+            # Check if we have numeric columns that might be sample IDs
+            numeric_columns = [col for col in all_columns 
+                              if col.isdigit() or (col and col[0].isdigit())]
+            if numeric_columns:
+                sample_columns = numeric_columns
+                print(f"Using numeric columns as sample IDs: {sample_columns}")
+        
+        if not sample_columns:
+            # Last resort: Look for columns that follow a common pattern for sample names
             sample_columns = [col for col in all_columns if "Rep" in col or "_R" in col]
         
         if not sample_columns:
@@ -1136,8 +1191,10 @@ def check_dge_table_annotation_columns_exist(outdir, runsheet_path, log_path, as
             return True
         
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
         log_check_result(log_path, component_name, "all", check_name, "RED", 
-                        "Error checking annotation columns", str(e))
+                        "Error checking annotation columns", f"{str(e)}\n{error_details}")
         return False
 
 def check_dge_table_sample_columns_exist(outdir, runsheet_path, log_path, assay_suffix="_GLbulkRNAseq",
@@ -1169,6 +1226,10 @@ def check_dge_table_sample_columns_exist(outdir, runsheet_path, log_path, assay_
     # First get sample names from runsheet
     try:
         df_rs = pd.read_csv(runsheet_path)
+        # Convert all column names to strings to handle numeric columns
+        df_rs.columns = df_rs.columns.astype(str)
+        # Ensure Sample Name column is string
+        df_rs['Sample Name'] = df_rs['Sample Name'].astype(str)
         
         # Filter runsheet by stratum if needed
         if stratum_factor and stratum_value:
@@ -1187,8 +1248,8 @@ def check_dge_table_sample_columns_exist(outdir, runsheet_path, log_path, assay_
                             f"Stratum factor: {stratum_factor}, Stratum value: {stratum_value}")
             return False
         
-        # Get sample names
-        sample_names = list(df_rs['Sample Name'])
+        # Get sample names as strings
+        sample_names = [str(name) for name in df_rs['Sample Name']]
         
         # Check if there are any technical replicates in the sample names
         tech_rep_pattern = "_techrep\\d+$"
@@ -1196,7 +1257,7 @@ def check_dge_table_sample_columns_exist(outdir, runsheet_path, log_path, assay_
         
         # Function to get base sample name (remove _techrepX if present)
         def get_base_name(sample_name):
-            return re.sub(tech_rep_pattern, "", sample_name)
+            return re.sub(tech_rep_pattern, "", str(sample_name))
         
         # If tech reps are present, convert to base sample names
         if has_tech_reps:
@@ -1205,8 +1266,10 @@ def check_dge_table_sample_columns_exist(outdir, runsheet_path, log_path, assay_
             expected_samples = set(sample_names)
         
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
         log_check_result(log_path, component_name, "all", check_name, "RED", 
-                        "Error parsing runsheet", str(e))
+                        "Error parsing runsheet", f"{str(e)}\n{error_details}")
         return False
     
     # Get DGE table path with the correct pattern
@@ -1222,23 +1285,38 @@ def check_dge_table_sample_columns_exist(outdir, runsheet_path, log_path, assay_
     try:
         # Read the DGE table
         df_dge = pd.read_csv(dge_table_path)
-        dge_columns = list(df_dge.columns)
+        # Convert all column names to strings to handle numeric columns
+        df_dge.columns = df_dge.columns.astype(str)
         
         # Find sample columns in the DGE table
         if has_tech_reps:
             # For each expected base sample name, check if it appears in DGE columns
             found_base_samples = set()
             for expected_base in expected_samples:
-                for col in dge_columns:
+                for col in df_dge.columns:
+                    col_str = str(col)
                     # If the column matches exactly or its base name matches
-                    if col == expected_base or get_base_name(col) == expected_base:
+                    if col_str == expected_base or get_base_name(col_str) == expected_base:
                         found_base_samples.add(expected_base)
                         break
             
             existing_samples = found_base_samples
         else:
             # Direct matching for non-tech rep datasets
-            existing_samples = set(col for col in dge_columns if col in expected_samples)
+            # Ensure both are strings for comparison
+            existing_samples = set(col for col in df_dge.columns if str(col) in expected_samples)
+            
+            # If we didn't find any samples, check if we have numeric columns
+            if not existing_samples:
+                numeric_columns = [col for col in df_dge.columns 
+                                  if str(col).isdigit() or (col and str(col)[0].isdigit())]
+                if numeric_columns and all(sample.isdigit() for sample in expected_samples):
+                    # If the expected samples are numbers, try numeric comparison
+                    expected_num = set(int(s) for s in expected_samples if s.isdigit())
+                    numeric_cols_int = set(int(c) for c in numeric_columns if str(c).isdigit())
+                    # Add any matches to existing_samples
+                    for match in expected_num & numeric_cols_int:
+                        existing_samples.add(str(match))
         
         # Calculate missing samples
         missing_samples = expected_samples - existing_samples
@@ -1260,8 +1338,10 @@ def check_dge_table_sample_columns_exist(outdir, runsheet_path, log_path, assay_
             return False
         
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
         log_check_result(log_path, component_name, "all", check_name, "RED", 
-                        "Error checking sample columns", str(e))
+                        "Error checking sample columns", f"{str(e)}\n{error_details}")
         return False
 
 def check_dge_table_sample_columns_constraints(outdir, runsheet_path, log_path, assay_suffix="_GLbulkRNAseq",
@@ -1298,6 +1378,10 @@ def check_dge_table_sample_columns_constraints(outdir, runsheet_path, log_path, 
     # First get sample names from runsheet
     try:
         df_rs = pd.read_csv(runsheet_path)
+        # Convert all column names to strings to handle numeric columns
+        df_rs.columns = df_rs.columns.astype(str)
+        # Ensure Sample Name column is string
+        df_rs['Sample Name'] = df_rs['Sample Name'].astype(str)
         
         # Filter runsheet by stratum if needed
         if stratum_factor and stratum_value:
@@ -1316,16 +1400,18 @@ def check_dge_table_sample_columns_constraints(outdir, runsheet_path, log_path, 
                             f"Stratum factor: {stratum_factor}, Stratum value: {stratum_value}")
             return False
         
-        # Get sample names
-        sample_names = list(df_rs['Sample Name'])
+        # Get sample names as strings
+        sample_names = [str(name) for name in df_rs['Sample Name']]
         
         # Check if there are any technical replicates in the sample names
         tech_rep_pattern = "_techrep\\d+$"
         has_tech_reps = any(re.search(tech_rep_pattern, sample) for sample in sample_names)
         
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
         log_check_result(log_path, component_name, "all", check_name, "RED", 
-                        "Error parsing runsheet", str(e))
+                        "Error parsing runsheet", f"{str(e)}\n{error_details}")
         return False
     
     # Get DGE table path with the correct pattern
@@ -1341,13 +1427,15 @@ def check_dge_table_sample_columns_constraints(outdir, runsheet_path, log_path, 
     try:
         # Read the DGE table
         df_dge = pd.read_csv(dge_table_path)
+        # Convert all column names to strings to handle numeric columns
+        df_dge.columns = df_dge.columns.astype(str)
         
         # Identify sample columns in the DGE table
         if has_tech_reps:
             # When there are tech reps, identify sample columns by looking for columns 
             # that either directly match a sample name or match a base sample name
             def get_base_name(sample_name):
-                return re.sub(tech_rep_pattern, "", sample_name)
+                return re.sub(tech_rep_pattern, "", str(sample_name))
                 
             # Extract base sample names from the runsheet
             base_sample_names = set(get_base_name(sample) for sample in sample_names)
@@ -1355,12 +1443,22 @@ def check_dge_table_sample_columns_constraints(outdir, runsheet_path, log_path, 
             # Find columns in DGE table that correspond to samples
             sample_columns = []
             for col in df_dge.columns:
+                col_str = str(col)
                 # Check if this column is a sample column (matches sample name or base name)
-                if col in sample_names or get_base_name(col) in base_sample_names:
+                if col_str in sample_names or get_base_name(col_str) in base_sample_names:
                     sample_columns.append(col)
         else:
             # For datasets without tech reps, use direct matching
-            sample_columns = [col for col in df_dge.columns if col in sample_names]
+            sample_columns = [col for col in df_dge.columns if str(col) in sample_names]
+            
+            # If we didn't find any samples, check if we have numeric columns
+            if not sample_columns:
+                # Check if sample names are numeric
+                numeric_samples = [s for s in sample_names if s.isdigit()]
+                if numeric_samples:
+                    # If the expected samples are numbers, try numeric columns
+                    sample_columns = [col for col in df_dge.columns 
+                                     if str(col).isdigit() and str(col) in numeric_samples]
         
         if not sample_columns:
             status = "RED"
@@ -1398,8 +1496,10 @@ def check_dge_table_sample_columns_constraints(outdir, runsheet_path, log_path, 
             return False
         
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
         log_check_result(log_path, component_name, "all", check_name, "RED", 
-                        "Error checking sample columns", str(e))
+                        "Error checking sample columns", f"{str(e)}\n{error_details}")
         return False
 
 def check_dge_table_group_columns_exist(outdir, runsheet_path, log_path, assay_suffix="_GLbulkRNAseq",
@@ -1446,6 +1546,8 @@ def check_dge_table_group_columns_exist(outdir, runsheet_path, log_path, assay_s
     try:
         # First get expected groups from runsheet
         df_rs = pd.read_csv(runsheet_path)
+        # Convert all column names to strings to handle numeric columns
+        df_rs.columns = df_rs.columns.astype(str)
         
         # Filter runsheet by stratum if needed
         if stratum_factor and stratum_value:
@@ -1556,6 +1658,10 @@ def check_dge_table_group_columns_constraints(outdir, runsheet_path, log_path, a
     # First get sample names from runsheet
     try:
         df_rs = pd.read_csv(runsheet_path)
+        # Convert all column names to strings to handle numeric columns
+        df_rs.columns = df_rs.columns.astype(str)
+        # Ensure Sample Name column is string
+        df_rs['Sample Name'] = df_rs['Sample Name'].astype(str)
         
         # Filter runsheet by stratum if needed
         if stratum_factor and stratum_value:
@@ -1574,16 +1680,18 @@ def check_dge_table_group_columns_constraints(outdir, runsheet_path, log_path, a
                             f"Stratum factor: {stratum_factor}, Stratum value: {stratum_value}")
             return False
         
-        # Get sample names
-        sample_names = list(df_rs['Sample Name'])
+        # Get sample names as strings
+        sample_names = [str(name) for name in df_rs['Sample Name']]
         
         # Check if there are any technical replicates in the sample names
         tech_rep_pattern = "_techrep\\d+$"
         has_tech_reps = any(re.search(tech_rep_pattern, sample) for sample in sample_names)
         
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
         log_check_result(log_path, component_name, "all", check_name, "RED", 
-                        "Error parsing runsheet", str(e))
+                        "Error parsing runsheet", f"{str(e)}\n{error_details}")
         return False
     
     # Get group information
@@ -1598,6 +1706,8 @@ def check_dge_table_group_columns_constraints(outdir, runsheet_path, log_path, a
             return False
             
         df_sample_table = pd.read_csv(sample_table_path)
+        # Convert all column names to strings
+        df_sample_table.columns = df_sample_table.columns.astype(str)
         
         # Check if 'condition' column exists
         if "condition" not in df_sample_table.columns:
@@ -1610,8 +1720,10 @@ def check_dge_table_group_columns_constraints(outdir, runsheet_path, log_path, a
         unique_conditions = df_sample_table["condition"].unique()
         
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
         log_check_result(log_path, component_name, "all", check_name, "RED", 
-                       "Error processing sample table", str(e))
+                       "Error processing sample table", f"{str(e)}\n{error_details}")
         return False
     
     # Get DGE table path with the correct pattern
@@ -1630,7 +1742,7 @@ def check_dge_table_group_columns_constraints(outdir, runsheet_path, log_path, a
         
         # Function to get base sample name (remove _techrepX if present)
         def get_base_name(sample_name):
-            return re.sub(tech_rep_pattern, "", sample_name)
+            return re.sub(tech_rep_pattern, "", str(sample_name))
         
         # Check if all samples from the runsheet are in the DGE table
         missing_samples = []
@@ -1804,6 +1916,8 @@ def check_dge_table_comparison_statistical_columns_exist(outdir, runsheet_path, 
     try:
         # First get expected groups from runsheet
         df_rs = pd.read_csv(runsheet_path)
+        # Convert all column names to strings to handle numeric columns
+        df_rs.columns = df_rs.columns.astype(str)
         
         # Filter runsheet by stratum if needed
         if stratum_factor and stratum_value:
@@ -2001,6 +2115,8 @@ def check_dge_table_group_statistical_columns_constraints(outdir, runsheet_path,
     try:
         # First get expected groups from runsheet
         df_rs = pd.read_csv(runsheet_path)
+        # Convert all column names to strings to handle numeric columns
+        df_rs.columns = df_rs.columns.astype(str)
         
         # Filter runsheet by stratum if needed
         if stratum_factor and stratum_value:
@@ -2129,10 +2245,11 @@ def check_dge_table_fixed_statistical_columns_exist(outdir, log_path, assay_suff
     try:
         # Read DGE table and check for expected columns
         df_dge = pd.read_csv(dge_table_path)
-        df_dge_columns = set(df_dge.columns)
+        # Convert all column names to strings to handle numeric columns
+        df_dge.columns = df_dge.columns.astype(str)
         
         # Find missing columns
-        missing_columns = expected_columns - df_dge_columns
+        missing_columns = expected_columns - set(df_dge.columns)
         
         if not missing_columns:
             status = "GREEN"
@@ -2200,6 +2317,8 @@ def check_dge_table_fixed_statistical_columns_constraints(outdir, log_path, assa
         
         # Read DGE table
         df_dge = pd.read_csv(dge_table_path)
+        # Convert all column names to strings to handle numeric columns
+        df_dge.columns = df_dge.columns.astype(str)
         
         # Apply constraints
         issues = utils_common_constraints_on_dataframe(df_dge, constraints)
@@ -2267,6 +2386,10 @@ def check_dge_table_log2fc_within_reason(outdir, runsheet_path, log_path, assay_
 
     try:
         df_dge = pd.read_csv(dge_table_path)
+        
+        # Ensure column names are treated as strings if they are used in comparisons
+        df_dge.columns = df_dge.columns.astype(str)
+        
         group_mean_cols = [col for col in df_dge.columns if col.startswith("Group.Mean_")]
         if not group_mean_cols:
             log_check_result(log_path, component_name, "all", check_name, "RED",
@@ -2381,6 +2504,8 @@ def check_ercc_presence(outdir, runsheet_path, log_path, assay_suffix="_GLbulkRN
     try:
         # Read runsheet to check for has_ercc flag
         runsheet_df = pd.read_csv(runsheet_path)
+        # Convert all column names to strings to handle numeric columns
+        runsheet_df.columns = runsheet_df.columns.astype(str)
         
         # Find has_ercc column - could be capitalized in different ways
         ercc_col = None

@@ -41,6 +41,10 @@ def parse_runsheet(runsheet_path):
     
     try:
         df = pd.read_csv(runsheet_path)
+        
+        # Convert Sample Name to string to ensure compatibility with numeric sample names
+        df['Sample Name'] = df['Sample Name'].astype(str)
+        
         required_columns = ['Sample Name', 'paired_end', 'has_ERCC', 'organism']
         for col in required_columns:
             if col not in df.columns:
@@ -179,6 +183,9 @@ def get_featurecounts_multiqc_stats(outdir, samples, log_path, assay_suffix="_GL
     
     print(f"Extracting stats from MultiQC data: {multiqc_zip}")
     
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
+    
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
         try:
@@ -213,6 +220,9 @@ def get_featurecounts_multiqc_stats(outdir, samples, log_path, assay_suffix="_GL
             for sample, count_data in multiqc_data['report_saved_raw_data']['multiqc_featurecounts'].items():
                 # Clean sample name (remove path if present)
                 sample_name = os.path.basename(sample) if '/' in sample else sample
+                
+                # Convert to string to ensure compatibility with numeric sample names
+                sample_name = str(sample_name)
                 
                 # Extract key metrics
                 fc_data[sample_name] = {
@@ -281,6 +291,9 @@ def parse_featurecounts(multiqc_data_dir, assay_suffix="_GLbulkRNAseq"):
             # Clean up sample name if needed
             if "/" in sample:
                 sample_name = sample.split("/")[-1]
+            
+            # Convert to string to ensure compatibility with numeric sample names
+            sample_name = str(sample_name)
             
             fc_data[sample_name] = {
                 'total_count': count_data['Total'],
@@ -607,8 +620,8 @@ def main():
     # Parse the runsheet
     runsheet_df = parse_runsheet(args.runsheet)
     
-    # Extract sample names
-    sample_names = runsheet_df['Sample Name'].tolist()
+    # Extract sample names and convert to strings to handle numeric sample names
+    sample_names = [str(sample) for sample in runsheet_df['Sample Name'].tolist()]
     
     # Check consistency of paired_end, has_ERCC, and organism values
     paired_end_values = runsheet_df['paired_end'].unique()
