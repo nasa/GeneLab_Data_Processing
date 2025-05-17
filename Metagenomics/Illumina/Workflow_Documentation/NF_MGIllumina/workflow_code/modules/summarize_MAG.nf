@@ -310,6 +310,7 @@ process SUMMARIZE_MAG_KO_ANNOTS_WITH_KEGG_DECODER {
 
         fi
         python --version > versions.txt
+        conda list keggdecoder | grep keggdecoder | awk '{print $1,"  version: "$2,", build: "$3}' >> versions.txt
         """
 }
 

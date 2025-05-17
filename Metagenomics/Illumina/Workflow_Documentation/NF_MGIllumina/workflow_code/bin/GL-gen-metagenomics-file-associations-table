@@ -31,7 +31,7 @@ parser.add_argument("--runsheet",
                     action = "store", default = "")
 
 parser.add_argument("--output", 
-                    help = 'Name of output log file (default: "<GLDS-ID>_[<output_prefix>]-associated-file-names.tsv", with appended prefix if one is provided)',
+                    help = 'Name of output log file (default: "<GLDS-ID>_[<output_prefix>]-updated-assay-table-cols.tsv", with appended prefix if one is provided)',
                     default = "", action = "store")
 parser.add_argument("-p", "--output-prefix", help = "Output additional file prefix if there is one", action = "store", default = "")
 parser.add_argument("--additional-string-to-remove-from-unique-filenames",
@@ -550,9 +550,9 @@ def main():
 
     # Set output file name
     if args.output == "" and output_prefix != "":
-        outfile = f"{args.GLDS_ID}_{output_prefix}-associated-file-names.tsv"
+        outfile = f"{args.GLDS_ID}_{output_prefix}-updated-assay-table-cols.tsv"
     elif args.output == "":
-        outfile = f"{args.GLDS_ID}-associated-file-names.tsv"
+        outfile = f"{args.GLDS_ID}-updated-assay-table-cols.tsv"
     else:
         outfile = args.output
     

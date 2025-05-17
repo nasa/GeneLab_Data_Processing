@@ -61,7 +61,7 @@ process RENAME_HEADERS {
     output:
         tuple val(sample_id), path("${sample_id}-assembly.fasta"), emit: contigs
         path("versions.txt"), emit: version
-        path("Failed-assemblies.tsv"), optional: true, emit: failed_assembly
+        path("Failed-assemblies${params.assay_suffix}.tsv"), optional: true, emit: failed_assembly
     script:
         """
         bit-rename-fasta-headers -i ${assembly} \\
@@ -71,7 +71,7 @@ process RENAME_HEADERS {
         # Checking the assembly produced anything (megahit can run, produce 
         # the output fasta, but it will be empty if no contigs were assembled)
         if [ ! -s ${sample_id}-assembly.fasta ]; then
-            printf "${sample_id}\\tNo contigs assembled\\n" > Failed-assemblies.tsv
+            printf "${sample_id}\\tNo contigs assembled\\n" > Failed-assemblies${params.assay_suffix}.tsv
         fi
         bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
         """

@@ -135,14 +135,18 @@ def write_metagenomics_body(output, output_file, assay_suffix, output_prefix, pr
     output.write("    {:<75} {:>0}".format("- " + str(output_file), "- this file\n\n"))
 
     # fastqc info
-    output.write("    {:<75} {:>0}".format("- " + fastqc_dir.name.replace('_',' ') + os.sep, "- multiQC summary reports of FastQC runs\n\n"))
+    output.write("    {:<75} {:>0}".format("- " + fastqc_dir.name.replace('_',' ') + os.sep, "- multiQC summary reports of FastQC runs\n"))
+    output.write("        {:<71} {:>0}".format("- raw_multiqc_GLmetagenomics_report.zip", "- raw data multiQC summary report\n"))
+    output.write("        {:<71} {:>0}".format("- filtered_multiqc_GLmetagenomics_report.zip", "- filtered data multiQC summary report\n\n"))
 
     # raw reads
     if raw_reads_dir.exists():
-        output.write("    {:<75} {:>0}".format("- " + raw_reads_dir.name.replace('_',' ') + os.sep, "- initial read fastq files\n\n"))
+        output.write("    {:<75} {:>0}".format("- " + raw_reads_dir.name.replace('_',' ') + os.sep, "- initial read fastq files\n"))
+        output.write("        {:<71} {:>0}".format("- *raw.fastq.gz", "- raw read files\n\n"))
 
     # quality-filtered reads
-    output.write("    {:<75} {:>0}".format("- " + filtered_reads_dir.name.replace('_',' ') + os.sep, "- quality-filtered fastq files\n\n"))
+    output.write("    {:<75} {:>0}".format("- " + filtered_reads_dir.name.replace('_',' ') + os.sep, "- quality-filtered fastq files\n"))
+    output.write("        {:<71} {:>0}".format("- *filtered.fastq.gz", "- filtered read files\n\n"))
 
     # outputs
     output.write("    {:<75} {:>0}".format("- " + assembly_based_dir.name.replace('_',' ') + os.sep, "- results generated from assembly-based approach\n\n"))
@@ -165,20 +169,21 @@ def write_metagenomics_body(output, output_file, assay_suffix, output_prefix, pr
 
     output.write("        {:<71} {:>0}".format("- " + mapping_dir.name.replace('_',' ') + os.sep, "- per-sample bam, coverage, and mapping info files\n"))
     output.write("            {:<67} {:>0}".format("- *.bam", "- bam files\n"))
-    output.write("            {:<67} {:>0}".format("- *.tsv", "- coverage files used for metabat2 binning\n"))
-    output.write("            {:<67} {:>0}".format("- *.txt", "- stdout from bowtie2 mapping\n\n"))
+    output.write("            {:<67} {:>0}".format("- *-metabat-assembly-depth.tsv", "- metabat summary of coverages\n"))
+    output.write("            {:<67} {:>0}".format("- *-mapping-info.txt", "- stdout from bowtie2 mapping\n\n"))
 
     if bins_dir.exists():
         output.write("        {:<71} {:>0}".format("- " + bins_dir.name.replace('_',' ') + os.sep, "- genomic bins recovered (if any)\n"))
-        output.write("            {:<67} {:>0}".format("- *.fasta", "- fasta files of bins recovered\n"))
+        output.write("            {:<67} {:>0}".format("- *.zip", "- zip archives containing fasta files of bins recovered\n"))
         output.write("            {:<67} {:>0}".format(f"- {output_prefix}bins-overview{assay_suffix}.tsv", "- summary stats of bins recovered\n\n"))
 
     if MAGs_dir.exists():
         output.write("        {:<71} {:>0}".format("- " + MAGs_dir.name.replace('_',' ') + os.sep, "- high-quality Metagenome-Assembled Genomes recovered (if any; > 90% est. comp., < 10% est. redundancy)\n"))
-        output.write("            {:<67} {:>0}".format("- *.fasta", "- fasta files of MAGs\n"))
+        output.write("            {:<67} {:>0}".format("- *.zip", "- zip archives containing fasta files of MAGs\n"))
         output.write("            {:<67} {:>0}".format(f"- {output_prefix}MAGs-overview{assay_suffix}.tsv", "- summary stats of MAGs including GTDB taxonomy\n"))
         output.write("            {:<67} {:>0}".format(f"- {output_prefix}MAG-level-KO-annotations{assay_suffix}.tsv", "- KO functional annotations associated with each MAG\n"))
-        output.write("            {:<67} {:>0}".format(f"- {output_prefix}MAG-KEGG-Decoder*", "- KEGG-Decoder summaries of MAG functional annotations\n\n"))
+        output.write("            {:<67} {:>0}".format(f"- {output_prefix}MAG-KEGG-Decoder-out{assay_suffix}.html", "- KEGG-Decoder summaries of MAG functional annotations\n\n"))
+        output.write("            {:<67} {:>0}".format(f"- {output_prefix}MAG-KEGG-Decoder-out{assay_suffix}.tsv", "- KEGG-Decoder summaries of MAG functional annotations\n\n"))
 
 
     output.write("        {:<71} {:>0}".format("- " + combined_output_dir.name.replace('_',' ') + os.sep, "- summary outputs with all samples combined\n"))

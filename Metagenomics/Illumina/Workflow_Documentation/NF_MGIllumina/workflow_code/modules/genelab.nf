@@ -205,14 +205,13 @@ process GENERATE_CURATION_TABLE {
         path(runsheet)
         
     output:
-        path("${GLDS_accession}_${output_prefix}-associated-file-names.tsv"), emit: curation_table
+        path("*-updated-assay-table-cols.tsv"), emit: curation_table
 
     script:
         def INPUT_TABLE = params.assay_table ? "--assay-table ${input_table}" : "--isa-zip  ${input_table}"
         """
         GL-gen-metagenomics-file-associations-table ${INPUT_TABLE} \\
                     --runsheet '${runsheet}' \\
-                    --output '${GLDS_accession}_${output_prefix}-associated-file-names.tsv' \\
                     --GLDS-ID  '${GLDS_accession}' \\
                     --output-prefix '${output_prefix}' \\
                     --assay_suffix '${assay_suffix}' \\
