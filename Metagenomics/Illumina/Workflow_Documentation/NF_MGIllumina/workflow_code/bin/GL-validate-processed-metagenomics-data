@@ -285,7 +285,7 @@ def check_assembly_based_file(validation_log, sample, file_path, failed_assembli
         if sample not in failed_assemblies_list and assembly == True:
 
             report_failure(validation_log, "The file '" + str(file_path) + \
-                           "' is empty, but that sample isn't noted in the 'Failed-assemblies.tsv' file as it should be if the assembly failed.")
+                           "' is empty, but that sample isn't noted in the 'Failed-assemblies' file as it should be if the assembly failed.")
 
 
 def check_assembly_based_genes_file(validation_log, sample, file_path, failed_assemblies_list, assembly = True):
@@ -617,7 +617,7 @@ def main():
 
     # Expected files
     assembly_summary = f"{output_prefix}assembly-summaries{assay_suffix}.tsv"
-    failed_assemblies = os.path.join(assemblies_dir,f"{output_prefix}Failed-assemblies.tsv")
+    failed_assemblies = os.path.join(assemblies_dir,f"{output_prefix}Failed-assemblies{assay_suffix}.tsv")
 
     raw_multiqc_zip = f"{output_prefix}raw_multiqc{assay_suffix}_report.zip"
     filtered_multiqc_zip = f"{output_prefix}filtered_multiqc{assay_suffix}_report.zip"
