@@ -46,7 +46,7 @@ process GET_RUNSHEET {
         
         # Create runsheet from the assay table
         create_runsheet.sh a_*metagenomic*.txt > GLfile.csv
-        GL-version | grep "GeneLab utils"| sed -E 's/^\\s+//' > versions.txt
+        GL-version | grep "GeneLab utils"| sed -E 's/^\\s+//' | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g' > versions.txt
         """
 }
 

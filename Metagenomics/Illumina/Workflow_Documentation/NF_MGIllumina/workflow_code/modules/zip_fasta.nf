@@ -57,7 +57,7 @@ process ZIP_FASTA {
              done
 
         fi
-        GL-version | grep "GeneLab utils"| sed -E 's/^\\s+//' > versions.txt
+        GL-version | grep "GeneLab utils"| sed -E 's/^\\s+//' | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g' > versions.txt
         """
 
 }
