@@ -73,7 +73,7 @@ process RENAME_HEADERS {
         if [ ! -s ${sample_id}-assembly.fasta ]; then
             printf "${sample_id}\\tNo contigs assembled\\n" > Failed-assemblies${params.assay_suffix}.tsv
         fi
-        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g' > versions.txt
         """
 }
 
@@ -95,6 +95,6 @@ process SUMMARIZE_ASSEMBLIES {
         bit-summarize-assembly \\
                  -o ${params.additional_filename_prefix}assembly-summaries${params.assay_suffix}.tsv \\
                  ${assemblies}
-        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g' > versions.txt
         """
 }

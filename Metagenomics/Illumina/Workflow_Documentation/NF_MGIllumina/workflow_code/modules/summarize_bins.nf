@@ -38,7 +38,7 @@ process SUMMARIZE_BIN_ASSEMBLIES {
               > ${params.additional_filename_prefix}bin-assembly-summaries.tsv
 
         fi
-        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g' > versions.txt
         """
 }
 

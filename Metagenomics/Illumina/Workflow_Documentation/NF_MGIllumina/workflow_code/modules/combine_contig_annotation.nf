@@ -86,7 +86,7 @@ process MAKE_COMBINED_GENE_LEVEL_TABLES {
 
         mv "${params.additional_filename_prefix}Combined-gene-level-taxonomy-coverages-CPM.tsv" \\
            "${params.additional_filename_prefix}Combined-gene-level-taxonomy-coverages-CPM${params.assay_suffix}.tsv"
-        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g' > versions.txt
         """
 }
 
@@ -172,7 +172,7 @@ process MAKE_COMBINED_CONTIG_TAX_TABLES {
 
         mv "${params.additional_filename_prefix}Combined-contig-level-taxonomy-coverages-CPM.tsv" \\
            "${params.additional_filename_prefix}Combined-contig-level-taxonomy-coverages-CPM${params.assay_suffix}.tsv"
-        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g' > versions.txt
         """
 }
 

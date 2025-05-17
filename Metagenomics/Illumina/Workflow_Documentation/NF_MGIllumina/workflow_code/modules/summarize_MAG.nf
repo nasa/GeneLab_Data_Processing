@@ -150,7 +150,7 @@ process  SUMMARIZE_MAG_ASSEMBLIES {
                > ${params.additional_filename_prefix}MAG-assembly-summaries.tsv
 
         fi
-        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g' > versions.txt
         """
 }
 

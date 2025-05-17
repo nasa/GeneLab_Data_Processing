@@ -65,7 +65,7 @@ process REMOVE_LINEWRAPS {
             touch ${sample_id}-genes.faa ${sample_id}-genes.fasta
             printf "Line wrapping not performed because gene-calling wasn't performed on ${sample_id}.\\n"
         fi 
-        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g' > versions.txt
         """
 }
 
@@ -128,7 +128,7 @@ process FILTER_KFAMSCAN {
             printf "Nothing to filter since functional annotation was not performed.\\n"
 
         fi
-        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g' > versions.txt
         """
 
 }
