@@ -164,7 +164,7 @@ def write_metagenomics_body(output, output_file, assay_suffix, output_prefix, pr
     output.write("            {:<67} {:>0}".format("- *.gff", "- predicted genes in general feature format\n\n"))
 
     output.write("        {:<71} {:>0}".format("- " + annotations_and_tax_dir.name.replace('_',' ') + os.sep, "- per-sample Kegg Orthology (KO) annotations, taxonomy, and coverages\n"))
-    output.write("            {:<67} {:>0}".format("- *-gene-coverage-annotation-tax.tsv", "- tables with gene coverage, annotation, and taxonomy info\n"))
+    output.write("            {:<67} {:>0}".format("- *-gene-coverage-annotation-and-tax.tsv", "- tables with gene coverage, annotation, and taxonomy info\n"))
     output.write("            {:<67} {:>0}".format("- *-contig-coverage-and-tax.tsv", "- tables with contig coverage and taxonomy info\n\n"))
 
     output.write("        {:<71} {:>0}".format("- " + mapping_dir.name.replace('_',' ') + os.sep, "- per-sample bam, coverage, and mapping info files\n"))
