@@ -182,7 +182,7 @@ def write_metagenomics_body(output, output_file, assay_suffix, output_prefix, pr
         output.write("            {:<67} {:>0}".format("- *.zip", "- zip archives containing fasta files of MAGs\n"))
         output.write("            {:<67} {:>0}".format(f"- {output_prefix}MAGs-overview{assay_suffix}.tsv", "- summary stats of MAGs including GTDB taxonomy\n"))
         output.write("            {:<67} {:>0}".format(f"- {output_prefix}MAG-level-KO-annotations{assay_suffix}.tsv", "- KO functional annotations associated with each MAG\n"))
-        output.write("            {:<67} {:>0}".format(f"- {output_prefix}MAG-KEGG-Decoder-out{assay_suffix}.html", "- KEGG-Decoder summaries of MAG functional annotations\n\n"))
+        output.write("            {:<67} {:>0}".format(f"- {output_prefix}MAG-KEGG-Decoder-out{assay_suffix}.html", "- KEGG-Decoder summaries of MAG functional annotations\n"))
         output.write("            {:<67} {:>0}".format(f"- {output_prefix}MAG-KEGG-Decoder-out{assay_suffix}.tsv", "- KEGG-Decoder summaries of MAG functional annotations\n\n"))
 
 
