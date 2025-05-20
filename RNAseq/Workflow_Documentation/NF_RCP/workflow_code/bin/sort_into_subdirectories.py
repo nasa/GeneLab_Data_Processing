@@ -24,13 +24,14 @@ print(samples)
 # For a given directory, sort all files into {sample: str, [files: str]}
 files_by_sample = dict()
 for sample in samples:
+    sample = str(sample)  # Add this line before the path is constructed
     pattern = f"{sample}{args.glob_suffix}"
     print(f"Looking for files matching: {pattern}")
     files_for_this_sample = list(Path(args.from_dir).glob(pattern))
     
     # Move files
     for file in files_for_this_sample:
-        dest = Path(args.to_dir) / sample / file.name
+        dest = Path(args.to_dir) / str(sample) / file.name
         print(f"Moving {file} to {dest}")
         dest.parent.mkdir( parents=True, exist_ok=True )
         shutil.move(file, dest)

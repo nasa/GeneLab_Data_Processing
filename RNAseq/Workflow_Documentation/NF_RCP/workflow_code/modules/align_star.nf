@@ -8,17 +8,17 @@ process ALIGN_STAR {
 
   output:
     path("${ meta.id }/${ meta.id }*"), emit: publishables // used to ensure direct files are available for publishing directive
-    path("${ meta.id }/${ meta.id}_Log.final.out"), emit: alignment_logs
+    path("${ meta.id }/${ meta.id }_Log.final.out"), emit: alignment_logs
     tuple val(meta), path("${ meta.id }/${ meta.id }_Aligned.sortedByCoord.out.bam"), emit: bam_by_coord
     tuple val(meta), path("${ meta.id }/${ meta.id }_Aligned.toTranscriptome.out.bam"), emit: bam_to_transcriptome
     path("${ meta.id }/${ meta.id }_ReadsPerGene.out.tab"), emit: reads_per_gene
-    path("${ meta.id }/${ meta.id }_Unmapped.out.*"), emit: bam_unaligned 
+    path("${ meta.id }/${ meta.id }_*unmapped.fastq.gz"), emit: unmapped_reads
     path("versions.yml"), emit: versions
 
   script:
     """
     STAR --twopassMode Basic \
-    --limitBAMsortRAM ${ (task.memory.toBytes() * 0.8).round() } \
+    --limitBAMsortRAM ${task.memory.toBytes() - 100000000} \
     --outFilterType BySJout \
     --outSAMunmapped Within \
     --genomeDir ${ star_index_dir } \
@@ -39,7 +39,17 @@ process ALIGN_STAR {
     --quantMode TranscriptomeSAM GeneCounts\
     --outFileNamePrefix '${ meta.id }/${ meta.id }_' \
     --outReadsUnmapped Fastx \
-    --readFilesIn ${ reads }
+    --genomeLoad NoSharedMemory \
+    --readFilesIn ${ reads } 
+
+    # Rename and gzip unmapped reads
+    if [ ${meta.paired_end} == true ]; then
+      mv "${ meta.id }/${ meta.id }_Unmapped.out.mate1" "${ meta.id }/${ meta.id }_R1_unmapped.fastq"
+      mv "${ meta.id }/${ meta.id }_Unmapped.out.mate2" "${ meta.id }/${ meta.id }_R2_unmapped.fastq"
+    else
+      mv "${ meta.id }/${ meta.id }_Unmapped.out.mate1" "${ meta.id }/${ meta.id }_unmapped.fastq"
+    fi
+    gzip ${ meta.id }/${ meta.id }_*_unmapped.fastq
 
     echo '"${task.process}":' > versions.yml
     echo "    star: \$(STAR --version | sed 's/STAR_//')" >> versions.yml

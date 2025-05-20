@@ -7,7 +7,6 @@
         "type": "object",
         "properties": {
             "Sample Name": {
-                "type": "string",
                 "description": "Sample Name, added as a prefix to sample-specific processed data output files. Should not include spaces or weird characters.",
                 "errorMessage": "'Sample Name' must be specified."
             },
@@ -40,7 +39,6 @@
                 "description": "Location of the raw reads file. For paired-end data, this specifies the reverse reads fastq.gz file. For single-end data, this column should be omitted."
             },
             "Original Sample Name": {
-                "type": "string",
                 "description": "Used to map the sample name that will be used for processing to the original sample name. This is often identical except in cases where the original name includes spaces or weird characters."
             }
         },

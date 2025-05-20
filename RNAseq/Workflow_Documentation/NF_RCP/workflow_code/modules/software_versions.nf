@@ -13,6 +13,6 @@ process SOFTWARE_VERSIONS {
 
     script:
     """
-    software_versions.py ${versions_file} software_versions${params.assay_suffix}.md --assay rnaseq
+    software_versions.py ${versions_file} software_versions${params.assay_suffix}.md --workflow NF_RCP --workflow_version ${workflow.manifest.version} --assay rnaseq
     """
 }

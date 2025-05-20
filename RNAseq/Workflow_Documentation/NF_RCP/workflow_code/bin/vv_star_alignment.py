@@ -140,6 +140,9 @@ def check_star_output_existence(outdir, samples, paired_end, log_path, assay_suf
     """Check if all expected STAR alignment output files exist for each sample."""
     alignment_dir = os.path.join(outdir, '02-STAR_Alignment')
     
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
+    
     # Expected file patterns for each sample in sample-specific subdirectories
     expected_patterns = [
         "{sample}/{sample}_Aligned.sortedByCoord.out.bam",
@@ -154,11 +157,11 @@ def check_star_output_existence(outdir, samples, paired_end, log_path, assay_suf
     # Add mate-specific files if paired-end
     if paired_end:
         expected_patterns.extend([
-            "{sample}/{sample}_Unmapped.out.mate1", 
-            "{sample}/{sample}_Unmapped.out.mate2"
+            "{sample}/{sample}_R1_unmapped.fastq.gz", 
+            "{sample}/{sample}_R2_unmapped.fastq.gz"
         ])
     else:
-        expected_patterns.append("{sample}/{sample}_Unmapped.out.mate1")
+        expected_patterns.append("{sample}/{sample}_unmapped.fastq.gz")
     
     # Dataset-level files (directly in the alignment directory)
     dataset_files = [
@@ -241,6 +244,9 @@ def check_star_output_existence(outdir, samples, paired_end, log_path, assay_suf
 def check_bam_file_integrity(outdir, samples, log_path):
     """Verify BAM file integrity using samtools quickcheck."""
     alignment_dir = os.path.join(outdir, '02-STAR_Alignment')
+    
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
     
     # BAM file patterns to check for each sample
     bam_patterns = [
@@ -328,6 +334,9 @@ def get_star_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
     
     print(f"Extracting STAR stats from MultiQC data: {multiqc_zip}")
     
+    # Convert all samples to strings for consistent comparison
+    samples = [str(sample) for sample in samples]
+    
     # Create a temporary directory to extract files
     with tempfile.TemporaryDirectory() as temp_dir:
         try:
@@ -380,8 +389,8 @@ def get_star_multiqc_stats(outdir, samples, log_path, assay_suffix="_GLbulkRNAse
                         # This is STAR data
                         star_metrics_found = True
                         
-                        # Clean sample name (remove path prefix if present)
-                        sample_name = os.path.basename(sample)
+                        # Convert sample to string to ensure compatibility with numeric sample names
+                        sample_name = str(os.path.basename(sample))
                         
                         # Extract key STAR metrics
                         star_data[sample_name] = {
@@ -705,8 +714,8 @@ def main():
     # Parse the runsheet
     runsheet_df = parse_runsheet(args.runsheet)
     
-    # Extract sample names
-    sample_names = runsheet_df['Sample Name'].tolist()
+    # Extract sample names and convert to strings to handle numeric sample names
+    sample_names = [str(sample) for sample in runsheet_df['Sample Name'].tolist()]
     
     # Extract paired_end status
     paired_end = runsheet_df['paired_end'].iloc[0] if len(runsheet_df) > 0 else False

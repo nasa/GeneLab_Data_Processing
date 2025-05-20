@@ -59,9 +59,7 @@ Software Updates:
 | scipy             | 1.9.1         | 1.15.1  |
 
 STAR Alignment
-- Added unaligned reads FASTQ output file(s) via STAR `-outReadsUnmapped Fastq`:
-  - {sample}_Unmapped.out.mate1
-  - {sample}_Unmapped.out.mate2
+- Added unaligned reads FASTQ output file(s) via STAR `-outReadsUnmapped Fastx`
 
 RSeQC Analysis
 - Updated inner_distance.py invocation to use a lower minimum value to account for longer read lengths
@@ -420,9 +418,14 @@ STAR --twopassMode Basic \
  --outSAMheaderHD @HD VN:1.4 SO:coordinate \
  --outFileNamePrefix /path/to/STAR/output/directory/<sample_id> \
  --outReadsUnmapped Fastx \
+ --genomeLoad NoSharedMemory \
  --readFilesIn /path/to/trimmed_forward_reads \
  /path/to/trimmed_reverse_reads # only needed for PE studies
 
+mv <sample_id>_Unmapped.out.mate1 <sample_id>_R1_unmapped.fastq  # Only needed for PE studies
+mv <sample_id>_Unmapped.out.mate2 <sample_id>_R2_unmapped.fastq  # Only needed for PE studies
+# mv <sample_id>_Unmapped.out.mate1 <sample_id>_unmapped.fastq    # Only needed for SE studies
+gzip *_unmapped.fastq
 ```
 
 **Parameter Definitions:**
@@ -448,7 +451,8 @@ STAR --twopassMode Basic \
 - `--quantMode` – specifies the type(s) of quantification desired; the `TranscriptomeSAM` option instructs STAR to output a separate sam/bam file containing alignments to the transcriptome and the `GeneCounts` option instructs STAR to output a tab delimited file containing the number of reads per gene
 - `--outSAMheaderHD` – indicates a header line for the sam/bam file
 - `--outFileNamePrefix` – specifies the path to and prefix for the output file names; for GeneLab the prefix is the sample id
-- `outReadsUnmapped` - specifies how to output unmapped and partially mapped reads (where only one mate of a paired-end read is mapped); the `Fastx` option outputs unmapped reads in separate fasta/fastq files named Unmapped.out.mate1 and Unmapped.out.mate2
+- `outReadsUnmapped` - specifies how to output unmapped and partially mapped reads (where only one mate of a paired-end read is mapped); the `Fastx` option outputs unmapped reads in separate fastq files 
+- `--genomeLoad` – controls how the genome index is loaded into memory; `NoSharedMemory` specifies that each job will have its own private copy of the genome rather than using shared memory. This is the only option compatible with `--twopassMode Basic`.
 - `--readFilesIn` – path to input read 1 (forward read) and read 2 (reverse read); for paired-end reads, read 1 and read 2 should be separated by a space; for single-end reads only read 1 should be indicated
 
 **Input Data:**
@@ -473,7 +477,7 @@ STAR --twopassMode Basic \
   - SJ.out.tab
 - *_STARtmp (directory containing the following:)
   - BAMsort (directory containing subdirectories that are empty – this was the location for temp files that were automatically removed after successful completion)
-- **\*Unmapped.out.mate1, \*Unmapped.out.mate2** (unmapped and partially mapped reads in fastq format)
+- **\*unmapped.fastq.gz** (unmapped and partially mapped reads)
 
 <br>
 

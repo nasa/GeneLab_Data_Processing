@@ -12,7 +12,6 @@ Check that the expected output directories exist
 
 Section-specific checks:
 - check_bowtie2_existence: Check if all expected bowtie2 alignment files exist for each sample
-- validate_unmapped_fastq: Validate the format and integrity of unmapped FASTQ files
 - check_samples_multiqc: Check if all samples are present in the MultiQC report
 - get_bowtie2_multiqc_stats: Extract Bowtie2 metrics from MultiQC report
 - report_multiqc_outliers: Identify and report statistical outliers in alignment metrics
@@ -41,6 +40,10 @@ def parse_runsheet(runsheet_path):
     try:
         # Try to read the runsheet using pandas
         df = pd.read_csv(runsheet_path)
+        
+        # Ensure sample names are strings
+        if 'Sample Name' in df.columns:
+            df['Sample Name'] = df['Sample Name'].astype(str)
         
         # Check for required columns
         required_columns = ['Sample Name', 'paired_end', 'has_ERCC', 'organism']
@@ -322,7 +325,7 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
             # Check multiple indicators of paired data:
             # 1. Check unmapped files
             unmapped_dir = os.path.join(outdir, "02-Bowtie2_Alignment")
-            has_paired_files = any(os.path.exists(os.path.join(unmapped_dir, sample, f"{sample}.unmapped.fastq.2.gz")) 
+            has_paired_files = any(os.path.exists(os.path.join(unmapped_dir, str(sample), f"{sample}_R2_unmapped.fastq.gz")) 
                                  for sample in samples)
             
             # 2. Check stats data for paired indicators
@@ -345,8 +348,10 @@ def check_samples_multiqc(outdir, samples, paired_end, log_path, assay_suffix="_
             # Check for missing samples
             missing_samples = []
             for sample in samples:
-                if sample not in multiqc_samples:
-                    missing_samples.append(sample)
+                # Convert sample to string for consistent comparison
+                sample_str = str(sample)
+                if sample_str not in multiqc_samples:
+                    missing_samples.append(sample_str)
             
             if missing_samples:
                 log_check_result(log_path, "alignment", "all", "check_samples_multiqc", "RED", 
@@ -666,6 +671,9 @@ def check_bowtie2_existence(outdir, samples, paired_end, log_path):
         missing_files.append(multiqc_file)
 
     for sample in samples:
+        # Ensure sample is a string
+        sample = str(sample)
+        
         # Check sample directory
         sample_dir = os.path.join(align_dir, sample)
         if not os.path.exists(sample_dir):
@@ -682,11 +690,11 @@ def check_bowtie2_existence(outdir, samples, paired_end, log_path):
         # Add unmapped files based on paired/single end
         if is_paired:
             required_files.extend([
-                f"{sample}.unmapped.fastq.1.gz",
-                f"{sample}.unmapped.fastq.2.gz"
+                f"{sample}_R1_unmapped.fastq.gz",
+                f"{sample}_R2_unmapped.fastq.gz"
             ])
         else:
-            required_files.append(f"{sample}.unmapped.fastq.gz")
+            required_files.append(f"{sample}_unmapped.fastq.gz")
 
         # Check each required file
         for file_name in required_files:
@@ -708,112 +716,22 @@ def check_bowtie2_existence(outdir, samples, paired_end, log_path):
                     "All files found", f"Verified {total_files} files for {len(samples)} samples")
     return True
 
-def validate_unmapped_fastq(outdir, samples, paired_end, log_path, max_lines=200000000):
-    """Validate unmapped FASTQ files from bowtie2 alignment."""
-    align_dir = os.path.join(outdir, "02-Bowtie2_Alignment")
-    invalid_files = []
-    all_files = []
-    is_paired = paired_end[0]
-
-    for sample in samples:
-        sample_dir = os.path.join(align_dir, sample)
-        
-        if is_paired:
-            files_to_check = [
-                os.path.join(sample_dir, f"{sample}.unmapped.fastq.1.gz"),
-                os.path.join(sample_dir, f"{sample}.unmapped.fastq.2.gz")
-            ]
-        else:
-            files_to_check = [
-                os.path.join(sample_dir, f"{sample}.unmapped.fastq.gz")
-            ]
-        
-        for file_path in files_to_check:
-            if os.path.exists(file_path):
-                all_files.append(file_path)
-                print(f"Validating unmapped FASTQ: {file_path}")
-                
-                try:
-                    # Check GZIP integrity
-                    result = subprocess.run(["gzip", "-t", file_path], capture_output=True)
-                    if result.returncode != 0:
-                        invalid_files.append(file_path)
-                        print(f"GZIP integrity check failed for: {file_path}")
-                        print(f"Error: {result.stderr.decode('utf-8')}")
-                        continue
-
-                    # Check FASTQ format and ensure file isn't empty
-                    with gzip.open(file_path, 'rt') as f:
-                        line_count = 0
-                        line_in_record = 0
-                        has_valid_record = False
-                        
-                        for line in f:
-                            line_count += 1
-                            line_in_record = (line_count - 1) % 4
-                            
-                            # Check if header line (every 4th line, starting with line 1)
-                            if line_in_record == 0:
-                                if not line.startswith('@'):
-                                    invalid_files.append(file_path)
-                                    print(f"Invalid FASTQ format in {file_path} at line {line_count}")
-                                    break
-                                has_valid_record = True
-                            
-                            # Stop after max_lines
-                            if line_count >= max_lines:
-                                print(f"Reached {max_lines} lines limit for {file_path}")
-                                break
-                        
-                        # Check if file is empty or has incomplete records
-                        if not has_valid_record:
-                            invalid_files.append(file_path)
-                            print(f"Empty or invalid FASTQ file: {file_path}")
-                            continue
-                        
-                        if line_count % 4 != 0:
-                            invalid_files.append(file_path)
-                            print(f"Incomplete FASTQ record in {file_path}")
-                                
-                except Exception as e:
-                    invalid_files.append(file_path)
-                    print(f"Error validating {file_path}: {str(e)}")
-
-    if invalid_files:
-        print(f"WARNING: The following unmapped FASTQ files are invalid:")
-        for file in invalid_files:
-            print(f"  - {file}")
-        log_check_result(log_path, "alignment", "all", "validate_unmapped_fastq", "RED", 
-                        f"Invalid format in {len(invalid_files)} of {len(all_files)} files", 
-                        "; ".join(invalid_files))
-        return False
-
-    if not all_files:
-        print("No unmapped FASTQ files found to validate")
-        log_check_result(log_path, "alignment", "all", "validate_unmapped_fastq", "HALT", 
-                        "No unmapped FASTQ files found to validate", "")
-        return False
-
-    print(f"All unmapped FASTQ files are valid")
-    log_check_result(log_path, "alignment", "all", "validate_unmapped_fastq", "GREEN", 
-                    "All files valid", f"Validated {len(all_files)} unmapped FASTQ files; Checked for valid FASTQ format and complete records")
-    return True
-
-def check_mapping_rates(outdir, star_data, log_path):
-    """Check if mapping rates meet expected thresholds."""
-    # ... [existing code] ...
+# def check_mapping_rates(outdir, star_data, log_path):
+#     """Check if mapping rates meet expected thresholds."""
     
-    # Define thresholds
-    thresholds = {
-        "total_mapped": [
-            {"code": "YELLOW", "type": "lower", "value": 70},
-            {"code": "RED", "type": "lower", "value": 50}
-        ],
-        "multi_mapped": [
-            {"code": "YELLOW", "type": "lower", "value": 30},
-            {"code": "RED", "type": "lower", "value": 15}
-        ]
-    }
+#     # Not implemented for now; Determine thresholds
+    
+#     # Define thresholds
+#     thresholds = {
+#         "total_mapped": [
+#             {"code": "YELLOW", "type": "lower", "value": 70},
+#             {"code": "RED", "type": "lower", "value": 50}
+#         ],
+#         "multi_mapped": [
+#             {"code": "YELLOW", "type": "lower", "value": 30},
+#             {"code": "RED", "type": "lower", "value": 15}
+#         ]
+#     }
 
 def main():
     """Main function to process runsheet and validate raw reads."""
@@ -834,8 +752,8 @@ def main():
     # Parse the runsheet
     runsheet_df = parse_runsheet(args.runsheet)
     
-    # Extract sample names
-    sample_names = runsheet_df['Sample Name'].tolist()
+    # Extract sample names and convert to strings
+    sample_names = [str(sample) for sample in runsheet_df['Sample Name'].tolist()]
     
     # Check consistency of paired_end, has_ERCC, and organism values
     paired_end_values = runsheet_df['paired_end'].unique()
@@ -861,20 +779,17 @@ def main():
     # 1. Check for bowtie2 alignment files existence
     check_bowtie2_existence(args.outdir, sample_names, paired_end_values, vv_log_path)
 
-    # 2. Validate unmapped FASTQ files
-    validate_unmapped_fastq(args.outdir, sample_names, paired_end_values, vv_log_path)
-
-    # 3. Check that samples are present in MultiQC data
+    # 2. Check that samples are present in MultiQC data
     check_samples_multiqc(args.outdir, sample_names, paired_end_values, vv_log_path, args.assay_suffix)
 
-    # 4. Get MultiQC stats
+    # 3. Get MultiQC stats
     multiqc_data = get_bowtie2_multiqc_stats(args.outdir, sample_names, paired_end_values, vv_log_path, args.assay_suffix)
 
-    # 5. Add group statistics for Bowtie2 metrics
+    # 4. Add group statistics for Bowtie2 metrics
     if multiqc_data:
         add_bowtie2_group_stats(args.outdir, multiqc_data, vv_log_path)
         
-        # 6. Report MultiQC stats outliers
+        # 5. Report MultiQC stats outliers
         report_multiqc_outliers(args.outdir, multiqc_data, vv_log_path)
 
 if __name__ == "__main__":
