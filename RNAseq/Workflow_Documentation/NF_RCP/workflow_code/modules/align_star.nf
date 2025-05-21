@@ -49,7 +49,7 @@ process ALIGN_STAR {
     else
       mv "${ meta.id }/${ meta.id }_Unmapped.out.mate1" "${ meta.id }/${ meta.id }_unmapped.fastq"
     fi
-    gzip ${ meta.id }/${ meta.id }_*_unmapped.fastq
+    gzip ${ meta.id }/${ meta.id }*_unmapped.fastq
 
     echo '"${task.process}":' > versions.yml
     echo "    star: \$(STAR --version | sed 's/STAR_//')" >> versions.yml
