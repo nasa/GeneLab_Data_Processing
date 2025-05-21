@@ -687,7 +687,7 @@ def add_unmapped_reads_column(df, glds_prefix, runsheet_df=None, mode=""):
                     values.append(f"{glds_prefix}{sample}_R1_unmapped.fastq.gz,{glds_prefix}{sample}_R2_unmapped.fastq.gz")
                 else:
                     # For single-end data
-                    values.append(f"{glds_prefix}{sample}_R1_unmapped.fastq.gz")
+                    values.append(f"{glds_prefix}{sample}_unmapped.fastq.gz")
             else:
                 # Default mode (STAR)
                 if is_paired:
@@ -695,7 +695,7 @@ def add_unmapped_reads_column(df, glds_prefix, runsheet_df=None, mode=""):
                     values.append(f"{glds_prefix}{sample}_R1_unmapped.fastq.gz,{glds_prefix}{sample}_R2_unmapped.fastq.gz")
                 else:
                     # For single-end data with STAR
-                    values.append(f"{glds_prefix}{sample}_R1_unmapped.fastq.gz")
+                    values.append(f"{glds_prefix}{sample}_unmapped.fastq.gz")
     
     # Add the column to the dataframe
     df = update_column(df, column_name, values, alternative_names)
