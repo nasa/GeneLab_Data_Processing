@@ -174,11 +174,15 @@
         },
         "reference_source": {
           "type": "string",
-          "description": "Specifies the source of the alternative reference files. (e.g. \"NCBI\" or \"ENSEMBL\")."
+          "description": "Specifies the source of the alternative reference files. (e.g. \"ncbi\" or \"ensembl\")."
         },
         "reference_version": {
           "type": "string",
           "description": "Specifies the version of the alternative reference files used, if available."
+        },
+        "gene_annotations_file": {
+          "type": "string",
+          "description": "Specifies a gene annotations file to use in place of the one isted in GL-DPPD-7110-A_annotations.csv."
         }
       },
       "required": ["reference_table"]

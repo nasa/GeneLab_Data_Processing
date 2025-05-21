@@ -41,17 +41,29 @@ process PARSE_ANNOTATIONS_TABLE {
     
     // extract required fields
     organism_key = organism_sci.capitalize().replace("_"," ")
-    fasta_url = organisms[organism_key][5]
-    gtf_url = organisms[organism_key][6]
-    gene_annotations_url = organisms[organism_key][10]
-    reference_version = organisms[organism_key][3]
-    reference_source = organisms[organism_key][4]
-    println "${colorCodes.c_blue}Annotation table values parsed for '${organism_key}':${colorCodes.c_bright_green}"
-    println "            Reference Fasta URL: ${fasta_url}"
-    println "            Reference GTF URL: ${gtf_url}" 
-    println "            Gene Annotations URL: ${gene_annotations_url}"
-    println "            Reference Source: ${reference_source}${colorCodes.c_reset}"
-    if (reference_source.toLowerCase().contains('ensembl')) {
-        println "${colorCodes.c_bright_green}            Reference Version: ${reference_version}${colorCodes.c_reset}"
+    
+    // Check if the organism exists in the table
+    if (organisms.containsKey(organism_key)) {
+        fasta_url = organisms[organism_key][5]
+        gtf_url = organisms[organism_key][6]
+        gene_annotations_url = organisms[organism_key][10]
+        reference_version = organisms[organism_key][3]
+        reference_source = organisms[organism_key][4]
+        println "${colorCodes.c_blue}Annotation table values parsed for '${organism_key}':${colorCodes.c_bright_green}"
+        println "            Reference Fasta URL: ${fasta_url}"
+        println "            Reference GTF URL: ${gtf_url}" 
+        println "            Gene Annotations URL: ${gene_annotations_url}"
+        println "            Reference Source: ${reference_source}${colorCodes.c_reset}"
+        if (reference_source.toLowerCase().contains('ensembl')) {
+            println "${colorCodes.c_bright_green}            Reference Version: ${reference_version}${colorCodes.c_reset}"
+        }
+    } else {
+        println "${colorCodes.c_back_bright_red}WARNING: Organism '${organism_key}' not found in annotations table.${colorCodes.c_reset}"
+        println "${colorCodes.c_yellow}Returning null values for all outputs.${colorCodes.c_reset}"
+        fasta_url = null
+        gtf_url = null
+        gene_annotations_url = null
+        reference_version = null
+        reference_source = null
     }
 }
