@@ -1212,9 +1212,18 @@ dds <- DESeqDataSetFromMatrix(
 )
 
 ### Collapse technical replicates if present ###
-if (any(grepl("_techrep\\d+$", rownames(sampleTable)))) {
-    tech_rep_groups <- sub("_techrep\\d+$", "", rownames(sampleTable))
-    dds <- collapseReplicates(dds, tech_rep_groups)
+tech_rep_pattern <- "_techrep\\d+$"
+if (any(grepl(tech_rep_pattern, rownames(sampleTable)))) {
+    tech_rep_groups <- sub(tech_rep_pattern, "", rownames(sampleTable))
+
+    if (length(unique(tech_rep_groups)) < length(tech_rep_groups)) {
+        # Collapse only if >1 replicate per group exists
+        dds <- collapseReplicates(dds, groupby = tech_rep_groups)
+
+        collapsed_names <- tech_rep_groups[!duplicated(tech_rep_groups)]
+        sampleTable <- sampleTable[match(collapsed_names, tech_rep_groups), , drop = FALSE]
+        rownames(sampleTable) <- collapsed_names
+    }
 }
 
 ### Filter low count genes ###
@@ -1301,7 +1310,7 @@ output_table$LRT.p.value <- res_lrt@listData$padj
 
 ### Add group-wise statistics ###
 tcounts <- as.data.frame(t(normCounts))
-tcounts$group <- sampleTable$condition[match(rownames(tcounts), rownames(sampleTable))]
+tcounts$group <- colData(dds)$condition[match(rownames(tcounts), rownames(colData(dds)))]
 
 ### Aggregate group means and standard deviations ###
 agg_means <- aggregate(. ~ group, data = tcounts, FUN = mean, na.rm = TRUE)
