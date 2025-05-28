@@ -1,6 +1,6 @@
 process PARSE_ANNOTATION_TABLE {
   // Extracts data from this kind of table: 
-  // https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv
+  // https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv
 
   input:
     val(annotations_csv_url_string)
@@ -22,7 +22,7 @@ process PARSE_ANNOTATION_TABLE {
     organism_key = organism_sci.capitalize().replace("_"," ")
     // fasta_url = organisms[organism_key][5]
     // gtf_url = organisms[organism_key][6]
-    annotations_db_url = organisms[organism_key][9]
+    annotations_db_url = organisms[organism_key][10]
     ensemblVersion = organisms[organism_key][3]
     ensemblSource = organisms[organism_key][4]
 

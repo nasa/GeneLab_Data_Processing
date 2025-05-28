@@ -28,10 +28,12 @@ process PROCESS_AFFYMETRIX {
         export HOME=\$PWD;
 
         quarto render \$PWD/${qmd} \
+            -P 'workflow_version:${workflow.manifest.version}' \
             -P 'runsheet:${runsheet_csv}' \
             -P 'annotation_file_path:${annotation_file_path}' \
             -P 'ensembl_version:${ensemblVersion}' \
             -P 'local_annotation_dir:${params.referenceStorePath}' \
+            -P 'annotation_config_path:${params.annotation_config_path}' \
             ${limit_biomart_query_parameter} \
             ${run_DE}
 
