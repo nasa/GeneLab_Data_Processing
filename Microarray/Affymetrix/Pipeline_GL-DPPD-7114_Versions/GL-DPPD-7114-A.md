@@ -6,7 +6,7 @@
 
 ---
 
-**Date:** February XX, 2025  
+**Date:** May XX, 2025  
 **Revision:** -A  
 **Document Number:** GL-DPPD-7114-A   
 
@@ -15,15 +15,16 @@ Crystal Han (GeneLab Data Processing Team)
 
 **Approved by:**  
 Samrawit Gebre (OSDR Project Manager)  
-Lauren Sanders (OSDR Project Scientist)  
+Danielle Lopez (OSDR Deputy Project Manager)
+Jonathan Galazka (OSDR Project Scientist)  
 Amanda Saravia-Butler (GeneLab Science Lead)  
-Barbara Novak (GeneLab Data Processing Lead)
+Barbara Novak (GeneLab Data Processing Lead)  
 
 ---
 
 ## Updates from previous version
 
-Updated [Ensembl Reference Files](../../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) to the following releases:
+Updated [Ensembl Reference Files](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) to the following releases:
 - Animals: Ensembl release 112
 - Plants: Ensembl plants release 59
 - Bacteria: Ensembl bacteria release 59
@@ -45,6 +46,8 @@ Software Updates:
 |matrixStats|0.63.0|1.5.0|
 |dp_tools|1.3.4|1.3.5|
 |Quarto|1.2.313|1.6.40|
+|Bioconductor|3.14|3.20|
+|tidyverse|1.3.1|2.0.0|
 
 MA Plots
 
@@ -52,7 +55,7 @@ MA Plots
 
 Custom Annotations
 
-- Added ability to use custom gene annotations when annotations are not available in Biomart or Ensembl FTP for *Arabidopsis thaliana*, see [Step 8](#8-probeset-annotations)
+- Added ability to use custom gene annotations when annotations are not available in Biomart or Ensembl FTP, see [Step 8](#8-probeset-annotations)
 
 ---
 
@@ -95,21 +98,21 @@ Custom Annotations
 |Program|Version|Relevant Links|
 |:------|:------:|:-------------|
 |R|4.4.2|[https://www.r-project.org/](https://www.r-project.org/)|
+|Bioconductor|3.20|[https://bioconductor.org](https://bioconductor.org)|
+|tidyverse|2.0.0|[https://www.tidyverse.org](https://www.tidyverse.org)
 |DT|0.33|[https://github.com/rstudio/DT](https://github.com/rstudio/DT)|
 |dplyr|1.1.4|[https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)|
 |tibble|3.2.1|[https://tibble.tidyverse.org](https://tibble.tidyverse.org)|
 |stringr|1.5.1|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
 |R.utils|2.12.3|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
-|oligo|1.70.0|[https://bioconductor.org/packages/3.14/bioc/html/oligo.html](https://bioconductor.org/packages/3.14/bioc/html/oligo.html)|
-|limma|3.62.2|[https://bioconductor.org/packages/3.14/bioc/html/limma.html](https://bioconductor.org/packages/3.14/bioc/html/limma.html)|
+|oligo|1.70.0|[https://bioconductor.org/packages/3.20/bioc/html/oligo.html](https://bioconductor.org/packages/3.20/bioc/html/oligo.html)|
+|limma|3.62.2|[https://bioconductor.org/packages/3.20/bioc/html/limma.html](https://bioconductor.org/packages/3.20/bioc/html/limma.html)|
 |glue|1.8.0|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
-|biomaRt|2.62.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
+|biomaRt|2.62.0|[https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html)|
 |matrixStats|1.5.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
 |statmod|1.5.0|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
-|dp_tools|1.3.5|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
-|singularity|3.9|[https://sylabs.io](https://sylabs.io)|
+|dp_tools|1.3.5|[https://github.com/torres-alexis/dp_tools](https://github.com/torres-alexis/dp_tools)|
 |Quarto|1.6.40|[https://quarto.org](https://quarto.org)|
-
 ---
 
 # General processing overview with example commands  
@@ -133,17 +136,15 @@ dpt-get-isa-archive \
 
 ### Parse the metadata from the *ISA.zip file to create a sample runsheet ###
 
-dpt-isa-to-runsheet --accession OSD-### \
- --config-type microarray \
- --config-version Latest \
- --isa-archive *ISA.zip
+dpt-isa-to-runsheet --accession GLDS-### \
+  --plugin-dir /path/to/dp_tools__microarray_plugin \
+  --isa-archive *ISA.zip
 ```
 
 **Parameter Definitions:**
 
 - `--accession OSD-###` - OSD accession ID (replace ### with the OSD number being processed), used to retrieve the urls for the ISA archive and raw expression files hosted on the GeneLab Repository
-- `--config-type` - Instructs the script to extract the metadata required for `microarray` processing from the ISA archive
-- `--config-version` - Specifies the `dp-tools` configuration version to use, a value of `Latest` will specify the most recent version
+- `--plugin-dir /path/to/dp_tools__microarray_plugin` - specifies the path to the plugin directory defining the dp-tools configuration for the desired assay type. A plugin for both the Affymetrix microarray assay is provided in the [Workflow_Documentation](../Workflow_Documentation/NF_MAAffymetrix/workflow_code/bin/dp_tools__affymetrix/) folder
 - `--isa-archive` - Specifies the *ISA.zip file for the respective GLDS dataset, downloaded in the `dpt-get-isa-archive` command
 
 
@@ -179,7 +180,7 @@ install.packages("matrixStats")
 install.packages("statmod")
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install(version = "3.14")
+BiocManager::install(version = "3.20")
 BiocManager::install("limma")
 BiocManager::install("biomaRt")
 BiocManager::install("oligo")
@@ -273,7 +274,7 @@ options(timeout=1000) # ensure enough time for data downloads
   **Function Parameter Definitions:**
   - `i_vector=` - a vector of logical values
 
-  **Returns:** a logical of length 1; `TRUE` if all values are true, `FALSE` otherwise; stops and returns an error if input vector is empty
+  **Returns:** a logical vector of length 1; `TRUE` if all values are true, `FALSE` otherwise; stops and returns an error if input vector is empty
 </details>
 
 #### runsheet_paths_are_URIs()
@@ -292,7 +293,7 @@ options(timeout=1000) # ensure enough time for data downloads
   **Function Parameter Definitions:**
   - `df_runsheet=` - a dataframe containing the sample runsheet information
 
-  **Returns:** a logical of length 1; `TRUE` if all values in the `Array Data File Path` of the runsheet start with "https", `FALSE` otherwise; stops and returns an error if input vector is empty
+  **Returns:** a logical vector of length 1; `TRUE` if all values in the `Array Data File Path` of the runsheet start with "https", `FALSE` otherwise; stops and returns an error if input vector is empty
 </details>
 
 #### download_files_from_runsheet()
@@ -348,7 +349,7 @@ options(timeout=1000) # ensure enough time for data downloads
 
   **Function Parameter Definitions:**
   - `organism=` - a string containing the name of the organism (as found in the species column of the GeneLab annotation table)
-  - `annotation_table_link=` - a string specifying the URL or path to latest GeneLab Annotations file, see [GL-DPPD-7110-A_annotations.csv](../../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
+  - `annotation_table_link=` - a string specifying the URL or path to latest GeneLab Annotations file, see [GL-DPPD-7110-A_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
 
   **Returns:** a dataframe containing all rows in the GeneLab annotations file that match the specified organism
 </details>
@@ -710,7 +711,7 @@ ensembl_version <- as.character(annotation_table$ensemblVersion)
     > Note: If not using custom annotations, leave `annotation_config_path` as `NULL`.
 
 - `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
-- `annotation_table_link` (URL or path to latest GeneLab Annotations file, see [GL-DPPD-7110-A_annotations.csv](../../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv))
+- `annotation_table_link` (URL or path to latest GeneLab Annotations file, see [GL-DPPD-7110-A_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv))
 
 **Output Data:**
 
@@ -1269,14 +1270,14 @@ probeset_expression_matrix.gene_mapped <- probeset_expression_matrix %>%
 - `local_annotation_dir` (path to local annotation directory if using custom annotations, output from [Step 2d](#2d-load-annotation-metadata))
 - `annotation_config_path` (URL or path to annotation config file if using custom annotations, output from [Step 2d](#2d-load-annotation-metadata))
 
-  > Note: See [Affymetrix_array_annotations.csv](../Array_Annotations/Affymetrix_array_annotations.csv) for the latest config file used at GeneLab. This file can also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAffymetrix/examples/annotations/README.md).
+  > Note: See [Affymetrix_array_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/tree/master/Microarray/Affymetrix/Array_Annotations/Affymetrix_array_annotations.csv) for the latest config file used at GeneLab. This file can also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAffymetrix/examples/annotations/README.md).
 
 - `probeset_level_data` (R object containing probeset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-probeset-summarization))
 
 **Output Data:**
 
 - `unique_probe_ids` (R object containing probeset ID to gene annotation mappings)
-- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html) or custom annotations)
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html) or custom annotations)
 
 <br>
 
@@ -1303,7 +1304,7 @@ print(glue::glue("Unique Mapping Count: {slices[['Unique Mapping']]}"))
 
 **Input Data:**
 
-- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
 
 **Output Data:**
 
@@ -1398,7 +1399,7 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 
 - `df_rs` (R dataframe containing information from the runsheet, output from [Step 2c](#2c-load-metadata-and-raw-data))
 - `annot_key` (keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL', defined in [Step 8a](#8a-get-probeset-annotations))
-- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
 - `background_corrected_data` (R object containing background-corrected microarray data, output from [Step 4](#4-background-correction))
 - `norm_data` (R object containing background-corrected and normalized microarray data, output from [Step 5](#5-between-array-normalization))
 - `unique_probe_ids` (R object containing probeset ID to gene annotation mappings, output from [Step 8a](#8a-get-probeset-annotations))
@@ -1606,7 +1607,7 @@ write.csv(df_interim, file.path(DIR_DGE, "differential_expression_GLmicroarray.c
 
 - `design_data` (a list of R objects containing the sample information and metadata, output from [Step 9a](#9a-generate-design-matrix) above)
 - INTERIM.csv (statistical values from individual probeset level DE analysis, output from [Step 9b](#9b-perform-individual-probeset-level-de) above)
-- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
 
 **Output Data:**
 
