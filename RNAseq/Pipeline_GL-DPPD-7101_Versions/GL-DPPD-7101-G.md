@@ -17,7 +17,7 @@ Barbara Novak (GeneLab Data Processing Lead)
 Amanda Saravia-Butler (GeneLab Science Lead)  
 Samrawit Gebre (OSDR Project Manager)  
 Danielle Lopez (OSDR Deputy Project Manager)  
-Lauren Sanders (OSDR Project Scientist)
+Jonathan Galazka (OSDR Project Scientist)
 
 ---
 
@@ -1399,8 +1399,10 @@ if (any(grepl(tech_rep_pattern, rownames(sampleTable)))) {
         # Collapse only if >1 replicate per group exists
         dds <- collapseReplicates(dds, groupby = tech_rep_groups)
 
-        collapsed_names <- tech_rep_groups[!duplicated(tech_rep_groups)]
-        sampleTable <- sampleTable[match(collapsed_names, tech_rep_groups), , drop = FALSE]
+        # Update sampleTable to match collapsed samples and preserve metadata from the first occurrence of each sample group
+        collapsed_names <- unique(tech_rep_groups)
+        first_occurrence_indices <- match(collapsed_names, tech_rep_groups)
+        sampleTable <- sampleTable[first_occurrence_indices, , drop = FALSE]
         rownames(sampleTable) <- collapsed_names
     }
 }

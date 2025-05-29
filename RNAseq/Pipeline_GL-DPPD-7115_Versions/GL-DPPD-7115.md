@@ -16,7 +16,7 @@ Barbara Novak (GeneLab Data Processing Lead)
 Amanda Saravia-Butler (GeneLab Science Lead)  
 Samrawit Gebre (OSDR Project Manager)  
 Danielle Lopez (OSDR Deputy Project Manager)  
-Lauren Sanders (OSDR Project Scientist)
+Jonathan Galazka (OSDR Project Scientist)
 
 ---
 
