@@ -78,7 +78,7 @@ compare_csv_from_runsheet <- function(runsheet_path) {
         select(matches("Factor.Value", ignore.case = TRUE)) %>%
         rename_with(~ paste0("factor_", seq_along(.)))
     result <- df %>%
-        select(sample_id = Sample.Name) %>%
+        select(Sample.Name, Source.Name) %>%
         bind_cols(factors)
     return(result)
 }
@@ -87,8 +87,8 @@ compare_csv <- compare_csv_from_runsheet(params$runsheet_path)
 ```
 
 ```{r compare_df-to-study_df}
-study <- compare_csv[, -1, drop=FALSE]  # Exclude sample_id
-rownames(study) <- compare_csv$sample_id
+study <- compare_csv[, -c(1, 2), drop=FALSE]  # Exclude Sample.Name and Source.Name
+rownames(study) <- compare_csv$Sample.Name
 ```
 
 ```{r study_df-to-group_df}
@@ -206,31 +206,30 @@ rownames(sampleTable) <- if (params$microbes) {
     colnames(txi.rsem$counts)
 }
 # Handle technical replicates
-# Identify technical replicates by name pattern
-tech_rep_pattern <- "_techrep(\\d+)$"
+# Use Source.Name column to identify technical replicates
 all_samples <- rownames(sampleTable)
-has_tech_rep <- grepl(tech_rep_pattern, all_samples)
+
+# Get source names for each sample from the runsheet
+source_names <- compare_csv$Source.Name[match(all_samples, compare_csv$Sample.Name)]
+names(source_names) <- all_samples
+
+# Identify samples that have tech reps (multiple samples with same source name)
+source_counts <- table(source_names)
+has_tech_reps <- source_counts > 1
 
 # Only process if we have technical replicates
-if (any(has_tech_rep)) {
-    # Get sample base names and tech replicate numbers
+if (any(has_tech_reps)) {
+    # Create sample info dataframe
     sample_info <- data.frame(
         name = all_samples,
+        source_name = source_names,
         stringsAsFactors = FALSE
     )
     
-    # For samples with tech reps, extract base name and replicate number
-    sample_info$base_name <- ifelse(has_tech_rep, 
-                                   sub(tech_rep_pattern, "", all_samples),
-                                   all_samples)
-    
-    sample_info$tech_rep <- rep(1, length(all_samples))
-    sample_info$tech_rep[has_tech_rep] <- as.integer(sub(".*_techrep", "", all_samples[has_tech_rep]))
-    
-    # Count how many tech reps each base sample has
-    base_samples <- unique(sample_info$base_name)
-    tech_rep_counts <- sapply(base_samples, function(b) {
-        sum(sample_info$base_name == b)
+    # Find unique source names and count tech reps for each
+    unique_sources <- unique(source_names)
+    tech_rep_counts <- sapply(unique_sources, function(src) {
+        sum(source_names == src)
     })
     
     # Find the minimum number of tech reps across all samples
@@ -239,16 +238,10 @@ if (any(has_tech_rep)) {
     # Keep all regular samples (no tech reps) and the minimum number of tech reps for each base sample
     samples_to_keep <- character(0)
     
-    for (base in base_samples) {
-        indices <- which(sample_info$base_name == base)
-        if (length(indices) == 1) {
-            # Regular sample, no tech reps
-            samples_to_keep <- c(samples_to_keep, sample_info$name[indices])
-        } else {
-            # Has tech reps, keep the minimum number in order
-            ordered_indices <- indices[order(sample_info$tech_rep[indices])]
-            samples_to_keep <- c(samples_to_keep, sample_info$name[ordered_indices[1:min_tech_reps]])
-        }
+    for (src in unique_sources) {
+        indices <- which(sample_info$source_name == src)
+        # Keep first min_tech_reps samples for this source
+        samples_to_keep <- c(samples_to_keep, sample_info$name[indices[1:min_tech_reps]])
     }
     
     # Update sample table and counts to keep only selected samples
@@ -284,18 +277,16 @@ if (params$microbes) {
     )
 }
 # Collapse technical replicates if present
-tech_rep_pattern <- "_techrep\\d+$"
-if (any(grepl(tech_rep_pattern, rownames(sampleTable)))) {
-    tech_rep_groups <- sub(tech_rep_pattern, "", rownames(sampleTable))
+# Get source names for remaining samples
+collapse_source_names <- compare_csv$Source.Name[match(rownames(sampleTable), compare_csv$Sample.Name)]
 
-    if (length(unique(tech_rep_groups)) < length(tech_rep_groups)) {
-        # Collapse only if >1 replicate per group exists
-        dds <- collapseReplicates(dds, groupby = tech_rep_groups)
-
-        collapsed_names <- tech_rep_groups[!duplicated(tech_rep_groups)]
-        sampleTable <- sampleTable[match(collapsed_names, tech_rep_groups), , drop = FALSE]
-        rownames(sampleTable) <- collapsed_names
-    }
+if (length(unique(collapse_source_names)) < length(collapse_source_names)) {
+    # Collapse only if >1 replicate per source exists
+    dds <- collapseReplicates(dds, groupby = collapse_source_names)
+    
+    collapsed_names <- unique(collapse_source_names)
+    sampleTable <- sampleTable[match(collapsed_names, collapse_source_names), , drop = FALSE]
+    rownames(sampleTable) <- collapsed_names
 }
 summary(dds)
 ```
