@@ -67,7 +67,7 @@ if (!is.null(params$parallel_config) && params$parallel_config != "") {
     BPPARAM <- SerialParam()
 }
 # Save parameters
-dir.create(dirname(paste0(params$output_directory)), recursive = TRUE)
+dir.create(params$output_directory, recursive = TRUE, showWarnings = FALSE)
 yaml::write_yaml(params, file.path(params$output_directory, "last_params.yml"))
 ```
 
