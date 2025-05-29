@@ -1230,9 +1230,17 @@ compare_csv_from_runsheet <- function(runsheet_path) {
     factors <- df %>%
         select(matches("Factor.Value", ignore.case = TRUE)) %>%
         rename_with(~ paste0("factor_", seq_along(.)))
-    result <- df %>%
-        select(Sample.Name, Source.Name) %>%
-        bind_cols(factors)
+    
+    # Check if Source.Name column exists
+    if ("Source.Name" %in% colnames(df)) {
+        result <- df %>%
+            select(Sample.Name, Source.Name) %>%
+            bind_cols(factors)
+    } else {
+        result <- df %>%
+            select(Sample.Name) %>%
+            bind_cols(factors)
+    }
     return(result)
 }
 
@@ -1240,7 +1248,11 @@ compare_csv_from_runsheet <- function(runsheet_path) {
 compare_csv <- compare_csv_from_runsheet(runsheet_path)
 
 ### Create data frame containing all samples and respective factors ###
-study <- compare_csv[, -c(1, 2), drop=FALSE]  # Exclude Sample.Name and Source.Name
+study <- if ("Source.Name" %in% colnames(compare_csv)) {
+    compare_csv[, -c(1, 2), drop=FALSE]  # Exclude Sample.Name and Source.Name
+} else {
+    compare_csv[, -1, drop=FALSE]  # Exclude only Sample.Name
+}
 rownames(study) <- compare_csv$Sample.Name
 
 ### Format groups and indicate the group that each sample belongs to ###
@@ -1329,62 +1341,59 @@ sampleTable <- data.frame(condition=factor(group))
 rownames(sampleTable) <- colnames(txi.rsem$counts)
 
 ### Handle technical replicates in sample table ###
-# Use Source.Name to identify technical replicates
-all_samples <- rownames(sampleTable)
+# Only if Source.Name column exists in runsheet
+if ("Source.Name" %in% colnames(compare_csv)) {
+    # Use Source.Name column to identify technical replicates
+    all_samples <- rownames(sampleTable)
 
-# Get source names for each sample from the runsheet
-source_names <- compare_csv$Source.Name[match(all_samples, compare_csv$Sample.Name)]
-names(source_names) <- all_samples
+    # Get source names for each sample from the runsheet
+    source_names <- compare_csv$Source.Name[match(all_samples, compare_csv$Sample.Name)]
+    names(source_names) <- all_samples
 
-# Identify samples that have tech reps (multiple samples with same source name)
-source_counts <- table(source_names)
-has_tech_reps <- source_counts > 1
+    # Identify samples that have tech reps (multiple samples with same source name)
+    source_counts <- table(source_names)
+    has_tech_reps <- source_counts > 1
 
-# Only process if we have technical replicates
-if (any(has_tech_reps)) {
-    # Create sample info dataframe
-    sample_info <- data.frame(
-        name = all_samples,
-        source_name = source_names,
-        stringsAsFactors = FALSE
-    )
-    
-    # Find unique source names and count tech reps for each
-    unique_sources <- unique(source_names)
-    tech_rep_counts <- sapply(unique_sources, function(src) {
-        sum(source_names == src)
-    })
-    
-    # Find the minimum number of tech reps across all samples
-    min_tech_reps <- min(tech_rep_counts)
-    
-    # Keep all regular samples (no tech reps) and the minimum number of tech reps for each base sample
-    samples_to_keep <- character(0)
-    
-    for (src in unique_sources) {
-        indices <- which(sample_info$source_name == src)
-        # Keep first min_tech_reps samples for this source
-        samples_to_keep <- c(samples_to_keep, sample_info$name[indices[1:min_tech_reps]])
-    }
-    
-    # Update sample table and counts to keep only selected samples
-    sampleTable <- sampleTable[samples_to_keep, , drop=FALSE]
-    
-    # Update the counts matrix to match the new sample table
-    if (params$microbes) {
-        counts <- counts[, samples_to_keep]
-    } else {
-        txi.rsem$counts <- txi.rsem$counts[, samples_to_keep]
-        txi.rsem$abundance <- txi.rsem$abundance[, samples_to_keep]
-        txi.rsem$length <- txi.rsem$length[, samples_to_keep]
+    # Only process if we have technical replicates
+    if (any(has_tech_reps)) {
+        # Create sample info dataframe
+        sample_info <- data.frame(
+            name = all_samples,
+            source_name = source_names,
+            stringsAsFactors = FALSE
+        )
+        
+        # Find unique source names and count tech reps for each
+        unique_sources <- unique(source_names)
+        tech_rep_counts <- sapply(unique_sources, function(src) {
+            sum(source_names == src)
+        })
+        
+        # Find the minimum number of tech reps across all samples
+        min_tech_reps <- min(tech_rep_counts)
+        
+        # Keep samples: all single samples + first min_tech_reps for each source (in runsheet order)
+        samples_to_keep <- character(0)
+        
+        for (src in unique_sources) {
+            indices <- which(sample_info$source_name == src)
+            # Keep first min_tech_reps samples for this source (1 for single samples, min_tech_reps for tech reps)
+            samples_to_keep <- c(samples_to_keep, sample_info$name[indices[1:min_tech_reps]])
+        }
+        
+        # Update sample table and counts to keep only selected samples
+        sampleTable <- sampleTable[samples_to_keep, , drop=FALSE]
+        
+        # Update the counts matrix to match the new sample table
+        if (params$microbes) {
+            counts <- counts[, samples_to_keep]
+        } else {
+            txi.rsem$counts <- txi.rsem$counts[, samples_to_keep]
+            txi.rsem$abundance <- txi.rsem$abundance[, samples_to_keep]
+            txi.rsem$length <- txi.rsem$length[, samples_to_keep]
+        }
     }
 }
-
-### Apply the technical replicate handling to the sample table ###
-sampleTable <- handle_technical_replicates(sampleTable)
-
-# Update the counts matrix to match the new sample table
-txi.rsem$counts <- txi.rsem$counts[, rownames(sampleTable)]
 
 ### Build dds object ###
 dds <- DESeqDataSetFromTximport(
