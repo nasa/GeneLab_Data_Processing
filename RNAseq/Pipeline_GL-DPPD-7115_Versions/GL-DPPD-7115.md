@@ -1019,7 +1019,10 @@ library(DESeq2)
 library(BiocParallel)
 
 ### Define a system-specific BiocParallelParam object to run DGE R script functions in parallel when applicable ###
-BPPARAM <- SerialParam()
+BPPARAM <- SerialParam(RNGseed = 7)
+
+### Set random seed for reproducibility ###
+set.seed(7)
 
 ### Define which organism is used in the study - this should be consistent with the species name in the "species" column of the GL-DPPD-7110-A_annotations.csv file ###
 organism <- "organism_that_samples_were_derived_from"
@@ -1045,7 +1048,7 @@ setwd(file.path(work_dir))
 
 - {GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv (runsheet, output from [Step 8a](#8a-create-sample-runsheet))
 - `organism` (name of organism samples were derived from, found in the species column of [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) file)
-- `BPPARAM` (system-specific BiocParallelParam object for parallel processing configuration, by default this is set to `SerialParam()`)
+- `BPPARAM` (system-specific BiocParallelParam object for parallel processing configuration, by default this is set to `SerialParam(RNGseed = 7)`)
 
 **Output Data:**
 
