@@ -13,7 +13,7 @@ OUTPUT_FN = f"VV_log_final_only_issues{args.assay_suffix}.csv"
 
 df = pd.read_csv(INPUT_FN, sep=",")
 
-# Filter out GREEN status (code 20) to keep only issues
-# Handle both string and integer flag_codes
-df_filtered = df.loc[~((df["flag_code"] == "20") | (df["flag_code"] == 20))]
+# Filter out GREEN status (code 20) and YELLOW status (code 30) to keep only RED status lines
+df_filtered = df.loc[~((df["flag_code"] == "20") | (df["flag_code"] == 20) | 
+                       (df["flag_code"] == "30") | (df["flag_code"] == 30))]
 df_filtered.to_csv(OUTPUT_FN, sep=",", index=False)
