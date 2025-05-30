@@ -256,7 +256,8 @@ def generate_protocol_content(args, software_versions):
         description += f"and featureCounts log files were compiled with MultiQC (version {multiqc_version}). "
         
         # Add rRNA removal sentence (for microbes workflow)
-        description += f"To create a set of rRNA-removed quantification data, Ensembl IDs mapping to ribosomal RNA (rRNA) were removed from the featureCounts gene count data. Both the original set of featureCounts quantification data and the rRNA-removed data were subject to differential gene expression analysis as follows. "
+        id_type = "Ensembl IDs" if args.reference_source and "ensembl" in args.reference_source.lower() else "gene IDs"
+        description += f"To create a set of rRNA-removed quantification data, {id_type} mapping to ribosomal RNA (rRNA) were removed from the featureCounts gene count data. Both the original set of featureCounts quantification data and the rRNA-removed data were subject to differential gene expression analysis as follows. "
     else:
         # For standard workflow (RSEM)
         description += f"Aligned reads from all samples were quantified using RSEM (version {rsem_version}), "
@@ -264,7 +265,8 @@ def generate_protocol_content(args, software_versions):
         description += f"and RSEM count log files were compiled with MultiQC (version {multiqc_version}). "
         
         # Add rRNA removal sentence for standard workflow
-        description += f"To create a set of rRNA-removed quantification data, Ensembl IDs mapping to ribosomal RNA (rRNA) were removed from the RSEM gene count data. Both the original set of RSEM quantification data and the rRNA-removed data were subject to differential gene expression analysis as follows. "
+        id_type = "Ensembl IDs" if args.reference_source and "ensembl" in args.reference_source.lower() else "gene IDs"
+        description += f"To create a set of rRNA-removed quantification data, {id_type} mapping to ribosomal RNA (rRNA) were removed from the RSEM gene count data. Both the original set of RSEM quantification data and the rRNA-removed data were subject to differential gene expression analysis as follows. "
     
     # Add runsheet generation and normalization sentence
     dp_tools_version = software_versions.get('dp_tools', 'unknown')
