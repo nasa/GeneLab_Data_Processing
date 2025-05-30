@@ -134,6 +134,13 @@ Staging:
             Unit to be suffix-concatenated onto prior Factor value columns.
           Example: day
 
+        - ISA Field Name: Source Name
+          ISA Table Source: Sample
+          Runsheet Column Name: Source Name
+          Processing Usage: >-
+            Source name identifier from the sample table.
+          Example: SLS-2_TMS_GC_G10
+          
       From User:
         # Removed since unused by Processing via the runsheet
         # - Runsheet Column Name: GLDS
