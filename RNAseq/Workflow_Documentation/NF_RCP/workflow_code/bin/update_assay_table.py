@@ -860,14 +860,22 @@ def add_align_multiqc_reports_column(df, glds_prefix, assay_suffix):
     
     return df
 
-def add_rseqc_multiqc_reports_column(df, glds_prefix, assay_suffix):
+def add_rseqc_multiqc_reports_column(df, glds_prefix, assay_suffix, runsheet_df=None):
     """Add the RSeQC MultiQC reports column to the dataframe."""
     column_name = "Parameter Value[RSeQC/MultiQC Reports]"
     alternative_names = []
     
-    # Create the four RSeQC multiqc report filenames - data zip and html for each
+    # Determine if this is paired-end data
+    is_paired = is_paired_end_data(runsheet_df)
+    
+    # Create the RSeQC multiqc report filenames - data zip and html for each
+    # Only include inner_dist for paired-end data
+    report_types = ["geneBody_cov", "infer_exp", "read_dist"]
+    if is_paired:
+        report_types.insert(2, "inner_dist")  # Add inner_dist for paired-end
+    
     multiqc_reports = []
-    for report_type in ["geneBody_cov", "infer_exp", "inner_dist", "read_dist"]:
+    for report_type in report_types:
         data_zip = f"{glds_prefix}{report_type}_multiqc{assay_suffix}_data.zip"
         html = f"{glds_prefix}{report_type}_multiqc{assay_suffix}.html"
         multiqc_reports.extend([data_zip, html])
@@ -1347,7 +1355,7 @@ def main():
         print("\n=== PROCESSING RSeQC SECTION ===")
         
         # Add RSeQC MultiQC Reports column
-        assay_df = add_rseqc_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
+        assay_df = add_rseqc_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix, runsheet_df)
         
         # =====================================================
         # SECTION 5: RAW COUNTS DATA
