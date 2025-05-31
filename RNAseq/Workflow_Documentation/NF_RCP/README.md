@@ -160,7 +160,7 @@ While in the location containing the `NF_RCP_2.0.0` directory that was downloade
 
 ```bash
 nextflow run NF_RCP_2.0.0/main.nf \ 
-   -profile singularity \
+   -profile singularity,local \
    --accession OSD-194 
 ```
 
@@ -174,7 +174,7 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 ```bash
 nextflow run NF_RCP_2.0.0/main.nf \ 
-   -profile singularity \
+   -profile singularity,local \
    --accession OSD-194 \
    --reference_version 112 \
    --reference_source ensembl \ 
@@ -190,7 +190,7 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 ```bash
 nextflow run NF_RCP_2.0.0/main.nf \ 
-   -profile singularity \
+   -profile singularity,local \
    --runsheet_path </path/to/runsheet> 
 ```
 
