@@ -383,14 +383,11 @@ custom_palette <- custom_palette[-c(21:23, grep(pattern = pattern_to_filter,
 
 
 ###############################################################################
-# Things to do:
-# 1. add of options to choose normalization method c(vst, relative_abundance, Archison distance)
-# 2. Add rarefaction
 
 # Required variables
 metadata_file <- opt[["metadata-table"]]
-features_file <-  opt[["feature-table"]] 
-taxonomy_file <-  opt[["taxonomy-table"]]
+features_file <- opt[["feature-table"]] 
+taxonomy_file <- opt[["taxonomy-table"]]
 beta_diversity_out_dir <- "beta_diversity/"
 if(!dir.exists(beta_diversity_out_dir)) dir.create(beta_diversity_out_dir)
 # Metadata group column name to compare
@@ -439,7 +436,7 @@ metadata <- metadata %>%
                          ) 
   )
 sample_names <- rownames(metadata)
-deseq2_sample_names <- make.names(sample_names, unique = TRUE)
+#deseq2_sample_names <- make.names(sample_names, unique = TRUE)
 
 short_group_labels <- sprintf("%d: %s", seq_along(group_levels), group_levels)
 names(short_group_labels) <- group_levels
@@ -450,7 +447,8 @@ sample_info_tab <- metadata %>%
 
 # Feature or ASV table
 feature_table <- read.table(file = features_file, header = TRUE,
-                            row.names = 1, sep = "\t")
+                            row.names = 1, sep = "\t", 
+                            check.names = FALSE)
 
 # ----------------- Preprocess ASV and taxonomy tables
 if(remove_rare){
@@ -467,7 +465,8 @@ if(remove_rare){
 
 # Taxonomy 
 taxonomy_table <-  read.table(file = taxonomy_file, header = TRUE,
-                              row.names = 1, sep = "\t")
+                              row.names = 1, sep = "\t", 
+                              check.names = FALSE)
 
 message(glue("There are {sum(is.na(taxonomy_table$domain))} features without 
            taxonomy assignments. Dropping them..."))
@@ -492,6 +491,15 @@ common_ids <- intersect(rownames(feature_table), rownames(taxonomy_table))
 # only features found in both table
 feature_table <- feature_table[common_ids,]
 taxonomy_table <- taxonomy_table[common_ids,]
+
+
+
+# drop samples with zero sequence counts
+samples2keep <-  colnames(feature_table)[colSums(feature_table) > 0]
+
+feature_table <- feature_table[, samples2keep]
+
+metadata <- metadata[samples2keep,]
 
 distance_methods <- c("euclidean", "bray") # "bray" # "euclidean"
 normalization_methods <- c("vst", "rarefy")
@@ -529,7 +537,8 @@ if(normalization_method == "vst"){
   
   # Save VSD validation plot
   ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}vsd_validation_plot.png"),
-         plot = mead_sd_plot, width = 14, height = 10, dpi = 300, units = "in")
+         plot = mead_sd_plot, width = 14, height = 10, 
+         dpi = 300, units = "in", limitsize = FALSE)
 }
 
 
@@ -543,7 +552,8 @@ dendogram <- make_dendogram(dist_obj, metadata, groups_colname,
 
 # Save dendogram
 ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_dendrogram{assay_suffix}.png"),
-       plot = dendogram, width = 14, height = 10, dpi = 300, units = "in")
+       plot = dendogram, width = 14, height = 10, 
+       dpi = 300, units = "in", limitsize = FALSE)
 
 
 #---------------------------- Run stats
@@ -561,13 +571,15 @@ write_csv(x = stats_res$adonis,
 ordination_plot_u <- plot_pcoa(ps, stats_res, distance_method, 
                                groups_colname,group_colors, legend_title) 
 ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_without_labels{assay_suffix}.png"),
-       plot=ordination_plot_u, width = 14, height = 8.33, dpi = 300, units = "in")
+       plot=ordination_plot_u, width = 14, height = 8.33, 
+       dpi = 300, units = "in", limitsize = FALSE)
 
 # Labeled PCoA plot
 ordination_plot <- plot_pcoa(ps, stats_res, distance_method,
                              groups_colname, group_colors, legend_title,
                              addtext=TRUE) 
 ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_w_labels{assay_suffix}.png"),
-       plot=ordination_plot, width = 14, height = 8.33, dpi = 300, units = "in")
+       plot=ordination_plot, width = 14, height = 8.33, 
+       dpi = 300, units = "in", limitsize = FALSE)
 
 })

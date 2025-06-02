@@ -281,7 +281,8 @@ values <- sample_info_tab %>% pull(color) %>% unique()
 
 # Feature or ASV table
 feature_table <- read.table(file = features_file, header = TRUE,
-                            row.names = 1, sep = "\t")
+                            row.names = 1, sep = "\t", 
+                            check.names = FALSE)
 
 if(remove_rare){
   
@@ -297,7 +298,8 @@ if(remove_rare){
 
 # Taxonomy 
 taxonomy_table <-  read.table(file = taxonomy_file, header = TRUE,
-                              row.names = 1, sep = "\t")
+                              row.names = 1, sep = "\t", 
+                              check.names = FALSE)
 
 
 
@@ -320,14 +322,23 @@ taxonomy_table <- taxonomy_table[!(rownames(taxonomy_table) %in% asvs2drop),]
 
 # Subset tables 
 
+
+
 # Get features common to the taxonomy and feature table 
 common_ids <- intersect(rownames(feature_table), rownames(taxonomy_table))
 
 # Subset the feature and taxonomy tables to contain 
 # only features found in both table
 feature_table <- feature_table[common_ids,]
+
 taxonomy_table <- taxonomy_table[common_ids,]
 
+
+# drop samples with zero sequence counts
+samples2keep <-  colnames(feature_table)[colSums(feature_table) > 0]
+
+feature_table <- feature_table[, samples2keep]
+metadata <- metadata[samples2keep,]
 
 
 # Create phyloseq object
@@ -339,6 +350,15 @@ seq_per_sample <- colSums(feature_table) %>% sort()
 
 # minimum value
 depth <- min(seq_per_sample)
+
+# Error if the number of sequences per sample left after filtering is 
+# insufficient for diversity analysis
+if(max(seq_per_sample) < 100){
+ 
+  print(seq_per_sample)
+  stop(glue("The maximum sequence count per sample ({max(seq_per_sample)}) is less than 100. \
+            Therefore, alpha diversity analysis cannot be performed."))
+} 
 
 for (count in seq_per_sample) {
   
@@ -395,7 +415,7 @@ rareplot <- ggplot(p, aes(x = Sample, y = Species,
         plot.margin = margin(t = 10, r = 20, b = 10, l = 10, unit = "pt"))
 
 ggsave(filename = glue("{alpha_diversity_out_dir}{output_prefix}rarefaction_curves{assay_suffix}.png"),
-       plot=rareplot, width = 14, height = 8.33, dpi = 300)
+       plot=rareplot, width = 14, height = 8.33, dpi = 300, limitsize = FALSE)
 
 # ------------------  Richness and diversity estimates  ------------------#
 
@@ -414,16 +434,38 @@ merged_table  <- metadata %>%
 
 diversity_stats <- map_dfr(.x = diversity_metrics, function(metric){
   
+
+  number_of_groups <- merged_table[,groups_colname] %>% unique() %>% length()
+  
+  if (number_of_groups < 2){
+    
+    stop("Exiting... There are less than two groups to compare, hence, pairwise comparions cannot be performed.
+         Please ensure that your metadata contains two or more groups to compare...")
+  
+  }else if(number_of_groups == 2){
+    
+  df <- data.frame(y=merged_table[,metric], x=merged_table[,groups_colname]) %>%
+      wilcox_test(y~x) %>% 
+      adjust_pvalue(method = "bonferroni") %>%
+      select(group1, group2, W=statistic, p, p.adj) %>% 
+      mutate(Metric=metric) %>% 
+    add_significance(p.col='p.adj', output.col = 'p.signif') %>% 
+    select(Metric,group1, group2, W, p, p.adj, p.signif)
+      
+  }else{
+    
   res <- dunnTest(merged_table[,metric],merged_table[,groups_colname])
   
   df <- res$res %>%
     separate(col = Comparison, into = c("group1", "group2"), sep = " - ") %>% 
     mutate(Metric=metric)  %>% 
-    rename(p=P.unadj, p.adj=P.adj)
-  
-  add_significance(df, p.col='p.adj', output.col = 'p.signif') %>% 
+    rename(p=P.unadj, p.adj=P.adj) %>% 
+    add_significance(p.col='p.adj', output.col = 'p.signif') %>% 
     select(Metric,group1, group2, Z, p, p.adj, p.signif)
   
+  }
+
+  return(df)
 })
 
 
@@ -511,7 +553,8 @@ richness_by_sample <-  ggplot(richness_by_sample$data %>%
 
 
 ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}richness_and_diversity_estimates_by_sample{assay_suffix}.png"),
-       plot=richness_by_sample, width = 14, height = 8.33, dpi = 300, units = "in")
+       plot=richness_by_sample, width = 14, height = 8.33, 
+       dpi = 300, units = "in", limitsize = FALSE)
 
 
 # ------------------- Make richness by group box plots ----------------------- #
@@ -579,7 +622,13 @@ richness_by_group <- wrap_plots(p, ncol = 2, guides =  'collect') +
                                      )
 
 width <- 3.6 * length(group_levels)
+
+# Cap the max plot with to prevent "Dimensions exceed 50 inches" error when
+# saving plot with ggsave
+if (width > 50){
+  width <- 50
+}
 ggsave(filename = glue("{output_prefix}richness_and_diversity_estimates_by_group{assay_suffix}.png"),
        plot=richness_by_group, width = width, 
        height = 8.33, dpi = 300, units = "in",
-       path = {alpha_diversity_out_dir})
+       path = {alpha_diversity_out_dir}, limitsize = FALSE)
