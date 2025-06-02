@@ -4,7 +4,7 @@
 
 ---
 
-**Date:** March XX, 2025  
+**Date:** May XX, 2025  
 **Revision:** C  
 **Document Number:** GL-DPPD-7104  
 
@@ -50,18 +50,19 @@ Software Updates and Changes:
 | vegan        | N/A              | 2.6._10       |
 | vsn          | N/A              | 3.74.0        |
 
-- Added new processing steps in R to generate processed data outputs for alpha and beta diversity, 
-  taxonomic summary plots, and differential abundance:
+- Added new processing steps in R to generate processed data outputs for alpha and beta diversity, taxonomic summary plots, and differential abundance:
   - Alpha Diversity Analysis ([Step 7](#7-alpha-diversity-analysis))
   - Beta Diversity Analysis ([Step 8](#8-beta-diversity-analysis))
   - Group-wise and Sample-wise Taxonomic Summary Plots ([Step 9](#9-taxonomy-plots))
   - Differential Abundance Testing ([Step 10](#9-differential-abundance-analysis)) with 
     ANCOMBC 1 ([Step 10a](#10a-ancombc-1)), ANCOMBC 2 ([Step 10b](#10b-ancombc-2)), and Deseq2 ([Step 10c](#10c-deseq2))
 - Assay-specific suffixes were added where needed for OSDR ("_GLAmpSeq")
-- Updated reference files:
-  - ITS UNITE: "UNITE\_v2024\_April2024.RData" from [DECIPHER](https://www2.decipher.codes/data/Downloads/TrainingSets/)
+- Updated [DECIPHER](https://www2.decipher.codes/data/Downloads/TrainingSets/) reference files to the following:
+  - ITS UNITE: "UNITE\_v2024\_April2024.RData" 
+  - SILVA SSU r138: "SILVA\_SSU\_r138\_2\_2024.RData"
+  - PR2 v4.13: "PR2\_v4\_13\_March2021.RData"
 - Added persistent reference links to DECIPHER databases on Figshare and replaced reference links to 
-  DECIPHER [website]([http://www2.decipher.codes/Classification/TrainingSets/](https://www2.decipher.codes/data/Downloads/TrainingSets/)) 
+  DECIPHER [website](https://www2.decipher.codes/data/Downloads/TrainingSets/)  
   - [SILVA SSU r138](https://figshare.com/ndownloader/files/52846199)
   - [UNITE v2024](https://figshare.com/ndownloader/files/52846346)
   - [PR2 v4.13](https://figshare.com/ndownloader/files/46241917)
@@ -1298,7 +1299,7 @@ library(hexbin)
   - [find_bad_taxa()](#find_bad_taxa)
 
   **Function Parameter Definitions:**
-  - `data=` - specifies the treeSummarizedExperiment containing the feature, taxonomy and metdata to be analyzed using ancombc2
+  - `data=` - specifies the treeSummarizedExperiment containing the feature, taxonomy and metadata to be analyzed using ancombc2
   - `...` - Other arguments passed on to ancombc2
 
   **Returns:** an ancombc2 result, or an empty result as returned by [find_bad_taxa()](#find_bad_taxa)
@@ -3352,6 +3353,7 @@ walk(pairwise_comp_df, function(col){
 * [plotSparsity()](#plotSparsity)
 
 **Parameter Definitions:**
+* *pipeline uses default values for `DESeq()` analysis* 
 
 **Input Data:**
 
