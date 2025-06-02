@@ -1447,8 +1447,9 @@ res_lrt <- results(dds_lrt)
 **Input Data:**
 
 * `group` (named vector specifying the group or set of factor levels for each sample, output from [Step 9c](#9c-configure-metadata-sample-grouping-and-group-comparisons))
+* `compare_csv` (data frame containing sample names, source names, and factor levels from the runsheet, output from [Step 9c](#9c-configure-metadata-sample-grouping-and-group-comparisons))
 * `txi.rsem` (imported RSEM data containing counts matrix, output from [Step 9d](#9d-import-rsem-genecounts))
-- `BPPARAM` (system-specific BiocParallelParam object for parallel processing configuration, output from [Step 9b](#9b-environment-set-up))
+* `BPPARAM` (system-specific BiocParallelParam object for parallel processing configuration, output from [Step 9b](#9b-environment-set-up))
 
 **Output Data:**
 

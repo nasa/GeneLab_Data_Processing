@@ -219,4 +219,104 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 **Additional Required Parameters For [Approach 1](#4a-approach-1-run-the-workflow-on-a-genelab-rnaseq-dataset-with-automatic-retrieval-of-reference-fasta-and-gtf-files):**
 
-* `--accession` - The OSD or GLDS ID for the dataset to be processed, eg. `GLDS-194` or `
+* `--accession` - The OSD or GLDS ID for the dataset to be processed, eg. `GLDS-194` or `OSD-194`
+
+<br>
+
+**Additional Required Parameters For [Approach 2](#4b-approach-2-run-the-workflow-on-a-genelab-rnaseq-dataset-using-local-reference-fasta-and-gtf-files):**
+
+* `--reference_version` - specifies the reference source version to use for the reference genome (Ensembl release `112` is used in this example); only needed when using Ensembl as the reference source
+
+* `--reference_source` - specifies the source of the reference files used (the source indicated in the Approach 2 example is `ensembl`) 
+
+* `--reference_fasta` - specifices the path to a local fasta file 
+
+* `--reference_gtf` - specifices the path to a local gtf file  
+
+  > Note: If the local reference files specified are different than the reference files used to create the [GeneLab annotations table](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv), additional gene annotations associated with any gene IDs from the specified files that are not shared in the GeneLab annotations will not be added to the DGE output table(s). 
+
+<br>
+
+**Additional Required Parameters for [Approach 3](#4c-approach-3-run-the-workflow-on-a-non-genelab-dataset-using-a-user-created-runsheet):**
+
+* `--runsheet_path` - specifies the path to a local runsheet. 
+
+<br>
+
+**Optional Parameters:**
+
+* `--skip_vv` - skip the automated V&V processes (Default: the automated V&V processes are active) 
+
+* `--outdir` - specifies the base directory where the output directory will be created (Default: output directory is created in the launch directory)  
+
+* `--force_single_end` - forces the analysis to use single end processing; for paired end datasets, this means only R1 is used; for single end datasets, this should have no effect  
+
+* `--reference_store_path` - specifies the directory to store the reference fasta and gtf files (Default: within the directory structure created by default in the launch directory)  
+
+* `--derived_store_path` - specifies the directory to store the tool-specific indices created during processing (Default: within the directory structure created by default in the launch directory) `
+
+* `--mode` - specifies which pipeline to use: set to `default` to run GL-DPPD-7101-G pipeline or set to `microbes` for the GL-DPPD-7115 prokaryotic pipeline (Default value: `default`)
+  > This allows the workflow to process either eukaryotic (default) or prokaryotic RNAseq data using the appropriate pipeline
+
+<br>
+
+**Additional Optional Parameters:**
+
+All parameters listed above and additional optional arguments for the RCP workflow, including debug related options that may not be immediately useful for most users, can be viewed by running the following command:
+
+```bash
+nextflow run NF_RCP_2.0.0/main.nf --help
+```
+
+See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details common to all nextflow workflows.
+
+<br>
+
+---
+
+### 5. Additional Output Files
+
+The outputs from the Analysis Staging and V&V Pipeline Subworkflows are described below:
+> Note: The outputs from the RNAseq Consensus Pipeline Subworkflow are documented in the [GL-DPPD-7101-G](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md) processing protocol.
+
+**Analysis Staging Subworkflow**
+
+   - Output:
+     - Metadata/\*_bulkRNASeq_v1_runsheet.csv (table containing metadata required for processing, including the raw reads files location)
+     - Metadata/\*-ISA.zip (the ISA archive of the OSD datasets to be processed, downloaded from the OSDR)
+   
+   
+**V&V Pipeline Subworkflow**
+
+   - Output:
+     - VV_Logs/VV_log_final_GLbulkRNAseq.csv (table containing V&V flags for all checks performed)
+     - VV_Logs/VV_log_final_only_issues_GLbulkRNAseq.csv (table containing V&V flags ONLY for checks that produced a flag code >= 30)
+     - VV_Logs/VV_log_VV_RAW_READS_GLbulkRNAseq.csv (table containing V&V flags ONLY for raw reads checks)
+     - VV_Logs/VV_log_VV_TRIMMED_READS_GLbulkRNAseq.csv (table containing V&V flags for trimmed reads checks ONLY)
+     - VV_Logs/VV_log_VV_ALIGNMENT_GLbulkRNAseq.csv (table containing V&V flags for alignment file checks ONLY)
+     - VV_Logs/VV_log_VV_RSEQC_GLbulkRNAseq.csv (table containing V&V flags for RSeQC file checks ONLY)
+     - VV_Logs/VV_log_VV_COUNTS_GLbulkRNAseq.csv (table containing V&V flags for gene quantification file checks ONLY) 
+     - VV_Logs/VV_log_VV_DESEQ2_ANALYSIS_GLbulkRNAseq.csv (table containing V&V flags for DESeq2 Analysis output checks ONLY)
+
+**Processing Information Archive**
+
+   - Output:
+     - GeneLab/processing_info_GLbulkRNAseq.zip (Archive containing workflow execution metadata)
+       - processing_info/samples.txt (single column list of all sample names in the dataset)
+       - processing_info/nextflow_log_GLbulkRNAseq.txt (Nextflow execution logs captured via `nextflow log`)
+       - processing_info/nextflow_run_command_GLbulkRNAseq.txt (Exact command line used to initiate the workflow)
+
+<br>
+
+Standard Nextflow resource usage logs are also produced as follows:
+> Further details about these logs can also found within [this Nextflow documentation page](https://www.nextflow.io/docs/latest/tracing.html#execution-report).
+
+**Nextflow Resource Usage Logs**
+
+   - Output:
+     - nextflow_info/execution_report_{timestamp}.html (an html report that includes metrics about the workflow execution including computational resources and exact workflow process commands)
+     - nextflow_info/execution_timeline_{timestamp}.html (an html timeline for all processes executed in the workflow)
+     - nextflow_info/execution_trace_{timestamp}.txt (an execution tracing file that contains information about each process executed in the workflow, including: submission time, start time, completion time, cpu and memory used, machine-readable output)
+     - nextflow_info/pipeline_dag_{timestamp}.html (a visualization of the workflow process DAG)
+
+<br>
