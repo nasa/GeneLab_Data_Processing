@@ -7,8 +7,10 @@
 
 ## Examples
 
-1. [Runsheet for GLDS-194](paired_end_runsheet/GLDS-194_bulkRNASeq_v1.csv) (paired end dataset)
-2. [Runsheet for GLDS-48](single_end_runsheet/GLDS-48_bulkRNASeq_v1.csv) (single end dataset)
+1. [Runsheet for GLDS-48](single_end_runsheet/GLDS-48_bulkRNASeq_v1_runsheet.csv) (single end dataset)
+2. [Runsheet for GLDS-194](paired_end_runsheet/GLDS-194_bulkRNASeq_v1_runsheet.csv) (paired end dataset)
+3. [Runsheet for GLDS-605](paired_end_runsheet/GLDS-605_bulkRNASeq_v2_runsheet.csv) (paired end dataset with technical replicates)
+
 
 
 ## Required columns
@@ -23,3 +25,10 @@
 | read2_path | string (url or local path) | Location of the raw reads file. For paired-end data, this specifies the reverse reads fastq.gz file. For single-end data, this column should be omitted. | /my/data/sample_2.fastq.gz |
 | Factor Value[<name, e.g. Spaceflight>] | string | A set of one or more columns specifying the experimental group the sample belongs to. In the simplest form, a column named 'Factor Value[group]' is sufficient. | Space Flight |
 | Original Sample Name | string | Used to map the sample name that will be used for processing to the original sample name. This is often identical except in cases where the original name includes spaces or weird characters. | Mmus_BAL-TAL_LRTN_BSL_Rep1_B7 |
+
+## Optional columns
+
+| Column Name | Type | Description | Example |
+|:------------|:-----|:------------|:--------|
+| Source Name | string | Identifier linking samples that originate from the same biological source. Used for handling technical replicates during differential gene expression analysis. Multiple samples with the same Source Name may be collapsed during analysis depending on the Has Tech Reps setting. | RR3_BSL_B7 |
+| Has Tech Reps | bool | Indicates whether this sample is a technical replicate that should be collapsed with other samples sharing the same Source Name. Set to True for technical replicates that should be collapsed, False for distinct biological samples that should remain separate even if they share a Source Name. | False |
