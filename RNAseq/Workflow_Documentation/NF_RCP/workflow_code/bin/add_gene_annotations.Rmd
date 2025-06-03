@@ -20,7 +20,7 @@ params:
 ### Setup
 ```{r, setup, include=FALSE}
 knitr::opts_knit$set(root.dir = params$work_dir)
-dir.create(output_directory, recursive = TRUE, showWarnings = FALSE)
+dir.create(params$output_directory, recursive = TRUE, showWarnings = FALSE)
 ```
 
 ```{r}
