@@ -12,7 +12,7 @@ The table below details the default maximum resource allocations for individual 
 
 | Mode      | Organism Type         | Default CPU Cores | Default Memory |
 |-----------|-----------------------|-------------------|----------------|
-| `default` | Eukaryotic organisms  | 16                | 40 GB          |
+| `default` | Eukaryotic organisms  | 16                | 72 GB          |
 | `microbes`| Prokaryotic organisms | 8                 | 16 GB          |
 
 > **Note:** These per-process resource allocations are defaults. They can be adjusted by modifying `cpus` and `memory`  directives in the configuration files: [`local.config`](workflow_code/conf/local.config) (local execution) and [`slurm.config`](workflow_code/conf/slurm.config) (SLURM clusters).
