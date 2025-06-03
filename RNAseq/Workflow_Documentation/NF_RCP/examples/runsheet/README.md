@@ -31,4 +31,4 @@
 | Column Name | Type | Description | Example |
 |:------------|:-----|:------------|:--------|
 | Source Name | string | Identifier linking samples. Used for handling technical replicates during differential gene expression analysis. Multiple samples with the same Source Name may be collapsed during analysis depending on the Has Tech Reps setting. | RR3_BSL_B7 |
-| Has Tech Reps | bool | Indicates whether this sample is a technical replicate that should be collapsed with other samples sharing the same Source Name. Set to True for technical replicates that should be collapsed, False for distinct biological samples that should remain separate even if they share a Source Name. | False |
+| Has Tech Reps | bool | Indicates whether this sample is a technical replicate that should be collapsed with other samples sharing the same Source Name. Set to True for technical replicates that should be collapsed, False for distinct samples that should remain separate even if they share a Source Name. | False |
