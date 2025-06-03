@@ -20,6 +20,7 @@ params:
 ### Setup
 ```{r, setup, include=FALSE}
 knitr::opts_knit$set(root.dir = params$work_dir)
+dir.create(output_directory, recursive = TRUE, showWarnings = FALSE)
 ```
 
 ```{r}
@@ -71,7 +72,6 @@ if (!(params$gene_id_type %in% colnames(annot)) || !(params$gene_id_type %in% co
         select(all_of(params$gene_id_type), everything())  # Make sure main gene ID is first column
 }
 
-dir.create(dirname(paste0(params$output_directory)), recursive = TRUE)
 write.csv(
     df2, 
     row.names = FALSE, 
