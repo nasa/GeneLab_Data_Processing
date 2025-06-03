@@ -1240,87 +1240,6 @@ def add_ercc_analyses_column(df, glds_prefix, assay_suffix):
     
     return df
 
-def add_has_tech_reps_column(df, runsheet_df=None):
-    """Add the Has Tech Reps column based on duplicate Source Name values in runsheet.
-    
-    Args:
-        df: The assay table dataframe
-        runsheet_df: The runsheet dataframe containing Source Name
-        
-    Returns:
-        The modified dataframe
-    """
-    column_name = "Has Tech Reps"
-    
-    # Check if column already exists
-    existing_col = find_column_case_insensitive(df, column_name)
-    if existing_col:
-        print(f"Column {existing_col} already exists, skipping tech reps detection")
-        return df
-    
-    # Check if runsheet is available
-    if runsheet_df is None:
-        print("Warning: No runsheet provided, skipping tech reps detection")
-        df[column_name] = "FALSE"
-        column_changes.append(f"Added: {column_name} (default FALSE - no runsheet)")
-        return df
-    
-    # Find the Source Name column in runsheet
-    source_col = find_column_case_insensitive(runsheet_df, "Source Name")
-    if not source_col:
-        print("Warning: Source Name column not found in runsheet, skipping tech reps detection")
-        df[column_name] = "FALSE"
-        column_changes.append(f"Added: {column_name} (default FALSE - no Source Name)")
-        return df
-    
-    print(f"Found Source Name column in runsheet: {source_col}")
-    
-    # Find Sample Name columns to map between runsheet and assay table
-    assay_sample_col = next((col for col in df.columns if 'Sample Name' in col), None)
-    runsheet_sample_col = find_column_case_insensitive(runsheet_df, "Sample Name")
-    
-    if not assay_sample_col or not runsheet_sample_col:
-        print("Warning: Could not find Sample Name columns for mapping, using default FALSE")
-        df[column_name] = "FALSE"
-        column_changes.append(f"Added: {column_name} (default FALSE - no sample mapping)")
-        return df
-    
-    # Count occurrences of each Source Name value in runsheet
-    source_counts = runsheet_df[source_col].value_counts()
-    
-    # Create mapping of source name to has_tech_reps boolean
-    has_tech_reps_map = {}
-    for source_name, count in source_counts.items():
-        has_tech_reps_map[source_name] = count > 1
-    
-    # Create mapping from runsheet sample name to source name
-    sample_to_source = {}
-    for _, row in runsheet_df.iterrows():
-        sample_name = row[runsheet_sample_col]
-        source_name = row[source_col]
-        sample_to_source[sample_name] = source_name
-    
-    # Create the Has Tech Reps values for each row in assay table
-    values = []
-    for assay_sample in df[assay_sample_col]:
-        # Find corresponding source name from runsheet
-        source_name = sample_to_source.get(assay_sample)
-        if source_name is not None:
-            has_tech_reps = has_tech_reps_map.get(source_name, False)
-        else:
-            has_tech_reps = False
-        values.append(str(has_tech_reps).upper())
-    
-    # Add the column
-    df[column_name] = values
-    column_changes.append(f"Added: {column_name}")
-    
-    # Print summary
-    tech_reps_count = sum(1 for v in values if v == "TRUE")
-    print(f"Added {column_name} column: {tech_reps_count}/{len(values)} samples have technical replicates")
-    
-    return df
-
 def clean_comma_space(df):
     """Remove spaces after commas in all string columns of the dataframe."""
     for col in df.columns:
@@ -1392,9 +1311,6 @@ def main():
         
         # Add read depth from MultiQC report (preserve if exists)
         assay_df = add_read_counts(assay_df, args.outdir, args.glds_accession, args.assay_suffix, runsheet_df)
-        
-        # Add Has Tech Reps column early in metadata section
-        assay_df = add_has_tech_reps_column(assay_df, runsheet_df)
         
         # Add Raw MultiQC reports column (preserve if exists)
         assay_df = add_raw_multiqc_reports_column(assay_df, glds_prefix, args.assay_suffix)
