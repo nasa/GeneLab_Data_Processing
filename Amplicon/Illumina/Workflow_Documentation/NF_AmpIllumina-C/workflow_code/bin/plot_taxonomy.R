@@ -267,7 +267,7 @@ group_low_abund_taxa <- function(abund_table, threshold=0.05,
   
   #loop over every column or taxa check to see if the max abundance is less than the set threshold
   #if true save the index in the taxa_to_group vector variable
-  while(TRUE){
+
     
     for (column in seq_along(abund_table)){
       if(max(abund_table[,column], na.rm = TRUE) < threshold ){
@@ -275,14 +275,14 @@ group_low_abund_taxa <- function(abund_table, threshold=0.05,
         index = index + 1
       }
     }
-    if(is.null(taxa_to_group)){
-      threshold <- readline("please provide a higher threshold for grouping rare taxa, only numbers are allowed   ")
-      threshold <- as.numeric(threshold)
-    }else{
-      break
-    }
     
-  }
+    if(is.null(taxa_to_group)){
+      
+     
+      message(glue::glue("Rare taxa were not grouped. please provide a higher threshold than {threshold} for grouping rare taxa, only numbers are allowed."))
+      return(abund_table)
+    }
+  
   
   
   if(rare_taxa){
@@ -376,8 +376,8 @@ metadata_file <- opt[["metadata-table"]]
 features_file <- opt[["feature-table"]]
 taxonomy_file <- opt[["taxonomy-table"]]
 # Metadata group column name to compare
-groups_colname <- opt[["group"]]
-sample_colname  <- opt[["samples-column"]]
+groups_colname <-  opt[["group"]]
+sample_colname <- opt[["samples-column"]]
 output_prefix <- opt[["output-prefix"]]
 assay_suffix <- opt[["assay-suffix"]]
 remove_rare <- opt[["remove-rare"]]
@@ -398,7 +398,7 @@ group_levels <- unique(group_column_values)
 
 # Feature or ASV table
 feature_table <- read.table(file = features_file, header = TRUE,
-                            row.names = 1, sep = "\t")
+                            row.names = 1, sep = "\t", check.names = FALSE)
 
 if(remove_rare){
   
@@ -414,7 +414,7 @@ if(remove_rare){
 
 # Taxonomy 
 taxonomy_table <-  read.table(file = taxonomy_file, header = TRUE,
-                              row.names = 1, sep = "\t")
+                              row.names = 1, sep = "\t", check.names = FALSE)
 
 
 
@@ -473,7 +473,7 @@ relAbundace_tbs_rare_grouped <- map2(.x = taxon_levels,
                                      .f = function(taxon_level=.x,
                                                    taxon_table=.y){
                                       
-                                       
+                                       print(taxon_level)
                                        taxon_table <- apply(X = taxon_table, MARGIN = 2,
                                                             FUN = function(x) x/sum(x)) * 100
                                        
@@ -535,7 +535,8 @@ walk2(.x = relAbundace_tbs_rare_grouped, .y = taxon_levels,
                                labs(x=NULL)
                           
                           ggsave(filename = glue("{taxonomy_plots_out_dir}/{output_prefix}samples_{taxon_level}{assay_suffix}.png"),
-                                 plot=p, width = plot_width, height = 8.5, dpi = 300)
+                                 plot=p, width = plot_width, height = 8.5,
+                                 dpi = 300, limitsize = FALSE)
                           
                            })
 
@@ -591,6 +592,13 @@ y_lab <- "Relative abundance (%)"
 y <- "relativeAbundance"
 number_of_groups <- length(group_levels)
 plot_width <- 2.5 * number_of_groups
+
+# Cap the maximum plot width to 50 regardless of the number of groups
+if(plot_width >  50 ){
+  
+  plot_width <- 50
+}
+
 walk2(.x = group_relAbundace_tbs, .y = taxon_levels, 
                            .f = function(relAbundace_tb=.x, taxon_level=.y){
                              
@@ -608,7 +616,8 @@ walk2(.x = group_relAbundace_tbs, .y = taxon_levels,
                                labs(x = NULL , y = y_lab, fill = tools::toTitleCase(taxon_level)) + 
                                scale_fill_manual(values = custom_palette)
                              ggsave(filename = glue("{taxonomy_plots_out_dir}/{output_prefix}groups_{taxon_level}{assay_suffix}.png"),
-                                    plot=p, width = plot_width, height = 10, dpi = 300)
+                                    plot=p, width = plot_width, 
+                                    height = 10, dpi = 300, limitsize = FALSE)
                            })
 
 
