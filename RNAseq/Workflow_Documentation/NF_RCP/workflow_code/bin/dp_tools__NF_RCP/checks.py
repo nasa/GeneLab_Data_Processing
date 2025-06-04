@@ -3,7 +3,7 @@ import copy
 import enum
 import gzip
 import itertools
-import logging
+from loguru import logger as log
 import math
 from pathlib import Path
 from statistics import mean
@@ -15,8 +15,6 @@ from importlib.metadata import files
 import pandas as pd
 
 from dp_tools.core.entity_model import Dataset, Sample, multiqc_run_to_dataframes
-
-log = logging.getLogger(__name__)
 
 from dp_tools.core.check_model import FlagCode, FlagEntry, FlagEntryWithOutliers
 
@@ -877,28 +875,29 @@ def check_dge_table_sample_columns_exist(
 
 
 def check_dge_table_sample_columns_constraints(
-    dge_table: Path, samples: set[str], **_
+    dge_table: Path, samples: set, **_
 ) -> FlagEntry:
     MINIMUM_COUNT = 0
     # data specific preprocess
-    df_dge = pd.read_csv(dge_table)[samples]
+
+    df_dge = pd.read_csv(dge_table)[[str(s) for s in samples]]
 
     column_meets_constraints = df_dge.apply(
         lambda col: all(col >= MINIMUM_COUNT), axis="rows"
     )
 
     # check logic
-    contraint_description = f"All counts are greater or equal to {MINIMUM_COUNT}"
+    constraint_description = f"All counts are greater or equal to {MINIMUM_COUNT}"
     if all(column_meets_constraints):
         code = FlagCode.GREEN
         message = (
-            f"All values in columns: {samples} met constraint: {contraint_description}"
+            f"All values in columns: {samples} met constraint: {constraint_description}"
         )
     else:
         code = FlagCode.HALT
         message = (
             f"These columns {list(column_meets_constraints.index[~column_meets_constraints])} "
-            f"fail the contraint: {contraint_description}."
+            f"fail the constraint: {constraint_description}."
         )
     return {"code": code, "message": message}
 

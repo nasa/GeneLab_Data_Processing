@@ -3,7 +3,7 @@ import copy
 import enum
 import gzip
 import itertools
-import logging
+from loguru import logger as log
 import math
 from pathlib import Path
 from statistics import mean
@@ -15,8 +15,6 @@ from importlib.metadata import files
 import pandas as pd
 
 from dp_tools.core.entity_model import Dataset, Sample, multiqc_run_to_dataframes
-
-log = logging.getLogger(__name__)
 
 from dp_tools.core.check_model import FlagCode, FlagEntry, FlagEntryWithOutliers
 
@@ -335,7 +333,7 @@ def check_for_outliers(
             df_diffs_in_std = df_diffs / df[mqc_key].std()
 
             # add to outlier tracker if over the threshold
-            for key, value in df_diffs_in_std.iteritems():
+            for key, value in df_diffs_in_std.items():
                 # if an outlier
                 if abs(value) > threshold["stdev_threshold"]:
                     # track it
@@ -841,7 +839,7 @@ def check_contrasts_table_rows(contrasts_table: Path, **_) -> FlagEntry:
         return {g1, g2}
 
     bad_columns: dict[str, dict[str, set]] = dict()
-    for (col_name, col_series) in df_contrasts.iteritems():
+    for (col_name, col_series) in df_contrasts.items():
         expected_values = _get_groups_from_comparisions(col_name)
         if not expected_values == set(col_series):
             bad_columns[col_name] = {
@@ -910,28 +908,29 @@ def check_dge_table_sample_columns_exist(
 
 
 def check_dge_table_sample_columns_constraints(
-    dge_table: Path, samples: set[str], **_
+    dge_table: Path, samples: set, **_
 ) -> FlagEntry:
     MINIMUM_COUNT = 0
     # data specific preprocess
-    df_dge = pd.read_csv(dge_table)[samples]
+
+    df_dge = pd.read_csv(dge_table)[[str(s) for s in samples]]
 
     column_meets_constraints = df_dge.apply(
         lambda col: all(col >= MINIMUM_COUNT), axis="rows"
     )
 
     # check logic
-    contraint_description = f"All counts are greater or equal to {MINIMUM_COUNT}"
+    constraint_description = f"All counts are greater or equal to {MINIMUM_COUNT}"
     if all(column_meets_constraints):
         code = FlagCode.GREEN
         message = (
-            f"All values in columns: {samples} met constraint: {contraint_description}"
+            f"All values in columns: {samples} met constraint: {constraint_description}"
         )
     else:
         code = FlagCode.HALT
         message = (
             f"These columns {list(column_meets_constraints.index[~column_meets_constraints])} "
-            f"fail the contraint: {contraint_description}."
+            f"fail the constraint: {constraint_description}."
         )
     return {"code": code, "message": message}
 
@@ -1064,7 +1063,7 @@ def utils_common_constraints_on_dataframe(
 
         # limit to only columns of interest
         query_df = df[col_set]
-        for (colname, colseries) in query_df.iteritems():
+        for (colname, colseries) in query_df.items():
             # check non null constraint
             if col_constraints.pop("nonNull", False) and nonNull(colseries) == False:
                 issues["Failed non null constraint"].append(colname)
@@ -1249,6 +1248,10 @@ def check_dge_table_log2fc_within_reason(
         df_dge_filtered["positive_sign_expected"] = (
             df_dge[group1_mean_col] - df_dge[group2_mean_col] > 0
         )
+
+        df_dge_filtered["matches_expected_sign"] = (
+            (df_dge[query_column] > 0) & df_dge_filtered["positive_sign_expected"]
+        ) | ((df_dge[query_column] < 0) & ~df_dge_filtered["positive_sign_expected"])
 
         all_suspect_signs = all_suspect_signs | df_dge_filtered.loc[
             df_dge_filtered["matches_expected_sign"] == False
