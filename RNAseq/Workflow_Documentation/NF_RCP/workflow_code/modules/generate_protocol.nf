@@ -1,6 +1,15 @@
 process GENERATE_PROTOCOL {
     publishDir "${ch_outdir}/GeneLab",
-        mode: params.publish_dir_mode
+        mode: params.publish_dir_mode,
+        pattern: "*.txt"
+
+    publishDir "${ch_outdir}/Metadata",
+        mode: params.publish_dir_mode,
+        pattern: "runsheet/*",
+        saveAs: { filename ->
+            if (filename.startsWith("runsheet/")) return filename.replace("runsheet/", "")
+            else return filename
+        }
 
     input:
         val(ch_outdir)
@@ -14,6 +23,7 @@ process GENERATE_PROTOCOL {
 
     output:
         path("protocol${params.assay_suffix}.txt")
+        path("runsheet/${runsheet}")
 
     script:
         def mode = params.mode == 'microbes' ? '--mode microbes' : ''
@@ -36,5 +46,8 @@ process GENERATE_PROTOCOL {
         --reference_fasta ${reference_fasta} \
         --reference_gtf ${reference_gtf} \
         --runsheet ${runsheet}
+
+        mkdir -p runsheet
+        cp ${runsheet} runsheet/
         """
 }
