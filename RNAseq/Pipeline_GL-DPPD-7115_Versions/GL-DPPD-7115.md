@@ -1068,16 +1068,17 @@ compare_csv_from_runsheet <- function(runsheet_path) {
         select(matches("Factor.Value", ignore.case = TRUE)) %>%
         rename_with(~ paste0("factor_", seq_along(.)))
     
-    # Check if Source.Name column exists
-    if ("Source.Name" %in% colnames(df)) {
+    # Check if both Source.Name and Has.Tech.Reps columns exist
+    if ("Source.Name" %in% colnames(df) && "Has.Tech.Reps" %in% colnames(df)) {
         result <- df %>%
-            select(Sample.Name, Source.Name) %>%
+            select(Sample.Name, Source.Name, Has.Tech.Reps) %>%
             bind_cols(factors)
     } else {
         result <- df %>%
             select(Sample.Name) %>%
             bind_cols(factors)
     }
+    
     return(result)
 }
 
@@ -1085,8 +1086,8 @@ compare_csv_from_runsheet <- function(runsheet_path) {
 compare_csv <- compare_csv_from_runsheet(runsheet_path)
 
 ### Create data frame containing all samples and respective factors ###
-study <- if ("Source.Name" %in% colnames(compare_csv)) {
-    compare_csv[, -c(1, 2), drop=FALSE]  # Exclude Sample.Name and Source.Name
+study <- if ("Source.Name" %in% colnames(compare_csv) && "Has.Tech.Reps" %in% colnames(compare_csv)) {
+    compare_csv[, -c(1, 2, 3), drop=FALSE]  # Exclude Sample.Name, Source.Name, and Has.Tech.Reps
 } else {
     compare_csv[, -1, drop=FALSE]  # Exclude only Sample.Name
 }
@@ -1120,7 +1121,7 @@ rm(contrast.names)
 
 **Output Data:**
 
-* `compare_csv` (data frame containing sample names, source names, and factor levels from the runsheet)
+* `compare_csv` (data frame containing sample names, technical replicate information if provided, and factor levels from the runsheet)
 - `study` (data frame specifying factor levels assigned to each sample)
 - `group` (named vector specifying the group or set of factor levels for each sample)
 - `contrasts` (matrix defining pairwise comparisons between groups)
@@ -1164,51 +1165,87 @@ counts <- counts[, rownames(study)]
 sampleTable <- data.frame(condition=factor(group))
 rownames(sampleTable) <- colnames(counts)
 
-### Handle technical replicates in sample table ###
-# Only if Source.Name column exists in runsheet
-if ("Source.Name" %in% colnames(compare_csv)) {
-    # Use Source.Name column to identify technical replicates
+### Handle technical replicates in sample table - STEP 1/2: Filter which samples to retain ###
+# Only if both `Source Name` and `Has Tech Reps` columns exist in runsheet
+if ("Source.Name" %in% colnames(compare_csv) && "Has.Tech.Reps" %in% colnames(compare_csv)) {
     all_samples <- rownames(sampleTable)
-
-    # Get source names for each sample from the runsheet
-    source_names <- compare_csv$Source.Name[match(all_samples, compare_csv$Sample.Name)]
-    names(source_names) <- all_samples
-
-    # Identify samples that have tech reps (multiple samples with same source name)
-    source_counts <- table(source_names)
-    has_tech_reps <- source_counts > 1
-
-    # Only process if we have technical replicates
-    if (any(has_tech_reps)) {
-        # Create sample info dataframe
-        sample_info <- data.frame(
-            name = all_samples,
-            source_name = source_names,
-            stringsAsFactors = FALSE
+    
+    # Get source names and tech rep status for each sample
+    sample_info <- data.frame(
+        name = all_samples,
+        source_name = compare_csv$Source.Name[match(all_samples, compare_csv$Sample.Name)],
+        has_tech_reps = compare_csv$Has.Tech.Reps[match(all_samples, compare_csv$Sample.Name)],
+        stringsAsFactors = FALSE
+    )
+    
+    # Count samples per source name (all samples regardless of tech rep status)
+    source_counts <- table(sample_info$source_name)
+    min_samples_per_source <- min(source_counts)
+    
+    if (min_samples_per_source > 1) {
+        # Use collapseReplicates approach
+        # Create grouping variable: Source Name for tech reps, Sample Name for non-tech reps
+        collapse_groups <- ifelse(
+            toupper(sample_info$has_tech_reps) == "TRUE",
+            sample_info$source_name,
+            sample_info$name
         )
         
-        # Find unique source names and count tech reps for each
-        unique_sources <- unique(source_names)
-        tech_rep_counts <- sapply(unique_sources, function(src) {
-            sum(source_names == src)
+        # Get unique groups and count for balancing
+        unique_groups <- unique(collapse_groups)
+        group_counts <- sapply(unique_groups, function(grp) {
+            sum(collapse_groups == grp)
         })
         
-        # Find the minimum number of tech reps across all samples
-        min_tech_reps <- min(tech_rep_counts)
+        min_group_size <- min(group_counts)
         
-        # Keep samples: all single samples + first min_tech_reps for each source (in runsheet order)
+        # Keep first min_group_size samples from each group
         samples_to_keep <- character(0)
-        
-        for (src in unique_sources) {
-            indices <- which(sample_info$source_name == src)
-            # Keep first min_tech_reps samples for this source (1 for single samples, min_tech_reps for tech reps)
-            samples_to_keep <- c(samples_to_keep, sample_info$name[indices[1:min_tech_reps]])
+        for (grp in unique_groups) {
+            indices <- which(collapse_groups == grp)
+            samples_to_keep <- c(samples_to_keep, sample_info$name[indices[1:min_group_size]])
         }
         
-        # Update sample table and counts to keep only selected samples
+        # Update sample table and counts
         sampleTable <- sampleTable[samples_to_keep, , drop=FALSE]
         
-        # Update the counts matrix to match the new sample table
+        if (params$microbes) {
+            counts <- counts[, samples_to_keep]
+        } else {
+            txi.rsem$counts <- txi.rsem$counts[, samples_to_keep]
+            txi.rsem$abundance <- txi.rsem$abundance[, samples_to_keep]
+            txi.rsem$length <- txi.rsem$length[, samples_to_keep]
+        }
+        
+    } else {
+        # min_samples_per_source = 1, use manual filtering approach
+        # Keep only first sample from each Source Name + Has Tech Reps = TRUE group
+        # Keep all samples with Has Tech Reps = FALSE
+        
+        samples_to_keep <- character(0)
+        
+        # Group by source name and tech rep status
+        for (src in unique(sample_info$source_name)) {
+            src_samples <- sample_info[sample_info$source_name == src, ]
+            
+            # Separate tech reps from non-tech reps
+            tech_rep_samples <- src_samples[toupper(src_samples$has_tech_reps) == "TRUE", ]
+            non_tech_rep_samples <- src_samples[toupper(src_samples$has_tech_reps) == "FALSE", ]
+            
+            # Keep only first tech rep sample if any exist
+            if (nrow(tech_rep_samples) > 0) {
+                samples_to_keep <- c(samples_to_keep, tech_rep_samples$name[1])
+            }
+            
+            # Keep all non-tech rep samples
+            if (nrow(non_tech_rep_samples) > 0) {
+                samples_to_keep <- c(samples_to_keep, non_tech_rep_samples$name)
+            }
+        }
+        
+        # Update sample table and counts
+        sampleTable <- sampleTable[samples_to_keep, , drop=FALSE]
+        
         if (params$microbes) {
             counts <- counts[, samples_to_keep]
         } else {
@@ -1226,17 +1263,36 @@ dds <- DESeqDataSetFromMatrix(
     design = ~condition
 )
 
-### Collapse technical replicates if present ###
-# Get source names for remaining samples
-collapse_source_names <- compare_csv$Source.Name[match(rownames(sampleTable), compare_csv$Sample.Name)]
-
-if (length(unique(collapse_source_names)) < length(collapse_source_names)) {
-    # Collapse only if >1 replicate per source exists
-    dds <- collapseReplicates(dds, groupby = collapse_source_names)
+### Handle technical replicates - STEP 2/2: Collapse retained tech reps in DESeq2 object ###
+# Only if both `Source Name` and `Has Tech Reps` columns exist in runsheet
+if ("Source.Name" %in% colnames(compare_csv) && "Has.Tech.Reps" %in% colnames(compare_csv)) {
+    # Get info for remaining samples after filtering
+    remaining_samples <- rownames(sampleTable)
+    remaining_info <- data.frame(
+        name = remaining_samples,
+        source_name = compare_csv$Source.Name[match(remaining_samples, compare_csv$Sample.Name)],
+        has_tech_reps = compare_csv$Has.Tech.Reps[match(remaining_samples, compare_csv$Sample.Name)],
+        stringsAsFactors = FALSE
+    )
     
-    collapsed_names <- unique(collapse_source_names)
-    sampleTable <- sampleTable[match(collapsed_names, collapse_source_names), , drop = FALSE]
-    rownames(sampleTable) <- collapsed_names
+    # Create collapse grouping: Source Name for tech reps, Sample Name for non-tech reps
+    collapse_source_names <- ifelse(
+        toupper(remaining_info$has_tech_reps) == "TRUE",
+        remaining_info$source_name,
+        remaining_info$name
+    )
+    
+    # Only collapse if there are multiple samples with the same collapse group
+    if (length(unique(collapse_source_names)) < length(collapse_source_names)) {
+        # Collapse only if >1 replicate per group exists
+        dds <- collapseReplicates(dds, groupby = collapse_source_names)
+        
+        collapsed_names <- unique(collapse_source_names)
+        # Update sampleTable to match collapsed samples
+        # For collapsed tech reps, use the source name; for non-tech reps, use sample name
+        sampleTable <- sampleTable[match(collapsed_names, collapse_source_names), , drop = FALSE]
+        rownames(sampleTable) <- collapsed_names
+    }
 }
 
 ### Filter low count genes ###
@@ -1268,6 +1324,7 @@ res_lrt <- results(dds_lrt)
 **Input Data:**
 
 - `group` (named vector specifying the group or set of factor levels for each sample, output from [Step 8c](#8c-configure-metadata-sample-grouping-and-group-comparisons))
+* `compare_csv` (data frame containing sample names, technical replicates information if provided, and factor levels from the runsheet, output from [Step 8c](#8c-configure-metadata-sample-grouping-and-group-comparisons))
 - `counts` (data frame of gene counts, output from [Step 8c](#8c-configure-metadata-sample-grouping-and-group-comparisons))
 - `BPPARAM` (system-specific BiocParallelParam object for parallel processing configuration, output from [Step 8b](#8b-environment-set-up))
 
