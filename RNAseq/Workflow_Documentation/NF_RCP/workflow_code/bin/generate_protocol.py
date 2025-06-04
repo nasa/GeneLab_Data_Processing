@@ -192,7 +192,7 @@ def generate_protocol_content(args, software_versions):
             
         # Add assembly information if available
         if genome_assembly:
-                reference_description += f", genome assembly {genome_assembly}"
+            reference_description += f", genome assembly {genome_assembly}"
         
         # Handle ERCC differently based on has_ercc
         if args.has_ercc.lower() == "true":
@@ -292,57 +292,33 @@ def generate_protocol_content(args, software_versions):
     if hasattr(args, 'runsheet') and args.runsheet and os.path.exists(args.runsheet):
         try:
             runsheet_df = pd.read_csv(args.runsheet)
-            # Check if Source Name column exists
-            if 'Source Name' in runsheet_df.columns:
-                # Count occurrences of each Source Name
-                source_counts = runsheet_df['Source Name'].value_counts()
-                n_reps = list(source_counts.values())
-                unique_n = set(n_reps)
+            
+            # Check if Has Tech Reps column exists (new approach)
+            if 'Has Tech Reps' in runsheet_df.columns and 'Source Name' in runsheet_df.columns:
+                # Work with boolean values directly
+                has_tech_reps = runsheet_df['Has Tech Reps']
                 
-                if all(x == 1 for x in n_reps):
-                    # No technical replicates at all
-                    tech_rep_sentence = ""
-                elif len(unique_n) == 1 and list(unique_n)[0] > 1:
-                    # All samples have the same number of tech reps
-                    tech_rep_sentence = ("Counts from all technical replicates for each sample were summed using DESeq2's collapseReplicates function. "
-                                         "These collapsed counts were then used for count normalization and differential expression analysis. ")
-                elif len(unique_n) > 1 and min(unique_n) > 1:
-                    # All samples have tech reps, but unequal number
-                    min_reps = min(unique_n)
-                    tech_rep_sentence = (f"For each sample, counts from the first {min_reps} technical replicates were summed using DESeq2's collapseReplicates function. "
-                                         "These collapsed counts were then used for count normalization and differential expression analysis. ")
-                else:
-                    # Some samples have tech reps, some don't (mixed scenario)
-                    tech_rep_sentence = ("For samples with technical replicates, only the first replicate was used for count normalization and differential expression analysis. ")
-            # Fallback to old method if Source Name column doesn't exist
-            elif 'Sample Name' in runsheet_df.columns:
-                # Remove whitespace and NA
-                sample_names = runsheet_df['Sample Name'].dropna().astype(str).tolist()
-                # Remove trailing/leading whitespace
-                sample_names = [s.strip() for s in sample_names]
-                # Remove empty
-                sample_names = [s for s in sample_names if s]
-                # Find base names (remove _techrepN if present)
-                base_names = [re.sub(r'_techrep\d+$', '', s) for s in sample_names]
-                from collections import Counter
-                base_counts = Counter(base_names)
-                n_reps = list(base_counts.values())
-                unique_n = set(n_reps)
-                if all(x == 1 for x in n_reps):
-                    # No technical replicates at all
-                    tech_rep_sentence = ""
-                elif len(unique_n) == 1 and list(unique_n)[0] > 1:
-                    # All samples have the same number of tech reps
-                    tech_rep_sentence = ("Counts from all technical replicates for each sample were summed using DESeq2's collapseReplicates function. "
-                                         "These collapsed counts were then used for count normalization and differential expression analysis. ")
-                elif len(unique_n) > 1 and min(unique_n) > 1:
-                    # All samples have tech reps, but unequal number
-                    min_reps = min(unique_n)
-                    tech_rep_sentence = (f"For each sample, counts from the first {min_reps} technical replicates were summed using DESeq2's collapseReplicates function. "
-                                         "These collapsed counts were then used for count normalization and differential expression analysis. ")
-                else:
-                    # Some samples have tech reps, some don't
-                    tech_rep_sentence = ("For samples with technical replicates, only the first replicate was used for count normalization and differential expression analysis. ")
+                if has_tech_reps.any():
+                    # Count only samples with tech reps per source name (matches R code logic)
+                    tech_rep_samples = runsheet_df[has_tech_reps == True]
+                    source_counts = tech_rep_samples['Source Name'].value_counts()
+                    min_samples_per_source = min(source_counts.values)
+                    
+                    # Check if all samples have tech reps
+                    all_have_tech_reps = has_tech_reps.all()
+                    
+                    if not all_have_tech_reps:
+                        # Datasets with Only Some Samples Having Technical Replicates
+                        tech_rep_sentence = ("For samples with technical replicates, only the first replicate was used for count normalization and differential expression analysis. ")
+                    elif min_samples_per_source > 1:
+                        # Check if all sources have equal number of tech reps
+                        if len(set(source_counts.values)) == 1:
+                            # Datasets Where All Samples Have an Equal Number (n > 1) of Technical Replicates
+                            tech_rep_sentence = ("Counts from all technical replicates for each sample were summed using DESeq2's collapseReplicates function. These collapsed counts were then used for count normalization and differential expression analysis. ")
+                        else:
+                            # Datasets Where All Samples Have Technical Replicates but an Unequal Number (n > 1)
+                            tech_rep_sentence = (f"For each sample, counts from the first {min_samples_per_source} technical replicates were summed using DESeq2's collapseReplicates function. These collapsed counts were then used for count normalization and differential expression analysis. ")
+                    # If min_samples_per_source = 1 and all have tech reps, no special handling needed
         except Exception as e:
             tech_rep_sentence = ""
     # If no runsheet, leave tech_rep_sentence as empty
@@ -463,6 +439,22 @@ def generate_protocol_content(args, software_versions):
         config += f"- Reference FASTA: {os.path.basename(args.reference_fasta)}\n"
     if args.reference_gtf and args.reference_gtf != "null":
         config += f"- Reference GTF: {os.path.basename(args.reference_gtf)}\n"
+    
+    # Add tech rep debug info
+    if hasattr(args, 'runsheet') and args.runsheet and os.path.exists(args.runsheet):
+        try:
+            debug_df = pd.read_csv(args.runsheet)
+            if 'Has Tech Reps' in debug_df.columns and 'Source Name' in debug_df.columns:
+                debug_has_tech_reps = debug_df['Has Tech Reps']
+                config += f"- Tech reps detected: {debug_has_tech_reps.any()}\n"
+                config += f"- All samples have tech reps: {debug_has_tech_reps.all()}\n"
+                if debug_has_tech_reps.any():
+                    debug_tech_rep_samples = debug_df[debug_has_tech_reps == True]
+                    debug_source_counts = debug_tech_rep_samples['Source Name'].value_counts()
+                    config += f"- Min tech reps per source: {min(debug_source_counts.values)}\n"
+                    config += f"- Source counts: {dict(debug_source_counts)}\n"
+        except Exception as e:
+            config += f"- Tech rep parsing error: {str(e)}\n"
     
     config += "\n"
     
