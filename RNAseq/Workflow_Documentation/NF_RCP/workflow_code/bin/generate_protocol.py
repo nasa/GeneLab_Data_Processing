@@ -174,7 +174,10 @@ def generate_protocol_content(args, software_versions):
         
         # Add assembly information if available
         if genome_assembly:
-            reference_description += f", genome assembly {genome_assembly}"
+            if is_ncbi:
+                reference_description += f", NCBI genome assembly {genome_assembly}"
+            else:
+                reference_description += f", genome assembly {genome_assembly}"
             
         reference_description += f" ({ref_fasta_name}) and the following gtf annotation file: {ref_gtf_name}. "
     else:
@@ -189,7 +192,7 @@ def generate_protocol_content(args, software_versions):
             
         # Add assembly information if available
         if genome_assembly:
-            reference_description += f", genome assembly {genome_assembly}"
+                reference_description += f", genome assembly {genome_assembly}"
         
         # Handle ERCC differently based on has_ercc
         if args.has_ercc.lower() == "true":
