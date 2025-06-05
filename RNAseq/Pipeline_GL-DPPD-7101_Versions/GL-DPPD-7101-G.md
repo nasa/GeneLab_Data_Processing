@@ -4,7 +4,7 @@
 
 ---
 
-**Date:** April 10, 2025  
+**Date:** February 20, 2025  
 **Revision:** G  
 **Document Number:** GL-DPPD-7101-G  
 
@@ -17,7 +17,6 @@ Barbara Novak (GeneLab Data Processing Lead)
 Amanda Saravia-Butler (GeneLab Science Lead)  
 Samrawit Gebre (OSDR Project Manager)  
 Danielle Lopez (OSDR Deputy Project Manager)  
-Jonathan Galazka (OSDR Project Scientist)
 
 ---
 
