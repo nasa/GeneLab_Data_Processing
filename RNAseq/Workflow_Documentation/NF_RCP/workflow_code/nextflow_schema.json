@@ -20,7 +20,7 @@
     },
     "dge_parallel_config": {
       "type": "string",
-      "default": "SerialParam()"
+      "default": "SerialParam(RNGseed = 7)"
     }
   },
   "$defs": {

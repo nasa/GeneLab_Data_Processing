@@ -6,6 +6,17 @@
 
 The current GeneLab RNAseq consensus processing pipeline (RCP) for eukaryotic organisms ([GL-DPPD-7101-G](../../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md)) and prokaryotic organisms ([GL-DPPD-7115](../../Pipeline_GL-DPPD-7115_Versions/GL-DPPD-7115.md)) are implemented as a single [Nextflow](https://nextflow.io/) DSL2 workflow that utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) to run all tools in containers. This workflow (NF_RCP) is run using the command line interface (CLI) of any unix-based system. While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow.   
 
+### Resource Requirements <!-- omit in toc -->
+
+The table below details the default maximum resource allocations for individual Nextflow processes.
+
+| Mode      | Organism Type         | Default CPU Cores | Default Memory |
+|-----------|-----------------------|-------------------|----------------|
+| `default` | Eukaryotic organisms  | 16                | 72 GB          |
+| `microbes`| Prokaryotic organisms | 8                 | 16 GB          |
+
+> **Note:** These per-process resource allocations are defaults. They can be adjusted by modifying `cpus` and `memory`  directives in the configuration files: [`local.config`](workflow_code/conf/local.config) (local execution) and [`slurm.config`](workflow_code/conf/slurm.config) (SLURM clusters).
+
 ### Workflow & Subworkflows <!-- omit in toc -->
 
 ---
@@ -130,7 +141,7 @@ unzip NF_RCP_2.0.0.zip
 Although Nextflow can fetch Singularity images from a url, doing so may cause issues as detailed [here](https://github.com/nextflow-io/nextflow/issues/1210).
 
 To avoid this issue, run the following command to fetch the Singularity images prior to running the NF_RCP workflow:
-> Note: This command should be run in the location containing the `NF_RCP_2.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files) above. Depending on your network speed, fetching the images will take ~20 minutes.  
+> Note: This command should be run in the location containing the `NF_RCP_2.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files) above. Depending on your network speed, fetching the images will take ~20 minutes. Approximately 8GB of RAM is needed to download and build the Singularity images.
 
 ```bash
 bash NF_RCP_2.0.0/bin/prepull_singularity.sh NF_RCP_2.0.0/config/software/by_docker_image.config
@@ -160,7 +171,7 @@ While in the location containing the `NF_RCP_2.0.0` directory that was downloade
 
 ```bash
 nextflow run NF_RCP_2.0.0/main.nf \ 
-   -profile singularity \
+   -profile singularity,local \
    --accession OSD-194 
 ```
 
@@ -174,7 +185,7 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 ```bash
 nextflow run NF_RCP_2.0.0/main.nf \ 
-   -profile singularity \
+   -profile singularity,local \
    --accession OSD-194 \
    --reference_version 112 \
    --reference_source ensembl \ 
@@ -190,7 +201,7 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 ```bash
 nextflow run NF_RCP_2.0.0/main.nf \ 
-   -profile singularity \
+   -profile singularity,local \
    --runsheet_path </path/to/runsheet> 
 ```
 
@@ -200,7 +211,7 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 * `NF_RCP_2.0.0/main.nf` - Instructs Nextflow to run the NF_RCP workflow 
 
-* `-profile` - Specifies the configuration profile(s) to load, `singularity` instructs Nextflow to setup and use singularity for all software called in the workflow
+* `-profile` - Specifies the configuration profile(s) to load, `singularity` instructs Nextflow to setup and use singularity for all software called in the workflow; use `local` for local execution ([local.config](workflow_code/conf/local.config)) or `slurm` for SLURM cluster execution ([slurm.config](workflow_code/conf/slurm.config))
   > Note: The output directory will be named `GLDS-#` when using a OSD or GLDS accession as input, or `results` when running the workflow with only a runsheet as input.
 
 
@@ -226,6 +237,12 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 <br>
 
+**Additional Required Parameters for [Approach 3](#4c-approach-3-run-the-workflow-on-a-non-genelab-dataset-using-a-user-created-runsheet):**
+
+* `--runsheet_path` - specifies the path to a local runsheet. 
+
+<br>
+
 **Optional Parameters:**
 
 * `--skip_vv` - skip the automated V&V processes (Default: the automated V&V processes are active) 
@@ -237,9 +254,6 @@ nextflow run NF_RCP_2.0.0/main.nf \
 * `--reference_store_path` - specifies the directory to store the reference fasta and gtf files (Default: within the directory structure created by default in the launch directory)  
 
 * `--derived_store_path` - specifies the directory to store the tool-specific indices created during processing (Default: within the directory structure created by default in the launch directory) `
-
-* `--runsheet_path` - specifies the path to a local runsheet (Default: a runsheet is automatically generated using the metadata on the OSDR for the dataset being processed)
-  > This is required when prcessing a non-OSDR dataset as indicated in [Approach 3 above](#4c-approach-3-run-the-workflow-on-a-non-genelab-dataset-using-a-user-created-runsheet)
 
 * `--mode` - specifies which pipeline to use: set to `default` to run GL-DPPD-7101-G pipeline or set to `microbes` for the GL-DPPD-7115 prokaryotic pipeline (Default value: `default`)
   > This allows the workflow to process either eukaryotic (default) or prokaryotic RNAseq data using the appropriate pipeline

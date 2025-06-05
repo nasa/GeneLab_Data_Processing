@@ -86,8 +86,10 @@ def generate_protocol_content(args, software_versions):
     
     # Format organism name if provided - replace underscores with spaces and title case
     organism_name = ""
+    organism_name_italics = ""  # For use in text (with underscores for Jira)
     if hasattr(args, 'organism') and args.organism:
         organism_name = args.organism.replace('_', ' ').title()
+        organism_name_italics = f"_{organism_name}_"  # Surrounded by underscores for Jira italics
     
     # Get reference FASTA and GTF basenames
     ref_fasta_name = ""
@@ -162,7 +164,7 @@ def generate_protocol_content(args, software_versions):
     # Generate reference description
     if args.mode == 'microbes':
         # For microbes, only mention Bowtie 2
-        reference_description = f"{organism_name} Bowtie 2 reference was built using Bowtie 2 (version {bowtie2_version})"
+        reference_description = f"{organism_name_italics} Bowtie 2 reference was built using Bowtie 2 (version {bowtie2_version})"
         
         # Add source and version information
         if is_ensembl and args.reference_version:
@@ -172,12 +174,15 @@ def generate_protocol_content(args, software_versions):
         
         # Add assembly information if available
         if genome_assembly:
-            reference_description += f", genome assembly {genome_assembly}"
+            if is_ncbi:
+                reference_description += f", NCBI genome assembly {genome_assembly}"
+            else:
+                reference_description += f", genome assembly {genome_assembly}"
             
         reference_description += f" ({ref_fasta_name}) and the following gtf annotation file: {ref_gtf_name}. "
     else:
         # For standard mode, mention STAR and RSEM
-        reference_description = f"{organism_name} STAR and RSEM references were built using STAR (version {star_version}) and RSEM (version {rsem_version}), respectively"
+        reference_description = f"{organism_name_italics} STAR and RSEM references were built using STAR (version {star_version}) and RSEM (version {rsem_version}), respectively"
         
         # Add source and version information
         if is_ensembl and args.reference_version:
@@ -202,15 +207,15 @@ def generate_protocol_content(args, software_versions):
     if args.mode == 'microbes':
         # For microbes workflow
         if args.has_ercc.lower() == "true":
-            description += f"Trimmed reads were aligned to the {organism_name} + ERCC Bowtie 2 reference with Bowtie 2 (version {bowtie2_version}) and alignment log files were compiled with MultiQC (version {multiqc_version}). "
+            description += f"Trimmed reads were aligned to the {organism_name_italics} + ERCC Bowtie 2 reference with Bowtie 2 (version {bowtie2_version}) and alignment log files were compiled with MultiQC (version {multiqc_version}). "
         else:
-            description += f"Trimmed reads were aligned to the {organism_name} Bowtie 2 reference with Bowtie 2 (version {bowtie2_version}) and alignment log files were compiled with MultiQC (version {multiqc_version}). "
+            description += f"Trimmed reads were aligned to the {organism_name_italics} Bowtie 2 reference with Bowtie 2 (version {bowtie2_version}) and alignment log files were compiled with MultiQC (version {multiqc_version}). "
     else:
         # For standard workflow
         if args.has_ercc.lower() == "true":
-            description += f"Trimmed reads were aligned to the {organism_name} + ERCC STAR reference with STAR (version {star_version}) and alignment log files were compiled with MultiQC (version {multiqc_version}). "
+            description += f"Trimmed reads were aligned to the {organism_name_italics} + ERCC STAR reference with STAR (version {star_version}) and alignment log files were compiled with MultiQC (version {multiqc_version}). "
         else:
-            description += f"Trimmed reads were aligned to the {organism_name} STAR reference with STAR (version {star_version}) and alignment log files were compiled with MultiQC (version {multiqc_version}). "
+            description += f"Trimmed reads were aligned to the {organism_name_italics} STAR reference with STAR (version {star_version}) and alignment log files were compiled with MultiQC (version {multiqc_version}). "
     
     # Add RSeQC assessment sentence
     infer_exp_version = software_versions.get('infer_experiment.py', 'unknown')
@@ -252,11 +257,19 @@ def generate_protocol_content(args, software_versions):
         description += f"Aligned reads from all samples were quantified using featureCounts from the Subread package (version {featurecounts_version}), "
         description += f"with isStrandSpecific set to {featurecounts_strandedness} "
         description += f"and featureCounts log files were compiled with MultiQC (version {multiqc_version}). "
+        
+        # Add rRNA removal sentence (for microbes workflow)
+        id_type = "Ensembl IDs" if args.reference_source and "ensembl" in args.reference_source.lower() else "gene IDs"
+        description += f"To create a set of rRNA-removed quantification data, {id_type} mapping to ribosomal RNA (rRNA) were removed from the featureCounts gene count data. Both the original set of featureCounts quantification data and the rRNA-removed data were subject to differential gene expression analysis as follows. "
     else:
         # For standard workflow (RSEM)
         description += f"Aligned reads from all samples were quantified using RSEM (version {rsem_version}), "
         description += f"with strandedness set to {rsem_strandedness} "
         description += f"and RSEM count log files were compiled with MultiQC (version {multiqc_version}). "
+        
+        # Add rRNA removal sentence for standard workflow
+        id_type = "Ensembl IDs" if args.reference_source and "ensembl" in args.reference_source.lower() else "gene IDs"
+        description += f"To create a set of rRNA-removed quantification data, {id_type} mapping to ribosomal RNA (rRNA) were removed from the RSEM gene count data. Both the original set of RSEM quantification data and the rRNA-removed data were subject to differential gene expression analysis as follows. "
     
     # Add runsheet generation and normalization sentence
     dp_tools_version = software_versions.get('dp_tools', 'unknown')
@@ -266,57 +279,57 @@ def generate_protocol_content(args, software_versions):
     
     if args.mode == 'microbes':
         # For microbes workflow (omit tximport)
-        description += f"The runsheet was generated with dp_tools (version {dp_tools_version}) and the runsheet and quantification data were imported to R (version {r_version}) and normalized with DESeq2 (version {deseq2_version}) median of ratios method. "
+        description += f"A runsheet was generated with dp_tools (version {dp_tools_version}) and the runsheet and quantification data were imported to R (version {r_version}) and normalized with DESeq2 (version {deseq2_version}) median of ratios method. "
     else:
         # For standard workflow (include tximport)
-        description += f"The runsheet was generated with dp_tools (version {dp_tools_version}) and the runsheet and quantification data were imported to R (version {r_version}) with tximport (version {tximport_version}) and normalized with DESeq2 (version {deseq2_version}) median of ratios method. "
+        if args.has_ercc.lower() == "true":
+            description += f"A runsheet was generated with dp_tools (version {dp_tools_version}) and the runsheet and quantification data were imported to R (version {r_version}) with tximport (version {tximport_version}), ERCC genes were removed, and the non-ERCC genes were normalized with DESeq2 (version {deseq2_version}) median of ratios method. "
+        else:
+            description += f"A runsheet was generated with dp_tools (version {dp_tools_version}) and the runsheet and quantification data were imported to R (version {r_version}) with tximport (version {tximport_version}) and normalized with DESeq2 (version {deseq2_version}) median of ratios method. "
     
     # Parse runsheet for technical replicate handling
     tech_rep_sentence = ""
     if hasattr(args, 'runsheet') and args.runsheet and os.path.exists(args.runsheet):
         try:
             runsheet_df = pd.read_csv(args.runsheet)
-            if 'Sample Name' in runsheet_df.columns:
-                # Remove whitespace and NA
-                sample_names = runsheet_df['Sample Name'].dropna().astype(str).tolist()
-                # Remove trailing/leading whitespace
-                sample_names = [s.strip() for s in sample_names]
-                # Remove empty
-                sample_names = [s for s in sample_names if s]
-                # Find base names (remove _techrepN if present)
-                base_names = [re.sub(r'_techrep\d+$', '', s) for s in sample_names]
-                from collections import Counter
-                base_counts = Counter(base_names)
-                n_reps = list(base_counts.values())
-                unique_n = set(n_reps)
-                if all(x == 1 for x in n_reps):
-                    # No technical replicates at all
-                    tech_rep_sentence = ""
-                elif len(unique_n) == 1 and list(unique_n)[0] > 1:
-                    # All samples have the same number of tech reps
-                    tech_rep_sentence = ("Counts from all technical replicates for each sample were summed using DESeq2's collapseReplicates function. "
-                                         "These collapsed counts were then used for count normalization and differential expression analysis. ")
-                elif len(unique_n) > 1 and min(unique_n) > 1:
-                    # All samples have tech reps, but unequal number
-                    tech_rep_sentence = ("For each sample, counts from the first n technical replicates were summed using DESeq2's collapseReplicates function. "
-                                         "These collapsed counts were then used for count normalization and differential expression analysis. ")
-                else:
-                    # Some samples have tech reps, some don't
-                    tech_rep_sentence = ("For samples with technical replicates, only the first replicate was used for count normalization and differential expression analysis. ")
+            
+            # Check if Has Tech Reps column exists (new approach)
+            if 'Has Tech Reps' in runsheet_df.columns and 'Source Name' in runsheet_df.columns:
+                # Work with boolean values directly
+                has_tech_reps = runsheet_df['Has Tech Reps']
+                
+                if has_tech_reps.any():
+                    # Count only samples with tech reps per source name (matches R code logic)
+                    tech_rep_samples = runsheet_df[has_tech_reps == True]
+                    source_counts = tech_rep_samples['Source Name'].value_counts()
+                    min_samples_per_source = min(source_counts.values)
+                    
+                    # Check if all samples have tech reps
+                    all_have_tech_reps = has_tech_reps.all()
+                    
+                    if not all_have_tech_reps:
+                        # Datasets with Only Some Samples Having Technical Replicates
+                        tech_rep_sentence = ("For samples with technical replicates, only the first replicate was used for count normalization and differential expression analysis. ")
+                    elif min_samples_per_source > 1:
+                        # Check if all sources have equal number of tech reps
+                        if len(set(source_counts.values)) == 1:
+                            # Datasets Where All Samples Have an Equal Number (n > 1) of Technical Replicates
+                            tech_rep_sentence = ("Counts from all technical replicates for each sample were summed using DESeq2's collapseReplicates function. These collapsed counts were then used for count normalization and differential expression analysis. ")
+                        else:
+                            # Datasets Where All Samples Have Technical Replicates but an Unequal Number (n > 1)
+                            tech_rep_sentence = (f"For each sample, counts from the first {min_samples_per_source} technical replicates were summed using DESeq2's collapseReplicates function. These collapsed counts were then used for count normalization and differential expression analysis. ")
+                    # If min_samples_per_source = 1 and all have tech reps, no special handling needed
         except Exception as e:
             tech_rep_sentence = ""
     # If no runsheet, leave tech_rep_sentence as empty
     
-    # Add ERCC normalization sentence if ERCC spike-ins were used
-    if args.has_ercc.lower() == "true":
-        description += ("The data were normalized twice, each time using a different size factor. "
-                        "The first used non-ERCC genes for size factor estimation, and the second used only ERCC group B genes to estimate the size factor. "
-                        "Both sets of normalized gene counts were subject to differential expression analysis. ")
-    else:
-        description += "Normalized gene counts were subject to differential expression analysis. "
+    # Add normalization and differential expression analysis sentence
+    description += "Normalized gene counts were subject to differential expression analysis. "
+    
     # Add tech rep sentence
     if tech_rep_sentence:
         description += tech_rep_sentence
+        
     # Add differential expression analysis sentence
     description += f"Differential expression analysis was performed in R (version {r_version}) using DESeq2 (version {deseq2_version}); all groups were compared pairwise using the Wald test and the likelihood ratio test was used to generate the F statistic p-value. "
     
@@ -415,7 +428,7 @@ def generate_protocol_content(args, software_versions):
     
     # Add reference information if provided
     if hasattr(args, 'organism') and args.organism:
-        config += f"- Organism: {args.organism}\n"
+        config += f"- Organism: {organism_name}\n"
     if hasattr(args, 'reference_source') and args.reference_source:
         config += f"- Reference source: {args.reference_source}\n"
     if hasattr(args, 'reference_version') and args.reference_version:
@@ -426,6 +439,22 @@ def generate_protocol_content(args, software_versions):
         config += f"- Reference FASTA: {os.path.basename(args.reference_fasta)}\n"
     if args.reference_gtf and args.reference_gtf != "null":
         config += f"- Reference GTF: {os.path.basename(args.reference_gtf)}\n"
+    
+    # Add tech rep debug info
+    if hasattr(args, 'runsheet') and args.runsheet and os.path.exists(args.runsheet):
+        try:
+            debug_df = pd.read_csv(args.runsheet)
+            if 'Has Tech Reps' in debug_df.columns and 'Source Name' in debug_df.columns:
+                debug_has_tech_reps = debug_df['Has Tech Reps']
+                config += f"- Tech reps detected: {debug_has_tech_reps.any()}\n"
+                config += f"- All samples have tech reps: {debug_has_tech_reps.all()}\n"
+                if debug_has_tech_reps.any():
+                    debug_tech_rep_samples = debug_df[debug_has_tech_reps == True]
+                    debug_source_counts = debug_tech_rep_samples['Source Name'].value_counts()
+                    config += f"- Min tech reps per source: {min(debug_source_counts.values)}\n"
+                    config += f"- Source counts: {dict(debug_source_counts)}\n"
+        except Exception as e:
+            config += f"- Tech rep parsing error: {str(e)}\n"
     
     config += "\n"
     
