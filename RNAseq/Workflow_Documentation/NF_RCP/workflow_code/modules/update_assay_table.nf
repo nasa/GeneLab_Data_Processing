@@ -6,7 +6,7 @@ process UPDATE_ASSAY_TABLE {
     input:
         path(ch_processed_directory)
     output:
-        path("a_*.txt"), emit: assay_table
+        path("a_*.txt"), emit: assay_table, optional: true
 
     script:
     def mode_param = params.mode == "microbes" ? "--mode microbes" : ""

@@ -82,8 +82,9 @@ Below is a description of each subworkflow and the additional output files gener
 3. [Fetch Singularity Images](#3-fetch-singularity-images)  
 4. [Run the Workflow](#4-run-the-workflow)  
    4a. [Approach 1: Run the workflow on a GeneLab RNAseq dataset with automatic retrieval of reference fasta and gtf files](#4a-approach-1-run-the-workflow-on-a-genelab-rnaseq-dataset-with-automatic-retrieval-of-reference-fasta-and-gtf-files)  
-   4b. [Approach 2: Run the workflow on a GeneLab RNAseq dataset using local reference fasta and gtf files](#4b-approach-2-run-the-workflow-on-a-genelab-rnaseq-dataset-using-local-reference-fasta-and-gtf-files)  
-   4c. [Approach 3: Run the workflow on a non-GeneLab dataset using a user-created runsheet](#4c-approach-3-run-the-workflow-on-a-non-genelab-dataset-using-a-user-created-runsheet)  
+   4b. [Approach 2: Run the workflow on a GeneLab RNAseq dataset with custom reference fasta and gtf files](#4b-approach-2-run-the-workflow-on-a-genelab-rnaseq-dataset-with-custom-reference-fasta-and-gtf-files)  
+   4c. [Approach 3: Run the workflow on a non-GeneLab dataset using a user-created runsheet with automatic retrieval of reference fasta and gtf files](#4c-approach-3-run-the-workflow-on-a-non-genelab-dataset-using-a-user-created-runsheet-with-automatic-retrieval-of-reference-fasta-and-gtf-files)  
+   4d. [Approach 4: Run the workflow on a non-GeneLab dataset using a user-created runsheet with custom reference fasta and gtf files](#4d-approach-4-run-the-workflow-on-a-non-genelab-dataset-using-a-user-created-runsheet-with-custom-reference-fasta-and-gtf-files)
 5. [Additional Output Files](#5-additional-output-files)  
 
 <br>
@@ -160,7 +161,11 @@ export NXF_SINGULARITY_CACHEDIR=$(pwd)/singularity
 
 ### 4. Run the Workflow
 
-While in the location containing the `NF_RCP_2.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are four examples of how to run the NF_RCP workflow:
+While in the location containing the `NF_RCP_2.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow.
+
+Both workflows automatically load reference files and organism-specific gene annotation files from the [GeneLab annotations table](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv). For organisms not listed in the table or to use alternative reference files, additional workflow parameters can be specified.
+
+ Below are four examples of how to run the NF_RCP workflow:
 > Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --reference_version) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
 
 > Note: To use Docker instead of Singularity, use `-profile docker` in the Nextflow run command. Nextflow will automatically pull images as needed.
@@ -179,9 +184,7 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 <br>
 
-#### 4b. Approach 2: Run the workflow on a GeneLab RNAseq dataset using local reference fasta and gtf files
-
-> Note: The `--reference_source` and `--reference_version` parameters should match the reference source and version number of the local reference fasta and gtf files used
+#### 4b. Approach 2: Run the workflow on a GeneLab RNAseq dataset with custom reference fasta and gtf files
 
 ```bash
 nextflow run NF_RCP_2.0.0/main.nf \ 
@@ -189,15 +192,17 @@ nextflow run NF_RCP_2.0.0/main.nf \
    --accession OSD-194 \
    --reference_version 112 \
    --reference_source ensembl \ 
-   --reference_fasta </path/to/fasta> \ 
-   --reference_gtf </path/to/gtf> 
+   --reference_fasta <url/or/path/to/fasta> \ 
+   --reference_gtf <url/or/path/to/gtf>
 ```
+
+> Note: The `--reference_source` and `--reference_version` parameters should match the reference source and version number of the reference fasta and gtf files used. 
+
+> Note: For gene annotations in the differential expression output table, see the optional `--gene_annotations_file` parameter described in the [Optional Parameters](#optional-parameters) section.
 
 <br>
 
-#### 4c. Approach 3: Run the workflow on a non-GeneLab dataset using a user-created runsheet
-
-> Note: Specifications for creating a runsheet manually are described [here](examples/runsheet/README.md).
+#### 4c. Approach 3: Run the workflow on a non-GeneLab dataset using a user-created runsheet with automatic retrieval of reference fasta and gtf files
 
 ```bash
 nextflow run NF_RCP_2.0.0/main.nf \ 
@@ -205,15 +210,35 @@ nextflow run NF_RCP_2.0.0/main.nf \
    --runsheet_path </path/to/runsheet> 
 ```
 
+> Note: Specifications for creating a runsheet manually are described [here](examples/runsheet/README.md).
+
 <br>
 
-**Required Parameters For All Approaches:**
+#### 4d. Approach 4: Run the workflow on a non-GeneLab dataset using a user-created runsheet with custom reference fasta and gtf files
+
+```bash
+nextflow run NF_RCP_2.0.0/main.nf \ 
+   -profile singularity \
+   --accession OSD-194 \
+   --reference_version 112 \
+   --reference_source ensembl \ 
+   --reference_fasta <url/or/path/to/fasta> \ 
+   --reference_gtf <url/or/path/to/gtf> 
+```
+> Note: This approach should be used for organisms not listed in the [GeneLab annotations table](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv). 
+
+> Note: The `--reference_source` and `--reference_version` parameters should match the reference source and version number of the reference fasta and gtf files used. 
+
+> Note: For gene annotations in the differential expression output table, see the optional `--gene_annotations_file` parameter described in the [Optional Parameters](#optional-parameters) section.
+
+<br>
+
+#### Required Parameters For All Approaches:
 
 * `NF_RCP_2.0.0/main.nf` - Instructs Nextflow to run the NF_RCP workflow 
 
 * `-profile` - Specifies the configuration profile(s) to load, `singularity` instructs Nextflow to setup and use singularity for all software called in the workflow; use `local` for local execution ([local.config](workflow_code/conf/local.config)) or `slurm` for SLURM cluster execution ([slurm.config](workflow_code/conf/slurm.config))
   > Note: The output directory will be named `GLDS-#` when using a OSD or GLDS accession as input, or `results` when running the workflow with only a runsheet as input.
-
 
 <br>
 
@@ -223,27 +248,50 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 <br>
 
-**Additional Required Parameters For [Approach 2](#4b-approach-2-run-the-workflow-on-a-genelab-rnaseq-dataset-using-local-reference-fasta-and-gtf-files):**
+**Additional Required Parameters For [Approach 2](#4b-approach-2-run-the-workflow-on-a-genelab-rnaseq-dataset-with-custom-reference-fasta-and-gtf-files):**
+
+* `--accession` - The OSD or GLDS ID for the dataset to be processed, eg. `GLDS-194` or `OSD-194`
 
 * `--reference_version` - specifies the reference source version to use for the reference genome (Ensembl release `112` is used in this example); only needed when using Ensembl as the reference source
 
 * `--reference_source` - specifies the source of the reference files used (the source indicated in the Approach 2 example is `ensembl`) 
 
-* `--reference_fasta` - specifices the path to a local fasta file 
+* `--reference_fasta` - specifices the URL or path to a fasta file 
 
-* `--reference_gtf` - specifices the path to a local gtf file  
-
-  > Note: If the local reference files specified are different than the reference files used to create the [GeneLab annotations table](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv), additional gene annotations associated with any gene IDs from the specified files that are not shared in the GeneLab annotations will not be added to the DGE output table(s). 
+* `--reference_gtf` - specifices the URL or path to a gtf file
 
 <br>
 
-**Additional Required Parameters for [Approach 3](#4c-approach-3-run-the-workflow-on-a-non-genelab-dataset-using-a-user-created-runsheet):**
+**Additional Required Parameters For [Approach 3](#4c-approach-3-run-the-workflow-on-a-non-genelab-dataset-using-a-user-created-runsheet-with-automatic-retrieval-of-reference-fasta-and-gtf-files):**
 
-* `--runsheet_path` - specifies the path to a local runsheet. 
+* `--runsheet_path` - specifies the path to a local runsheet (Default: a runsheet is automatically generated using the metadata on the OSDR for the dataset being processed)
 
 <br>
 
-**Optional Parameters:**
+**Additional Required Parameters For [Approach 4](#4d-approach-4-run-the-workflow-on-a-non-genelab-dataset-using-a-user-created-runsheet-with-custom-reference-fasta-and-gtf-files):**
+
+* `--runsheet_path` - specifies the path to a local runsheet (Default: a runsheet is automatically generated using the metadata on the OSDR for the dataset being processed)
+
+* `--reference_version` - specifies the reference source version to use for the reference genome (Ensembl release `112` is used in this example); only needed when using Ensembl as the reference source
+
+* `--reference_source` - specifies the source of the reference files used (the source indicated in the Approach 2 example is `ensembl`) 
+
+* `--reference_fasta` - specifices the URL or path to a fasta file 
+
+* `--reference_gtf` - specifices the URL or path to a gtf file
+
+<br>
+
+#### Optional Parameters:
+
+* `--gene_annotations_file` - Specifies the URL or path to a gene annotation file that adds additional gene annotation columns to the differential expression output table. This can be:
+
+  - The file listed in the `genelab_annots_link` column of the [GeneLab annotations table](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110/GL-DPPD-7110_annotations.csv)
+  - A custom gene annotation file where:
+    - For organisms listed in the GeneLab annotations table: gene IDs must be in a column with the same name as column 1 of the GeneLab organism-specific gene annotation file
+    - For organisms not listed in the table: gene IDs must be in a column named `gene_id`
+  
+  Only genes included in the specified annotations file will receive additional annotations in the output.
 
 * `--skip_vv` - skip the automated V&V processes (Default: the automated V&V processes are active) 
 
@@ -256,7 +304,7 @@ nextflow run NF_RCP_2.0.0/main.nf \
 * `--derived_store_path` - specifies the directory to store the tool-specific indices created during processing (Default: within the directory structure created by default in the launch directory) `
 
 * `--mode` - specifies which pipeline to use: set to `default` to run GL-DPPD-7101-G pipeline or set to `microbes` for the GL-DPPD-7115 prokaryotic pipeline (Default value: `default`)
-  > This allows the workflow to process either eukaryotic (default) or prokaryotic RNAseq data using the appropriate pipeline
+  > Note: This allows the workflow to process either eukaryotic (default) or prokaryotic RNAseq data using the appropriate pipeline.
 
 <br>
 

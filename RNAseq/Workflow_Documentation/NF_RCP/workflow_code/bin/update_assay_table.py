@@ -333,11 +333,11 @@ def extract_and_find_assay(outdir, glds_accession):
         sys.exit(1)
 
     # Find and extract ISA zip
-    isa_zip = find_file(
-        metadata_dir, 
-        '*ISA*.zip', 
-        error_msg=f"Error: No ISA zip found in {metadata_dir}"
-    ) or find_file(metadata_dir, '*.zip')
+    isa_zip = find_file(metadata_dir, '*ISA*.zip') or find_file(metadata_dir, '*.zip')
+    
+    if isa_zip is None:
+        print(f"No ISA zip file found in {metadata_dir}. Exiting silently.")
+        sys.exit(0)  # Exit with status 0 (success)
     
     print(f"Found ISA zip file: {isa_zip}")
     

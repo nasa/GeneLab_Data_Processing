@@ -1488,7 +1488,13 @@ dds <- DESeq(dds, parallel = TRUE, BPPARAM = BPPARAM)
 
 ### Generate normalized counts ###
 normCounts <- as.data.frame(counts(dds, normalized = TRUE))
-VSTCounts <- as.data.frame(assay(vst(dds)))
+VSTCounts <- tryCatch({
+  as.data.frame(assay(vst(dds)))
+}, error = function(e) {
+  # If vst() fails, use varianceStabilizingTransformation directly
+  print(sprintf("DEBUG: %s: VST failed, falling back to direct varianceStabilizingTransformation call", Sys.time()))
+  as.data.frame(assay(varianceStabilizingTransformation(dds)))
+})
 
 ### Add 1 to normalized counts for log calculations ###
 normCounts <- normCounts + 1
