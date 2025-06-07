@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added reference table support for Pseudomonas aeruginosa [#37](https://github.com/nasa/GeneLab_Data_Processing/issues/37)
 - Added V&V check for adapter content removal using FastQC/MultiQC reports from trimmed reads [#42](https://github.com/nasa/GeneLab_Data_Processing/issues/42)
 - Added generation of a CSV file summarizing parsed metrics from tool logs and MultiQC reports [#84](https://github.com/nasa/GeneLab_Data_Processing/issues/84)
+- Added support for user-specified custom genomes that are not present in the provided GeneLab Annotation Reference table [#157](https://github.com/nasa/GeneLab_Data_Processing/issues/157)
 
 ### Changed
 
@@ -66,6 +67,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - DGE validation script (`vv_dge_deseq2.py`) error with all-integer sample names [#112](https://github.com/nasa/GeneLab_Data_Processing/issues/112)
 - The `--accession` parameter (formerly `--gldsAccession`) is now optional for runsheet-based workflows; if omitted, outputs default to the 'results' directory [#35](https://github.com/nasa/GeneLab_Data_Processing/issues/35)
+- Metadata/ISA.zip is now optional when running post-processing workflow [#156](https://github.com/nasa/GeneLab_Data_Processing/issues/156)
+- Add fallback for vst() function in case the representative subsampling implemented in vst() fails due to sparse matrix input as in testing runs. 
+
 
 ### Removed
 
