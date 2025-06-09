@@ -1,0 +1,530 @@
+---
+title: "Differential Gene Expression Analysis"
+output:
+  html_document:
+    pandoc_args: ["+RTS", "-K1024m", "-RTS"]
+
+params:
+  cpus: 1
+  work_dir: "." # directory where the script will run
+  output_directory: "." # directory for output files
+  output_filename_label: "" # label for output file names
+  output_filename_suffix: "" # suffix for output file names
+  runsheet_path: NULL # path to the runsheet file
+  input_counts: NULL # directory containing RSEM gene results OR FeatureCounts table for microbes mode
+  gene_id_type: "" # denotes the name of the identifier column (e.g. ENSEMBL, TAIR)
+  microbes: FALSE # set this to TRUE to use Bowtie 2 input
+  DEBUG_MODE_LIMIT_GENES: FALSE # debugging option to limit the number of genes
+  DEBUG_MODE_ADD_DUMMY_COUNTS: FALSE # debugging option to add dummy counts
+  parallel_config: NULL # parallel configuration string (e.g. "MulticoreParam(workers = params$cpus)")
+---
+
+## Substeps {.tabset}
+
+### 1. Setup<!---  START:NON_DPPD --->
+```{r, setup, include=FALSE}
+knitr::opts_knit$set(root.dir = params$work_dir)
+```
+
+### 2. Load Libraries and Parameters
+```{r library-loading}
+options(timeout=1200)
+# List of required packages
+cran_packages <- c("stringr", "knitr", "yaml", "dplyr")
+bioc_packages <- c("tximport", "DESeq2", "BiocParallel")
+# Install missing CRAN packages
+for (pkg in cran_packages) {
+    if (!require(pkg, character.only = TRUE)) {
+        install.packages(pkg)
+        library(pkg, character.only = TRUE)
+    }
+}
+# Install BiocManager if not already installed
+if (!require("BiocManager", character.only = TRUE)) {
+    install.packages("BiocManager")
+    library(BiocManager)
+}
+# Install missing Bioconductor packages
+for (pkg in bioc_packages) {
+    if (!require(pkg, character.only = TRUE)) {
+        BiocManager::install(pkg)
+        library(pkg, character.only = TRUE)
+    }
+}
+# Load all required libraries
+library(stringr)
+library(knitr)
+library(yaml)
+library(dplyr)
+library(tximport)
+library(DESeq2)
+library(BiocParallel)
+# Set up parallel backend if params$parallel_config is defined, otherwise set BPPARAM <- SerialParam(RNGseed = 7)
+# See https://rdrr.io/bioc/BiocParallel/man/register.html
+if (!is.null(params$parallel_config) && params$parallel_config != "") {
+    BPPARAM <- eval(parse(text = params$parallel_config))
+} else {
+    BPPARAM <- SerialParam(RNGseed = 7)
+}
+# Set random seed for reproducibility
+set.seed(7)
+# Save parameters
+dir.create(params$output_directory, recursive = TRUE, showWarnings = FALSE)
+yaml::write_yaml(params, file.path(params$output_directory, "last_params.yml"))
+```
+
+### 3. Load Study Metadata
+```{r runsheet-to-compare_df}
+compare_csv_from_runsheet <- function(runsheet_path) {
+    df <- read.csv(runsheet_path)
+    factors <- df %>%
+        select(matches("Factor.Value", ignore.case = TRUE)) %>%
+        rename_with(~ paste0("factor_", seq_along(.)))
+    
+    # Check if both Source.Name and Has.Tech.Reps columns exist
+    if ("Source.Name" %in% colnames(df) && "Has.Tech.Reps" %in% colnames(df)) {
+        result <- df %>%
+            select(Sample.Name, Source.Name, Has.Tech.Reps) %>%
+            bind_cols(factors)
+    } else {
+        result <- df %>%
+            select(Sample.Name) %>%
+            bind_cols(factors)
+    }
+    
+    return(result)
+}
+# Loading metadata from runsheet csv file
+compare_csv <- compare_csv_from_runsheet(params$runsheet_path)
+```
+
+```{r compare_df-to-study_df}
+study <- if ("Source.Name" %in% colnames(compare_csv) && "Has.Tech.Reps" %in% colnames(compare_csv)) {
+    compare_csv[, -c(1, 2, 3), drop=FALSE]  # Exclude Sample.Name, Source.Name, and Has.Tech.Reps
+} else {
+    compare_csv[, -1, drop=FALSE]  # Exclude only Sample.Name
+}
+rownames(study) <- compare_csv$Sample.Name
+```
+
+```{r study_df-to-group_df}
+##### Format groups and indicate the group that each sample belongs to #####
+group <- if (ncol(study) >= 2) {
+    apply(study, 1, paste, collapse = " & ")
+} else {
+    study[[1]]
+}
+group_names <- paste0("(", group, ")")
+group <- sub("^BLOCKER_", "", make.names(paste0("BLOCKER_", group)))
+names(group) <- group_names
+```
+
+```{r group_df-to-contrasts_df}
+##### Format contrasts table, defining pairwise comparisons for all groups #####
+contrast.names <- combn(levels(factor(names(group))),2) # generate matrix of pairwise group combinations for comparison
+contrasts <- apply(contrast.names, MARGIN=2, function(col) sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", stringr::str_sub(col, 2, -2)))))
+contrast.names <- c(paste(contrast.names[1,],contrast.names[2,],sep = "v"),paste(contrast.names[2,],contrast.names[1,],sep = "v")) # format combinations for output table files names
+contrasts <- cbind(contrasts,contrasts[c(2,1),])
+colnames(contrasts) <- contrast.names
+rm(contrast.names)
+```
+
+### 4. Load Gene Counts
+```{r load-gene-counts}
+##### Import FeatureCounts or RSEM count data #####
+if (params$microbes) {
+    # For microbes, look for FeatureCounts TSV file
+    if (!file.exists(params$input_counts)) {
+        stop(paste("FeatureCounts file not found at:", params$input_counts))
+    }
+    # Load featureCounts data with tab separator
+    featurecounts <- read.csv(params$input_counts, header = TRUE, sep = "\t", skip = 1, check.names = FALSE)
+    # Create counts matrix: remove metadata columns, remove possible .bam from column names
+    row.names(featurecounts) <- featurecounts$Geneid
+    counts <- featurecounts[,-c(1:6)]
+    colnames(counts) <- gsub("\\.bam$", "", colnames(counts))
+    # Reorder counts columns to match runsheet
+    counts <- counts[, rownames(study)]
+} else {
+    # Load RSEM data for default mode
+    files <- list.files(
+        path = params$input_counts, 
+        pattern = ".genes.results$", 
+        full.names = TRUE
+    )
+
+    # Remove "_rRNArm" from filenames for matching
+    clean_filenames <- sub("_rRNArm", "", basename(files))
+
+    samples <- rownames(study)
+
+    # Reorder files based on sample names
+    reordering <- sapply(samples, function(x) {
+        grep(paste0("^", x, "\\.genes.results$"), clean_filenames, value = FALSE)
+    })
+
+    files <- files[reordering]
+    names(files) <- samples
+
+    # Import data using tximport
+    txi.rsem <- tximport(files, type = "rsem", txIn = FALSE, txOut = FALSE)
+
+    if (dim(txi.rsem$counts)[2] != nrow(study)) {
+        stop("Sample count mismatch between imported gene results and runsheet")
+    }
+}
+##### Apply debug options if enabled #####
+if (params$DEBUG_MODE_LIMIT_GENES) {
+    if (params$microbes) {
+        counts <- counts[1:150,]
+    } else {
+        txi.rsem$counts <- txi.rsem$counts[1:150,]
+    }
+    print(sprintf("DEBUG: %s: Limiting analysis to first 150 genes", Sys.time()))
+}
+if (params$DEBUG_MODE_ADD_DUMMY_COUNTS) {
+    set.seed(1)
+    if (params$microbes) {
+        counts <- counts + matrix(
+            sample(0:5000, NROW(counts)*NCOL(counts), replace=TRUE),
+            nrow=NROW(counts)
+        )
+    } else {
+        txi.rsem$counts <- txi.rsem$counts + matrix(
+            sample(0:5000, NROW(txi.rsem$counts)*NCOL(txi.rsem$counts), replace=TRUE),
+            nrow=NROW(txi.rsem$counts)
+        )
+    }
+    print(sprintf("DEBUG: %s: Replacing original counts with random values from 0 to 5000", Sys.time()))
+}
+
+# Save a copy of the original counts before any filtering
+if (params$microbes) {
+    original_counts <- counts
+} else {
+    original_txi_counts <- txi.rsem$counts
+}
+
+if (params$microbes) {
+} else {
+    ## Add 1 to genes with lengths of zero - needed to make DESeqDataSet object
+    print(sprintf("DEBUG: %s: Converting %d zero length genes to 1-length of %d genes (%f %% total)", Sys.time(), length(txi.rsem$length[txi.rsem$length == 0]), length(txi.rsem$length), length(txi.rsem$length[txi.rsem$length == 0])/length(txi.rsem$length)))
+    txi.rsem$length[txi.rsem$length == 0] <- 1
+}
+```
+
+```{r create-sample-table}
+## Create data frame defining which group each sample belongs to
+sampleTable <- data.frame(condition=factor(group))
+rownames(sampleTable) <- if (params$microbes) {
+    colnames(counts)
+} else {
+    colnames(txi.rsem$counts)
+}
+# Handle technical replicates - STEP 1/2: Filter which samples to retain
+# Only if both `Source Name` and `Has Tech Reps` columns exist in runsheet
+if ("Source.Name" %in% colnames(compare_csv) && "Has.Tech.Reps" %in% colnames(compare_csv)) {
+    all_samples <- rownames(sampleTable)
+    
+    # Get source names and tech rep status for each sample
+    sample_info <- data.frame(
+        name = all_samples,
+        source_name = compare_csv$Source.Name[match(all_samples, compare_csv$Sample.Name)],
+        has_tech_reps = compare_csv$Has.Tech.Reps[match(all_samples, compare_csv$Sample.Name)],
+        stringsAsFactors = FALSE
+    )
+    
+    # Count samples per source name (all samples regardless of tech rep status)
+    source_counts <- table(sample_info$source_name)
+    min_samples_per_source <- min(source_counts)
+    
+    if (min_samples_per_source > 1) {
+        # Use collapseReplicates approach
+        # Create grouping variable: Source Name for tech reps, Sample Name for non-tech reps
+        collapse_groups <- ifelse(
+            toupper(sample_info$has_tech_reps) == "TRUE",
+            sample_info$source_name,
+            sample_info$name
+        )
+        
+        # Get unique groups and count for balancing
+        unique_groups <- unique(collapse_groups)
+        group_counts <- sapply(unique_groups, function(grp) {
+            sum(collapse_groups == grp)
+        })
+        
+        min_group_size <- min(group_counts)
+        
+        # Keep first min_group_size samples from each group
+        samples_to_keep <- character(0)
+        for (grp in unique_groups) {
+            indices <- which(collapse_groups == grp)
+            samples_to_keep <- c(samples_to_keep, sample_info$name[indices[1:min_group_size]])
+        }
+        
+        # Update sample table and counts
+        sampleTable <- sampleTable[samples_to_keep, , drop=FALSE]
+        
+        if (params$microbes) {
+            counts <- counts[, samples_to_keep]
+        } else {
+            txi.rsem$counts <- txi.rsem$counts[, samples_to_keep]
+            txi.rsem$abundance <- txi.rsem$abundance[, samples_to_keep]
+            txi.rsem$length <- txi.rsem$length[, samples_to_keep]
+        }
+        
+    } else {
+        # min_samples_per_source = 1, use manual filtering approach
+        # Keep only first sample from each Source Name + Has Tech Reps = TRUE group
+        # Keep all samples with Has Tech Reps = FALSE
+        
+        samples_to_keep <- character(0)
+        
+        # Group by source name and tech rep status
+        for (src in unique(sample_info$source_name)) {
+            src_samples <- sample_info[sample_info$source_name == src, ]
+            
+            # Separate tech reps from non-tech reps
+            tech_rep_samples <- src_samples[toupper(src_samples$has_tech_reps) == "TRUE", ]
+            non_tech_rep_samples <- src_samples[toupper(src_samples$has_tech_reps) == "FALSE", ]
+            
+            # Keep only first tech rep sample if any exist
+            if (nrow(tech_rep_samples) > 0) {
+                samples_to_keep <- c(samples_to_keep, tech_rep_samples$name[1])
+            }
+            
+            # Keep all non-tech rep samples
+            if (nrow(non_tech_rep_samples) > 0) {
+                samples_to_keep <- c(samples_to_keep, non_tech_rep_samples$name)
+            }
+        }
+        
+        # Update sample table and counts
+        sampleTable <- sampleTable[samples_to_keep, , drop=FALSE]
+        
+        if (params$microbes) {
+            counts <- counts[, samples_to_keep]
+        } else {
+            txi.rsem$counts <- txi.rsem$counts[, samples_to_keep]
+            txi.rsem$abundance <- txi.rsem$abundance[, samples_to_keep]
+            txi.rsem$length <- txi.rsem$length[, samples_to_keep]
+        }
+    }
+}
+```
+
+### 4. DGE
+```{r load-deseq2-dataset}
+# Create dataset
+if (params$microbes) {
+    # Build DESeqDataSet directly from counts for microbes mode
+    dds <- DESeqDataSetFromMatrix(
+        countData = counts,
+        colData = sampleTable,
+        design = ~condition
+    )
+} else {
+    # Build DESeqDataSet from tximport object for non-microbes mode
+    dds <- DESeqDataSetFromTximport(
+        txi = txi.rsem,
+        colData = sampleTable,
+        design = ~condition
+    )
+}
+# Handle technical replicates - STEP 2/2: Collapse retained tech reps in DESeq2 object
+# Only if both `Source Name` and `Has Tech Reps` columns exist in runsheet
+if ("Source.Name" %in% colnames(compare_csv) && "Has.Tech.Reps" %in% colnames(compare_csv)) {
+    # Get info for remaining samples after filtering
+    remaining_samples <- rownames(sampleTable)
+    remaining_info <- data.frame(
+        name = remaining_samples,
+        source_name = compare_csv$Source.Name[match(remaining_samples, compare_csv$Sample.Name)],
+        has_tech_reps = compare_csv$Has.Tech.Reps[match(remaining_samples, compare_csv$Sample.Name)],
+        stringsAsFactors = FALSE
+    )
+    
+    # Create collapse grouping: Source Name for tech reps, Sample Name for non-tech reps
+    collapse_source_names <- ifelse(
+        toupper(remaining_info$has_tech_reps) == "TRUE",
+        remaining_info$source_name,
+        remaining_info$name
+    )
+    
+    # Only collapse if there are multiple samples with the same collapse group
+    if (length(unique(collapse_source_names)) < length(collapse_source_names)) {
+        # Collapse only if >1 replicate per group exists
+        dds <- collapseReplicates(dds, groupby = collapse_source_names)
+        
+        collapsed_names <- unique(collapse_source_names)
+        # Update sampleTable to match collapsed samples
+        # For collapsed tech reps, use the source name; for non-tech reps, use sample name
+        sampleTable <- sampleTable[match(collapsed_names, collapse_source_names), , drop = FALSE]
+        rownames(sampleTable) <- collapsed_names
+    }
+}
+summary(dds)
+```
+
+```{r filter-genes-by-normalized-counts}
+##### Filter out genes with counts of less than 10 in all samples #####
+keep <- rowSums(counts(dds)) > 10
+print(sprintf("DEBUG: %s: Removed %d genes for having dataset wide count sum less than 10. (%f%% of all genes)", Sys.time(), sum(!keep), sum(!keep)/length(keep)*100))
+dds <- dds[keep,]
+summary(dds)
+dim(dds)
+```
+
+```{r default-normalized-dge-analysis}
+# remove ERCC genes if any are present
+if (length(grep("ERCC-", rownames(dds))) != 0) {
+    dds <- dds[-c(grep("ERCC-", rownames(dds))), ]
+}
+dds <- DESeq(dds, parallel = TRUE, BPPARAM = BPPARAM)
+```
+
+```{r output-counts-related-files}
+normCounts <- as.data.frame(counts(dds, normalized = TRUE))
+VSTCounts <- tryCatch({
+  as.data.frame(assay(vst(dds)))
+}, error = function(e) {
+  # If vst() fails, use varianceStabilizingTransformation directly
+  print(sprintf("DEBUG: %s: VST failed, falling back to direct varianceStabilizingTransformation call", Sys.time()))
+  as.data.frame(assay(varianceStabilizingTransformation(dds)))
+})
+write.csv(
+    if (params$microbes) {
+        original_counts
+    } else {
+        original_txi_counts
+    },
+    file = file.path(params$output_directory,
+                     paste0(if(params$microbes) "FeatureCounts_Unnormalized_Counts" 
+                           else "RSEM_Unnormalized_Counts",
+                           params$output_filename_label, params$output_filename_suffix, ".csv"))
+)
+write.csv(
+    normCounts,
+    file = file.path(params$output_directory,
+                     paste0("Normalized_Counts",
+                           params$output_filename_label, params$output_filename_suffix, ".csv"))
+)
+write.csv(
+    VSTCounts,
+    file = file.path(params$output_directory,
+                     paste0("VST_Counts",
+                           params$output_filename_label, params$output_filename_suffix, ".csv"))
+)
+```
+
+```{r prep-counts-for-dge}
+## Add 1 to all counts to avoid issues with log transformation
+normCounts <- normCounts + 1
+## output table 1 will be used to generate computer-readable DGE table,
+## which is used to create GeneLab visualization plots
+output_table <- tibble::rownames_to_column(normCounts, var = params$gene_id_type)
+```
+
+```{r run-deseq2-LRT}
+##### Generate F statistic p-value (similar to ANOVA p-value) using DESeq2 likelihood ratio test (LRT) design #####
+print(sprintf("DEBUG: %s: Generating Likelihood Ratio Test Based Statistics", Sys.time()))
+dds_lrt <- DESeq(dds, test = "LRT", reduced = ~1)
+res_lrt <- results(dds_lrt)
+# Store LRT p-value (add after means and stdevs)
+lrt_pvalues <- res_lrt@listData$padj
+```
+
+```{r wald-test-iteration}
+## Iterate through Wald Tests to generate pairwise comparisons of all groups
+compute_contrast <- function(dds, i) {
+    res <- results(
+        dds,
+        contrast = c("condition", contrasts[1, i], contrasts[2, i]),
+        parallel = FALSE  # Disable internal parallelization
+    )
+    res_df <- as.data.frame(res@listData)[, c(2, 4, 5, 6)]
+    colnames(res_df) <- c(
+        paste0("Log2fc_", colnames(contrasts)[i]),
+        paste0("Stat_", colnames(contrasts)[i]),
+        paste0("P.value_", colnames(contrasts)[i]),
+        paste0("Adj.p.value_", colnames(contrasts)[i])
+    )
+    return(res_df)
+}
+res_list <- bplapply(1:dim(contrasts)[2], function(i) compute_contrast(dds, i), BPPARAM = BPPARAM)
+# Combine the list of data frames into a single data frame
+res_df <- do.call(cbind, res_list)
+# Combine with the existing output_table
+output_table <- cbind(output_table, res_df)
+```
+
+```{r calculate-group-statistics}
+### Add summary statistics ###
+output_table$All.mean <- rowMeans(normCounts, na.rm = TRUE)
+output_table$All.stdev <- matrixStats::rowSds(as.matrix(normCounts), na.rm = TRUE, useNames = FALSE)
+output_table$LRT.p.value <- res_lrt@listData$padj
+# Calculate group means and standard deviations
+tcounts <- as.data.frame(t(normCounts))
+# Assign group labels based on colData(dds)
+tcounts$group <- colData(dds)$condition[match(rownames(tcounts), rownames(colData(dds)))]
+# Aggregate group means and standard deviations
+agg_means <- aggregate(. ~ group, data = tcounts, FUN = mean, na.rm = TRUE)
+agg_stdev <- aggregate(. ~ group, data = tcounts, FUN = sd, na.rm = TRUE)
+# Extract group names
+group_ids <- agg_means$group
+# Remove the 'group' column and transpose to match expected structure
+group_means <- as.data.frame(t(agg_means[-1]))
+group_stdev <- as.data.frame(t(agg_stdev[-1]))
+# Get cleaned group names
+orig_group_names <- group_names[match(group_ids, group)]
+# Interleave means and stdevs for each group
+group_stats <- data.frame(matrix(ncol = 0, nrow = nrow(group_means)))
+for (i in seq_along(group_ids)) {
+    # Create column names with cleaned group names
+    mean_colname <- paste0("Group.Mean_", orig_group_names[i])
+    stdev_colname <- paste0("Group.Stdev_", orig_group_names[i])
+    # Add columns
+    group_stats[[mean_colname]] <- group_means[,i]
+    group_stats[[stdev_colname]] <- group_stdev[,i]
+}
+### Add computed group means and standard deviations to output_table ###
+output_table <- cbind(output_table, group_stats)
+```
+
+```{r output-dge-related-files}
+# note: the paste0 here is ensure no string file name prefixes still create their directories
+# e.g. dge_output/
+write.csv(
+    contrasts,
+    file = file.path(params$output_directory, 
+                     paste0("contrasts", params$output_filename_label, params$output_filename_suffix, ".csv"))
+)
+write.csv(
+    output_table,
+    row.names = FALSE,
+    file = file.path(params$output_directory, 
+                     paste0("differential_expression_no_annotations", params$output_filename_label, params$output_filename_suffix, ".csv"))
+)
+write.csv(
+    sampleTable,
+    file = file.path(params$output_directory, 
+                     paste0("SampleTable", params$output_filename_label, params$output_filename_suffix, ".csv"))
+)
+# Create summary file based on output_table
+output <- capture.output(summary(output_table))
+# Write summary file
+conn <- file(file.path(params$output_directory, "summary.txt"), "w")
+writeLines(output, conn)
+close(conn)
+```
+
+```{r version-reporting}
+## print session info ##
+session_info_output <- capture.output(sessionInfo())
+# Write versions file
+cat(session_info_output,
+    "BioC_version_associated_with_R_version",
+    toString(BiocManager::version()),
+    file = file.path(params$output_directory, "versions.txt"),
+    append = TRUE,
+    sep = "\n")
+```
