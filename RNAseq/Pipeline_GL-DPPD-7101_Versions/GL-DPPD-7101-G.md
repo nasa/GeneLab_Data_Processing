@@ -202,7 +202,7 @@ fastqc -o /path/to/raw_fastqc/output/directory *.fastq.gz
 **Parameter Definitions:**
 
 - `-o` – the output directory to store results
-- `*.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces inbetween them
+- `*.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces in between them
 
 **Input Data:**
 
@@ -291,7 +291,7 @@ fastqc -o /path/to/trimmed_fastqc/output/directory *.fastq.gz
 **Parameter Definitions:**
 
 - `-o` – the output directory to store results
-- `*.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces inbetween them
+- `*.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces in between them
 
 **Input Data:**
 
@@ -2218,7 +2218,7 @@ ERCCcounts.to_csv('ERCC_analysis/ERCCcounts_GLbulkRNAseq.csv')
 - ERCC_analysis/ERCC_stats_GLDS-*_GLbulkRNAseq.csv (Samplewise counts statistics table containing 'Min', 'Max', 'Dynamic range', 'R')
 - ERCC_analysis/ERCC_dynrange_GLDS-*_GLbulkRNAseq.csv (Samplewise counts statistics subset table containing 'Dynamic range')
 - ERCC_analysis/ERCC_rsq_GLDS-*_GLbulkRNAseq.csv (Samplewise counts statistics subset table containing 'R')
-- ERCC_analysis/ERCCmetadata_GLbulkRNAseq.csv (Samplewise metadata table inlcuding ERCC mix number)
+- ERCC_analysis/ERCCmetadata_GLbulkRNAseq.csv (Samplewise metadata table including ERCC mix number)
 - ERCC_analysis/ERCCcounts_GLbulkRNAseq.csv (Samplewise ERCC counts table)
 
 <br>
@@ -2283,7 +2283,7 @@ write.csv(normcounts, 'ERCC_analysis/ERCC_normcounts_GLbulkRNAseq.csv') #OUTPUT
 
 **Input Data:**
 
-- ERCC_analysis/ERCCmetadata_GLbulkRNAseq.csv (samplewise metadata table inlcuding ERCC mix number, output from [Step 10a](#10a-evaluate-ercc-count-data-in-python))
+- ERCC_analysis/ERCCmetadata_GLbulkRNAseq.csv (samplewise metadata table including ERCC mix number, output from [Step 10a](#10a-evaluate-ercc-count-data-in-python))
 - ERCC_analysis/ERCCcounts_GLbulkRNAseq.csv (samplewise ERCC counts table, output from [Step 10a](#10a-evaluate-ercc-count-data-in-python))
 
 **Output Data:**

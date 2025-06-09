@@ -188,7 +188,7 @@ def check_fastqgz_file_contents(file: Path, count_lines_to_check: int) -> FlagEn
             )
         else:
             code = FlagCode.GREEN
-            message = f"First {count_lines_to_check} lines checked found no issues.  This means headers lines were identifiable and no decompression errors occured."
+            message = f"First {count_lines_to_check} lines checked found no issues.  This means headers lines were identifiable and no decompression errors occurred."
     except (EOFError, gzip.BadGzipFile):
         code = FlagCode.HALT
         message = (
@@ -595,9 +595,9 @@ def check_aggregate_star_unnormalized_counts_table_values_against_samplewise_tab
         # check if the values match for any of the count modes
         #   unstranded, sense, antisense
         # for remaining samples, only check the match for the first count mode
-        # TODO: Fix rare false postive related to zero counts, in those cases the strand_assessment can be prematurely determined which causes other samples to be compared with an inappropriate assessment
+        # TODO: Fix rare false positive related to zero counts, in those cases the strand_assessment can be prematurely determined which causes other samples to be compared with an inappropriate assessment
         for count_mode in STAR_COUNT_MODES:
-            # make sure to sort indicies
+            # make sure to sort indices
             if df_agg[sample].sort_index().equals(df_samp[count_mode].sort_index()):
                 # assign strand assessment if first sample
                 if strand_assessment is None:
@@ -822,7 +822,7 @@ def check_contrasts_table_rows(contrasts_table: Path, **_) -> FlagEntry:
     # data specific preprocess
     df_contrasts = pd.read_csv(contrasts_table, index_col=0)
 
-    def _get_groups_from_comparisions(s: str) -> set[str]:
+    def _get_groups_from_comparisons(s: str) -> set[str]:
         """Converts '(G1)v(G2)'
         into G1...G2 where G1 and G2 are renamed as per the r make names function
 
@@ -840,7 +840,7 @@ def check_contrasts_table_rows(contrasts_table: Path, **_) -> FlagEntry:
 
     bad_columns: dict[str, dict[str, set]] = dict()
     for (col_name, col_series) in df_contrasts.items():
-        expected_values = _get_groups_from_comparisions(col_name)
+        expected_values = _get_groups_from_comparisons(col_name)
         if not expected_values == set(col_series):
             bad_columns[col_name] = {
                 "expected": expected_values,
@@ -1007,15 +1007,15 @@ def check_dge_table_group_columns_constraints(
             ].append(group)
 
     # check logic
-    contraint_description = f"Group mean and standard deviations are correctly computed from samplewise normalized counts within a tolerance of {FLOAT_TOLERANCE} percent (to accomodate minor float related differences )"
+    constraint_description = f"Group mean and standard deviations are correctly computed from samplewise normalized counts within a tolerance of {FLOAT_TOLERANCE} percent (to accommodate minor float related differences )"
     if not any([issue_type for issue_type in issues.values()]):
         code = FlagCode.GREEN
-        message = f"All values in columns: {query_columns} met constraint: {contraint_description}"
+        message = f"All values in columns: {query_columns} met constraint: {constraint_description}"
     else:
         code = FlagCode.HALT
         message = (
             f"Issues found {issues} that"
-            f"fail the contraint: {contraint_description}."
+            f"fail the constraint: {constraint_description}."
         )
     return {"code": code, "message": message}
 
@@ -1040,10 +1040,10 @@ def check_dge_table_comparison_statistical_columns_exist(
     # check logic
     if not missing_cols:
         code = FlagCode.GREEN
-        message = f"All comparision summary statistic columns (Prefixes: {COMPARISON_PREFIXES}) present. {sorted(list(expected_columns))}"
+        message = f"All comparison summary statistic columns (Prefixes: {COMPARISON_PREFIXES}) present. {sorted(list(expected_columns))}"
     else:
         code = FlagCode.HALT
-        message = f"Missing these comparision summary statistic columns (Prefixes: {COMPARISON_PREFIXES}): {sorted(list(missing_cols))}"
+        message = f"Missing these comparison summary statistic columns (Prefixes: {COMPARISON_PREFIXES}): {sorted(list(missing_cols))}"
     return {"code": code, "message": message}
 
 
@@ -1124,7 +1124,7 @@ def check_dge_table_group_statistical_columns_constraints(
     else:
         code = FlagCode.HALT
         message = (
-            f"Issues found {issues} that" f"fail the contraint: {resolved_constraints}."
+            f"Issues found {issues} that" f"fail the constraint: {resolved_constraints}."
         )
     return {"code": code, "message": message}
 
@@ -1176,7 +1176,7 @@ def check_dge_table_fixed_statistical_columns_constraints(
     else:
         code = FlagCode.HALT
         message = (
-            f"Issues found {issues} that" f"fail the contraint: {fixed_stats_columns}."
+            f"Issues found {issues} that" f"fail the constraint: {fixed_stats_columns}."
         )
     return {"code": code, "message": message}
 
@@ -1202,12 +1202,12 @@ def check_dge_table_log2fc_within_reason(
     # Track error messages
     err_msg_yellow = ""
     all_suspect_signs: dict[int, dict[str, float]] = dict()
-    for comparision in expected_comparisons:
-        query_column = f"Log2fc_{comparision}"
+    for comparison in expected_comparisons:
+        query_column = f"Log2fc_{comparison}"
         group1_mean_col = (
-            "Group.Mean_" + comparision.split(")v(")[0] + ")"
+            "Group.Mean_" + comparison.split(")v(")[0] + ")"
         )  # Uses parens and adds them back to prevent slicing on 'v' within factor names
-        group2_mean_col = "Group.Mean_" + "(" + comparision.split(")v(")[1]
+        group2_mean_col = "Group.Mean_" + "(" + comparison.split(")v(")[1]
         computed_log2fc = (df_dge[group1_mean_col] / df_dge[group2_mean_col]).apply(
             math.log, args=[2]
         )
@@ -1224,7 +1224,7 @@ def check_dge_table_log2fc_within_reason(
         # flag if not enough within tolerance
         if percent_within_tolerance < LOG2FC_CROSS_METHOD_TOLERANCE_PERCENT:
             err_msg_yellow += (
-                f"For comparison: '{comparision}' {percent_within_tolerance:.2f} % of genes have absolute percent differences "
+                f"For comparison: '{comparison}' {percent_within_tolerance:.2f} % of genes have absolute percent differences "
                 f"(between log2fc direct computation and DESeq2's approach) "
                 f"less than {LOG2FC_CROSS_METHOD_PERCENT_DIFFERENCE_THRESHOLD} % which does not met the minimum percentage "
                 f"({LOG2FC_CROSS_METHOD_TOLERANCE_PERCENT} %) of genes required.  "
@@ -1377,7 +1377,7 @@ def check_viz_table_columns_constraints(
         code = FlagCode.HALT
         message = (
             f"Issues found {issues} that"
-            f"fail the contraint: {viz_pairwise_columns_constraints}."
+            f"fail the constraint: {viz_pairwise_columns_constraints}."
         )
     return {"code": code, "message": message}
 
@@ -1539,7 +1539,7 @@ def check_sample_in_multiqc_report(
     An optional name_reformat_function can be supplied to address sample name changes that occur in the multiqc report.
     An example being the renaming of Sample '-' characters to '_' for certain RSeQC modules.
 
-    :param sample: Query sample names to check for presense
+    :param sample: Query sample names to check for presence
     :type sample: list[str]
     :param multiqc_report_path: MultiQC report directory
     :type multiqc_report_path: Path

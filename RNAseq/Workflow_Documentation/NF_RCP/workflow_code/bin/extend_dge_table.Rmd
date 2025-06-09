@@ -1,5 +1,5 @@
 ---
-title: Extend Differential Expresssion Table To Generate Visualization Table
+title: Extend Differential Expression Table To Generate Visualization Table
 output:
   html_document:
     pandoc_args: ["+RTS", "-K1024m", "-RTS"]

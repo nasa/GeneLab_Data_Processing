@@ -1,5 +1,5 @@
 /*
- *  Extend Differential Expresssion Table To Generate Visualization Table
+ *  Extend Differential Expression Table To Generate Visualization Table
  */
 
 process EXTEND_DGE_TABLE {

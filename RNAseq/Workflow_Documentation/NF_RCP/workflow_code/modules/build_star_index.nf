@@ -32,7 +32,7 @@ process BUILD_STAR_INDEX {
     }
 
     # Get bases in the fasta file
-    # We substract the number of lines to remove newline characters from the count
+    # We subtract the number of lines to remove newline characters from the count
     NUM_BASES=\$(( \$(grep -v '>' ${ genome_fasta } | wc -c) - \$(grep -v '>' ${ genome_fasta } | wc -l)))
     echo NUM_BASES=\$NUM_BASES
 
