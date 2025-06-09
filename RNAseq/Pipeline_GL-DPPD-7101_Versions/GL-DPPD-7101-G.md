@@ -50,7 +50,7 @@ Software Updates:
 | tximport          | 1.27.1        | 1.34.0  |
 | tidyverse         | 1.3.1         | 2.0.0   |
 | stringr           | 1.4.1         | 1.5.1   |
-| dp_tools          | 1.18*, 1.3.4* | 1.3.5   |
+| dp_tools          | 1.18*, 1.3.4* | 1.3.8   |
 | pandas            | 1.5.0         | 2.2.3   |
 | seaborn           | 0.12.0        | 0.13.2  |
 | matplotlib        | 3.6.0         | 3.10.0  |
@@ -174,7 +174,7 @@ DESeq2 Analysis Workflow
 |knitr|1.49|[https://yihui.org/knitr/](https://yihui.org/knitr/)|
 |stringr|1.5.1|[https://github.com/tidyverse/stringr](https://github.com/tidyverse/stringr)|
 |yaml|2.3.10|[https://github.com/yaml/yaml](https://github.com/yaml/yaml)|
-|dp_tools|1.3.5|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
+|dp_tools|1.3.8|[https://github.com/torres-alexis/dp_tools](https://github.com/torres-alexis/dp_tools)|
 |pandas|2.2.3|[https://github.com/pandas-dev/pandas](https://github.com/pandas-dev/pandas)|
 |seaborn|0.13.2|[https://seaborn.pydata.org/](https://seaborn.pydata.org/)|
 |matplotlib|3.10.0|[https://matplotlib.org/stable](https://matplotlib.org/stable)|
