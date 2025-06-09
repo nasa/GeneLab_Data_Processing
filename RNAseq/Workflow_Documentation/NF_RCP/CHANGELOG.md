@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - knitr 1.49
   - stringr 1.5.1
   - yaml 2.3.10
-  - dp_tools 1.3.5
+  - dp_tools 1.3.8
   - pandas 2.2.3
   - seaborn 0.13.2
   - matplotlib 3.10.0
