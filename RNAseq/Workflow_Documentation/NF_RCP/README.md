@@ -276,9 +276,9 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 * `--reference_source` - specifies the source of the reference files used (the source indicated in the Approach 2 example is `ensembl`) 
 
-* `--reference_fasta` - specifices the URL or path to a fasta file 
+* `--reference_fasta` - specifies the URL or path to a fasta file 
 
-* `--reference_gtf` - specifices the URL or path to a gtf file
+* `--reference_gtf` - specifies the URL or path to a gtf file
 
 <br>
 

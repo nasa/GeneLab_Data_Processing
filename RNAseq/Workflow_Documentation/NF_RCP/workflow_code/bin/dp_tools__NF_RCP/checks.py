@@ -982,7 +982,7 @@ def check_dge_table_group_columns_constraints(
         code = FlagCode.HALT
         message = (
             f"Issues found {issues} that"
-            f"fail the contraint: {constraint_description}."
+            f"fail the constraint: {constraint_description}."
         )
     return {"code": code, "message": message}
 
@@ -1091,7 +1091,7 @@ def check_dge_table_group_statistical_columns_constraints(
     else:
         code = FlagCode.HALT
         message = (
-            f"Issues found {issues} that" f"fail the contraint: {resolved_constraints}."
+            f"Issues found {issues} that" f"fail the constraint: {resolved_constraints}."
         )
     return {"code": code, "message": message}
 
@@ -1143,7 +1143,7 @@ def check_dge_table_fixed_statistical_columns_constraints(
     else:
         code = FlagCode.HALT
         message = (
-            f"Issues found {issues} that" f"fail the contraint: {fixed_stats_columns}."
+            f"Issues found {issues} that" f"fail the constraint: {fixed_stats_columns}."
         )
     return {"code": code, "message": message}
 
