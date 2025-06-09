@@ -21,38 +21,32 @@ process DOWNLOAD_REFERENCES {
 
   # Handle fasta file
   if [[ "${fasta_url}" == http* ]]; then
-    cd temp_fasta
-    wget "${fasta_url}"
-    
-    # Handle decompression if needed
-    if ls *.gz &> /dev/null; then
-      gunzip *.gz
-    fi
-    # Move processed files to main directory
-    mv *.fa *.fna ../ 2>/dev/null || true
-    cd ..
+    wget --directory-prefix temp_fasta "${fasta_url}"
   else
     # It's a file path - just copy it directly to main directory
-    cp "${fasta_url}" ./
+    cp "${fasta_url}" temp_fasta
   fi
-
-  # Handle gtf file
+  
   if [[ "${gtf_url}" == http* ]]; then
-    cd temp_gtf
-    wget "${gtf_url}"
-    
-    # Handle decompression if needed
-    if ls *.gz &> /dev/null; then
-      gunzip *.gz
-    fi
-    # Move processed files to main directory
-    mv *.gtf ../ 2>/dev/null || true
-    cd ..
+    wget --directory-prefix temp_gtf "${gtf_url}"
   else
     # It's a file path - just copy it directly to main directory
-    cp "${gtf_url}" ./
+    cp "${gtf_url}" temp_gtf
   fi
+    
+  # Handle decompression if needed
+  if ls temp_fasta/*.gz &> /dev/null; then
+    gunzip temp_fasta/*.gz
+  fi
+  # Move processed files to main directory
+  mv temp_fasta/*.fa temp_fasta/*.fna ./ 2>/dev/null || true
 
+  if ls temp_gtf/*.gz &> /dev/null; then
+    gunzip temp_gtf/*.gz
+  fi
+  # Move processed files to main directory
+  mv temp_gtf/*.gtf ./ 2>/dev/null || true
+  
   # Clean up temp directories
   rm -rf temp_fasta temp_gtf
   """
