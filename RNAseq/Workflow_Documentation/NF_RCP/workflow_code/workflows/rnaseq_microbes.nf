@@ -111,19 +111,25 @@ workflow RNASEQ_MICROBES {
 
         PARSE_ANNOTATIONS_TABLE( annotations_csv_url_string, organism_sci )
 
-        // Use manually provided reference genome files if provided. Reference source and version are optional.
+        // Use reference input and gene annotations file workflow params if provided
         if ( params.reference_fasta && params.reference_gtf ) {
             genome_references_pre_subsample = Channel.fromPath([params.reference_fasta, params.reference_gtf], checkIfExists: true ).toList()
-            genome_references_pre_subsample | view
             Channel.value( params.reference_source ) | set { reference_source }
             Channel.value( params.reference_version ) | set { reference_version }
+            Channel.value( params.reference_fasta ) | set { reference_fasta_url }
+            Channel.value( params.reference_gtf ) | set { reference_gtf_url }
+            Channel.value( params.gene_annotations_file ) | set { gene_annotations_url }
         } else{
-            // Use annotations table to get genome reference files
-            DOWNLOAD_REFERENCES( reference_store_path, organism_sci, PARSE_ANNOTATIONS_TABLE.out.reference_source, PARSE_ANNOTATIONS_TABLE.out.reference_version, PARSE_ANNOTATIONS_TABLE.out.reference_fasta_url, PARSE_ANNOTATIONS_TABLE.out.reference_gtf_url )
-            genome_references_pre_subsample = DOWNLOAD_REFERENCES.out.reference_files
+            // Use annotations table to get reference inputs, organism-specific gene annotations file
             reference_source = PARSE_ANNOTATIONS_TABLE.out.reference_source
             reference_version = PARSE_ANNOTATIONS_TABLE.out.reference_version
+            reference_fasta_url = PARSE_ANNOTATIONS_TABLE.out.reference_fasta_url
+            reference_gtf_url = PARSE_ANNOTATIONS_TABLE.out.reference_gtf_url
+            gene_annotations_url = PARSE_ANNOTATIONS_TABLE.out.gene_annotations_url
         }
+
+        DOWNLOAD_REFERENCES( reference_store_path, organism_sci, reference_source, reference_version, reference_fasta_url, reference_gtf_url )
+        genome_references_pre_subsample = DOWNLOAD_REFERENCES.out.reference_files
 
         // Genomic region subsampling step is used only for debugging / testing 
         if ( params.genome_subsample ) {
