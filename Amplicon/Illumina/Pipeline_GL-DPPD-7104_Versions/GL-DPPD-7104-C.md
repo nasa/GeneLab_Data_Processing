@@ -488,7 +488,6 @@ seqtab.nochim <- removeBimeraDenovo(unqs=seqtab, method=“consensus”, multith
 <br>
 
 ### 5f. Assigning Taxonomy
-<Change download file URL in the command below> 
 
 ```R
 ## Creating a DNAStringSet object from the ASVs: ##
@@ -1125,21 +1124,16 @@ library(hexbin)
 
     # Loop over every column or taxa then check to see if the max abundance is less than the set threshold
     # if true, save the index in the taxa_to_group vector variable
-    while(TRUE){
 
-      for (column in seq_along(abund_table)){
-        if(max(abund_table[, column], na.rm = TRUE) < threshold ){
-          taxa_to_group[index] <- column
-          index = index + 1
-        }
+    for (column in seq_along(abund_table)){
+      if(max(abund_table[, column], na.rm = TRUE) < threshold ){
+        taxa_to_group[index] <- column
+        index = index + 1
       }
-      if(is.null(taxa_to_group)){
-        threshold <- readline("please provide a higher threshold for grouping rare taxa, only numbers are allowed")
-        threshold <- as.numeric(threshold)
-      }else{
-        break
-      }
-
+    }
+    if(is.null(taxa_to_group)){
+      message(glue::glue("Rare taxa were not grouped. please provide a higher threshold than {threshold} for grouping rare taxa, only numbers are allowed."))
+    return(abund_table)
     }
 
     if(rare_taxa){
@@ -1473,11 +1467,13 @@ values <- sample_info_tab %>% pull(color) %>% unique()
 
 # ---- Import Feature or ASV table ---- #
 feature_table <- read.table(file = features_file, header = TRUE,
-                            row.names = 1, sep = "\t")
+                              row.names = 1, sep = "\t", 
+                              check.names = FALSE)
 
 # ---- Import Taxonomy table ---- #
 taxonomy_table <- read.table(file = taxonomy_file, header = TRUE,
-                              row.names = 1, sep = "\t")
+                              row.names = 1, sep = "\t"),
+                              check.names = FALSE)
 ```
 
 **Input Data:**
@@ -1573,6 +1569,12 @@ common_ids <- intersect(rownames(feature_table), rownames(taxonomy_table))
 # only features found in both tables
 feature_table <- feature_table[common_ids,]
 taxonomy_table <- taxonomy_table[common_ids,]
+
+# drop samples with zero sequence counts
+samples2keep <-  colnames(feature_table)[colSums(feature_table) > 0]
+
+feature_table <- feature_table[, samples2keep]
+metadata <- metadata[samples2keep,]
 ```
 **Custom Functions Used:**
 
@@ -1594,7 +1596,7 @@ taxonomy_table <- taxonomy_table[common_ids,]
 
 **Output Data:**
 
-* `feature_table` (a dataframe containing a filtered subset of the samples feature counts (i.e. ASV or OTU table) after removing features that do not meet the filtering thresholds or that belong to Chroroplast or Mitochondrial organelles)
+* `feature_table` (a dataframe containing a filtered subset of the samples feature counts (i.e. ASV or OTU table) after removing features that do not meet the filtering thresholds or that belong to Chroroplast or Mitochondrial organelles, and samples with zero sequence counts)
 * `taxonomy_table` (a dataframe containing a filtered subset of the feature taxonomy table after removing ASV taxonomy assignments for features that do not meet the filtering thresholds or that belong to Chroroplast or Mitochondrial organelles)
 
 <br>
@@ -1635,14 +1637,14 @@ seq_per_sample <- colSums(feature_table) %>% sort()
 # minimum value
 depth <- min(seq_per_sample)
 
-for (count in seq_per_sample) {
-  
-  if(count >= rarefaction_depth) {
-    depth <- count
-    break
-    }
-  
-}
+# Error if the number of sequences per sample left after filtering is
+# insufficient for diversity analysis
+if(max(seq_per_sample) < 100){
+ 
+  print(seq_per_sample)
+  stop(glue("The maximum sequence count per sample ({max(seq_per_sample)}) is less than 100. \
+            Therefore, alpha diversity analysis cannot be performed."))
+} 
 
 # -------------------- Rarefy sample counts to even depth per sample
 ps.rarefied <- rarefy_even_depth(physeq = ASV_physeq, 
@@ -1688,7 +1690,7 @@ rareplot <- ggplot(p, aes(x = Sample, y = Species,
         plot.margin = margin(t = 10, r = 20, b = 10, l = 10, unit = "pt"))
 
 ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}rarefaction_curves{assay_suffix}.png"),
-       plot=rareplot, width = 14, height = 8.33, dpi = 300)
+       plot=rareplot, width = 14, height = 8.33, dpi = 300, limitsize = FALSE)
 ```
 
 **Input Data:**
@@ -1733,17 +1735,39 @@ merged_table <- metadata %>%
   inner_join(diversity.df)
 
 diversity_stats <- map_dfr(.x = diversity_metrics, function(metric){
+  
 
+  number_of_groups <- merged_table[,groups_colname] %>% unique() %>% length()
+  
+  if (number_of_groups < 2){
+    
+    stop("Exiting... There are less than two groups to compare, hence, pairwise comparions cannot be performed.
+         Please ensure that your metadata contains two or more groups to compare...")
+  
+  }else if(number_of_groups == 2){
+    
+  df <- data.frame(y=merged_table[,metric], x=merged_table[,groups_colname]) %>%
+      wilcox_test(y~x) %>% 
+      adjust_pvalue(method = "bonferroni") %>%
+      select(group1, group2, W=statistic, p, p.adj) %>% 
+      mutate(Metric=metric) %>% 
+    add_significance(p.col='p.adj', output.col = 'p.signif') %>% 
+    select(Metric,group1, group2, W, p, p.adj, p.signif)
+      
+  }else{
+    
   res <- dunnTest(merged_table[,metric],merged_table[,groups_colname])
-
+  
   df <- res$res %>%
-    separate(col = Comparison, into = c("group1", "group2"), sep = " - ") %>%
-    mutate(Metric=metric) %>%
-    rename(p=P.unadj, p.adj=P.adj)
-
-  add_significance(df, p.col='p.adj', output.col = 'p.signif') %>%
+    separate(col = Comparison, into = c("group1", "group2"), sep = " - ") %>% 
+    mutate(Metric=metric)  %>% 
+    rename(p=P.unadj, p.adj=P.adj) %>% 
+    add_significance(p.col='p.adj', output.col = 'p.signif') %>% 
     select(Metric,group1, group2, Z, p, p.adj, p.signif)
+  
+  }
 
+  return(df)
 })
 
 # Write diversity statistics table to file
@@ -1855,7 +1879,8 @@ richness_by_sample <- ggplot(richness_by_sample$data %>%
 
 # Save sample plot
 ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}richness_and_diversity_estimates_by_sample{assay_suffix}.png"),
-       plot=richness_by_sample, width = 14, height = 8.33, dpi = 300, units = "in")
+       plot=richness_by_sample, width = 14, height = 8.33, 
+       dpi = 300, units = "in", limitsize = FALSE)
 
 # ------------------- Make richness by group box plots ----------------------- #
 richness_by_group <- plot_richness(ps.rarefied, x = groups_colname, 
@@ -1997,9 +2022,9 @@ walk2(.x = normalization_methods, .y = distance_methods,
   
   # Save VSD validation plot
   ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}vsd_validation_plot.png"),
-         plot = mead_sd_plot, width = 14, height = 10, dpi = 300, units = "in")
-
-   }
+         plot = mead_sd_plot, width = 14, height = 10, 
+         dpi = 300, units = "in", limitsize = FALSE)
+  }
 
 
   # Calculate distance between samples
@@ -2010,10 +2035,9 @@ walk2(.x = normalization_methods, .y = distance_methods,
                               group_colors, legend_title)
 
   # Save dendogram
-  ggsave(filename = glue("{output_prefix}{distance_method}_dendrogram{assay_suffix}.png"),
-         plot = dendogram, width = 14, 
-         height = 10, dpi = 300,
-         units = "in", path = beta_diversity_out_dir)
+  ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_dendrogram{assay_suffix}.png"),
+       plot = dendogram, width = 14, height = 10, 
+       dpi = 300, units = "in", limitsize = FALSE)
 
   #---------------------------- Run stats
   # Checking homogeneity of variance and comparing groups using adonis test
@@ -2030,14 +2054,16 @@ walk2(.x = normalization_methods, .y = distance_methods,
   ordination_plot_u <- plot_pcoa(ps, stats_res, distance_method, 
                                  groups_colname, group_colors, legend_title) 
   ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_without_labels{assay_suffix}.png"),
-         plot=ordination_plot_u, width = 14, height = 8.33, dpi = 300, units = "in")
+       plot=ordination_plot_u, width = 14, height = 8.33, 
+       dpi = 300, units = "in", limitsize = FALSE)
 
   # Labeled PCoA plot
   ordination_plot <- plot_pcoa(ps, stats_res, distance_method,
                                groups_colname, group_colors, legend_title,
                                addtext=TRUE) 
   ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_w_labels{assay_suffix}.png"),
-         plot=ordination_plot, width = 14, height = 8.33, dpi = 300, units = "in")
+       plot=ordination_plot, width = 14, height = 8.33, 
+       dpi = 300, units = "in", limitsize = FALSE)
 
 })
 ```
@@ -2113,7 +2139,7 @@ relAbundace_tbs_rare_grouped <- map2(.x = taxon_levels,
                                      .f = function(taxon_level=.x,
                                                    taxon_table=.y){
                                       
-                                       
+                                       print(taxon_level)
                                        taxon_table <- apply(X = taxon_table, MARGIN = 2,
                                                             FUN = function(x) x/sum(x)) * 100
                                        
@@ -2176,7 +2202,7 @@ walk2(.x = relAbundace_tbs_rare_grouped, .y = taxon_levels,
                                labs(x=NULL)
                           
                           ggsave(filename = glue("{taxonomy_plots_out_dir}/{output_prefix}samples_{taxon_level}{assay_suffix}.png"),
-                                 plot=p, width = plot_width, height = 8.5, dpi = 300)
+                                 plot=p, width = plot_width, height = 8.5, dpi = 300, limitsize = FALSE)
                           
                            })
 
@@ -2228,6 +2254,13 @@ y_lab <- "Relative abundance (%)"
 y <- "relativeAbundance"
 number_of_groups <- length(group_levels)
 plot_width <- 2.5 * number_of_groups
+
+# Cap the maximum plot width to 50 regardless of the number of groups
+if(plot_width >  50 ){
+  
+  plot_width <- 50
+}
+
 walk2(.x = group_relAbundace_tbs, .y = taxon_levels, 
                            .f = function(relAbundace_tb=.x, taxon_level=.y){
                              
@@ -2245,7 +2278,7 @@ walk2(.x = group_relAbundace_tbs, .y = taxon_levels,
                                labs(x = NULL , y = y_lab, fill = tools::toTitleCase(taxon_level)) + 
                                scale_fill_manual(values = custom_palette)
                              ggsave(filename = glue("{taxonomy_plots_out_dir}/{output_prefix}groups_{taxon_level}{assay_suffix}.png"),
-                                    plot=p, width = plot_width, height = 10, dpi = 300)
+                                    plot=p, width = plot_width, height = 10, dpi = 300, limitsize = FALSE)
                            })
 ```
 
