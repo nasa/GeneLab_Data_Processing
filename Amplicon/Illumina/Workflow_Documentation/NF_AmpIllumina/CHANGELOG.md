@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ANCOMBC 2.8.0
   - broom 1.0.7
   - DescTools 0.99.59
-  - dp_tools 1.3.6
+  - dp_tools 1.3.8
   - FSA 0.9.6
   - ggdendro 0.2.0
   - glue 1.8.0

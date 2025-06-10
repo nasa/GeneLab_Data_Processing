@@ -37,7 +37,7 @@ Software Updates and Changes:
 | broom        | N/A              | 1.0.7         |
 | DescTools    | N/A              | 0.99.59       |
 | DESeq2       | N/A              | 1.46.0        |
-| dp_tools     | N/A              | 1.3.6         |
+| dp_tools     | N/A              | 1.3.8         |
 | FSA          | N/A              | 0.9.6         |
 | ggdendro     | N/A              | 0.2.0         |
 | ggrepel      | N/A              | 0.9.6         |
