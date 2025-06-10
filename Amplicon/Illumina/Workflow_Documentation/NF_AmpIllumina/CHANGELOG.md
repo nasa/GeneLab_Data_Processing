@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ANCOMBC1 differential abundance analysis
 - ANCOMBC2 differential abundance analysis
 - Added workflow parameters for finer-grained control of diversity and differential abundance analyses
-- Improved taxonomy plotting and visualization
+- Improved error handling and robustness in R scripts, plots
 - Software version tracking
 - Added software versions:
   - ANCOMBC 2.8.0
