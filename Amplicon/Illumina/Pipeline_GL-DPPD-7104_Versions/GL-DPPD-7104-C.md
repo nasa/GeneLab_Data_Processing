@@ -136,7 +136,7 @@ Software Updates and Changes:
 |rcolorbrewer|1.1.3|[https://CRAN.R-project.org/package=RColorBrewer](https://CRAN.R-project.org/package=RColorBrewer)|
 |taxize|0.10.0|[https://docs.ropensci.org/taxize/](https://docs.ropensci.org/taxize/)|
 |tidyverse|2.0.0|[https://CRAN.R-project.org/package=tidyverse](https://CRAN.R-project.org/package=tidyverse)|
-|vegan|2.6_4|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
+|vegan|2.6.10|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
 |vsn|3.74.0|[https://bioconductor.org/packages/release/bioc/html/vsn.html](https://bioconductor.org/packages/release/bioc/html/vsn.html)|
 
 # Reference databases used
