@@ -33,7 +33,7 @@ The table below details the default maximum resource allocations for individual 
    4d. [Modify parameters and cpu resources in the Nextflow config file](#4d-modify-parameters-and-cpu-resources-in-the-nextflow-config-file)  
 
 5. [Run the Workflow Indirectly Using the Python Wrapper Script](#5-run-the-workflow-indirectly-using-the-python-wrapper-script)  
-   5a. [Approach 1: Use an OSD or GeneLab acession as input](#5a-approach-1-use-an-osd-or-genelab-acession-as-input)  
+   5a. [Approach 1: Use an OSD or GeneLab accession as input](#5a-approach-1-use-an-osd-or-genelab-accession-as-input)  
    5b. [Approach 2: Use a csv file as input to the workflow](#5b-approach-2-use-a-csv-file-as-input-to-the-workflow)  
    5c. [Approach 3: Use a csv file as input to the workflow and supply extra arguments to Nextflow run](#5c-approach-3-use-a-csv-file-as-input-to-the-workflow-and-supply-extra-arguments-to-nextflow-run)  
    5d. [Approach 4: Create an edited Nextflow config file but do not run the workflow](#5d-approach-4-create-an-edited-nextflow-config-file-but-do-not-run-the-workflow)  
@@ -211,7 +211,7 @@ Once you've downloaded the workflow template, you can modify the parameters in t
 * `--errorStrategy` - Error handling strategy for Nextflow processes . If processes fail, use "ignore" to allow the workflow to continue running (default: "terminate")
 * `--primers_linked` - Whether forward and reverse primers are linked (default: TRUE)
 * `--anchored_primers` - Whether primers are anchored at the start of reads (default: TRUE)
-* `--min_cutadapt_len` - Minimum length of reads to keep after Cutadapt primer trimming (default: 130) 
+* `--min_cutadapt_len` - Minimum length of reads to keep after Cutadapt trimming (default: 130) 
 * `--discard_untrimmed` - Whether to discard untrimmed reads (default: TRUE)
 * `--left_trunc` - Truncate forward reads after this many bases. Reads shorter than this are discarded (default: 0; no truncation)
 * `--right_trunc` - Truncate reverse reads after this many bases. Reads shorter than this are discarded (default: 0; no truncation)
@@ -226,7 +226,7 @@ Once you've downloaded the workflow template, you can modify the parameters in t
 * `--prevalence_cutoff` - Taxa with prevalence below this fraction will be excluded.(default: 0.15)
 * `--library_cutoff` - Samples with library sizes below this threshold will be excluded. (default: 100)
 * `--conda_cutadapt` - Path to existing Cutadapt conda environment (default: null; creates new environment)
-* `--conda_diversity` - Path to existing R diversity conda environment (default: null; creates new environment)
+* `--conda_diversity` - Path to existing R diversity analysis conda environment (default: null; creates new environment)
 * `--conda_dp_tools` - Path to existing dp_tools conda environment (default: null; creates new environment)
 * `--conda_fastqc` - Path to existing FastQC conda environment (default: null; creates new environment)
 * `--conda_multiqc` - Path to existing MultiQC conda environment (default: null; creates new environment)
@@ -245,7 +245,7 @@ For options and detailed help on how to run the workflow using the script, run t
 python run_workflow.py
 ```
 
-#### 5a. Approach 1: Use an OSD or GeneLab acession as input
+#### 5a. Approach 1: Use an OSD or GeneLab accession as input
 
 ```bash
 python run_workflow.py \
@@ -330,7 +330,7 @@ For options and detailed help on how to run the post-processing workflow, run th
 nextflow run post_processing.nf --help
 ```
 
-To generate a README file, a protocols file, a md5sums table and a file association table after running the processing workflow sucessfully, modify and set the parameters in [post_processing.config](workflow_code/post_processing.config) then run the following command:
+To generate a README file, a protocols file, a md5sums table and a file association table after running the processing workflow successfully, modify and set the parameters in [post_processing.config](workflow_code/post_processing.config) then run the following command:
 
 ```bash
 nextflow run post_processing.nf \
