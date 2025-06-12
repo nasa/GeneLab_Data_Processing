@@ -430,83 +430,103 @@ final_results_bc1  <- map(pairwise_comp_df, function(col){
   # conserve - should a conservative variance estimator be used for the test statistic? 
   # it is recommended to set to TRUE if your sample size is small and the number of expected differentially abundant taxa is large.
   
-  out <-  ancombc(data = tse_sub, assay_name = "counts", 
-                  tax_level = NULL, 
-                  formula = group, 
-                  p_adj_method = "fdr", prv_cut = prevalence_cutoff,
-                  lib_cut = library_cutoff, 
-                  group = group, struc_zero = remove_struc_zero,
-                  neg_lb = TRUE, tol = 1e-5, 
-                  max_iter = 100, conserve = TRUE, alpha = 0.05, global = FALSE,
-                  n_cl = threads, verbose = TRUE)
-  
-  # ------ Set data frame names ---------# 
-  # LFC 
-  lfc <- out$res$lfc %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>% 
-    set_names(
-      c("taxon",
-        glue("lnFC_({group2})v({group1})"))
+  tryCatch({
+    out <-  ancombc(data = tse_sub, assay_name = "counts", 
+                    tax_level = NULL, 
+                    formula = group, 
+                    p_adj_method = "fdr", prv_cut = prevalence_cutoff,
+                    lib_cut = library_cutoff, 
+                    group = group, struc_zero = remove_struc_zero,
+                    neg_lb = TRUE, tol = 1e-5, 
+                    max_iter = 100, conserve = TRUE, alpha = 0.05, global = FALSE,
+                    n_cl = threads, verbose = TRUE)
+    
+    # ------ Set data frame names ---------# 
+    # LFC 
+    lfc <- out$res$lfc %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>% 
+      set_names(
+        c("taxon",
+          glue("lnFC_({group2})v({group1})"))
+      )
+    
+    # SE
+    se <- out$res$se %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>%
+      set_names(
+        c("taxon",
+          glue("lnfcSE_({group2})v({group1})"))
+      )
+    
+    # W    
+    W <- out$res$W %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>%
+      set_names(
+        c("taxon",
+          glue("Wstat_({group2})v({group1})"))
+      )
+    
+    # p_val
+    p_val <- out$res$p_val %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>%
+      set_names(
+        c("taxon",
+          glue("pvalue_({group2})v({group1})"))
+      )
+    
+    # q_val
+    q_val <- out$res$q_val %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>% 
+      set_names(
+        c("taxon",
+          glue("qvalue_({group2})v({group1})"))
+      )
+    
+    
+    # Diff_abn
+    diff_abn <- out$res$diff_abn %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>%
+      set_names(
+        c("taxon",
+          glue("diff_({group2})v({group1})"))
+      )
+    
+    
+    res <-lfc %>%
+      left_join(se) %>%
+      left_join(W) %>% 
+      left_join(p_val)  %>% 
+      left_join(q_val) %>% 
+      left_join(diff_abn)
+    
+    return(res)
+  }, error = function(e) {
+    # Create log message
+    log_msg <- c(
+      "\nANCOMBC1 analysis failed for comparison: ", group1, " vs ", group2,
+      "\nError: ", e$message,
+      "\n\nDiagnostics:",
+      paste("- Number of taxa after filtering:", nrow(taxonomy_table)),
+      paste("- Number of samples in group", group1, ":", sum(tse_sub[[group]] == group1)),
+      paste("- Number of samples in group", group2, ":", sum(tse_sub[[group]] == group2)),
+      "\nPossibly insufficient data for ANCOMBC1 analysis. Consider adjusting filtering parameters or group assignments."
     )
-  
-  # SE
-  se <- out$res$se %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>%
-    set_names(
-      c("taxon",
-        glue("lnfcSE_({group2})v({group1})"))
-    )
-  
-  # W    
-  W <- out$res$W %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>%
-    set_names(
-      c("taxon",
-        glue("Wstat_({group2})v({group1})"))
-    )
-  
-  # p_val
-  p_val <- out$res$p_val %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>%
-    set_names(
-      c("taxon",
-        glue("pvalue_({group2})v({group1})"))
-    )
-  
-  # q_val
-  q_val <- out$res$q_val %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>% 
-    set_names(
-      c("taxon",
-        glue("qvalue_({group2})v({group1})"))
-    )
-  
-  
-  # Diff_abn
-  diff_abn <- out$res$diff_abn %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>%
-    set_names(
-      c("taxon",
-        glue("diff_({group2})v({group1})"))
-    )
-  
-  
-  res <-lfc %>%
-    left_join(se) %>%
-    left_join(W) %>% 
-    left_join(p_val)  %>% 
-    left_join(q_val) %>% 
-    left_join(diff_abn)
-  
-  
-  return(res)
-  
+    
+    # Write to log file
+    writeLines(log_msg, 
+              file.path(diff_abund_out_dir, 
+                       glue("{output_prefix}ancombc1_failure.txt")))
+    
+    # Print to console and quit
+    message(log_msg)
+    quit(status = 0)
+  })
 })
 
 

@@ -468,7 +468,20 @@ deseq_modeled <- tryCatch({
   deseq_obj <- estimateSizeFactors(deseq_obj, geoMeans=geoMeans)
   
   # Call DESeq again with alternative geom mean size est
-  DESeq(deseq_obj)
+  tryCatch({
+    DESeq(deseq_obj)
+  }, error = function(e2) {
+
+    writeLines(c("Error:", e2$message,
+                "\nUsing gene-wise estimates as final estimates instead of standard curve fitting."), 
+              file.path(diff_abund_out_dir, glue("{output_prefix}deseq2_warning.txt")))
+    
+    # Use gene-wise estimates as final estimates
+    deseq_obj <- estimateDispersionsGeneEst(deseq_obj)
+    dispersions(deseq_obj) <- mcols(deseq_obj)$dispGeneEst
+    # Continue with testing using nbinomWaldTest
+    nbinomWaldTest(deseq_obj)
+  })
 })
 
 # Make ASV Sparsity plot

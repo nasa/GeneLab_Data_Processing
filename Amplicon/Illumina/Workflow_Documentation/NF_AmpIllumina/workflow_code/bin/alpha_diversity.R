@@ -438,7 +438,7 @@ diversity_stats <- map_dfr(.x = diversity_metrics, function(metric){
   number_of_groups <- merged_table[,groups_colname] %>% unique() %>% length()
   
   if (number_of_groups < 2){
-    warning_file <- glue("{alpha_diversity_out_dir}{output_prefix}alpha_diversity_warning.txt")
+    warning_file <- glue("{alpha_diversity_out_dir}{output_prefix}alpha_diversity_failure.txt")
     original_groups <- length(unique(metadata[[groups_colname]]))
     writeLines(
       text = glue("Group count information:
