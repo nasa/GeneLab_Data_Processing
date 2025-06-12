@@ -2410,80 +2410,101 @@ final_results_bc1 <- map(pairwise_comp_df, function(col){
   tse_sub[[groups_colname]] <- factor(tse_sub[[groups_colname]] , levels = c(group1, group2))
 
   # Run ancombc (uses default parameters unless specified in pipeline Parameter Definitions)
-  out <- ancombc(data = tse_sub, 
-                  formula = groups_colname, 
-                  p_adj_method = "fdr", prv_cut = prevalence_cutoff,
-                  lib_cut = library_cutoff, 
-                  group = groups_colname , struc_zero = remove_struc_zero,
-                  neg_lb = TRUE, 
-                  conserve = TRUE,
-                  n_cl = threads, verbose = TRUE)
-  
-  # ------ Set data frame names ---------# 
-  # lnFC 
-  lfc <- out$res$lfc %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>% 
-    set_names(
-      c("taxon",
-        glue("lnFC_({group2})v({group1})"))
+  tryCatch({
+    out <- ancombc(data = tse_sub, 
+                    formula = groups_colname, 
+                    p_adj_method = "fdr", prv_cut = prevalence_cutoff,
+                    lib_cut = library_cutoff, 
+                    group = groups_colname , struc_zero = remove_struc_zero,
+                    neg_lb = TRUE, 
+                    conserve = TRUE,
+                    n_cl = threads, verbose = TRUE)
+    
+    # ------ Set data frame names ---------# 
+    # lnFC 
+    lfc <- out$res$lfc %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>% 
+      set_names(
+        c("taxon",
+          glue("lnFC_({group2})v({group1})"))
+      )
+    
+    # SE
+    se <- out$res$se %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>%
+      set_names(
+        c("taxon",
+          glue("lnfcSE_({group2})v({group1})"))
+      )
+    
+    # W    
+    W <- out$res$W %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>%
+      set_names(
+        c("taxon",
+          glue("Wstat_({group2})v({group1})"))
+      )
+    
+    # p_val
+    p_val <- out$res$p_val %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>%
+      set_names(
+        c("taxon",
+          glue("pvalue_({group2})v({group1})"))
+      )
+    
+    # q_val
+    q_val <- out$res$q_val %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>% 
+      set_names(
+        c("taxon",
+          glue("qvalue_({group2})v({group1})"))
+      )
+    
+    # Diff_abn
+    diff_abn <- out$res$diff_abn %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>%
+      set_names(
+        c("taxon",
+          glue("diff_({group2})v({group1})"))
+      )
+    
+    # Merge the dataframes to one results dataframe
+    res <- lfc %>%
+      left_join(se) %>%
+      left_join(W) %>% 
+      left_join(p_val) %>% 
+      left_join(q_val) %>% 
+      left_join(diff_abn)
+    
+    return(res)
+  }, error = function(e) {
+    # Create log message
+    log_msg <- c(
+      "\nANCOMBC1 analysis failed for comparison: ", group1, " vs ", group2,
+      "\nError: ", e$message,
+      "\n\nDiagnostics:",
+      paste("- Number of taxa after filtering:", nrow(taxonomy_table)),
+      paste("- Number of samples in group", group1, ":", sum(tse_sub[[group]] == group1)),
+      paste("- Number of samples in group", group2, ":", sum(tse_sub[[group]] == group2)),
+      "\nPossibly insufficient data for ANCOMBC1 analysis. Consider adjusting filtering parameters or group assignments."
     )
-  
-  # SE
-  se <- out$res$se %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>%
-    set_names(
-      c("taxon",
-        glue("lnfcSE_({group2})v({group1})"))
-    )
-  
-  # W    
-  W <- out$res$W %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>%
-    set_names(
-      c("taxon",
-        glue("Wstat_({group2})v({group1})"))
-    )
-  
-  # p_val
-  p_val <- out$res$p_val %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>%
-    set_names(
-      c("taxon",
-        glue("pvalue_({group2})v({group1})"))
-    )
-  
-  # q_val
-  q_val <- out$res$q_val %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>% 
-    set_names(
-      c("taxon",
-        glue("qvalue_({group2})v({group1})"))
-    )
-  
-  # Diff_abn
-  diff_abn <- out$res$diff_abn %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>%
-    set_names(
-      c("taxon",
-        glue("diff_({group2})v({group1})"))
-    )
-  
-  # Merge the dataframes to one results dataframe
-  res <- lfc %>%
-    left_join(se) %>%
-    left_join(W) %>% 
-    left_join(p_val) %>% 
-    left_join(q_val) %>% 
-    left_join(diff_abn)
-  
-  return(res)
-  
+    
+    # Write to log file
+    writeLines(log_msg, 
+              file.path(diff_abund_out_dir, 
+                       glue("{output_prefix}ancombc1_failure.txt")))
+    
+    # Print to console and quit
+    message(log_msg)
+    quit(status = 0)
+  })
 })
 
 # ------------ Create merged stats pairwise dataframe ----------------- #
@@ -2820,37 +2841,49 @@ output <- ancombc2(data = tse,
 
 # Create new column names - the original column names given by ANCOMBC are
 # difficult to understand
-new_colnames <- map_chr(output$res_pair %>% colnames, 
-                        function(colname) {
-                          # Columns comparing a group to the reference group
-                          if(str_count(colname,groups_colname) == 1){
-                            str_replace_all(string=colname, 
-                                            pattern=glue("(.+)_{groups_colname}(.+)"),
-                                            replacement=glue("\\1_(\\2)v({ref_group})")) %>% 
-                            str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
-                            str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
-                            str_replace(pattern = "^W_", replacement = "Wstat_") %>%
-                            str_replace(pattern = "^p_", replacement = "pvalue_") %>%
-                            str_replace(pattern = "^q_", replacement = "qvalue_")
-                            
-                          # Columns with normal two groups comparison
-                          } else if(str_count(colname,groups_colname) == 2){
-                            
-                            str_replace_all(string=colname, 
-                                            pattern=glue("(.+)_{groups_colname}(.+)_{groups_colname}(.+)"),
-                                            replacement=glue("\\1_(\\2)v(\\3)")) %>% 
-                            str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
-                            str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
-                            str_replace(pattern = "^W_", replacement = "Wstat_") %>%
-                            str_replace(pattern = "^p_", replacement = "pvalue_") %>%
-                            str_replace(pattern = "^q_", replacement = "qvalue_")
-                            
-                            # Feature/ ASV column 
-                          } else{
-                            
-                            return(colname)
-                          }
-                        } )
+tryCatch({
+  new_colnames <- map_chr(output$res_pair %>% colnames, 
+                          function(colname) {
+                            # Columns comparing a group to the reference group
+                            if(str_count(colname,groups_colname) == 1){
+                              str_replace_all(string=colname, 
+                                              pattern=glue("(.+)_{groups_colname}(.+)"),
+                                              replacement=glue("\\1_(\\2)v({ref_group})")) %>% 
+                              str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
+                              str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
+                              str_replace(pattern = "^W_", replacement = "Wstat_") %>%
+                              str_replace(pattern = "^p_", replacement = "pvalue_") %>%
+                              str_replace(pattern = "^q_", replacement = "qvalue_")
+                              
+                            # Columns with normal two groups comparison
+                            } else if(str_count(colname,groups_colname) == 2){
+                              
+                              str_replace_all(string=colname, 
+                                              pattern=glue("(.+)_{groups_colname}(.+)_{groups_colname}(.+)"),
+                                              replacement=glue("\\1_(\\2)v(\\3)")) %>% 
+                              str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
+                              str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
+                              str_replace(pattern = "^W_", replacement = "Wstat_") %>%
+                              str_replace(pattern = "^p_", replacement = "pvalue_") %>%
+                              str_replace(pattern = "^q_", replacement = "qvalue_")
+                              
+                              # Feature/ ASV column 
+                            } else{
+                              
+                              return(colname)
+                            }
+                          } )
+}, error = function(e) {
+  writeLines(c("ANCOMBC2 script failed at res_pair processing:", e$message,
+              "\n\nDiagnostics:",
+              paste("- Number of taxa after filtering:", nrow(taxonomy_table)),
+              paste("- Number of groups:", length(unique(tse[[group]]))),
+              paste("- Sample sizes per group:"),
+              paste("  ", paste(names(table(tse[[group]])), "=", table(tse[[group]]), collapse="\n  ")),
+              "\nPossibly insufficient data for ANCOMBC2 analysis. Consider adjusting filtering parameters or group assignments."), 
+            file.path(diff_abund_out_dir, glue("{output_prefix}ancombc2_failure.txt")))
+  quit(status = 0)
+})
 
 # Change the column named taxon to the feature name e.g. ASV
 new_colnames[match("taxon", new_colnames)] <- feature
