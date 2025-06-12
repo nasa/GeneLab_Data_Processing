@@ -1741,10 +1741,18 @@ diversity_stats <- map_dfr(.x = diversity_metrics, function(metric){
   number_of_groups <- merged_table[,groups_colname] %>% unique() %>% length()
   
   if (number_of_groups < 2){
-    
-    stop("Exiting... There are less than two groups to compare, hence, pairwise comparions cannot be performed.
-         Please ensure that your metadata contains two or more groups to compare...")
-  
+    warning_file <- glue("{alpha_diversity_out_dir}{output_prefix}alpha_diversity_warning.txt")
+    original_groups <- length(unique(metadata[[groups_colname]]))
+    writeLines(
+      text = glue("Group count information:
+Original number of groups: {original_groups}
+Number of groups after filtering: {number_of_groups}
+
+There are less than two groups to compare, hence, pairwise comparisons cannot be performed.
+Please ensure that your metadata contains two or more groups to compare..."),
+      con = warning_file
+    )
+    quit(status = 0)
   }else if(number_of_groups == 2){
     
   df <- data.frame(y=merged_table[,metric], x=merged_table[,groups_colname]) %>%
