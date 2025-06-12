@@ -477,17 +477,28 @@ write_csv(x = diversity_stats,
 comp_letters <- data.frame(group = group_levels)
 colnames(comp_letters) <- groups_colname
 
-walk(.x = diversity_metrics, function(metric=.x){
-  
+walk(.x = diversity_metrics, function(metric = .x) {
+
   sub_comp <- diversity_stats %>% filter(Metric == metric)
-  p_values <- sub_comp$p.adj # holm p adjusted values by default
-  names(p_values) <- paste(sub_comp$group1,sub_comp$group2, sep = "-")
-  
-  letters_df <-  enframe(multcompView::multcompLetters(p_values)$Letters,
-                      name = groups_colname,
-                      value = glue("{metric}_letter"))
+
+  sanitize <- function(x) gsub("-", "_", x)
+  g1 <- sanitize(sub_comp$group1)
+  g2 <- sanitize(sub_comp$group2)
+
+  safe_names <- paste(g1, g2, sep = "-")
+  orig_names <- paste(sub_comp$group1, sub_comp$group2, sep = "-")
+  safe_to_orig <- setNames(orig_names, safe_names)
+
+  p_values <- setNames(sub_comp$p.adj, safe_names)
+
+  letters <- multcompView::multcompLetters(p_values)$Letters
+  names(letters) <- safe_to_orig[names(letters)]
+
+  letters_df <- enframe(letters,
+                        name = groups_colname,
+                        value = glue("{metric}_letter"))
+
   comp_letters <<- comp_letters %>% left_join(letters_df)
-   
 })
 
 
