@@ -9,4 +9,4 @@ dependencies:
     - unzip=6.0
     - git=2.45.2
     - pip:
-      - git+https://github.com/torres-alexis/dp_tools.git@1.3.6
+      - git+https://github.com/torres-alexis/dp_tools.git@1.3.8

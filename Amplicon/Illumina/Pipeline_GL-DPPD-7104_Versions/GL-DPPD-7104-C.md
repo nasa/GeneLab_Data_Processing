@@ -37,6 +37,7 @@ Software Updates and Changes:
 | broom        | N/A              | 1.0.7         |
 | DescTools    | N/A              | 0.99.59       |
 | DESeq2       | N/A              | 1.46.0        |
+| dp_tools     | N/A              | 1.3.8         |
 | FSA          | N/A              | 0.9.6         |
 | ggdendro     | N/A              | 0.2.0         |
 | ggrepel      | N/A              | 0.9.6         |
@@ -136,7 +137,7 @@ Software Updates and Changes:
 |rcolorbrewer|1.1.3|[https://CRAN.R-project.org/package=RColorBrewer](https://CRAN.R-project.org/package=RColorBrewer)|
 |taxize|0.10.0|[https://docs.ropensci.org/taxize/](https://docs.ropensci.org/taxize/)|
 |tidyverse|2.0.0|[https://CRAN.R-project.org/package=tidyverse](https://CRAN.R-project.org/package=tidyverse)|
-|vegan|2.6_4|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
+|vegan|2.6.10|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
 |vsn|3.74.0|[https://bioconductor.org/packages/release/bioc/html/vsn.html](https://bioconductor.org/packages/release/bioc/html/vsn.html)|
 
 # Reference databases used
@@ -488,7 +489,6 @@ seqtab.nochim <- removeBimeraDenovo(unqs=seqtab, method=“consensus”, multith
 <br>
 
 ### 5f. Assigning Taxonomy
-<Change download file URL in the command below> 
 
 ```R
 ## Creating a DNAStringSet object from the ASVs: ##
@@ -1125,21 +1125,16 @@ library(hexbin)
 
     # Loop over every column or taxa then check to see if the max abundance is less than the set threshold
     # if true, save the index in the taxa_to_group vector variable
-    while(TRUE){
 
-      for (column in seq_along(abund_table)){
-        if(max(abund_table[, column], na.rm = TRUE) < threshold ){
-          taxa_to_group[index] <- column
-          index = index + 1
-        }
+    for (column in seq_along(abund_table)){
+      if(max(abund_table[, column], na.rm = TRUE) < threshold ){
+        taxa_to_group[index] <- column
+        index = index + 1
       }
-      if(is.null(taxa_to_group)){
-        threshold <- readline("please provide a higher threshold for grouping rare taxa, only numbers are allowed")
-        threshold <- as.numeric(threshold)
-      }else{
-        break
-      }
-
+    }
+    if(is.null(taxa_to_group)){
+      message(glue::glue("Rare taxa were not grouped. please provide a higher threshold than {threshold} for grouping rare taxa, only numbers are allowed."))
+    return(abund_table)
     }
 
     if(rare_taxa){
@@ -1473,11 +1468,13 @@ values <- sample_info_tab %>% pull(color) %>% unique()
 
 # ---- Import Feature or ASV table ---- #
 feature_table <- read.table(file = features_file, header = TRUE,
-                            row.names = 1, sep = "\t")
+                              row.names = 1, sep = "\t", 
+                              check.names = FALSE)
 
 # ---- Import Taxonomy table ---- #
 taxonomy_table <- read.table(file = taxonomy_file, header = TRUE,
-                              row.names = 1, sep = "\t")
+                              row.names = 1, sep = "\t"),
+                              check.names = FALSE)
 ```
 
 **Input Data:**
@@ -1573,6 +1570,12 @@ common_ids <- intersect(rownames(feature_table), rownames(taxonomy_table))
 # only features found in both tables
 feature_table <- feature_table[common_ids,]
 taxonomy_table <- taxonomy_table[common_ids,]
+
+# drop samples with zero sequence counts
+samples2keep <-  colnames(feature_table)[colSums(feature_table) > 0]
+
+feature_table <- feature_table[, samples2keep]
+metadata <- metadata[samples2keep,]
 ```
 **Custom Functions Used:**
 
@@ -1594,7 +1597,7 @@ taxonomy_table <- taxonomy_table[common_ids,]
 
 **Output Data:**
 
-* `feature_table` (a dataframe containing a filtered subset of the samples feature counts (i.e. ASV or OTU table) after removing features that do not meet the filtering thresholds or that belong to Chroroplast or Mitochondrial organelles)
+* `feature_table` (a dataframe containing a filtered subset of the samples feature counts (i.e. ASV or OTU table) after removing features that do not meet the filtering thresholds or that belong to Chroroplast or Mitochondrial organelles, and samples with zero sequence counts)
 * `taxonomy_table` (a dataframe containing a filtered subset of the feature taxonomy table after removing ASV taxonomy assignments for features that do not meet the filtering thresholds or that belong to Chroroplast or Mitochondrial organelles)
 
 <br>
@@ -1635,14 +1638,14 @@ seq_per_sample <- colSums(feature_table) %>% sort()
 # minimum value
 depth <- min(seq_per_sample)
 
-for (count in seq_per_sample) {
-  
-  if(count >= rarefaction_depth) {
-    depth <- count
-    break
-    }
-  
-}
+# Error if the number of sequences per sample left after filtering is
+# insufficient for diversity analysis
+if(max(seq_per_sample) < 100){
+ 
+  print(seq_per_sample)
+  stop(glue("The maximum sequence count per sample ({max(seq_per_sample)}) is less than 100. \
+            Therefore, alpha diversity analysis cannot be performed."))
+} 
 
 # -------------------- Rarefy sample counts to even depth per sample
 ps.rarefied <- rarefy_even_depth(physeq = ASV_physeq, 
@@ -1688,7 +1691,7 @@ rareplot <- ggplot(p, aes(x = Sample, y = Species,
         plot.margin = margin(t = 10, r = 20, b = 10, l = 10, unit = "pt"))
 
 ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}rarefaction_curves{assay_suffix}.png"),
-       plot=rareplot, width = 14, height = 8.33, dpi = 300)
+       plot=rareplot, width = 14, height = 8.33, dpi = 300, limitsize = FALSE)
 ```
 
 **Input Data:**
@@ -1733,17 +1736,47 @@ merged_table <- metadata %>%
   inner_join(diversity.df)
 
 diversity_stats <- map_dfr(.x = diversity_metrics, function(metric){
+  
 
+  number_of_groups <- merged_table[,groups_colname] %>% unique() %>% length()
+  
+  if (number_of_groups < 2){
+    warning_file <- glue("{alpha_diversity_out_dir}{output_prefix}alpha_diversity_warning.txt")
+    original_groups <- length(unique(metadata[[groups_colname]]))
+    writeLines(
+      text = glue("Group count information:
+Original number of groups: {original_groups}
+Number of groups after filtering: {number_of_groups}
+
+There are less than two groups to compare, hence, pairwise comparisons cannot be performed.
+Please ensure that your metadata contains two or more groups to compare..."),
+      con = warning_file
+    )
+    quit(status = 0)
+  }else if(number_of_groups == 2){
+    
+  df <- data.frame(y=merged_table[,metric], x=merged_table[,groups_colname]) %>%
+      wilcox_test(y~x) %>% 
+      adjust_pvalue(method = "bonferroni") %>%
+      select(group1, group2, W=statistic, p, p.adj) %>% 
+      mutate(Metric=metric) %>% 
+    add_significance(p.col='p.adj', output.col = 'p.signif') %>% 
+    select(Metric,group1, group2, W, p, p.adj, p.signif)
+      
+  }else{
+    
   res <- dunnTest(merged_table[,metric],merged_table[,groups_colname])
-
+  
   df <- res$res %>%
-    separate(col = Comparison, into = c("group1", "group2"), sep = " - ") %>%
-    mutate(Metric=metric) %>%
-    rename(p=P.unadj, p.adj=P.adj)
-
-  add_significance(df, p.col='p.adj', output.col = 'p.signif') %>%
+    separate(col = Comparison, into = c("group1", "group2"), sep = " - ") %>% 
+    mutate(Metric=metric)  %>% 
+    rename(p=P.unadj, p.adj=P.adj) %>% 
+    add_significance(p.col='p.adj', output.col = 'p.signif') %>% 
     select(Metric,group1, group2, Z, p, p.adj, p.signif)
+  
+  }
 
+  return(df)
 })
 
 # Write diversity statistics table to file
@@ -1757,14 +1790,25 @@ colnames(comp_letters) <- groups_colname
 walk(.x = diversity_metrics, function(metric = .x) {
 
   sub_comp <- diversity_stats %>% filter(Metric == metric)
-  p_values <- sub_comp$p.adj # holm p adjusted values by default
-  names(p_values) <- paste(sub_comp$group1, sub_comp$group2, sep = "-")
-  
-  letters_df <- enframe(multcompView::multcompLetters(p_values)$Letters,
-                      name = groups_colname,
-                      value = glue("{metric}_letter"))
+
+  sanitize <- function(x) gsub("-", "_", x)
+  g1 <- sanitize(sub_comp$group1)
+  g2 <- sanitize(sub_comp$group2)
+
+  safe_names <- paste(g1, g2, sep = "-")
+  orig_names <- paste(sub_comp$group1, sub_comp$group2, sep = "-")
+  safe_to_orig <- setNames(orig_names, safe_names)
+
+  p_values <- setNames(sub_comp$p.adj, safe_names)
+
+  letters <- multcompView::multcompLetters(p_values)$Letters
+  names(letters) <- safe_to_orig[names(letters)]
+
+  letters_df <- enframe(letters,
+                        name = groups_colname,
+                        value = glue("{metric}_letter"))
+
   comp_letters <<- comp_letters %>% left_join(letters_df)
- 
 })
 
 # Summary table
@@ -1855,7 +1899,8 @@ richness_by_sample <- ggplot(richness_by_sample$data %>%
 
 # Save sample plot
 ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}richness_and_diversity_estimates_by_sample{assay_suffix}.png"),
-       plot=richness_by_sample, width = 14, height = 8.33, dpi = 300, units = "in")
+       plot=richness_by_sample, width = 14, height = 8.33, 
+       dpi = 300, units = "in", limitsize = FALSE)
 
 # ------------------- Make richness by group box plots ----------------------- #
 richness_by_group <- plot_richness(ps.rarefied, x = groups_colname, 
@@ -1997,9 +2042,9 @@ walk2(.x = normalization_methods, .y = distance_methods,
   
   # Save VSD validation plot
   ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}vsd_validation_plot.png"),
-         plot = mead_sd_plot, width = 14, height = 10, dpi = 300, units = "in")
-
-   }
+         plot = mead_sd_plot, width = 14, height = 10, 
+         dpi = 300, units = "in", limitsize = FALSE)
+  }
 
 
   # Calculate distance between samples
@@ -2010,10 +2055,9 @@ walk2(.x = normalization_methods, .y = distance_methods,
                               group_colors, legend_title)
 
   # Save dendogram
-  ggsave(filename = glue("{output_prefix}{distance_method}_dendrogram{assay_suffix}.png"),
-         plot = dendogram, width = 14, 
-         height = 10, dpi = 300,
-         units = "in", path = beta_diversity_out_dir)
+  ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_dendrogram{assay_suffix}.png"),
+       plot = dendogram, width = 14, height = 10, 
+       dpi = 300, units = "in", limitsize = FALSE)
 
   #---------------------------- Run stats
   # Checking homogeneity of variance and comparing groups using adonis test
@@ -2030,14 +2074,16 @@ walk2(.x = normalization_methods, .y = distance_methods,
   ordination_plot_u <- plot_pcoa(ps, stats_res, distance_method, 
                                  groups_colname, group_colors, legend_title) 
   ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_without_labels{assay_suffix}.png"),
-         plot=ordination_plot_u, width = 14, height = 8.33, dpi = 300, units = "in")
+       plot=ordination_plot_u, width = 14, height = 8.33, 
+       dpi = 300, units = "in", limitsize = FALSE)
 
   # Labeled PCoA plot
   ordination_plot <- plot_pcoa(ps, stats_res, distance_method,
                                groups_colname, group_colors, legend_title,
                                addtext=TRUE) 
   ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_w_labels{assay_suffix}.png"),
-         plot=ordination_plot, width = 14, height = 8.33, dpi = 300, units = "in")
+       plot=ordination_plot, width = 14, height = 8.33, 
+       dpi = 300, units = "in", limitsize = FALSE)
 
 })
 ```
@@ -2113,7 +2159,7 @@ relAbundace_tbs_rare_grouped <- map2(.x = taxon_levels,
                                      .f = function(taxon_level=.x,
                                                    taxon_table=.y){
                                       
-                                       
+                                       print(taxon_level)
                                        taxon_table <- apply(X = taxon_table, MARGIN = 2,
                                                             FUN = function(x) x/sum(x)) * 100
                                        
@@ -2176,7 +2222,7 @@ walk2(.x = relAbundace_tbs_rare_grouped, .y = taxon_levels,
                                labs(x=NULL)
                           
                           ggsave(filename = glue("{taxonomy_plots_out_dir}/{output_prefix}samples_{taxon_level}{assay_suffix}.png"),
-                                 plot=p, width = plot_width, height = 8.5, dpi = 300)
+                                 plot=p, width = plot_width, height = 8.5, dpi = 300, limitsize = FALSE)
                           
                            })
 
@@ -2228,6 +2274,13 @@ y_lab <- "Relative abundance (%)"
 y <- "relativeAbundance"
 number_of_groups <- length(group_levels)
 plot_width <- 2.5 * number_of_groups
+
+# Cap the maximum plot width to 50 regardless of the number of groups
+if(plot_width >  50 ){
+  
+  plot_width <- 50
+}
+
 walk2(.x = group_relAbundace_tbs, .y = taxon_levels, 
                            .f = function(relAbundace_tb=.x, taxon_level=.y){
                              
@@ -2245,7 +2298,7 @@ walk2(.x = group_relAbundace_tbs, .y = taxon_levels,
                                labs(x = NULL , y = y_lab, fill = tools::toTitleCase(taxon_level)) + 
                                scale_fill_manual(values = custom_palette)
                              ggsave(filename = glue("{taxonomy_plots_out_dir}/{output_prefix}groups_{taxon_level}{assay_suffix}.png"),
-                                    plot=p, width = plot_width, height = 10, dpi = 300)
+                                    plot=p, width = plot_width, height = 10, dpi = 300, limitsize = FALSE)
                            })
 ```
 
@@ -2357,80 +2410,101 @@ final_results_bc1 <- map(pairwise_comp_df, function(col){
   tse_sub[[groups_colname]] <- factor(tse_sub[[groups_colname]] , levels = c(group1, group2))
 
   # Run ancombc (uses default parameters unless specified in pipeline Parameter Definitions)
-  out <- ancombc(data = tse_sub, 
-                  formula = groups_colname, 
-                  p_adj_method = "fdr", prv_cut = prevalence_cutoff,
-                  lib_cut = library_cutoff, 
-                  group = groups_colname , struc_zero = remove_struc_zero,
-                  neg_lb = TRUE, 
-                  conserve = TRUE,
-                  n_cl = threads, verbose = TRUE)
-  
-  # ------ Set data frame names ---------# 
-  # lnFC 
-  lfc <- out$res$lfc %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>% 
-    set_names(
-      c("taxon",
-        glue("lnFC_({group2})v({group1})"))
+  tryCatch({
+    out <- ancombc(data = tse_sub, 
+                    formula = groups_colname, 
+                    p_adj_method = "fdr", prv_cut = prevalence_cutoff,
+                    lib_cut = library_cutoff, 
+                    group = groups_colname , struc_zero = remove_struc_zero,
+                    neg_lb = TRUE, 
+                    conserve = TRUE,
+                    n_cl = threads, verbose = TRUE)
+    
+    # ------ Set data frame names ---------# 
+    # lnFC 
+    lfc <- out$res$lfc %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>% 
+      set_names(
+        c("taxon",
+          glue("lnFC_({group2})v({group1})"))
+      )
+    
+    # SE
+    se <- out$res$se %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>%
+      set_names(
+        c("taxon",
+          glue("lnfcSE_({group2})v({group1})"))
+      )
+    
+    # W    
+    W <- out$res$W %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>%
+      set_names(
+        c("taxon",
+          glue("Wstat_({group2})v({group1})"))
+      )
+    
+    # p_val
+    p_val <- out$res$p_val %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>%
+      set_names(
+        c("taxon",
+          glue("pvalue_({group2})v({group1})"))
+      )
+    
+    # q_val
+    q_val <- out$res$q_val %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>% 
+      set_names(
+        c("taxon",
+          glue("qvalue_({group2})v({group1})"))
+      )
+    
+    # Diff_abn
+    diff_abn <- out$res$diff_abn %>%
+      as.data.frame() %>% 
+      select(-contains("Intercept")) %>%
+      set_names(
+        c("taxon",
+          glue("diff_({group2})v({group1})"))
+      )
+    
+    # Merge the dataframes to one results dataframe
+    res <- lfc %>%
+      left_join(se) %>%
+      left_join(W) %>% 
+      left_join(p_val) %>% 
+      left_join(q_val) %>% 
+      left_join(diff_abn)
+    
+    return(res)
+  }, error = function(e) {
+    # Create log message
+    log_msg <- c(
+      "\nANCOMBC1 analysis failed for comparison: ", group1, " vs ", group2,
+      "\nError: ", e$message,
+      "\n\nDiagnostics:",
+      paste("- Number of taxa after filtering:", nrow(taxonomy_table)),
+      paste("- Number of samples in group", group1, ":", sum(tse_sub[[group]] == group1)),
+      paste("- Number of samples in group", group2, ":", sum(tse_sub[[group]] == group2)),
+      "\nPossibly insufficient data for ANCOMBC1 analysis. Consider adjusting filtering parameters or group assignments."
     )
-  
-  # SE
-  se <- out$res$se %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>%
-    set_names(
-      c("taxon",
-        glue("lnfcSE_({group2})v({group1})"))
-    )
-  
-  # W    
-  W <- out$res$W %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>%
-    set_names(
-      c("taxon",
-        glue("Wstat_({group2})v({group1})"))
-    )
-  
-  # p_val
-  p_val <- out$res$p_val %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>%
-    set_names(
-      c("taxon",
-        glue("pvalue_({group2})v({group1})"))
-    )
-  
-  # q_val
-  q_val <- out$res$q_val %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>% 
-    set_names(
-      c("taxon",
-        glue("qvalue_({group2})v({group1})"))
-    )
-  
-  # Diff_abn
-  diff_abn <- out$res$diff_abn %>%
-    as.data.frame() %>% 
-    select(-contains("Intercept")) %>%
-    set_names(
-      c("taxon",
-        glue("diff_({group2})v({group1})"))
-    )
-  
-  # Merge the dataframes to one results dataframe
-  res <- lfc %>%
-    left_join(se) %>%
-    left_join(W) %>% 
-    left_join(p_val) %>% 
-    left_join(q_val) %>% 
-    left_join(diff_abn)
-  
-  return(res)
-  
+    
+    # Write to log file
+    writeLines(log_msg, 
+              file.path(diff_abund_out_dir, 
+                       glue("{output_prefix}ancombc1_failure.txt")))
+    
+    # Print to console and quit
+    message(log_msg)
+    quit(status = 0)
+  })
 })
 
 # ------------ Create merged stats pairwise dataframe ----------------- #
@@ -2767,37 +2841,49 @@ output <- ancombc2(data = tse,
 
 # Create new column names - the original column names given by ANCOMBC are
 # difficult to understand
-new_colnames <- map_chr(output$res_pair %>% colnames, 
-                        function(colname) {
-                          # Columns comparing a group to the reference group
-                          if(str_count(colname,groups_colname) == 1){
-                            str_replace_all(string=colname, 
-                                            pattern=glue("(.+)_{groups_colname}(.+)"),
-                                            replacement=glue("\\1_(\\2)v({ref_group})")) %>% 
-                            str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
-                            str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
-                            str_replace(pattern = "^W_", replacement = "Wstat_") %>%
-                            str_replace(pattern = "^p_", replacement = "pvalue_") %>%
-                            str_replace(pattern = "^q_", replacement = "qvalue_")
-                            
-                          # Columns with normal two groups comparison
-                          } else if(str_count(colname,groups_colname) == 2){
-                            
-                            str_replace_all(string=colname, 
-                                            pattern=glue("(.+)_{groups_colname}(.+)_{groups_colname}(.+)"),
-                                            replacement=glue("\\1_(\\2)v(\\3)")) %>% 
-                            str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
-                            str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
-                            str_replace(pattern = "^W_", replacement = "Wstat_") %>%
-                            str_replace(pattern = "^p_", replacement = "pvalue_") %>%
-                            str_replace(pattern = "^q_", replacement = "qvalue_")
-                            
-                            # Feature/ ASV column 
-                          } else{
-                            
-                            return(colname)
-                          }
-                        } )
+tryCatch({
+  new_colnames <- map_chr(output$res_pair %>% colnames, 
+                          function(colname) {
+                            # Columns comparing a group to the reference group
+                            if(str_count(colname,groups_colname) == 1){
+                              str_replace_all(string=colname, 
+                                              pattern=glue("(.+)_{groups_colname}(.+)"),
+                                              replacement=glue("\\1_(\\2)v({ref_group})")) %>% 
+                              str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
+                              str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
+                              str_replace(pattern = "^W_", replacement = "Wstat_") %>%
+                              str_replace(pattern = "^p_", replacement = "pvalue_") %>%
+                              str_replace(pattern = "^q_", replacement = "qvalue_")
+                              
+                            # Columns with normal two groups comparison
+                            } else if(str_count(colname,groups_colname) == 2){
+                              
+                              str_replace_all(string=colname, 
+                                              pattern=glue("(.+)_{groups_colname}(.+)_{groups_colname}(.+)"),
+                                              replacement=glue("\\1_(\\2)v(\\3)")) %>% 
+                              str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
+                              str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
+                              str_replace(pattern = "^W_", replacement = "Wstat_") %>%
+                              str_replace(pattern = "^p_", replacement = "pvalue_") %>%
+                              str_replace(pattern = "^q_", replacement = "qvalue_")
+                              
+                              # Feature/ ASV column 
+                            } else{
+                              
+                              return(colname)
+                            }
+                          } )
+}, error = function(e) {
+  writeLines(c("ANCOMBC2 script failed at res_pair processing:", e$message,
+              "\n\nDiagnostics:",
+              paste("- Number of taxa after filtering:", nrow(taxonomy_table)),
+              paste("- Number of groups:", length(unique(tse[[group]]))),
+              paste("- Sample sizes per group:"),
+              paste("  ", paste(names(table(tse[[group]])), "=", table(tse[[group]]), collapse="\n  ")),
+              "\nPossibly insufficient data for ANCOMBC2 analysis. Consider adjusting filtering parameters or group assignments."), 
+            file.path(diff_abund_out_dir, glue("{output_prefix}ancombc2_failure.txt")))
+  quit(status = 0)
+})
 
 # Change the column named taxon to the feature name e.g. ASV
 new_colnames[match("taxon", new_colnames)] <- feature
@@ -3128,7 +3214,20 @@ deseq_modeled <- tryCatch({
   deseq_obj <- estimateSizeFactors(deseq_obj, geoMeans=geoMeans)
   
   # Call DESeq again with alternative geom mean size est
-  DESeq(deseq_obj)
+  tryCatch({
+    DESeq(deseq_obj)
+  }, error = function(e2) {
+
+    writeLines(c("Error:", e2$message,
+                "\nUsing gene-wise estimates as final estimates instead of standard curve fitting."), 
+              file.path(diff_abund_out_dir, glue("{output_prefix}deseq2_warning.txt")))
+    
+    # Use gene-wise estimates as final estimates
+    deseq_obj <- estimateDispersionsGeneEst(deseq_obj)
+    dispersions(deseq_obj) <- mcols(deseq_obj)$dispGeneEst
+    # Continue with testing using nbinomWaldTest
+    nbinomWaldTest(deseq_obj)
+  })
 })
 
 

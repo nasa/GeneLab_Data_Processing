@@ -438,10 +438,18 @@ diversity_stats <- map_dfr(.x = diversity_metrics, function(metric){
   number_of_groups <- merged_table[,groups_colname] %>% unique() %>% length()
   
   if (number_of_groups < 2){
-    
-    stop("Exiting... There are less than two groups to compare, hence, pairwise comparions cannot be performed.
-         Please ensure that your metadata contains two or more groups to compare...")
-  
+    warning_file <- glue("{alpha_diversity_out_dir}{output_prefix}alpha_diversity_failure.txt")
+    original_groups <- length(unique(metadata[[groups_colname]]))
+    writeLines(
+      text = glue("Group count information:
+Original number of groups: {original_groups}
+Number of groups after filtering: {number_of_groups}
+
+There are less than two groups to compare, hence, pairwise comparisons cannot be performed.
+Please ensure that your metadata contains two or more groups to compare..."),
+      con = warning_file
+    )
+    quit(status = 0)
   }else if(number_of_groups == 2){
     
   df <- data.frame(y=merged_table[,metric], x=merged_table[,groups_colname]) %>%
@@ -477,17 +485,28 @@ write_csv(x = diversity_stats,
 comp_letters <- data.frame(group = group_levels)
 colnames(comp_letters) <- groups_colname
 
-walk(.x = diversity_metrics, function(metric=.x){
-  
+walk(.x = diversity_metrics, function(metric = .x) {
+
   sub_comp <- diversity_stats %>% filter(Metric == metric)
-  p_values <- sub_comp$p.adj # holm p adjusted values by default
-  names(p_values) <- paste(sub_comp$group1,sub_comp$group2, sep = "-")
-  
-  letters_df <-  enframe(multcompView::multcompLetters(p_values)$Letters,
-                      name = groups_colname,
-                      value = glue("{metric}_letter"))
+
+  sanitize <- function(x) gsub("-", "_", x)
+  g1 <- sanitize(sub_comp$group1)
+  g2 <- sanitize(sub_comp$group2)
+
+  safe_names <- paste(g1, g2, sep = "-")
+  orig_names <- paste(sub_comp$group1, sub_comp$group2, sep = "-")
+  safe_to_orig <- setNames(orig_names, safe_names)
+
+  p_values <- setNames(sub_comp$p.adj, safe_names)
+
+  letters <- multcompView::multcompLetters(p_values)$Letters
+  names(letters) <- safe_to_orig[names(letters)]
+
+  letters_df <- enframe(letters,
+                        name = groups_colname,
+                        value = glue("{metric}_letter"))
+
   comp_letters <<- comp_letters %>% left_join(letters_df)
-   
 })
 
 

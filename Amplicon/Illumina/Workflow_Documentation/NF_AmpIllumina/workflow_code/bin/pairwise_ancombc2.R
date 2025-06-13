@@ -466,38 +466,49 @@ output <- ancombc2(data = tse, assay_name = "counts", tax_level = NULL,
 
 # Create new column names - the original column names given by ANCOMBC are
 # difficult to understand
-new_colnames <- map_chr(output$res_pair  %>% colnames, 
-                        function(colname) {
-                          # Columns comparing a group to the reference group
-                          if(str_count(colname,group) == 1){
-                            str_replace_all(string=colname, 
-                                            pattern=glue("(.+)_{group}(.+)"),
-                                            replacement=glue("\\1_(\\2)v({ref_group})")) %>% 
-                            str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
-                            str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
-                            str_replace(pattern = "^W_", replacement = "Wstat_") %>%
-                            str_replace(pattern = "^p_", replacement = "pvalue_") %>%
-                            str_replace(pattern = "^q_", replacement = "qvalue_")
-                            
-                          # Columns with normal two groups comparison
-                          } else if(str_count(colname,group) == 2){
-                            
-                            str_replace_all(string=colname, 
-                                            pattern=glue("(.+)_{group}(.+)_{group}(.+)"),
-                                            replacement=glue("\\1_(\\2)v(\\3)")) %>% 
-                            str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
-                            str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
-                            str_replace(pattern = "^W_", replacement = "Wstat_") %>%
-                            str_replace(pattern = "^p_", replacement = "pvalue_") %>%
-                            str_replace(pattern = "^q_", replacement = "qvalue_")
-                            
-                            # Feature/ ASV column 
-                          } else{
-                            
-                            return(colname)
-                          }
-                        } )
-
+tryCatch({
+  new_colnames <- map_chr(output$res_pair  %>% colnames, 
+                          function(colname) {
+                            # Columns comparing a group to the reference group
+                            if(str_count(colname,group) == 1){
+                              str_replace_all(string=colname, 
+                                              pattern=glue("(.+)_{group}(.+)"),
+                                              replacement=glue("\\1_(\\2)v({ref_group})")) %>% 
+                              str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
+                              str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
+                              str_replace(pattern = "^W_", replacement = "Wstat_") %>%
+                              str_replace(pattern = "^p_", replacement = "pvalue_") %>%
+                              str_replace(pattern = "^q_", replacement = "qvalue_")
+                              
+                            # Columns with normal two groups comparison
+                            } else if(str_count(colname,group) == 2){
+                              
+                              str_replace_all(string=colname, 
+                                              pattern=glue("(.+)_{group}(.+)_{group}(.+)"),
+                                              replacement=glue("\\1_(\\2)v(\\3)")) %>% 
+                              str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
+                              str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
+                              str_replace(pattern = "^W_", replacement = "Wstat_") %>%
+                              str_replace(pattern = "^p_", replacement = "pvalue_") %>%
+                              str_replace(pattern = "^q_", replacement = "qvalue_")
+                              
+                              # Feature/ ASV column 
+                            } else{
+                              
+                              return(colname)
+                            }
+                          } )
+}, error = function(e) {
+  writeLines(c("ANCOMBC2 script failed at res_pair processing:", e$message,
+              "\n\nDiagnostics:",
+              paste("- Number of taxa after filtering:", nrow(taxonomy_table)),
+              paste("- Number of groups:", length(unique(tse[[group]]))),
+              paste("- Sample sizes per group:"),
+              paste("  ", paste(names(table(tse[[group]])), "=", table(tse[[group]]), collapse="\n  ")),
+              "\nPossibly insufficient data for ANCOMBC2 analysis. Consider adjusting filtering parameters or group assignments."), 
+            file.path(diff_abund_out_dir, glue("{output_prefix}ancombc2_failure.txt")))
+  quit(status = 0)
+})
 
 # Change the column named taxon to the feature name e.g. ASV
 new_colnames[match("taxon", new_colnames)] <- feature
