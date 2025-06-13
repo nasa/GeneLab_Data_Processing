@@ -7,7 +7,7 @@
 --- 
 
 <p align="center">
-<a href="../images/GL-amplicon-overview.pdf"><img src="../images/GL-amplicon-overview.png"></a>
+<a href="../images/GL-amplicon-subwayplot.pdf"><img src="../images/GL-amplicon-subwayplot.png"></a>
 </p>
 
 ---
