@@ -159,7 +159,7 @@ nextflow run main.nf -resume -profile singularity  --input_file PE_file.csv
 <br> 
 
 > See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details on how to run Nextflow.  
-> For additional information on editing the `nextflow.config` file, see [Step 4d](#4d-modify-parameters-and-cpu-resources-in-the-nextflow-config-file) below.   
+> For additional information on editing the `nextflow.config` file, see [Step 4c](#4c-modify-parameters-and-cpu-resources-in-the-nextflow-config-file) below.   
 
 
 <br>
@@ -210,7 +210,7 @@ nextflow run post_processing.nf --help
 To generate the post-processing files after running the main processing workflow successfully, modify and set the parameters in [post_processing.config](workflow_code/post_processing.config), then run the following command:
 
 ```bash
-nextflow -C post_processing.config run post_processing.nf -resume -profile singularity
+nextflow run post_processing.nf -C post_processing.config -resume -profile singularity
 ``` 
 
 The outputs of the post-processing workflow are described below:
