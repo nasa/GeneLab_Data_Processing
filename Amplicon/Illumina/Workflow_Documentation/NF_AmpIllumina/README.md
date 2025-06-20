@@ -35,7 +35,7 @@ The table below details the default maximum resource allocations for individual 
    5a. [Main outputs](#5a-main-outputs)  
    5b. [Resource logs](#5b-resource-logs)  
 
-6. [Post-processing](#7-post-processing)  
+6. [Post-processing](#6-post-processing)  
 
 <br>
 
@@ -169,10 +169,6 @@ nextflow run main.nf \
       * `slurm` - instructs Nextflow to use the [Slurm cluster management and job scheduling system](https://slurm.schedmd.com/overview.html) to schedule and run the jobs on a Slurm HPC cluster
 * `--target_region` - Specifies the amplicon target region to be analyzed, available option are: 16S, 18S, or ITS
 
-  *Required only if you would like to pull and process data directly from OSDR*
-
-* `--accession` - A GeneLab / OSD accession number e.g. GLDS-487.
-
 
 **Additional Required Parameters For Approach 1:** 
 
@@ -189,7 +185,7 @@ nextflow run main.nf \
 * `--R_primer` - Reverse primer sequence
 
 
-**Additional [Optional] Parameters For ALL Approaches**
+**Additional [Optional] Parameters For All Approaches**
 > *Note: See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details on how to run Nextflow.*
 
 * `--errorStrategy` - Error handling strategy for Nextflow processes . If processes fail, use "ignore" to allow the workflow to continue running (default: "terminate")
