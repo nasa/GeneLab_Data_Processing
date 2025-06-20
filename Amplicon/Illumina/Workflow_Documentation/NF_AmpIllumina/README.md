@@ -81,7 +81,7 @@ We recommend installing Singularity on a system wide level as per the associated
 All files required for utilizing the NF_AmpIllumina GeneLab workflow for processing amplicon Illumina data are in the [workflow_code](workflow_code) directory. To get a copy of the latest *NF_AmpIllumina* version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
 
 ```bash
-wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/NF_AmpIllumina_1.0.0/NF_AmpIllumina_1.0.0.zip
+wget https://github.com/nasa/GeneLab_AmpliconSeq_Workflow/releases/download/NF_AmpIllumina_1.0.0/NF_AmpIllumina_1.0.0.zip
 unzip NF_AmpIllumina_1.0.0.zip && cd NF_AmpIllumina_1.0.0
 ```
 
