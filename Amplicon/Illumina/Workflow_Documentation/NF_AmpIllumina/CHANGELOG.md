@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_AmpIllumina_1.0.0/Amplicon/Illumina/Workflow_Documentation/NF_AmpIllumina) - TBD
+## [1.0.0](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow/tree/NF_AmpIllumina_1.0.0) 
 
 ### Added
 
@@ -46,7 +46,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - SILVA SSU r138_2 2024
   - UNITE v2024 April2024
 
-### Fixed
+<br>
 
-### Removed
+---
 
+> ***Note:** All previous workflow changes associated with the previous version of the GeneLab Amplicon Pipeline
+[GL-DPPD-7104-B](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md) and can be found in the
+[change log of the Snakemake workflow (SW_AmpIllumina-B)](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/CHANGELOG.md).*
