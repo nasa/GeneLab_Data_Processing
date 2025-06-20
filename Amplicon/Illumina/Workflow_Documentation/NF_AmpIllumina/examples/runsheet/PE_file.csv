@@ -1,0 +1,3 @@
+sample_id,forward,reverse,paired,groups
+Sample-1,/path/to/raw-reads/Sample-1_R1_raw.fastq.gz,/path/to/raw-reads/Sample-1_R2_raw.fastq.gz,true,A
+Sample-2,/path/to/raw-reads/Sample-2_R1_raw.fastq.gz,/path/to/raw-reads/Sample-2_R2_raw.fastq.gz,true,B
