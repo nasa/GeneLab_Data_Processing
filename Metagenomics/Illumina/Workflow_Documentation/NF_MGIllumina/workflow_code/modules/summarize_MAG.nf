@@ -150,7 +150,7 @@ process  SUMMARIZE_MAG_ASSEMBLIES {
                > ${params.additional_filename_prefix}MAG-assembly-summaries.tsv
 
         fi
-        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' > versions.txt
+        bit-version |grep "Bioinformatics Tools"|sed -E 's/^\\s+//' | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g' > versions.txt
         """
 }
 
@@ -310,6 +310,7 @@ process SUMMARIZE_MAG_KO_ANNOTS_WITH_KEGG_DECODER {
 
         fi
         python --version > versions.txt
+        conda list keggdecoder | grep keggdecoder | awk '{print $1,"  version: "$2,", build: "$3}' >> versions.txt
         """
 }
 

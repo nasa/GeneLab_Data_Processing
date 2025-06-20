@@ -205,14 +205,13 @@ process GENERATE_CURATION_TABLE {
         path(runsheet)
         
     output:
-        path("${GLDS_accession}_${output_prefix}-associated-file-names.tsv"), emit: curation_table
+        path("*-updated-assay-table-cols.tsv"), emit: curation_table
 
     script:
         def INPUT_TABLE = params.assay_table ? "--assay-table ${input_table}" : "--isa-zip  ${input_table}"
         """
         GL-gen-metagenomics-file-associations-table ${INPUT_TABLE} \\
                     --runsheet '${runsheet}' \\
-                    --output '${GLDS_accession}_${output_prefix}-associated-file-names.tsv' \\
                     --GLDS-ID  '${GLDS_accession}' \\
                     --output-prefix '${output_prefix}' \\
                     --assay_suffix '${assay_suffix}' \\
@@ -254,14 +253,17 @@ process GENERATE_MD5SUMS {
     script:
         """
         mkdir processing/ && \\
-        cp -r ${dirs.join(" ")} ${processing_info} ${README} \\
-              processing/
+        cp -a ${processing_info} ${README} processing/ && \\
+        ln -s ${dirs.join(" ")} processing/
 
         # Generate md5sums
-        find -L processing/ -type f -exec md5sum '{}' \\; |
+        # exclude versions.txt files and files with size zero (which will not be uploaded to OSDR)
+        find -L processing/ -type f ! \\( -size 0 -o -name versions.txt \\
+            -o -name "*-contig-coverages.tsv" -o -name "*-gene-coverages.tsv" \\
+            -o -name "*-annotations.tsv" -o -name "*-contig-tax.tsv" \\
+            -o -name "*-gene-tax.tsv" \\) -exec md5sum '{}' \\; |
         awk -v OFS='\\t' 'BEGIN{OFS="\\t"; printf "File Path\\tFile Name\\tmd5\\n"} \\
-                {N=split(\$2,a,"/"); sub(/processing\\//, "", \$2); print \$2,a[N],\$1}' \\
-                | grep -v "versions.txt" > processed_md5sum${params.assay_suffix}.tsv
+                {N=split(\$2,a,"/"); sub(/processing\\//, "", \$2); print \$2,a[N],\$1}' > processed_md5sum${params.assay_suffix}.tsv
         """
 }
 

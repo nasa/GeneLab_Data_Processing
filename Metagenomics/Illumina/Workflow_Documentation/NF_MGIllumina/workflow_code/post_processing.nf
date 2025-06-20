@@ -36,7 +36,7 @@ if(params.help){
   println("  --assay_suffix [STRING]  Genelab's assay suffix. Default: _GLmetagenomics.")
   println("  --output_prefix [STRING] Unique name to tag onto output files. Default: empty string.")
   println("  --V_V_guidelines_link [URL] Genelab metagenomics data validation and verification guidelines link. Default: https://genelab-tools.arc.nasa.gov/confluence/pages/viewpage.action?pageId=8225175.")
-  println("  --target_files [STRING] A comma separated list of target files and/or directories to find in processing_info.zip. Default: main.nf,nextflow.config,unique-sample-IDs.txt,envs/,bin/,config/,modules/,<--logs>.")
+  println("  --target_files [STRING] A comma separated list of target files and/or directories to find in processing_info.zip. Default: nextflow_processing_info_GLmetagenomics.txt,command.txt,unique-sample-IDs.txt,software_versions.txt,GLfile.csv,<--logs>.")
   println("File Suffixes:")
   println("      --raw_suffix [STRING]  Suffix used for the raw reads during processing. Only applicable when input reads are single-end. Default: _HRremoved_raw.fastq.gz.")  
   println("      --raw_R1_suffix [STRING]  Suffix used for the raw forward reads during processing. Default: _R1_HRremoved_raw.fastq.gz.")
