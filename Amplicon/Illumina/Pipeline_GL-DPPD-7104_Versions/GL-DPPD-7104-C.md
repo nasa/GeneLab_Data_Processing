@@ -2012,6 +2012,63 @@ output_prefix <- ""
 distance_methods <- c("euclidean", "bray")
 normalization_methods <- c("vst", "rarefy")
 
+# Check and adjust rarefaction depth to preserve at least 2 groups
+library_sizes <- colSums(feature_table)
+min_lib_size <- min(library_sizes)
+max_lib_size <- max(library_sizes)
+
+# Check group-wise library sizes 
+metadata_with_libsizes <- metadata
+metadata_with_libsizes$library_size <- library_sizes[rownames(metadata)]
+
+group_lib_stats <- metadata_with_libsizes %>%
+  group_by(!!sym(groups_colname)) %>%
+  summarise(
+    n_samples = n(),
+    min_lib = min(library_size),
+    max_lib = max(library_size),
+    median_lib = median(library_size),
+    .groups = 'drop'
+  )
+
+# Find max depth that preserves at least 2 groups
+groups_surviving_at_depth <- function(depth) {
+  sum(group_lib_stats$min_lib >= depth)
+}
+
+if(groups_surviving_at_depth(rarefaction_depth) < 2) {
+  
+  # Find the depth that preserves exactly 2 groups (use the 2nd highest group minimum)
+  group_mins <- sort(group_lib_stats$min_lib, decreasing = TRUE)
+  if(length(group_mins) >= 2) {
+    adjusted_depth <- group_mins[2] # Use 2nd highest group minimum directly
+  } else {
+    adjusted_depth <- max(10, floor(min_lib_size * 0.8))
+  }
+  
+  warning_msg <- c(
+    paste("Original rarefaction depth:", rarefaction_depth),
+    paste("Total groups in data:", nrow(group_lib_stats)),
+    "",
+    "Group-wise library size stats:",
+    paste(capture.output(print(group_lib_stats, row.names = FALSE)), collapse = "\n"),
+    "",
+    paste("WARNING: Rarefaction depth", rarefaction_depth, "would preserve only", 
+          groups_surviving_at_depth(rarefaction_depth), "group(s)"),
+    paste("Beta diversity analysis requires at least 2 groups for statistical tests."),
+    "",
+    paste("Automatically adjusted rarefaction depth to:", adjusted_depth),
+    paste("This should preserve", groups_surviving_at_depth(adjusted_depth), "groups for analysis.")
+  )
+  
+  writeLines(warning_msg, "rarefaction_depth_warning.txt")
+  message("WARNING: Rarefaction depth adjusted from ", rarefaction_depth, " to ", adjusted_depth, 
+          " to preserve at least 2 groups - see rarefaction_depth_warning.txt")
+  
+  # Update the rarefaction depth
+  rarefaction_depth <- adjusted_depth
+}
+
 options(warn=-1) # ignore warnings
 # Run the analysis
 walk2(.x = normalization_methods, .y = distance_methods,
@@ -2499,7 +2556,7 @@ final_results_bc1 <- map(pairwise_comp_df, function(col){
     # Write to log file
     writeLines(log_msg, 
               file.path(diff_abund_out_dir, 
-                       glue("{output_prefix}ancombc1_failure.txt")))
+                       glue("ancombc1_failure.txt")))
     
     # Print to console and quit
     message(log_msg)
@@ -2835,44 +2892,71 @@ output <- ancombc2(data = tse,
                    iter_control = list(tol = 1e-5, max_iter = 20,
                                        verbose = FALSE),
                    mdfdr_control = list(fwer_ctrl_method = "fdr", B = 100), 
-                   lme_control = NULL)
+                   lme_control = NULL, trend_control = NULL)
 
-
+# For 2-group comparisons, use res instead of mapping across pairwise results in res_pair
+is_two_group <- length(unique(tse[[group]])) == 2
 
 # Create new column names - the original column names given by ANCOMBC are
 # difficult to understand
 tryCatch({
-  new_colnames <- map_chr(output$res_pair %>% colnames, 
-                          function(colname) {
-                            # Columns comparing a group to the reference group
-                            if(str_count(colname,groups_colname) == 1){
-                              str_replace_all(string=colname, 
-                                              pattern=glue("(.+)_{groups_colname}(.+)"),
-                                              replacement=glue("\\1_(\\2)v({ref_group})")) %>% 
-                              str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
-                              str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
-                              str_replace(pattern = "^W_", replacement = "Wstat_") %>%
-                              str_replace(pattern = "^p_", replacement = "pvalue_") %>%
-                              str_replace(pattern = "^q_", replacement = "qvalue_")
-                              
-                            # Columns with normal two groups comparison
-                            } else if(str_count(colname,groups_colname) == 2){
-                              
-                              str_replace_all(string=colname, 
-                                              pattern=glue("(.+)_{groups_colname}(.+)_{groups_colname}(.+)"),
-                                              replacement=glue("\\1_(\\2)v(\\3)")) %>% 
-                              str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
-                              str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
-                              str_replace(pattern = "^W_", replacement = "Wstat_") %>%
-                              str_replace(pattern = "^p_", replacement = "pvalue_") %>%
-                              str_replace(pattern = "^q_", replacement = "qvalue_")
-                              
-                              # Feature/ ASV column 
-                            } else{
-                              
-                              return(colname)
-                            }
-                          } )
+  # Check if this is a 2-group comparison (using res instead of res_pair)
+  if(is_two_group) {
+    # For 2-group comparisons, use the group-specific columns
+    group_cols <- colnames(output$res)[grepl(paste0("^[a-zA-Z_]+_", group), colnames(output$res))]
+    if(length(group_cols) > 0) {
+      # Extract group name from the first group-specific column
+      group_name <- str_replace(group_cols[1], paste0("^[a-zA-Z_]+_", group), "")
+      # Create comparison name
+      comparison_name <- glue("({ref_group})v({group_name})")
+      
+      new_colnames <- c(
+        feature,  # Keep the feature column name
+        glue("lnFC_{comparison_name}"),
+        glue("lnfcSE_{comparison_name}"),
+        glue("Wstat_{comparison_name}"),
+        glue("pvalue_{comparison_name}"),
+        glue("qvalue_{comparison_name}"),
+        glue("diff_{comparison_name}"),
+        glue("passed_ss_{comparison_name}")
+      )
+    } else {
+      stop("Could not identify group-specific column for 2-group comparison")
+    }
+  } else {
+    # Multi-group comparisons
+    new_colnames <- map_chr(output$res_pair  %>% colnames, 
+                            function(colname) {
+                              # Columns comparing a group to the reference group
+                              if(str_count(colname,group) == 1){
+                                str_replace_all(string=colname, 
+                                                pattern=glue("(.+)_{group}(.+)"),
+                                                replacement=glue("\\1_(\\2)v({ref_group})")) %>% 
+                                str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
+                                str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
+                                str_replace(pattern = "^W_", replacement = "Wstat_") %>%
+                                str_replace(pattern = "^p_", replacement = "pvalue_") %>%
+                                str_replace(pattern = "^q_", replacement = "qvalue_")
+                                
+                              # Columns with normal two groups comparison
+                              } else if(str_count(colname,group) == 2){
+                                
+                                str_replace_all(string=colname, 
+                                                pattern=glue("(.+)_{group}(.+)_{group}(.+)"),
+                                                replacement=glue("\\1_(\\2)v(\\3)")) %>% 
+                                str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
+                                str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
+                                str_replace(pattern = "^W_", replacement = "Wstat_") %>%
+                                str_replace(pattern = "^p_", replacement = "pvalue_") %>%
+                                str_replace(pattern = "^q_", replacement = "qvalue_")
+                                
+                                # Feature/ ASV column 
+                              } else{
+                                
+                                return(colname)
+                              }
+                            } )
+  }
 }, error = function(e) {
   writeLines(c("ANCOMBC2 script failed at res_pair processing:", e$message,
               "\n\nDiagnostics:",
@@ -2881,7 +2965,7 @@ tryCatch({
               paste("- Sample sizes per group:"),
               paste("  ", paste(names(table(tse[[group]])), "=", table(tse[[group]]), collapse="\n  ")),
               "\nPossibly insufficient data for ANCOMBC2 analysis. Consider adjusting filtering parameters or group assignments."), 
-            file.path(diff_abund_out_dir, glue("{output_prefix}ancombc2_failure.txt")))
+            file.path(diff_abund_out_dir, glue("ancombc2_failure.txt")))
   quit(status = 0)
 })
 
@@ -2890,7 +2974,20 @@ new_colnames[match("taxon", new_colnames)] <- feature
 
 
 # Rename columns
-paired_stats_df <- output$res_pair %>% set_names(new_colnames)
+if(is_two_group) {
+  # For 2-group comparisons, we need to select the group-specific columns and rename them
+  # The columns are named like "lfc_groupsGround Control", "se_groupsGround Control", etc.
+  
+  group_specific_cols <- colnames(output$res)[grepl(paste0("^[a-zA-Z_]+_", group), colnames(output$res))]
+  
+  # Create a new data frame with the selected columns
+  paired_stats_df <- output$res %>%
+    select(taxon, all_of(group_specific_cols)) %>%
+    set_names(new_colnames)
+} else {
+  # Multi-group comparisons
+  paired_stats_df <- output$res_pair  %>%  set_names(new_colnames)
+}
 
 # Get the unique comparison names 
 uniq_comps <- str_replace_all(new_colnames, ".+_(\\(.+\\))", "\\1") %>% unique()
@@ -3220,7 +3317,7 @@ deseq_modeled <- tryCatch({
 
     writeLines(c("Error:", e2$message,
                 "\nUsing gene-wise estimates as final estimates instead of standard curve fitting."), 
-              file.path(diff_abund_out_dir, glue("{output_prefix}deseq2_warning.txt")))
+              file.path(diff_abund_out_dir, glue("deseq2_warning.txt")))
     
     # Use gene-wise estimates as final estimates
     deseq_obj <- estimateDispersionsGeneEst(deseq_obj)
