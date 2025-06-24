@@ -2061,9 +2061,9 @@ if(groups_surviving_at_depth(rarefaction_depth) < 2) {
     paste("This should preserve", groups_surviving_at_depth(adjusted_depth), "groups for analysis.")
   )
   
-  writeLines(warning_msg, "rarefaction_depth_warning.txt")
+  writeLines(warning_msg, glue("{beta_diversity_out_dir}/{output_prefix}rarefaction_depth_warning.txt"))
   message("WARNING: Rarefaction depth adjusted from ", rarefaction_depth, " to ", adjusted_depth, 
-          " to preserve at least 2 groups - see rarefaction_depth_warning.txt")
+          " to preserve at least 2 groups - see ", output_prefix, "rarefaction_depth_warning.txt")
   
   # Update the rarefaction depth
   rarefaction_depth <- adjusted_depth
@@ -2556,7 +2556,7 @@ final_results_bc1 <- map(pairwise_comp_df, function(col){
     # Write to log file
     writeLines(log_msg, 
               file.path(diff_abund_out_dir, 
-                       glue("ancombc1_failure.txt")))
+                       glue("{output_prefix}ancombc1_failure.txt")))
     
     # Print to console and quit
     message(log_msg)
@@ -2965,7 +2965,7 @@ tryCatch({
               paste("- Sample sizes per group:"),
               paste("  ", paste(names(table(tse[[group]])), "=", table(tse[[group]]), collapse="\n  ")),
               "\nPossibly insufficient data for ANCOMBC2 analysis. Consider adjusting filtering parameters or group assignments."), 
-            file.path(diff_abund_out_dir, glue("ancombc2_failure.txt")))
+            file.path(diff_abund_out_dir, glue("{output_prefix}ancombc2_failure.txt")))
   quit(status = 0)
 })
 
@@ -3317,7 +3317,7 @@ deseq_modeled <- tryCatch({
 
     writeLines(c("Error:", e2$message,
                 "\nUsing gene-wise estimates as final estimates instead of standard curve fitting."), 
-              file.path(diff_abund_out_dir, glue("deseq2_warning.txt")))
+              file.path(diff_abund_out_dir, glue("{output_prefix}deseq2_warning.txt")))
     
     # Use gene-wise estimates as final estimates
     deseq_obj <- estimateDispersionsGeneEst(deseq_obj)
