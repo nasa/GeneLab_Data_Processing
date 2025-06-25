@@ -3387,11 +3387,11 @@ df <- results(deseq_modeled, contrast = c(groups_colname, group1, group2)) %>% #
   rownames_to_column(feature) %>% 
   set_names(c(feature ,
               glue("baseMean_({group1})v({group2})"),
-              glue("log2FC_({group1})v({group2})"),
-              glue("lfcSE_({group1})v({group2})"), 
-              glue("stat_({group1})v({group2})"), 
-              glue("pvalue_({group1})v({group2})"),
-              glue("padj_({group1})v({group2})") 
+              glue("Log2fc_({group1})v({group2})"),
+              glue("Logfc.SE_({group1})v({group2})"), 
+              glue("Stat_({group1})v({group2})"), 
+              glue("P.value_({group1})v({group2})"),
+              glue("Adj.p.value_({group1})v({group2})") 
             )) # rename the columns
      
   merged_stats_df <<- merged_stats_df %>% 
@@ -3471,9 +3471,9 @@ normalized_table <- normalized_table %>%
 # Calculate mean global means and standard deviations
 All_mean_sd <- normalized_table %>%
   rowwise() %>%
-  mutate(All.Mean=mean(c_across(where(is.numeric)), na.rm = TRUE),
-         All.Stdev=sd(c_across(where(is.numeric)), na.rm = TRUE) ) %>% 
-  select(!!feature, All.Mean, All.Stdev)
+  mutate(All.mean=mean(c_across(where(is.numeric)), na.rm = TRUE),
+         All.stdev=sd(c_across(where(is.numeric)), na.rm = TRUE) ) %>% 
+  select(!!feature, All.mean, All.stdev)
 
 # Add taxonomy
 merged_df <- df  %>% # statistics table
