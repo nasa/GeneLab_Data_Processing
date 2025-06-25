@@ -1533,6 +1533,7 @@ message(glue("There are {sum(is.na(taxonomy_table$domain))} features without
            taxonomy assignments. Dropping them..."))
 
 # Dropping features that couldn't be assigned taxonomy
+# For beta and alpha diversity only, unassigned ASVs are not dropped in DA analyses
 taxonomy_table <- taxonomy_table[-which(is.na(taxonomy_table$domain)),]
 
 # Handle case where no domain was assigned but a phylum was.
@@ -2683,10 +2684,15 @@ df <- data.frame(ASV=rownames(taxonomy_table), best_taxonomy=tax_names)
 colnames(df) <- c(feature, "best_taxonomy")
 
 # Pull NCBI IDS for unique taxonomy names
-df2 <- data.frame(best_taxonomy = df$best_taxonomy %>%
-                    unique()) %>%
+# Filter out unannotated entries before querying NCBI
+valid_taxonomy <- df$best_taxonomy %>% unique() %>% setdiff("_")
+df2_valid <- data.frame(best_taxonomy = valid_taxonomy) %>%
   mutate(NCBI_id=get_ncbi_ids(best_taxonomy, target_region),
          .after = best_taxonomy)
+
+# Add unannotated entries with NA NCBI_id
+df2_invalid <- data.frame(best_taxonomy = "_", NCBI_id = NA)
+df2 <- rbind(df2_valid, df2_invalid)
 
 df <- df %>%
   left_join(df2, join_by("best_taxonomy")) %>% 
@@ -3035,10 +3041,15 @@ colnames(df) <- c(feature, "best_taxonomy")
 
 # Querying NCBI...
 # Pull NCBI IDS for unique taxonomy names
-df2 <- data.frame(best_taxonomy = df$best_taxonomy %>%
-                    unique()) %>%
+# Filter out unannotated entries before querying NCBI
+valid_taxonomy <- df$best_taxonomy %>% unique() %>% setdiff("_")
+df2_valid <- data.frame(best_taxonomy = valid_taxonomy) %>%
   mutate(NCBI_id=get_ncbi_ids(best_taxonomy, target_region),
          .after = best_taxonomy)
+
+# Add unannotated entries with NA NCBI_id
+df2_invalid <- data.frame(best_taxonomy = "_", NCBI_id = NA)
+df2 <- rbind(df2_valid, df2_invalid)
 
 df <- df %>%
   left_join(df2, join_by("best_taxonomy")) %>% 
@@ -3397,14 +3408,15 @@ df <- data.frame(ASV=rownames(taxonomy_table), best_taxonomy=tax_names)
 colnames(df) <- c(feature, "best_taxonomy")
 
 # Pull NCBI IDS for unique taxonomy names
-df2 <- data.frame(best_taxonomy = df$best_taxonomy %>%
-                    unique()) %>%
+# Filter out unannotated entries before querying NCBI
+valid_taxonomy <- df$best_taxonomy %>% unique() %>% setdiff("_")
+df2_valid <- data.frame(best_taxonomy = valid_taxonomy) %>%
   mutate(NCBI_id=get_ncbi_ids(best_taxonomy, target_region),
          .after = best_taxonomy)
 
-df <- df %>%
-  left_join(df2, join_by("best_taxonomy")) %>%
-  right_join(merged_stats_df)
+# Add unannotated entries with NA NCBI_id
+df2_invalid <- data.frame(best_taxonomy = "_", NCBI_id = NA)
+df2 <- rbind(df2_valid, df2_invalid)
 
 # -------- Retrieve deseq normalized table from the deseq model
 normalized_table <- counts(deseq_modeled, normalized=TRUE) %>% 
