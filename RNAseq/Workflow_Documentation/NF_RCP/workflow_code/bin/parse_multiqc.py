@@ -225,13 +225,13 @@ def parse_fastqc(prefix, assay_suffix):
             
             # Process forward read
             if reads['f']:
-                for k, v in j['report_general_stats_data'][-1][reads['f']].items():
+                for k, v in j['report_general_stats_data'][0][reads['f']].items():
                     if k != 'percent_fails':
                         data[base_name][prefix + '_' + k + '_f'] = v
                         
             # Process reverse read
             if reads['r']:
-                for k, v in j['report_general_stats_data'][-1][reads['r']].items():
+                for k, v in j['report_general_stats_data'][0][reads['r']].items():
                     if k != 'percent_fails':
                         data[base_name][prefix + '_' + k + '_r'] = v
 
