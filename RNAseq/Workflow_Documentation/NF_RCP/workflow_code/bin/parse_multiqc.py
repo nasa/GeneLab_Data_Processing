@@ -14,7 +14,20 @@ import re
 import os
 
 
-def main(osd_num, paired_end, assay_suffix, mode):
+def get_runsheet_order(runsheet_path):
+    """Read runsheet and return ordered list of sample names"""
+    if not runsheet_path or not os.path.exists(runsheet_path):
+        return None
+    try:
+        df = pd.read_csv(runsheet_path)
+        if 'Sample Name' in df.columns:
+            return df['Sample Name'].tolist()
+    except Exception as e:
+        print(f"WARNING: Error reading runsheet: {str(e)}")
+    return None
+
+
+def main(osd_num, paired_end, assay_suffix, mode, runsheet=None):
 
     osd_num = osd_num.split('-')[1]
 
@@ -46,6 +59,15 @@ def main(osd_num, paired_end, assay_suffix, mode):
         multiqc_data.append(parse_inner_dist(assay_suffix))
 
     samples = set([s for ss in multiqc_data for s in ss])
+
+    # Order samples according to runsheet if provided
+    runsheet_order = get_runsheet_order(runsheet)
+    if runsheet_order:
+        ordered_samples = [s for s in runsheet_order if s in samples]
+        extra_samples = [s for s in samples if s not in runsheet_order]
+        samples = ordered_samples + extra_samples
+    else:
+        samples = sorted(samples)  # Fallback to alphabetical
 
     metadata = get_metadata(osd_num)
 
@@ -550,6 +572,7 @@ if __name__ == '__main__':
     parser.add_argument('--paired', action='store_true')
     parser.add_argument('--assay_suffix', default='_GLbulkRNAseq')
     parser.add_argument('--mode', default='default')
+    parser.add_argument('--runsheet', default=None)
     args = parser.parse_args()
 
-    main(args.osd_num, args.paired, args.assay_suffix, args.mode)
+    main(args.osd_num, args.paired, args.assay_suffix, args.mode, args.runsheet)
