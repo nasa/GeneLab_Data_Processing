@@ -282,8 +282,8 @@ workflow RNASEQ_MICROBES {
             ch_meta,
             isa_archive.ifEmpty(file("ISA.zip")),  // Use a placeholder if isa_archive is empty
             all_multiqc_output,
-            DGE_DESEQ2.out.norm_counts | map{ it -> it[1],
-            runsheet_path }
+            DGE_DESEQ2.out.norm_counts | map{ it -> it[1] },
+            runsheet_path
         )
 
         VV_RAW_READS(
