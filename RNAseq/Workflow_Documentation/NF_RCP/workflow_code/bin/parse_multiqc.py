@@ -27,6 +27,166 @@ def get_runsheet_order(runsheet_path):
     return None
 
 
+def generate_validation_report(fieldnames, populated_fields, mode, assay_suffix, paired_end):
+    """Generate a validation report showing which columns are missing data"""
+    
+    # Define field categories
+    metadata_fields = [
+        'osd_num', 'sample', 'organism', 'tissue', 'sequencing_instrument', 
+        'library_selection', 'library_layout', 'strandedness', 'read_depth', 
+        'read_length', 'rrna_contamination', 'rin', 'organism_part', 'cell_line', 
+        'cell_type', 'secondary_organism', 'strain', 'animal_source', 'seed_source', 
+        'source_accession', 'mix'
+    ]
+    
+    gene_count_fields = ['gene_detected_gt10', 'gene_total', 'gene_detected_gt10_pct']
+    
+    fastqc_raw_fields = [f for f in fieldnames if f.startswith('raw_')]
+    fastqc_trimmed_fields = [f for f in fieldnames if f.startswith('trimmed_')]
+    
+    # For single-end data, exclude _r fields from FastQC sections
+    if not paired_end:
+        fastqc_raw_fields = [f for f in fastqc_raw_fields if not f.endswith('_r')]
+        fastqc_trimmed_fields = [f for f in fastqc_trimmed_fields if not f.endswith('_r')]
+    
+    star_fields = [
+        'uniquely_mapped_percent', 'multimapped_percent', 'multimapped_toomany_percent',
+        'unmapped_tooshort_percent', 'unmapped_other_percent'
+    ]
+    
+    bowtie2_fields = [
+        'total_reads', 'overall_alignment_rate', 'aligned_none', 'aligned_one', 'aligned_multi'
+    ]
+    
+    featurecounts_fields = [
+        'total_count', 'num_assigned', 'pct_assigned', 'num_unassigned_nofeatures',
+        'num_unassigned_ambiguity', 'pct_unassigned_nofeatures', 'pct_unassigned_ambiguity'
+    ]
+    
+    rseqc_fields = [
+        'mean_genebody_cov_5_20', 'mean_genebody_cov_40_60', 'mean_genebody_cov_80_95',
+        'ratio_genebody_cov_3_to_5', 'pct_sense', 'pct_antisense', 'pct_undetermined',
+        'cds_exons_pct', '5_utr_exons_pct', '3_utr_exons_pct', 'introns_pct', 
+        'tss_up_1kb_pct', 'tss_up_1kb_5kb_pct', 'tss_up_5kb_10kb_pct', 'tes_down_1kb_pct', 
+        'tss_down_1kb_5kb_pct', 'tss_down_5kb_10kb_pct', 'other_intergenic_pct'
+    ]
+    
+    # Add inner distance fields only for paired-end data
+    if paired_end:
+        rseqc_fields.extend(['peak_inner_dist', 'peak_inner_dist_pct_reads'])
+    
+    rsem_fields = [
+        'num_uniquely_aligned', 'pct_uniquely_aligned', 'pct_multi_aligned',
+        'pct_filtered', 'pct_unalignable'
+    ]
+    
+    def get_missing_fields(field_list):
+        return [f for f in field_list if f in fieldnames and f not in populated_fields]
+    
+    report_filename = f'qc_validation{assay_suffix}.txt'
+    with open(report_filename, 'w') as f:
+        # Header
+        f.write("QC metrics validation report\n\n")
+        mode_display = "Microbes" if mode == 'microbes' else "Default"
+        data_type = "Paired end" if paired_end else "Single end"
+        f.write(f"Mode: {mode_display}\n")
+        f.write(f"Data type: {data_type}\n\n")
+        f.write("-" * 40 + "\n\n")
+        
+        # Calculate summary stats
+        missing_metadata_count = len([f for f in metadata_fields if f in fieldnames and f not in populated_fields])
+        total_metadata_count = len([f for f in metadata_fields if f in fieldnames])
+        
+        # Count expected MultiQC fields based on mode (excluding metadata)
+        expected_multiqc_fields = gene_count_fields + fastqc_raw_fields + fastqc_trimmed_fields + rseqc_fields
+        if mode == 'microbes':
+            expected_multiqc_fields += bowtie2_fields + featurecounts_fields
+        else:
+            expected_multiqc_fields += star_fields + rsem_fields
+        
+        missing_multiqc_count = len([f for f in expected_multiqc_fields if f in fieldnames and f not in populated_fields])
+        total_multiqc_count = len([f for f in expected_multiqc_fields if f in fieldnames])
+        
+        # Summary section
+        f.write("Summary:\n")
+        f.write(f"  * {missing_metadata_count}/{total_metadata_count} Metadata fields are empty\n")
+        f.write(f"  * {missing_multiqc_count}/{total_multiqc_count} expected MultiQC fields are empty\n\n")
+        
+        f.write("Categories missing entries:\n\n")
+        
+        # Metadata
+        missing_metadata = get_missing_fields(metadata_fields)
+        if missing_metadata:
+            f.write(" * Metadata:\n")
+            for field in missing_metadata:
+                f.write(f"  * {field}\n")
+            f.write("\n")
+        
+        # Gene count
+        missing_gene_count = get_missing_fields(gene_count_fields)
+        if missing_gene_count:
+            f.write(" * Gene Count:\n")
+            for field in missing_gene_count:
+                f.write(f"  * {field}\n")
+            f.write("\n")
+        
+        # FastQC Raw
+        missing_fastqc_raw = get_missing_fields(fastqc_raw_fields)
+        if missing_fastqc_raw:
+            f.write(" * FastQC Raw:\n")
+            for field in missing_fastqc_raw:
+                f.write(f"  * {field}\n")
+            f.write("\n")
+        
+        # FastQC Trimmed
+        missing_fastqc_trimmed = get_missing_fields(fastqc_trimmed_fields)
+        if missing_fastqc_trimmed:
+            f.write(" * FastQC Trimmed:\n")
+            for field in missing_fastqc_trimmed:
+                f.write(f"  * {field}\n")
+            f.write("\n")
+        
+        # Mode-specific sections
+        if mode == 'microbes':
+            # For microbes mode, check Bowtie2 and FeatureCounts (STAR/RSEM expected to be empty)
+            missing_bowtie2 = get_missing_fields(bowtie2_fields)
+            if missing_bowtie2:
+                f.write(" * Bowtie2 (Prokaryotes):\n")
+                for field in missing_bowtie2:
+                    f.write(f"  * {field}\n")
+                f.write("\n")
+            
+            missing_featurecounts = get_missing_fields(featurecounts_fields)
+            if missing_featurecounts:
+                f.write(" * FeatureCounts (Prokaryotes):\n")
+                for field in missing_featurecounts:
+                    f.write(f"  * {field}\n")
+                f.write("\n")
+        else:
+            # For eukaryotic mode, check STAR and RSEM (Bowtie2/FeatureCounts expected to be empty)
+            missing_star = get_missing_fields(star_fields)
+            if missing_star:
+                f.write(" * STAR (Eukaryotes):\n")
+                for field in missing_star:
+                    f.write(f"  * {field}\n")
+                f.write("\n")
+            
+            missing_rsem = get_missing_fields(rsem_fields)
+            if missing_rsem:
+                f.write(" * RSEM (Eukaryotes):\n")
+                for field in missing_rsem:
+                    f.write(f"  * {field}\n")
+                f.write("\n")
+        
+        # RSeQC (relevant for both modes)
+        missing_rseqc = get_missing_fields(rseqc_fields)
+        if missing_rseqc:
+            f.write(" * RSeQC:\n")
+            for field in missing_rseqc:
+                f.write(f"  * {field}\n")
+            f.write("\n")
+
+
 def main(osd_num, paired_end, assay_suffix, mode, runsheet=None):
 
     osd_num = osd_num.split('-')[1]
@@ -112,6 +272,10 @@ def main(osd_num, paired_end, assay_suffix, mode, runsheet=None):
     fieldnames_set = set(fieldnames)
 
     output_filename = f'qc_metrics{assay_suffix}.csv'
+    
+    # Track which fields have data for validation report
+    populated_fields = set()
+    
     with open(output_filename, mode='w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -125,13 +289,30 @@ def main(osd_num, paired_end, assay_suffix, mode, runsheet=None):
                         # Only keep fields that are in the fieldnames list
                         if k in fieldnames_set:
                             all_fields[k] = v
+                            if v is not None and v != '':  # Track populated fields
+                                populated_fields.add(k)
                         else:
                             # Optionally add debug output to see which fields are being skipped
                             # print(f"Skipping field not in fieldnames: {k}")
                             pass
             
-            # Write the row with filtered fields
+            # Track fields that are always populated
+            populated_fields.add('osd_num')
+            populated_fields.add('sample')
+            
+            # Track populated metadata fields
+            for k, v in metadata.items():
+                if v is not None and v != '':
+                    populated_fields.add(k)
+            
+            # Write rows with osd_num and sample fields
             writer.writerow({'osd_num': 'OSD-' + osd_num, 'sample': sample, **metadata, **all_fields})
+    
+    # Generate validation report
+    try:
+        generate_validation_report(fieldnames, populated_fields, mode, assay_suffix, paired_end)
+    except Exception as e:
+        print(f"WARNING: Failed to generate validation report: {str(e)}")
 
 
 def get_metadata(osd_num):
