@@ -187,9 +187,20 @@ def parse_fastqc(prefix, assay_suffix):
         with open(f'{prefix}_multiqc{assay_suffix}_data/multiqc_data.json') as f:
             j = json.loads(f.read())
 
+        # Find FastQC section by looking for FastQC-specific fields
+        fastqc_section = None
+        for section in j['report_general_stats_data']:
+            sample_data = next(iter(section.values()), {})
+            if 'total_sequences' in sample_data and 'percent_gc' in sample_data:
+                fastqc_section = section
+                break
+
+        if not fastqc_section:
+            return {}
+
         # Group the samples by base name for paired end data
         sample_groups = {}
-        for sample in j['report_general_stats_data'][-1].keys():
+        for sample in fastqc_section.keys():
             # Handle various naming patterns
             if ' Read 1' in sample:
                 base_name = sample.replace(' Read 1', '')
@@ -225,13 +236,13 @@ def parse_fastqc(prefix, assay_suffix):
             
             # Process forward read
             if reads['f']:
-                for k, v in j['report_general_stats_data'][0][reads['f']].items():
+                for k, v in fastqc_section[reads['f']].items(): 
                     if k != 'percent_fails':
                         data[base_name][prefix + '_' + k + '_f'] = v
                         
             # Process reverse read
             if reads['r']:
-                for k, v in j['report_general_stats_data'][0][reads['r']].items():
+                for k, v in fastqc_section[reads['r']].items(): 
                     if k != 'percent_fails':
                         data[base_name][prefix + '_' + k + '_r'] = v
 
