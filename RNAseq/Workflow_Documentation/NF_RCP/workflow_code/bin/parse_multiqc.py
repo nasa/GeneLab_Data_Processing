@@ -109,41 +109,41 @@ def generate_validation_report(fieldnames, populated_fields, mode, assay_suffix,
         
         # Summary section
         f.write("Summary:\n")
-        f.write(f"  * {missing_metadata_count}/{total_metadata_count} Metadata fields are empty\n")
-        f.write(f"  * {missing_multiqc_count}/{total_multiqc_count} expected MultiQC fields are empty\n\n")
+        f.write(f"* {missing_metadata_count}/{total_metadata_count} Metadata fields are empty\n")
+        f.write(f"* {missing_multiqc_count}/{total_multiqc_count} expected MultiQC fields are empty\n\n")
         
         f.write("Categories missing entries:\n\n")
         
         # Metadata
         missing_metadata = get_missing_fields(metadata_fields)
         if missing_metadata:
-            f.write(" * Metadata:\n")
+            f.write("* Metadata:\n")
             for field in missing_metadata:
-                f.write(f"  * {field}\n")
+                f.write(f"** {field}\n")
             f.write("\n")
         
         # Gene count
         missing_gene_count = get_missing_fields(gene_count_fields)
         if missing_gene_count:
-            f.write(" * Gene Count:\n")
+            f.write("* Gene Count:\n")
             for field in missing_gene_count:
-                f.write(f"  * {field}\n")
+                f.write(f"** {field}\n")
             f.write("\n")
         
         # FastQC Raw
         missing_fastqc_raw = get_missing_fields(fastqc_raw_fields)
         if missing_fastqc_raw:
-            f.write(" * FastQC Raw:\n")
+            f.write("* FastQC Raw:\n")
             for field in missing_fastqc_raw:
-                f.write(f"  * {field}\n")
+                f.write(f"** {field}\n")
             f.write("\n")
         
         # FastQC Trimmed
         missing_fastqc_trimmed = get_missing_fields(fastqc_trimmed_fields)
         if missing_fastqc_trimmed:
-            f.write(" * FastQC Trimmed:\n")
+            f.write("* FastQC Trimmed:\n")
             for field in missing_fastqc_trimmed:
-                f.write(f"  * {field}\n")
+                f.write(f"** {field}\n")
             f.write("\n")
         
         # Mode-specific sections
@@ -151,39 +151,39 @@ def generate_validation_report(fieldnames, populated_fields, mode, assay_suffix,
             # For microbes mode, check Bowtie2 and FeatureCounts (STAR/RSEM expected to be empty)
             missing_bowtie2 = get_missing_fields(bowtie2_fields)
             if missing_bowtie2:
-                f.write(" * Bowtie2 (Prokaryotes):\n")
+                f.write("* Bowtie2 (Prokaryotes):\n")
                 for field in missing_bowtie2:
-                    f.write(f"  * {field}\n")
+                    f.write(f"** {field}\n")
                 f.write("\n")
             
             missing_featurecounts = get_missing_fields(featurecounts_fields)
             if missing_featurecounts:
-                f.write(" * FeatureCounts (Prokaryotes):\n")
+                f.write("* FeatureCounts (Prokaryotes):\n")
                 for field in missing_featurecounts:
-                    f.write(f"  * {field}\n")
+                    f.write(f"** {field}\n")
                 f.write("\n")
         else:
             # For eukaryotic mode, check STAR and RSEM (Bowtie2/FeatureCounts expected to be empty)
             missing_star = get_missing_fields(star_fields)
             if missing_star:
-                f.write(" * STAR (Eukaryotes):\n")
+                f.write("* STAR (Eukaryotes):\n")
                 for field in missing_star:
-                    f.write(f"  * {field}\n")
+                    f.write(f"** {field}\n")
                 f.write("\n")
             
             missing_rsem = get_missing_fields(rsem_fields)
             if missing_rsem:
-                f.write(" * RSEM (Eukaryotes):\n")
+                f.write("* RSEM (Eukaryotes):\n")
                 for field in missing_rsem:
-                    f.write(f"  * {field}\n")
+                    f.write(f"** {field}\n")
                 f.write("\n")
         
         # RSeQC (relevant for both modes)
         missing_rseqc = get_missing_fields(rseqc_fields)
         if missing_rseqc:
-            f.write(" * RSeQC:\n")
+            f.write("* RSeQC:\n")
             for field in missing_rseqc:
-                f.write(f"  * {field}\n")
+                f.write(f"** {field}\n")
             f.write("\n")
 
 
