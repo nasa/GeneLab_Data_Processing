@@ -281,7 +281,8 @@ workflow RNASEQ {
             ch_meta,
             isa_archive.ifEmpty(file("ISA.zip")),  // Use a placeholder if isa_archive is empty
             all_multiqc_output,
-            QUANTIFY_RSEM_GENES.out.publishables
+            QUANTIFY_RSEM_GENES.out.publishables,
+            runsheet_path
         )
 
         VV_RAW_READS(
