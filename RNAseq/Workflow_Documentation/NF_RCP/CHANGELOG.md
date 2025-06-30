@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed trimming metrics extraction in `parse_multiqc.py` script 
+- Fixed fastqc metrics extraction in `parse_multiqc.py` script 
+  - Added qc file validation output listing missing entries
+  - Updated multiqc parsing for fastqc metrics
 
 ## [2.0.0](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_RCP_2.0.0/RNAseq/Workflow_Documentation/NF_RCP) - 2025-04-10
 
