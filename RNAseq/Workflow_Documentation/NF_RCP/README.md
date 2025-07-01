@@ -354,6 +354,11 @@ The outputs from the Analysis Staging and V&V Pipeline Subworkflows are describe
        - processing_info/nextflow_log_GLbulkRNAseq.txt (Nextflow execution logs captured via `nextflow log`)
        - processing_info/nextflow_run_command_GLbulkRNAseq.txt (Exact command line used to initiate the workflow)
 
+**QC metrics summary**
+
+  - Output:
+    - GeneLab/qc_metrics_GLbulkRNAseq.csv (comma-separated text file listing a summary of qc metrics and metadata for the dataset)
+    - GeneLab/qc_validation_GLbulkRNAseq.txt (a validation report for qc_metrics generation that lists any missing entries in the qc_metrics file)
 <br>
 
 Standard Nextflow resource usage logs are also produced as follows:
