@@ -128,9 +128,9 @@ All files required for utilizing the NF_RCP GeneLab workflow for processing RNAs
 copy of latest NF_RCP version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
 
 ```bash
-wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/NF_RCP_2.0.0/NF_RCP_2.0.0.zip
+wget https://github.com/nasa/GeneLab_Data_Processing/releases/download/NF_RCP_2.0.1/NF_RCP_2.0.1.zip
 
-unzip NF_RCP_2.0.0.zip
+unzip NF_RCP_2.0.1.zip
 ```
 
 <br>
@@ -142,10 +142,10 @@ unzip NF_RCP_2.0.0.zip
 Although Nextflow can fetch Singularity images from a url, doing so may cause issues as detailed [here](https://github.com/nextflow-io/nextflow/issues/1210).
 
 To avoid this issue, run the following command to fetch the Singularity images prior to running the NF_RCP workflow:
-> Note: This command should be run in the location containing the `NF_RCP_2.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files) above. Depending on your network speed, fetching the images will take ~20 minutes. Approximately 8GB of RAM is needed to download and build the Singularity images.
+> Note: This command should be run in the location containing the `NF_RCP_2.0.1` directory that was downloaded in [step 2](#2-download-the-workflow-files) above. Depending on your network speed, fetching the images will take ~20 minutes. Approximately 8GB of RAM is needed to download and build the Singularity images.
 
 ```bash
-bash NF_RCP_2.0.0/bin/prepull_singularity.sh NF_RCP_2.0.0/config/software/by_docker_image.config
+bash NF_RCP_2.0.1/bin/prepull_singularity.sh NF_RCP_2.0.1/config/software/by_docker_image.config
 ```
 
 
@@ -161,7 +161,7 @@ export NXF_SINGULARITY_CACHEDIR=$(pwd)/singularity
 
 ### 4. Run the Workflow
 
-While in the location containing the `NF_RCP_2.0.0` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow.
+While in the location containing the `NF_RCP_2.0.1` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow.
 
 Both workflows automatically load reference files and organism-specific gene annotation files from the [GeneLab annotations table](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv). For organisms not listed in the table or to use alternative reference files, additional workflow parameters can be specified.
 
@@ -175,7 +175,7 @@ Both workflows automatically load reference files and organism-specific gene ann
 #### 4a. Approach 1: Run the workflow on a GeneLab RNAseq dataset with automatic retrieval of reference fasta and gtf files
 
 ```bash
-nextflow run NF_RCP_2.0.0/main.nf \ 
+nextflow run NF_RCP_2.0.1/main.nf \ 
    -profile singularity,local \
    --accession OSD-194 
 ```
@@ -187,7 +187,7 @@ nextflow run NF_RCP_2.0.0/main.nf \
 #### 4b. Approach 2: Run the workflow on a GeneLab RNAseq dataset with custom reference fasta and gtf files
 
 ```bash
-nextflow run NF_RCP_2.0.0/main.nf \ 
+nextflow run NF_RCP_2.0.1/main.nf \ 
    -profile singularity,local \
    --accession OSD-194 \
    --reference_version 112 \
@@ -205,7 +205,7 @@ nextflow run NF_RCP_2.0.0/main.nf \
 #### 4c. Approach 3: Run the workflow on a non-GeneLab dataset using a user-created runsheet with automatic retrieval of reference fasta and gtf files
 
 ```bash
-nextflow run NF_RCP_2.0.0/main.nf \ 
+nextflow run NF_RCP_2.0.1/main.nf \ 
    -profile singularity,local \
    --runsheet_path </path/to/runsheet> 
 ```
@@ -217,7 +217,7 @@ nextflow run NF_RCP_2.0.0/main.nf \
 #### 4d. Approach 4: Run the workflow on a non-GeneLab dataset using a user-created runsheet with custom reference fasta and gtf files
 
 ```bash
-nextflow run NF_RCP_2.0.0/main.nf \ 
+nextflow run NF_RCP_2.0.1/main.nf \ 
    -profile singularity \
    --accession OSD-194 \
    --reference_version 112 \
@@ -235,7 +235,7 @@ nextflow run NF_RCP_2.0.0/main.nf \
 
 #### Required Parameters For All Approaches:
 
-* `NF_RCP_2.0.0/main.nf` - Instructs Nextflow to run the NF_RCP workflow 
+* `NF_RCP_2.0.1/main.nf` - Instructs Nextflow to run the NF_RCP workflow 
 
 * `-profile` - Specifies the configuration profile(s) to load, `singularity` instructs Nextflow to setup and use singularity for all software called in the workflow; use `local` for local execution ([local.config](workflow_code/conf/local.config)) or `slurm` for SLURM cluster execution ([slurm.config](workflow_code/conf/slurm.config))
   > Note: The output directory will be named `GLDS-#` when using a OSD or GLDS accession as input, or `results` when running the workflow with only a runsheet as input.
@@ -313,7 +313,7 @@ nextflow run NF_RCP_2.0.0/main.nf \
 All parameters listed above and additional optional arguments for the RCP workflow, including debug related options that may not be immediately useful for most users, can be viewed by running the following command:
 
 ```bash
-nextflow run NF_RCP_2.0.0/main.nf --help
+nextflow run NF_RCP_2.0.1/main.nf --help
 ```
 
 See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details common to all nextflow workflows.
@@ -354,6 +354,10 @@ The outputs from the Analysis Staging and V&V Pipeline Subworkflows are describe
        - processing_info/nextflow_log_GLbulkRNAseq.txt (Nextflow execution logs captured via `nextflow log`)
        - processing_info/nextflow_run_command_GLbulkRNAseq.txt (Exact command line used to initiate the workflow)
 
+**QC metrics summary**
+
+  - Output:
+    - GeneLab/qc_metrics_GLbulkRNAseq.csv (comma-separated text file containing a summary of qc metrics and metadata for the dataset, see the [QC metrics README](./QC_metrics_README.md) for a complete list of field definitions)
 <br>
 
 Standard Nextflow resource usage logs are also produced as follows:
