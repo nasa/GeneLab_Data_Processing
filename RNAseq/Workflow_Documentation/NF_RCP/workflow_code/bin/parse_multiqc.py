@@ -68,7 +68,7 @@ def generate_validation_report(fieldnames, populated_fields, mode, assay_suffix,
         'ratio_genebody_cov_3_to_5', 'pct_sense', 'pct_antisense', 'pct_undetermined',
         'cds_exons_pct', '5_utr_exons_pct', '3_utr_exons_pct', 'introns_pct', 
         'tss_up_1kb_pct', 'tss_up_1kb_5kb_pct', 'tss_up_5kb_10kb_pct', 'tes_down_1kb_pct', 
-        'tss_down_1kb_5kb_pct', 'tss_down_5kb_10kb_pct', 'other_intergenic_pct'
+        'tes_down_1kb_5kb_pct', 'tes_down_5kb_10kb_pct', 'other_intergenic_pct'
     ]
     
     # Add inner distance fields only for paired-end data
@@ -262,7 +262,7 @@ def main(osd_num, paired_end, assay_suffix, mode, runsheet=None):
         'mean_genebody_cov_5_20', 'mean_genebody_cov_40_60', 'mean_genebody_cov_80_95', 'ratio_genebody_cov_3_to_5',
         'pct_sense', 'pct_antisense', 'pct_undetermined',
         'peak_inner_dist', 'peak_inner_dist_pct_reads',
-        'cds_exons_pct', '5_utr_exons_pct', '3_utr_exons_pct', 'introns_pct', 'tss_up_1kb_pct', 'tss_up_1kb_5kb_pct', 'tss_up_5kb_10kb_pct', 'tes_down_1kb_pct', 'tss_down_1kb_5kb_pct', 'tss_down_5kb_10kb_pct', 'other_intergenic_pct',
+        'cds_exons_pct', '5_utr_exons_pct', '3_utr_exons_pct', 'introns_pct', 'tss_up_1kb_pct', 'tss_up_1kb_5kb_pct', 'tss_up_5kb_10kb_pct', 'tes_down_1kb_pct', 'tes_down_1kb_5kb_pct', 'tes_down_5kb_10kb_pct', 'other_intergenic_pct',
 
         # RSEM
         'num_uniquely_aligned', 'pct_uniquely_aligned', 'pct_multi_aligned', 'pct_filtered', 'pct_unalignable'
@@ -653,8 +653,8 @@ def parse_read_dist(assay_suffix):
 
             data[sample]['tss_up_1kb_5kb_pct'] = read_data['tss_up_5kb_tag_pct'] - read_data['tss_up_1kb_tag_pct']
             data[sample]['tss_up_5kb_10kb_pct'] = read_data['tss_up_10kb_tag_pct'] - read_data['tss_up_5kb_tag_pct']
-            data[sample]['tss_down_1kb_5kb_pct'] = read_data['tes_down_5kb_tag_pct'] - read_data['tes_down_1kb_tag_pct']
-            data[sample]['tss_down_5kb_10kb_pct'] = read_data['tes_down_10kb_tag_pct'] - read_data['tes_down_5kb_tag_pct']
+            data[sample]['tes_down_1kb_5kb_pct'] = read_data['tes_down_5kb_tag_pct'] - read_data['tes_down_1kb_tag_pct']
+            data[sample]['tes_down_5kb_10kb_pct'] = read_data['tes_down_10kb_tag_pct'] - read_data['tes_down_5kb_tag_pct']
 
         data = {s.replace('_read_dist', ''):{k.replace('_tag', ''):v for k, v in d.items()} for s, d in data.items()}
 
