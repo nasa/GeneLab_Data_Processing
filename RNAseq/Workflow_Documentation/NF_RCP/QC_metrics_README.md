@@ -207,7 +207,7 @@ Summarizes the distribution of reads over genome features.
 | tss_up_1kb_5kb_pct        | float | percentage of reads aligned 1-5 kb upstream of a transcription start site  | 0.389163859 |
 | tss_up_5kb_10kb_pct       | float | percentage of reads aligned 5-10 kb upstream of a transcription start site | 0.116168783 |
 | tes_down_1kb_pct          | float | percentage of reads aligned 1 kb downstream of a transcription end site    | 0.276327172 |
-| tss_down_1kb_5kb_pct      | float | percentage of reads aligned 1-5 kb downstream of a transcription end site  | 0.419487364 |
-| tss_down_5kb_10kb_pct     | float | percentage of reads aligned 5-10 kb downstream of a transcription end site | 0.137565531 |
+| tes_down_1kb_5kb_pct      | float | percentage of reads aligned 1-5 kb downstream of a transcription end site  | 0.419487364 |
+| tes_down_5kb_10kb_pct     | float | percentage of reads aligned 5-10 kb downstream of a transcription end site | 0.137565531 |
 | other_intergenic_pct      | float | percentage of reads aligned to other intergenic regions                    | 4.160588723 |
 
