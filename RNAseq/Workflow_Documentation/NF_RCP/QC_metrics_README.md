@@ -31,15 +31,15 @@ List selected metadata fields for each sample
 | tissue                | sample table        | 'Material Type' listed in sample table (e.g. organ, tissue, cell culture, whole organism)                 | "Cells, cultured", "thymus"              |
 | sequencing_instrument | assay table         | Sequencer used to sequence the samples                                                                    | "Illumina NovaSeq 6000"                  |
 | library_selection     | assay table         | Biomolecule selection (rRNA depletion, mRNA enrichment, target amplification)                             | "Ribo-depletion", "polyA enrichment"     |
-| library_layout        | assay table         | RNA library construction parameter indicating whether the library was sequenced single- or paired-end.    | "SINGLE", "PAIRED"                       |
+| library_layout        | assay table         | RNA library construction parameter indicating whether the library was sequenced single- or paired-end     | "SINGLE", "PAIRED"                       |
 | strandedness          | assay table         | RNAseq library construction parameter indicating whether the library preserves the transcript orientation | "STRANDED", "UNSTRANDED"                 |
 | read_depth            | assay table         | Total number of sequenced fragments                                                                       | 82186286                                 |
 | read_length           | assay table         | Raw data read length in bases                                                                             | 151                                      |
 | rrna_contamination    | assay table         | Percent rRNA found in the data                                                                            | 2.74                                     |
 | rin                   | assay table         | RNA integrity number                                                                                      | 7.4                                      |
-| organism_part         | sample table        | For plant samples, the part of the plant from which the sample was derived.                               | "Plant Roots"                            |
+| organism_part         | sample table        | For plant samples, the part of the plant from which the sample was derived                                | "Plant Roots"                            |
 | cell_line             | sample table        | Cell line identifier                                                                                      | "IMR90 hiPSC"                            |
-| cell_type             | sample table        | The morphological or functional form of the cells used.                                                   | "Myocytes, Cardiac"                      |
+| cell_type             | sample table        | The type of cell(s) used in the study                                                                     | "Myocytes, Cardiac"                      |
 | secondary_organism    | sample table        | Additional organism(s) which may confound assay measurements (e.g. food source, host, symbiote)           | "Vibrio fischeri ES114"                  |
 | strain                | sample table        | Strain, breed, ecotype, etc.                                                                              | "C57BL/6J"                               |
 | animal_source         | sample table        | The source of the animal(s) used in the study                                                             | "Jackson Laboratory"                     |
@@ -68,11 +68,11 @@ lists each metric only once.
 | quality_score_median   | float | Median quality score                                                                                              | 35.61967608 |
 | percent_duplicates     | float | Percentage estimated sequence duplication, measured based on first 50bp of the first 100,000 reads in the dataset | 67.01577646 |
 | percent_gc             | float | Overall %GC of all bases in all sequences for this read type                                                      | 48          |
-| gc_min_1pct            | int   | Minimum %GC value reached by at least 1% of the total reads of this read type                                     | 31          |
-| gc_max_1pct            | int   | Maximum %GC value reached by at least 1% of the total reads of this read type                                     | 65          |
-| gc_auc_25pct           | int   | %GC value at the 25 quartile of total reads of this read                                                          | 42          |
-| gc_auc_50pct           | int   | %GC value at the 50th quartile of total reads of this read type                                                   | 49          |
-| gc_auc_75pct           | int   | %GC value at the 75th quartile of total reads of this read type                                                   | 57          |
+| gc_min_1pct            | int   | Minimum %GC value reached by at least 1% of the total reads for this read type                                     | 31          |
+| gc_max_1pct            | int   | Maximum %GC value reached by at least 1% of the total reads for this read type                                     | 65          |
+| gc_auc_25pct           | int   | %GC value at the 25th quartile of total reads for this read type                                                          | 42          |
+| gc_auc_50pct           | int   | %GC value at the 50th quartile of total reads for this read type                                                   | 49          |
+| gc_auc_75pct           | int   | %GC value at the 75th quartile of total reads for this read type                                                   | 57          |
 | n_content_sum          | float | %N base calls summed across all base positions in the read for this read type                                     | 1.510487284 |
 
 <br>
@@ -88,11 +88,11 @@ Alignment metrics generated by STAR.
 
 | Column Name                 | Type  | Description                                                                         | Example |
 |:----------------------------|:------|:------------------------------------------------------------------------------------|:--------|
-| uniquely_mapped_percent     | float | Percent of reads mapped uniquely in the genome                                      | 79.95   |
-| multimapped_percent         | float | Percent of reads mapped to multiple loci in the genome                              | 13.14   |
-| multimapped_toomany_percent | float | Percent of reads mapped to 20 or more loci in the genome                            | 0.13	  |
-| unmapped_tooshort_percent   | float | Percent of reads where the best alignment is shorter than the allowed mapped length | 6.53	  |  
-| unmapped_other_percent      | float | Percent of reads that couldn't be mapped at all                                     | 0.25    |  
+| uniquely_mapped_percent     | float | Percent of reads (or fragments) mapped uniquely in the genome                       | 79.95   |
+| multimapped_percent         | float | Percent of reads (or fragments) mapped to multiple loci in the genome               | 13.14   |
+| multimapped_toomany_percent | float | Percent of reads (or fragments) mapped to 20 or more loci in the genome             | 0.13	  |
+| unmapped_tooshort_percent   | float | Percent of reads (or fragments) where the best alignment is shorter than the allowed mapped length | 6.53	  |  
+| unmapped_other_percent      | float | Percent of reads (or fragments) that couldn't be mapped at all                      | 0.25    |  
 
 #### Bowtie2 alignment metrics 
 *Source: bowtie2 MultiQC*   
@@ -121,8 +121,8 @@ Summarizes the data in the Unnormalized_Counts_GLbulkRNASeq.csv files.
 | Column Name            | Type  | Description                                       | Example    |
 |:-----------------------|:------|:--------------------------------------------------|:-----------|
 | gene_total             | int   | total number of genes detected                    | 57186      |
-| gene_detected_gt10     | int   | number of genes detected with > 10 read depth     | 19207      |
-| gene_detected_gt10_pct | float | percentage of genes detected with > 10 read depth | 33.5868919 |
+| gene_detected_gt10     | int   | number of genes detected with > 10 counts         | 19207      |
+| gene_detected_gt10_pct | float | percentage of genes detected with > 10 counts     | 33.5868919 |
 
 
 #### RSEM gene count metrics
@@ -132,11 +132,11 @@ Summarizes the alignment rates generated by RSEM during gene expression estimati
 
 | Column Name            | Type  | Description                                             | Example     |
 |:-----------------------|:------|:--------------------------------------------------------|:------------|
-| num_uniquely_aligned   | int   | number of reads aligned uniquely to a gene              | 41152050    |
-| pct_uniquely_aligned   | float | percentage of reads aligned unique to a gene            | 74.48868329 |
-| pct_multi_aligned      | float | percentage of reads aligned to multiple genes           | 15.27982918 |
-| pct_filtered           | float | percentage of reads filtered due to too many alignments | 0           |
-| pct_unalignable        | float | percentage of reads unalignable to any gene             | 10.23148753 |
+| num_uniquely_aligned   | int   | number of reads (or fragments) aligned uniquely to a gene              | 41152050    |
+| pct_uniquely_aligned   | float | percentage of reads (or fragments) aligned uniquely to a gene          | 74.48868329 |
+| pct_multi_aligned      | float | percentage of reads (or fragments) aligned to multiple genes           | 15.27982918 |
+| pct_filtered           | float | percentage of reads (or fragments) filtered due to too many alignments | 0           |
+| pct_unalignable        | float | percentage of reads (or fragments) unalignable to any gene             | 10.23148753 |
 
 #### FeatureCounts gene count metrics
 *Source: FeatureCounts MultiQC*  
@@ -166,9 +166,9 @@ there is any 5' or 3' bias.
 
 | Column Name               | Type  | Description                                                                          | Example     |
 |:--------------------------|:------|:-------------------------------------------------------------------------------------|:------------|
-| mean_genebody_cov_5_20    | float | average read coverage between the 5th and 20th gene body percentile from the 5' end         | 70.60419705 |
-| mean_genebody_cov_40_60   | float | average read coverage between the 40th and 60th gene body percentile from the 5' end        | 99.38086546 |
-| mean_genebody_cov_80_95   | float | average read coverage between the 80th and 95th gene body percentile from the 5' end        | 87.1712315  |
+| mean_genebody_cov_5_20    | float | average read (or fragment) coverage between the 5th and 20th gene body percentile from the 5' end         | 70.60419705 |
+| mean_genebody_cov_40_60   | float | average read (or fragment) coverage between the 40th and 60th gene body percentile from the 5' end        | 99.38086546 |
+| mean_genebody_cov_80_95   | float | average read (or fragment) coverage between the 80th and 95th gene body percentile from the 5' end        | 87.1712315  |
 | ratio_genebody_cov_3_to_5 | float | ratio of the 3' (mean_genebody_cov_80_95) to 5' (mean_genebody_cov_5_20) gene body coverage | 1.234646595 |
 
 #### Infer experiment metrics
@@ -178,9 +178,9 @@ transcripts. Can be used to infer whether the RNAseq library prep was stranded o
 
 | Column Name               | Type  | Description                                                  | Example |
 |:--------------------------|:------|:-------------------------------------------------------------|:--------|
-| pct_sense                 | float | percentage of reads aligned to the sense strand              | 91.16   |
-| pct_antisense             | float | percentage of reads aligned to the antisense strand          | 1.76    |
-| pct_undetermined          | float | percentage of reads where the strand could not be determined | 7.08    |
+| pct_sense                 | float | percentage of reads (or fragments) aligned to the sense strand              | 91.16   |
+| pct_antisense             | float | percentage of reads (or fragments) aligned to the antisense strand          | 1.76    |
+| pct_undetermined          | float | percentage of reads (or fragments) where the strand alignment could not be determined | 7.08    |
 
 #### Inner distance metrics
 *Source: RSeQC Inner Distance MultiQC*  
@@ -190,7 +190,7 @@ negative if the two reads overlap.
 
 | Column Name               | Type  | Description                                         | Example     |
 |:--------------------------|:------|:----------------------------------------------------|:------------|
-| peak_inner_dist           | float | The inner distance at the peak of the distribution  | -123.5      |
+| peak_inner_dist           | float | The inner distance (distance between the 3' end of the forward mapped read and the 5' end of the reverse mapped read) at the peak of the distribution, a negative value indicates overlapping reads  | -123.5      |
 | peak_inner_dist_pct_reads | float | percentage of reads at the peak of the distribution | 5.112384053 |
 
 #### Read distribution metrics
@@ -199,15 +199,15 @@ Summarizes the distribution of reads over genome features.
 
 | Column Name               | Type  | Description                                                                | Example.    |
 |:--------------------------|:------|:---------------------------------------------------------------------------|:------------|
-| cds_exons_pct             | float | percentage of reads aligned to CDS exons                                   | 43.5637117  |
-| 5_utr_exons_pct           | float | percentage of reads aligned to 5' UTRs                                     | 8.886329966 |
-| 3_utr_exons_pct           | float | percentage of reads aligned to 3' UTRs                                     | 21.41150152 |
-| introns_pct               | float | percentage of reads aligned to introns                                     | 20.55254242 |
-| tss_up_1kb_pct            | float | percentage of reads aligned 1 kb upstream of a transcription start site    | 0.086612962 |
-| tss_up_1kb_5kb_pct        | float | percentage of reads aligned 1-5 kb upstream of a transcription start site  | 0.389163859 |
-| tss_up_5kb_10kb_pct       | float | percentage of reads aligned 5-10 kb upstream of a transcription start site | 0.116168783 |
-| tes_down_1kb_pct          | float | percentage of reads aligned 1 kb downstream of a transcription end site    | 0.276327172 |
-| tes_down_1kb_5kb_pct      | float | percentage of reads aligned 1-5 kb downstream of a transcription end site  | 0.419487364 |
-| tes_down_5kb_10kb_pct     | float | percentage of reads aligned 5-10 kb downstream of a transcription end site | 0.137565531 |
-| other_intergenic_pct      | float | percentage of reads aligned to other intergenic regions                    | 4.160588723 |
+| cds_exons_pct             | float | percentage of reads (or fragments) aligned to CDS exons                                   | 43.5637117  |
+| 5_utr_exons_pct           | float | percentage of reads (or fragments) aligned to 5' UTRs                                     | 8.886329966 |
+| 3_utr_exons_pct           | float | percentage of reads (or fragments) aligned to 3' UTRs                                     | 21.41150152 |
+| introns_pct               | float | percentage of reads (or fragments) aligned to introns                                     | 20.55254242 |
+| tss_up_1kb_pct            | float | percentage of reads (or fragments) aligned 1 kb upstream of a transcription start site    | 0.086612962 |
+| tss_up_1kb_5kb_pct        | float | percentage of reads (or fragments) aligned 1-5 kb upstream of a transcription start site  | 0.389163859 |
+| tss_up_5kb_10kb_pct       | float | percentage of reads (or fragments) aligned 5-10 kb upstream of a transcription start site | 0.116168783 |
+| tes_down_1kb_pct          | float | percentage of reads (or fragments) aligned 1 kb downstream of a transcription end site    | 0.276327172 |
+| tes_down_1kb_5kb_pct      | float | percentage of reads (or fragments) aligned 1-5 kb downstream of a transcription end site  | 0.419487364 |
+| tes_down_5kb_10kb_pct     | float | percentage of reads (or fragments) aligned 5-10 kb downstream of a transcription end site | 0.137565531 |
+| other_intergenic_pct      | float | percentage of reads (or fragments) aligned to other intergenic regions                    | 4.160588723 |
 
