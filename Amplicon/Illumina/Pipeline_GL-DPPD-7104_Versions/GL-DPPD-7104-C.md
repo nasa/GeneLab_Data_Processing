@@ -1533,6 +1533,7 @@ message(glue("There are {sum(is.na(taxonomy_table$domain))} features without
            taxonomy assignments. Dropping them..."))
 
 # Dropping features that couldn't be assigned taxonomy
+# For beta and alpha diversity only, unassigned ASVs are not dropped in DA analyses
 taxonomy_table <- taxonomy_table[-which(is.na(taxonomy_table$domain)),]
 
 # Handle case where no domain was assigned but a phylum was.
@@ -2437,7 +2438,7 @@ ps <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
 tse <-  mia::makeTreeSummarizedExperimentFromPhyloseq(ps)
 
 # Get unique group comparison as a matrix
-pairwise_comp.m <- utils::combn(metadata[, groups_colname] %>% unique, 2)
+pairwise_comp.m <- utils::combn((metadata[,group] %>% unique %>% sort), 2)
 pairwise_comp_df <- pairwise_comp.m %>% as.data.frame 
 # Name the columns in the pairwise matrix as group1vgroup2
 colnames(pairwise_comp_df) <- map_chr(pairwise_comp_df,
@@ -2446,9 +2447,14 @@ comparisons <- colnames(pairwise_comp_df)
 names(comparisons) <- comparisons
 
 # Write out contrasts table
-write_csv(x = pairwise_comp_df,
-          file = glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"),
-          col_names = FALSE)
+comparison_names <- paste0("(", pairwise_comp_df[2,], ")v(", pairwise_comp_df[1,], ")")
+contrasts_df <- data.frame(row_index = c("1", "2"))
+for(i in seq_along(comparison_names)) {
+  contrasts_df[[comparison_names[i]]] <- c(pairwise_comp_df[2,i], pairwise_comp_df[1,i])
+}
+colnames(contrasts_df)[1] <- ""
+write_csv(x = contrasts_df,
+          file =  glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"))
 
 # ---------------------- Run ANCOMBC 1 ---------------------------------- #
 set.seed(123)
@@ -2484,7 +2490,7 @@ final_results_bc1 <- map(pairwise_comp_df, function(col){
       select(-contains("Intercept")) %>% 
       set_names(
         c("taxon",
-          glue("lnFC_({group2})v({group1})"))
+          glue("Lnfc_({group2})v({group1})"))
       )
     
     # SE
@@ -2493,7 +2499,7 @@ final_results_bc1 <- map(pairwise_comp_df, function(col){
       select(-contains("Intercept")) %>%
       set_names(
         c("taxon",
-          glue("lnfcSE_({group2})v({group1})"))
+          glue("Lnfc.SE_({group2})v({group1})"))
       )
     
     # W    
@@ -2502,7 +2508,7 @@ final_results_bc1 <- map(pairwise_comp_df, function(col){
       select(-contains("Intercept")) %>%
       set_names(
         c("taxon",
-          glue("Wstat_({group2})v({group1})"))
+          glue("Stat_({group2})v({group1})"))
       )
     
     # p_val
@@ -2511,7 +2517,7 @@ final_results_bc1 <- map(pairwise_comp_df, function(col){
       select(-contains("Intercept")) %>%
       set_names(
         c("taxon",
-          glue("pvalue_({group2})v({group1})"))
+          glue("P.value_({group2})v({group1})"))
       )
     
     # q_val
@@ -2520,7 +2526,7 @@ final_results_bc1 <- map(pairwise_comp_df, function(col){
       select(-contains("Intercept")) %>% 
       set_names(
         c("taxon",
-          glue("qvalue_({group2})v({group1})"))
+          glue("Q.value_({group2})v({group1})"))
       )
     
     # Diff_abn
@@ -2529,7 +2535,7 @@ final_results_bc1 <- map(pairwise_comp_df, function(col){
       select(-contains("Intercept")) %>%
       set_names(
         c("taxon",
-          glue("diff_({group2})v({group1})"))
+          glue("Diff_({group2})v({group1})"))
       )
     
     # Merge the dataframes to one results dataframe
@@ -2592,21 +2598,21 @@ merged_stats_df <- merged_stats_df %>%
 # suffixes as comparison names, we only need to extract the comparion names
 # from one of them. Here we extract them from the "lnFC" prefixed columns
 comp_names <- merged_stats_df %>% 
-  select(starts_with("lnFC_", ignore.case = FALSE)) %>%
-  colnames() %>% str_remove_all("lnFC_")
+  select(starts_with("Lnfc_", ignore.case = FALSE)) %>%
+  colnames() %>% str_remove_all("Lnfc_")
 names(comp_names) <- comp_names
 
 # -------------- Make volcano plots ------------------ #
 volcano_plots <- map(comp_names, function(comparison){
   
   # Construct column names for columns to be selected
-  comp_col <- c(
-    glue("lnFC_{comparison}"),
-    glue("lnfcSE_{comparison}"),
-    glue("Wstat_{comparison}"),
-    glue("pvalue_{comparison}"),
-    glue("qvalue_{comparison}"),
-    glue("diff_{comparison}")
+  comp_col  <- c(
+    glue("Lnfc_{comparison}"),
+    glue("Lnfc.SE_{comparison}"),
+    glue("Stat_{comparison}"),
+    glue("P.value_{comparison}"),
+    glue("Q.value_{comparison}"),
+    glue("Diff_{comparison}")
   )
 
   sub_res_df <- merged_stats_df %>% 
@@ -2640,8 +2646,8 @@ volcano_plots <- map(comp_names, function(comparison){
   }
 
   # Make plot
-  p <- ggplot(sub_res_df %>% mutate(diff = qvalue <= p_val), 
-              aes(x=lnFC, y=-log10(qvalue), 
+  p <- ggplot(sub_res_df %>% mutate(diff = Q.value <= p_val), 
+              aes(x=Lnfc, y=-log10(Q.value), 
                   color=diff, label=!!sym(feature))) +
     geom_point(alpha=0.7, size=2) +
     scale_color_manual(values=c("TRUE"="red", "FALSE"="black"),
@@ -2649,7 +2655,7 @@ volcano_plots <- map(comp_names, function(comparison){
                                 paste0("qval \u2264 ", p_val))) +
     geom_hline(yintercept = -log10(p_val), linetype = "dashed") +
     ggrepel::geom_text_repel(show.legend = FALSE) +
-    expandy(-log10(sub_res_df$qvalue)) + # Expand plot y-limit
+    expandy(-log10(sub_res_df$Q.value)) + # Expand plot y-limit
     coord_cartesian(clip = 'off') +
     scale_y_continuous(oob = scales::oob_squish_infinite) + # prevent clipping of infinite values
     labs(x= x_label, y="-log10(Q-value)", 
@@ -2678,10 +2684,15 @@ df <- data.frame(ASV=rownames(taxonomy_table), best_taxonomy=tax_names)
 colnames(df) <- c(feature, "best_taxonomy")
 
 # Pull NCBI IDS for unique taxonomy names
-df2 <- data.frame(best_taxonomy = df$best_taxonomy %>%
-                    unique()) %>%
+# Filter out unannotated entries before querying NCBI
+valid_taxonomy <- df$best_taxonomy %>% unique() %>% setdiff("_")
+df2_valid <- data.frame(best_taxonomy = valid_taxonomy) %>%
   mutate(NCBI_id=get_ncbi_ids(best_taxonomy, target_region),
          .after = best_taxonomy)
+
+# Add unannotated entries with NA NCBI_id
+df2_invalid <- data.frame(best_taxonomy = "_", NCBI_id = NA)
+df2 <- rbind(df2_valid, df2_invalid)
 
 df <- df %>%
   left_join(df2, join_by("best_taxonomy")) %>% 
@@ -2742,9 +2753,9 @@ normalized_table <- normalized_table %>%
 # Compute globally/ASV normalized means and standard deviations 
 All_mean_sd <- normalized_table %>%
   rowwise() %>%
-  mutate(All.Mean=mean(c_across(where(is.numeric)), na.rm = TRUE),
-         All.Stdev=sd(c_across(where(is.numeric)), na.rm = TRUE) ) %>%
-  select(!!feature, All.Mean, All.Stdev)
+  mutate(All.mean=mean(c_across(where(is.numeric)), na.rm = TRUE),
+         All.stdev=sd(c_across(where(is.numeric)), na.rm = TRUE) ) %>% 
+  select(!!feature, All.mean, All.stdev)
 
 # Merge the taxonomy table to the stats table
 merged_df <- df %>%
@@ -2767,7 +2778,7 @@ output_file <- glue("{diff_abund_out_dir}/{output_prefix}ancombc1_differential_a
 # Write combined table to file but before that drop
 # all columns of inferred differential abundance by ANCOMBC 
 write_csv(merged_df %>%
-            select(-starts_with("diff_")),
+            select(-starts_with("Diff_")),
           output_file)
 
 ```
@@ -2821,11 +2832,11 @@ write_csv(merged_df %>%
   - NCBI identifier for the best taxonomic assignment for each ASV 
   - Normalized abundance values for each ASV for each sample
   - For each pairwise group comparison:
-    - natural log of the fold change (lnFC)
-    - standard error for the lnFC (lnfcSE)
-    - test statistic from the primary result (Wstat)
-    - P-value (pvalue)
-    - Adjusted p-value (qvalue)
+    - natural log of the fold change (Lnfc)
+    - standard error for the lnFC (Lnfc.SE)
+    - test statistic from the primary result (Stat)
+    - P-value (P.value)
+    - Adjusted p-value (Q.value)
   - All.mean (mean across all samples)
   - All.stdev (standard deviation across all samples) 
   - For each group:
@@ -2908,17 +2919,17 @@ tryCatch({
       # Extract group name from the first group-specific column
       group_name <- str_replace(group_cols[1], paste0("^[a-zA-Z_]+_", group), "")
       # Create comparison name
-      comparison_name <- glue("({ref_group})v({group_name})")
+      comparison_name <- glue("({group_name})v({ref_group})")
       
       new_colnames <- c(
         feature,  # Keep the feature column name
-        glue("lnFC_{comparison_name}"),
-        glue("lnfcSE_{comparison_name}"),
-        glue("Wstat_{comparison_name}"),
-        glue("pvalue_{comparison_name}"),
-        glue("qvalue_{comparison_name}"),
-        glue("diff_{comparison_name}"),
-        glue("passed_ss_{comparison_name}")
+        glue("Lnfc_{comparison_name}"),
+        glue("Lnfc.SE_{comparison_name}"),
+        glue("Stat_{comparison_name}"),
+        glue("P.value_{comparison_name}"),
+        glue("Q.value_{comparison_name}"),
+        glue("Diff_{comparison_name}"),
+        glue("Passed_ss_{comparison_name}")
       )
     } else {
       stop("Could not identify group-specific column for 2-group comparison")
@@ -2932,11 +2943,13 @@ tryCatch({
                                 str_replace_all(string=colname, 
                                                 pattern=glue("(.+)_{group}(.+)"),
                                                 replacement=glue("\\1_(\\2)v({ref_group})")) %>% 
-                                str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
-                                str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
-                                str_replace(pattern = "^W_", replacement = "Wstat_") %>%
-                                str_replace(pattern = "^p_", replacement = "pvalue_") %>%
-                                str_replace(pattern = "^q_", replacement = "qvalue_")
+                                str_replace(pattern = "^lfc_", replacement = "Lnfc_") %>% 
+                                str_replace(pattern = "^se_", replacement = "Lnfc.SE_") %>% 
+                                str_replace(pattern = "^W_", replacement = "Stat_") %>%
+                                str_replace(pattern = "^p_", replacement = "P.value_") %>%
+                                str_replace(pattern = "^q_", replacement = "Q.value_") %>%
+                                str_replace(pattern = "^diff_", replacement = "Diff_") %>%
+                                str_replace(pattern = "^passed_ss_", replacement = "Passed_ss_")
                                 
                               # Columns with normal two groups comparison
                               } else if(str_count(colname,group) == 2){
@@ -2944,11 +2957,13 @@ tryCatch({
                                 str_replace_all(string=colname, 
                                                 pattern=glue("(.+)_{group}(.+)_{group}(.+)"),
                                                 replacement=glue("\\1_(\\2)v(\\3)")) %>% 
-                                str_replace(pattern = "^lfc_", replacement = "lnFC_") %>% 
-                                str_replace(pattern = "^se_", replacement = "lnfcSE_") %>% 
-                                str_replace(pattern = "^W_", replacement = "Wstat_") %>%
-                                str_replace(pattern = "^p_", replacement = "pvalue_") %>%
-                                str_replace(pattern = "^q_", replacement = "qvalue_")
+                                str_replace(pattern = "^lfc_", replacement = "Lnfc_") %>% 
+                                str_replace(pattern = "^se_", replacement = "Lnfc.SE_") %>% 
+                                str_replace(pattern = "^W_", replacement = "Stat_") %>%
+                                str_replace(pattern = "^p_", replacement = "P.value_") %>%
+                                str_replace(pattern = "^q_", replacement = "Q.value_") %>%
+                                str_replace(pattern = "^diff_", replacement = "Diff_") %>%
+                                str_replace(pattern = "^passed_ss_", replacement = "Passed_ss_")
                                 
                                 # Feature/ ASV column 
                               } else{
@@ -2994,13 +3009,17 @@ uniq_comps <- str_replace_all(new_colnames, ".+_(\\(.+\\))", "\\1") %>% unique()
 uniq_comps <- uniq_comps[-match(feature, uniq_comps)]
 
 # Write out contrasts table
-uniq_comps %>%
-  str_replace_all("\\((.+)\\)v\\((.+)\\)", "\\1.vs.\\2") %>% 
-  str_split(".vs.") %>% 
-  map(.f = function(comparison) data.frame(comparison)) %>% 
-  list_cbind() %>% 
-  write_csv(file = glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"),
-            col_names = FALSE)
+contrasts_df <- data.frame(row_index = c("1", "2"))
+for(i in seq_along(uniq_comps)) {
+  groups_vec <- uniq_comps[i] %>%
+    str_replace_all("\\)v\\(", ").vs.(") %>% 
+    str_remove_all("\\(|\\)") %>%
+    str_split(".vs.") %>% unlist
+  contrasts_df[[uniq_comps[i]]] <- c(groups_vec[1], groups_vec[2])
+}
+colnames(contrasts_df)[1] <- ""
+write_csv(x = contrasts_df,
+          file = glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"))
 
 # ------ Sort columns by group comparisons --------#
 # Create a data frame containing only the feature/ASV column
@@ -3026,10 +3045,15 @@ colnames(df) <- c(feature, "best_taxonomy")
 
 # Querying NCBI...
 # Pull NCBI IDS for unique taxonomy names
-df2 <- data.frame(best_taxonomy = df$best_taxonomy %>%
-                    unique()) %>%
+# Filter out unannotated entries before querying NCBI
+valid_taxonomy <- df$best_taxonomy %>% unique() %>% setdiff("_")
+df2_valid <- data.frame(best_taxonomy = valid_taxonomy) %>%
   mutate(NCBI_id=get_ncbi_ids(best_taxonomy, target_region),
          .after = best_taxonomy)
+
+# Add unannotated entries with NA NCBI_id
+df2_invalid <- data.frame(best_taxonomy = "_", NCBI_id = NA)
+df2 <- rbind(df2_valid, df2_invalid)
 
 df <- df %>%
   left_join(df2, join_by("best_taxonomy")) %>% 
@@ -3084,9 +3108,9 @@ normalized_table <- normalized_table %>%
 # Calculate global mean and standard deviation
 All_mean_sd <- normalized_table %>%
   rowwise() %>%
-  mutate(All.Mean=mean(c_across(where(is.numeric)), na.rm = TRUE),
-         All.Stdev=sd(c_across(where(is.numeric)), na.rm = TRUE) ) %>% 
-  select(!!feature, All.Mean, All.Stdev)
+  mutate(All.mean=mean(c_across(where(is.numeric)), na.rm = TRUE),
+         All.stdev=sd(c_across(where(is.numeric)), na.rm = TRUE) ) %>% 
+  select(!!feature, All.mean, All.stdev)
 
 # Append the taxonomy table to the ncbi and stats table
 merged_df <- df %>%
@@ -3116,13 +3140,13 @@ write_csv(merged_df %>%
 volcano_plots <- map(uniq_comps, function(comparison){
   
   comp_col <- c(
-    glue("lnFC_{comparison}"),
-    glue("lnfcSE_{comparison}"),
-    glue("Wstat_{comparison}"),
-    glue("pvalue_{comparison}"),
-    glue("qvalue_{comparison}"),
-    glue("diff_{comparison}"),
-    glue("passed_ss_{comparison}")
+    glue("Lnfc_{comparison}"),
+    glue("Lnfc.SE_{comparison}"),
+    glue("Stat_{comparison}"),
+    glue("P.value_{comparison}"),
+    glue("Q.value_{comparison}"),
+    glue("Diff_{comparison}"),
+    glue("Passed_ss_{comparison}")
   )
   
   sub_res_df <- res_df %>% 
@@ -3154,15 +3178,15 @@ volcano_plots <- map(uniq_comps, function(comparison){
   }
   #######################################
   
-  p <- ggplot(sub_res_df %>% mutate(diff = qvalue <= p_val),
-              aes(x=lnFC, y=-log10(qvalue), color=diff, label=!!sym(feature))) +
+  p <- ggplot(sub_res_df %>% mutate(diff = Q.value <= p_val),
+              aes(x=Lnfc, y=-log10(Q.value), color=diff, label=!!sym(feature))) +
     geom_point(alpha=0.7, size=2) +
     scale_color_manual(values=c("TRUE"="red", "FALSE"="black"),
                        labels=c(paste0("qval > ", p_val), 
                                 paste0("qval \u2264 ", p_val))) +
     geom_hline(yintercept = -log10(p_val), linetype = "dashed") +
     ggrepel::geom_text_repel(show.legend = FALSE) + 
-    expandy(-log10(sub_res_df$qvalue)) + # Expand plot y-limit
+    expandy(-log10(sub_res_df$Q.value)) + # Expand plot y-limit
     coord_cartesian(clip = 'off') +
     scale_y_continuous(oob = scales::oob_squish_infinite) + # prevent clipping of infinite values
     labs(x= x_label, y="-log10(Q-value)", 
@@ -3236,11 +3260,11 @@ volcano_plots <- map(uniq_comps, function(comparison){
   - NCBI identifier for the best taxonomic assignment for each ASV 
   - Normalized abundance values for each ASV for each sample
   - For each pairwise group comparison:
-    - natural log of the fold change (lnFC)
-    - standard error for the lnFC (lnfcSE)
-    - test statistic from the primary result (Wstat)
-    - P-value (pvalue)
-    - Adjusted p-value (qvalue)
+    - natural log of the fold change (Lnfc)
+    - standard error for the lnFC (Lnfc.SE)
+    - test statistic from the primary result (Stat)
+    - P-value (P.value)
+    - Adjusted p-value (Q.value)
   - All.mean (mean across all samples)
   - All.stdev (standard deviation across all samples) 
   - For each group:
@@ -3334,7 +3358,7 @@ ggsave(filename = glue("{diff_abund_out_dir}/{output_prefix}asv_sparsity_plot.pn
        plot = sparsity_plot, width = 14, height = 10, dpi = 300, units = "in")
 
 # Get unique group comparison as a matrix
-pairwise_comp.m <- utils::combn(metadata[,groups_colname] %>% unique, 2)
+pairwise_comp.m <- utils::combn((metadata[,group] %>% unique %>% sort), 2)
 pairwise_comp_df <- pairwise_comp.m %>% as.data.frame 
 # Set the colnames as group1vgroup2
 colnames(pairwise_comp_df) <- map_chr(pairwise_comp_df,
@@ -3343,9 +3367,14 @@ comparisons <- colnames(pairwise_comp_df)
 names(comparisons) <- comparisons
 
 # Write out contrasts table
-write_csv(x = pairwise_comp_df,
-          file = glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"),
-          col_names = FALSE)
+comparison_names <- paste0("(", pairwise_comp_df[2,], ")v(", pairwise_comp_df[1,], ")")
+contrasts_df <- data.frame(row_index = c("1", "2"))
+for(i in seq_along(comparison_names)) {
+  contrasts_df[[comparison_names[i]]] <- c(pairwise_comp_df[2,i], pairwise_comp_df[1,i])
+}
+colnames(contrasts_df)[1] <- ""
+write_csv(x = contrasts_df,
+          file =  glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"))
 
 # Retrieve statistics table
 merged_stats_df <- data.frame(ASV=rownames(feature_table))
@@ -3357,18 +3386,18 @@ walk(pairwise_comp_df, function(col){
   group2 <- col[2]
 
 # Retrieve the statistics table for the cuurrent pair and rename the columns
-df <- results(deseq_modeled, contrast = c(groups_colname, group1, group2)) %>% # Get stats
+df <- results(deseq_modeled, contrast = c(group, group2, group1)) %>%
   data.frame() %>%
   rownames_to_column(feature) %>% 
   set_names(c(feature ,
-              glue("baseMean_({group1})v({group2})"),
-              glue("log2FC_({group1})v({group2})"),
-              glue("lfcSE_({group1})v({group2})"), 
-              glue("stat_({group1})v({group2})"), 
-              glue("pvalue_({group1})v({group2})"),
-              glue("padj_({group1})v({group2})") 
-            )) # rename the columns
-     
+              glue("baseMean_({group2})v({group1})"),
+              glue("Log2fc_({group2})v({group1})"),
+              glue("lfcSE_({group2})v({group1})"), 
+              glue("Stat_({group2})v({group1})"), 
+              glue("P.value_({group2})v({group1})"),
+              glue("Adj.p.value_({group2})v({group1})") 
+            ))
+            
   merged_stats_df <<- merged_stats_df %>% 
                           dplyr::left_join(df, join_by(!!feature))
 })
@@ -3383,14 +3412,15 @@ df <- data.frame(ASV=rownames(taxonomy_table), best_taxonomy=tax_names)
 colnames(df) <- c(feature, "best_taxonomy")
 
 # Pull NCBI IDS for unique taxonomy names
-df2 <- data.frame(best_taxonomy = df$best_taxonomy %>%
-                    unique()) %>%
+# Filter out unannotated entries before querying NCBI
+valid_taxonomy <- df$best_taxonomy %>% unique() %>% setdiff("_")
+df2_valid <- data.frame(best_taxonomy = valid_taxonomy) %>%
   mutate(NCBI_id=get_ncbi_ids(best_taxonomy, target_region),
          .after = best_taxonomy)
 
-df <- df %>%
-  left_join(df2, join_by("best_taxonomy")) %>%
-  right_join(merged_stats_df)
+# Add unannotated entries with NA NCBI_id
+df2_invalid <- data.frame(best_taxonomy = "_", NCBI_id = NA)
+df2 <- rbind(df2_valid, df2_invalid)
 
 # -------- Retrieve deseq normalized table from the deseq model
 normalized_table <- counts(deseq_modeled, normalized=TRUE) %>% 
@@ -3445,9 +3475,9 @@ normalized_table <- normalized_table %>%
 # Calculate mean global means and standard deviations
 All_mean_sd <- normalized_table %>%
   rowwise() %>%
-  mutate(All.Mean=mean(c_across(where(is.numeric)), na.rm = TRUE),
-         All.Stdev=sd(c_across(where(is.numeric)), na.rm = TRUE) ) %>% 
-  select(!!feature, All.Mean, All.Stdev)
+  mutate(All.mean=mean(c_across(where(is.numeric)), na.rm = TRUE),
+         All.stdev=sd(c_across(where(is.numeric)), na.rm = TRUE) ) %>% 
+  select(!!feature, All.mean, All.stdev)
 
 # Add taxonomy
 merged_df <- df  %>% # statistics table
@@ -3486,19 +3516,19 @@ walk(pairwise_comp_df, function(col){
   p_val <- 0.1 # logfc cutoff
   
   # Retrieve data for plotting
-  deseq_res <- results(deseq_modeled, contrast = c(groups_colname, group1, group2))
+  deseq_res <- results(deseq_modeled, contrast = c(group, group2, group1))
   volcano_data <- as.data.frame(deseq_res)
   volcano_data <- volcano_data[!is.na(volcano_data$padj), ]
   volcano_data$significant <- volcano_data$padj <= p_val
   
    ######Long x-axis label adjustments##########
-  x_label <- glue("Log2 Fold Change\n\n( {group1} vs {group2} )")
+  x_label <- glue("Log2 Fold Change\n\n( {group2} vs {group1} )")
   label_length <- nchar(x_label)
   max_allowed_label_length <- plot_width_inches * 10
   
   # Construct x-axis label with new line breaks if was too long
   if (label_length > max_allowed_label_length){
-    x_label <- glue("Log2 Fold Change\n\n( {group1} \n vs \n {group2} )")
+    x_label <- glue("Log2 Fold Change\n\n( {group2} \n vs \n {group1} )")
   }
   #######################################
   
@@ -3531,7 +3561,7 @@ walk(pairwise_comp_df, function(col){
   # Replace space in group name with underscore 
   group1 <- str_replace_all(group1, "[:space:]+", "_")
   group2 <- str_replace_all(group2, "[:space:]+", "_")
-  ggsave(filename = glue("{output_prefix}({group1})v({group2})_volcano.png"),
+  ggsave(filename = glue("{output_prefix}({group2})v({group1})_volcano.png"),
          plot = p,
          width = plot_width_inches, 
          height = plot_height_inches, 
@@ -3573,11 +3603,11 @@ walk(pairwise_comp_df, function(col){
   - NCBI identifier for the best taxonomic assignment for each ASV 
   - Normalized abundance values for each ASV for each sample
   - For each pairwise group comparison:
-    - log2 of the fold change (log2FC)
+    - log2 of the fold change (Log2fc)
     - standard error for the log2FC (lfcSE)
-    - test statistic from the primary result (stat)
-    - P-value (pvalue)
-    - Adjusted p-value (padj)
+    - test statistic from the primary result (Stat)
+    - P-value (P.value)
+    - Adjusted p-value (Adj.p.value)
   - All.mean (mean across all samples)
   - All.stdev (standard deviation across all samples) 
   - For each group:
