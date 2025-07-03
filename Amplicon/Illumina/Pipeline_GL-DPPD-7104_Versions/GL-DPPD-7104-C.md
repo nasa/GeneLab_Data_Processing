@@ -1456,6 +1456,7 @@ metadata <- metadata %>%
 
 # Retrieve sample names
 sample_names <- rownames(metadata)
+deseq2_sample_names <- make.names(sample_names, unique = TRUE)
 
 # Subset metadata to contain only the groups and color columns
 sample_info_tab <- metadata %>%
@@ -1528,12 +1529,12 @@ if(remove_rare){
 
 # Preprocess ASV and taxonomy tables
 
-# Preprocess ASV and taxonomy tables
 message(glue("There are {sum(is.na(taxonomy_table$domain))} features without 
-           taxonomy assignments. Consolidating them as Unclassified..."))
+           taxonomy assignments. Dropping them..."))
 
-# Label features as "Unclassified" for those that couldn't be assigned taxonomy
-taxonomy_table[which(is.na(taxonomy_table$domain)),] <- "Unclassified"
+# Dropping features that couldn't be assigned taxonomy
+# For beta and alpha diversity only, unassigned ASVs are not dropped in DA analyses
+taxonomy_table <- taxonomy_table[-which(is.na(taxonomy_table$domain)),]
 
 # Handle case where no domain was assigned but a phylum was.
 if(all(is.na(taxonomy_table$domain))){
@@ -1790,12 +1791,24 @@ colnames(comp_letters) <- groups_colname
 walk(.x = diversity_metrics, function(metric = .x) {
 
   sub_comp <- diversity_stats %>% filter(Metric == metric)
-  p_values <- sub_comp$p.adj # holm p adjusted values by default
-  names(p_values) <- paste(sub_comp$group1,sub_comp$group2, sep = "-")
-  
-  letters_df <-  enframe(multcompView::multcompLetters(p_values)$Letters,
-                         name = groups_colname,
-                         value = glue("{metric}_letter"))
+
+  sanitize <- function(x) gsub("-", "_", x)
+  g1 <- sanitize(sub_comp$group1)
+  g2 <- sanitize(sub_comp$group2)
+
+  safe_names <- paste(g1, g2, sep = "-")
+  orig_names <- paste(sub_comp$group1, sub_comp$group2, sep = "-")
+  safe_to_orig <- setNames(orig_names, safe_names)
+
+  p_values <- setNames(sub_comp$p.adj, safe_names)
+
+  letters <- multcompView::multcompLetters(p_values)$Letters
+  names(letters) <- safe_to_orig[names(letters)]
+
+  letters_df <- enframe(letters,
+                        name = groups_colname,
+                        value = glue("{metric}_letter"))
+
   comp_letters <<- comp_letters %>% left_join(letters_df)
 })
 
@@ -2100,45 +2113,9 @@ walk2(.x = normalization_methods, .y = distance_methods,
                               group_colors, legend_title)
 
   # Save dendogram
-  length_of_longest_label <- Reduce(max,sample_names %>% nchar())
-
-  number_of_samples <- length(sample_names)
-
-  estimated_height <- 0.3 * number_of_samples
-
-  if( estimated_height  <= 10 ){
-    
-    dendo_height  <- 10
-    
-  } else if(estimated_height <= 50){
-    
-    dendo_height  <- estimated_height
-    
-  } else{
-    
-    # Cap the maximum plot width at 50 inches
-    dendo_height  <- 50
-  }
-
-  if(length_of_longest_label <= 14 ){
-    
-    # Default plot width
-    dendo_width <- 14
-    
-  }else if(length_of_longest_label <= 50){
-    
-    # Adjust plot width by label length
-    dendo_width <- length_of_longest_label
-    
-  } else{
-    
-    # Cap the maximum plot width at 50 inches 
-    dendo_width <- 50
-  }
-  
   ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_dendrogram{assay_suffix}.png"),
-        plot = dendogram, width = dendo_width, height = dendo_height, 
-        dpi = 300, units = "in", limitsize = FALSE)
+       plot = dendogram, width = 14, height = 10, 
+       dpi = 300, units = "in", limitsize = FALSE)
 
   #---------------------------- Run stats
   # Checking homogeneity of variance and comparing groups using adonis test
@@ -2356,10 +2333,9 @@ y <- "relativeAbundance"
 number_of_groups <- length(group_levels)
 plot_width <- 2.5 * number_of_groups
 
-# Make plot width between 7.5 and 50
-if(plot_width < 7.5) {
-  plot_width <- 7.5
-} else if(plot_width > 50) {
+# Cap the maximum plot width to 50 regardless of the number of groups
+if(plot_width >  50 ){
+  
   plot_width <- 50
 }
 
@@ -2462,7 +2438,7 @@ ps <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
 tse <-  mia::makeTreeSummarizedExperimentFromPhyloseq(ps)
 
 # Get unique group comparison as a matrix
-pairwise_comp.m <- utils::combn(metadata[, groups_colname] %>% unique, 2)
+pairwise_comp.m <- utils::combn((metadata[,group] %>% unique %>% sort), 2)
 pairwise_comp_df <- pairwise_comp.m %>% as.data.frame 
 # Name the columns in the pairwise matrix as group1vgroup2
 colnames(pairwise_comp_df) <- map_chr(pairwise_comp_df,
@@ -2943,7 +2919,7 @@ tryCatch({
       # Extract group name from the first group-specific column
       group_name <- str_replace(group_cols[1], paste0("^[a-zA-Z_]+_", group), "")
       # Create comparison name
-      comparison_name <- glue("({ref_group})v({group_name})")
+      comparison_name <- glue("({group_name})v({ref_group})")
       
       new_colnames <- c(
         feature,  # Keep the feature column name
@@ -3382,7 +3358,7 @@ ggsave(filename = glue("{diff_abund_out_dir}/{output_prefix}asv_sparsity_plot.pn
        plot = sparsity_plot, width = 14, height = 10, dpi = 300, units = "in")
 
 # Get unique group comparison as a matrix
-pairwise_comp.m <- utils::combn(metadata[,groups_colname] %>% unique, 2)
+pairwise_comp.m <- utils::combn((metadata[,group] %>% unique %>% sort), 2)
 pairwise_comp_df <- pairwise_comp.m %>% as.data.frame 
 # Set the colnames as group1vgroup2
 colnames(pairwise_comp_df) <- map_chr(pairwise_comp_df,
@@ -3391,10 +3367,10 @@ comparisons <- colnames(pairwise_comp_df)
 names(comparisons) <- comparisons
 
 # Write out contrasts table
-comparison_names <- paste0("(", pairwise_comp_df[1,], ")v(", pairwise_comp_df[2,], ")")
+comparison_names <- paste0("(", pairwise_comp_df[2,], ")v(", pairwise_comp_df[1,], ")")
 contrasts_df <- data.frame(row_index = c("1", "2"))
 for(i in seq_along(comparison_names)) {
-  contrasts_df[[comparison_names[i]]] <- c(pairwise_comp_df[1,i], pairwise_comp_df[2,i])
+  contrasts_df[[comparison_names[i]]] <- c(pairwise_comp_df[2,i], pairwise_comp_df[1,i])
 }
 colnames(contrasts_df)[1] <- ""
 write_csv(x = contrasts_df,
@@ -3410,18 +3386,18 @@ walk(pairwise_comp_df, function(col){
   group2 <- col[2]
 
 # Retrieve the statistics table for the cuurrent pair and rename the columns
-df <- results(deseq_modeled, contrast = c(groups_colname, group1, group2)) %>% # Get stats
+df <- results(deseq_modeled, contrast = c(group, group2, group1)) %>%
   data.frame() %>%
   rownames_to_column(feature) %>% 
   set_names(c(feature ,
-              glue("baseMean_({group1})v({group2})"),
-              glue("Log2fc_({group1})v({group2})"),
-              glue("Logfc.SE_({group1})v({group2})"), 
-              glue("Stat_({group1})v({group2})"), 
-              glue("P.value_({group1})v({group2})"),
-              glue("Adj.p.value_({group1})v({group2})") 
-            )) # rename the columns
-     
+              glue("baseMean_({group2})v({group1})"),
+              glue("Log2fc_({group2})v({group1})"),
+              glue("lfcSE_({group2})v({group1})"), 
+              glue("Stat_({group2})v({group1})"), 
+              glue("P.value_({group2})v({group1})"),
+              glue("Adj.p.value_({group2})v({group1})") 
+            ))
+            
   merged_stats_df <<- merged_stats_df %>% 
                           dplyr::left_join(df, join_by(!!feature))
 })
@@ -3540,19 +3516,19 @@ walk(pairwise_comp_df, function(col){
   p_val <- 0.1 # logfc cutoff
   
   # Retrieve data for plotting
-  deseq_res <- results(deseq_modeled, contrast = c(groups_colname, group1, group2))
+  deseq_res <- results(deseq_modeled, contrast = c(group, group2, group1))
   volcano_data <- as.data.frame(deseq_res)
   volcano_data <- volcano_data[!is.na(volcano_data$padj), ]
   volcano_data$significant <- volcano_data$padj <= p_val
   
    ######Long x-axis label adjustments##########
-  x_label <- glue("Log2 Fold Change\n\n( {group1} vs {group2} )")
+  x_label <- glue("Log2 Fold Change\n\n( {group2} vs {group1} )")
   label_length <- nchar(x_label)
   max_allowed_label_length <- plot_width_inches * 10
   
   # Construct x-axis label with new line breaks if was too long
   if (label_length > max_allowed_label_length){
-    x_label <- glue("Log2 Fold Change\n\n( {group1} \n vs \n {group2} )")
+    x_label <- glue("Log2 Fold Change\n\n( {group2} \n vs \n {group1} )")
   }
   #######################################
   
@@ -3585,7 +3561,7 @@ walk(pairwise_comp_df, function(col){
   # Replace space in group name with underscore 
   group1 <- str_replace_all(group1, "[:space:]+", "_")
   group2 <- str_replace_all(group2, "[:space:]+", "_")
-  ggsave(filename = glue("{output_prefix}({group1})v({group2})_volcano.png"),
+  ggsave(filename = glue("{output_prefix}({group2})v({group1})_volcano.png"),
          plot = p,
          width = plot_width_inches, 
          height = plot_height_inches, 
