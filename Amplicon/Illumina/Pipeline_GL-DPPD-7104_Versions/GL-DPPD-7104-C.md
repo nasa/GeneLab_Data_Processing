@@ -495,20 +495,24 @@ seqtab.nochim <- removeBimeraDenovo(unqs=seqtab, method=“consensus”, multith
 dna <- DNAStringSet(getSequences(seqtab.nochim))
 
 ## Downloading the reference R taxonomy object: ##
-download.file( url="https://figshare.com/ndownloader/files/52846199", destfile=“SILVA_SSU_r138_2_2024.RData”)
+download.file(url = "https://figshare.com/ndownloader/files/52846199", 
+             destfile = "SILVA_SSU_r138_2_2024.RData", 
+             method = "libcurl", 
+             headers = c("User-Agent" = "Mozilla/5.0"))
 
 ## Loading taxonomy object: ##
-load(“SILVA_SSU_r138_2_2024.RData”)
+load("SILVA_SSU_r138_2_2024.RData")
 
 ## Classifying sequences:
-tax_info <- IdTaxa(test=dna, trainingSet=trainingSet, strand=“both”, processors=NULL)
-```
+tax_info <- IdTaxa(test=dna, trainingSet=trainingSet, strand="both", processors=NULL)
 
 **Parameter Definitions:** 
 
 - `download.file()` - the R utils function used to download the taxonomy database file
   - `url=` - reference database URL address to download
   - `destfile=` - local path/name for the downloaded file
+  - `method=` - specifies the download method to use
+  - `headers=` - HTTP headers to pass with the download request
 - `IdTaxa()` - the DECIPHER function used to classify the sequences 
   - `test=dna` - DNAStringSet object holding sequences to classify
   - `trainingSet=trainingSet` - specifies the reference database to use
