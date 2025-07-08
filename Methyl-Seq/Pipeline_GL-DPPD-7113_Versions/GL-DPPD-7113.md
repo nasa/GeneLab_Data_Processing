@@ -87,6 +87,7 @@ Samrawit Gebre (OSDR Project Manager)
 |Bioconductor | 3.20   |[https://bioconductor.org](https://bioconductor.org)
 |methylKit    | 1.32.0 |[https://bioconductor.org/packages/release/bioc/html/methylKit.html](https://bioconductor.org/packages/release/bioc/html/methylKit.html)|
 |genomation   | 1.38.0 |[https://bioconductor.org/packages/release/bioc/html/genomation.html](https://bioconductor.org/packages/release/bioc/html/genomation.html)|
+|dp_tools     | 1.3.4  |[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
 
 ---
 
@@ -1353,7 +1354,7 @@ compute_contrast_bases <- function(i) {
     # Make binary vector for treatment argument to methRead()
     curr_treatment_vec <- c()
     for (value in curr_sample_info_df$condition) {
-        if (value == curr_sample_info_df$condition[1]) {
+        if (value == curr_contrasts_vec[1]) {
             curr_treatment_vec <- c(curr_treatment_vec, 1)
         } else {
             curr_treatment_vec <- c(curr_treatment_vec, 0)
@@ -1367,7 +1368,7 @@ compute_contrast_bases <- function(i) {
                 methylKit::unite(reorganize(
                     meth_obj,
                     sample.ids = as.list(curr_samples_vec),
-                    treatment = as.integer(factor(curr_sample_info_df$condition)) - 1
+                    treatment = curr_treatment_vec
                 ),
                 min.per.group = 1L), # Keep only bases with coverage in at least one sample per group
                 mc.cores = myargs$mc_cores)
@@ -1489,7 +1490,44 @@ rm(df_list)
 ### 11f. Tile analysis
 
 ```R
-### Tile analysis ###
+### Function for computing differential methylation per tile for each contrasts ###
+compute_contrast_tiles <- function(i) {
+    # Get current contrast
+    curr_contrasts_vec <- contrasts[, i]
+
+    # Get subset sample info table relevant to current contrast
+    curr_sample_info_df <- sample_meth_info_df %>% filter(condition %in% curr_contrasts_vec)
+
+    # Get which samples are relevant to current contrast
+    curr_samples_vec <- curr_sample_info_df %>% pull(sample_id)
+
+    # Make binary vector for treatment argument to methRead()
+    curr_treatment_vec <- c()
+    for (value in curr_sample_info_df$condition) {
+        if (value == curr_contrasts_vec[1]) {
+            curr_treatment_vec <- c(curr_treatment_vec, 1)
+        } else {
+            curr_treatment_vec <- c(curr_treatment_vec, 0)
+        }
+    }
+
+    # return methylation statistics for tiles
+    return(
+        as.data.frame(getData(
+            calculateDiffMeth(
+                methylKit::unite(reorganize(
+                    meth_tiles_obj,
+                    sample.ids = as.list(curr_samples_vec),
+                    treatment = curr_treatment_vec
+                ),
+                min.per.group = 1L), # Keep only tiles with coverage in at least one sample per group
+                mc.cores = myargs$mc_cores)
+            )
+        ) %>%
+        relocate("meth.diff", .before = "pvalue") %>% # move methyl diff value before stats values
+        rename_with(~ paste0(.x, "_", colnames(contrasts)[i]), any_of(c("pvalue", "qvalue", "meth.diff")))
+    )
+}
 
 # Group bases into tiles
 meth_tiles_obj <- tileMethylCounts(norm_meth_obj,

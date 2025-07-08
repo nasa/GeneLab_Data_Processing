@@ -4,10 +4,12 @@
 
 ## MGIllumina Pipeline Version and Corresponding Workflow
 
-|Pipeline Version|Current Workflow Version (for respective pipeline version)|
-|:---------------|:---------------------------------------------------------|
-|*[GL-DPPD-7107.md](../Pipeline_GL-DPPD-7107_Versions/GL-DPPD-7107.md)|[2.0.4](SW_MGIllumina)|
+|Pipeline Version|Current Workflow Version (for respective pipeline version)|Nextflow Version| 
+|:---------------|:---------------------------------------------------------|:---------------|
+|*[GL-DPPD-7107-A.md](../Pipeline_GL-DPPD-7107_Versions/GL-DPPD-7107-A.md)|[NF_MGIllumina_1.0.0](NF_MGIllumina)|24.04.4|
+|[GL-DPPD-7107.md](../Pipeline_GL-DPPD-7107_Versions/GL-DPPD-7107.md)|[SW_MGIllumina_2.0.4](SW_MGIllumina)|N/A (Snakemake v7.26.0)|
+
 
 *Current GeneLab Pipeline/Workflow Implementation
 
-> See the [workflow change log](SW_MGIllumina/CHANGELOG.md) to access previous workflow versions and view all changes associated with each version update.
+> See the [workflow change log](NF_MGIllumina/CHANGELOG.md) to access previous workflow versions and view all changes associated with each version update.
