@@ -1439,6 +1439,21 @@ metadata[,sample_colname] <- NULL
 group_column_values <- metadata %>% pull(!!sym(groups_colname))
 group_levels <- unique(group_column_values)
 
+# Write out table listing contrasts used for all differential abundance methods
+# Get pairwise combinations
+pairwise_comp.m <- utils::combn(group_levels, 2)
+# Create comparison names  
+comparisons <- paste0("(", pairwise_comp.m[2,], ")v(", pairwise_comp.m[1,], ")")
+names(comparisons) <- comparisons
+# Create contrasts table
+contrasts_df <- data.frame(
+  " " = c("1", "2"),
+  rbind(pairwise_comp.m[2,], pairwise_comp.m[1,]) %>% as.data.frame() %>% setNames(comparisons),
+  check.names = FALSE
+)
+write_csv(x = contrasts_df,
+          file = glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"))
+
 # Add colors to metadata that equals the number of groups
 num_colors <- length(group_levels)
 palette <- 'Set1'
@@ -1505,6 +1520,7 @@ taxonomy_table <- read.table(file = taxonomy_file, header = TRUE,
 * `group_colors` (a named character vector of colors for each group)
 * `group_levels` (a character vector of unique group names)
 * **differential_abundance/<output_prefix>SampleTable_GLAmpSeq.csv** (a comma-separated file containing a table with two columns: "Sample Name" and "groups"; the output_prefix denotes the method used to compute the differential abundance)
+* **differential_abundance/<output_prefix>contrasts_GLAmpSeq.csv** (a comma-separated file listing all pairwise group comparisons)
 
 <br>
 
@@ -2450,15 +2466,6 @@ colnames(pairwise_comp_df) <- map_chr(pairwise_comp_df,
 comparisons <- colnames(pairwise_comp_df)
 names(comparisons) <- comparisons
 
-# Write out contrasts table
-comparison_names <- paste0("(", pairwise_comp_df[2,], ")v(", pairwise_comp_df[1,], ")")
-contrasts_df <- data.frame(row_index = c("1", "2"))
-for(i in seq_along(comparison_names)) {
-  contrasts_df[[comparison_names[i]]] <- c(pairwise_comp_df[2,i], pairwise_comp_df[1,i])
-}
-colnames(contrasts_df)[1] <- ""
-write_csv(x = contrasts_df,
-          file =  glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"))
 
 # ---------------------- Run ANCOMBC 1 ---------------------------------- #
 set.seed(123)
@@ -2828,7 +2835,6 @@ write_csv(merged_df %>%
 
 **Output Data:**
 
-* **differential_abundance/ancombc1/<output_prefix>contrasts_GLAmpSeq.csv** (a comma-separated file listing all pairwise group comparisons)
 * **differential_abundance/ancombc1/<output_prefix>(\<group1\>)v(\<group2\>)_volcano.png** (volcano plots for each pariwise comparison)
 * **differential_abundance/ancombc1/<output_prefix>ancombc1_differential_abundance_GLAmpSeq.csv** (a comma-separated ANCOM-BC1 differential abundance results table containing the following columns:
   - ASV (identified ASVs)
@@ -3011,19 +3017,6 @@ if(is_two_group) {
 # Get the unique comparison names 
 uniq_comps <- str_replace_all(new_colnames, ".+_(\\(.+\\))", "\\1") %>% unique()
 uniq_comps <- uniq_comps[-match(feature, uniq_comps)]
-
-# Write out contrasts table
-contrasts_df <- data.frame(row_index = c("1", "2"))
-for(i in seq_along(uniq_comps)) {
-  groups_vec <- uniq_comps[i] %>%
-    str_replace_all("\\)v\\(", ").vs.(") %>% 
-    str_remove_all("\\(|\\)") %>%
-    str_split(".vs.") %>% unlist
-  contrasts_df[[uniq_comps[i]]] <- c(groups_vec[1], groups_vec[2])
-}
-colnames(contrasts_df)[1] <- ""
-write_csv(x = contrasts_df,
-          file = glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"))
 
 # ------ Sort columns by group comparisons --------#
 # Create a data frame containing only the feature/ASV column
@@ -3256,7 +3249,6 @@ volcano_plots <- map(uniq_comps, function(comparison){
 
 **Output Data:**
 
-* **differential_abundance/ancombc2/<output_prefix>contrasts_GLAmpSeq.csv** (a comma-separated file listing all pairwise group comparisons)
 * **differential_abundance/ancombc2/<output_prefix>(\<group1\>)v(\<group2\>)_volcano.png** (volcano plots for each pariwise comparison)
 * **differential_abundance/ancombc2/<output_prefix>ancombc1_differential_abundance_GLAmpSeq.csv** (a comma-separated ANCOM-BC2 differential abundance results table containing the following columns:
   - ASV (identified ASVs)
@@ -3369,16 +3361,6 @@ colnames(pairwise_comp_df) <- map_chr(pairwise_comp_df,
                                       \(col) str_c(col, collapse = "v"))
 comparisons <- colnames(pairwise_comp_df)
 names(comparisons) <- comparisons
-
-# Write out contrasts table
-comparison_names <- paste0("(", pairwise_comp_df[2,], ")v(", pairwise_comp_df[1,], ")")
-contrasts_df <- data.frame(row_index = c("1", "2"))
-for(i in seq_along(comparison_names)) {
-  contrasts_df[[comparison_names[i]]] <- c(pairwise_comp_df[2,i], pairwise_comp_df[1,i])
-}
-colnames(contrasts_df)[1] <- ""
-write_csv(x = contrasts_df,
-          file =  glue("{diff_abund_out_dir}{output_prefix}contrasts{assay_suffix}.csv"))
 
 # Retrieve statistics table
 merged_stats_df <- data.frame(ASV=rownames(feature_table))
@@ -3599,7 +3581,6 @@ walk(pairwise_comp_df, function(col){
 
 **Output Data:**
 
-* **differential_abundance/deseq2/<output_prefix>contrasts_GLAmpSeq.csv** (a comma-separated file table listing all pairwise group comparisons)
 * **differential_abundance/deseq2/<output_prefix>(\<group1\>)v(\<group2\>)_volcano.png** (volcano plots for each pariwise comparison)
 * **differential_abundance/deseq2/<output_prefix>deseq2_differential_abundance_GLAmpSeq.csv** (a comma-separated DESeq2 differential abundance results table containing the following columns:
   - ASV (identified ASVs)
