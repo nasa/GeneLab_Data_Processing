@@ -792,12 +792,12 @@ library(hexbin)
   **Returns:** a phyloseq object created from the feature_table, metadata, and specified transformation method
 </details>
 
-#### make_dendogram()
+#### make_dendrogram()
 <details>
-  <summary>compute heirarchical clustering and create a dendogram</summary>
+  <summary>compute heirarchical clustering and create a dendrogram</summary>
 
   ```R
-  make_dendogram <- function(dist_obj, metadata, groups_colname,
+  make_dendrogram <- function(dist_obj, metadata, groups_colname,
                             group_colors, legend_title){
 
     # Hierarchical Clustering
@@ -810,8 +810,8 @@ library(hexbin)
       left_join(metadata %>% 
                   rownames_to_column("label")) # Labels are sample names
 
-    # Plot dendogram
-    dendogram <- ggplot() +
+    # Plot dendrogram
+    dendrogram <- ggplot() +
       # Plot tree
       geom_segment(data = segment_data, 
                   aes(x = x, y = y, xend = xend, yend = yend) 
@@ -832,7 +832,7 @@ library(hexbin)
             legend.title = element_text(size = 12, face='bold'),
             legend.text = element_text(face = 'bold', size = 11))
     
-    return(dendogram)
+    return(dendrogram)
   }
   ```
   **Function Parameter Definitions:**
@@ -841,7 +841,7 @@ library(hexbin)
   - `groups_colname=` - name of the column in the metadata dataframe to use for specifying sample groups
   - `legend_title=` - legend title to use for plotting
 
-  **Returns:** a dendogram plot
+  **Returns:** a dendrogram plot
 </details>
 
 #### run_stats()
@@ -969,9 +969,9 @@ library(hexbin)
     # Define a cut-off for determining what's rare
     cut_off <- cut_off_percent * ncol(feature_table)
     # Get the occurrence for each feature
-    feature_occurence <- rowSums(feature_table > 0)
+    feature_occurrence <- rowSums(feature_table > 0)
     # Get names of the abundant features
-    abund_features <- names(feature_occurence[feature_occurence >= cut_off])
+    abund_features <- names(feature_occurrence[feature_occurrence >= cut_off])
     # Remove rare features
     abun_features.m <- feature_table[abund_features,]
     return(abun_features.m)
@@ -2100,7 +2100,7 @@ walk2(.x = normalization_methods, .y = distance_methods,
                           method = normalization_method,
                           rarefaction_depth = rarefaction_depth)
 
-  # ---------Clustering and dendogram plotting
+  # ---------Clustering and dendrogram plotting
 
   # Extract normalized count table
   count_tab <- otu_table(ps)
@@ -2128,13 +2128,13 @@ walk2(.x = normalization_methods, .y = distance_methods,
   # Calculate distance between samples
   dist_obj <- vegdist(t(count_tab), method = distance_method)
 
-  # Make dendogram
-  dendogram <- make_dendogram(dist_obj, metadata, groups_colname,
+  # Make dendrogram
+  dendrogram <- make_dendrogram(dist_obj, metadata, groups_colname,
                               group_colors, legend_title)
 
-  # Save dendogram
+  # Save dendrogram
   ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_dendrogram{assay_suffix}.png"),
-       plot = dendogram, width = 14, height = 10, 
+       plot = dendrogram, width = 14, height = 10, 
        dpi = 300, units = "in", limitsize = FALSE)
 
   #---------------------------- Run stats
@@ -2168,7 +2168,7 @@ walk2(.x = normalization_methods, .y = distance_methods,
 **Custom Functions Used:**
 
 * [transform_phyloseq()](#transform_phyloseq)
-* [make_dendogram()](#make_dendogram)
+* [make_dendrogram()](#make_dendrogram)
 * [run_stats()](#run_stats)
 * [plot_pcoa()](#plot_pcoa)
 
@@ -2232,7 +2232,7 @@ dont_group <- c("phylum")
 # phylum 1%, class 3%, order 3%, family 8%, genus 8% and species 9%
 thresholds <- c(phylum=1,class=3, order=3, family=8, genus=8, species=9)
 # Convert from wide to long format
-relAbundace_tbs_rare_grouped <- map2(.x = taxon_levels,
+relAbundance_tbs_rare_grouped <- map2(.x = taxon_levels,
                                      .y = taxon_tables, 
                                      .f = function(taxon_level=.x,
                                                    taxon_table=.y){
@@ -2280,10 +2280,10 @@ if(number_of_samples >=  30 ){
 }
 
 # Make sample plots
-walk2(.x = relAbundace_tbs_rare_grouped, .y = taxon_levels, 
-                           .f = function(relAbundace_tb, taxon_level){
+walk2(.x = relAbundance_tbs_rare_grouped, .y = taxon_levels, 
+                           .f = function(relAbundance_tb, taxon_level){
                              
-                             df <- relAbundace_tb %>%
+                             df <- relAbundance_tb %>%
                                left_join(metadata %>% rownames_to_column("samples"))
                              
                           p <- ggplot(data = df, mapping = aes(x= !!sym(x), y=!!sym(y) )) +
@@ -2313,7 +2313,7 @@ thresholds <- c(phylum=1,class=2, order=2, family=2, genus=2, species=2)
 group_rare <- TRUE # should rare taxa be grouped ?
 maximum_number_of_taxa <- 500 # If the number of taxa is more than this then rare taxa will be grouped anyway. 
 
-group_relAbundace_tbs <- map2(.x = taxon_levels, .y = taxon_tables, 
+group_relAbundance_tbs <- map2(.x = taxon_levels, .y = taxon_tables, 
                                      .f = function(taxon_level=.x, taxon_table=.y){
                                        
                                        taxon_table <- as.data.frame(taxon_table %>% t()) 
@@ -2359,10 +2359,10 @@ if(plot_width >  50 ){
   plot_width <- 50
 }
 
-walk2(.x = group_relAbundace_tbs, .y = taxon_levels, 
-                           .f = function(relAbundace_tb=.x, taxon_level=.y){
+walk2(.x = group_relAbundance_tbs, .y = taxon_levels, 
+                           .f = function(relAbundance_tb=.x, taxon_level=.y){
                              
-                             p <- ggplot(data =  relAbundace_tb %>%
+                             p <- ggplot(data =  relAbundance_tb %>%
                                            mutate(X = str_wrap(!!sym(groups_colname),
                                                              width = 10) # wrap long group names
                                                   ), 
@@ -3127,7 +3127,7 @@ merged_df <- merged_df %>%
 # Writing out results of differential abundance using ANCOMBC2...
 output_file <- glue("{diff_abund_out_dir}{output_prefix}ancombc2_differential_abundance{assay_suffix}.csv")
 # Write out merged stats table but before that 
-# drop ANCOMBC inferred diffrential abundance columns
+# drop ANCOMBC inferred differential abundance columns
 write_csv(merged_df %>%
             select(-starts_with("diff_")),
           output_file)
