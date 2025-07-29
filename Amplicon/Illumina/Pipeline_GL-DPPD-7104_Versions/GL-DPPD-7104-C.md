@@ -48,11 +48,11 @@ Software Updates and Changes:
 | rcolorbrewer | N/A              | 1.1.3         |
 | taxize       | N/A              | 0.10.0        |
 | tidyverse    | N/A              | 2.0.0         |
-| vegan        | N/A              | 2.6.10        |
+| vegan        | N/A              | 2.6-10        |
 | vsn          | N/A              | 3.74.0        |
 | patchwork    | N/A              | 1.3.0         |
 | rstatix      | N/A              | 0.7.2         |
-| multcompView | N/A              | 0.1_10        |
+| multcompView | N/A              | 0.1-10        |
 | scales       | N/A              | 1.4.0         |
 | dendextend   | N/A              | 1.19.0        |
 
@@ -142,11 +142,11 @@ Software Updates and Changes:
 |rcolorbrewer|1.1.3|[https://CRAN.R-project.org/package=RColorBrewer](https://CRAN.R-project.org/package=RColorBrewer)|
 |taxize|0.10.0|[https://docs.ropensci.org/taxize/](https://docs.ropensci.org/taxize/)|
 |tidyverse|2.0.0|[https://CRAN.R-project.org/package=tidyverse](https://CRAN.R-project.org/package=tidyverse)|
-|vegan|2.6.10|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
+|vegan|2.6-10|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
 |vsn|3.74.0|[https://bioconductor.org/packages/release/bioc/html/vsn.html](https://bioconductor.org/packages/release/bioc/html/vsn.html)|
 |patchwork|1.3.0|[https://CRAN.R-project.org/package=patchwork](https://CRAN.R-project.org/package=patchwork)|
 |rstatix|0.7.2|[https://CRAN.R-project.org/package=rstatix](https://CRAN.R-project.org/package=rstatix)|
-|multcompView|0.1_10|[https://CRAN.R-project.org/package=multcompView](https://CRAN.R-project.org/package=multcompView)|
+|multcompView|0.1-10|[https://CRAN.R-project.org/package=multcompView](https://CRAN.R-project.org/package=multcompView)|
 |scales|1.4.0|[https://CRAN.R-project.org/package=scales](https://CRAN.R-project.org/package=scales)|
 |dendextend|1.19.0|[https://CRAN.R-project.org/package=dendextend](https://CRAN.R-project.org/package=dendextend)|
 
