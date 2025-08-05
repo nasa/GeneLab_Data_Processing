@@ -48,8 +48,13 @@ Software Updates and Changes:
 | rcolorbrewer | N/A              | 1.1.3         |
 | taxize       | N/A              | 0.10.0        |
 | tidyverse    | N/A              | 2.0.0         |
-| vegan        | N/A              | 2.6._10       |
+| vegan        | N/A              | 2.6-10        |
 | vsn          | N/A              | 3.74.0        |
+| patchwork    | N/A              | 1.3.0         |
+| rstatix      | N/A              | 0.7.2         |
+| multcompView | N/A              | 0.1-10        |
+| scales       | N/A              | 1.4.0         |
+| dendextend   | N/A              | 1.19.0        |
 
 - Added new processing steps in R to generate processed data outputs for alpha and beta diversity, taxonomic summary plots, and differential abundance:
   - Alpha Diversity Analysis ([Step 7](#7-alpha-diversity-analysis))
@@ -137,8 +142,13 @@ Software Updates and Changes:
 |rcolorbrewer|1.1.3|[https://CRAN.R-project.org/package=RColorBrewer](https://CRAN.R-project.org/package=RColorBrewer)|
 |taxize|0.10.0|[https://docs.ropensci.org/taxize/](https://docs.ropensci.org/taxize/)|
 |tidyverse|2.0.0|[https://CRAN.R-project.org/package=tidyverse](https://CRAN.R-project.org/package=tidyverse)|
-|vegan|2.6.10|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
+|vegan|2.6-10|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
 |vsn|3.74.0|[https://bioconductor.org/packages/release/bioc/html/vsn.html](https://bioconductor.org/packages/release/bioc/html/vsn.html)|
+|patchwork|1.3.0|[https://CRAN.R-project.org/package=patchwork](https://CRAN.R-project.org/package=patchwork)|
+|rstatix|0.7.2|[https://CRAN.R-project.org/package=rstatix](https://CRAN.R-project.org/package=rstatix)|
+|multcompView|0.1-10|[https://CRAN.R-project.org/package=multcompView](https://CRAN.R-project.org/package=multcompView)|
+|scales|1.4.0|[https://CRAN.R-project.org/package=scales](https://CRAN.R-project.org/package=scales)|
+|dendextend|1.19.0|[https://CRAN.R-project.org/package=dendextend](https://CRAN.R-project.org/package=dendextend)|
 
 # Reference databases used
 <update figshare links once the updated DBs are downloaded>
@@ -219,10 +229,10 @@ zip -r raw_multiqc_GLAmpSeq_report.zip raw_multiqc_GLAmpSeq_report
 The location and orientation of primers in the data is important to understand in deciding how to do this step. `cutadapt` has many options for primer identification and removal, which are described in detail in the [cutadapt adapter type documentation](https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types).  
 
 The following example commands show how it was done for some samples of [GLDS-200](https://osdr.nasa.gov/bio/repo/data/studies/OSD-200), which was 2x250 sequencing of the 16S gene using these primers:  
-* forward: 5’-GTGCCAGCMGCCGCGGTAA-3’  
-* reverse: 5’-GGACTACVSGGGTATCTAAT-3’  
+* forward: 5'-GTGCCAGCMGCCGCGGTAA-3'  
+* reverse: 5'-GGACTACVSGGGTATCTAAT-3'  
 
-Due to the size of the target amplicon and the type of sequencing done here, both forward and reverse primers are expected to be on each of the forward and reverse reads. It therefore takes “linked” primers as input for forward and reverse reads, specified in the example command below by the `...` between them. It also expects that the primers start at the first position of the reads (“anchored”), specified with the leading `^` characters in the example command below.  
+Due to the size of the target amplicon and the type of sequencing done here, both forward and reverse primers are expected to be on each of the forward and reverse reads. It therefore takes "linked" primers as input for forward and reverse reads, specified in the example command below by the `...` between them. It also expects that the primers start at the first position of the reads ("anchored"), specified with the leading `^` characters in the example command below.  
 
 The following website is useful for reverse complementing primers and dealing with degenerate bases appropriately: [http://arep.med.harvard.edu/labgc/adnan/projects/Utilities/revcomp.html](http://arep.med.harvard.edu/labgc/adnan/projects/Utilities/revcomp.html)  
 
@@ -238,7 +248,7 @@ cutadapt -a ^GTGCCAGCMGCCGCGGTAA...ATTAGATACCCSBGTAGTCC -A ^GGACTACVSGGGTATCTAAT
 *	`-A` – specifies the primers and orientations expected on the reverse reads (when primers are linked as noted above)
 *	`-o` – specifies file path/name of forward, primer-trimmed reads
 *	`-p` – specifies file path/name of reverse, primer-trimmed reads
-*	`sample1_R1_raw.fastq.gz` – this and following “R2” file are positional arguments specifying the forward and reverse reads, respectively, for input
+*	`sample1_R1_raw.fastq.gz` – this and following "R2" file are positional arguments specifying the forward and reverse reads, respectively, for input
 *	`--discard-untrimmed` – this filters out those reads where the primers were not found as expected
 
 **Input Data:**
@@ -264,12 +274,12 @@ Specific settings required will depend on the dataset being processing. These in
 
 
 The following is an example from a [GLDS-200](https://osdr.nasa.gov/bio/repo/data/studies/OSD-200) sample that used paired-end 2x250 sequencing with the following 16S primers:  
-* forward: 5’-GTGCCAGCMGCCGCGGTAA-3’
-* reverse: 5’- GGACTACVSGGGTATCTAAT-3’
+* forward: 5'-GTGCCAGCMGCCGCGGTAA-3'
+* reverse: 5'- GGACTACVSGGGTATCTAAT-3'
 
 ```bash
-filtered_out <- filterAndTrim(fwd=“sample1_R1_trimmed.fastq.gz”, filt=“sample1_R1_filtered.fastq.gz”,
-                              rev=“sample1_R2_trimmed.fastq.gz”, filt.rev=“sample1_R1_filtered.fastq.gz”,
+filtered_out <- filterAndTrim(fwd="sample1_R1_trimmed.fastq.gz", filt="sample1_R1_filtered.fastq.gz",
+                              rev="sample1_R2_trimmed.fastq.gz", filt.rev="sample1_R1_filtered.fastq.gz",
                               truncLen=c(220, 160), maxN=0, maxEE=c(2,2),
                               truncQ=2, rm.phix=TRUE, compress=TRUE, multithread=TRUE)
 ```
@@ -278,9 +288,9 @@ filtered_out <- filterAndTrim(fwd=“sample1_R1_trimmed.fastq.gz”, filt=“sam
 
 *	`filtered_out <-` – specifies the variable that will store the summary results within in our R environment
 *	`filterAndTrim()` – the DADA2 function we are calling, with the following parameters set within it
-*	`fwd=` – specifying the path to the forward reads, here “sample1_R1_trimmed.fastq.gz”
+*	`fwd=` – specifying the path to the forward reads, here "sample1_R1_trimmed.fastq.gz"
 *	`filt=` – specifying the path to where the output forward reads will be written
-*	`rev=` – specifying the path to the reverse reads, here “sample1_R2_trimmed.fastq.gz”; only applicable if paired-end
+*	`rev=` – specifying the path to the reverse reads, here "sample1_R2_trimmed.fastq.gz"; only applicable if paired-end
 *	`filt.rev=` – specifying the path to where the output reverse reads will be written; only applicable if paired-end
 *	`truncLen=c(220, 160)` – specifying the forward reads to be truncated at 220 bp, and the reverse to be truncated at 160 bps (note that this parameter also functions as a minimum-length filter); would only have 1 value if not paired-end
 *	`maxN=0` – setting the maximum allowed Ns to 0, any reads with an N will be filtered out
@@ -366,10 +376,10 @@ These example commands as written assume paired-end data, with notes included on
 ### 5a. Learning the Error Rates
 ```R
 ## Forward error rates ##
-forward_errors <- learnErrors(fls=“sample1_R1_filtered.fastq.gz”, multithread=TRUE)
+forward_errors <- learnErrors(fls="sample1_R1_filtered.fastq.gz", multithread=TRUE)
 
 ## Reverse error rates (skip if single-end data) ##
-reverse_errors <- learnErrors(fls=“sample1_R2_filtered.fastq.gz”, multithread=TRUE)
+reverse_errors <- learnErrors(fls="sample1_R2_filtered.fastq.gz", multithread=TRUE)
 ```
 
 **Parameter Definitions:**  
@@ -392,10 +402,10 @@ reverse_errors <- learnErrors(fls=“sample1_R2_filtered.fastq.gz”, multithrea
 ### 5b. Inferring Sequences
 ```R
 ## Inferring forward sequences ##
-forward_seqs <- dada(derep=“sample1_R1_filtered.fastq.gz”, err=forward_errors, pool=“pseudo”, multithread=TRUE)
+forward_seqs <- dada(derep="sample1_R1_filtered.fastq.gz", err=forward_errors, pool="pseudo", multithread=TRUE)
 
 ## Inferring reverse sequences (skip if single-end)##
-reverse_seqs <- dada(derep=“sample1_R2_filtered.fastq.gz”, err=reverse_errors, pool=“pseudo”, multithread=TRUE)
+reverse_seqs <- dada(derep="sample1_R2_filtered.fastq.gz", err=reverse_errors, pool="pseudo", multithread=TRUE)
 ```
 
 **Parameter Definitions:**  
@@ -403,7 +413,7 @@ reverse_seqs <- dada(derep=“sample1_R2_filtered.fastq.gz”, err=reverse_error
 * `dada()` – the DADA2 function we are calling, with the following parameters set within it
 * `derep=` – the path to the filtered reads (either forward or reverse)
 * `err=` – the object holding the error profile for the inferred reads (either forward or reverse)
-* `pool=“pseudo”` – setting the method of incorporating information from multiple samples, "pseudo" instructs the algorithm to perform pseudo-pooling between individually processed samples
+* `pool="pseudo"` – setting the method of incorporating information from multiple samples, "pseudo" instructs the algorithm to perform pseudo-pooling between individually processed samples
 * `multithread=TRUE` – determine number of cores available and run in parallel when possible (can also take an integer specifying the number of cores to use)
 
 **Input Data:**
@@ -421,7 +431,7 @@ reverse_seqs <- dada(derep=“sample1_R2_filtered.fastq.gz”, err=reverse_error
 
 ### 5c. Merging Forward and Reverse Reads; Skip if Data are Single-End
 ```R
-merged_contigs <- mergePairs(dadaF=forward_seqs, derepF=“sample1_R1_filtered.fastq.gz”, dadaR=reverse_seqs, derepR=“sample1_R2_filtered.fastq.gz”)
+merged_contigs <- mergePairs(dadaF=forward_seqs, derepF="sample1_R1_filtered.fastq.gz", dadaR=reverse_seqs, derepR="sample1_R2_filtered.fastq.gz")
 ```
 
 **Parameter Definitions:** 
@@ -467,7 +477,7 @@ seqtab <- makeSequenceTable(merged_contigs)
 
 ### 5e. Removing putative chimeras
 ```R
-seqtab.nochim <- removeBimeraDenovo(unqs=seqtab, method=“consensus”, multithread=TRUE)
+seqtab.nochim <- removeBimeraDenovo(unqs=seqtab, method="consensus", multithread=TRUE)
 ```
 
 **Parameter Definitions:**  
