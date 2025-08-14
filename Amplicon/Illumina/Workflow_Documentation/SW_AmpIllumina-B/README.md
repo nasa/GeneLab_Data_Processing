@@ -145,7 +145,7 @@ ___
    > *Note: See [cutadapt documentation here](https://cutadapt.readthedocs.io/en/stable/recipes.html#trimming-amplicon-primers-from-paired-end-reads) for more info.*
 
 * `--anchor-primers TRUE/FALSE` - indicates if primers should be anchored (TRUE) or not (FALSE) when provided to cutadapt. Default: FALSE
-   > *Note: See [cutadapt documention here](https://cutadapt.readthedocs.io/en/stable/guide.html#anchored-5adapters) for more info.*
+   > *Note: See [cutadapt documentation here](https://cutadapt.readthedocs.io/en/stable/guide.html#anchored-5adapters) for more info.*
 
 * `--discard-untrimmed TRUE/FALSE` - if set to TRUE, instructs cutadapt to remove reads if the primers were not found in the expected location; if set to FALSE, these reads are kept. Default: TRUE
 

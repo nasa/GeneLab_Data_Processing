@@ -50,7 +50,7 @@ ___
 
 ### 2. Run the visualization script manually  
 
-The [Illumina-R-visualizations.R](./Illumina-R-visualizations.R) script can be executed from the command line by providing `runsheet_file`, `sample_info`, `counts`, `taxonomy`, `plots_dir`, `output_prefix`, and `assay_suffix` as positional arguments, in their respecive order.
+The [Illumina-R-visualizations.R](./Illumina-R-visualizations.R) script can be executed from the command line by providing `runsheet_file`, `sample_info`, `counts`, `taxonomy`, `plots_dir`, `output_prefix`, and `assay_suffix` as positional arguments, in their respective order.
 
 The example command below shows how to execute the script with the following parameters:
  * runsheet_file: /path/to/runsheet.csv  

@@ -492,7 +492,7 @@ seqtab.nochim <- removeBimeraDenovo(unqs=seqtab, method="consensus", multithread
 
 * `seqtab` (a named integer matrix containing the sequence table, output from [Step 5d](#5d-generating-sequence-table-with-counts-per-sample))
 
-**Ouptut Data:**
+**Output Data:**
 
 * `seqtab.nochim` (a named integer matrix containing the sequence table filtered to exclude putative chimeras)
 
@@ -804,7 +804,7 @@ library(hexbin)
 
 #### make_dendrogram()
 <details>
-  <summary>compute heirarchical clustering and create a dendrogram</summary>
+  <summary>compute hierarchical clustering and create a dendrogram</summary>
 
   ```R
   make_dendrogram <- function(dist_obj, metadata, groups_colname,
@@ -1131,10 +1131,10 @@ library(hexbin)
   group_low_abund_taxa <- function(abund_table, threshold=0.05,
                                   rare_taxa=FALSE) {
 
-    # Intialize an empty vector that will contain the indices for the
+    # Initialize an empty vector that will contain the indices for the
     # low abundance columns/ taxa to group
     taxa_to_group <- c()
-    #intialize the index variable of species with low abundance (taxa/columns)
+    #initialize the index variable of species with low abundance (taxa/columns)
     index <- 1
 
     # Loop over every column or taxa then check to see if the max abundance is less than the set threshold
@@ -1371,7 +1371,7 @@ library(hexbin)
   - `x=` -  a matrix or DESeqDataSet to plot
   - `normalized=TRUE` - boolean specifying whether to normalize the counts from a DESeqDataSEt; default is TRUE
   - `feature=` - a string specifying which feature type ("ASV", "OTU", "gene" etc.) is being plotted; Default is "ASV"
-  - `...=` - any named arguement(s) that can be passed to the ggplot2::ggplot function.
+  - `...=` - any named argument(s) that can be passed to the ggplot2::ggplot function.
 
   **Returns:** a sparsity plot of type ggplot
 </details>
@@ -2225,7 +2225,7 @@ assay_suffix <- "_GLAmpSeq"
 output_prefix <- ""
 
 # -------------------------Prepare feature tables -------------------------- #
-# For ITS and 18S datasets the taxonomy columns may also contain kingdom and divison taxonomy levels
+# For ITS and 18S datasets the taxonomy columns may also contain kingdom and division taxonomy levels
 # which will break the code. To avoid this, we only plot the phylum to species levels.
 taxon_levels <- c("phylum", "class", "order", "family", "genus", "species") # Plot only phylum to species
 names(taxon_levels) <- taxon_levels
@@ -2596,7 +2596,7 @@ final_results_bc1 <- map(pairwise_comp_df, function(col){
 merged_stats_df <- final_results_bc1[[names(final_results_bc1)[1]]] %>%
   as.data.frame() %>% select(taxon)
 
-# Loop over the results of every comparion and join it the pre-existing 
+# Loop over the results of every comparison and join it the pre-existing 
 # stats table
 walk(comparisons[names(final_results_bc1)], .f = function(comparison){
   
@@ -2616,7 +2616,7 @@ merged_stats_df <- merged_stats_df %>%
 
 # ------ Get comparison names
 # Since all column groups i.e. lnFC, pval, W, etc. have the same
-# suffixes as comparison names, we only need to extract the comparion names
+# suffixes as comparison names, we only need to extract the comparison names
 # from one of them. Here we extract them from the "lnFC" prefixed columns
 comp_names <- merged_stats_df %>% 
   select(starts_with("Lnfc_", ignore.case = FALSE)) %>%
@@ -2809,7 +2809,7 @@ write_csv(merged_df %>%
 * [get_ncbi_ids()](#get_ncbi_ids)
 * [fix_names()](#fix_names)
   
-**Parameter Defintion:**
+**Parameter Definition:**
 
 * `ancombc()` - ANCOMBC::ancombc function (*using the following non-default values:*)
   * `data` - TreeSummarizedExperiment object created from `feature_table` input data
@@ -3381,7 +3381,7 @@ walk(pairwise_comp_df, function(col){
   group1 <- col[1]
   group2 <- col[2]
 
-# Retrieve the statistics table for the cuurrent pair and rename the columns
+# Retrieve the statistics table for the current pair and rename the columns
 df <- results(deseq_modeled, contrast = c(group, group2, group1)) %>%
   data.frame() %>%
   rownames_to_column(feature) %>% 

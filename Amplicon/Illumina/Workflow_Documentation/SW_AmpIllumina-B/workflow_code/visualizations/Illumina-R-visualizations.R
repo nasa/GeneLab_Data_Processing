@@ -65,7 +65,7 @@ remove_common_prefix <- function(strs) {
   sapply(strs, function(x) substr(x, nchar(prefix) + 1, nchar(x)))
 }
 
-# Adust cex based on number of samples
+# Adjust cex based on number of samples
 adjust_cex <- function(num_samples, start_samples = 40, end_samples = 150, default_cex = 1, min_cex = 0.6) {
   slope <- (min_cex - default_cex) / (end_samples - start_samples)
   
@@ -185,7 +185,7 @@ RColorBrewer_Palette_lengths <- c(Accent=8, Dark2=8, Paired=12, Pastel1=9, Paste
 
 # Check if number of colors exceeds the limit of the selected RColorBrewer_Palette palette
 if (num_colors > RColorBrewer_Palette_lengths[RColorBrewer_Palette]) {
-    # If so, reate a custom palette with more colors
+    # If so, create a custom palette with more colors
     custom_palette <- colorRampPalette(brewer.pal(RColorBrewer_Palette_lengths[RColorBrewer_Palette], RColorBrewer_Palette))(num_colors)
     colors <- custom_palette
 } else {
