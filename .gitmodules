@@ -1,0 +1,3 @@
+[submodule "Amplicon/Illumina/Workflow_Documentation/NF_AmpIllumina"]
+	path = Amplicon/Illumina/Workflow_Documentation/NF_AmpIllumina
+	url = https://github.com/nasa/GeneLab_AmpliconSeq_Workflow
