@@ -643,8 +643,8 @@ def main():
     
     parser.add_argument('--visualizations',
                         choices=['TRUE', 'FALSE'],
-                        default='FALSE',
-                    help='If set to TRUE, enables visualization of workflow results. Default: FALSE')
+                        default='TRUE',
+                    help='If set to FALSE, disables visualization of workflow results. Default: TRUE')
     
     # Check if no arguments were provided
     if len(sys.argv) == 1:

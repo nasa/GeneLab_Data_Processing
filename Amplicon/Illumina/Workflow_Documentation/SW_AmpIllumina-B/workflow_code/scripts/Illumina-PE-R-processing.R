@@ -160,7 +160,7 @@ dna <- DNAStringSet(getSequences(seqtab.nochim))
     # downloading reference R taxonomy object (at some point this will be stored somewhere on GeneLab's server and we won't download it, but should leave the code here, just commented out)
 cat("\n\n  Downloading reference database...\n\n")
 if ( target_region == "16S" ) { 
-    download.file("http://www2.decipher.codes/Classification/TrainingSets/SILVA_SSU_r138_2019.RData", "SILVA_SSU_r138_2019.RData")
+    download.file("https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2019.RData", "SILVA_SSU_r138_2019.RData")
     # loading reference taxonomy object
     load("SILVA_SSU_r138_2019.RData")
     # removing downloaded file
@@ -170,7 +170,7 @@ if ( target_region == "16S" ) {
 
 } else if (target_region == "ITS" ) {
 
-    download.file("http://www2.decipher.codes/Classification/TrainingSets/UNITE_v2023_July2023.RData", "UNITE_v2023_July2023.RData")    
+    download.file("https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2023_July2023.RData", "UNITE_v2023_July2023.RData")    
     # loading reference taxonomy object
     load("UNITE_v2023_July2023.RData")
     # removing downloaded file
@@ -180,7 +180,7 @@ if ( target_region == "16S" ) {
 
 } else if (target_region == "18S" ) {
 
-    download.file("http://www2.decipher.codes/Classification/TrainingSets/PR2_v4_13_March2021.RData", "PR2_v4_13_March2021.RData")    
+    download.file("https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData", "PR2_v4_13_March2021.RData")    
     # loading reference taxonomy object
     load("PR2_v4_13_March2021.RData")
     # removing downloaded file
