@@ -12,5 +12,5 @@
 
 *Current GeneLab Pipeline/Workflow Implementation
 
-> See the [NF_AmpIllumina Change Log](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow/CHANGELOG.md) to access the most recent changes to the workflow and view all changes associated with each update.<br>
+> See the [NF_AmpIllumina Change Log](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow/blob/main/CHANGELOG.md) to access the most recent changes to the workflow and view all changes associated with each update.<br>
 > All workflow changes associated with the previous version of the GeneLab Amplicon Pipeline ([GL-DPPD-7104-B](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md) and earlier) can be found in the [SW_AmpIllumina-B Change Log](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/CHANGELOG.md)

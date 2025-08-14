@@ -35,7 +35,7 @@
 - Added [run_workflow.py](workflow_code/scripts/run_workflow.py)
   - Sets up runsheet for OSDR datasets. Uses a runsheet to set up [config.yaml](workflow_code/config.yaml) and [unique-sample-IDs.txt](workflow_code/unique-sample-IDs.txt). Runs the Snakemake workflow.
 - Updated instructions in [README.md](README.md) to use [run_workflow.py](workflow_code/scripts/run_workflow.py)
-- Added downstream analysis visualizations rule using [Illumina-R-Visualizations.R](workflow_code/scripts/Illumina-R-visualizations.R)
+- Added downstream analysis visualizations rule using [Illumina-R-Visualizations.R](workflow_code/visualizations/Illumina-R-visualizations.R)
   - Volcano plots, dendrogram, PCoA, rarefaction, richness, taxonomy plots
 
 <br> 

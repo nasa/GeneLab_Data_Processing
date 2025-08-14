@@ -607,7 +607,7 @@ write.table(tax_and_count_tab, "taxonomy-and-counts_GLAmpSeq.tsv", sep="\t", quo
 
 ### 6a. Create Sample Runsheet
 
-> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the examples for [Paired-end](../Workflow_Documentation/NF_AmpIllumina-B/workflow_code/PE_file.csv) and [Single-end](../Workflow_Documentation/NF_AmpIllumina-B/workflow_code/SE_file.csv) samples. When creating this table manually, the most important columns for the analyses below are:
+> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the examples for [Paired-end](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow/blob/main/examples/runsheet/PE_file.csv) and [Single-end](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow/blob/main/examples/runsheet/SE_file.csv) samples. When creating this table manually, the most important columns for the analyses below are:
 
 * `sample_id` - column with unique sample names.
 * `groups`    - column with the groups/treatments that each sample belong to. This column is used for comparison.

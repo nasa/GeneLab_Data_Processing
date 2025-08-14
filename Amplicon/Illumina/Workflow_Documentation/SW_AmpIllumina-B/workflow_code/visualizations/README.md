@@ -79,7 +79,7 @@ Additionally, the `RColorBrewer_Palette` variable can be modified in the script.
 
 **Input Data:**
 * *runsheet.csv (output from [GL-DPPD-7104-B step 6a](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#6a-create-sample-runsheet))
-* unique-sample-IDs.txt (output from [run_workflow.py](/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/README.md#5-additional-output-files))
+* unique-sample-IDs.txt (output from [run_workflow.py](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#5-additional-output-files))
 * counts_GLAmpSeq.tsv (output from [GL-DPPD-7104-B step 5g](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#5g-generating-and-writing-standard-outputs))
 * taxonomy_GLAmpSeq.tsv (output from [GL-DPPD-7104-B step 5g](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md#5g-generating-and-writing-standard-outputs))
 
