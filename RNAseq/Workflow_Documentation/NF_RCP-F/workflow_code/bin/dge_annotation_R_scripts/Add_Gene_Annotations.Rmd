@@ -89,7 +89,7 @@ df2 <- merge(
 # )
 
 dir.create(dirname(paste0(params$annotated_output_prefix, "_")), recursive = TRUE)
-write.csv(df2, row.names = FALSE, paste0(params$annotated_output_prefix, "differential_expression.csv"))
+write.csv(df2, row.names = FALSE, paste0(params$annotated_output_prefix, "differential_expression_GLbulkRNAseq.csv"))
 ```
 
 ```{r verson-reporting}

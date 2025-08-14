@@ -1,0 +1,73 @@
+nextflow_process {
+
+    name "Test Process VV_AGILE1CH"
+    script "modules/VV_AGILE1CH.nf"
+    process "VV_AGILE1CH"
+
+    test("GLDS-367: Should run without failures") {
+
+        when {
+            params {
+                // define parameters here. Example:
+                gldsAccession = "GLDS-367"
+            }
+            process {
+                """
+                // define inputs of the process here. Example:
+                input[0] = file("test-datasets-extended/testdata/GLDS-367/Metadata/*")
+                input[1] = file("test-datasets-extended/testdata/GLDS-367/00-DE/*")
+                input[2] = false // val(skipVV)
+                input[3] = file("${baseDir}/bin/dp_tools__agilent_1_channel")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            // TODO: future on dp_tools, messages in VV log are not deterministic due to use of sets to present items (i.e. order is not guaranteed)
+            assert snapshot(
+                process.out.VVed_raw_reads,
+                process.out.VVed_runsheet,
+                process.out.versions
+                // process.out.log.get(0).lines(), // returns "parallel": false
+                // process.out.log.get(0).lines().count(), // returns 1
+                // process.out.log.get(0).count() // raises java.lang.NullPointerException
+                // process.out.log.get(0) // gives file and md5sum default
+                // process.out.log.get(0).readLines().count() // raises MethodSelectionException for list obj
+                // process.out.log.get(0).readLines().size() // returns 1
+                // ["V&V Log lines count" : process.out.log.get(0).countLines()] // Raises countLines error for get(0), seems to be a null pointer?
+            ).match()
+        }
+
+    }
+    test("GLDS-542: Should run without failures") {
+
+        when {
+            params {
+                // define parameters here. Example:
+                gldsAccession = "GLDS-367"
+            }
+            process {
+                """
+                // define inputs of the process here. Example:
+                input[0] = file("test-datasets-extended/testdata/GLDS-367/Metadata/*")
+                input[1] = file("test-datasets-extended/testdata/GLDS-367/00-DE/*")
+                input[2] = false // val(skipVV)
+                input[3] = file("${baseDir}/bin/dp_tools__agilent_1_channel")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            // TODO: future on dp_tools, messages in VV log are not deterministic due to use of sets to present items (i.e. order is not guaranteed)
+            assert snapshot(
+                process.out.VVed_raw_reads,
+                process.out.VVed_runsheet,
+                process.out.versions
+            ).match()
+        }
+
+    }
+
+}

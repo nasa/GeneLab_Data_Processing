@@ -33,7 +33,7 @@ process SORT_INDEX_BAM {
 
   script:
     sorted_bam_fname = bam_file.name.replaceAll('.out.bam','_sorted.out.bam')
-    mem_MB_per_thread = task.memory.toMega().intdiv(task.cpus)
+    mem_MB_per_thread = (task.memory.toMega().intValue() * 0.8 / task.cpus).intValue()
     """    
     samtools sort -m ${ mem_MB_per_thread  }M \
                   --threads ${ task.cpus } \

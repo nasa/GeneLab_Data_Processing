@@ -8,8 +8,10 @@ GeneLab has wrapped each step of the pipeline into a workflow with validation an
 
 |Pipeline Version|Current Workflow Version (for respective pipeline version)|Nextflow Version|
 |:---------------|:---------------------------------------------------------|:---------------|
-|*[GL-DPPD-7101-F.md](../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md)|[NF_RCP-F_1.0.3](NF_RCP-F)|22.10.1|
+|*[GL-DPPD-7101-G.md](../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md)|[NF_RCP_2.0.1](NF_RCP)|24.10.5|
+|*[GL-DPPD-7115.md](../Pipeline_GL-DPPD-7115_Versions/GL-DPPD-7115.md)|[NF_RCP_2.0.1](NF_RCP)|24.10.5|
+|[GL-DPPD-7101-F.md](../Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md)|[NF_RCP-F_1.0.4](NF_RCP-F)|22.10.1|
 
 *Current GeneLab Pipeline/Workflow Implementation
 
-> See the [workflow changelog](NF_RCP-F/CHANGELOG.md) to access previous workflow versions and view all changes associated with each version update. 
+> See the [workflow changelog](NF_RCP/CHANGELOG.md) to access previous workflow versions and view all changes associated with each version update. 

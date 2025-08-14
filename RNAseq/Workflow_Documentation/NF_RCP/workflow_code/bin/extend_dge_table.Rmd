@@ -1,0 +1,94 @@
+---
+title: Extend Differential Expression Table To Generate Visualization Table
+output:
+  html_document:
+    pandoc_args: ["+RTS", "-K1024m", "-RTS"]
+
+params:
+    work_dir: "." 
+    output_directory: "." # Directory for output files
+    output_filename_suffix: "_GLbulkRNAseq.csv"
+    input_table_path: "" # MUST be a table with output from 'Perform_DGE.Rmd'
+    table_sep: ","
+    
+---
+
+## Results {.tabset}
+
+### Setup
+```{r, setup, include=FALSE}
+knitr::opts_knit$set(root.dir = params$work_dir)
+```
+
+```{r}
+# allow more flexibility in download time
+# useful for slower connections where the default of 60 seconds might be exceeded
+options(timeout = 600)
+
+suppressMessages(library(dplyr))
+suppressMessages(library(tibble))
+```
+
+### Output
+
+```{r, load-table-to-extend}
+df <- read.csv(params$input_table_path,
+               sep = params$table_sep,
+                check.names = FALSE # don't rename column names with check.names
+                 )
+```
+
+```{r, add-viz-columns}
+### Combine annotations table and the (non-ERCC) normalized counts table
+### Add columns needed to generate GeneLab visulaization plots to the (non-ERCC) normalized counts table
+## Add column to indicate the sign (positive/negative) of log2fc for each pairwise comparison
+updown_table <- sign(df[,grep("Log2fc_",colnames(df))])
+colnames(updown_table) <- gsub("Log2fc","Updown",grep("Log2fc_",colnames(df),value = TRUE))
+df <- cbind(df,updown_table)
+rm(updown_table)
+
+## Add column to indicate contrast significance with p <= 0.1
+sig.1_table <- df[,grep("P.value_",colnames(df))]<=.1
+colnames(sig.1_table) <- gsub("P.value","Sig.1",grep("P.value_",colnames(df),value = TRUE))
+df <- cbind(df,sig.1_table)
+rm(sig.1_table)
+
+## Add column to indicate contrast significance with p <= 0.05
+sig.05_table <- df[,grep("P.value_",colnames(df))]<=.05
+colnames(sig.05_table) <- gsub("P.value","Sig.05",grep("P.value_",colnames(df),value = TRUE))
+df <- cbind(df, sig.05_table)
+rm(sig.05_table)
+
+## Add columns for the volcano plot with p-value and adjusted p-value
+log_pval_table <- log2(df[,grep("P.value_", colnames(df))])
+colnames(log_pval_table) <- paste0("Log2_", colnames(log_pval_table))
+df <- cbind(df, log_pval_table)
+rm(log_pval_table)
+log_adj_pval_table <- log2(df[,grep("Adj.p.value_", colnames(df))])
+colnames(log_adj_pval_table) <- paste0("Log2_", colnames(log_adj_pval_table))
+df <- cbind(df, log_adj_pval_table)
+rm(log_adj_pval_table)
+
+dir.create(dirname(paste0(params$output_directory)), recursive = TRUE)
+write.csv(
+    df,
+    row.names = FALSE,
+    file = file.path(params$output_directory, 
+                     paste0(params$extended_table_output_prefix, 
+                            "visualization_output_table", 
+                            params$output_filename_suffix, ".csv"))
+)
+```
+
+```{r version-reporting}
+## print session info ##
+session_info_output <- capture.output(sessionInfo())
+
+# Write versions file
+cat(session_info_output,
+    "BioC_version_associated_with_R_version",
+    toString(BiocManager::version()),
+    file = file.path(params$output_directory, "versions.txt"),
+    append = TRUE,
+    sep = "\n")
+```

@@ -1,0 +1,267 @@
+#!/usr/bin/env python
+
+"""
+This is a program for generating a README.txt file for GeneLab processed metagenomics datasets.
+"""
+
+import os
+import sys
+import argparse
+import textwrap
+import zipfile
+import re
+
+
+parser = argparse.ArgumentParser(description = "This program generates the corresponding README file for GeneLab processed amplicon dataset. It is intended to \
+                                             be run before running `GL-validate-processed-metagenomics-data` and after processing_info.zip has been created.")
+
+required = parser.add_argument_group('required arguments')
+required.add_argument("-g", "--GLDS-ID", help = 'GLDS ID (e.g. "GLDS-69")', action = "store", required = True)
+parser.add_argument("--output", help = 'Name of output file (default: "README.txt", with appended prefix if one is provided)', default = "README.txt")
+parser.add_argument("--name", help = 'Name of individual who performed the processing (default: "Michael D. Lee")', default = "Michael D. Lee")
+parser.add_argument("--email", help = 'Email address of individual who performed the processing (default: "Mike.Lee@nasa.gov")', default = "Mike.Lee@nasa.gov")
+parser.add_argument("--protocol_ID", help = 'Protocol document ID followed (default: assay dependent)', default = "GL-DPPD-7104-B")
+parser.add_argument("-p", "--output-prefix", help = "Output additional file prefix if there is one", action = "store", default = "")
+parser.add_argument("--assay_suffix", help = "Genelab assay suffix", action = "store", default = "_GLAmpSeq")
+parser.add_argument("--primers-already-trimmed", help = "Add this flag if primers were trimmed prior to GeneLab processing, \
+                    therefore there are no trimmed sequence data", action = "store_true")
+parser.add_argument("--processing_zip_file", help = "Specifies the location of processing_info.zip", 
+                    action = "store", default = "processing_info.zip")
+parser.add_argument("--raw-reads-dir", help = "Specifies the location of the raw reads directory if they are to be included", action = "store", default = "")
+parser.add_argument("--fastqc_dir", help = "Specifies the location of fastqc and multiqc reports directory", 
+                    action = "store", default = "FastQC_Outputs/")
+parser.add_argument("--filtered_reads_dir", help = "Specifies the location of the filtered reads directory", 
+                    action = "store", default = "Filtered_Sequence_Data/")
+parser.add_argument("--read_based_dir", help = "Specifies the location of the directory containing the results generated from read-based approach", 
+                    action = "store", default = "Read-based_Processing/")
+parser.add_argument("--assembly_based_dir", help = "Specifies the location of the directory containing results generated from assembly-based approach", 
+                    action = "store", default = "Assembly-based_Processing/")
+parser.add_argument("--assemblies_dir", help = "Specifies the location of the directory containing sample contig assemblies", 
+                    action = "store", default = "Assembly-based_Processing/assemblies/")
+parser.add_argument("--genes_dir", help = "Specifies the location of the directory containing predicted genes", 
+                    action = "store", default = "Assembly-based_Processing/predicted-genes/")
+parser.add_argument("--annotations_and_tax_dir", help = "Specifies the location of the directory containing contigs annotation and taxonomy", 
+                    action = "store", default = "Assembly-based_Processing/annotations-and-taxonomy/")
+parser.add_argument("--mapping_dir", help = "Specifies the location of the directory containing per-sample bam, coverage, and mapping info files", 
+                    action = "store", default = "Assembly-based_Processing/read-mapping/")
+parser.add_argument("--bins_dir", help = "Specifies the location of the directory containing recovered genome bins", 
+                    action = "store", default = "Assembly-based_Processing/bins/")
+parser.add_argument("--MAGs_dir", help = "Specifies the location of the directory containing metaassebled genomes (MAGs)", 
+                    action = "store", default = "Assembly-based_Processing/MAGs/")
+parser.add_argument("--combined_output_dir", help = "Specifies the location of the directory containing summary outputs with all samples combined", 
+                    action = "store", default = "Assembly-based_Processing/combined-outputs/")
+
+if len(sys.argv)==1:
+    parser.print_help(sys.stderr)
+    sys.exit(0)
+
+args = parser.parse_args()
+
+# Setting some colors
+tty_colors = {
+    'green' : '\033[0;32m%s\033[0m',
+    'yellow' : '\033[0;33m%s\033[0m',
+    'red' : '\033[0;31m%s\033[0m'
+}
+
+
+### Functions ###
+def color_text(text, color='green'):
+    if sys.stdout.isatty():
+        return tty_colors[color] % text
+    else:
+        return text
+
+
+def wprint(text):
+    """ Print wrapper """
+
+    print(textwrap.fill(text, width=80, initial_indent="  ", 
+          subsequent_indent="  ", break_on_hyphens=False))
+
+
+def report_failure(message, color = "yellow"):
+    print("")
+    wprint(color_text(message, color))
+    print("\nREADME-generation failed.\n")
+
+    sys.exit(1)
+
+
+def check_for_file_and_contents(file_path):
+    """ Used by get_processing_zip_contents function """
+
+    if not os.path.exists(file_path):
+        report_failure("The expected file '" + str(file_path) + "' does not exist.")
+    if not os.path.getsize(file_path) > 0:
+        report_failure("The file '" + str(file_path) + "' is empty.")
+
+
+def get_processing_zip_contents(processing_zip_file):
+    """ This gets the filenames that are in the processing_info.zip to add them to the readme """
+    # Check that the zip file exists and that it is not empty
+
+    check_for_file_and_contents(processing_zip_file)
+
+    with zipfile.ZipFile(processing_zip_file) as zip_obj:
+
+        entries = zip_obj.namelist()
+        entries.sort()
+
+    return(entries)
+
+
+def write_header(output, GLDS_ID, name, email, protocol_ID):
+
+    header = ["################################################################################\n",
+              "{:<77} {:>0}".format("## This directory holds processed data for NASA " + str(GLDS_ID), "##\n"),
+              "{:<77} {:>0}".format("## https://genelab-data.ndc.nasa.gov/genelab/accession/" + str(GLDS_ID) + "/", "##\n"),
+              "{:<77} {:>0}".format("##", "##\n"),
+              "{:<77} {:>0}".format("## Processed by " + str(name) + " (" + str(email) + ")", "##\n"),
+              "{:<77} {:>0}".format("## Based on " + str(protocol_ID),  "##\n"),
+              "################################################################################\n\n",
+              "Summary of contents:\n\n"]
+
+    output.writelines(header)
+
+
+
+def write_metagenomics_body(output, output_file, assay_suffix, output_prefix, processing_zip_file,
+                        processing_zip_contents, fastqc_dir, raw_reads_dir, filtered_reads_dir,
+                        read_based_dir, assembly_based_dir, assemblies_dir, mapping_dir, genes_dir,
+                        annotations_and_tax_dir, bins_dir, MAGs_dir, combined_output_dir):
+
+    # this file
+    output.write("    {:<75} {:>0}".format("- " + str(output_file), "- this file\n\n"))
+
+    # fastqc info
+    output.write("    {:<75} {:>0}".format("- " + str(fastqc_dir), "- multiQC summary reports of FastQC runs\n\n"))
+
+    # raw reads
+    if raw_reads_dir != "":
+        output.write("    {:<75} {:>0}".format("- " + str(raw_reads_dir), "- initial read fastq files\n\n"))
+
+    # quality-filtered reads
+    output.write("    {:<75} {:>0}".format("- " + str(filtered_reads_dir), "- quality-filtered fastq files\n\n"))
+
+    # outputs
+    output.write("    {:<75} {:>0}".format("- " + str(assembly_based_dir), "- results generated from assembly-based approach\n\n"))
+
+    output.write("        {:<71} {:>0}".format(f"- {output_prefix}Assembly-based-processing-overview{assay_suffix}.tsv", "- Assembly-based overview per sample\n\n"))
+    
+    output.write("        {:<71} {:>0}".format("- " + str(assemblies_dir), "- per-sample assembly files and info\n"))
+    output.write("            {:<67} {:>0}".format("- *-assembly.fasta", "- fasta files of individual sample assemblies\n"))
+    output.write("            {:<67} {:>0}".format(f"- {output_prefix}assembly-summaries{assay_suffix}.tsv", "- table of all assemblies' summary statistics\n"))
+    output.write("            {:<67} {:>0}".format(f"- {output_prefix}Failed-assemblies{assay_suffix}.tsv", "- samples that didn't assemble any contigs (if any)\n\n"))
+
+    output.write("        {:<71} {:>0}".format("- " + str(genes_dir), "- per-sample predicted gene files\n"))
+    output.write("            {:<67} {:>0}".format("- *.faa", "- gene amino-acid sequences\n"))
+    output.write("            {:<67} {:>0}".format("- *.fasta", "- gene nucleotide sequences\n"))
+    output.write("            {:<67} {:>0}".format("- *.gff", "- predicted genes in general feature format\n\n"))
+
+    output.write("        {:<71} {:>0}".format("- " + str(annotations_and_tax_dir), "- per-sample Kegg Orthology (KO) annotations, taxonomy, and coverages\n"))
+    output.write("            {:<67} {:>0}".format("- *-gene-coverage-annotation-tax.tsv", "- tables with gene coverage, annotation, and taxonomy info\n"))
+    output.write("            {:<67} {:>0}".format("- *-contig-coverage-and-tax.tsv", "- tables with contig coverage and taxonomy info\n\n"))
+
+    output.write("        {:<71} {:>0}".format("- " + str(mapping_dir), "- per-sample bam, coverage, and mapping info files\n"))
+    output.write("            {:<67} {:>0}".format("- *.bam", "- bam files\n"))
+    output.write("            {:<67} {:>0}".format("- *.tsv", "- coverage files used for metabat2 binning\n"))
+    output.write("            {:<67} {:>0}".format("- *.txt", "- stdout from bowtie2 mapping\n\n"))
+
+    if os.path.exists(bins_dir):
+        output.write("        {:<71} {:>0}".format("- " + str(bins_dir), "- genomic bins recovered (if any)\n"))
+        output.write("            {:<67} {:>0}".format("- *.fasta", "- fasta files of bins recovered\n"))
+        output.write("            {:<67} {:>0}".format(f"- {output_prefix}bins-overview{assay_suffix}.tsv", "- summary stats of bins recovered\n\n"))
+
+    if os.path.exists(MAGs_dir):
+        output.write("        {:<71} {:>0}".format("- " + str(MAGs_dir), "- high-quality Metagenome-Assembled Genomes recovered (if any; > 90% est. comp., < 10% est. redundancy)\n"))
+        output.write("            {:<67} {:>0}".format("- *.fasta", "- fasta files of MAGs\n"))
+        output.write("            {:<67} {:>0}".format(f"- {output_prefix}MAGs-overview{assay_suffix}.tsv", "- summary stats of MAGs including GTDB taxonomy\n"))
+        output.write("            {:<67} {:>0}".format(f"- {output_prefix}MAG-level-KO-annotations{assay_suffix}.tsv", "- KO functional annotations associated with each MAG\n"))
+        output.write("            {:<67} {:>0}".format(f"- {output_prefix}MAG-KEGG-Decoder*", "- KEGG-Decoder summaries of MAG functional annotations\n\n"))
+
+
+    output.write("        {:<71} {:>0}".format("- " + str(combined_output_dir), "- summary outputs with all samples combined\n"))
+    output.write("            {:<67} {:>0}".format(f"- {output_prefix}Combined-gene-level-KO-function-coverages{assay_suffix}.tsv", "- table of combined KO function coverages\n"))
+    output.write("            {:<67} {:>0}".format(f"- {output_prefix}Combined-gene-level-KO-function-coverages-CPM{assay_suffix}.tsv", "- table of combined KO function coverages, normalized to coverage per million\n"))
+    output.write("            {:<67} {:>0}".format(f"- {output_prefix}Combined-gene-level-taxonomy-coverages{assay_suffix}.tsv", "- table of combined, gene-level taxonomy coverages\n"))
+    output.write("            {:<67} {:>0}".format(f"- {output_prefix}Combined-gene-level-taxonomy-coverages-CPM{assay_suffix}.tsv", "- table of combined, gene-level taxonomy coverages, normalized to coverage per million\n"))
+    output.write("            {:<67} {:>0}".format(f"- {output_prefix}Combined-contig-level-taxonomy-coverages{assay_suffix}.tsv", "- table of combined, contig-level taxonomy coverages\n"))
+    output.write("            {:<67} {:>0}".format(f"- {output_prefix}Combined-contig-level-taxonomy-coverages-CPM{assay_suffix}.tsv", "- table of combined, contig-level taxonomy coverages, normalized to coverage per million\n\n"))
+
+    output.write("    {:<75} {:>0}".format("- " + str(read_based_dir), "- results generated from read-based approach\n"))
+    output.write("        {:<71} {:>0}".format(f"- {output_prefix}Gene-families{assay_suffix}.tsv", "- gene-family abundances\n"))
+    output.write("        {:<71} {:>0}".format(f"- {output_prefix}Gene-families-grouped-by-taxa{assay_suffix}.tsv", "- gene-family abundances grouped by taxa\n"))
+    output.write("        {:<71} {:>0}".format(f"- {output_prefix}Gene-families-cpm{assay_suffix}.tsv", "- gene-family abundances normalized to copies-per-million\n"))
+    output.write("        {:<71} {:>0}".format(f"- {output_prefix}Gene-families-KO-cpm{assay_suffix}.tsv", "- KO term abundances normalized to copies-per-million\n"))
+    output.write("        {:<71} {:>0}".format(f"- {output_prefix}Pathway-abundances{assay_suffix}.tsv", "- pathway abundances\n"))
+    output.write("        {:<71} {:>0}".format(f"- {output_prefix}Pathway-abundances-grouped-by-taxa{assay_suffix}.tsv", "- pathway abundances grouped by taxa\n"))
+    output.write("        {:<71} {:>0}".format(f"- {output_prefix}Pathway-abundances-cpm{assay_suffix}.tsv", "- pathway abundances normalized to copies-per-million\n"))
+    output.write("        {:<71} {:>0}".format(f"- {output_prefix}Pathway-coverages{assay_suffix}.tsv", "- pathway coverages\n"))
+    output.write("        {:<71} {:>0}".format(f"- {output_prefix}Pathway-coverages-grouped-by-taxa{assay_suffix}.tsv", "- pathway coverages grouped by taxa\n"))
+    output.write("        {:<71} {:>0}".format(f"- {output_prefix}Metaphlan-taxonomy{assay_suffix}.tsv", "- metaphlan estimated taxonomic relative abundances\n\n"))
+
+    # Processing info
+    output.write("    {:<75} {:>0}".format("- " + str(processing_zip_file), "- zip archive holding info related to processing\n"))
+    for item in processing_zip_contents:
+
+        num_levels = item.count("/")
+
+        if num_levels > 1 and not item.endswith("/"):
+            out_item = re.sub(r'^.*/', '', str(item))
+        elif num_levels == 1 and not item.endswith("/"):
+            out_item = re.sub(r'^.*/', '', str(item))
+        elif num_levels > 1:
+            out_item = re.sub(r'^[^/]*/', '', str(item))
+        else:
+            out_item = str(item)
+
+        if item.endswith('/'):
+            num_levels -= 1
+
+        num_spaces = num_levels * 4
+
+        output.write("        " + " " * num_spaces + "- " + out_item + "\n")
+
+    output.write("\n")
+
+
+
+
+def main():
+    ### Variable setup ###
+    # Suffixes
+    output_prefix = str(args.output_prefix)
+    assay_suffix = str(args.assay_suffix)
+    # Directories
+    raw_reads_dir = str(args.raw_reads_dir)
+    fastqc_dir = str(args.fastqc_dir)
+    filtered_reads_dir = str(args.filtered_reads_dir)
+    read_based_dir =  str(args.read_based_dir) 
+    assembly_based_dir = str(args.assembly_based_dir)
+    assemblies_dir = str(args.assemblies_dir)
+    genes_dir = str(args.genes_dir)
+    annotations_and_tax_dir = str(args.annotations_and_tax_dir)
+    mapping_dir = str(args.mapping_dir)
+    bins_dir = str(args.bins_dir)
+    MAGs_dir = str(args.MAGs_dir)
+    combined_output_dir = str(args.combined_output_dir)
+    # Files
+    processing_zip_file = str(args.processing_zip_file)
+    output_file = str(args.output)
+    
+    processing_zip_contents = get_processing_zip_contents(processing_zip_file)
+
+    with open(output_file, "w") as output:
+
+        write_header(output, args.GLDS_ID, args.name, args.email, args.protocol_ID)
+        
+        write_metagenomics_body(output, output_file, assay_suffix, output_prefix, processing_zip_file,
+                        processing_zip_contents, fastqc_dir, raw_reads_dir, filtered_reads_dir,
+                        read_based_dir, assembly_based_dir, assemblies_dir, mapping_dir, genes_dir,
+                        annotations_and_tax_dir, bins_dir, MAGs_dir, combined_output_dir)
+
+
+
+if __name__ == "__main__":
+    main()

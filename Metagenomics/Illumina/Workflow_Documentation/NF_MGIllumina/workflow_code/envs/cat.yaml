@@ -1,0 +1,7 @@
+name: CAT
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+    - cat=5.2.3
