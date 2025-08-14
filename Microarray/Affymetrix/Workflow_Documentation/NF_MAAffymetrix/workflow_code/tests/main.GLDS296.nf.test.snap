@@ -1,0 +1,27 @@
+{
+    "GLDS-296: Should run without failures.": {
+        "content": [
+            [
+                "OSD-296_metadata_OSD-296-ISA.zip:md5,539611140acef3f9f7583ed0d151ba0c",
+                "OSD-296_microarray_v0_runsheet.csv:md5,7478109160f6a9d66af16341ff242ff2"
+            ],
+            [
+                "raw_intensities_probe.csv:md5,2ba765e0c1cdc513bc34adc4d3d94b34"
+            ],
+            [
+                "normalized_expression_probeset.csv:md5,bc877364a676b1bc0211fd5e6c95127a",
+                "normalized_intensities_probe.csv:md5,9b58c8b8246817c6165df02e31488a36"
+            ],
+            [
+                "SampleTable.csv:md5,cccf6b883d7e4ef369e28004acf0d84a",
+                "contrasts.csv:md5,ef97c2a0ad7888b40219a52c3700d30c",
+                "differential_expression.csv:md5,32ce9cb6bb461ccbf4877111eb311008",
+                "visualization_PCA_table.csv:md5,675608cff6f99f0daef3387f12ec4b63"
+            ],
+            {
+                "Affymetrix.html exists": false
+            }
+        ],
+        "timestamp": "2023-04-27T00:20:25+0000"
+    }
+}

@@ -1,17 +1,28 @@
-# GeneLab bioinformatics processing pipeline for Illumina RNA-sequencing data
+# GeneLab bioinformatics processing pipelines for Illumina RNA-sequencing data
 
-> **The document [`GL-DPPD-7101-F.md`](Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-F.md) holds an overview and example commands for how GeneLab processes RNAseq datasets. See the [Repository Links](#repository-links) descriptions below for more information. Processed data output files and a GeneLab data processing summary is provided for each GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
+> **Documents [`GL-DPPD-7101-G.md`](Pipeline_GL-DPPD-7101_Versions/GL-DPPD-7101-G.md) and [`GL-DPPD-7115`](Pipeline_GL-DPPD-7115_Versions) contain overview and example commands for how GeneLab processes RNAseq datasets from eukaryotic and prokaryotic organisms, respectively. See the [Repository Links](#repository-links) descriptions below for more information. Processed data output files and a GeneLab data processing summary is provided for each GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 
 ---
+## RNAseq Processing Pipelines
 
-<img src="images/RNAseq_pipeline_diagram.png" align="center" alt=""/>
+### Eukaryotes
+<img src="images/RNAseq_eukaryotes_pipeline_diagram.png" align="center" alt="Eukaryotic RNAseq processing workflow"/>  
+
+
+### Prokaryotes
+<img src="images/RNAseq_prokaryotes_pipeline_diagram.png" align="center" alt="Prokaryotic RNAseq processing workflow"/>
+
 
 ---
 ## Repository Links
 
 * [**Pipeline_GL-DPPD-7101_Versions**](Pipeline_GL-DPPD-7101_Versions)
 
-  - Contains the current and previous GeneLab RNAseq consensus processing pipeline (RCP) versions documentation
+  - Contains the current and previous GeneLab RNAseq consensus processing pipeline (RCP) versions documentation for eukaryotic organisms
+
+* [**Pipeline_GL-DPPD-7115_Versions**](Pipeline_GL-DPPD-7115_Versions)
+
+  - Contains the current and previous GeneLab RNAseq consensus processing pipeline (RCP) versions documentation for prokaryotic organisms
 
 * [**RNAseq_Tool_Install**](RNAseq_Tool_Install)
 
@@ -50,7 +61,7 @@ Licenses for the 3rd party open source software utilized in the RNAseq pipeline 
 
 ## Notices
 
-Copyright © 2023 United States Government as represented by the Administrator of the National Aeronautics and Space Administration.  All Rights Reserved. 
+Copyright © 2025 United States Government as represented by the Administrator of the National Aeronautics and Space Administration.  All Rights Reserved. 
 
 ### Disclaimers
 
@@ -58,11 +69,15 @@ No Warranty: THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF AN
 
 Waiver and Indemnity:  RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS ANY PRIOR RECIPIENT.  IF RECIPIENT'S USE OF THE SUBJECT SOFTWARE RESULTS IN ANY LIABILITIES, DEMANDS, DAMAGES, EXPENSES OR LOSSES ARISING FROM SUCH USE, INCLUDING ANY DAMAGES FROM PRODUCTS BASED ON, OR RESULTING FROM, RECIPIENT'S USE OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD HARMLESS THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS ANY PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW.  RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS AGREEMENT. 
 
-The “GeneLab RNA Sequencing Processing Pipeline and Workflow” software also makes use of the following 3rd party Open Source software, released under the licenses indicated above.  A complete listing of 3rd Party software notices and licenses made use of in “GeneLab RNA Sequencing Processing Pipeline and Workflow” can be found in the [RNAseq_3rd_Party_Software.md](../3rd_Party_Licenses/RNAseq_3rd_Party_Software.md) file as indicated above. 
+The "GeneLab RNA Sequencing Processing Pipeline and Workflow" software also makes use of the following 3rd party Open Source software, released under the licenses indicated above.  A complete listing of 3rd Party software notices and licenses made use of in "GeneLab RNA Sequencing Processing Pipeline and Workflow" can be found in the [RNAseq_3rd_Party_Software.md](../3rd_Party_Licenses/RNAseq_3rd_Party_Software.md) file as indicated above. 
 
 <br>
 
 ---
-**Developed and maintained by:**  
-Amanda Saravia-Butler  
-Jonathan Oribello
+**Developed by:**  
+Amanda Saravia-Butler    
+Jonathan Oribello  
+
+**Maintained by:**  
+Alexis Torres  
+Crystal Han  

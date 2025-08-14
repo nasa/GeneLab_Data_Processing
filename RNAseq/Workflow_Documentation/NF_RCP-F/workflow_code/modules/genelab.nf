@@ -1,28 +1,41 @@
 /* Processes dealing with retrieving data from GeneLab
 */
-// TODO Migrate these CLI args to updated dp tools package API
-process RNASEQ_RUNSHEET_FROM_GLDS {
-  // Downloads isazip and creates run sheets using GeneLab API
-  tag "${ glds_accession }"
-  publishDir "${ params.outputDir }/${ params.gldsAccession }/Metadata",
+
+process RUNSHEET_FROM_GLDS {
+  // Downloads isa Archive and creates runsheet using GeneLab API
+  tag "${ gldsAccession }"
+  publishDir "${ params.outputDir }/${ gldsAccession }/Metadata",
+    pattern: "*.{zip,csv}",
     mode: params.publish_dir_mode
 
   input:
-    val(glds_accession)
+    // TEMP: RESTORE ONCE OSD SUPPORT ADDED val(osdAccession)
+    val(gldsAccession)
+    path(dp_tools_plugin)
 
   output:
-    path("${ glds_accession }_bulkRNASeq_v*.csv"), emit: runsheet
-    path("*.zip"), emit: isazip
+    path("${ gldsAccession }_*_v?_runsheet.csv"), emit: runsheet
+    path("*.zip"), emit: isaArchive
 
   script:
+    def injects = params.biomart_attribute ? "--inject biomart_attribute='${ params.biomart_attribute }'" : ''
     """
-    dpt-get-isa-archive --accession ${ glds_accession }
 
-    dpt-isa-to-runsheet --accession ${ glds_accession } \
-      --config-type bulkRNASeq --isa-archive *.zip
+    dpt-get-isa-archive --accession ${ gldsAccession }
+    ls ${dp_tools_plugin}
+
+    dpt-isa-to-runsheet --accession ${ gldsAccession } \
+      --plugin-dir ${dp_tools_plugin} \
+      --isa-archive *.zip ${ injects }
+
+    cat > versions.yaml <<EOF
+    - name: "dp_tools"
+      version: "\$(python -c 'import dp_tools; print(dp_tools.__version__)')"
+      homepage: "https://github.com/J-81/dp_tools"
+      workflow task: "${task.process}"
+    EOF
     """
 }
-
 
 process STAGE_RAW_READS {
   // Stages the raw reads into appropriate publish directory
@@ -52,7 +65,8 @@ process GENERATE_METASHEET {
   // Generates a metadata table, not used in further processing
   tag "${ params.gldsAccession }"
   publishDir "${ params.outputDir }/${ params.gldsAccession }/Metadata",
-    mode: params.publish_dir_mode
+    mode: params.publish_dir_mode,
+    pattern: "*_metadata_table.txt"
 
   input:
     path("isa.zip")
@@ -60,6 +74,7 @@ process GENERATE_METASHEET {
 
   output:
     path("${ params.gldsAccession }_metadata_table.txt"), emit: metasheet
+    path("versions.yaml"), emit: versions
 
   script:
     """
@@ -67,27 +82,38 @@ process GENERATE_METASHEET {
                        --isa-zip isa.zip \
                        --output-dir . \
                        --runsheet ${ runsheet }
+
+    cat > versions.yaml <<EOF
+    - name: "python"
+      version: \$(python --version | awk '{split(\$0,a," "); print a[2]}')
+      homepage: "https://www.python.org/"
+      workflow task: ${task.process}
+    EOF
     """
 }
 
 process GENERATE_MD5SUMS {
   // Generates tabular data indicating genelab standard publishing files, md5sum generation, and tool version table formatting
   tag "${ params.gldsAccession }"
+  label "big_mem"
+
   publishDir "${ params.outputDir }/${ params.gldsAccession }/GeneLab",
     mode: params.publish_dir_mode
 
   input:
     path(data_dir)
     path(runsheet)
+    path("dp_tools__NF_RCP")
 
   output:
     path("*md5sum*")
-    path("Missing_md5sum_files.txt"), optional: true
+    path("Missing_md5sum_files_GLbulkRNAseq.txt"), optional: true
 
   script:
     """
     generate_md5sum_files.py  --root-path ${ data_dir } \\
-                              --runsheet-path ${ runsheet }
+                              --runsheet-path ${ runsheet } \\
+                              --plug-in-dir "dp_tools__NF_RCP"
     """
 }
 
@@ -100,6 +126,7 @@ process UPDATE_ISA_TABLES {
   input:
     path(data_dir)
     path(runsheet)
+    path("dp_tools__NF_RCP")
 
   output:
     path("updated_curation_tables") // directory containing extended ISA tables
@@ -107,7 +134,8 @@ process UPDATE_ISA_TABLES {
   script:
     """
     update_curation_table.py  --root-path ${ data_dir } \\
-                              --runsheet-path ${ runsheet }
+                              --runsheet-path ${ runsheet } \\
+                              --plug-in-dir "dp_tools__NF_RCP"
     """
 }
 
@@ -121,11 +149,12 @@ process SOFTWARE_VERSIONS {
     path("software_versions.txt")
 
   output:
-    path("software_versions.md")
+    path("software_versions_GLbulkRNAseq.md")
 
   script:
     """
     format_software_versions.py software_versions.txt
+    mv software_versions.md software_versions_GLbulkRNAseq.md
     """
 }
 

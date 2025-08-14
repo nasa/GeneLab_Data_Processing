@@ -1,0 +1,26 @@
+{
+    "GLDS-425: Should run without failures": {
+        "content": [
+            [
+                "GLDS-425_metadata_GLDS-425-ISA.zip:md5,79b4e84e4b0df389f7202b0b83700885",
+                "OSD-425_microarray_v0_runsheet.csv:md5,cb8cbe08da9a89a34ae38d15070ec1cc"
+            ],
+            [
+                "raw_intensities.csv:md5,c48a8f7d255dbdf5bf2b34a5b0f42ae5"
+            ],
+            [
+                "normalized_expression.csv:md5,96c797e63fbe155d8f1e98c37e0a8d92"
+            ],
+            [
+                "SampleTable.csv:md5,52cbdffc5b51a4574bae9522acecbfa4",
+                "contrasts.csv:md5,051d905e84df18df8850b9cf020a0e94",
+                "differential_expression.csv:md5,bdeaa5c3f076c1d906d7c9ac03f67cb3",
+                "visualization_PCA_table.csv:md5,abbfe8e853f0e8bf6681887d7172495f"
+            ],
+            {
+                "NF_MAAgilent1ch_v1.0.0.html exists": true
+            }
+        ],
+        "timestamp": "2023-03-23T21:50:36+0000"
+    }
+}

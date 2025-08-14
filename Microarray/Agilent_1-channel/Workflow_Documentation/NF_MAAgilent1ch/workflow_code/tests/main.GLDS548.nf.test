@@ -1,0 +1,30 @@
+nextflow_pipeline {
+
+    name "Test Workflow main.nf"
+    script "main.nf"
+    tag "core"
+
+    test("GLDS-548: Should run without failures") {
+
+        when {
+            params {
+                // define parameters here. Example: 
+                osdAccession = "OSD-548"
+                gldsAccession = "GLDS-548"
+                limit_biomart_query = 300
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert snapshot(
+                            path("${params.outputDir}/${params.gldsAccession}/Metadata").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/00-RawData").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/01-limma_NormExp").list(),
+                            path("${params.outputDir}/${params.gldsAccession}/02-limma_DGE").list(),
+                            ).match()
+        }
+
+    }
+
+}

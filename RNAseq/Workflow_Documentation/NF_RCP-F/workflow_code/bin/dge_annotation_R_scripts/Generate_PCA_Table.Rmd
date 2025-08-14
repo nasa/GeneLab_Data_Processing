@@ -4,10 +4,10 @@ output:
     html_document:
         code_folding: show
 params:
-    input_table_path: "norm_counts_output/Normalized_Counts.csv"
+    input_table_path: "norm_counts_output/Normalized_Count_GLbulkRNAseq.csv"
     table_sep: ","
     pca_table_output_prefix: ""
-    pca_table_output_suffix: ""
+    pca_table_output_suffix: "_GLbulkRNAseq.csv"
     output_base_fn: "visualization_PCA_table"
     work_dir: "." # should be set to launch directory 
 ---

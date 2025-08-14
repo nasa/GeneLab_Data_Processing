@@ -263,7 +263,7 @@ string_map <- string_db$map(annot, primary_keytype, removeUnmappedRows = FALSE, 
 ## Adding some blank lines just for spacing on print-out ##
 cat("\n\n")
 
-## Create a table using the gene IDs of the primary keytype as row names and a column containing STRING IDs. For genes containig multiple STRING IDs, combine all STRING IDs for each gene into one row and separate each ID with a '|' ##
+## Create a table using the gene IDs of the primary keytype as row names and a column containing STRING IDs. For genes containing multiple STRING IDs, combine all STRING IDs for each gene into one row and separate each ID with a '|' ##
 
 tab_with_multiple_STRINGids_combined <-
     data.frame(row.names = annot[[primary_keytype]])
@@ -303,7 +303,7 @@ pthOrganisms(PANTHER.db) <- target_organism
 
 ## Use ENTREZ IDs to map genes to respective PANTHER GO slim annotation(s) ##
 
-## Note: Since there can be none (indicated in the annotation table as "NA"), one, or multiple ENTREZ IDs for a gene, this section contains 3 distinct parts to handle each of those scenarios and create a new column in the annotation table containg the GO slim IDs ## 
+## Note: Since there can be none (indicated in the annotation table as "NA"), one, or multiple ENTREZ IDs for a gene, this section contains 3 distinct parts to handle each of those scenarios and create a new column in the annotation table containing the GO slim IDs ## 
 
 for ( curr_row in 1:dim(annot)[1] ) {
 

@@ -1,0 +1,71 @@
+---
+title: Generate PCA Table from Normalized Counts
+output:
+  html_document:
+    pandoc_args: ["+RTS", "-K1024m", "-RTS"]
+
+params:
+    input_table_path: "Normalized_Counts_GLbulkRNAseq.csv"
+    table_sep: ","
+    work_dir: "." 
+    output_directory: "." # Directory for output files
+    output_filename_suffix: "_GLbulkRNAseq.csv"
+---
+
+## Results {.tabset}
+
+### Setup
+```{r, setup, include=FALSE}
+knitr::opts_knit$set(root.dir = params$work_dir)
+library(knitr)
+```
+
+```{r}
+# allow more flexibility in download time
+# useful for slower connections where the default of 60 seconds might be exceeded
+options(timeout = 600)
+
+library(dplyr)
+library(tibble)
+```
+
+### Output
+
+```{r, load-table-to-extend}
+normCounts <- read.csv(params$input_table_path,
+                       sep = params$table_sep,
+                       row.names = 1,
+                       check.names = FALSE
+                      )
+```
+
+```{r, add-viz-columns}
+### Generate and export PCA table for GeneLab visualization plots
+## Add 1 to all counts to avoid issues with log transformation
+exp_raw <- log2(normCounts + 1)
+PCA_raw <- prcomp(t(exp_raw), scale = FALSE)
+dir.create(dirname(paste0(params$output_directory)), recursive = TRUE)
+write.csv(
+  PCA_raw$x,
+  file = file.path(
+    params$output_directory,
+    paste0(
+      "visualization_PCA_table",
+      params$output_filename_suffix
+    )
+  )
+)
+```
+
+```{r version-reporting}
+## print session info ##
+session_info_output <- capture.output(sessionInfo())
+
+# Write versions file
+cat(session_info_output,
+    "BioC_version_associated_with_R_version",
+    toString(BiocManager::version()),
+    file = file.path(params$output_directory, "versions.txt"),
+    append = TRUE,
+    sep = "\n")
+```

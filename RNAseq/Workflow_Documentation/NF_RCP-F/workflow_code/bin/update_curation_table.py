@@ -8,7 +8,7 @@ import pandas as pd
 
 from dp_tools.core.post_processing import update_curation_tables
 from dp_tools.core.loaders import load_data
-
+from dp_tools.plugin_api import load_plugin
 
 ##############################################################
 # Utility Functions To Handle Logging, Config and CLI Arguments
@@ -21,11 +21,14 @@ def _parse_args():
 
     parser.add_argument("--runsheet-path", required=True, help="Runsheet path")
 
+    parser.add_argument("--plug-in-dir", required=True, help="Plugin path")
+
     args = parser.parse_args()
     return args
 
 
-def main(root_dir: Path, runsheet_path: Path):
+def main(root_dir: Path, runsheet_path: Path, plug_in_dir: Path):
+    plugin = load_plugin(Path(plug_in_dir))
     # Use runsheet to determine if paired end
     is_paired_end = all(pd.read_csv(runsheet_path)["paired_end"].unique())
     has_ERCC = all(pd.read_csv(runsheet_path)["has_ERCC"].unique())
@@ -41,11 +44,11 @@ def main(root_dir: Path, runsheet_path: Path):
 
     ds = load_data(
         key_sets=key_sets,
-        config=("bulkRNASeq", "Latest"),
+        config=plugin.config,
         root_path=(root_dir),
         runsheet_path=runsheet_path,
     )
-    update_curation_tables(ds.dataset, config=("bulkRNASeq", "Latest"))
+    update_curation_tables(ds.dataset, config=plugin.config)
 
 
 if __name__ == "__main__":
@@ -54,4 +57,4 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     log = logging.getLogger(__name__)
     args = _parse_args()
-    main(Path(args.root_path), runsheet_path=Path(args.runsheet_path))
+    main(Path(args.root_path), runsheet_path=Path(args.runsheet_path), plug_in_dir=args.plug_in_dir)
