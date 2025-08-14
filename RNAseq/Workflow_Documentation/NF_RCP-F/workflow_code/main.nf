@@ -5,6 +5,11 @@ c_bright_green = "\u001b[32;1m";
 c_blue = "\033[0;34m";
 c_reset = "\033[0m";
 
+
+include { staging as STAGING } from './stage_analysis.nf'
+include { references as REFERENCES } from './references.nf'
+include { strandedness as STRANDEDNESS } from './strandedness.nf'
+
 include { FASTQC as RAW_FASTQC } from './modules/quality.nf'
 include { FASTQC as TRIMMED_FASTQC } from './modules/quality.nf'
 include { MULTIQC as RAW_MULTIQC } from './modules/quality.nf' addParams(MQCLabel:"raw")
@@ -22,7 +27,7 @@ include { BUILD_STAR;
           CONCAT_ERCC;
           QUANTIFY_STAR_GENES;
           QUANTIFY_RSEM_GENES } from './modules/genome.nf'
-include { DGE_BY_DESEQ2 } from './modules/dge.nf'
+include { DGE_BY_DESEQ2 } from './modules/DGE_BY_DESEQ2'
 include { VV_RAW_READS;
           VV_TRIMMED_READS;
           VV_STAR_ALIGNMENTS;
@@ -127,9 +132,6 @@ if ( params.stageLocal && params.truncateTo ) {
   println("${c_bright_green}No Staging of raw reads.  Only getting Metadata for ${params.gldsAccession}${c_reset}")
 }
 
-include { staging as STAGING } from './stage_analysis.nf'
-include { references as REFERENCES } from './references.nf'
-include { strandedness as STRANDEDNESS } from './strandedness.nf'
 
 workflow {
 	main:
@@ -140,7 +142,6 @@ workflow {
                           | view { meta -> "${c_bright_green}Autodetected Processing Metadata:\n\t hasERCC: ${meta.has_ercc}\n\t pairedEND: ${meta.paired_end}\n\t organism: ${meta.organism_sci}${c_reset}"  }
                           | set { ch_meta }
 
-    STAGING.out.raw_reads | map{ it -> it[1] } | collect | set { ch_all_raw_reads }
     STAGING.out.raw_reads | map{ it -> it[1] } | collect | set { ch_all_raw_reads }
     STAGING.out.raw_reads | map { it[0].id }
                           | collectFile(name: "samples.txt", sort: true, newLine: true)
@@ -240,6 +241,7 @@ workflow {
                   RAW_FASTQC.out.fastqc | map { it -> [ it[1], it[2] ] } | flatten | collect,
                   RAW_MULTIQC.out.zipped_report,
                   RAW_MULTIQC.out.unzipped_report,
+                  "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
                 )
     VV_TRIMMED_READS( ch_meta,
                       STAGING.out.runsheet,
@@ -250,13 +252,15 @@ workflow {
                       TRIMGALORE.out.reports | collect,
                       TRIM_MULTIQC.out.zipped_report,
                       TRIM_MULTIQC.out.unzipped_report,
+                      "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
                     )
     VV_STAR_ALIGNMENTS( STAGING.out.runsheet,
                         ALIGN_STAR.out.publishables | collect,
                         QUANTIFY_STAR_GENES.out.publishables | collect,
                         ALIGN_MULTIQC.out.zipped_report,
                         ALIGN_MULTIQC.out.unzipped_report,
-                        STRANDEDNESS.out.bam_bed | collect
+                        STRANDEDNESS.out.bam_bed | collect,
+                        "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
                       )
     VV_RSEQC( ch_meta,
               STAGING.out.runsheet,
@@ -265,12 +269,14 @@ workflow {
               STRANDEDNESS.out.infer_experiment_multiqc,
               STRANDEDNESS.out.inner_distance_multiqc,
               STRANDEDNESS.out.read_distribution_multiqc,
+              "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
             )
     VV_RSEM_COUNTS( STAGING.out.runsheet,
                     COUNT_ALIGNED.out.only_counts | collect,
                     QUANTIFY_RSEM_GENES.out.publishables,
                     COUNT_MULTIQC.out.zipped_report,
                     COUNT_MULTIQC.out.unzipped_report,
+                    "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
                   )
     VV_DESEQ2_ANALYSIS( ch_meta,
                         STAGING.out.runsheet,
@@ -281,6 +287,7 @@ workflow {
                         DGE_BY_DESEQ2.out.dge,
                         DGE_BY_DESEQ2.out.norm_counts_ercc | ifEmpty( { file("NO_FILES.placeholder") }),
                         DGE_BY_DESEQ2.out.dge_ercc | ifEmpty( { file("NO_FILES.placeholder") }),
+                        "${ projectDir }/bin/dp_tools__NF_RCP" // dp_tools plugin
                   )
 
     // Software Version Capturing
@@ -339,6 +346,6 @@ workflow POST_PROCESSING {
   main:
     ch_processed_directory = Channel.fromPath("${ params.outputDir }/${ params.gldsAccession }", checkIfExists: true)
     ch_runsheet = Channel.fromPath("${ params.outputDir }/${ params.gldsAccession }/Metadata/*_runsheet.csv", checkIfExists: true)
-    GENERATE_MD5SUMS(ch_processed_directory, ch_runsheet )
-    UPDATE_ISA_TABLES(ch_processed_directory, ch_runsheet )
+    GENERATE_MD5SUMS(ch_processed_directory, ch_runsheet, "${ projectDir }/bin/dp_tools__NF_RCP" )
+    UPDATE_ISA_TABLES(ch_processed_directory, ch_runsheet, "${ projectDir }/bin/dp_tools__NF_RCP" )
 }

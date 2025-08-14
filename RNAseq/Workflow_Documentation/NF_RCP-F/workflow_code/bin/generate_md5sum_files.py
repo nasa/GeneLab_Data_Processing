@@ -14,6 +14,7 @@ from dp_tools.core.post_processing import (
     ALLOWED_MISSING_KEYS_FOR_PAIRED_END,
     generate_md5sum_table,
 )
+from dp_tools.plugin_api import load_plugin
 
 ##############################################################
 # Utility Functions To Handle Logging, Config and CLI Arguments
@@ -26,11 +27,15 @@ def _parse_args():
 
     parser.add_argument("--runsheet-path", required=True, help="Runsheet path")
 
+    parser.add_argument("--plug-in-dir", required=True, help="Plugin path")
+
     args = parser.parse_args()
     return args
 
 
-def main(root_dir: Path, runsheet_path: Path):
+def main(root_dir: Path, runsheet_path: Path, plug_in_dir: Path):
+    plugin = load_plugin(Path(plug_in_dir))
+
     # Use runsheet to determine if paired end
     is_paired_end = all(pd.read_csv(runsheet_path)["paired_end"].unique())
     has_ERCC = all(pd.read_csv(runsheet_path)["has_ERCC"].unique())
@@ -46,7 +51,7 @@ def main(root_dir: Path, runsheet_path: Path):
 
     ds = load_data(
         key_sets=key_sets,
-        config=("bulkRNASeq", "Latest"),
+        config=plugin.config,
         root_path=(root_dir),
         runsheet_path=runsheet_path,
     )
@@ -62,7 +67,7 @@ def main(root_dir: Path, runsheet_path: Path):
 
     df = generate_md5sum_table(
         ds.dataset,
-        config=("bulkRNASeq", "Latest"),
+        config=plugin.config,
         allowed_unused_keys=missing_keys,
         include_tags=True,
     )
@@ -72,13 +77,13 @@ def main(root_dir: Path, runsheet_path: Path):
         df_subset = df.loc[df["tags"].apply(lambda l: tag in l)].drop(
             "tags", axis="columns"
         )
-        df_subset.to_csv(f"{tag}_md5sum.tsv", sep="\t", index=False)
+        df_subset.to_csv(f"{tag}_md5sum_GLbulkRNAseq.tsv", sep="\t", index=False)
 
     # Log missing files
     print(df.columns)
     missing_files = df.loc[df['md5sum'] == "USER MUST ADD MANUALLY!"]["filename"].to_list()
     if missing_files:
-        with open("Missing_md5sum_files.txt", "w") as f:
+        with open("Missing_md5sum_files_GLbulkRNAseq.txt", "w") as f:
             for missing in missing_files:
                 f.write(missing+"\n")
 
@@ -88,4 +93,4 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     log = logging.getLogger(__name__)
     args = _parse_args()
-    main(Path(args.root_path), runsheet_path=Path(args.runsheet_path))
+    main(Path(args.root_path), runsheet_path=Path(args.runsheet_path), plug_in_dir=args.plug_in_dir)

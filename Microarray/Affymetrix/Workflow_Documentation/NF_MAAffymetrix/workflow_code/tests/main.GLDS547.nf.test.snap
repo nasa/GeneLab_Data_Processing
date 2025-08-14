@@ -1,0 +1,24 @@
+{
+    "GLDS-547: Should run without failures": {
+        "content": [
+            [
+                "OSD-547_metadata_OSD-547-ISA.zip:md5,417d4b50fae769c0c42f1b3589f145e6",
+                "OSD-547_microarray_v0_runsheet.csv:md5,46f96ff3d2069330aa7589ebd4239545"
+            ],
+            [
+                "raw_intensities_probe.csv:md5,c70428bfa9f23ebd6093761391e00ae8"
+            ],
+            [
+                "normalized_expression_probeset.csv:md5,fa9d6eb92180457d81fdc1ce42e684c1",
+                "normalized_intensities_probe.csv:md5,f11890e076445706868512a7abba301f"
+            ],
+            [
+                "SampleTable.csv:md5,5b8a41b5f38582b553344f7a7d075ff5",
+                "contrasts.csv:md5,cdf56af4c7ec6fe6692a2da22ecb0ef6",
+                "differential_expression.csv:md5,41208f1164a6b8fd84006bde8776cd8c",
+                "visualization_PCA_table.csv:md5,87efc5e6591c24a15d36153b354aca1c"
+            ]
+        ],
+        "timestamp": "2023-05-18T17:12:20+0000"
+    }
+}

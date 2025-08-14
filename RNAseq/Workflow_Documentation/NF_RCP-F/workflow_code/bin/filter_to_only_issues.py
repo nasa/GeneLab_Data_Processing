@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 import pandas as pd
 
-INPUT_FN="VV_log_final.tsv"
-OUTPUT_FN="VV_log_final_only_issues.tsv"
+INPUT_FN="VV_log_final_GLbulkRNAseq.tsv"
+OUTPUT_FN="VV_log_final_only_issues_GLbulkRNAseq.tsv"
 
 df = pd.read_csv(INPUT_FN, sep="\t")
 

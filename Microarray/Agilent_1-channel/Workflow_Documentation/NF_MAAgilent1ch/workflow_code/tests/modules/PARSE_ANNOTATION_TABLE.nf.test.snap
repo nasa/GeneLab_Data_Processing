@@ -1,0 +1,18 @@
+{
+    "Should run without failures": {
+        "content": [
+            {
+                "reference_version_and_source": [
+                    [
+                        "107",
+                        "ensembl"
+                    ]
+                ],
+                "annotations_db_url": [
+                    "https://figshare.com/ndownloader/files/36597120"
+                ]
+            }
+        ],
+        "timestamp": "2023-01-18T00:23:45+0000"
+    }
+}

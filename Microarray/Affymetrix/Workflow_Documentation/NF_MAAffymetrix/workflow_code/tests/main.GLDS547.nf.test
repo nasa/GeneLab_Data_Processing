@@ -1,0 +1,31 @@
+nextflow_pipeline {
+
+    name "Test Workflow main.nf"
+    script "main.nf"
+    tag "core"
+
+    test("GLDS-547: Should run without failures") {
+
+        when {
+            params {
+                // define parameters here. Example: 
+                osdAccession = "OSD-547"
+                gldsAccession = "GLDS-547"
+                // biomart_attribute = "AFFY HTA 2 0" IN ISA
+                limit_biomart_query = 300
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert snapshot(
+                            path("${ params.outputDir }/Metadata").list(),
+                            path("${ params.outputDir }/00-RawData").list(),
+                            path("${ params.outputDir }/01-oligo_NormExp").list(),
+                            path("${ params.outputDir }/02-limma_DGE").list(),
+                            ).match()
+        }
+
+    }
+
+}

@@ -1,0 +1,27 @@
+{
+    "GLDS-213: Should run without failures. ": {
+        "content": [
+            [
+                "GLDS-213_metadata_E-MTAB-2518-ISA.zip:md5,b574bb813e50c7e39dafced44666cd4b",
+                "OSD-213_microarray_v0_runsheet.csv:md5,724a73764af5094f13a46080feb190f2"
+            ],
+            [
+                "raw_intensities_probe.csv:md5,7f41d409ad465284d8031322f4814cda"
+            ],
+            [
+                "normalized_expression_probeset.csv:md5,1abb2fa77908cba2d272e7e1d795e5f8",
+                "normalized_intensities_probe.csv:md5,523a4d9ab583d0035f6fcecc7f5c0e7f"
+            ],
+            [
+                "SampleTable.csv:md5,45da641d29a8e8f1969704589b7f4a93",
+                "contrasts.csv:md5,c3a62a6df91e480256388713c0259112",
+                "differential_expression.csv:md5,7d6e259909956b92a68a93239491e530",
+                "visualization_PCA_table.csv:md5,630be87d909463bbc0099f512c0c30d4"
+            ],
+            {
+                "Affymetrix.html exists": false
+            }
+        ],
+        "timestamp": "2023-04-27T01:24:13+0000"
+    }
+}
