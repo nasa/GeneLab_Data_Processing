@@ -36,14 +36,21 @@ We encourage all investigators working with space-relevant omics data to process
 ## Licenses
 
 The software for each pipeline is released under the NASA Open Source Agreement (NOSA) Version 1.3
-- [Amplicon License](Licenses/Amplicon_and_Metagenomics_NOSA_License.pdf)
-- [Metagenomics License](Licenses/Amplicon_and_Metagenomics_NOSA_License.pdf)
+- [Amplicon License](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow/blob/main/License/Amplicon_NOSA_License.pdf)
+- [Metagenomics License](./Licenses/Metagenomics_NOSA_License.pdf)
+- [Methyl-Seq License](./Licenses/Methylation_Sequencing_NOSA_License.pdf)
+- [RNAseq License](./Licenses/RNA_Sequencing_NOSA_License.pdf)
+- [Microarray License](./Licenses/Microarray_GPL-3.0_with_Additional_Requirements_License.pdf)
 
 ### 3rd Party Software Licenses
 
 Licenses for the 3rd party open source software utilized for each pipeline can be found by clicking the respective pipeline link below:
-- [Amplicon License](3rd_Party_Licenses/Amplicon_and_Metagenomics_3rd_Party_Software.md)
-- [Metagenomics License](3rd_Party_Licenses/Amplicon_and_Metagenomics_3rd_Party_Software.md)
+- [Amplicon Licenses](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow/blob/main/License/3rd_Party_Licenses/README.md)
+- [Metagenomics Licenses](./3rd_Party_Licenses/Metagenomics_3rd_Party_Software.md)
+- [Methyl-Seq Licenses](./3rd_Party_Licenses/Methyl-Seq_3rd_Party_Software.md)
+- [RNAseq Licenses](./3rd_Party_Licenses/RNAseq_3rd_Party_Software.md)
+- [Microarray - Agilent 1-channel Licenses](./3rd_Party_Licenses/Microarray_Agilent_1_Channel_3rd_Party_Software.md)
+- [Microarray - Affymetrix Licenses](./3rd_Party_Licenses/Microarray_Affymetrix_3rd_Party_Software.md)
 
 ---
 

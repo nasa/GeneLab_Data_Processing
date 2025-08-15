@@ -14,7 +14,7 @@
 
 ## Licenses
 
-The software for the Metagenomics pipelines is released under the [NASA Open Source Agreement (NOSA) Version 1.3](../Licenses/Amplicon_and_Metagenomics_NOSA_License.pdf).
+The software for the Metagenomics pipelines is released under the [NASA Open Source Agreement (NOSA) Version 1.3](../Licenses/Metagenomics_NOSA_License.pdf).
 
 
 ### 3rd Party Software Licenses
