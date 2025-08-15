@@ -6,9 +6,11 @@
 
 |Pipeline Version|Current Workflow Version (for respective pipeline version)|
 |:---------------|:---------------------------------------------------------|
-|*[GL-DPPD-7104-B.md](../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md)|[1.2.2](SW_AmpIllumina-B)|
-|[GL-DPPD-7104-A.md](../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-A.md)|[1.1.1](SW_AmpIllumina-A)|
+|*[GL-DPPD-7104-C.md](../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-C.md)|[NF_AmpIllumina_1.0.0](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow)|
+|[GL-DPPD-7104-B.md](../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md)|[SW_AmpIllumina-B_1.2.3](SW_AmpIllumina-B)|
+|[GL-DPPD-7104-A.md](../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-A.md)|[SW_AmpIllumina-A_1.1.1](SW_AmpIllumina-A)|
 
 *Current GeneLab Pipeline/Workflow Implementation
 
-> See the [workflow change log](SW_AmpIllumina-B/CHANGELOG.md) to access previous workflow versions and view all changes associated with each version update.
+> See the [NF_AmpIllumina Change Log](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow/blob/main/CHANGELOG.md) to access the most recent changes to the workflow and view all changes associated with each update.<br>
+> All workflow changes associated with the previous version of the GeneLab Amplicon Pipeline ([GL-DPPD-7104-B](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md) and earlier) can be found in the [SW_AmpIllumina-B Change Log](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Amplicon/Illumina/Workflow_Documentation/SW_AmpIllumina-B/CHANGELOG.md)

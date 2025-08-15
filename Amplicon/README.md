@@ -3,7 +3,7 @@
 ---
 
 <p align="center">
-<a href="images/GL-amplicon-overview.pdf"><img src="images/GL-amplicon-overview.png"></a>
+<a href="images/GL-amplicon-subwayplot.pdf"><img src="images/GL-amplicon-subwayplot.png"></a>
 </p>
 
 --- 
@@ -19,12 +19,12 @@
 
 ## Licenses
 
-The software for the Amplicon Seq pipelines is released under the [NASA Open Source Agreement (NOSA) Version 1.3](../Licenses/Amplicon_and_Metagenomics_NOSA_License.pdf).
+The software for the Amplicon Seq pipelines is released under the [NASA Open Source Agreement (NOSA) Version 1.3](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow/blob/main/License/Amplicon_NOSA_License.pdf).
 
 
 ### 3rd Party Software Licenses
 
-Licenses for the 3rd party open source software utilized in the Amplicon Seq pipelines can be found in the [3rd_Party_Licenses sub-directory](../3rd_Party_Licenses/Amplicon_and_Metagenomics_3rd_Party_Software.md) on the GeneLab_Data_Processing GitHub repository landing page. 
+Licenses for the 3rd party open source software utilized in the Amplicon Seq pipelines can be found in the [3rd_Party_Licenses sub-directory](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow/tree/main/License/3rd_Party_Licenses/README.md) on the GeneLab_Data_Processing GitHub repository landing page. 
 
 <br>
 

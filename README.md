@@ -4,7 +4,7 @@
 # GeneLab_Data_Processing
 
 ## About
-The [NASA GeneLab](https://genelab.nasa.gov/) Data Processing team and [Analysis Working Group](https://osdr.nasa.gov/bio/awg/about.html) members have created standard pipelines for processing omics data from spaceflight and space-relevant experiments. This repository contains the processing pipelines that have been standardized to date for the assay types indicated below. Each subdirectory in this repository holds current and previous pipeline versions for the respective assay type, including detailed descriptions and processing instructions as well as the exact processing commands used to generate processed data for datasets hosted in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
+The [NASA GeneLab](https://www.nasa.gov/osdr-genelab-about/) Data Processing team and [Analysis Working Group](https://www.nasa.gov/osdr-open-science-analysis-working-groups/) members have created standard pipelines for processing omics data from spaceflight and space-relevant experiments. This repository contains the processing pipelines that have been standardized to date for the assay types indicated below. Each subdirectory in this repository holds current and previous pipeline versions for the respective assay type, including detailed descriptions and processing instructions as well as the exact processing commands used to generate processed data for datasets hosted in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 
 ---
 
@@ -29,21 +29,28 @@ Click on an assay type below for data processing information.
 ---
 
 ## Usage
-We encourage all investigators working with space-relevant omics data to process their data using the standard pipelines described here when possible. Anyone planning to publish analyses derived from [GeneLab processed data](https://genelab-data.ndc.nasa.gov/genelab/projects) may refer to this repository for data processing methods. If you have omics data from a spaceflight or space-relevant experiment, you can submit your data to GeneLab through our [submission portal](https://genelab-data.ndc.nasa.gov/geode-sso-login/).
+We encourage all investigators working with space-relevant omics data to process their data using the standard pipelines described here when possible. Anyone planning to publish analyses derived from [GeneLab processed data](https://genelab-data.ndc.nasa.gov/genelab/projects) may refer to this repository for data processing methods. If you have omics data from a spaceflight or space-relevant experiment, you can submit your data to GeneLab through our [submission portal](https://www.nasa.gov/osdr-submission-portal/).
 
 ---
 
 ## Licenses
 
 The software for each pipeline is released under the NASA Open Source Agreement (NOSA) Version 1.3
-- [Amplicon License](Licenses/Amplicon_and_Metagenomics_NOSA_License.pdf)
-- [Metagenomics License](Licenses/Amplicon_and_Metagenomics_NOSA_License.pdf)
+- [Amplicon License](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow/blob/main/License/Amplicon_NOSA_License.pdf)
+- [Metagenomics License](./Licenses/Metagenomics_NOSA_License.pdf)
+- [Methyl-Seq License](./Licenses/Methylation_Sequencing_NOSA_License.pdf)
+- [RNAseq License](./Licenses/RNA_Sequencing_NOSA_License.pdf)
+- [Microarray License](./Licenses/Microarray_GPL-3.0_with_Additional_Requirements_License.pdf)
 
 ### 3rd Party Software Licenses
 
 Licenses for the 3rd party open source software utilized for each pipeline can be found by clicking the respective pipeline link below:
-- [Amplicon License](3rd_Party_Licenses/Amplicon_and_Metagenomics_3rd_Party_Software.md)
-- [Metagenomics License](3rd_Party_Licenses/Amplicon_and_Metagenomics_3rd_Party_Software.md)
+- [Amplicon Licenses](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow/blob/main/License/3rd_Party_Licenses/README.md)
+- [Metagenomics Licenses](./3rd_Party_Licenses/Metagenomics_3rd_Party_Software.md)
+- [Methyl-Seq Licenses](./3rd_Party_Licenses/Methyl-Seq_3rd_Party_Software.md)
+- [RNAseq Licenses](./3rd_Party_Licenses/RNAseq_3rd_Party_Software.md)
+- [Microarray - Agilent 1-channel Licenses](./3rd_Party_Licenses/Microarray_Agilent_1_Channel_3rd_Party_Software.md)
+- [Microarray - Affymetrix Licenses](./3rd_Party_Licenses/Microarray_Affymetrix_3rd_Party_Software.md)
 
 ---
 
