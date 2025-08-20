@@ -216,7 +216,7 @@ trim_galore --gzip \
 
 **Output Data:**
 
-- **\*fastq.gz** (trimmed reads)
+- **\*\_GLbulkRNAseq{_R1,_R2}_trimmed_fastq.gz** (trimmed reads)
 - **\*trimming_report.txt** (trimming report)
 
 <br>
@@ -356,8 +356,8 @@ mv <sample_id>.unmapped.fastq.2.gz <sample_id>_R2_unmapped.fastq.gz  # For paire
 **Output Data:**
 
 - *\.sam (alignments in SAM format)
-- **\*.bowtie2.log** (log file containing alignment statistics)
-- **\*unmapped.fastq.gz** (unmapped and partially mapped reads)
+- **\*_GLbulkRNAseq.bowtie2.log** (log file containing alignment statistics)
+- **\*_GLbulkRNAseq{_R1,_R2}_unmapped.fastq.gz** (unmapped and partially mapped reads)
 
 <br>
 
@@ -435,7 +435,7 @@ samtools sort -m 3G \
 
 **Output Data:**
 
-- **\*_sorted.bam** (samtools sorted genome-aligned bam file)
+- **\*_GLbulkRNAseq_sorted.bam** (samtools sorted genome-aligned bam file)
 
 <br>
 
@@ -456,7 +456,7 @@ samtools index -@ NumberOfThreads /path/to/*_sorted.bam
 
 **Output Data:**
 
-- **\*_sorted.bam.bai** (index of sorted mapping to genome file)
+- **\*_GLbulkRNAseq_sorted.bam.bai** (index of sorted mapping to genome file)
 
 <br>
 

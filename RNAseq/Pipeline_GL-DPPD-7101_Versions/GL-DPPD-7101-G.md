@@ -277,7 +277,7 @@ trim_galore --gzip \
 
 **Output Data:**
 
-- **\*fastq.gz** (trimmed reads)
+- **\*\_GLbulkRNAseq{_R1,_R2}_trimmed_fastq.gz** (trimmed reads)
 - **\*trimming_report.txt** (trimming report)
 
 <br>
@@ -462,12 +462,12 @@ gzip *_unmapped.fastq
 **Output Data:**
 
 - *Aligned.sortedByCoord.out.bam (sorted mapping to genome)
-- **\*Aligned.toTranscriptome.out.bam** (sorted mapping to transcriptome)
-- **\*Log.final.out** (log file containing alignment info/stats such as reads mapped, etc)
+- **\*_GLbulkRNAseq_Aligned.toTranscriptome.out.bam** (sorted mapping to transcriptome)
+- **\*_GLbulkRNAseq_Log.final.out** (log file containing alignment info/stats such as reads mapped, etc)
 - *ReadsPerGene.out.tab (tab delimitated file containing STAR read counts per gene with 4 columns that correspond to different strandedness options: column 1 = gene ID, column 2 = counts for unstranded RNAseq, column 3 = counts for 1st read strand aligned with RNA, column 4 = counts for 2nd read strand aligned with RNA)
 - *Log.out (main log file containing detailed info about the STAR run)
 - *Log.progress.out (minute-by-minute report containing job progress statistics, such as the number of processed reads, % of mapped reads etc.)
-- **\*SJ.out.tab** (high confidence collapsed splice junctions in tab-delimited format)
+- **\*_GLbulkRNAseq_SJ.out.tab** (high confidence collapsed splice junctions in tab-delimited format)
 - *_STARgenome (directory containing the following:)
   - sjdbInfo.txt
   - sjdbList.out.tab
@@ -476,7 +476,7 @@ gzip *_unmapped.fastq
   - SJ.out.tab
 - *_STARtmp (directory containing the following:)
   - BAMsort (directory containing subdirectories that are empty – this was the location for temp files that were automatically removed after successful completion)
-- **\*unmapped.fastq.gz** (unmapped and partially mapped reads)
+- **\*\_GLbulkRNAseq{_R1,_R2}_unmapped.fastq.gz** (unmapped and partially mapped reads)
 
 <br>
 
@@ -580,7 +580,7 @@ samtools sort -m 3G \
 
 **Output Data:**
 
-- **\*Aligned.sortedByCoord_sorted.out.bam** (samtools sorted genome aligned bam file)
+- **\*_GLbulkRNAseq_Aligned.sortedByCoord_sorted.out.bam** (samtools sorted genome aligned bam file)
 
 <br>
 
@@ -601,7 +601,7 @@ samtools index -@ NumberOfThreads /path/to/*Aligned.sortedByCoord_sorted.out.bam
 
 **Output Data:**
 
-- **\*Aligned.sortedByCoord_sorted.out.bam.bai** (index of sorted mapping to genome file)
+- **\*_GLbulkRNAseq_Aligned.sortedByCoord_sorted.out.bam.bai** (index of sorted mapping to genome file)
 
 <br>
 
@@ -966,8 +966,8 @@ rsem-calculate-expression --num-threads NumberOfThreads \
 
 **Output Data:**
 
-- **\*genes.results** (counts per gene)
-- **\*isoforms.results** (counts per isoform)
+- **\*_GLbulkRNAseq.genes.results** (counts per gene)
+- **\*_GLbulkRNAseq.isoforms.results** (counts per isoform)
 - *stat (directory containing the following stats files)
   - *cnt
   - *model
@@ -1093,7 +1093,7 @@ echo "*: ${rRNA_count} rRNA entries removed." > *_rRNA_counts.txt
 - *rrna_ensembl_ids.txt (file containing list of gene IDs with rRNA features, output from [Step 8di](#8di-extract-rrna-gene-ids-from-gtf))
 
 **Output Data:**
-- **\*rRNArm.genes.results** (RSEM gene counts with rRNA entries removed)
+- **\*_GLbulkRNAseq_rRNArm.genes.results** (RSEM gene counts with rRNA entries removed)
 - *rRNA_counts.txt (Summary of number of rRNA entries removed)
 
 <br>
