@@ -278,7 +278,7 @@ trim_galore --gzip \
 **Output Data:**
 
 - **\*\_GLbulkRNAseq{_R1,_R2}_trimmed_fastq.gz** (trimmed reads)
-- **\*trimming_report.txt** (trimming report)
+- **\*\_GLbulkRNAseq_trimming_report.txt** (trimming report)
 
 <br>
 
