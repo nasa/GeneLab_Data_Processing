@@ -126,7 +126,7 @@ Software Updates and Changes:
 |Cutadapt|5.0|[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
 |R-base|4.4.2|[https://www.r-project.org/](https://www.r-project.org/)|
 |DADA2|1.34.0|[https://www.bioconductor.org/packages/release/bioc/html/dada2.html](https://www.bioconductor.org/packages/release/bioc/html/dada2.html)|
-|DECIPHER|3.20.0|[https://bioconductor.org/packages/release/bioc/html/DECIPHER.html](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html)|
+|DECIPHER|3.2.0|[https://bioconductor.org/packages/release/bioc/html/DECIPHER.html](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html)|
 |biomformat|1.34.0|[https://github.com/joey711/biomformat](https://github.com/joey711/biomformat)|
 |ANCOMBC|2.8.0|[https://github.com/FrederickHuangLin/ANCOMBC](https://github.com/FrederickHuangLin/ANCOMBC)|
 |broom|1.0.7|[https://CRAN.R-project.org/package=broom](https://CRAN.R-project.org/package=broom)|
