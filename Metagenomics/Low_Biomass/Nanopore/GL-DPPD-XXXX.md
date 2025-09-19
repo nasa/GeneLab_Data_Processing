@@ -170,7 +170,7 @@ dorado basecaller ${model} ${input_directory} \
 - `--device` - specifies CPU or GPU device; specifying 'auto' chooses either 'cpu' or 'gpu' depending on detected presence of a GPU device
 - `--recursive` - enables recursive scanning through input directory to load FAST5 and/or POD5 files
 - `--kit-name` - enables barcoding with the provided kit name; see [dorado documentation](https://software-docs.nanoporetech.com/dorado/1.1.1/barcoding/barcoding/) for a full list of accepted kit names
-- `--min-qscore` - 
+- `--min-qscore` - specifies the minimum Q-score, reads with a mean Q-score below this threshold are discarded (default to `7` for this pipeline)
 - `model` - positional argument specifying the basecalling model to use or a path to the model directory
 - `input_directory` - positional argument specifying the location of the raw data in POD5 or FAST5 format
 
