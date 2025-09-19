@@ -59,6 +59,7 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [9d. Generate combined Krona chart](#9d-generate-combined-krona-chart)
       - [9e. Compute per-sample taxon level summaries](#9e-compute-taxon-level-summaries-for-each-sample)
       - [9f. Compile taxon level summaries](#9f-compile-kaiju-taxonomy-results)
+      - [9e. Process Kaiju output]()
     - [10. Taxonomic and functional profiling using Kraken2](#10-taxonomic-and-functional-profiling-using-kraken2)
       - [10a. Taxonomic Classification](#10a-taxonomic-classification)
       - [10b. Combine Kraken2 reports](#10b-combine-kraken2-reports)
@@ -66,6 +67,12 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [10c. Generate per sample Krona charts](#10d-generate-per-sample-krona-charts)
       - [10d. Generate combined Krona chart](#10e-generate-combined-krona-chart)
       - [10e. Compile Kraken2 Summary QC](#10f-compile-kraken2-summary-qc)
+      - [10f. Process Kraken2 output]()
+    - [11. Taxonomy plots]()
+        - [11a. Per-sample]()
+        - [11b. combined]()
+    - [12. Read-based Feature Table Decontamination]()
+      - [11a. Kaiju outp conversion]()
   - [**Assembly-based processing**](#assembly-based-processing)
     - [11. Sample assembly](#11-sample-assembly)
     - [12. Polish assembly](#12-polish-assembly)
@@ -80,6 +87,22 @@ Barbara Novak (GeneLab Data Processing Lead)
     - [21. Generating normalized, gene- and contig-level coverage summary tables of KO-annotations and taxonomy across samples](#21-generating-normalized-gene--and-contig-level-coverage-summary-tables-of-ko-annotations-and-taxonomy-across-samples)
     - [22. **M**etagenome-**A**ssembled **G**enome (MAG) recovery](#22-metagenome-assembled-genome-mag-recovery)
     - [23. Generating MAG-level functional summary overview](#23-generating-mag-level-functional-summary-overview)
+  - [**Feature Table Decontamination**]
+    - [24. R Environment Setup](#24-r-environment-setup)
+      - [24a. Load libraries](#24a-load-libraries)
+      - [24b. Define Custom Functions](#24b-define-custom-functions)
+      - [24c. Set Variable](#24c-set-variables)
+      - [24d. Import kaiju taxonomy data](#24d-import-kaiju-taxonomy-data)
+      - [24e. Import kraken2 taxonomy data](#24e-import-kraken2-taxonomy-data)
+      - [24f. Import sample metadata](#24f-import-sample-metadata)
+    - [25. Read-based processing feature-table decontamination](#25-read-based-processing-feature-table-decontamination)
+      - [25a. Taxonomy filtering](#25a-taxonomy-filtering)
+      - [25b. Decontamination](#25b-decontamination-with-decontam)
+        - [25b.i. Setup Variables](#25bi-setup-variables)
+        - [25b.ii. Identify prevalence of contaminant sequences](#25bii-identify-prevalence-of-contaminant-sequences)
+        - [25b.iii. Decontaminated taxonomy plots](#25biii-decontaminated-taxonomy-plots)
+    - [26. Assembly-based processing decontamination](#26-assembly-based-processing-decontamination)
+
 
 ---
 
@@ -90,12 +113,12 @@ Barbara Novak (GeneLab Data Processing Lead)
 |bbduk| 38.86 |[https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/)|
 |CAT| 5.2.3 |[https://github.com/dutilh/CAT#cat-and-bat](https://github.com/dutilh/CAT#cat-and-bat)|
 |CheckM| 1.1.3 |[https://github.com/Ecogenomics/CheckM](https://github.com/Ecogenomics/CheckM)|
-|Decontam| | |
 |Dorado| 1.1.1| [https://github.com/nanoporetech/dorado](https://github.com/nanoporetech/dorado)|
 |Flye| 2.9.5 | [https://github.com/mikolmogorov/Flye](https://github.com/mikolmogorov/Flye) |
 |GTDB-Tk| 2.4.0 |[https://github.com/Ecogenomics/GTDBTk](https://github.com/Ecogenomics/GTDBTk)|
 |Kaiju| 1.10.1 | [https://bioinformatics-centre.github.io/kaiju/](https://bioinformatics-centre.github.io/kaiju/) |
-|KOFamScan| 1.3.0 |[https://github.com/takaram/kofam_scan#kofamscan](https://github.com/takaram/kofam_scan#kofamscan)|
+|KEGG-Decoder| 1.2.2 |[https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder](https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder)
+|KOFamScan| 1.3.0 |[https://github.com/takaram/kofam_scan](https://github.com/takaram/kofam_scan)|
 |Kraken2| 2.1.6 | [https://github.com/DerrickWood/kraken2](https://github.com/DerrickWood/kraken2) |
 |KrakenTools | 1.2 | [https://ccb.jhu.edu/software/krakentools/](https://ccb.jhu.edu/software/krakentools/) |
 |Krona| 2.8.1 | [https://github.com/marbl/Krona/wiki](https://github.com/marbl/Krona/wiki)|
@@ -103,14 +126,21 @@ Barbara Novak (GeneLab Data Processing Lead)
 |Minimap2| 2.2.8 | [https://github.com/lh3/minimap2](https://github.com/lh3/minimap2) |
 |MultiQC| 1.27.1 |[https://multiqc.info/](https://multiqc.info/)|
 |Medaka| 2.0.1 | [https://github.com/nanoporetech/medaka](https://github.com/nanoporetech/medaka) |
-|MEGAHIT| 1.2.9 |[https://github.com/voutcn/megahit#megahit](https://github.com/voutcn/megahit#megahit)|
 |NanoPlot| 1.44.1 | [https://github.com/wdecoster/NanoPlot](https://github.com/wdecoster/NanoPlot)|
 |Porechop| 0.2.4 | [https://github.com/rrwick/Porechop](https://github.com/rrwick/Porechop) |
 |Prodigal| 2.6.3 |[https://github.com/hyattpd/Prodigal#prodigal](https://github.com/hyattpd/Prodigal#prodigal)|
 |samtools| 1.20 |[https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)|
-|KEGG-Decoder| 1.2.2 |[https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder](https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder)
-|HUMAnN| 3.9 |[https://github.com/biobakery/humann](https://github.com/biobakery/humann)|
-|MetaPhlAn| 4.1.0 |[https://github.com/biobakery/MetaPhlAn](https://github.com/biobakery/MetaPhlAn)|
+| R | 4.5.1 | [https://www.r-project.org](https://www.r-project.org) |
+|Bioconductor | 3.21 | [https://www.bioconductor.org](https://www.bioconductor.org) |
+|decontam| 1.28.0 | [https://www.bioconductor.org/packages/release/bioc/html/decontam.html](https://www.bioconductor.org/packages/release/bioc/html/decontam.html) |
+|DT| 0.34.0 | [https://cran.r-project.org/web/packages/DT/index.html](https://cran.r-project.org/web/packages/DT/index.html) |
+|glue| 1.8.0 | [https://cran.r-project.org/web/packages/glue/index.html](https://cran.r-project.org/web/packages/glue/index.html) |
+|optparse| 1.7.5 |[https://cran.r-project.org/web/packages/optparse/index.html](https://cran.r-project.org/web/packages/optparse/index.html) |
+|pavian| 1.2.1 | [https://github.com/fbreitwieser/pavian](https://github.com/fbreitwieser/pavian) |
+|pheatmap| 1.0.13 | [https://cran.r-project.org/package=pheatmap](https://cran.r-project.org/package=pheatmap) |
+|phyloseq| 1.52.0 | [https://www.bioconductor.org/packages/release/bioc/html/phyloseq.html](https://www.bioconductor.org/packages/release/bioc/html/phyloseq.html) |
+|plotly| 4.11.0 | [https://cran.r-project.org/web/packages/plotly/index.html](https://cran.r-project.org/web/packages/plotly/index.html) |
+|tidyverse| 2.0.0 | [https://www.tidyverse.org](https://www.tidyverse.org) |
 
 ---
 
@@ -589,7 +619,7 @@ kraken2 --db kraken2_host_db --gzip-compressed --threads NumberOfThreads --use-n
 
 ### 9. Taxonomic and Functional Profiling using Kaiju
 
-#### 9a. Taxonomic Classification
+#### 9a. Kaiju Taxonomic Classification
 ```
 kaiju -f kaiju_db.fmi -t nodes.dmp \
     -z NumberOfThreads \
@@ -615,68 +645,8 @@ kaiju -f kaiju_db.fmi -t nodes.dmp \
 
 - sample_kaiju.out (kaiju output file)
 
-#### 9b. Convert Kaiju Output to Krona Format
-```
-kaiju2krona -u -n ${NAMES} -t nodes.dmp \
-	-i sample_kaiju.out \
-	-o sample.krona
-```
 
-**Parameter Definitions:**
-
-- `-u` - include count for unclassified reads in output
-- `-n` - specifies path to the Kaiju names.dmp file
-- `-t` - specifies path to the Kaiju nodes.dmp file
-- `-i` - specifies path to the Kaiju output file (output from [Step 9ai](#9ai-read-taxonomic-classification-using-kaiju))
-- `-o` - specifies the name of krona formatted kaiju output file
-
-**Input data:**
-
-- sample_kaiju.out (kaiju output file, output from [Step 9ai](#9ai-read-taxonomic-classification-using-kaiju))
-
-**Output data:**
-
-- sample.krona (krona formatted kaiju output)
-
-#### 9c. Generate per sample Krona charts
-
-```bash
-ktImportText -o sample_krona.html sample.krona
-```
-
-**Parameter Definitions:**
-
-- `-o` - specifies the name of the krona output html file
-- `sample.krona` - positional argument specifying the krona text file for each sample
-
-**Input Data:**
-
-- sample.krona (krona formatted kaiju output from [Step 9aii](#9aii-convert-kaiju-output-to-krona-format))
-
-**Output Data:**
-
-- **sample_krona.html** (per-sample Krona charts in html format)
-
-#### 9d. Generate combined Krona chart
-
-```bash
-ktImportText -o kaiju_report.html *.krona
-```
-
-**Parameter Definitions:**
-
-- `-o` - specifies the name of the krona output html file
-- `*.krona` - positional argument specifying krona formatted text files for all samples
-
-**Input Data:**
-
-- *.krona (krona formatted kaiju output files from [Step 9aii](#9aii-convert-kaiju-output-to-krona-format))
-
-**Output Data:**
-
-- **kaiju_report.html** (per-sample Krona charts in html format)
-
-#### 9e. Compute per-sample taxon level summaries
+#### 9e. Kaiju per-sample taxon level summaries
 
 ```bash
 # Get taxon level information for each sample
@@ -736,6 +706,29 @@ for TAXON_LEVEL in (phylum class order family genus species); do
 - **merged_kaiju_summary_genus.tsv** (Compiled kaiju outputs at the genus taxon level)
 - **merged_kaiju_summary_species.tsv** (Compiled kaiju outputs at the species taxon level)
 
+#### 9b. Convert Kaiju Output to Krona Format
+```
+kaiju2krona -u -n ${NAMES} -t nodes.dmp \
+	-i sample_kaiju.out \
+	-o sample.krona
+```
+
+**Parameter Definitions:**
+
+- `-u` - include count for unclassified reads in output
+- `-n` - specifies path to the Kaiju names.dmp file
+- `-t` - specifies path to the Kaiju nodes.dmp file
+- `-i` - specifies path to the Kaiju output file (output from [Step 9ai](#9ai-read-taxonomic-classification-using-kaiju))
+- `-o` - specifies the name of krona formatted kaiju output file
+
+**Input data:**
+
+- sample_kaiju.out (kaiju output file, output from [Step 9ai](#9ai-read-taxonomic-classification-using-kaiju))
+
+**Output data:**
+
+- sample.krona (krona formatted kaiju output)
+
 ---
 
 ### 10. Taxonomic and Functional Profiling using Kraken2
@@ -794,63 +787,6 @@ combine_kreports.py --output merged-kraken-table.tsv \
 
 - **merged-kraken-table.tsv**  (merged Kraken2 output in tab-delimited format)
 
-#### 10c. Convert Kraken2 output to Krona format
-
-```bash
-kreport2krona.py --report-file sample-kraken2-report.tsv  --output sample.krona
-```
-
-**Parameter Definition:**
-
-- `--output` - specifies the name of the krona output file
-- `--report-file` - specifies the name of the input kraken2 report file
-
-**Input data:**
-
-- sample-kraken2-report.tsv (kraken report, output from [Step 10a](#10a-taxonomic-classification)
-
-**Output data:**
-
-- sample.krona (krona formatted kraken2 output)
-
-#### 10d. Generate per sample Krona charts
-
-```bash
-ktImportText -o sample_krona.html sample.krona
-```
-
-**Parameter Definitions:**
-
-- `-o` - specifies the name of the krona output html file
-- `sample.krona` - positional argument specifying the krona text file for each sample
-
-**Input Data:**
-
-- sample.krona (krona formatted kraken2 output from [Step 10c](#10c-convert-kraken2-output-to-krona-format)
-
-**Output Data:**
-
-- **sample_krona.html** (per-sample Krona charts in html format)
-
-#### 10e. Generate combined Krona chart
-
-```bash
-ktImportText -o kraken_report.html *.krona
-```
-
-**Parameter Definitions:**
-
-- `-o` - specifies the name of the krona output html file
-- `*.krona` - positional argument specifying krona formatted text files for all samples
-
-**Input Data:**
-
-- *.krona (krona formatted kaiju output from [Step 10c](#10c-convert-kraken2-output-to-krona-format)
-
-**Output Data:**
-
-- **kraken_report.html** (per-sample Krona charts in html format)
-
 #### 10f. Compile Kraken2 Summary QC
 
 ```bash 
@@ -872,6 +808,70 @@ multiqc -o kraken_multiqc_report -n kraken_multiqc --interactive /path/to/kraken
 
 - **kraken2_multiqc.html** (multiqc output html summary)
 - **kraken2_multiqc_data.zip** (zip archive containing multiqc output data)
+
+#### 10c. Convert Kraken2 output to Krona format
+
+```bash
+kreport2krona.py --report-file sample-kraken2-report.tsv  --output sample.krona
+```
+
+**Parameter Definition:**
+
+- `--output` - specifies the name of the krona output file
+- `--report-file` - specifies the name of the input kraken2 report file
+
+**Input data:**
+
+- sample-kraken2-report.tsv (kraken report, output from [Step 10a](#10a-taxonomic-classification)
+
+**Output data:**
+
+- sample.krona (krona formatted kraken2 output)
+
+
+---
+
+### 11. Taxonomy Plots
+
+#### 11a. Generate per sample Krona charts
+
+```bash
+ktImportText -o sample_krona.html sample.krona
+```
+
+**Parameter Definitions:**
+
+- `-o` - specifies the name of the krona output html file
+- `sample.krona` - positional argument specifying the krona text file for each sample
+
+**Input Data:**
+
+- sample.krona (krona formatted kaiju or kraken output from [Step 9b](#9b-convert-kaiju-output-to-krona-format) or [Step 10c](#10c-convert-kraken2-output-to-krona-format)
+
+**Output Data:**
+
+- **sample_krona.html** (per-sample Krona charts in html format)
+
+#### 10e. Generate combined Krona chart
+
+```bash
+ktImportText -o ${classification_type}_krona_report.html ${input_dir}/*.krona
+```
+
+**Parameter Definitions:**
+
+- `-o` - specifies the name of the krona output html file
+- `input_dir` - positional argument specifying the location of the krona files
+- `classification_type` - positional argument specifying which tool was used to create the taxonomic classification (kaiju or kraken2)
+- `*.krona` - positional argument specifying krona formatted text files for all samples
+
+**Input Data:**
+
+- *.krona (krona formatted kaiju or kraken output in krona format from [Step 9b](#9b-convert-kaiju-output-to-krona-format) or [Step 10c](#10c-convert-kraken2-output-to-krona-format))
+
+**Output Data:**
+
+- **${classification_type}_krona_report.html** (per-sample Krona charts in html format)
 
 ---
 
@@ -1740,3 +1740,751 @@ KEGG-decoder -v interactive -i MAG-level-KO-annotations_GLmetagenomics.tsv -o MA
 
 <br>
 ---
+
+## Read-based Feature Table Decontamination
+> Feature table decontamination is performed in R.  
+
+### 24. R Environment Setup
+
+#### 24a. Load libraries
+
+```R
+library(decontam)
+library(phyloseq)
+library(tidyverse)
+library(DT)
+library(plotly)
+library(glue)
+library(pheatmap)
+library(pavian)
+```
+
+#### 24b. Define Custom Functions
+
+##### get_last_assignment()
+<details>
+  <summary>retrieves the last taxonomy assignment from a taxonomy string</summary>
+
+  ```R
+  get_last_assignment <- function(taxonomy_string, split_by=';', remove_prefix=NULL){
+    # A function to get the last taxonomy assignment from a taxonomy string 
+    split_names <- strsplit(x =  taxonomy_string , split = split_by) %>% 
+      unlist()
+    
+    level_name <- split_names[[length(split_names)]]
+    
+    if(level_name == "_"){
+      return(taxonomy_string)
+    }
+    
+    if(!is.null(remove_prefix)){
+      level_name <- gsub(pattern = remove_prefix, replacement = '', x = level_name)
+    }
+    
+    return(level_name)
+  }
+  ```
+  **Function Parameter Definitions:**
+  - `taxonomy_string` - a character string containing a list of taxonomy assignments
+  - `split_by=` - a character string containing a regular expression used to split the `taxonomy_string`
+  - `remove_prefix=` - a character string containing a regular expression to be matched and removed, default=`NULL`
+
+  **Returns:** the last taxonomy assignment listed in the `taxonomy_string`
+</details>
+
+##### mutate_taxonomy()
+<details>
+  <summary>ensure that the taxonomy column is named "taxonomy" and aggregate duplicates to ensure that taxonomy names are unique</summary>
+
+  ```R
+  mutate_taxonomy <- function(df, taxonomy_column="taxonomy"){
+    
+    # make sure that the taxonomy column is always named taxonomy
+    col_index <- which(colnames(df) == taxonomy_column)
+    colnames(df)[col_index] <- 'taxonomy'
+    df <- df %>% dplyr::mutate(across( where(is.numeric), \(x) tidyr::replace_na(x,0)  ) )%>% 
+      dplyr::mutate(taxonomy=map_chr(taxonomy,.f = function(taxon_name=.x){
+        last_assignment <- get_last_assignment(taxon_name) 
+        last_assignment  <- gsub(pattern = "\\[|\\]|'", replacement = '',x = last_assignment)
+        trimws(last_assignment, which = "both")
+      })) %>% 
+      as.data.frame(check.names=FALSE, StringAsFactor=FASLE)
+    # Ensure the taxonomy names are unique by aggregating duplicates
+    df <- aggregate(.~taxonomy,data = df, FUN = sum)
+    return(df)
+  }
+  ```
+  **Function Parameter Definitions:**
+  - `df` - a dataframe containing the taxonomy assignments
+  - `taxonomy_column=` - name of the column in `df` containing the taxonomy assignments, default="taxonomy"
+
+  **Returns:** a dataframe with unique taxonomy names stored in a column named "taxonomy"
+
+</details>
+
+##### process_kaiju_table()
+<details>
+  <summary>reformat kaiju output table</summary>
+
+  ```R
+  process_kaiju_table <- function(file_path, taxon_col="taxon_path",
+                                  kingdom=NULL, remove_non_microbial = TRUE){
+    
+    kaija_table <- read_delim(file = file_path,
+                              delim = "\t",
+                              col_names = TRUE)
+    
+    if(remove_non_microbial){
+      # Remove non-microbial and unclassified assignments in this case Metazoa for animal assignments
+      non_microbial_indices <- grep(pattern = "unclassified|assigned|Metazoa|Chordata|Nematoda|Arthropoda|Annelida|Brachiopoda|Mollusca|Cnidaria|Streptophyta",
+                                    x = kaija_table[[taxon_col]])
+      
+      if(!is_empty(non_microbial_indices)){
+        kaija_table <- kaija_table[-non_microbial_indices,]
+      }
+      
+    }
+    
+    if(!is.null(kingdom)){
+      kingdom_indices <- grep(pattern = kingdom ,
+                              x = kaija_table[[taxon_col]])
+      if(!is_empty(kingdom_indices)){
+        kaija_table <- kaija_table[kingdom_indices,]
+      }
+    }
+    
+    
+    abs_abun_df <- pivot_wider(data = kaija_table %>% dplyr::select(sample,reads,taxonomy=!!sym(taxon_col)), 
+                              names_from = "sample", values_from = "reads",
+                              names_sort = TRUE) %>% mutate_taxonomy
+    
+    rel_abun_df <- pivot_wider(data = kaija_table %>% dplyr::select(sample,percent,taxonomy=!!sym(taxon_col)), 
+                              names_from = "sample", values_from = "percent",
+                              names_sort = TRUE) %>% mutate_taxonomy
+    
+    # Set the taxon names as row names, drop the taxonomy column and convert to a matrix
+    rownames(abs_abun_df) <- abs_abun_df[,"taxonomy"]
+    rownames(rel_abun_df) <- rel_abun_df[,"taxonomy"]
+    
+    abs_abun_df <- abs_abun_df[,-(which(colnames(abs_abun_df) == "taxonomy"))]
+    rel_abun_df <- rel_abun_df[,-(which(colnames(rel_abun_df) == "taxonomy"))]
+    
+    abs_abun_matrix <- as.matrix(abs_abun_df)
+    rel_abun_matrix <- as.matrix(rel_abun_df)
+    
+    final_tables <- list("relative_table"=rel_abun_matrix,
+                        "abundance_table"=abs_abun_matrix)
+    return(final_tables)
+    
+  }
+  ```
+  **Function Parameter Definitions:**
+  - `file_path` - file path to the tab-delimited kaiju output table file
+  - `taxon_col=`- name of the taxon column in the input data file, default="taxon_path"
+  - `kingdom=` - a character string containing a regular expression used to filter for specific kingdoms, default=`NULL`
+  - `remove_non_microbial=` - a boolean specifying whether or not to remove non-microbial and unclassified assuments, default=`TRUE`
+
+  **Returns:** a dataframe with reformated kaiju output
+
+</details>
+
+##### create_dt()
+<details>
+  <summary>create an HTML widget to display rectangular data (`matrix` or `dataframe`) using the DataTables Javascript library</summary>
+
+```R
+create_dt <- function(table2show, caption=NULL) {
+  DT::datatable(table2show,
+                rownames = FALSE, # remove row numbers
+                filter = "top", # add filter on top of columns
+                extensions = "Buttons", # add download buttons
+                caption=caption,
+                options = list(
+                  autoWidth = TRUE,
+                  dom = "Blfrtip", # location of the download buttons
+                  buttons = c("copy", "csv", "excel", "pdf", "print"), # download buttons
+                  pageLength = 5, # show first 5 entries, default is 10
+                  order = list(0, "asc") # order the title column by ascending order
+                ),
+                escape = FALSE # make URLs clickable) 
+  )
+}
+```
+**Function Parameter Definitions:**
+- `table2show` - a `matrix` or `dataframe` containing tabular data to display
+- `caption=` - a character vector to use as the caption for the table
+
+</details>
+
+##### filter_rare()
+<details>
+  <summary>filter out rare and non_microbial taxonomy assignments</summary>
+
+  ```R
+  filter_rare <- function(species_table, non_microbial, threshold=1){
+    
+    clean_tab_count  <-  species_table %>% 
+      filter(str_detect(Species, non_microbial, negate = TRUE))  
+    
+    clean_tab <- clean_tab_count %>% 
+      mutate( across( where(is.numeric)  , \(x) (x/sum(x, na.rm = TRUE))*100 ) )
+    
+    rownames(clean_tab) <- clean_tab$Species
+    clean_tab  <- clean_tab[,-1] 
+    
+    
+    # Get species with relative abundance less than 1% in all samples
+    rare_species <- map(clean_tab, .f = \(col) rownames(clean_tab)[col < threshold])
+    rare <- Reduce(intersect, rare_species)
+    
+    rownames(clean_tab_count) <- clean_tab_count$Species
+    clean_tab_count  <- clean_tab_count[,-1] 
+    
+    abund_table <- clean_tab_count[!(rownames(clean_tab_count) %in% rare), ]
+    
+    return(abund_table)
+  }
+  ```
+  **Function Parameter Definitions:**
+  - `species_table` - the dataframe to filter
+  - `non_microbial` - a character vector denoting the string used to identify a species as non-microbial
+  - `threshold=` - abundance threshold used to determine if the relative abundance is rare, value denotes a percentage between 0 and 100.
+
+  **Returns:** a dataframe with rare and non_microbrial assignemnts removed
+</details>
+
+
+##### make_plot()
+<details>
+  <summary>create bar plot of relative abundance</summary>
+
+  ```R
+  # Make bar plot
+  make_plot <- function(abund_table, metadata, colors2use, publication_format){
+    
+    abund_table_wide <- abund_table %>% 
+        as.data.frame() %>% 
+        rownames_to_column("Sample_ID") %>% 
+        inner_join(metadata) %>% 
+        select(!!!colnames(metadata), everything()) %>% 
+        mutate(Sample_ID = Sample_ID %>% str_remove("barcode"))
+        
+    abund_table_long <- abund_table_wide  %>%
+        pivot_longer(-colnames(metadata), 
+                    names_to = "Species",
+                    values_to = "relative_abundance")
+      
+    p <- ggplot(abund_table_long, mapping = aes(x=Sample_ID, y=relative_abundance, fill=Species)) +
+         geom_col() +
+         scale_fill_manual(values = colors2use) + 
+         labs(x=NULL, y="Relative Abundance (%)") + 
+         publication_format
+
+    return(p)
+  }
+  ```
+  **Function Parameter Definitions:**
+  - `abund_table` - a dataframe containing the data to plot
+  - `metadata` - a vector of strings specifying the data to include in the plot
+  - `colors2use` - a vector of strings specifying a custom color palette for coloring plots
+  - `publication_format` - a ggplot::theme object specifying the custom theme for plotting
+
+  **Returns:** a ggplot bar plot
+
+</details>
+
+##### get_colors2use()
+<details>
+  <summary>get colors to use in plots</summary>
+
+  ```R
+  get_colors2use <- function(species, expected_microbes, microbe_colors, custom_palette){
+    
+    unexpected_microbes <- setdiff(species, expected_microbes)
+    
+    start <- length(species)+1
+    end <-  length(species) + length(unexpected_microbes)
+    unexpected_microbes_colors <-  custom_palette[start:end]
+    names(unexpected_microbes_colors) <- unexpected_microbes
+    colors2use <- append(microbe_colors,unexpected_microbes_colors)
+    return(colors2use)
+    
+  }
+  ```
+  **Function Parameter Definitions:**
+  - `species` - a vector specifying the list of species that will use this color palette, used to set the number of colors in the palette
+  - `expected_microbes` - the list of microbe species that were expected in the data
+  - `microbe_colors` - colors assigned to the expected microbes
+  - `custom_palette` - a vector of strings specifying a custom color palette
+
+  **Returns:** a vector of strings specifying the color palette to use for the input species list
+
+</details>
+
+#### 24c. Set global variables
+
+```R
+
+kraken_taxonomy_outdir <- "kraken2_taxonomy/"
+kaiju_taxonomy_outdir <- "kaiju_taxonomy/"
+
+# Define custom theme for plotting
+publication_format <- theme_bw() +
+  theme(panel.grid = element_blank()) +
+  theme(axis.ticks.length=unit(-0.15, "cm"),
+        axis.text.x=element_text(margin=ggplot2::margin(t=0.5,r=0,b=0,l=0,unit ="cm")),
+        axis.text.y=element_text(margin=ggplot2::margin(t=0,r=0.5,b=0,l=0,unit ="cm")), 
+        axis.title = element_text(size = 18,face ='bold.italic', color = 'black'), 
+        axis.text = element_text(size = 16,face ='bold', color = 'black'),
+        legend.position = 'right', legend.title = element_text(size = 15,face ='bold', color = 'black'),
+        legend.text = element_text(size = 14,face ='bold', color = 'black'),
+        strip.text =  element_text(size = 14,face ='bold', color = 'black'))
+
+# Define custom palette for plotting
+custom_palette <- c("#A6CEE3","#1F78B4","#B2DF8A","#33A02C","#FB9A99","#E31A1C","#FDBF6F", "#FF7F00",
+                    "#CAB2D6","#6A3D9A","#FF00FFFF","#B15928","#000000","#FFC0CBFF","#8B864EFF","#F0027F",
+                    "#666666","#1B9E77", "#E6AB02","#A6761D","#FFFF00FF","#FFFF99","#00FFFFFF",
+                    "#B2182B","#FDDBC7","#D1E5F0","#CC0033","#FF00CC","#330033",
+                    "#999933","#FF9933","#FFFAFAFF",colors()) 
+# remove white colors
+custom_palette <- custom_palette[-c(21:23,
+                                    grep(pattern = "white|snow|azure|gray|#FFFAFAFF|aliceblue",
+                                         x = custom_palette, 
+                                         ignore.case = TRUE)
+                                   )
+                                ]
+# Define expected microbes to use for filtering
+expected_microbes <- c("Pseudomonas aeruginosa", "Salmonella enterica",
+                       "Limosilactobacillus fermentum", "Lactobacillus fermentum", "Staphylococcus aureus",
+                       "Enterococcus faecalis", "Escherichia coli",
+                       "Listeria monocytogenes", "Bacillus subtilis", "Bacillus spizizenii",
+                       "Saccharomyces cerevisiae", "Cryptococcus neoformans")
+orig_expected_microbes <- c("Pseudomonas aeruginosa", "Salmonella enterica",
+                       "Limosilactobacillus fermentum", "Staphylococcus aureus",
+                       "Enterococcus faecalis", "Escherichia coli",
+                       "Listeria monocytogenes", "Bacillus spizizenii",
+                       "Saccharomyces cerevisiae", "Cryptococcus neoformans")
+orig_expected_microbes <- c(sort(orig_expected_microbes), "Escherichia phage Lambda")
+
+# Define expected microbe color palette
+microbe_colors <- custom_palette[1:length(orig_expected_microbes)]
+names(microbe_colors) <- orig_expected_microbes
+
+# Define human associated microbes
+human_associated_microbes <- c("Staphylococcus epidermedis", "Staphylococcus hominis", "Cutibacterium acnes",
+                               "Staphylococcus haemolyticus", "Malassezia", "Corynebacterium", "Micrococcus",
+                               "Hoylesella shahii", "Streptococcus mitis",
+                               "Eubacterium saphenum", "Lawsonella clevelandensis")
+
+# subplots grouping variable
+facets_kaiju <- c("Sample_Type","input_conc_ng", "lambda_spike")
+facets_kraken2 <- c("Sample_Type","input_conc_ng")
+```
+**Input Data:** 
+
+*No input data required*
+
+**Output Data:**
+
+- `publication_format` (a ggplot::theme object specifying the custom theme for plotting)
+- `custom_palette` (a vector of strings specifying a custom color palette for coloring plots)
+- `expected_microbes` (a vector of strings listing microbes that may be found in the samples)
+- `orig_expected_microbes` (a vector of strings listing microbes that may be found in the samples plus "Escherichia phage Lambda")
+- `microbe_colors` (a vector of strings specifying the custom color palette to use for coloring the `orig_expected_microbes`)
+- `human_associated_microbes` (a vector of strings listing microbes that are known to be found in humans)
+- `facets_kaiju` (a vector of strings listing subplot grouping variables for kaiju data)
+- `facets_kraken2` (a vector of strings listing subplot grouping variables for kraken2 data)
+- `kraken_taxonomy_outdir` (a path to the output folder for read taxonomy output based on kraken2 processing)
+- `kaiju_taxonomy_outdir` (a path to the output folder for read taxonomy output based on kaiju processing)
+
+#### 24d. Import Kaiju Taxonomy Data
+
+```R
+kaiju_table <- "/path/to/kaiju_read_taxonomy/merged_kaiju_summary_species.tsv"
+feature_table <- process_kaiju_table(kaiju_table, taxon_col="taxon_name", remove_non_microbial = FALSE)$abundance_table
+
+# Create Species table (species raw read count by barcode)
+feature_table %>% as.data.frame %>% 
+  rownames_to_column("Species") %>%
+  pivot_longer(-Species, names_to = "Barcode", values_to = "Reads") %>% 
+  write_delim(species_csv, delim=',')
+
+## The number of reads classified at the species level
+colSums(feature_table) %>%
+  enframe(name = "Barcode", value = "Number of reads") %>%
+  write_delim("{kaiju_taxonomy_outdir}species_counts{assay_suffix}.csv", delim=",")
+
+species_table <- feature_table
+
+```
+**Input Data:**
+- `kaiju_table` (the merged kaiju summary data at the species taxon level, output from [Step 9f](#9f-compile-kaiju-taxonomy-results))
+- `kaiju_taxonomy_outdir` (a path to the output folder for read taxonomy output based on kaiju processing)
+- `assay_suffix` (standard GeneLab assay suffix to use in output files)
+
+**Output Data:**
+- `species_table` (dataframe of relative abundance data)
+- **kaiju_taxonomy/species_counts_GLMetagenomics.csv** (Number of reads classified for each species)
+
+
+##### 24e. Import Kraken2 Taxonomy Data
+
+```R
+kraken_reports_dir <- "/path/to/read_taxonomy/kraken2_output/"
+
+# import kraken2 reports
+reports <- pavian::read_reports(kraken_reports_dir)
+
+# create taxonomy overview
+summary_table  <- pavian::summarize_reports(reports)
+rownames(summary_table) <- rownames(summary_table) %>% str_split("-") %>% map_chr(\(x) pluck(x, 1))
+summary_table %>% rownames_to_column("Sample_ID") %>% write_delim('{kraken_taxonomy_outdir}kraken_taxonomy_overview.csv', delim=',')
+
+samples <- names(reports) %>% str_split("-") %>% map_chr(\(x) pluck(x, 1))
+merged_reports  <- pavian::merge_reports2(reports, col_names = samples)
+taxonReads <- merged_reports$taxonReads
+cladeReads <- merged_reports$cladeReads
+tax_data <- merged_reports[["tax_data"]]
+
+#Create species table
+species_table <- tax_data %>% 
+  bind_cols(cladeReads) %>%
+  filter(taxRank %in% c("U","S")) %>% 
+  select(-contains("tax")) %>%
+  zero_if_na() %>% 
+  filter(name != 0) %>%  # drop unknown taxonomies
+  group_by(name) %>% 
+  summarise(across(everything(), sum)) %>% 
+  ungroup() %>% 
+  as.data.frame()
+
+species_names <- species_table[,"name"]
+rownames(species_table) <- species_names
+
+taxonomy_col <- match("name", colnames(species_table))
+species_table <- species_table[,-taxonomy_col]
+
+species_table <- apply(X = species_table, MARGIN = 2, FUN = as.numeric)
+rownames(species_table) <- species_names
+
+# calculate total number of reads for each sample
+colSums(species_table) %>%
+  enframe(name = "Sample", value = "Number of reads") %>%
+  write_delim("{kraken_taxonomy_outdir}species_counts{assay_suffix}.csv", delim=",")
+```
+
+**Input Data:**
+- `kraken_reports` (the per-sample kraken reports, output from [Step 10a](#10a-taxonomic-classification))
+- `kraken_taxonomy_outdir` (a path to the output folder for read taxonomy output based on kraken2 processing)
+- `assay_suffix` (standard GeneLab assay suffix to use in output files)
+
+
+**Output Data:**
+- `species_table` (a dataframe of species raw read counts by barcode)
+- **kraken_taxonomy/species_counts_GLMetagenomics.csv** (a dataframe of per-sample read counts)
+- **kraken_taxonomy/kraken_taxonomy_overview.csv** (Comma-separated table containing a summary of Kraken2 taxonomy classification)
+
+
+#### 24f. Import Sample Metadata
+
+```R
+# define input files
+metadata_file <- "/path/to/metadata.txt"
+
+# Import metadata
+metadata <- read_delim(metdata_file , delim = "\t") %>% as.data.frame()
+row.names(metadata) <- metadata$Sample_ID
+```
+
+**Input Data:** 
+
+- `metadata_file` (a file containing sample metadata for the study, columns are: Sample_ID (string), Sample_Type (string), input_conc_ng (float), lambda_spike ('no'/'yes'), Sample_or_Control (string))
+
+**Output Data:**
+
+- `metadata` (a dataframe containing sample metadata for the study with the sampleIDs as the row names)
+
+--- 
+
+### 25. Read-based processing feature table decontamination
+
+The read-based feature table decontamination and taxonomy QC are performed using the same functions for both kraken2 and kaiju generated taxonomies.
+
+#### 25a. Taxonomy filtering
+
+```R
+# with unclassified data
+output_dir <- "{taxonomy_type}_taxonomy/"
+abundance_threshold <- 0.5
+
+species <- species_table %>% as.data.frame %>% 
+  rownames_to_column("Species") %>% pull(Species) %>% unique()
+colors2use <- get_colors2use(species, orig_expected_microbes, microbe_colors, custom_palette)
+
+abund_table <- species_table %>% 
+               as.data.frame %>% 
+               mutate( across(everything(), \(x) (x/sum(x, na.rm = TRUE))*100 ) ) %>% 
+               rownames_to_column("Species") 
+  
+rownames(abund_table) <- abund_table$Species
+  
+abund_table <- abund_table[, -match(x = "Species", colnames(abund_table))] %>% t
+
+# excluding unclassified and host reads
+non_microbial <- "Unclassified|unclassified|Homo sapien"
+
+# Get species with relative abundance greater than 0.5 in all the samples
+clean_tab <- species_table %>% 
+  as.data.frame %>% 
+  rownames_to_column("Species") 
+
+abund_table <- filter_rare(clean_tab, non_microbial, threshold=abundance_threshold)
+species <- rownames(abund_table)
+colors2use <- get_colors2use(species, orig_expected_microbes, microbe_colors, custom_palette)
+
+species_abund_table <- abund_table %>% 
+                    as.data.frame %>% 
+                   mutate( across( where(is.numeric)  , \(x) (x/sum(x, na.rm = TRUE))*100 ) )
+
+abund_table <- species_abund_table %>% t
+
+# Without human-associated microbes
+unwanted <- str_c(c(non_microbial, human_associated_microbes), collapse = "|")
+clean_tab2 <- filter_rare(clean_tab, unwanted, threshold=abundance_threshold)
+clean_tab2 <- clean_tab2   %>% 
+  mutate( across( where(is.numeric)  , \(x) (x/sum(x, na.rm = TRUE))*100 ) )
+abund_table <- clean_tab2 %>% t
+species <- rownames(clean_tab2)
+colors2use <- get_colors2use(species, orig_expected_microbes, microbe_colors, custom_palette)
+
+p <- make_plot(abund_table, metadata, colors2use, publication_format) + 
+  facet_wrap(facets, scales = "free_x", nrow=1)
+
+p$data %>% mutate(run="Ultra Low", host_read_removal="kraken", taxonomy="{taxonomy_type}") %>% write_delim(file="{output_dir}/{taxonomy_type}_no_unwanted{assay_suffix}.tsv", delim = "\t")
+
+# Expected microbes alone 
+non_microbial <- "Unclassifed|unclassified|Homo sapien"
+
+clean_tab2 <- clean_tab %>% 
+  filter(str_detect(Species, non_microbial, negate = TRUE))  %>% 
+    filter(str_detect(Species, str_c(expected_microbes, collapse = "|"))) %>%  #select only the expected microbes
+  mutate( across( where(is.numeric)  , \(x) (x/sum(x, na.rm = TRUE))*100 ) )
+
+rownames(clean_tab2) <- clean_tab2$Species
+clean_tab2  <- clean_tab2[,-1] 
+abund_table <- clean_tab2 %>% t
+species <- rownames(clean_tab2)
+colors2use <- get_colors2use(species, orig_expected_microbes, microbe_colors, custom_palette)
+
+p <- make_plot(abund_table, metadata, colors2use, publication_format) + 
+  facet_wrap(facets, scales = "free_x", nrow=1)
+
+p$data %>% mutate(run="Ultra Low", host_read_removal="kraken", taxonomy="{taxonomy_type}") %>% write_delim(file="{output_dir}{taxonomy_type}_expected{assay_suffix}.tsv", delim = "\t")
+
+# Without Unclassified and host reads alone
+
+# Get species with relative abundance greater than 1 in all the samples
+clean_tab2 <- clean_tab %>% 
+  as.data.frame %>% 
+  filter(str_detect(Species, non_microbial, negate = TRUE))  %>% 
+  mutate( across( where(is.numeric)  , \(x) (x/sum(x, na.rm = TRUE))*100 ) )
+
+rownames(clean_tab2) <- clean_tab2$Species
+clean_tab2  <- clean_tab2[,-1] 
+abund_table <- clean_tab2 %>% t
+species <- rownames(clean_tab2)
+colors2use <- get_colors2use(species, orig_expected_microbes, microbe_colors, custom_palette)
+
+p <- make_plot(abund_table, metadata, colors2use, publication_format) + 
+  facet_wrap(facets, scales = "free_x", nrow=1)
+
+#Without removing taxonomies with relative abundance less than 0.5%
+p$data %>% mutate(run="Ultra Low", host_read_removal="kraken", taxonomy="{taxonomy_type}") %>% write_delim(file="{output_dir}{taxonomy_type}_no_filt{assay_suffix}.tsv", delim = "\t")
+
+# Filter out unclassified, human reads and rare species
+
+# Rare species here are classified as species with a relative abundance less than 0.5% across
+# all samples.
+
+# Get species with relative abundance greater than 0.5 in all the samples
+abund_table <- filter_rare(clean_tab, non_microbial, threshold=abundance_threshold)
+species <- rownames(abund_table)
+colors2use <- get_colors2use(species, orig_expected_microbes, microbe_colors, custom_palette)
+
+species_abund_table <- abund_table %>% 
+                    as.data.frame %>% 
+                   mutate( across( where(is.numeric)  , \(x) (x/sum(x, na.rm = TRUE))*100 ) )
+
+abund_table <- species_abund_table %>% t
+
+p <- make_plot(abund_table, metadata, colors2use, publication_format) + 
+  facet_wrap(facets, scales = "free_x", nrow=1)
+
+p$data %>% mutate(run="Ultra Low", host_read_removal="kraken", taxonomy="{taxonomy_type}") %>% write_delim(file="{output_dir}{taxonomy_type}_filtered{assay_suffix}.tsv", delim = "\t")
+```
+
+**Parameter Definitions:**
+- `abundance_threshold` - threshold for defining rare species, default=0.5
+- `taxonomy_type` - string specify which tool was used to create the input taxonomy, either `kaiju` or `kraken`
+- `assay_suffix` - string specifying an assay suffix to use for output file nameing in this dataset (default: GLMetagenomics)
+
+
+**Input Data:**
+- `species_table` (dataframe of relative abundance data, from [Step 24d](#24d-import-kaiju-taxonomy-data) if using kaiju taxonomies or [Step 24e](#24e-import-kraken2-taxonomy-data) is using kraken taxonomies)
+- `facets` (a vector of strings listing subplot grouping variables for either kaiju or kraken data, from [Step 24c](#24c-set-global-variables))
+
+
+**Output Data**
+- `species_abund_table` (a dataframe containing filtered realtive abundance values)
+- **<kraken|kaiju>_taxonomy/<kraken|kaiju>_expected_GLMetagenomics.tsv** ()
+- **<kraken|kaiju>_taxonomy/<kraken|kaiju>_no_filt_GLMetagenomics.tsv** ()
+- **<kraken|kaiju>_taxonomy/<kraken|kaiju>_filtered_GLMetagenomics.tsv** ()
+
+---
+
+#### 25b. Decontamination with Decontam
+
+##### 25b.i. Setup variables
+```R
+feature_table <- species_abund_table #species_table
+sub_metadata <- metadata[colnames(feature_table),]
+# Modify NTC concentration
+sub_metadata <- sub_metadata %>% 
+  mutate(input_conc_ng=map2_dbl(Sample_Type, input_conc_ng,
+                                .f= function(type, conc) { 
+                                  if(conc == 0) return(0.0000001) else return(conc) 
+                                  } )
+         )
+sub_metadata$input_conc_ng <- as.numeric(sub_metadata$input_conc_ng)
+ps <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
+            sample_data(sub_metadata))
+```
+
+**Input Data:**
+- `species_abund_table` (a dataframe containing filtered relative abundance values, from [Step ](#25a-taxonomy-filtering))
+
+**Output Data:**
+- `ps` (phyloseq object of the relative abundance values with NTC metadata added)
+
+##### 25b.ii. Identify prevalence of contaminant sequences
+The prevalence (presence/absence across samples) of each sequence feature in 
+true positive samples is compared to the prevalence in negative controls to 
+identify contaminants.
+
+```R
+contam_threshold <- 0.1
+output_dir <- "{taxonomy_type}_taxonomy_decontam/"
+# In our phyloseq object, "Sample_or_Control" is the sample variable that holds 
+# the negative control information. We’ll summarize that data as a logical 
+# variable, with TRUE for control samples, as that is the form required by isContaminant
+sample_data(ps)$is.neg <- sample_data(ps)$Sample_or_Control == "Control_Sample"
+contamdf <- isContaminant(ps, neg="is.neg", conc="input_conc_ng", threshold=contam_threshold) # threshold
+
+#### Create contaminant table
+contamdf %>%
+  mutate( across( where(is.numeric), \(x) round(x, digits = 2) ) ) %>%
+  rownames_to_column("Species") %>% 
+  write_delim(file="{output_dir}{taxonomy_type}_contaminant_table{assay_suffix}.tsv", delim = "\t")
+
+table(contamdf$contaminant)
+
+contamdf %>% filter(contaminant == TRUE) %>% 
+  write_delim(file="{output_dir}{taxonomy_type}_filtered_contaminant_table{assay_suffix}.tsv", delim = "\t")
+
+
+isExpected <- str_detect(rownames(contamdf), pattern = str_c(expected_microbes, collapse = "|"))
+contamdf[isExpected,] %>%
+  select(-p.freq) %>%
+  mutate( across( where(is.numeric), \(x) round(x, digits = 3) ) ) %>% 
+  write_delim(file="{output_dir}{taxonomy_type}_contaminant_table_expected_microbes{assay_suffix}.tsv", delim = "\t")
+```
+
+**Parameter Defintitions:**
+- `contam_threshold` - probability threshold below which the null hypothesis (not a contaminant) should be rejected in favor of the alternate hypothesis (contaminant) (default: 0.1)
+- `taxonomy_type` - string specify which tool was used to create the input taxonomy, either `kaiju` or `kraken`
+- `assay_suffix` - string specifying an assay suffix to use for output file nameing in this dataset (default: GLMetagenomics)
+
+
+**Input Data:**
+- `ps` (phyloseq object of the relative abundance values with NTC metadata added, from [Step ](#25bi-setup-variables))
+
+**Output Data:**
+- `contam_df` (dataframe of contaminant table)
+- **<kaiju|kraken>_taxonomy_decontam/<kaiju|kraken>_contaminant_table_GLMetagenomics.tsv** (tab-delimited table of classification information for all input sequences)
+- **<kaiju|kraken>_taxonomy_decontam/<kaiju|kraken>_filtered_contaminant_table_GLMetagenomics.tsv** (tab-delimited table of classification information for all sequences identified as contaminants)
+- **<kaiju|kraken>_taxonomy_decontam/<kaiju|kraken>_contaminant_table_expected_microbes_GLMetagenomics.tsv** (tab-delimited table of classification information for expected microbes)
+
+##### 25b.iii. Decontaminated taxonomy plots
+
+```R
+output_dir <- "{taxonomy_type}_taxonomy_decontam/"
+contaminants <- contamdf %>%
+  as.data.frame %>%
+  rownames_to_column("Species") %>%
+  filter(contaminant == TRUE) %>% pull(Species)
+species <- species_abund_table  %>% 
+  as.data.frame %>% 
+  rownames_to_column("Species") %>%
+  filter(str_detect(Species, pattern = str_c(contaminants, collapse = "|"), negate = TRUE)) %>%
+  pull(Species) %>%
+  unique()
+colors2use <- get_colors2use(species, orig_expected_microbes, microbe_colors, custom_palette)
+
+abund_table <- species_abund_table %>% 
+                    as.data.frame  %>% 
+                    rownames_to_column("Species") %>% 
+                    filter(str_detect(Species, 
+                                      pattern = str_c(contaminants,
+                                                      collapse = "|"),
+                                      negate = TRUE)) %>%
+                    mutate( across( where(is.numeric)   , \(x) (x/sum(x, na.rm = TRUE))*100 ) )
+  
+rownames(abund_table) <- abund_table$Species
+  
+abund_table <- abund_table[, -match(x = "Species", colnames(abund_table))] %>% t
+  
+abund_table_wide <- abund_table %>% 
+    as.data.frame() %>% 
+    rownames_to_column("Sample_ID") %>% 
+    inner_join(metadata) %>% 
+    select(!!!colnames(metadata), everything()) %>% 
+    mutate(Sample_ID = Sample_ID %>% str_remove("barcode"))
+    
+  
+abund_table_long <- abund_table_wide  %>%
+    pivot_longer(-colnames(metadata), 
+                 names_to = "Species",
+                 values_to = "relative_abundance")
+  
+p <- ggplot(abund_table_long, mapping = aes(x=Sample_ID, 
+                                              y=relative_abundance, fill=Species)) +
+    geom_col() +
+    scale_fill_manual(values = colors2use) + 
+    labs(x=NULL, y="Relative Abundance (%)") + 
+    publication_format + 
+  facet_wrap(facets, scales = "free_x", nrow=1)
+
+#### Taxonomy plot without contaminants
+
+# Taxonomy plot after contaminant removal at a set threshold of 0.1
+# ggsave(filename = "results/species_plot.png", plot = p,
+#          device = "png", width = 10, height = 6, units = "in", dpi = 300)
+ggplotly(p) %>% saveWidget(file = "{output_dir}{taxonomy_type}_taxonomy_plots_no_contam{assay_suffix}.html")
+```
+**Parameter Definitions:**
+- `taxonomy_type` - string specify which tool was used to create the input taxonomy, either `kaiju` or `kraken`
+- `assay_suffix` - string specifying an assay suffix to use for output file nameing in this dataset (default: GLMetagenomics)
+
+**Input Data:**
+- `species_abund_table` ()
+- `contam_df` ()
+
+**Output Data:**
+- **<kaiju|kraken>_taxonomy_decontam/<kaiju|kraken>_taxonomy_plots_no_contam_GLMetagenomics.html** (Plot of taxonomies for decontaminated data)
+
+---
+
+### 26. Assembly-based processing decontamination
+Medaka assembly annotation of kraken decontaminated low biomass samples
+Quality filtered and trimmed reads were decontaminated (host (human) reads filtered out) using kraken2. Assembly of the clean reads was performed using metaflye followed by polishing with medaka. The polished assembly was annotated using our standard assembly annotation pipeline with prodigal used to predict genes, CAT used for taxonomy assignment of genes and contigs and KOFamScan for genes functional annotation.  
+
