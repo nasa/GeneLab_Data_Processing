@@ -41,6 +41,7 @@ Software Updates and Changes:
 | FSA          | N/A              | 0.9.6         |
 | ggdendro     | N/A              | 0.2.0         |
 | ggrepel      | N/A              | 0.9.6         |
+| ggplot2      | N/A              | 3.5.1         |
 | glue         | N/A              | 1.8.0         |
 | hexbin       | N/A              | 1.28.3        |
 | mia          | N/A              | 1.14.0        |
@@ -135,6 +136,7 @@ Software Updates and Changes:
 |FSA|0.9.6|[https://CRAN.R-project.org/package=FSA](https://CRAN.R-project.org/package=FSA)|
 |ggdendro|0.2.0|[https://CRAN.R-project.org/package=ggdendro](https://CRAN.R-project.org/package=ggdendro)|
 |ggrepel|0.9.6|[https://CRAN.R-project.org/package=ggrepel](https://CRAN.R-project.org/package=ggrepel)|
+|ggplot2|3.5.1|[https://CRAN.R-project.org/package=ggplot2](https://CRAN.R-project.org/package=ggplot2)|
 |glue|1.8.0|[https://glue.tidyverse.org/](https://glue.tidyverse.org/)|
 |hexbin|1.28.3|[https://CRAN.R-project.org/package=hexbin](https://CRAN.R-project.org/package=hexbin)|
 |mia|1.14.0|[https://github.com/microbiome/mia](https://github.com/microbiome/mia)|
@@ -746,6 +748,19 @@ library(hexbin)
       # Minimum sequences/count value
       depth <- min(seq_per_sample)
 
+      # Error if the number of sequences per sample left after filtering is 
+    # insufficient for diversity analysis
+    if(max(seq_per_sample) < 100){
+      
+      warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure{assay_suffix}.txt")
+      writeLines(
+        text = glue("The maximum sequence count per sample ({max(seq_per_sample)}) is less than 100.
+Therefore, beta diversity analysis with rarefaction cannot be performed. Check VST method normalization instead."),
+        con = warning_file
+      )
+      return(NULL)   # stop rarefaction branch, but don't kill script
+    }
+
       # Loop through the sequences per sample and return the count
       # nearest to the minimum required rarefaction depth
       for (count in seq_per_sample) {
@@ -756,6 +771,24 @@ library(hexbin)
         }
       }
 
+      # Error if the depth that ends up being used is also less than 100
+    if(depth < 100){
+      
+      warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure{assay_suffix}.txt")
+      writeLines(
+        text = glue("The rarefaction depth being used in the analysis ({depth}) is less than 100.
+Therefore, beta diversity analysis with rarefaction cannot be performed. Check VST method normalization instead."),
+        con = warning_file
+      )
+      return(NULL)   # stop rarefaction branch, but don't kill script
+    } 
+    
+    #Warning if rarefaction depth is between 100 and 500
+    if (depth > 100 && depth < 500) {
+      warning(glue("Rarefaction depth ({depth}) is between 100 and 500.
+Beta diversity results may be unreliable."))
+    }
+
       #----- Rarefy sample counts to even depth per sample
       ps <- rarefy_even_depth(physeq = ASV_physeq,
                               sample.size = depth,
@@ -763,6 +796,26 @@ library(hexbin)
                               replace = FALSE,
                               verbose = FALSE)
 
+    # ---- Group check ----
+    survived_samples <- sample_names(ps)
+    remaining_groups <- unique(metadata[rownames(metadata) %in% survived_samples, groups_colname])
+    
+    if(length(remaining_groups) < 2){
+      warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure{assay_suffix}.txt")
+      writeLines(
+        text = glue("Not enough groups remain after rarefaction at {depth} (only {length(remaining_groups)}). Skipping beta diversity with rarefaction."),
+        con = warning_file
+      )
+      return(NULL)  # stop analysis, like depth failure
+    }
+
+    # Write rarefaction depth used into file
+    depth_file <- glue("{beta_diversity_out_dir}{output_prefix}rarefaction_depth{assay_suffix}.txt")
+    writeLines(
+      text = as.character(depth),
+      con = depth_file
+    )
+    
     # Variance Stabilizing Transformation
     }else if(method == "vst"){
 
@@ -1673,10 +1726,43 @@ depth <- min(seq_per_sample)
 # insufficient for diversity analysis
 if(max(seq_per_sample) < 100){
  
-  print(seq_per_sample)
-  stop(glue("The maximum sequence count per sample ({max(seq_per_sample)}) is less than 100. \
-            Therefore, alpha diversity analysis cannot be performed."))
+  warning_file <- glue("{alpha_diversity_out_dir}{output_prefix}alpha_diversity_failure{assay_suffix}.txt")
+  writeLines(
+    text = glue("The maximum sequence count per sample ({max(seq_per_sample)}) is less than 100.
+Therefore, alpha diversity analysis cannot be performed."),
+    con = warning_file
+  )
+  quit(status = 0)
+}
+
+for (count in seq_per_sample) {
+
+  if(count >= rarefaction_depth) {
+    depth <- count
+    break
+    }
+
+}
+
+# Error if the depth that ends up being used is also less than 100
+if(depth < 100){
+ 
+  warning_file <- glue("{alpha_diversity_out_dir}{output_prefix}alpha_diversity_failure{assay_suffix}.txt")
+  writeLines(
+    text = glue("The rarefaction depth being used in the analysis ({depth}) is less than 100.
+Therefore, alpha diversity analysis cannot be performed."),
+    con = warning_file
+  )
+  quit(status = 0)
 } 
+
+#Warning if rarefaction depth is between 100 and 500
+if (depth > 100 && depth < 500) {
+
+  warning(glue("Rarefaction depth ({depth}) is between 100 and 500.
+Alpha diversity results may be unreliable."))
+
+}
 
 # -------------------- Rarefy sample counts to even depth per sample
 ps.rarefied <- rarefy_even_depth(physeq = ASV_physeq, 
@@ -1741,7 +1827,9 @@ ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}rarefaction_cur
 **Output Data:**
 
 * `ps.rarefied` (a phyloseq object of the sample features (i.e. ASV) with feature counts derived from the `feature_table`, resampled such that all samples have the same library size)
-* **alpha_diversity/<output_prefix>rarefaction_curves_GLAmpSeq.png** (plot containing the rarefaction curves for each sample)
+* **alpha_diversity/alpha_diversity_plots_GLAmpSeq.zip** (zip containing the following)
+  * **<output_prefix>rarefaction_curves_GLAmpSeq.png** (plot containing the rarefaction curves for each sample)
+* **alpha_diversity/<output_prefix>rarefaction_depth_GLAmpSeq.txt** (rarefaction depth value used in alpha analysis)
 
 <br>
 
@@ -2016,8 +2104,9 @@ ggsave(filename = glue("{output_prefix}richness_and_diversity_estimates_by_group
 
 **Output Data:**
 
-* **alpha_diversity/<output_prefix>richness_and_diversity_estimates_by_sample_GLAmpSeq.png** (dot plots containing richness and diversity estimates for each sample)
-* **alpha_diversity/<output_prefix>richness_and_diversity_estimates_by_group_GLAmpSeq.png** (box plots containing richness and diversity estimates for each group)
+* **alpha_diversity/alpha_diversity_plots_GLAmpSeq.zip** (zip containing the following)
+  * **<output_prefix>richness_and_diversity_estimates_by_sample_GLAmpSeq.png** (dot plots containing richness and diversity estimates for each sample)
+  * **<output_prefix>richness_and_diversity_estimates_by_group_GLAmpSeq.png** (box plots containing richness and diversity estimates for each group)
 
 <br>
 
@@ -2043,73 +2132,23 @@ output_prefix <- ""
 distance_methods <- c("euclidean", "bray")
 normalization_methods <- c("vst", "rarefy")
 
-# Check and adjust rarefaction depth to preserve at least 2 groups
-library_sizes <- colSums(feature_table)
-min_lib_size <- min(library_sizes)
-max_lib_size <- max(library_sizes)
-
-# Check group-wise library sizes 
-metadata_with_libsizes <- metadata
-metadata_with_libsizes$library_size <- library_sizes[rownames(metadata)]
-
-group_lib_stats <- metadata_with_libsizes %>%
-  group_by(!!sym(groups_colname)) %>%
-  summarise(
-    n_samples = n(),
-    min_lib = min(library_size),
-    max_lib = max(library_size),
-    median_lib = median(library_size),
-    .groups = 'drop'
-  )
-
-# Find max depth that preserves at least 2 groups
-groups_surviving_at_depth <- function(depth) {
-  sum(group_lib_stats$min_lib >= depth)
-}
-
-if(groups_surviving_at_depth(rarefaction_depth) < 2) {
-  
-  # Find the depth that preserves exactly 2 groups (use the 2nd highest group minimum)
-  group_mins <- sort(group_lib_stats$min_lib, decreasing = TRUE)
-  if(length(group_mins) >= 2) {
-    adjusted_depth <- group_mins[2] # Use 2nd highest group minimum directly
-  } else {
-    adjusted_depth <- max(10, floor(min_lib_size * 0.8))
-  }
-  
-  warning_msg <- c(
-    paste("Original rarefaction depth:", rarefaction_depth),
-    paste("Total groups in data:", nrow(group_lib_stats)),
-    "",
-    "Group-wise library size stats:",
-    paste(capture.output(print(group_lib_stats, row.names = FALSE)), collapse = "\n"),
-    "",
-    paste("WARNING: Rarefaction depth", rarefaction_depth, "would preserve only", 
-          groups_surviving_at_depth(rarefaction_depth), "group(s)"),
-    paste("Beta diversity analysis requires at least 2 groups for statistical tests."),
-    "",
-    paste("Automatically adjusted rarefaction depth to:", adjusted_depth),
-    paste("This should preserve", groups_surviving_at_depth(adjusted_depth), "groups for analysis.")
-  )
-  
-  writeLines(warning_msg, glue("{beta_diversity_out_dir}/{output_prefix}rarefaction_depth_warning.txt"))
-  message("WARNING: Rarefaction depth adjusted from ", rarefaction_depth, " to ", adjusted_depth, 
-          " to preserve at least 2 groups - see ", output_prefix, "rarefaction_depth_warning.txt")
-  
-  # Update the rarefaction depth
-  rarefaction_depth <- adjusted_depth
-}
-
 options(warn=-1) # ignore warnings
+
 # Run the analysis
 walk2(.x = normalization_methods, .y = distance_methods,
       .f = function(normalization_method, distance_method){
   
-  # Create transformed phyloseq object
-  ps <- transform_phyloseq(feature_table, metadata, 
-                          method = normalization_method,
-                          rarefaction_depth = rarefaction_depth)
+# Create transformed phyloseq object
+ps <- transform_phyloseq(feature_table, metadata, 
+                        method = normalization_method,
+                        rarefaction_depth = rarefaction_depth)
 
+# Skip downstream analysis when normalization by rarefaction fails
+if (is.null(ps)) {
+  message(glue("{normalization_method} failed. Skipping downstream analysis."))
+  return(NULL)
+}
+  
   # ---------Clustering and dendrogram plotting
 
   # Extract normalized count table
@@ -2197,12 +2236,14 @@ walk2(.x = normalization_methods, .y = distance_methods,
 
 **Output Data:**
 
-* **beta_diversity/<output_prefix><distance_method>_dendrogram_GLAmpSeq.png** (dendrogram(s) of the specified distance, Euclidean or Bray-Curtis, - based hierarchical clustering of the samples, colored by experimental groups)
+* **beta_diversity/<distance_method>_plots_GLAmpSeq.zip** (zip containing the following)
+  * **<output_prefix><distance_method>_dendrogram_GLAmpSeq.png** (dendrogram(s) of the specified distance, Euclidean or Bray-Curtis, - based hierarchical clustering of the samples, colored by experimental groups)
+  * **<output_prefix><distance_method>_PCoA_without_labels_GLAmpSeq.png** (Principle Coordinates Analysis plots of VST transformed and rarefy transformed ASV counts for Euclidean and Bray-Curtis distance methods, respectively, without sample labels)
+  * **<output_prefix><distance_method>_PCoA_w_labels_GLAmpSeq.png** (Principle Coordinates Analysis plots of VST transformed and rarefy transformed ASV counts for Euclidean and Bray-Curtis distance methods, respectively, with sample labels)
 * **beta_diversity/<output_prefix><distance_method>_adonis_table_GLAmpSeq.csv** (comma-separated table(s) containing the degrees of freedom (df), sum of squares (SumOfSqs), coefficient of determination (R^2), F-statistic (statistic), and p-value for the model (variation explained by experimental groups) and residual (unexplained variation) sources of variation (terms) for the specified distance analysis, Euclidean or Bray-Curtis)
 * **beta_diversity/<output_prefix><distance_method>_variance_table_GLAmpSeq.csv** (comma-separated table(s) containing the degrees of freedom (df), sum of squares (sumsq), mean square (meansq), F-statistic (statistic), and p-value for the groups (variation explained by experimental groups) and residual (unexplained variation) sources of variation (terms) for the specified distance analysis, Euclidean or Bray-Curtis)
-* **beta_diversity/<output_prefix><distance_method>_PCoA_without_labels_GLAmpSeq.png** (Principle Coordinates Analysis plots of VST transformed and rarefy transformed ASV counts for Euclidean and Bray-Curtis distance methods, respectively, without sample labels)
-* **beta_diversity/<output_prefix><distance_method>_PCoA_w_labels_GLAmpSeq.png** (Principle Coordinates Analysis plots of VST transformed and rarefy transformed ASV counts for Euclidean and Bray-Curtis distance methods, respectively, with sample labels)
-* **beta_diversity/<output_prefix>vsd_validation_plot.png** (VST transformation validation diagnostic plot)
+* **beta_diversity/<output_prefix>vsd_validation_plot_GLAmpSeq.png** (VST transformation validation diagnostic plot)
+* **beta_diversity/<output_prefix>rarefaction_depth_GLAmpSeq.txt** (rarefaction depth value used in beta analysis)
 
 <br>
 
@@ -2411,8 +2452,10 @@ walk2(.x = group_relAbundance_tbs, .y = taxon_levels,
 
 **Output Data:**
 
-* **taxonomy_plots/<output_prefix>samples_<taxon_level>_GLAmpSeq.png** (barplots of the relative abundance of the specified taxon level for each sample)
-* **taxonomy_plots/<output_prefix>groups_<taxon_level>_GLAmpSeq.png** (barplots of the relative abundance of the specified taxon level for each group)
+* **taxonomy_plots/sample_taxonomy_plots_GLAmpSeq.zip** (zip containing the following)
+  * **<output_prefix>samples_<taxon_level>_GLAmpSeq.png** (barplots of the relative abundance of the specified taxon level for each sample)
+* **taxonomy_plots/group_taxonomy_plots_GLAmpSeq.zip** (zip containing the following)
+  * **<output_prefix>groups_<taxon_level>_GLAmpSeq.png** (barplots of the relative abundance of the specified taxon level for each group)
 
 Where `taxon_level` is all of phylum, class, order, family, genus, and species.
 
@@ -2845,7 +2888,8 @@ write_csv(merged_df %>%
 
 **Output Data:**
 
-* **differential_abundance/ancombc1/<output_prefix>(\<group1\>)v(\<group2\>)_volcano.png** (volcano plots for each pariwise comparison)
+* **differential_abundance/ancombc1/ancombc1_volcano_plots_GLAmpSeq.zip** (zip containing the following)
+  * **<output_prefix>(\<group1\>)v(\<group2\>)_volcano_GLAmpSeq.png** (volcano plots for each pariwise comparison)
 * **differential_abundance/ancombc1/<output_prefix>ancombc1_differential_abundance_GLAmpSeq.csv** (a comma-separated ANCOM-BC1 differential abundance results table containing the following columns:
   - ASV (identified ASVs)
   - taxonomic assignment columns
@@ -3259,8 +3303,9 @@ volcano_plots <- map(uniq_comps, function(comparison){
 
 **Output Data:**
 
-* **differential_abundance/ancombc2/<output_prefix>(\<group1\>)v(\<group2\>)_volcano.png** (volcano plots for each pariwise comparison)
-* **differential_abundance/ancombc2/<output_prefix>ancombc1_differential_abundance_GLAmpSeq.csv** (a comma-separated ANCOM-BC2 differential abundance results table containing the following columns:
+* **differential_abundance/ancombc2/ancombc2_volcano_plots_GLAmpSeq.zip** (zip containing the following)
+  * **<output_prefix>(\<group1\>)v(\<group2\>)_volcano_GLAmpSeq.png** (volcano plots for each pariwise comparison)
+* **differential_abundance/ancombc2/<output_prefix>ancombc2_differential_abundance_GLAmpSeq.csv** (a comma-separated ANCOM-BC2 differential abundance results table containing the following columns:
   - ASV (identified ASVs)
   - taxonomic assignment columns
   - NCBI identifier for the best taxonomic assignment for each ASV 
@@ -3591,7 +3636,8 @@ walk(pairwise_comp_df, function(col){
 
 **Output Data:**
 
-* **differential_abundance/deseq2/<output_prefix>(\<group1\>)v(\<group2\>)_volcano.png** (volcano plots for each pariwise comparison)
+* **differential_abundance/deseq2/deseq2_volcano_plots_GLAmpSeq.zip** (zip containing the following)
+  * **<output_prefix>(\<group1\>)v(\<group2\>)_volcano_GLAmpSeq.png** (volcano plots for each pariwise comparison)
 * **differential_abundance/deseq2/<output_prefix>deseq2_differential_abundance_GLAmpSeq.csv** (a comma-separated DESeq2 differential abundance results table containing the following columns:
   - ASV (identified ASVs)
   - taxonomic assignment columns
@@ -3608,7 +3654,7 @@ walk(pairwise_comp_df, function(col){
   - For each group:
     - Group.Mean_(group) (mean within group)
     - Group.Stdev_(group) (standard deviation within group))
-* **differential_abundance/deseq2/<output_prefix>asv_sparsity_plot.png** (a diagnostic plot of ASV sparsity to be used to assess if running DESeq2 is appropriate)
+* **differential_abundance/deseq2/<output_prefix>asv_sparsity_plot_GLAmpSeq.png** (a diagnostic plot of ASV sparsity to be used to assess if running DESeq2 is appropriate)
 <br>
 
 ---
