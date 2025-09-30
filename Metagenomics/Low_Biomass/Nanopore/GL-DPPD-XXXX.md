@@ -76,6 +76,7 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [11e. Create kraken species count table](#11e-create-kraken-species-count-table)
       - [11f. Read-in tables](#11f-read-in-tables)
       - [11g. Taxonomy barplots](#11g-taxonomy-barplots)
+      - [11h. Feature decontamination](#11h-feature-decontamination)
   - [**Assembly-based processing**](#assembly-based-processing)
     - [12. Sample assembly](#12-sample-assembly)
     - [13. Polish assembly](#13-polish-assembly)
@@ -90,25 +91,8 @@ Barbara Novak (GeneLab Data Processing Lead)
     - [22. Generating normalized, gene- and contig-level coverage summary tables of KO-annotations and taxonomy across samples](#22-generating-normalized-gene--and-contig-level-coverage-summary-tables-of-ko-annotations-and-taxonomy-across-samples)
     - [23. **M**etagenome-**A**ssembled **G**enome (MAG) recovery](#23-metagenome-assembled-genome-mag-recovery)
     - [24. Generating MAG-level functional summary overview](#24-generating-mag-level-functional-summary-overview)
-  - [**Read-based Feature Table Decontamination**]()
-    - [25. R environment setup](#25-r-environment-setup)
-      - [25a. Load libraries](#25a-load-libraries)
-      - [25b. Define custom functions](#25b-define-custom-functions)
-      - [25c. Set global variables](#25c-set-global-variables)
-      - [25d. Import kaiju taxonomy data](#25d-import-kaiju-taxonomy-data)
-      - [25e. Import kraken2 taxonomy data](#25e-import-kraken2-taxonomy-data)
-      - [25f. Import sample metadata](#25f-import-sample-metadata)
-    - [26. Feature table decontamination](#26-read-based-processing-feature-table-decontamination)
-      - [26a. Taxonomy Filtering](#26a-taxonomy-filtering)
-      - [26b. Decontamination with decontam](#26b-decontamination-with-decontam)
-        - [26b.i. Setup variables](#26bi-setup-variables)
-        - [26b.ii. Identify prevalence of contaminant sequences](#26bii-identify-prevalence-of-contaminant-sequences)
-        - [26b.iii. Decontaminated taxonomy plots](#26biii-decontaminated-taxonomy-plots)
-  - [**Assembly-based Feature Table Decontamination**]()
-    [27. ](#27-assembly-based-processing-decontamination)
 
 
-<br>
 
 ---
 
@@ -162,7 +146,7 @@ model="hac"
 input_directory=/path/to/pod5/or/fast5/data
 kit_name=SQK-RPB004
 
-dorado basecaller "hac" ${input_directory} \
+dorado basecaller ${model} ${input_directory} \
   --no-trim \
   --device auto \
   --recursive \
@@ -195,6 +179,7 @@ dorado basecaller "hac" ${input_directory} \
 ### 2. Demultiplexing
 
 #### 2a. Split fastq
+
 ```bash
 dorado demux \
   --output-dir /path/to/fastq/output \
@@ -257,6 +242,7 @@ done
 <br>
 
 ---
+
 ### 3.  Raw Data QC
 
 #### 3a. Raw Data QC
@@ -399,7 +385,6 @@ multiqc  --zip-data-dir \
 ---
 
 ### 5. Trimming
-
 
 #### 5a. Trim Filtered Data
 
@@ -683,7 +668,6 @@ multiqc --zip-data-dir \
 ##### 8a.i. Download from URL
 
 ```bash
-
   # Downloading and unpacking database from ${host_url}
   wget -O host.tar.gz --timeout=3600 --tries=0 --continue  host_url
 
@@ -714,6 +698,7 @@ kraken2-build --add-to-library host_assembly.fasta --db kraken2_host_db/ --no-ma
 # Once your library is finalized, build the database
 kraken2-build --build --db kraken2_host_db/
 ```
+
 **Parameter Definitions:**
 
 - `--download-taxonomy` - downloads taxonomic mapping information
@@ -740,6 +725,7 @@ kraken2-build --download-taxonomy --db kraken2_host_db/
 kraken2-build --build --db kraken2_host_db/ --threads numberOfThreads 
 kraken2-build --clean --db kraken2_host_db/
 ```
+
 **Parameter Definitions:**
 
 - `--download-library` - specifies the reference name/type to download, host_name must 
@@ -798,7 +784,7 @@ gzip sample_host_removed.fastq
 
 ### 9. R Environment Setup
 
-> Taxonomy bar plot, heatmaps and feature decontamination with decontam is performed in R.
+> Taxonomy bar plot, heatmaps and feature decontamination with decontam are performed in R.
 
 #### 9a. Load libraries
 
@@ -818,7 +804,7 @@ library(pavian)
   <summary>retrieves the last taxonomy assignment from a taxonomy string</summary>
 
   ```R
-  get_last_assignment <- function(taxonomy_string, split_by=';', remove_prefix=NULL){
+  get_last_assignment <- function(taxonomy_string, split_by=';', remove_prefix=NULL) {
     # A function to get the last taxonomy assignment from a taxonomy string 
     split_names <- strsplit(x =  taxonomy_string , split = split_by) %>% 
       unlist()
@@ -836,6 +822,7 @@ library(pavian)
     return(level_name)
   }
   ```
+
   **Function Parameter Definitions:**
   - `taxonomy_string` - a character string containing a list of taxonomy assignments
   - `split_by=` - a character string containing a regular expression used to split the `taxonomy_string`
@@ -849,7 +836,7 @@ library(pavian)
   <summary>ensure that the taxonomy column is named "taxonomy" and aggregate duplicates to ensure that taxonomy names are unique</summary>
 
   ```R
-  mutate_taxonomy <- function(df, taxonomy_column="taxonomy"){
+  mutate_taxonomy <- function(df, taxonomy_column="taxonomy") {
     
     # make sure that the taxonomy column is always named taxonomy
     col_index <- which(colnames(df) == taxonomy_column)
@@ -866,6 +853,7 @@ library(pavian)
     return(df)
   }
   ```
+
   **Function Parameter Definitions:**
   - `df` - a dataframe containing the taxonomy assignments
   - `taxonomy_column=` - name of the column in `df` containing the taxonomy assignments, default="taxonomy"
@@ -879,26 +867,25 @@ library(pavian)
   <summary>reformat kaiju output table</summary>
 
   ```R
-process_kaiju_table <- function(file_path, taxon_col="taxon_name"{
+  process_kaiju_table <- function(file_path, taxon_col="taxon_name") {
   
- abs_abun_df <-  read_delim(file = file_path,
-                            delim = "\t",
-                            col_names = TRUE) %>% 
+    abs_abun_df <-  read_delim(file = file_path,
+                               delim = "\t",
+                               col_names = TRUE) %>% 
              select(sample, reads, taxonomy=!!sym(taxon_col)) %>%
              pivot_wider(names_from = "sample", values_from = "reads",
                              names_sort = TRUE) %>%
              mutate_taxonomy
   
-   
-  # Set the taxon names as row names, drop the taxonomy column and convert to a matrix
-  rownames(abs_abun_df) <- abs_abun_df[,"taxonomy"]
-  abs_abun_df <- abs_abun_df[,-(which(colnames(abs_abun_df) == "taxonomy"))]
-  abs_abun_matrix <- as.matrix(abs_abun_df)
-  
-  return(abs_abun_matrix)
-  
-}
+    # Set the taxon names as row names, drop the taxonomy column and convert to a matrix
+    rownames(abs_abun_df) <- abs_abun_df[,"taxonomy"]
+    abs_abun_df <- abs_abun_df[,-(which(colnames(abs_abun_df) == "taxonomy"))]
+    abs_abun_matrix <- as.matrix(abs_abun_df)
+    
+    return(abs_abun_matrix)
+  }
   ```
+
   **Function Parameter Definitions:**
   - `file_path` - file path to the tab-delimited kaiju output table file
   - `taxon_col=`- name of the taxon column in the input data file, default="taxon_path"
@@ -912,45 +899,77 @@ process_kaiju_table <- function(file_path, taxon_col="taxon_name"{
 <details>
   <summary>merge and process multiple kraken outputs to one species table</summary>
 
-```R
-process_kraken_table <- function(reports_dir){
+  ```R
+  process_kraken_table <- function(reports_dir) {
 
-reports <- read_reports(reports_dir)
+    reports <- read_reports(reports_dir)
 
-samples <- names(reports) %>%
-              str_split("-") %>%
-              map_chr(function(x) pluck(x, 1))
-merged_reports  <- merge_reports2(reports, col_names = samples)
-taxonReads <- merged_reports$taxonReads
-cladeReads <- merged_reports$cladeReads
-tax_data <- merged_reports[["tax_data"]]
+    samples <- names(reports) %>%
+                  str_split("-") %>%
+                  map_chr(function(x) pluck(x, 1))
+    merged_reports  <- merge_reports2(reports, col_names = samples)
+    taxonReads <- merged_reports$taxonReads
+    cladeReads <- merged_reports$cladeReads
+    tax_data <- merged_reports[["tax_data"]]
 
-species_table <- tax_data %>% 
-  bind_cols(cladeReads) %>%
-  filter(taxRank %in% c("U","S")) %>% # select unclassified and species rows 
-  select(-contains("tax")) %>%
-  zero_if_na() %>% 
-  filter(name != 0) %>%  # drop unknown taxonomies
-  group_by(name) %>% 
-  summarise(across(everything(), sum)) %>% 
-  ungroup() %>% 
-  as.data.frame() %>% 
-  rename(species=name)
+    species_table <- tax_data %>% 
+      bind_cols(cladeReads) %>%
+      filter(taxRank %in% c("U","S")) %>% # select unclassified and species rows 
+      select(-contains("tax")) %>%
+      zero_if_na() %>% 
+      filter(name != 0) %>%  # drop unknown taxonomies
+      group_by(name) %>% 
+      summarise(across(everything(), sum)) %>% 
+      ungroup() %>% 
+      as.data.frame() %>% 
+      rename(species=name)
 
-species_names <- species_table[,"species"]
-rownames(species_table) <- species_names
+    species_names <- species_table[,"species"]
+    rownames(species_table) <- species_names
+    species_table <- species_table[,-(which(colnames(species_table) == "species"))]
+    species_table <- as.matrix(species_table)
+    
+    return(species_table)\
+  }
+  ```
 
-return(species_table)
-
-}
-```
   **Function Parameter Definitions:**
   - `reports_dir` - path to a directory containing kraken2 reports 
 
-  **Returns:** a kraken species count dataframe with samples and species as columns and rowsx, respectively.
+  **Returns:** a kraken species count matrix with samples and species as columns and rows, respectively.
 
 </details>
 
+
+##### count_to_rel_abundance()
+<details>
+  <summary>Convert species count matrix to relative abundance matrix</summary>
+
+  ```R
+  count_to_rel_abundance <- function(species_table) {
+
+    abund_table <- species_table %>% 
+                        as.data.frame %>% 
+                        mutate( across(everything(), function(x) (x/sum(x, na.rm = TRUE))*100 ) )  %>% # calculation species relative abundance per sample
+        select(
+                where( ~all(!is.na(.)) )
+              )  %>% # drop columns where none of the reads were classified or were non-microbial
+              rownames_to_column("Species") 
+      
+    rownames(abund_table) <- abund_table$Species
+      
+    abund_table <- abund_table[, -match(x = "Species", colnames(abund_table))] %>% t
+
+    return(abund_table)
+  }
+  ```
+
+  **Function Parameter Definitions:**
+  - `species_table` - a species count matrix with samples and species as columns and rows, respectively.
+
+  **Returns:** a species relative abundance matrix with samples and species as rows and column, respectively.
+
+</details>
 
 
 ##### filter_rare()
@@ -958,13 +977,15 @@ return(species_table)
   <summary>filter out rare and non_microbial taxonomy assignments</summary>
 
   ```R
-  filter_rare <- function(species_table, non_microbial, threshold=1){
+  filter_rare <- function(species_table, non_microbial, threshold=1) {
     
     clean_tab_count  <-  species_table %>% 
-      filter(str_detect(Species, non_microbial, negate = TRUE))  
+                         as.data.frame %>% 
+                         rownames_to_column("Species") %>% 
+                         filter(str_detect(Species, non_microbial, negate = TRUE))  
     
     clean_tab <- clean_tab_count %>% 
-      mutate( across( where(is.numeric)  , \(x) (x/sum(x, na.rm = TRUE))*100 ) )
+      mutate( across( where(is.numeric), \(x) (x/sum(x, na.rm = TRUE))*100 ) )
     
     rownames(clean_tab) <- clean_tab$Species
     clean_tab  <- clean_tab[,-1] 
@@ -982,12 +1003,13 @@ return(species_table)
     return(abund_table)
   }
   ```
+
   **Function Parameter Definitions:**
   - `species_table` - the dataframe to filter
   - `non_microbial` - a character vector denoting the string used to identify a species as non-microbial
   - `threshold=` - abundance threshold used to determine if the relative abundance is rare, value denotes a percentage between 0 and 100.
 
-  **Returns:** a dataframe with rare and non_microbrial assignemnts removed
+  **Returns:** a dataframe with rare and non_microbial assignments removed
 </details>
 
 
@@ -997,7 +1019,7 @@ return(species_table)
 
   ```R
   # Make bar plot
-  make_plot <- function(abund_table, metadata, colors2use, publication_format){
+  make_plot <- function(abund_table, metadata, colors2use, publication_format) {
     
     abund_table_wide <- abund_table %>% 
         as.data.frame() %>% 
@@ -1020,6 +1042,7 @@ return(species_table)
     return(p)
   }
   ```
+
   **Function Parameter Definitions:**
   - `abund_table` - a dataframe containing the data to plot
   - `metadata` - a vector of strings specifying the data to include in the plot
@@ -1036,75 +1059,73 @@ return(species_table)
   <summary>Feature table decoxntamination with decontam</summary>
 
   ```R
-run_decontam <- function(feature_table, metadata, contam_threshold=0.1, prev_col=NULL, freq_col=NULL){
+  run_decontam <- function(feature_table, metadata, contam_threshold=0.1, prev_col=NULL, freq_col=NULL) {
 
-            # feature_table - [MATRIX] feature matrix to decontaminate with sample names as column and features as row
-            # prev_col - [BOOLEAN] column in metadata to be use for prevalence based analysis
-            # freq_col - [NUMERIC] column in metadata to be use for frequency based analysis 
-            sub_metadata <- metadata[colnames(feature_table),]
-            # Modify NTC concentration
-            # Often times the user may set the NTC concentration to zero because they think nothing is 
-            # and should be in the negative control but decontam fails if the value is zero.
-            # to prevent decontam from failing we use a very small concentration value
-            # 0.0000001
-            if(!is.null(freq_col)){
+    sub_metadata <- metadata[colnames(feature_table),]
+    # Modify NTC concentration
+    # Often times the user may set the NTC concentration to zero because they think nothing 
+    # should be in the negative control but decontam fails if the value is zero.
+    # to prevent decontam from failing we use a very small concentration value
+    # 0.0000001
+    if (!is.null(freq_col)) {
 
-            sub_metadata <- sub_metadata %>% 
-              mutate(!!freq_col:=map_dbl(!!sym(freq_col), .f= function(conc) { 
-                                              if(conc == 0) return(0.0000001) else return(conc) 
-                                              } )
-                    )
-            sub_metadata[, freq_col] <- as.numeric(sub_metadata[,freq_col])
+      sub_metadata <- sub_metadata %>% 
+        mutate(!!freq_col:=map_dbl(!!sym(freq_col), .f= function(conc) { 
+                                      if(conc == 0) return(0.0000001) else return(conc) 
+                                    } 
+                                  )
+              )
+      sub_metadata[, freq_col] <- as.numeric(sub_metadata[,freq_col])
 
-            }
+    }
 
-            # Create phyloseq object
-            ps <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
-                        sample_data(sub_metadata))
+    # Create phyloseq object
+    ps <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE), sample_data(sub_metadata))
 
+    # In our phyloseq object, "Sample_or_Control" is the sample variable that holds  the negative 
+    # control information. We’ll summarize that data as a logical variable, with TRUE for control 
+    # samples, as that is the form required by isContaminant
+    sample_data(ps)$is.neg <- sample_data(ps)[[prev_col]] == "Control_Sample"
+    contamdf <- isContaminant(ps, neg="is.neg", conc="input_conc_ng") # thresheld = 0.1 - default
 
-           # Run Decontam 
-            if(!is.null(freq_col) && !is.null(prev_col)){   
+    # Run Decontam 
+    if (!is.null(freq_col) && !is.null(prev_col)) {   
 
-            # Run decontam in both prevalence and frequency modes
-            contamdf <- isContaminant(ps, neg=prev_col, conc=freq_col, threshold=contam_threshold) # threshold
+      # Run decontam in both prevalence and frequency modes
+      contamdf <- isContaminant(ps, neg=prev_col, conc=freq_col, threshold=contam_threshold) # threshold
 
-            }else if(!is.null(freq_col)){
-             
-            # Run decontam in frequency mode
-            contamdf <- isContaminant(ps, conc=freq_col, threshold=contam_threshold) # threshold
+    } else if(!is.null(freq_col)) {
+      
+      # Run decontam in frequency mode
+      contamdf <- isContaminant(ps, conc=freq_col, threshold=contam_threshold) # threshold
 
-            }else if(!is.null(prev_col)){
+    } else if(!is.null(prev_col)){
 
-            # Run decontam in prevalence mode
-            contamdf <- isContaminant(ps, conc=freq_col, threshold=contam_threshold)
-            
-            }else{
+      # Run decontam in prevalence mode
+      contamdf <- isContaminant(ps, conc=freq_col, threshold=contam_threshold)
+    
+    } else {
 
-               cat("Both freq_col and prev_col cannot be set tdo NULL\n")
-               cat("please supply either one or both column names your metadata")
-               cat("for frequency and prevalence based analysis, respectively\n")
-               stop()
-            }
+      cat("Both freq_col and prev_col cannot be set tdo NULL\n")
+      cat("please supply either one or both column names your metadata")
+      cat("for frequency and prevalence based analysis, respectively\n")
+      stop()
 
-                                 
-         return(contamdf)
+    }
+                    
+    return(contamdf)
+  }
+  ```
 
-
-}
-
-```
-**Function Parameter Definitions:**
+  **Function Parameter Definitions:**
   - `metadata` - a vector of strings specifying the data to include in the plot
   - `feature_table` -  feature matrix to decontaminate with sample names as column and features as row
-  - `prev_col` - a boolean column in metadata to be use for prevalence based analysis
+  - `prev_col` - a character column in metadata to be used for prevalence based analysis. Controls in this column should always be names "Control_Sample"
   - `freq_col` - a numeric column in metadata to be use for frequency based analysis
   - `contam_threshold` -  the probability threshold below which (strictly less than) the null-hypothesis 
-                         (not a contaminant) should be rejected in favor of the alternate hypothesis (contaminant).
+                          (not a contaminant) should be rejected in favor of the alternate hypothesis (contaminant).
 
-
-**Returns:** a dataframe of detailed decontam results
-
+  **Returns:** a dataframe of detailed decontam results
 </details>
 
 #### 9c. Set global variables
@@ -1135,10 +1156,8 @@ custom_palette <- custom_palette[-c(21:23,
                                          ignore.case = TRUE)
                                    )
                                 ]
-
-# subplots grouping variable
-facets <- c("Sample_Type","input_conc_ng", "lambda_spike")
 ```
+
 **Input Data:** 
 
 *No input data required*
@@ -1147,7 +1166,6 @@ facets <- c("Sample_Type","input_conc_ng", "lambda_spike")
 
 - `publication_format` (a ggplot::theme object specifying the custom theme for plotting)
 - `custom_palette` (a vector of strings specifying a custom color palette for coloring plots)
-- `facets` (a vector of strings listing subplot grouping variables )
 
 <br>
 
@@ -1173,7 +1191,7 @@ rm nr_euk/kaiju_db_nr_euk.bwt nr_euk/kaiju_db_nr_euk.sa
 
 **Input Data:**
 
-- None
+*No input data required*
 
 **Output Data:**
 
@@ -1374,8 +1392,121 @@ species_table <- read_csv(file="kaiju_species_table.csv") %>%  as.data.frame()
 #### 10h. Taxonomy barplots
 
 ```R
+library(tidyverse)
 
+filter_threshold=0.5
+# Filter out Rare and non-microbial assignment
+# You can add as many species that you'd like to filter out
+# using the following syntax "|species_name1|species_name2"
+non_microbial <- "Unclassifed|unclassified|Homo sapien|cannot|uncultured|unidentified"
+
+plot_width <- 18
+plot_height <- 8
+
+# Convert count matrix to relative abundance matrix
+abund_table <- count_to_rel_abundance(species_table)
+
+# Make plot without filtering
+p <- make_plot(abund_table, metadata, custom_palette, publication_format)
+
+ggsave(filename =  "unfiltered-kaiju_species_plot.png", plot = p,
+       device = "png", width = plot_width, height = plot_height, units = "in", dpi = 300)
+
+
+# Get species with relative abundance greater than filter_threshold in all samples
+# Drop rare and non-microbial assignments
+filtered_species_table  <- filter_rare(species_table, non_microbial, threshold=filter_threshold)
+
+
+# Convert count matrix to relative abundance matrix
+filtered_species_table <- count_to_rel_abundance(filtered_species_table)
+
+# Write filtered table to file
+write_csv(x = filtered_species_table, file = "filtered-kaiju_species_table.csv")
+
+# Make plot after filtering
+p <- make_plot(filtered_species_table , metadata, custom_palette, publication_format)
+
+ggsave(filename = "filtered-kaiju_species_plot.png", plot = p,
+         device = "png", width = plot_width, height = plot_height, units = "in", dpi = 300)
 ```
+
+**Parameter Definitions:**
+
+- `filter_threshold` - a decimal threshold from 0-1 for filter out rare species i.e potential fals epositives.
+- `non_microbial` - a regex string  listing out assignmnets to drop before filtering based on the `filter_threshold` above. 
+
+**Input Data:**
+
+- `species_table` (a dataframe of species count per sample, output from [Step 10g](#10g-read-in-tables))
+- `metadata` - (a dataframe of sample-wise metadata, output from [Step 10g](#10g-read-in-tables))
+
+**Output Data:**
+
+- **unfiltered-kaiju_species_plot.png** (barplot plot without filtering)
+- **filtered-kaiju_species_table.csv** (filtered relative abundance table)
+- **filtered-kaiju_species_plot.png** (barplot after filtering rare and non-microbial taxa)
+
+
+#### 10i. Feature decontamination
+
+Feature decontamination with decontam. Decontam is an R package that statistically identifies contaminating features in a feature table
+
+```R
+library(tidyverse)
+library(decontam)
+feature_table <- read_csv("filtered-kaiju_species_table.csv")
+contam_threshold <- 0.1
+# Control samples in this column should always be written as "Control_Sample" and true samples as "True_Sample"
+prev_col <- "Sample_or_Control"
+freq_col <- "input_conc_ng"
+plot_width <- 18
+plot_height <- 8
+
+contamdf <- run_decontam(feature_table, metadata, contam_threshold, prev_col, freq_col)
+
+# Write decontam results table to file
+write_csv(x = contamdf %>% rownames_to_column("Species"), file = "decontam-kaiju_results.csv")
+
+# Get the list of contaminats identified by decontam
+contaminants <- contamdf %>%
+                as.data.frame %>%
+                rownames_to_column("Species") %>%
+                filter(contaminant == TRUE) %>% pull(Species)
+
+# Drop contaminant features identified by decontam
+decontaminated_table <- feature_table %>% 
+                as.data.frame  %>% 
+                rownames_to_column("Species") %>% 
+                filter(str_detect(Species, 
+                                  pattern = str_c(contaminants,
+                                                  collapse = "|"),
+                                  negate = TRUE)) %>%
+                select(-Species) %>% as.matrix
+
+# Convert count matrix to relative abundance matrix
+decontaminated_species_table <- count_to_rel_abundance(decontaminated_table)
+
+# Write decontaminated species table to file
+write_csv(x = decontaminated_species_table, file = "decontaminated-kaiju_species_table.csv")
+
+# Make plot after filtering out contaminants
+p <- make_plot(decontaminated_species_table , metadata, custom_palette, publication_format)
+
+ggsave(filename = "decontaminated-kaiju-species_plot.png", plot = p,
+         device = "png", width = plot_width, height = plot_height, units = "in", dpi = 300)
+```
+
+**Input Data:**
+
+- `filtered-kaiju_species_table.csv`(a dataframe of species count per sample, output from [Step 10h](#10h-taxonomy-barplots))
+- `metadata`(a dataframe of sample-wise metadata, output from [Step 10g](#10g-read-in-tables))
+
+**Output Data:**
+
+- **decontam-kaiju_results.csv** (decontam's results table)
+- **decontaminated-kaiju_species_table.csv** (decontaminated species table)
+- **decontaminated-kaiju-species_plot.png** (barplot after filtering out contaminants)
 
 <br>
 
@@ -1542,7 +1673,6 @@ reports_dir <- "/path/to/directory/with/*-kraken2-report.tsv"
 species_table <- process_kraken_table(reports_dir)
 write_csv(x = species_table, 
           file = "kraken_species_table.csv")
-
 ```
 
 **Parameter Definitions:**
@@ -1596,8 +1726,123 @@ species_table <- species_table[,-match("species", colnames(species_table))]
 #### 11g. Taxonomy barplots
 
 ```R
+library(tidyverse)
 
+filter_threshold=0.5
+# Filter out Rare and non-microbial assignment
+# You can add as many species that you'd like to filter out
+# using the following syntax "|species_name1|species_name2"
+non_microbial <- "Unclassifed|unclassified|Homo sapien"
+
+plot_width <- 18
+plot_height <- 8
+
+# Convert count matrix to relative abundance matrix
+abund_table <- count_to_rel_abundance(species_table)
+
+# Make plot without filtering
+p <- make_plot(abund_table, metadata, custom_palette, publication_format)
+
+ggsave(filename =  "unfiltered-kraken_species_plot.png", plot = p, device = "png", 
+       width = plot_width, height = plot_height, units = "in", dpi = 300)
+
+
+# Get species with relative abundance greater than filter_threshold in all samples
+# Drop rare and non-microbial assignments
+filtered_species_table  <- filter_rare(species_table, non_microbial, threshold=filter_threshold)
+
+
+# Convert count matrix to relative abundance matrix
+filtered_species_table <- count_to_rel_abundance(filtered_species_table)
+
+# Write filtered table to file
+write_csv(x = filtered_species_table, file = "filtered-kraken_species_table.csv")
+
+# Make plot after filtering
+p <- make_plot(filtered_species_table , metadata, custom_palette, publication_format)
+
+ggsave(filename = "filtered-kraken_species_plot.png", plot = p,
+         device = "png", width = plot_width, height = plot_height, units = "in", dpi = 300)
 ```
+
+**Parameter Definitions:**
+
+- `filter_threshold` - a decimal threshold from 0-1 for filter out rare species i.e potential fals epositives.
+- `non_microbial` - a regex string  listing out assignmnets to drop before filtering based on the `filter_threshold` above. 
+
+**Input Data:**
+
+- `species_table` (a dataframe of species count per sample, output from [Step 10g](#10g-read-in-tables))
+- `metadata` - (a dataframe of sample-wise metadata, output from [Step 10g](#10g-read-in-tables))
+
+**Output Data:**
+
+- **unfiltered-kraken_species_plot.png** (barplot plot without filtering)
+- **filtered-kraken_species_table.csv** (filtered relative abundance table)
+- **filtered-kraken_species_plot.png** (barplot after filtering rare and non-microbial taxa)
+
+---
+
+#### 11h. Feature decontamination
+
+Feature decontamination with decontam. Decontam is an R package that statistically identifies contaminating features in a feature table
+
+```R
+library(tidyverse)
+library(decontam)
+
+feature_table <- read_csv("filtered-kraken_species_table.csv")
+contam_threshold <- 0.1
+# Control samples in this column should always be written as "Control_Sample" and true samples as "True_Sample"
+prev_col <- "Sample_or_Control"
+freq_col <- "input_conc_ng"
+plot_width <- 18
+plot_height <- 8
+
+contamdf <- run_decontam(feature_table, metadata, contam_threshold, prev_col, freq_col)
+
+# Write decontam results table to file
+write_csv(x = contamdf %>% rownames_to_column("Species"), file = "decontam-kraken_results.csv")
+
+# Get the list of contaminats identified by decontam
+contaminants <- contamdf %>%
+                as.data.frame %>%
+                rownames_to_column("Species") %>%
+                filter(contaminant == TRUE) %>% pull(Species)
+
+# Drop contaminant features identified by decontam
+decontaminated_table <- feature_table %>% 
+                as.data.frame  %>% 
+                rownames_to_column("Species") %>% 
+                filter(str_detect(Species, 
+                                  pattern = str_c(contaminants,
+                                                  collapse = "|"),
+                                  negate = TRUE)) %>%
+                select(-Species) %>% as.matrix
+
+# Convert count matrix to relative abundance matrix
+decontaminated_species_table <- count_to_rel_abundance(decontaminated_table)
+
+# Write decontaminated species table to file
+write_csv(x = decontaminated_species_table, file = "decontaminated-kraken_species_table.csv")
+
+# Make plot after filtering out contaminants
+p <- make_plot(decontaminated_species_table , metadata, custom_palette, publication_format)
+
+ggsave(filename = "decontaminated-kraken-species_plot.png", plot = p,
+         device = "png", width = plot_width, height = plot_height, units = "in", dpi = 300)
+```
+
+**Input Data:**
+
+- `filtered-kraken_species_table.csv`(a dataframe of species count per sample, output from [Step 11g](#11g-taxonomy-barplots))
+- `metadata`(a dataframe of sample-wise metadata, output from step[Step 11f](#11f-read-in-tables))
+
+**Output Data:**
+
+- **decontam-kraken_results.csv** (decontam's results table)
+- **decontaminated-kraken_species_table.csv** (decontaminated species table)
+- **decontaminated-kraken-species_plot.png** (barplot after filtering out contaminants)
 
 <br>
 
@@ -1696,7 +1941,6 @@ bit-summarize-assembly -o assembly-summaries_GLmetagenomics.tsv *-assembly.fasta
 **Parameter Definitions:**  
 
 - `-o` – output summary table
-
 - `*-assembly.fasta` - multiple input assemblies provided as positional arguments
 
 **Input Data:**
@@ -1716,6 +1960,7 @@ bit-summarize-assembly -o assembly-summaries_GLmetagenomics.tsv *-assembly.fasta
 prodigal -a sample-1-genes.faa -d sample-1-genes.fasta -f gff -p meta -c -q \
          -o sample-1-genes.gff -i sample-1-assembly.fasta
 ```
+
 **Parameter Definitions:**
 
 - `-a` – specifies the output amino acid sequences file
@@ -1763,8 +2008,10 @@ mv sample-1-genes.fasta.tmp sample-1-genes.fasta
 ---
 
 ### 16. Functional annotation
-> **Notes**  
-> The annotation process overwrites the same temporary directory by default. So if running multiple processses at a time, it is necessary to specify a specific temporary directory with the `--tmp-dir` argument as shown below.
+> **Note:**  
+> The annotation process overwrites the same temporary directory by default. When running multiple 
+processses at a time, it is necessary to specify a specific temporary directory with the 
+`--tmp-dir` argument as shown below.
 
 
 #### 16a. Downloading reference database of HMM models (only needs to be done once)
@@ -1820,7 +2067,6 @@ rm -rf sample-1-tmp-KO/ sample-1-KO-annots.tmp
 - `-i` – specifies the input table
 - `-o` – specifies the output table
 
-
 **Input Data:**
 
 - sample-1-KO-tab.tmp (table of KO annotations assigned to gene IDs from [step 7b](#7b-running-kegg-annotation))
@@ -1863,7 +2109,6 @@ CAT contigs -c sample-1-assembly.fasta -d CAT_prepare_20200618/2020-06-18_databa
 - `--I_know_what_Im_doing` – allows us to alter the `--top` parameter
 - `--no-stars` - suppress marking of suggestive taxonomic assignments
 
-
 **Input Data:**
 
 - sample-1-assembly.fasta (assembly file from [step 5a](#5a-renaming-contig-headers))
@@ -1897,8 +2142,6 @@ CAT add_names -i sample-1-tax-out.tmp.ORF2LCA.txt -o sample-1-gene-tax-out.tmp \
 
 - sample-1-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added)
 
-
-
 #### 17d. Adding taxonomy info from taxids to contigs
 
 ```bash
@@ -1913,7 +2156,6 @@ CAT add_names -i sample-1-tax-out.tmp.contig2classification.txt -o sample-1-cont
 - `-t` – specifies the CAT reference taxonomy database
 - `--only_official` – specifies to add only standard taxonomic ranks
 - `--exclude-scores` - specifies to exclude bit-score support scores in the lineage
-
 
 **Input Data:**
 
@@ -1935,6 +2177,14 @@ awk -F $'\t' ' BEGIN { OFS=FS } { if ( $3 == "lineage" ) { print $1,$3,$5,$6,$7,
     sed 's/lineage/taxid/'  > sample-1-gene-tax-out.tsv
 ```
 
+**Input Data:**
+
+- sample-1-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added from [step 8c](#8c-adding-taxonomy-info-from-taxids-to-genes))
+
+**Output Data:**
+
+- sample-1-gene-tax-out.tsv (gene-calls taxonomy file with lineage info added reformatted)
+
 #### 17f. Formatting contig-level output with awk and sed
 
 ```bash
@@ -1950,13 +2200,10 @@ rm sample-1*.tmp*
 
 **Input Data:**
 
-- sample-1-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added from [step 8c](#8c-adding-taxonomy-info-from-taxids-to-genes))
 - sample-1-contig-tax-out.tmp (contig taxonomy file with lineage info added from [step 8d](#8d-adding-taxonomy-info-from-taxids-to-contigs))
-
 
 **Output Data:**
 
-- sample-1-gene-tax-out.tsv (gene-calls taxonomy file with lineage info added reformatted)
 - sample-1-contig-tax-out.tsv (contig taxonomy file with lineage info added reformatted)
 
 <br>
@@ -2023,8 +2270,10 @@ samtools index sample_sorted.bam sample_sorted.bam.bai
 ---
 
 ### 19. Getting coverage information and filtering based on detection
-> **Notes**  
-> “Detection” is a metric of what proportion of a reference sequence recruited reads (see [here](http://merenlab.org/2017/05/08/anvio-views/#detection)). Filtering based on detection is one way of helping to mitigate non-specific read-recruitment.
+> **Note:**  
+> “Detection” is a measure of what proportion of a reference sequence recruited reads 
+(see the discussion of detection [here](http://merenlab.org/2017/05/08/anvio-views/#detection)). 
+Filtering based on detection is one way of helping to mitigate non-specific read-recruitment.
 
 #### 19a. Filtering coverage levels based on detection
 
@@ -2042,24 +2291,22 @@ pileup.sh -in sample-1.bam fastaorf=sample-1-genes.fasta outorf=sample-1-gene-co
 - `out=` – the output contig-coverage tsv file
 
 
-#### 19b. Filtering gene coverage based on requiring 50% detection and parsing down to just gene ID and coverage
+#### 19b. Filtering gene and contig coverage based on requiring 50% detection and parsing down to just gene ID and coverage
 
 ```bash
+# Filtering gene coverage
 grep -v "#" sample-1-gene-cov-and-det.tmp | awk -F $'\t' ' BEGIN { OFS=FS } { if ( $10 <= 0.5 ) $4 = 0 } \
      { print $1,$4 } ' > sample-1-gene-cov.tmp
 
 cat <( printf "gene_ID\tcoverage\n" ) sample-1-gene-cov.tmp > sample-1-gene-coverages.tsv
-```
 
-Filtering contig coverage based on requiring 50% detection and parsing down to just contig ID and coverage:
-```bash
+# Filtering contig coverage
 grep -v "#" sample-1-contig-cov-and-det.tmp | awk -F $'\t' ' BEGIN { OFS=FS } { if ( $5 <= 50 ) $2 = 0 } \
      { print $1,$2 } ' > sample-1-contig-cov.tmp
 
 cat <( printf "contig_ID\tcoverage\n" ) sample-1-contig-cov.tmp > sample-1-contig-coverages.tsv
 
-  # removing intermediate files
-
+# removing intermediate files
 rm sample-1-*.tmp
 ```
 
@@ -2078,8 +2325,8 @@ rm sample-1-*.tmp
 ---
 
 ### 20. Combining gene-level coverage, taxonomy, and functional annotations into one table for each sample
-> **Notes**  
-> Just uses `paste`, `sed`, and `awk`, all are standard in any Unix-like environment.  
+> **Note:**  
+> Just uses `paste`, `sed`, and `awk`, which are all standard in any Unix-like environment.  
 
 ```bash
 paste <( tail -n +2 sample-1-gene-coverages.tsv | sort -V -k 1 ) <( tail -n +2 sample-1-annotations.tsv | sort -V -k 1 | cut -f 2- ) \
@@ -2110,8 +2357,8 @@ rm sample-1*tmp sample-1-gene-coverages.tsv sample-1-annotations.tsv sample-1-ge
 ---
 
 ### 21. Combining contig-level coverage and taxonomy into one table for each sample
-> **Notes**  
-> Just uses `paste`, `sed`, and `awk`, all are standard in any Unix-like environment.  
+> **Note:**  
+> Just uses `paste`, `sed`, and `awk`, which are all standard in any Unix-like environment.  
 
 ```bash
 paste <( tail -n +2 sample-1-contig-coverages.tsv | sort -V -k 1 ) \
@@ -2142,9 +2389,15 @@ rm sample-1*tmp sample-1-contig-coverages.tsv sample-1-contig-tax-out.tsv
 
 ### 22. Generating normalized, gene- and contig-level coverage summary tables of KO-annotations and taxonomy across samples
 
-> **Notes**  
-> * To combine across samples to generate these summary tables, we need the same "units". This is done for annotations based on the assigned KO terms, and all non-annotated functions are included together as "Not annotated". It is done for taxonomic classifications based on taxids (full lineages included in the table), and any not classified are included together as "Not classified". 
-> * The values we are working with are coverage per gene (so they are number of bases recruited to the gene normalized by the length of the gene). These have been normalized by making the total coverage of a sample 1,000,000 and setting each individual gene-level coverage its proportion of that 1,000,000 total. So basically percent, but out of 1,000,000 instead of 100 to make the numbers more friendly. 
+> **Note:**  
+> * To combine across samples to generate these summary tables, we need the same "units". This is done for annotations 
+based on the assigned KO terms, and all non-annotated functions are included together as "Not annotated". It is done for 
+taxonomic classifications based on taxids (full lineages included in the table), and any not classified are included 
+together as "Not classified". 
+> * The values we are working with are coverage per gene (so they are number of bases recruited to the gene normalized 
+by the length of the gene). These have been normalized by making the total coverage of a sample 1,000,000 and setting 
+each individual gene-level coverage its proportion of that 1,000,000 total. So basically percent, but out of 1,000,000 
+instead of 100 to make the numbers more friendly. 
 
 #### 22a. Generating gene-level coverage summary tables
 
@@ -2176,6 +2429,7 @@ bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o Combi
 ```bash
 bit-GL-combine-contig-tax-tables *-contig-coverage-and-tax.tsv -o Combined
 ```
+
 **Parameter Definitions:**  
 
 - `*-contig-coverage-and-tax.tsv` - positional arguments specifying the input tsv files, can be provided as a space-delimited list of files, or with wildcards like above
@@ -2355,7 +2609,6 @@ tail -n +2 MAGs-overview.tmp | sort -t \$'\t' -k 14,20 > MAGs-overview-sorted.tm
 
 cat MAGs-overview-header.tmp MAGs-overview-sorted.tmp \
     > MAGs-overview_GLmetagenomics.tsv
-
 ```
 
 **Input Data:**
@@ -2439,1036 +2692,4 @@ KEGG-decoder -v interactive -i MAG-level-KO-annotations_GLmetagenomics.tsv -o MA
 <br>
 
 ---
-
-## Read-based Feature Table Decontamination
-> Feature table decontamination is performed in R.  
-
-### 25. R Environment Setup
-
-#### 25a. Load libraries
-
-```R
-library(decontam)
-library(phyloseq)
-library(tidyverse)
-library(DT)
-library(plotly)
-library(glue)
-library(pheatmap)
-library(pavian)
-```
-
-#### 25b. Define Custom Functions
-
-##### get_last_assignment()
-<details>
-  <summary>retrieves the last taxonomy assignment from a taxonomy string</summary>
-
-  ```R
-  get_last_assignment <- function(taxonomy_string, split_by=';', remove_prefix=NULL){
-    # A function to get the last taxonomy assignment from a taxonomy string 
-    split_names <- strsplit(x =  taxonomy_string , split = split_by) %>% 
-      unlist()
-    
-    level_name <- split_names[[length(split_names)]]
-    
-    if(level_name == "_"){
-      return(taxonomy_string)
-    }
-    
-    if(!is.null(remove_prefix)){
-      level_name <- gsub(pattern = remove_prefix, replacement = '', x = level_name)
-    }
-    
-    return(level_name)
-  }
-  ```
-  **Function Parameter Definitions:**
-  - `taxonomy_string` - a character string containing a list of taxonomy assignments
-  - `split_by=` - a character string containing a regular expression used to split the `taxonomy_string`
-  - `remove_prefix=` - a character string containing a regular expression to be matched and removed, default=`NULL`
-
-  **Returns:** the last taxonomy assignment listed in the `taxonomy_string`
-</details>
-
-##### mutate_taxonomy()
-<details>
-  <summary>ensure that the taxonomy column is named "taxonomy" and aggregate duplicates to ensure that taxonomy names are unique</summary>
-
-  ```R
-  mutate_taxonomy <- function(df, taxonomy_column="taxonomy"){
-    
-    # make sure that the taxonomy column is always named taxonomy
-    col_index <- which(colnames(df) == taxonomy_column)
-    colnames(df)[col_index] <- 'taxonomy'
-    df <- df %>% dplyr::mutate(across( where(is.numeric), \(x) tidyr::replace_na(x,0)  ) )%>% 
-      dplyr::mutate(taxonomy=map_chr(taxonomy,.f = function(taxon_name=.x){
-        last_assignment <- get_last_assignment(taxon_name) 
-        last_assignment  <- gsub(pattern = "\\[|\\]|'", replacement = '',x = last_assignment)
-        trimws(last_assignment, which = "both")
-      })) %>% 
-      as.data.frame(check.names=FALSE, StringAsFactor=FASLE)
-    # Ensure the taxonomy names are unique by aggregating duplicates
-    df <- aggregate(.~taxonomy,data = df, FUN = sum)
-    return(df)
-  }
-  ```
-  **Function Parameter Definitions:**
-  - `df` - a dataframe containing the taxonomy assignments
-  - `taxonomy_column=` - name of the column in `df` containing the taxonomy assignments, default="taxonomy"
-
-  **Returns:** a dataframe with unique taxonomy names stored in a column named "taxonomy"
-
-</details>
-
-##### process_kaiju_table()
-<details>
-  <summary>reformat kaiju output table</summary>
-
-  ```R
-  process_kaiju_table <- function(file_path, taxon_col="taxon_path",
-                                  kingdom=NULL, remove_non_microbial = TRUE){
-    
-    kaija_table <- read_delim(file = file_path,
-                              delim = "\t",
-                              col_names = TRUE)
-    
-    if(remove_non_microbial){
-      # Remove non-microbial and unclassified assignments in this case Metazoa for animal assignments
-      non_microbial_indices <- grep(pattern = "unclassified|assigned|Metazoa|Chordata|Nematoda|Arthropoda|Annelida|Brachiopoda|Mollusca|Cnidaria|Streptophyta",
-                                    x = kaija_table[[taxon_col]])
-      
-      if(!is_empty(non_microbial_indices)){
-        kaija_table <- kaija_table[-non_microbial_indices,]
-      }
-      
-    }
-    
-    if(!is.null(kingdom)){
-      kingdom_indices <- grep(pattern = kingdom ,
-                              x = kaija_table[[taxon_col]])
-      if(!is_empty(kingdom_indices)){
-        kaija_table <- kaija_table[kingdom_indices,]
-      }
-    }
-    
-    
-    abs_abun_df <- pivot_wider(data = kaija_table %>% dplyr::select(sample,reads,taxonomy=!!sym(taxon_col)), 
-                              names_from = "sample", values_from = "reads",
-                              names_sort = TRUE) %>% mutate_taxonomy
-    
-    rel_abun_df <- pivot_wider(data = kaija_table %>% dplyr::select(sample,percent,taxonomy=!!sym(taxon_col)), 
-                              names_from = "sample", values_from = "percent",
-                              names_sort = TRUE) %>% mutate_taxonomy
-    
-    # Set the taxon names as row names, drop the taxonomy column and convert to a matrix
-    rownames(abs_abun_df) <- abs_abun_df[,"taxonomy"]
-    rownames(rel_abun_df) <- rel_abun_df[,"taxonomy"]
-    
-    abs_abun_df <- abs_abun_df[,-(which(colnames(abs_abun_df) == "taxonomy"))]
-    rel_abun_df <- rel_abun_df[,-(which(colnames(rel_abun_df) == "taxonomy"))]
-    
-    abs_abun_matrix <- as.matrix(abs_abun_df)
-    rel_abun_matrix <- as.matrix(rel_abun_df)
-    
-    final_tables <- list("relative_table"=rel_abun_matrix,
-                        "abundance_table"=abs_abun_matrix)
-    return(final_tables)
-    
-  }
-  ```
-  **Function Parameter Definitions:**
-  - `file_path` - file path to the tab-delimited kaiju output table file
-  - `taxon_col=`- name of the taxon column in the input data file, default="taxon_path"
-  - `kingdom=` - a character string containing a regular expression used to filter for specific kingdoms, default=`NULL`
-  - `remove_non_microbial=` - a boolean specifying whether or not to remove non-microbial and unclassified assuments, default=`TRUE`
-
-  **Returns:** a dataframe with reformated kaiju output
-
-</details>
-
-##### create_dt()
-<details>
-  <summary>create an HTML widget to display rectangular data (`matrix` or `dataframe`) using the DataTables Javascript library</summary>
-
-```R
-create_dt <- function(table2show, caption=NULL) {
-  DT::datatable(table2show,
-                rownames = FALSE, # remove row numbers
-                filter = "top", # add filter on top of columns
-                extensions = "Buttons", # add download buttons
-                caption=caption,
-                options = list(
-                  autoWidth = TRUE,
-                  dom = "Blfrtip", # location of the download buttons
-                  buttons = c("copy", "csv", "excel", "pdf", "print"), # download buttons
-                  pageLength = 5, # show first 5 entries, default is 10
-                  order = list(0, "asc") # order the title column by ascending order
-                ),
-                escape = FALSE # make URLs clickable) 
-  )
-}
-```
-**Function Parameter Definitions:**
-- `table2show` - a `matrix` or `dataframe` containing tabular data to display
-- `caption=` - a character vector to use as the caption for the table
-
-</details>
-
-##### filter_rare()
-<details>
-  <summary>filter out rare and non_microbial taxonomy assignments</summary>
-
-  ```R
-  filter_rare <- function(species_table, non_microbial, threshold=1){
-    
-    clean_tab_count  <-  species_table %>% 
-      filter(str_detect(Species, non_microbial, negate = TRUE))  
-    
-    clean_tab <- clean_tab_count %>% 
-      mutate( across( where(is.numeric)  , \(x) (x/sum(x, na.rm = TRUE))*100 ) )
-    
-    rownames(clean_tab) <- clean_tab$Species
-    clean_tab  <- clean_tab[,-1] 
-    
-    
-    # Get species with relative abundance less than 1% in all samples
-    rare_species <- map(clean_tab, .f = \(col) rownames(clean_tab)[col < threshold])
-    rare <- Reduce(intersect, rare_species)
-    
-    rownames(clean_tab_count) <- clean_tab_count$Species
-    clean_tab_count  <- clean_tab_count[,-1] 
-    
-    abund_table <- clean_tab_count[!(rownames(clean_tab_count) %in% rare), ]
-    
-    return(abund_table)
-  }
-  ```
-  **Function Parameter Definitions:**
-  - `species_table` - the dataframe to filter
-  - `non_microbial` - a character vector denoting the string used to identify a species as non-microbial
-  - `threshold=` - abundance threshold used to determine if the relative abundance is rare, value denotes a percentage between 0 and 100.
-
-  **Returns:** a dataframe with rare and non_microbrial assignemnts removed
-</details>
-
-
-##### make_plot()
-<details>
-  <summary>create bar plot of relative abundance</summary>
-
-  ```R
-  # Make bar plot
-  make_plot <- function(abund_table, metadata, colors2use, publication_format){
-    
-    abund_table_wide <- abund_table %>% 
-        as.data.frame() %>% 
-        rownames_to_column("Sample_ID") %>% 
-        inner_join(metadata) %>% 
-        select(!!!colnames(metadata), everything()) %>% 
-        mutate(Sample_ID = Sample_ID %>% str_remove("barcode"))
-        
-    abund_table_long <- abund_table_wide  %>%
-        pivot_longer(-colnames(metadata), 
-                    names_to = "Species",
-                    values_to = "relative_abundance")
-      
-    p <- ggplot(abund_table_long, mapping = aes(x=Sample_ID, y=relative_abundance, fill=Species)) +
-         geom_col() +
-         scale_fill_manual(values = colors2use) + 
-         labs(x=NULL, y="Relative Abundance (%)") + 
-         publication_format
-
-    return(p)
-  }
-  ```
-  **Function Parameter Definitions:**
-  - `abund_table` - a dataframe containing the data to plot
-  - `metadata` - a vector of strings specifying the data to include in the plot
-  - `colors2use` - a vector of strings specifying a custom color palette for coloring plots
-  - `publication_format` - a ggplot::theme object specifying the custom theme for plotting
-
-  **Returns:** a ggplot bar plot
-
-</details>
-
-##### get_colors2use()
-<details>
-  <summary>get colors to use in plots</summary>
-
-  ```R
-  get_colors2use <- function(species, expected_microbes, microbe_colors, custom_palette){
-    
-    unexpected_microbes <- setdiff(species, expected_microbes)
-    
-    start <- length(species)+1
-    end <-  length(species) + length(unexpected_microbes)
-    unexpected_microbes_colors <-  custom_palette[start:end]
-    names(unexpected_microbes_colors) <- unexpected_microbes
-    colors2use <- append(microbe_colors,unexpected_microbes_colors)
-    return(colors2use)
-    
-  }
-  ```
-  **Function Parameter Definitions:**
-  - `species` - a vector specifying the list of species that will use this color palette, used to set the number of colors in the palette
-  - `expected_microbes` - the list of microbe species that were expected in the data
-  - `microbe_colors` - colors assigned to the expected microbes
-  - `custom_palette` - a vector of strings specifying a custom color palette
-
-  **Returns:** a vector of strings specifying the color palette to use for the input species list
-
-</details>
-
-##### process_taxonomy()
-<details>
-  <summary>process taxonomy assignment table</summary>
-
-  ```R
-  process_taxonomy <- function(taxonomy, prefix='\\w__') {
-    # Function to process a taxonopmy assignment table
-    #1. ~ taxonomy is a string specifying the taxonomic assignment file name
-    #2 prefix ~ is a regular expression specifying the characters to remove
-    # from the taxon names  '\\w__'  for greengenes and 'D_\\d__' for SILVA
-    
-    
-    taxonomy <- apply(X = taxonomy, MARGIN = 2, FUN = as.character) 
-    
-    #taxonomy[,'species'] <- paste(taxonomy[,'genus'],taxonomy[,'species'])
-    # replace NAa with Other and delete the D_num__ prefix from the taxonomy names
-    for (rank in colnames(taxonomy)) {
-      #delete the taxonomy prefix
-      taxonomy[,rank] <- gsub(pattern = prefix, x = taxonomy[, rank],
-                              replacement = '')
-      indices <- which(is.na(taxonomy[,rank]))
-      taxonomy[indices, rank] <- rep(x = "Other", times=length(indices)) 
-      #replace empty cell
-      indices <- which(taxonomy[,rank] == "")
-      taxonomy[indices,rank] <- rep(x = "Other", times=length(indices))
-    }
-    taxonomy <- apply(X = taxonomy,MARGIN = 2,
-                      FUN =  gsub,pattern = "_",replacement = " ") %>% 
-      as.data.frame(stringAsfactor=F)
-    return(taxonomy)
-  }
-  ```
-  **Function Parameter Definitions:**
-  - `taxonomy` - string specifying the taxonomy assignment file path
-  - `prefix=` - a regular expression specifying the characters to remove from the taxon names. `\\w__` for greengenes and `D_\\d__` for SILVA
-
-  **Returns:** a dataframe containing the modified taxonomy values
-
-</details>
-
-##### format_taxonomy_table()
-<details>
-  <summary>format a taxonomy assignment table by appending a suffix to a known name</summary>
-
-  ```R
-  format_taxonomy_table <- function(taxonomy=taxonomy.m,stringToReplace="Other",
-                                    suffix=";Other") {
-    
-    for (taxa_index in seq_along(taxonomy)) {
-      #indices <- which(taxonomy[,taxa_index] == stringToReplace)
-      
-      indices <- grep(x = taxonomy[,taxa_index], pattern = stringToReplace)
-      
-      taxonomy[indices,taxa_index] <- 
-        paste0(taxonomy[indices,taxa_index-1],
-              rep(x = suffix, times=length(indices)))
-      
-    }
-    return(taxonomy)
-  }
-  ```
-  **Function Parameter Defintions:**
-  - `taxonomy=` - a dataframe of the unformatted taxonomy table
-  - `stringToReplace=` - a string specifying value to replace in the taxonomy known name
-  - `suffix=` - a string containing the suffix to append to the known name
-
-  **Returns:** a dataframe with the formatted taxonomy table
-</details>
-
-##### fix_names()
-<details>
-  <summary>regularize taxonomy names</summary>
-
-  ```R
-  fix_names<- function(taxonomy,stringToReplace,suffix){
-    #1~ taxonomy is a taxonomy dataframe with taxonomy ranks as column names
-    #2~ stringToReplace is a vector of regex strings specifying what to replace
-    #3~ suffix is a string specifying the replacement value
-    
-    
-    for(index in seq_along(stringToReplace)){
-      taxonomy <- format_taxonomy_table(taxonomy = taxonomy,
-                                        stringToReplace=stringToReplace[index], 
-                                        suffix=suffix[index])
-    }
-    return(taxonomy)
-  }
-  ```
-  **Function Parameter Defintions:**
-  - `taxonomy=` - a dataframe containing the taxonomy table
-  - `stringToReplace=` - a vector of regular expression strings specifying the values to replace
-  - `suffix=` - a string specifying the replacement value
-
-  **Returns:** a dataframe containing a taxonomy table with regularized names
-
-</details>
-
-##### read_input_table()
-<details>
-  <summary>read a tab-delimited file into a dataframe</summary>
-
-  ```R
-  # Function to read an input table into a dataframe
-  read_input_table <- function(file_name){
-    
-    # Get depth from file name
-    df <- read_delim(file = file_name, delim = "\t", comment = "#")
-    return(df)
-    
-  }
-  ```
-  **Function Parameter Defintions:**
-  - `filename=` - a tab-delimited file containing the data to import. Lines starting with `#` will be ignored.
-
-  **Returns:** a dataframe containing a the data from the provided file
-
-</details>
-
-##### read_contig_table()
-<details>
-  <summary>read the assembly-based contig annotation table into a dataframe</summary>
-
-  ```R
-   # Read Assembly-based contig annotation table
-  read_contig_table <- function(file_name, sample_names){
-    
-    df <- read_input_table(file_name)
-
-    taxonomy_table <- df %>%
-      select(domain:species) %>%
-      mutate(domain=replace_na(domain, "Unclassified"))
-    
-    counts_table <- df %>% select(!!sample_names)
-
-    taxonomy_table  <- process_taxonomy(taxonomy_table)
-    taxonomy_table <- fix_names(taxonomy_table, "Other", ";_")
-
-    df <- bind_cols(taxonomy_table, counts_table)
-    
-    return(df)
-  }
-  ```
-  **Function Parameter Defintions:**
-  - `file_name` - a tab-delimited file containing the assembly-based contig annotation table
-  - `sample_names` - a list of sample names to use in the dataframe. Filters out samples in the file that are not present in the sample_names list.
-  **Returns:** a dataframe containing a the data from the provided file
-
-
-</details>
-
-
-
-#### 25c. Set global variables
-
-```R
-
-kraken_taxonomy_outdir <- "kraken2_taxonomy/"
-kaiju_taxonomy_outdir <- "kaiju_taxonomy/"
-
-# Define custom theme for plotting
-publication_format <- theme_bw() +
-  theme(panel.grid = element_blank()) +
-  theme(axis.ticks.length=unit(-0.15, "cm"),
-        axis.text.x=element_text(margin=ggplot2::margin(t=0.5,r=0,b=0,l=0,unit ="cm")),
-        axis.text.y=element_text(margin=ggplot2::margin(t=0,r=0.5,b=0,l=0,unit ="cm")), 
-        axis.title = element_text(size = 18,face ='bold.italic', color = 'black'), 
-        axis.text = element_text(size = 16,face ='bold', color = 'black'),
-        legend.position = 'right', legend.title = element_text(size = 15,face ='bold', color = 'black'),
-        legend.text = element_text(size = 14,face ='bold', color = 'black'),
-        strip.text =  element_text(size = 14,face ='bold', color = 'black'))
-
-# Define custom palette for plotting
-custom_palette <- c("#A6CEE3","#1F78B4","#B2DF8A","#33A02C","#FB9A99","#E31A1C","#FDBF6F", "#FF7F00",
-                    "#CAB2D6","#6A3D9A","#FF00FFFF","#B15928","#000000","#FFC0CBFF","#8B864EFF","#F0027F",
-                    "#666666","#1B9E77", "#E6AB02","#A6761D","#FFFF00FF","#FFFF99","#00FFFFFF",
-                    "#B2182B","#FDDBC7","#D1E5F0","#CC0033","#FF00CC","#330033",
-                    "#999933","#FF9933","#FFFAFAFF",colors()) 
-# remove white colors
-custom_palette <- custom_palette[-c(21:23,
-                                    grep(pattern = "white|snow|azure|gray|#FFFAFAFF|aliceblue",
-                                         x = custom_palette, 
-                                         ignore.case = TRUE)
-                                   )
-                                ]
-# Define expected microbes to use for filtering
-expected_microbes <- c("Pseudomonas aeruginosa", "Salmonella enterica",
-                       "Limosilactobacillus fermentum", "Lactobacillus fermentum", "Staphylococcus aureus",
-                       "Enterococcus faecalis", "Escherichia coli",
-                       "Listeria monocytogenes", "Bacillus subtilis", "Bacillus spizizenii",
-                       "Saccharomyces cerevisiae", "Cryptococcus neoformans")
-orig_expected_microbes <- c("Pseudomonas aeruginosa", "Salmonella enterica",
-                       "Limosilactobacillus fermentum", "Staphylococcus aureus",
-                       "Enterococcus faecalis", "Escherichia coli",
-                       "Listeria monocytogenes", "Bacillus spizizenii",
-                       "Saccharomyces cerevisiae", "Cryptococcus neoformans")
-orig_expected_microbes <- c(sort(orig_expected_microbes), "Escherichia phage Lambda")
-
-# Define expected microbe color palette
-microbe_colors <- custom_palette[1:length(orig_expected_microbes)]
-names(microbe_colors) <- orig_expected_microbes
-
-# Define human associated microbes
-human_associated_microbes <- c("Staphylococcus epidermedis", "Staphylococcus hominis", "Cutibacterium acnes",
-                               "Staphylococcus haemolyticus", "Malassezia", "Corynebacterium", "Micrococcus",
-                               "Hoylesella shahii", "Streptococcus mitis",
-                               "Eubacterium saphenum", "Lawsonella clevelandensis")
-
-# subplots grouping variable
-facets_kaiju <- c("Sample_Type","input_conc_ng", "lambda_spike")
-facets_kraken2 <- c("Sample_Type","input_conc_ng")
-
-assembly_directory <- here('data/assembly_annotation/kraken2/medaka')
-assembly_based_summary <- glue("{assembly_directory}/Assembly-based-processing-overview_GLmetagenomics.tsv")
-bin_overview <- glue("{assembly_directory}/bins-overview_GLmetagenomics.tsv")
-mag_overview <- glue("{assembly_directory}/MAGs-overview_GLmetagenomics.tsv")
-assembly_summary <- glue("{assembly_directory}/assembly-summaries_GLmetagenomics.tsv")
-contig_taxonomy <- glue("{assembly_directory}/Combined-contig-level-taxonomy-coverages-CPM_GLmetagenomics.tsv")
-gene_function <- glue("{assembly_directory}/Combined-gene-level-KO-function-coverages-CPM_GLmetagenomics.tsv")
-gene_taxonomy <- glue("{assembly_directory}/Combined-gene-level-taxonomy-coverages-CPM_GLmetagenomics.tsv")
-
-metdata_file <- here("mapping/metadata.txt")
-plot_dir <- here('results/')
-
-analysis_name <- "kraken-medaka"
-sample_type <- "assembly"
-
-
-```
-**Input Data:** 
-
-*No input data required*
-
-**Output Data:**
-
-- `publication_format` (a ggplot::theme object specifying the custom theme for plotting)
-- `custom_palette` (a vector of strings specifying a custom color palette for coloring plots)
-- `expected_microbes` (a vector of strings listing microbes that may be found in the samples)
-- `orig_expected_microbes` (a vector of strings listing microbes that may be found in the samples plus "Escherichia phage Lambda")
-- `microbe_colors` (a vector of strings specifying the custom color palette to use for coloring the `orig_expected_microbes`)
-- `human_associated_microbes` (a vector of strings listing microbes that are known to be found in humans)
-- `facets_kaiju` (a vector of strings listing subplot grouping variables for kaiju data)
-- `facets_kraken2` (a vector of strings listing subplot grouping variables for kraken2 data)
-- `kraken_taxonomy_outdir` (a path to the output folder for read taxonomy output based on kraken2 processing)
-- `kaiju_taxonomy_outdir` (a path to the output folder for read taxonomy output based on kaiju processing)
-
-#### 25d. Import Kaiju Taxonomy Data
-
-```R
-kaiju_table <- "/path/to/kaiju_read_taxonomy/merged_kaiju_summary_species.tsv"
-feature_table <- process_kaiju_table(kaiju_table, taxon_col="taxon_name", remove_non_microbial = FALSE)$abundance_table
-
-# Create Species table (species raw read count by barcode)
-feature_table %>% as.data.frame %>% 
-  rownames_to_column("Species") %>%
-  pivot_longer(-Species, names_to = "Barcode", values_to = "Reads") %>% 
-  write_delim(species_csv, delim=',')
-
-## The number of reads classified at the species level
-colSums(feature_table) %>%
-  enframe(name = "Barcode", value = "Number of reads") %>%
-  write_delim("{kaiju_taxonomy_outdir}species_counts{assay_suffix}.csv", delim=",")
-
-species_table <- feature_table
-
-```
-**Input Data:**
-- `kaiju_table` (the merged kaiju summary data at the species taxon level, output from [Step 9f](#9f-compile-kaiju-taxonomy-results))
-- `kaiju_taxonomy_outdir` (a path to the output folder for read taxonomy output based on kaiju processing)
-- `assay_suffix` (standard GeneLab assay suffix to use in output files)
-
-**Output Data:**
-- `species_table` (dataframe of relative abundance data)
-- **kaiju_taxonomy/species_counts_GLMetagenomics.csv** (Number of reads classified for each species)
-
-
-##### 25e. Import Kraken2 Taxonomy Data
-
-```R
-kraken_reports_dir <- "/path/to/read_taxonomy/kraken2_output/"
-
-# import kraken2 reports
-reports <- pavian::read_reports(kraken_reports_dir)
-
-# create taxonomy overview
-summary_table  <- pavian::summarize_reports(reports)
-rownames(summary_table) <- rownames(summary_table) %>% str_split("-") %>% map_chr(\(x) pluck(x, 1))
-summary_table %>% rownames_to_column("Sample_ID") %>% write_delim('{kraken_taxonomy_outdir}kraken_taxonomy_overview.csv', delim=',')
-
-samples <- names(reports) %>% str_split("-") %>% map_chr(\(x) pluck(x, 1))
-merged_reports  <- pavian::merge_reports2(reports, col_names = samples)
-taxonReads <- merged_reports$taxonReads
-cladeReads <- merged_reports$cladeReads
-tax_data <- merged_reports[["tax_data"]]
-
-#Create species table
-species_table <- tax_data %>% 
-  bind_cols(cladeReads) %>%
-  filter(taxRank %in% c("U","S")) %>% 
-  select(-contains("tax")) %>%
-  zero_if_na() %>% 
-  filter(name != 0) %>%  # drop unknown taxonomies
-  group_by(name) %>% 
-  summarise(across(everything(), sum)) %>% 
-  ungroup() %>% 
-  as.data.frame()
-
-species_names <- species_table[,"name"]
-rownames(species_table) <- species_names
-
-taxonomy_col <- match("name", colnames(species_table))
-species_table <- species_table[,-taxonomy_col]
-
-species_table <- apply(X = species_table, MARGIN = 2, FUN = as.numeric)
-rownames(species_table) <- species_names
-
-# calculate total number of reads for each sample
-colSums(species_table) %>%
-  enframe(name = "Sample", value = "Number of reads") %>%
-  write_delim("{kraken_taxonomy_outdir}species_counts{assay_suffix}.csv", delim=",")
-```
-
-**Input Data:**
-- `kraken_reports` (the per-sample kraken reports, output from [Step 10a](#10a-taxonomic-classification))
-- `kraken_taxonomy_outdir` (a path to the output folder for read taxonomy output based on kraken2 processing)
-- `assay_suffix` (standard GeneLab assay suffix to use in output files)
-
-
-**Output Data:**
-- `species_table` (a dataframe of species raw read counts by barcode)
-- **kraken_taxonomy/species_counts_GLMetagenomics.csv** (a dataframe of per-sample read counts)
-- **kraken_taxonomy/kraken_taxonomy_overview.csv** (Comma-separated table containing a summary of Kraken2 taxonomy classification)
-
-
-#### 25f. Import Sample Metadata
-
-```R
-# define input files
-metadata_file <- "/path/to/metadata.txt"
-
-# Import metadata
-metadata <- read_delim(metdata_file , delim = "\t") %>% as.data.frame()
-row.names(metadata) <- metadata$Sample_ID
-```
-
-**Input Data:** 
-
-- `metadata_file` (a file containing sample metadata for the study, columns are: Sample_ID (string), Sample_Type (string), input_conc_ng (float), lambda_spike ('no'/'yes'), Sample_or_Control (string))
-
-**Output Data:**
-
-- `metadata` (a dataframe containing sample metadata for the study with the sampleIDs as the row names)
-
---- 
-
-### 26. Feature table decontamination
-
-The read-based feature table decontamination and taxonomy QC are performed using the same functions for both kraken2 and kaiju generated taxonomies.
-
-#### 26a. Taxonomy filtering
-
-```R
-# with unclassified data
-output_dir <- "{taxonomy_type}_taxonomy/"
-abundance_threshold <- 0.5
-
-species <- species_table %>% as.data.frame %>% 
-  rownames_to_column("Species") %>% pull(Species) %>% unique()
-colors2use <- get_colors2use(species, orig_expected_microbes, microbe_colors, custom_palette)
-
-abund_table <- species_table %>% 
-               as.data.frame %>% 
-               mutate( across(everything(), \(x) (x/sum(x, na.rm = TRUE))*100 ) ) %>% 
-               rownames_to_column("Species") 
-  
-rownames(abund_table) <- abund_table$Species
-  
-abund_table <- abund_table[, -match(x = "Species", colnames(abund_table))] %>% t
-
-# excluding unclassified and host reads
-non_microbial <- "Unclassified|unclassified|Homo sapien"
-
-# Get species with relative abundance greater than 0.5 in all the samples
-clean_tab <- species_table %>% 
-  as.data.frame %>% 
-  rownames_to_column("Species") 
-
-abund_table <- filter_rare(clean_tab, non_microbial, threshold=abundance_threshold)
-species <- rownames(abund_table)
-colors2use <- get_colors2use(species, orig_expected_microbes, microbe_colors, custom_palette)
-
-species_abund_table <- abund_table %>% 
-                    as.data.frame %>% 
-                   mutate( across( where(is.numeric)  , \(x) (x/sum(x, na.rm = TRUE))*100 ) )
-
-abund_table <- species_abund_table %>% t
-
-# Without human-associated microbes
-unwanted <- str_c(c(non_microbial, human_associated_microbes), collapse = "|")
-clean_tab2 <- filter_rare(clean_tab, unwanted, threshold=abundance_threshold)
-clean_tab2 <- clean_tab2   %>% 
-  mutate( across( where(is.numeric)  , \(x) (x/sum(x, na.rm = TRUE))*100 ) )
-abund_table <- clean_tab2 %>% t
-species <- rownames(clean_tab2)
-colors2use <- get_colors2use(species, orig_expected_microbes, microbe_colors, custom_palette)
-
-p <- make_plot(abund_table, metadata, colors2use, publication_format) + 
-  facet_wrap(facets, scales = "free_x", nrow=1)
-
-p$data %>% mutate(run="Ultra Low", host_read_removal="kraken", taxonomy="{taxonomy_type}") %>% write_delim(file="{output_dir}/{taxonomy_type}_no_unwanted{assay_suffix}.tsv", delim = "\t")
-
-# Expected microbes alone 
-non_microbial <- "Unclassifed|unclassified|Homo sapien"
-
-clean_tab2 <- clean_tab %>% 
-  filter(str_detect(Species, non_microbial, negate = TRUE))  %>% 
-    filter(str_detect(Species, str_c(expected_microbes, collapse = "|"))) %>%  #select only the expected microbes
-  mutate( across( where(is.numeric)  , \(x) (x/sum(x, na.rm = TRUE))*100 ) )
-
-rownames(clean_tab2) <- clean_tab2$Species
-clean_tab2  <- clean_tab2[,-1] 
-abund_table <- clean_tab2 %>% t
-species <- rownames(clean_tab2)
-colors2use <- get_colors2use(species, orig_expected_microbes, microbe_colors, custom_palette)
-
-p <- make_plot(abund_table, metadata, colors2use, publication_format) + 
-  facet_wrap(facets, scales = "free_x", nrow=1)
-
-p$data %>% mutate(run="Ultra Low", host_read_removal="kraken", taxonomy="{taxonomy_type}") %>% write_delim(file="{output_dir}{taxonomy_type}_expected{assay_suffix}.tsv", delim = "\t")
-
-# Without Unclassified and host reads alone
-
-# Get species with relative abundance greater than 1 in all the samples
-clean_tab2 <- clean_tab %>% 
-  as.data.frame %>% 
-  filter(str_detect(Species, non_microbial, negate = TRUE))  %>% 
-  mutate( across( where(is.numeric)  , \(x) (x/sum(x, na.rm = TRUE))*100 ) )
-
-rownames(clean_tab2) <- clean_tab2$Species
-clean_tab2  <- clean_tab2[,-1] 
-abund_table <- clean_tab2 %>% t
-species <- rownames(clean_tab2)
-colors2use <- get_colors2use(species, orig_expected_microbes, microbe_colors, custom_palette)
-
-p <- make_plot(abund_table, metadata, colors2use, publication_format) + 
-  facet_wrap(facets, scales = "free_x", nrow=1)
-
-#Without removing taxonomies with relative abundance less than 0.5%
-p$data %>% mutate(run="Ultra Low", host_read_removal="kraken", taxonomy="{taxonomy_type}") %>% write_delim(file="{output_dir}{taxonomy_type}_no_filt{assay_suffix}.tsv", delim = "\t")
-
-# Filter out unclassified, human reads and rare species
-
-# Rare species here are classified as species with a relative abundance less than 0.5% across
-# all samples.
-
-# Get species with relative abundance greater than 0.5 in all the samples
-abund_table <- filter_rare(clean_tab, non_microbial, threshold=abundance_threshold)
-species <- rownames(abund_table)
-colors2use <- get_colors2use(species, orig_expected_microbes, microbe_colors, custom_palette)
-
-species_abund_table <- abund_table %>% 
-                    as.data.frame %>% 
-                   mutate( across( where(is.numeric)  , \(x) (x/sum(x, na.rm = TRUE))*100 ) )
-
-abund_table <- species_abund_table %>% t
-
-p <- make_plot(abund_table, metadata, colors2use, publication_format) + 
-  facet_wrap(facets, scales = "free_x", nrow=1)
-
-p$data %>% mutate(run="Ultra Low", host_read_removal="kraken", taxonomy="{taxonomy_type}") %>% write_delim(file="{output_dir}{taxonomy_type}_filtered{assay_suffix}.tsv", delim = "\t")
-```
-
-**Parameter Definitions:**
-- `abundance_threshold` - threshold for defining rare species, default=0.5
-- `taxonomy_type` - string specify which tool was used to create the input taxonomy, either `kaiju` or `kraken`
-- `assay_suffix` - string specifying an assay suffix to use for output file nameing in this dataset (default: GLMetagenomics)
-
-
-**Input Data:**
-- `species_table` (dataframe of relative abundance data, from [Step 24d](#24d-import-kaiju-taxonomy-data) if using kaiju taxonomies or [Step 24e](#24e-import-kraken2-taxonomy-data) is using kraken taxonomies)
-- `facets` (a vector of strings listing subplot grouping variables for either kaiju or kraken data, from [Step 24c](#24c-set-global-variables))
-
-
-**Output Data**
-- `species_abund_table` (a dataframe containing filtered realtive abundance values)
-- **<kraken|kaiju>_taxonomy/<kraken|kaiju>_expected_GLMetagenomics.tsv** ()
-- **<kraken|kaiju>_taxonomy/<kraken|kaiju>_no_filt_GLMetagenomics.tsv** ()
-- **<kraken|kaiju>_taxonomy/<kraken|kaiju>_filtered_GLMetagenomics.tsv** ()
-
----
-
-#### 26b. Decontamination with Decontam
-
-##### 26b.i. Setup variables
-```R
-feature_table <- species_abund_table #species_table
-sub_metadata <- metadata[colnames(feature_table),]
-# Modify NTC concentration
-sub_metadata <- sub_metadata %>% 
-  mutate(input_conc_ng=map2_dbl(Sample_Type, input_conc_ng,
-                                .f= function(type, conc) { 
-                                  if(conc == 0) return(0.0000001) else return(conc) 
-                                  } )
-         )
-sub_metadata$input_conc_ng <- as.numeric(sub_metadata$input_conc_ng)
-ps <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
-            sample_data(sub_metadata))
-```
-
-**Input Data:**
-- `species_abund_table` (a dataframe containing filtered relative abundance values, from [Step ](#25a-taxonomy-filtering))
-
-**Output Data:**
-- `ps` (phyloseq object of the relative abundance values with NTC metadata added)
-
-##### 26b.ii. Identify prevalence of contaminant sequences
-The prevalence (presence/absence across samples) of each sequence feature in 
-true positive samples is compared to the prevalence in negative controls to 
-identify contaminants.
-
-```R
-contam_threshold <- 0.1
-output_dir <- "{taxonomy_type}_taxonomy_decontam/"
-# In our phyloseq object, "Sample_or_Control" is the sample variable that holds 
-# the negative control information. We’ll summarize that data as a logical 
-# variable, with TRUE for control samples, as that is the form required by isContaminant
-sample_data(ps)$is.neg <- sample_data(ps)$Sample_or_Control == "Control_Sample"
-contamdf <- isContaminant(ps, neg="is.neg", conc="input_conc_ng", threshold=contam_threshold) # threshold
-
-#### Create contaminant table
-contamdf %>%
-  mutate( across( where(is.numeric), \(x) round(x, digits = 2) ) ) %>%
-  rownames_to_column("Species") %>% 
-  write_delim(file="{output_dir}{taxonomy_type}_contaminant_table{assay_suffix}.tsv", delim = "\t")
-
-table(contamdf$contaminant)
-
-contamdf %>% filter(contaminant == TRUE) %>% 
-  write_delim(file="{output_dir}{taxonomy_type}_filtered_contaminant_table{assay_suffix}.tsv", delim = "\t")
-
-
-isExpected <- str_detect(rownames(contamdf), pattern = str_c(expected_microbes, collapse = "|"))
-contamdf[isExpected,] %>%
-  select(-p.freq) %>%
-  mutate( across( where(is.numeric), \(x) round(x, digits = 3) ) ) %>% 
-  write_delim(file="{output_dir}{taxonomy_type}_contaminant_table_expected_microbes{assay_suffix}.tsv", delim = "\t")
-```
-
-**Parameter Defintitions:**
-- `contam_threshold` - probability threshold below which the null hypothesis (not a contaminant) should be rejected in favor of the alternate hypothesis (contaminant) (default: 0.1)
-- `taxonomy_type` - string specify which tool was used to create the input taxonomy, either `kaiju` or `kraken`
-- `assay_suffix` - string specifying an assay suffix to use for output file nameing in this dataset (default: GLMetagenomics)
-
-
-**Input Data:**
-- `ps` (phyloseq object of the relative abundance values with NTC metadata added, from [Step ](#25bi-setup-variables))
-
-**Output Data:**
-- `contam_df` (dataframe of contaminant table)
-- **<kaiju|kraken>_taxonomy_decontam/<kaiju|kraken>_contaminant_table_GLMetagenomics.tsv** (tab-delimited table of classification information for all input sequences)
-- **<kaiju|kraken>_taxonomy_decontam/<kaiju|kraken>_filtered_contaminant_table_GLMetagenomics.tsv** (tab-delimited table of classification information for all sequences identified as contaminants)
-- **<kaiju|kraken>_taxonomy_decontam/<kaiju|kraken>_contaminant_table_expected_microbes_GLMetagenomics.tsv** (tab-delimited table of classification information for expected microbes)
-
-##### 26b.iii. Decontaminated taxonomy plots
-
-```R
-output_dir <- "{taxonomy_type}_taxonomy_decontam/"
-contaminants <- contamdf %>%
-  as.data.frame %>%
-  rownames_to_column("Species") %>%
-  filter(contaminant == TRUE) %>% pull(Species)
-species <- species_abund_table  %>% 
-  as.data.frame %>% 
-  rownames_to_column("Species") %>%
-  filter(str_detect(Species, pattern = str_c(contaminants, collapse = "|"), negate = TRUE)) %>%
-  pull(Species) %>%
-  unique()
-colors2use <- get_colors2use(species, orig_expected_microbes, microbe_colors, custom_palette)
-
-abund_table <- species_abund_table %>% 
-                    as.data.frame  %>% 
-                    rownames_to_column("Species") %>% 
-                    filter(str_detect(Species, 
-                                      pattern = str_c(contaminants,
-                                                      collapse = "|"),
-                                      negate = TRUE)) %>%
-                    mutate( across( where(is.numeric)   , \(x) (x/sum(x, na.rm = TRUE))*100 ) )
-  
-rownames(abund_table) <- abund_table$Species
-  
-abund_table <- abund_table[, -match(x = "Species", colnames(abund_table))] %>% t
-  
-abund_table_wide <- abund_table %>% 
-    as.data.frame() %>% 
-    rownames_to_column("Sample_ID") %>% 
-    inner_join(metadata) %>% 
-    select(!!!colnames(metadata), everything()) %>% 
-    mutate(Sample_ID = Sample_ID %>% str_remove("barcode"))
-    
-  
-abund_table_long <- abund_table_wide  %>%
-    pivot_longer(-colnames(metadata), 
-                 names_to = "Species",
-                 values_to = "relative_abundance")
-  
-p <- ggplot(abund_table_long, mapping = aes(x=Sample_ID, 
-                                              y=relative_abundance, fill=Species)) +
-    geom_col() +
-    scale_fill_manual(values = colors2use) + 
-    labs(x=NULL, y="Relative Abundance (%)") + 
-    publication_format + 
-  facet_wrap(facets, scales = "free_x", nrow=1)
-
-#### Taxonomy plot without contaminants
-
-# Taxonomy plot after contaminant removal at a set threshold of 0.1
-# ggsave(filename = "results/species_plot.png", plot = p,
-#          device = "png", width = 10, height = 6, units = "in", dpi = 300)
-ggplotly(p) %>% saveWidget(file = "{output_dir}{taxonomy_type}_taxonomy_plots_no_contam{assay_suffix}.html")
-```
-**Parameter Definitions:**
-- `taxonomy_type` - string specify which tool was used to create the input taxonomy, either `kaiju` or `kraken`
-- `assay_suffix` - string specifying an assay suffix to use for output file nameing in this dataset (default: GLMetagenomics)
-
-**Input Data:**
-- `species_abund_table` ()
-- `contam_df` ()
-
-**Output Data:**
-- **<kaiju|kraken>_taxonomy_decontam/<kaiju|kraken>_taxonomy_plots_no_contam_GLMetagenomics.html** (Plot of taxonomies for decontaminated data)
-
----
-
-### 27. Assembly-based processing decontamination
-Medaka assembly annotation of kraken decontaminated low biomass samples
-Quality filtered and trimmed reads were decontaminated (host (human) reads filtered out) using kraken2. Assembly of the clean reads was performed using metaflye followed by polishing with medaka. The polished assembly was annotated using our standard assembly annotation pipeline with prodigal used to predict genes, CAT used for taxonomy assignment of genes and contigs and KOFamScan for genes functional annotation.  
-
-#### 27a. 
-
-```R
-
-# assembly based summary
-
-overview_table <-  read_input_table(assembly_summary)
-
-col_names <- names(overview_table) %>% str_remove_all("-assembly")
-
-overview_table <- overview_table %>%
-  set_names(col_names) %>% 
-  select(!!sort(col_names)) %?%
-
-write_delim(overview_table, "")
-
-# Contig annotation
-sample_order <- col_names[-1] %>% sort()
-contig_table <-  read_contig_table(contig_taxonomy, sample_order)
-
-# expected microbes
-species_contig_table %>% 
-  filter( str_detect( species, str_c(expected_microbes, collapse = "|") ) ) %>% 
-  knitr::kable()
-
-contig.m <- species_contig_table %>%
-  group_by(species) %>%
-  summarise(across(everything(), sum)) %>%
-  as.data.frame()
-
-rownames(contig.m) <- contig.m[['species']]
-contig.m <- contig.m[,-match("species", colnames(contig.m))] %>% as.matrix()
-
-colours <- colorRampPalette(c('white','red'))(255)
-colnames(contig.m) <-  colnames(contig.m) %>% str_remove_all("barcode")
-
-main_groups <- c("Sample_Type", "input_conc_ng", "lambda_spike" )
-annotation_colors <- list(Sample_Type= c(Even="red", NTC="blue"),
-                          input_conc_ng = c("0.005"="gold4", "0.010"="darkred",
-                                            "0.000"="pink", "0.100"="green"),
-                          lambda_spike = c(no="black", yes="purple"))
-col_annotation <- as.data.frame(metadata)[,rev(main_groups), drop=FALSE]
-
-# Heatmap of normalized counts
-pheatmap(mat = contig.m,
-         cluster_cols = FALSE, 
-         cluster_rows = FALSE, 
-         col = colours, 
-         angle_col = 0, 
-         display_numbers = TRUE,
-         fontsize = 12,
-         number_format = "%.0f",
-         annotation_col = col_annotation,
-        annotation_colors = annotation_colors)
-
-# Gene Annotation
-gene_taxonomy_table <-  read_contig_table(gene_taxonomy, sample_order)
-
-species_gene_table <- gene_taxonomy_table %>%
-  select(species, !!sample_order) %>% 
-  group_by(species) %>% 
-  summarise(across(everything(), sum)) 
-create_dt( species_gene_table %>%  mutate(across(where(is.numeric), \(x) round(x,digits = 2))) )
-
-# expected microbes
-species_gene_table %>% 
-  filter( str_detect( species, str_c(expected_microbes, collapse = "|") ) ) %>% 
-  knitr::kable()
-
-# heatmap of normalized counts
-gene.m <- species_gene_table %>% as.data.frame()
-
-rownames(gene.m) <- gene.m[['species']]
-gene.m <- gene.m[,-match("species", colnames(gene.m))] %>% as.matrix()
-colnames(gene.m) <-  colnames(gene.m) %>% str_remove_all("barcode")
-
-# with unclassified
-pheatmap(mat = gene.m,
-         cluster_cols = FALSE, 
-         cluster_rows = FALSE, 
-         col = colours, 
-         angle_col = 0, 
-         display_numbers = TRUE,
-         fontsize = 12, 
-         number_format = "%.0f",
-        annotation_col = col_annotation,
-        annotation_colors = annotation_colors)
-
-# without unclassified
-heatmap(mat = gene.m[-match("Unclassified;_;_;_;_;_;_", rownames(gene.m)),],
-         cluster_cols = FALSE, 
-         cluster_rows = FALSE, 
-         col = colours, 
-         angle_col = 0, 
-         display_numbers = TRUE,
-         fontsize = 12, 
-         number_format = "%.0f", 
-         annotation_col = col_annotation,
-        annotation_colors = annotation_colors)
-
-# abundant taxa without unclassified
-taxa <- rowSums(gene.m) %>% sort()
-abund_taxa <- taxa[taxa>2000] %>% names
-
-abund_gene.m <- gene.m[abund_taxa,]
-pheatmap(mat = abund_gene.m[-match("Unclassified;_;_;_;_;_;_", rownames(abund_gene.m)),],
-         cluster_cols = FALSE, 
-         cluster_rows = FALSE, 
-         col = colours, 
-         angle_col = 0, 
-         display_numbers = TRUE,
-         fontsize = 12, 
-         number_format = "%.0f",
-         annotation_col = col_annotation,
-        annotation_colors = annotation_colors)
 
