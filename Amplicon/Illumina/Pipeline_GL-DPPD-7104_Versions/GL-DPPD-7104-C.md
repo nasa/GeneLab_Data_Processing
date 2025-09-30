@@ -774,7 +774,7 @@ library(hexbin)
     if(method == 'rarefy'){
       # Create phyloseq object
       ASV_physeq <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
-                            sample_data(metadata))
+                             sample_data(metadata))
 
       # Get the count for every sample sorted in ascending order
       seq_per_sample <- colSums(feature_table) %>% sort()
@@ -782,17 +782,16 @@ library(hexbin)
       depth <- min(seq_per_sample)
 
       # Error if the number of sequences per sample left after filtering is 
-    # insufficient for diversity analysis
-    if(max(seq_per_sample) < 100){
+      # insufficient for diversity analysis
+      if(max(seq_per_sample) < 100){
       
-      warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure{assay_suffix}.txt")
-      writeLines(
-        text = glue("The maximum sequence count per sample ({max(seq_per_sample)}) is less than 100.
-Therefore, beta diversity analysis with rarefaction cannot be performed. Check VST method normalization instead."),
-        con = warning_file
-      )
-      return(NULL)   # stop rarefaction branch, but don't kill script
-    }
+        warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure{assay_suffix}.txt")
+        writeLines(
+          text = glue("The maximum sequence count per sample ({max(seq_per_sample)}) is less than 100. Therefore, beta diversity analysis with rarefaction cannot be performed. Check VST method normalization instead."),
+          con = warning_file
+        )
+        return(NULL)   # stop rarefaction branch, but don't kill script
+      }
 
       # Loop through the sequences per sample and return the count
       # nearest to the minimum required rarefaction depth
@@ -805,22 +804,20 @@ Therefore, beta diversity analysis with rarefaction cannot be performed. Check V
       }
 
       # Error if the depth that ends up being used is also less than 100
-    if(depth < 100){
-      
-      warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure{assay_suffix}.txt")
-      writeLines(
-        text = glue("The rarefaction depth being used in the analysis ({depth}) is less than 100.
-Therefore, beta diversity analysis with rarefaction cannot be performed. Check VST method normalization instead."),
-        con = warning_file
-      )
-      return(NULL)   # stop rarefaction branch, but don't kill script
-    } 
+      if(depth < 100){
+        
+        warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure{assay_suffix}.txt")
+        writeLines(
+          text = glue("The rarefaction depth being used in the analysis ({depth}) is less than 100. Therefore, beta diversity analysis with rarefaction cannot be performed. Check VST method normalization instead."),
+          con = warning_file
+        )
+        return(NULL)   # stop rarefaction branch, but don't kill script
+      } 
     
-    #Warning if rarefaction depth is between 100 and 500
-    if (depth > 100 && depth < 500) {
-      warning(glue("Rarefaction depth ({depth}) is between 100 and 500.
-Beta diversity results may be unreliable."))
-    }
+      #Warning if rarefaction depth is between 100 and 500
+      if (depth > 100 && depth < 500) {
+        warning(glue("Rarefaction depth ({depth}) is between 100 and 500. Beta diversity results may be unreliable."))
+      }
 
       #----- Rarefy sample counts to even depth per sample
       ps <- rarefy_even_depth(physeq = ASV_physeq,
@@ -829,25 +826,25 @@ Beta diversity results may be unreliable."))
                               replace = FALSE,
                               verbose = FALSE)
 
-    # ---- Group check ----
-    survived_samples <- sample_names(ps)
-    remaining_groups <- unique(metadata[rownames(metadata) %in% survived_samples, groups_colname])
-    
-    if(length(remaining_groups) < 2){
-      warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure{assay_suffix}.txt")
-      writeLines(
-        text = glue("Not enough groups remain after rarefaction at {depth} (only {length(remaining_groups)}). Skipping beta diversity with rarefaction."),
-        con = warning_file
-      )
-      return(NULL)  # stop analysis, like depth failure
-    }
+      # ---- Group check ----
+      survived_samples <- sample_names(ps)
+      remaining_groups <- unique(metadata[rownames(metadata) %in% survived_samples, groups_colname])
+      
+      if(length(remaining_groups) < 2){
+        warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure{assay_suffix}.txt")
+        writeLines(
+          text = glue("Not enough groups remain after rarefaction at {depth} (only {length(remaining_groups)}). Skipping beta diversity with rarefaction."),
+          con = warning_file
+        )
+        return(NULL)  # stop analysis, like depth failure
+      }
 
-    # Write rarefaction depth used into file
-    depth_file <- glue("{beta_diversity_out_dir}{output_prefix}rarefaction_depth{assay_suffix}.txt")
-    writeLines(
-      text = as.character(depth),
-      con = depth_file
-    )
+      # Write rarefaction depth used into file
+      depth_file <- glue("{beta_diversity_out_dir}{output_prefix}rarefaction_depth{assay_suffix}.txt")
+      writeLines(
+        text = as.character(depth),
+        con = depth_file
+      )
     
     # Variance Stabilizing Transformation
     }else if(method == "vst"){
@@ -864,8 +861,8 @@ Beta diversity results may be unreliable."))
       # Create VST normalized counts matrix
       # ~1 means no design
       deseq_counts <- DESeqDataSetFromMatrix(countData = feature_table,
-                                            colData = metadata,
-                                            design = ~1)
+                                             colData = metadata,
+                                             design = ~1)
       deseq_counts_vst <- varianceStabilizingTransformation(deseq_counts)
       vst_trans_count_tab <- assay(deseq_counts_vst)
 
@@ -1023,20 +1020,22 @@ Beta diversity results may be unreliable."))
                         hjust = 0.3, vjust = -0.4, size = 4)
     }
 
-  # Add annotations to pcoa plot
-  p <-  p +  labs(x = label_PC1, y = label_PC2, color = legend_title) +
-      coord_fixed(sqrt(eigen_vals[2]/eigen_vals[1])) +
-      scale_color_manual(values = group_colors) +
-      theme_bw() + theme(text = element_text(size = 15, face="bold"),
-                        legend.direction = "vertical",
-                        legend.justification = "center",
-                        legend.title = element_text(hjust=0.1)) +
-      annotate("text", x = Inf, y = -Inf,
-              label = paste("R2:", toString(round(r2_value, 3))),
-              hjust = 1.1, vjust = -2, size = 4)+
-      annotate("text", x = Inf, y = -Inf,
+    # Add annotations to pcoa plot
+    p <-  p + labs(x = label_PC1, y = label_PC2, color = legend_title) +
+          coord_fixed(sqrt(eigen_vals[2]/eigen_vals[1])) +
+          scale_color_manual(values = group_colors) +
+          theme_bw() + 
+          theme(text = element_text(size = 15, face="bold"),
+                legend.direction = "vertical",
+                legend.justification = "center",
+                legend.title = element_text(hjust=0.1)) +
+          annotate("text", x = Inf, y = -Inf,
+                   label = paste("R2:", toString(round(r2_value, 3))),
+                   hjust = 1.1, vjust = -2, size = 4) +
+          annotate("text", x = Inf, y = -Inf,
               label = paste("Pr(>F)", toString(round(prf_value,4))),
-              hjust = 1.1, vjust = -0.5, size = 4) + ggtitle("PCoA")
+              hjust = 1.1, vjust = -0.5, size = 4) + 
+          ggtitle("PCoA")
 
     return(p)
   }
@@ -1073,7 +1072,7 @@ Beta diversity results may be unreliable."))
     return(abun_features.m)
   }
   ```
-**Function Parameter Definitions:**
+  **Function Parameter Definitions:**
   - `feature_table=` - dataframe containing feature/ASV counts with samples as columns and features as rows
   - `cut_off_percent=0.75` - decimal value between 0.001 and 1 specifying the fraction of the total number of samples to determine the most abundant features; by default it removes features that are not present in 3/4 of the total number of samples
 
@@ -1234,7 +1233,7 @@ Beta diversity results may be unreliable."))
     }
     if(is.null(taxa_to_group)){
       message(glue::glue("Rare taxa were not grouped. please provide a higher threshold than {threshold} for grouping rare taxa, only numbers are allowed."))
-    return(abund_table)
+      return(abund_table)
     }
 
     if(rare_taxa){
@@ -1320,7 +1319,6 @@ Beta diversity results may be unreliable."))
     uid <- get_uid(taxonomy, division_filter = search_string)
     tax_ids <- uid[1:length(uid)]
     return(tax_ids)
-    
   }
   ```
   **Function Parameter Definitions:**
@@ -1405,9 +1403,9 @@ Beta diversity results may be unreliable."))
   <summary>calculates the geometric mean</summary>
 
   ```R
-    gm_mean <- function(x, na.rm=TRUE) {
-      exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
-    }
+  gm_mean <- function(x, na.rm=TRUE) {
+    exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+  }
   ```
   **Function Parameter Definitions:**
   - `x=` - a numeric vector specifying the values to calculate the geometirc mean on
@@ -1421,37 +1419,33 @@ Beta diversity results may be unreliable."))
   <summary>Plots ASV sparsity. A modification of DESeq2::plotSparsity to generate a ggplot.</summary>
 
   ```R
-    plotSparsity <- function (x, normalized = TRUE, feature="ASV", ...) {
-  
-  
-      if (is(x, "DESeqDataSet")) {
+  plotSparsity <- function (x, normalized = TRUE, feature="ASV", ...) {
 
-            x <- counts(x, normalized = normalized)
-      }
+    if (is(x, "DESeqDataSet")) {
+          x <- counts(x, normalized = normalized)
+    }
+
+    rs <- MatrixGenerics::rowSums(x)
+    rmx <- apply(x, 1, max)
+
+    # Prepare plot dataframe
+    df <- data.frame(rs=rs, rmx=rmx) %>% 
+          mutate(x=rs, y=rmx/rs) %>% 
+          filter(x>0)
   
-      rs <- MatrixGenerics::rowSums(x)
-      rmx <- apply(x, 1, max)
-
-      # Prepare plot dataframe
-      df <- data.frame(rs=rs, rmx=rmx) %>% 
-               mutate(x=rs, y=rmx/rs) %>% 
-               filter(x>0)
-    
-      # Plot
-      ggplot(data = df, aes(x=x, y=y), ...) +
-        geom_point(size=3) +
-        scale_x_log10() + 
-        scale_y_continuous(limits = c(0,1)) +
-        theme_bw() +
-        labs(title = glue("Concentration of {feature} counts over total sum of {feature} counts"),
-             x=glue("Sum of counts per {feature}"),
-             y=glue("Max {feature} count / Sum of {feature} counts")) + 
-        theme(axis.text = element_text(face = "bold", size = 12),
-              axis.title = element_text(face = "bold", size = 14),
-              title = element_text(face = "bold", size = 14))
-
-  }
-    
+    # Plot
+    ggplot(data = df, aes(x=x, y=y), ...) +
+      geom_point(size=3) +
+      scale_x_log10() + 
+      scale_y_continuous(limits = c(0,1)) +
+      theme_bw() +
+      labs(title = glue("Concentration of {feature} counts over total sum of {feature} counts"),
+            x=glue("Sum of counts per {feature}"),
+            y=glue("Max {feature} count / Sum of {feature} counts")) + 
+      theme(axis.text = element_text(face = "bold", size = 12),
+            axis.title = element_text(face = "bold", size = 14),
+            title = element_text(face = "bold", size = 14))
+  }    
   ```
   **Function Parameter Definitions:**
   - `x=` -  a matrix or DESeqDataSet to plot
@@ -1461,7 +1455,6 @@ Beta diversity results may be unreliable."))
 
   **Returns:** a sparsity plot of type ggplot
 </details>
-
 
 <br>
 
@@ -1779,7 +1772,7 @@ for (count in seq_per_sample) {
 
 # Error if the depth that ends up being used is also less than 100
 if(depth < 100){
- 
+  
   warning_file <- glue("{alpha_diversity_out_dir}{output_prefix}alpha_diversity_failure_<tech_type>{assay_suffix}.txt")
   writeLines(
     text = glue("The rarefaction depth being used in the analysis ({depth}) is less than 100.
