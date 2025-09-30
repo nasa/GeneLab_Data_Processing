@@ -168,6 +168,13 @@ Software Updates and Changes:
 > Exact processing commands for specific datasets are available in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory of this repository, and/or are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 >
 > Output files listed in **bold** below are included with each Amplicon Seq processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
+> 
+> ***Note:** All output files have an assay suffix ("_GLAmpSeq") added as indicated below. For this assay, each output file also 
+> has a "<tech_type>" suffix added before the assay suffix to uniquely identify files that were created using different 
+> amplicon technologies (for example: "16S", "18S", "ITS"). The <tech_type> string (which includes a leading "_") is derived from the 
+> "Parameter Value: Library Selection" column in the OSDR assay table.*
+
+
 
 ---
 
