@@ -40,7 +40,7 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [5a. Trim Filtered Data](#5a-trim-filtered-data)
       - [5b. Trimmed Data QC](#5b-trimmed-data-qc)
       - [5c. Compile Trimmed Data QC](#5c-compile-filtered-data-qc)
-    - [6. Contaminant Removal](#7-remove-contaminants)
+    - [6. Contaminant Removal](#6-remove-contaminants)
       - [6a. Assemble Contaminants](#6a-assemble-contaminants)
       - [6b. Build Contaminant Index and Map Reads](#6b-build-contaminant-index-and-map-reads)
       - [6c. Sort and Index Contaminant Reads](#6c-sort-and-index-contaminant-alignments)
@@ -556,7 +556,7 @@ minimap2 -t NumberOfThreads -a -x splice blanks.mmi /path/to/trimmed_reads/sampl
 
 - sample.sam (Reads aligned to contaminant assembly)
 
-#### 6b. Sort and Index Contaminant Alignments
+#### 6c. Sort and Index Contaminant Alignments
 ```bash
 # Sort Sam, convert to bam and create index
 samtools sort --threads NumberOfThreads -o sample_sorted.bam sample.sam > sample_sort.log 2>&1
@@ -577,14 +577,14 @@ samtools index sample_sorted.bam sample_sorted.bam.bai
 
 **Input Data:**
 
-- sample.sam (Reads aligned to contaminant assembly, output from [Step 6a](#6a-build-contaminant-index-and-map-reads))
+- sample.sam (Reads aligned to contaminant assembly, output from [Step 6b](#6b-build-contaminant-index-and-map-reads))
 
 **Output Data:**
 
 - sample_sorted.bam (sorted mapping to contaminant assembly)
 - sample_sorted.bam.bai (index of sorted mapping to contaminant assembly)
 
-#### 6c. Gather Contaminant Mapping Metrics
+#### 6d. Gather Contaminant Mapping Metrics
 
 ```bash
 
@@ -603,8 +603,8 @@ samtools idxstats sample_sorted.bam  > sample_idxstats.txt 2> sample_idxstats.lo
 
 **Input Data:**
 
-- sample_sorted.bam (sorted mapping to contaminant assembly, output from [Step 6b](#6b-sort-and-index-contaminant-alignments))
-- sample_sorted.bam.bai (index of sorted mapping to contaminant assembly, output from [Step 6b](#6b-sort-and-index-contaminant-alignments))
+- sample_sorted.bam (sorted mapping to contaminant assembly, output from [Step 6c](#6c-sort-and-index-contaminant-alignments))
+- sample_sorted.bam.bai (index of sorted mapping to contaminant assembly, output from [Step 6c](#6c-sort-and-index-contaminant-alignments))
 
 **Output Data:**
 
@@ -612,7 +612,7 @@ samtools idxstats sample_sorted.bam  > sample_idxstats.txt 2> sample_idxstats.lo
 - sample_stats.txt (comprehensive alignment statistics)
 - sample_idxstats.txt (contig alignment summary statistics)
 
-#### 6d. Generate Decontaminated Read Files
+#### 6e. Generate Decontaminated Read Files
 ```bash
 # Retain reads that do not map to contaminants
 samtools fastq -t -f 4 sample_sorted.bam | gzip --to-stdout > sample_blank_removed.fastq.gz
@@ -629,13 +629,13 @@ samtools fastq -t -f 4 sample_sorted.bam | gzip --to-stdout > sample_blank_remov
 
 **Input Data:**
 
-- sample_sorted.bam (sorted mapping to contaminant assembly, output from [Step 6b](#6b-sort-and-index-contaminant-alignments))
+- sample_sorted.bam (sorted mapping to contaminant assembly, output from [Step 6c](#6c-sort-and-index-contaminant-alignments))
 
 **Output Data:**
 
 - sample_blank_removed.fastq.gz (blank removed reads in fastq format)
 
-#### 6e. Contaminant Removal QC
+#### 6f. Contaminant Removal QC
 
 ```bash
 NanoPlot --only-report \
@@ -656,7 +656,7 @@ NanoPlot --only-report \
 
 **Input Data:**
 
-- sample_blank_removed.fastq.gz (blank removed reads, output from [Step 6d](#6d-generate-decontaminated-read-files))
+- sample_blank_removed.fastq.gz (blank removed reads, output from [Step 6e](#6e-generate-decontaminated-read-files))
 
 **Output Data:**
 
@@ -665,7 +665,7 @@ NanoPlot --only-report \
 - /path/to/noblank_nanoplot_output/sample_NanoStats.txt (text file containing basic statistics)
 
 
-#### 6f. Compile Contaminant Removal QC
+#### 6g. Compile Contaminant Removal QC
 
 ```bash
 multiqc --zip-data-dir \ 
@@ -684,7 +684,7 @@ multiqc --zip-data-dir \
 
 **Input Data:**
 
-- /path/to/noblank_nanoplot_output/*NanoStats.txt (NanoPlot output data, output from [Step 6e](#6e-contaminant-removal-qc))
+- /path/to/noblank_nanoplot_output/*NanoStats.txt (NanoPlot output data, output from [Step 6f](#6f-contaminant-removal-qc))
 
 **Output Data:**
 
