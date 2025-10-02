@@ -40,57 +40,89 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [5a. Trim Filtered Data](#5a-trim-filtered-data)
       - [5b. Trimmed Data QC](#5b-trimmed-data-qc)
       - [5c. Compile Trimmed Data QC](#5c-compile-filtered-data-qc)
-    - [6. Assemble Contaminants](#6-assemble-contaminants)
-    - [7. Contaminant Removal](#7-remove-contaminants)
-      - [7a. Build Contaminant Index and Map Reads](#7a-build-contaminant-index-and-map-reads)
-      - [7b. Sort and Index Contaminant Reads](#7b-sort-and-index-contaminant-alignments)
-      - [7c. Gather Contaminant Mapping Metrics](#7c-gather-contaminant-mapping-metrics)
-      - [7d. Generate Decontaminated Read Files](#7d-generate-decontaminated-read-files)
-      - [7e. Contaminant Removal QC](#7e-contaminant-removal-qc)
-      - [7f. Compile Contaminant Removal QC](#7f-compile-contaminant-removal-qc)
-    - [8. Host Removal](#8-host-removal)
-      - [8a. Build or download host database](#8a-build-or-download-host-database)
-        - [8a.i. Download from URL](#8ai-download-from-url)
-        - [8a.ii. Build from custom reference](#8aii-build-from-custom-reference)
-        - [8a.iii. Build from host name](#8aiii-build-from-host-name)
-      - [8b. Remove Host Reads](#8b-remove-host-reads)
-    - [9. R Environment Setup](#9-r-environment-setup)
-      - [9a. Load libraries](#9a-load-libraries)
-      - [9b. Define Custom Functions](#9b-define-custom-functions)
-      - [9c. Set global variables](#9c-set-global-variables)
+    - [6. Contaminant Removal](#7-remove-contaminants)
+      - [6a. Assemble Contaminants](#6a-assemble-contaminants)
+      - [6b. Build Contaminant Index and Map Reads](#6b-build-contaminant-index-and-map-reads)
+      - [6c. Sort and Index Contaminant Reads](#6c-sort-and-index-contaminant-alignments)
+      - [6d. Gather Contaminant Mapping Metrics](#6d-gather-contaminant-mapping-metrics)
+      - [6e. Generate Decontaminated Read Files](#6e-generate-decontaminated-read-files)
+      - [6f. Contaminant Removal QC](#6f-contaminant-removal-qc)
+      - [6g. Compile Contaminant Removal QC](#6g-compile-contaminant-removal-qc)
+    - [7. Host Removal](#7-host-removal)
+      - [7a. Build or download host database](#7a-build-or-download-host-database)
+        - [7a.i. Download from URL](#7ai-download-from-url)
+        - [7a.ii. Build from custom reference](#7aii-build-from-custom-reference)
+        - [7a.iii. Build from host name](#7aiii-build-from-host-name)
+      - [7b. Remove Host Reads](#7b-remove-host-reads)
+    - [8. R Environment Setup](#8-r-environment-setup)
+      - [8a. Load libraries](#8a-load-libraries)
+      - [8b. Define Custom Functions](#8b-define-custom-functions)
+      - [8c. Set global variables](#8c-set-global-variables)
   - [**Read-based processing**](#read-based-processing)
-    - [10. Taxonomic profiling using kaiju](#10-taxonomic-profiling-using-kaiju)
-      - [10a. Build kaiju database](#10a-build-kaiju-database)
-      - [10b. Kaiju Taxonomic Classification](#10b-kaiju-taxonomic-classification)
-      - [10c. Compile kaiju taxonomy results](#10c-compile-kaiju-taxonomy-results)
-      - [10d. Convert kaiju output to krona format](#10d-convert-kaiju-output-to-krona-format)
-      - [10e. Compile kaiju krona report](#10e-compile-kaiju-krona-report)
-      - [10f. Create kaiju species count table](#10f-create-kaiju-species-count-table)
-      - [10g. Read-in tables](#10g-read-in-tables)
-      - [10h. Taxonomy barplots](#10h-taxonomy-barplots)
-    - [11. Taxonomic Profiling using Kraken2](#11-taxonomic-profiling-using-kraken2)
-      - [11a. Download kraken2 database](#11a-download-kraken2-database)
-      - [11b. Taxonomic Classification](#11b-taxonomic-classification)
-      - [11c. Convert Kraken2 output to Krona format](#11c-convert-kraken2-output-to-krona-format)
-      - [11d. Compile kraken2 krona report](#11d-compile-kraken2-krona-report)
-      - [11e. Create kraken species count table](#11e-create-kraken-species-count-table)
-      - [11f. Read-in tables](#11f-read-in-tables)
-      - [11g. Taxonomy barplots](#11g-taxonomy-barplots)
-      - [11h. Feature decontamination](#11h-feature-decontamination)
+    - [9. Taxonomic profiling using kaiju](#9-taxonomic-profiling-using-kaiju)
+      - [9a. Build kaiju database](#9a-build-kaiju-database)
+      - [9b. Kaiju Taxonomic Classification](#9b-kaiju-taxonomic-classification)
+      - [9c. Compile kaiju taxonomy results](#9c-compile-kaiju-taxonomy-results)
+      - [9d. Convert kaiju output to krona format](#9d-convert-kaiju-output-to-krona-format)
+      - [9e. Compile kaiju krona report](#9e-compile-kaiju-krona-report)
+      - [9f. Create kaiju species count table](#9f-create-kaiju-species-count-table)
+      - [9g. Read-in tables](#9g-read-in-tables)
+      - [9h. Taxonomy barplots](#9h-taxonomy-barplots)
+      - [9i. Feature decontamination](#9i-feature-decontamination)
+    - [10. Taxonomic Profiling using Kraken2](#10-taxonomic-profiling-using-kraken2)
+      - [10a. Download kraken2 database](#10a-download-kraken2-database)
+      - [10b. Taxonomic Classification](#10b-taxonomic-classification)
+      - [10c. Convert Kraken2 output to Krona format](#10c-convert-kraken2-output-to-krona-format)
+      - [10d. Compile kraken2 krona report](#10d-compile-kraken2-krona-report)
+      - [10e. Create kraken species count table](#10e-create-kraken-species-count-table)
+      - [10f. Read-in tables](#10f-read-in-tables)
+      - [10g. Taxonomy barplots](#10g-taxonomy-barplots)
+      - [10h. Feature decontamination](#10h-feature-decontamination)
   - [**Assembly-based processing**](#assembly-based-processing)
-    - [12. Sample assembly](#12-sample-assembly)
-    - [13. Polish assembly](#13-polish-assembly)
-    - [14. Renaming contigs and summarizing assemblies](#14-renaming-contigs-and-summarizing-assemblies)
-    - [15. Gene prediction](#15-gene-prediction)
-    - [16. Functional annotation](#16-functional-annotation)
-    - [17. Taxonomic classification](#17-taxonomic-classification)
-    - [18. Read-mapping](#18-read-mapping)
-    - [19. Getting coverage information and filtering based on detection](#19-getting-coverage-information-and-filtering-based-on-detection)
-    - [20. Combining gene-level coverage, taxonomy, and functional annotations into one table for each sample](#20-combining-gene-level-coverage-taxonomy-and-functional-annotations-into-one-table-for-each-sample)
-    - [21. Combining contig-level coverage and taxonomy into one table for each sample](#21-combining-contig-level-coverage-and-taxonomy-into-one-table-for-each-sample)
-    - [22. Generating normalized, gene- and contig-level coverage summary tables of KO-annotations and taxonomy across samples](#22-generating-normalized-gene--and-contig-level-coverage-summary-tables-of-ko-annotations-and-taxonomy-across-samples)
-    - [23. **M**etagenome-**A**ssembled **G**enome (MAG) recovery](#23-metagenome-assembled-genome-mag-recovery)
-    - [24. Generating MAG-level functional summary overview](#24-generating-mag-level-functional-summary-overview)
+    - [11. Sample assembly](#11-sample-assembly)
+    - [12. Polish assembly](#12-polish-assembly)
+    - [13. Renaming contigs and summarizing assemblies](#13-renaming-contigs-and-summarizing-assemblies)
+      - [13a. Renaming contig headers](#13a-renaming-contig-headers)
+      - [13b. Summarizing assemblies](#13b-summarizing-assemblies)
+    - [14. Gene prediction](#14-gene-prediction)
+      - [14a. Remove line wraps in gene prediction output](#14a-remove-line-wraps-in-gene-prediction-output)
+    - [15. Functional annotation](#15-functional-annotation)
+      - [15a. Downloading reference database of HMM models (only needs to be done once)](#15a-downloading-reference-database-of-hmm-models-only-needs-to-be-done-once)
+      - [15b. Running KEGG annotation](#15b-running-kegg-annotation)
+      - [15c. Filtering output to retain only those passing the KO-specific score and top hits](#15c-filtering-output-to-retain-only-those-passing-the-ko-specific-score-and-top-hits)
+    - [16. Taxonomic classification](#16-taxonomic-classification)
+      - [16a. Pulling and un-packing pre-built reference db (only needs to be done once)](#16a-pulling-and-un-packing-pre-built-reference-db-only-needs-to-be-done-once)
+      - [16b. Running taxonomic classification](#16b-running-taxonomic-classification)
+      - [16c. Adding taxonomy info from taxids to genes](#16c-adding-taxonomy-info-from-taxids-to-genes)
+      - [16d. Adding taxonomy info from taxids to contigs](#16d-adding-taxonomy-info-from-taxids-to-contigs)
+      - [16e. Formatting gene-level output with awk and sed](#16e-formatting-gene-level-output-with-awk-and-sed)
+      - [16f. Formatting contig-level output with awk and sed](#16f-formatting-contig-level-output-with-awk-and-sed)
+    - [17. Read-mapping](#17-read-mapping)
+      - [17a. Align Reads to Sample Assembly](#17a-align-reads-to-sample-assembly)
+      - [17b. Sort and Index Assembly Alignments](#17b-sort-and-index-assembly-alignments)
+    - [18. Getting coverage information and filtering based on detection](#18-getting-coverage-information-and-filtering-based-on-detection)
+      - [18a. Filtering coverage levels based on detection](#18a-filtering-coverage-levels-based-on-detection)
+      - [18b. Filtering gene and contig coverage based on requiring 50% detection and parsing down to just gene ID and coverage](#18b-filtering-gene-and-contig-coverage-based-on-requiring-50-detection-and-parsing-down-to-just-gene-id-and-coverage)
+    - [19. Combining gene-level coverage, taxonomy, and functional annotations into one table for each sample](#19-combining-gene-level-coverage-taxonomy-and-functional-annotations-into-one-table-for-each-sample)
+    - [20. Combining contig-level coverage and taxonomy into one table for each sample](#20-combining-contig-level-coverage-and-taxonomy-into-one-table-for-each-sample)
+    - [21. Generating normalized, gene- and contig-level coverage summary tables of KO-annotations and taxonomy across samples](#21-generating-normalized-gene--and-contig-level-coverage-summary-tables-of-ko-annotations-and-taxonomy-across-samples)
+      - [21a. Generating gene-level coverage summary tables](#21a-generating-gene-level-coverage-summary-tables)
+      - [21b. Gene-level taxonomy heatmaps](#21b-gene-level-taxonomy-heatmaps)
+      - [21c. Gene-level taxonomy decontamination](#21c-gene-level-taxonomy-decontamination)
+      - [21d. Gene-level KO functions heatmaps](#21d-gene-level-ko-functions-heatmaps)
+      - [21e. Gene-level KO functions decontamination](#21e-gene-level-ko-functions-decontamination)
+      - [21f. Generating contig-level coverage summary tables](#21f-generating-contig-level-coverage-summary-tables)
+      - [21g. Contig-level Heatmaps](#21g-contig-level-heatmaps)
+      - [21h. Contig-level decontamination](#21h-contig-level-decontamination)
+    - [22. **M**etagenome-**A**ssembled **G**enome (MAG) recovery](#22-metagenome-assembled-genome-mag-recovery)
+      - [22a. Binning contigs](#22a-binning-contigs)
+      - [22b. Bin quality assessment](#22b-bin-quality-assessment)
+      - [22c. Filtering MAGs](#22c-filtering-mags)
+      - [22d. MAG taxonomic classification](#22d-mag-taxonomic-classification)
+      - [22e. Generating overview table of all MAGs](#22e-generating-overview-table-of-all-mags)
+    - [23. Generating MAG-level functional summary overview](#23-generating-mag-level-functional-summary-overview)
+      - [23a. Getting KO annotations per MAG](#23a-getting-ko-annotations-per-mag)
+      - [23b. Summarizing KO annotations with KEGG-Decoder](#23b-summarizing-ko-annotations-with-kegg-decoder)
 
 
 
@@ -142,7 +174,7 @@ Barbara Novak (GeneLab Data Processing Lead)
 ### 1. Basecalling
 
 ```bash
-model="hac"
+model="hac" # high accuracy model
 input_directory=/path/to/pod5/or/fast5/data
 kit_name=SQK-RPB004
 
@@ -198,7 +230,7 @@ dorado demux \
 
 **Input Data:**
 
-- basecalled.bam (basecalled nanopore data in bam format, output from [step 1](#1-basecalling))
+- basecalled.bam (basecalled nanopore data in bam format, output from [Step 1](#1-basecalling))
 
 **Output Data:**
 
@@ -233,7 +265,7 @@ done
 
 **Input Data:**
 
-- /path/to/fastq/output/ (directory containing spilt fastq files)[step 2a](#2a-split-fastq))
+- /path/to/fastq/output/ (directory containing spilt fastq files from [Step 2a](#2a-split-fastq))
 
 **Output Data:**
 
@@ -266,7 +298,7 @@ NanoPlot --only-report \
 
 **Input Data:**
 
-- /path/to/raw_data/sample.fastq.gz (raw reads, output from [Step 2](#2-demultiplexing))
+- /path/to/raw_data/sample.fastq.gz (raw reads, output from [Step 2b](#2b-concatenate-files-for-each-sample))
 
 **Output Data:**
 
@@ -346,7 +378,7 @@ NanoPlot --only-report \
 
 **Input Data:**
 
-- sample_filtered.fastq (raw reads, output from [Step 2](#2-demultiplexing))
+- sample_filtered.fastq (filtered reads, output from [Step 4a](#4a-filter-raw-data))
 
 **Output Data:**
 
@@ -467,7 +499,11 @@ multiqc --zip-data-dir \
 
 ---
 
-### 6. Assemble Contaminants
+### 6. Contaminant Removal
+
+> A major issue with low biomass data is the high potential for contamination due to the low amount of DNA extracted in the sample for sequencing.  Because negative control/blank samples should by theory be contaminant free, any sequence detected in the negative control is a potential contaminant. To filter out contaminants found in negative control samples that may have been due to cross contamination in the lab, we use a read mapping approach. First negative/blank control samples reads are assembled then filtered and trimmed reads mapped to the assembled contigs. Reads mapping to the assembled contigs are categorized as contaminants and are therefore filtered out and thus excluded from further analyses.
+
+### 6a. Assemble Contaminants
 
 ```bash
 flye --meta --threads NumberOfThreads \
@@ -494,9 +530,7 @@ flye --meta --threads NumberOfThreads \
 
 ---
 
-### 7. Contaminant Removal
-
-#### 7a. Build Contaminant Index and Map Reads
+#### 6b. Build Contaminant Index and Map Reads
 
 ```bash
 # Build contaminant index
@@ -515,14 +549,14 @@ minimap2 -t NumberOfThreads -a -x splice blanks.mmi /path/to/trimmed_reads/sampl
 
 **Input Data**
 
-- /path/to/contaminant_assembly/assembly.fasta (Contaminant assembly, output from [Step 6](#6-assemble-contaminants))
+- /path/to/contaminant_assembly/assembly.fasta (Contaminant assembly, output from [Step 6a](#6-assemble-contaminants))
 - /path/to/trimmed_reads/sample_trimmed.fastq (Filtered and trimmed reads, output from [Step 5a](#5a-trim-filtered-data))
 
 **Output Data**
 
 - sample.sam (Reads aligned to contaminant assembly)
 
-#### 7b. Sort and Index Contaminant Alignments
+#### 6b. Sort and Index Contaminant Alignments
 ```bash
 # Sort Sam, convert to bam and create index
 samtools sort --threads NumberOfThreads -o sample_sorted.bam sample.sam > sample_sort.log 2>&1
@@ -543,14 +577,14 @@ samtools index sample_sorted.bam sample_sorted.bam.bai
 
 **Input Data:**
 
-- sample.sam (Reads aligned to contaminant assembly, output from [Step 7a](#7a-build-contaminant-index-and-map-reads))
+- sample.sam (Reads aligned to contaminant assembly, output from [Step 6a](#6a-build-contaminant-index-and-map-reads))
 
 **Output Data:**
 
 - sample_sorted.bam (sorted mapping to contaminant assembly)
 - sample_sorted.bam.bai (index of sorted mapping to contaminant assembly)
 
-#### 7c. Gather Contaminant Mapping Metrics
+#### 6c. Gather Contaminant Mapping Metrics
 
 ```bash
 
@@ -569,8 +603,8 @@ samtools idxstats sample_sorted.bam  > sample_idxstats.txt 2> sample_idxstats.lo
 
 **Input Data:**
 
-- sample_sorted.bam (sorted mapping to contaminant assembly, output from [Step 7b](#7b-sort-and-index-contaminant-alignments))
-- sample_sorted.bam.bai (index of sorted mapping to contaminant assembly, output from [Step 7b](#7b-sort-and-index-contaminant-alignments))
+- sample_sorted.bam (sorted mapping to contaminant assembly, output from [Step 6b](#6b-sort-and-index-contaminant-alignments))
+- sample_sorted.bam.bai (index of sorted mapping to contaminant assembly, output from [Step 6b](#6b-sort-and-index-contaminant-alignments))
 
 **Output Data:**
 
@@ -578,7 +612,7 @@ samtools idxstats sample_sorted.bam  > sample_idxstats.txt 2> sample_idxstats.lo
 - sample_stats.txt (comprehensive alignment statistics)
 - sample_idxstats.txt (contig alignment summary statistics)
 
-#### 7d. Generate Decontaminated Read Files
+#### 6d. Generate Decontaminated Read Files
 ```bash
 # Retain reads that do not map to contaminants
 samtools fastq -t -f 4 sample_sorted.bam | gzip --to-stdout > sample_blank_removed.fastq.gz
@@ -595,13 +629,13 @@ samtools fastq -t -f 4 sample_sorted.bam | gzip --to-stdout > sample_blank_remov
 
 **Input Data:**
 
-- sample_sorted.bam (sorted mapping to contaminant assembly, output from [Step 7b](#7b-sort-and-index-contaminant-alignments))
+- sample_sorted.bam (sorted mapping to contaminant assembly, output from [Step 6b](#6b-sort-and-index-contaminant-alignments))
 
 **Output Data:**
 
 - sample_blank_removed.fastq.gz (blank removed reads in fastq format)
 
-#### 7e. Contaminant Removal QC
+#### 6e. Contaminant Removal QC
 
 ```bash
 NanoPlot --only-report \
@@ -622,7 +656,7 @@ NanoPlot --only-report \
 
 **Input Data:**
 
-- sample_blank_removed.fastq.gz (blank removed reads, output from [Step 7d](#7d-generate-decontaminated-read-files))
+- sample_blank_removed.fastq.gz (blank removed reads, output from [Step 6d](#6d-generate-decontaminated-read-files))
 
 **Output Data:**
 
@@ -631,7 +665,7 @@ NanoPlot --only-report \
 - /path/to/noblank_nanoplot_output/sample_NanoStats.txt (text file containing basic statistics)
 
 
-#### 7f. Compile Contaminant Removal QC
+#### 6f. Compile Contaminant Removal QC
 
 ```bash
 multiqc --zip-data-dir \ 
@@ -650,7 +684,7 @@ multiqc --zip-data-dir \
 
 **Input Data:**
 
-- /path/to/noblank_nanoplot_output/*NanoStats.txt (NanoPlot output data, output from [Step 7d](#7d-generate-decontaminated-read-files))
+- /path/to/noblank_nanoplot_output/*NanoStats.txt (NanoPlot output data, output from [Step 6e](#6e-contaminant-removal-qc))
 
 **Output Data:**
 
@@ -661,11 +695,11 @@ multiqc --zip-data-dir \
 
 ---
 
-### 8. Host Removal
+### 7. Host Removal
 
-#### 8a. Build or download host database
+#### 7a. Build or download host database
 
-##### 8a.i. Download from URL
+##### 7a.i. Download from URL
 
 ```bash
   # Downloading and unpacking database from ${host_url}
@@ -688,7 +722,7 @@ multiqc --zip-data-dir \
 - kraken2_host_db/ - Kraken2 database directory
 
 
-##### 8a.ii. Build from custom reference
+##### 7a.ii. Build from custom reference
 
 ```bash
 # Install taxonomy       
@@ -715,7 +749,7 @@ kraken2-build --build --db kraken2_host_db/
 - kraken2_host_db/ - Kraken2 database directory
 
 
-##### 8a.iii. Build from host name
+##### 7a.iii. Build from host name
 
 ```bash
 # Build kraken reference from host_name
@@ -741,13 +775,13 @@ kraken2-build --clean --db kraken2_host_db/
 
 **Input Data:**
 
-- `host_name` - host database name (one of )
+- `host_name` - host database name (one of those specified in `--download-library` above)
 
 **Output Data:**
 
 - kraken2_host_db/ - Kraken2 database directory
 
-#### 8b. Remove host reads
+#### 7b. Remove host reads
 ```bash
 kraken2 --db kraken2_host_db/ --gzip-compressed --threads NumberOfThreads --use-names \
         --output sample-kraken2-output.txt --report sample-kraken2-report.tsv \
@@ -757,7 +791,7 @@ gzip sample_host_removed.fastq
 
 **Parameter Definitions:**
 
-- `--db` - specifies the directory holding the kraken2 database files created in [Step 8a](#8a-build-or-download-host-database)
+- `--db` - specifies the directory holding the kraken2 database files created in [Step 7a](#7a-build-or-download-host-database)
 - `--gzip-compressed` - specifies the input fastq files are gzip-compressed
 - `--threads` - number of parallel processing threads to use
 - `--use-names` - specifies adding taxa names in addition to taxon IDs
@@ -768,7 +802,7 @@ gzip sample_host_removed.fastq
 
 **Input Data:**
 
-- sample_blank_removed.fastq.gz (gzipped blank removed fastq file, output from [Step 7d](#7d-generate-decontaminated-read-files))
+- sample_blank_removed.fastq.gz (gzipped blank removed fastq file, output from [Step 6d](#6d-generate-decontaminated-read-files))
 
 **Output Data:**
 
@@ -780,13 +814,12 @@ gzip sample_host_removed.fastq
 
 ---
 
-## Read-based Processing
 
-### 9. R Environment Setup
+### 8. R Environment Setup
 
-> Taxonomy bar plot, heatmaps and feature decontamination with decontam are performed in R.
+> Taxonomy bar plots, heatmaps and feature decontamination with decontam are performed in R.
 
-#### 9a. Load libraries
+#### 8a. Load libraries
 
 ```R
 library(decontam)
@@ -797,7 +830,7 @@ library(pheatmap)
 library(pavian)
 ```
 
-#### 9b. Define Custom Functions
+#### 8b. Define Custom Functions
 
 ##### get_last_assignment()
 <details>
@@ -805,7 +838,7 @@ library(pavian)
 
   ```R
   get_last_assignment <- function(taxonomy_string, split_by=';', remove_prefix=NULL) {
-    # A function to get the last taxonomy assignment from a taxonomy string 
+
     split_names <- strsplit(x =  taxonomy_string , split = split_by) %>% 
       unlist()
     
@@ -950,7 +983,7 @@ library(pavian)
 
     abund_table <- species_table %>% 
                         as.data.frame %>% 
-                        mutate( across(everything(), function(x) (x/sum(x, na.rm = TRUE))*100 ) )  %>% # calculation species relative abundance per sample
+                        mutate( across(everything(), function(x) (x/sum(x, na.rm = TRUE))*100 ) )  %>% # calculate species relative abundance per sample
         select(
                 where( ~all(!is.na(.)) )
               )  %>% # drop columns where none of the reads were classified or were non-microbial
@@ -1092,12 +1125,12 @@ library(pavian)
     if (!is.null(freq_col) && !is.null(prev_col)) {   
 
       # Run decontam in both prevalence and frequency modes
-      contamdf <- isContaminant(ps, neg=prev_col, conc=freq_col, threshold=contam_threshold) # threshold
+      contamdf <- isContaminant(ps, neg=prev_col, conc=freq_col, threshold=contam_threshold) 
 
     } else if(!is.null(freq_col)) {
       
       # Run decontam in frequency mode
-      contamdf <- isContaminant(ps, conc=freq_col, threshold=contam_threshold) # threshold
+      contamdf <- isContaminant(ps, conc=freq_col, threshold=contam_threshold) 
 
     } else if(!is.null(prev_col)){
 
@@ -1107,7 +1140,7 @@ library(pavian)
     } else {
 
       cat("Both freq_col and prev_col cannot be set tdo NULL\n")
-      cat("please supply either one or both column names your metadata")
+      cat("please supply either one or both column names in your metadata")
       cat("for frequency and prevalence based analysis, respectively\n")
       stop()
 
@@ -1128,7 +1161,191 @@ library(pavian)
   **Returns:** a dataframe of detailed decontam results
 </details>
 
-#### 9c. Set global variables
+
+##### process_taxonomy()
+<details>
+  <summary>process a taxonomy assignment table</summary>
+
+```R
+process_taxonomy <- function(taxonomy, prefix='\\w__') { 
+  
+  taxonomy <- apply(X = taxonomy, MARGIN = 2, FUN = as.character) 
+
+  # replace NAa with Other and delete the D_num__ prefix from the taxonomy names
+  for (rank in colnames(taxonomy)) {
+    #delete the taxonomy prefix
+    taxonomy[,rank] <- gsub(pattern = prefix, x = taxonomy[, rank],
+                            replacement = '')
+    indices <- which(is.na(taxonomy[,rank]))
+    taxonomy[indices, rank] <- rep(x = "Other", times=length(indices)) 
+    #replace empty cell
+    indices <- which(taxonomy[,rank] == "")
+    taxonomy[indices,rank] <- rep(x = "Other", times=length(indices))
+  }
+  taxonomy <- apply(X = taxonomy,MARGIN = 2,
+                    FUN =  gsub,pattern = "_",replacement = " ") %>% 
+    as.data.frame(stringAsfactor=F)
+  return(taxonomy)
+}
+
+```
+**Function Parameter Definitions:**
+
+- `taxonomy` - is a string specifying the taxonomic assignment file name
+- `prefix`  - is a regular expression specifying the characters to remove
+              from taxon names
+
+**Returns:** a dataframe of reformated taxonomy names
+
+</details>
+
+
+##### format_taxonomy_table()
+<details>
+  <summary>format a taxonomy assignment table by appending a suffix to a known name</summary>
+
+```R
+format_taxonomy_table <- function(taxonomy,stringToReplace="Other",
+                                  suffix=";Other") {
+  
+  for (taxa_index in seq_along(taxonomy)) {
+    
+    indices <- grep(x = taxonomy[,taxa_index], pattern = stringToReplace)
+    
+    taxonomy[indices,taxa_index] <- 
+      paste0(taxonomy[indices,taxa_index-1],
+             rep(x = suffix, times=length(indices)))
+    
+  }
+  return(taxonomy)
+}
+
+```
+**Function Parameter Definitions:**
+- `taxonomy` -  taxonomy dataframe with taxonomy ranks as column names
+- `stringToReplace` - a vector of regex strings specifying what to replace
+- `suffix` - string specifying the replacement value
+
+**Returns:** a dataframe of reformated taxonomy names
+
+</details>
+
+
+##### fix_names()
+<details>
+  <summary>clean taxonomy names</summary>
+
+```R
+fix_names<- function(taxonomy,stringToReplace,suffix){
+  
+  for(index in seq_along(stringToReplace)){
+    taxonomy <- format_taxonomy_table(taxonomy = taxonomy,
+                                      stringToReplace=stringToReplace[index], 
+                                      suffix=suffix[index])
+  }
+  return(taxonomy)
+}
+
+```
+**Function Parameter Definitions:**
+- `taxonomy` -  taxonomy dataframe with taxonomy ranks as column names
+- `stringToReplace` - a vector of regex strings specifying what to replace
+- `suffix` - string specifying the replacement value
+
+**Returns:** a dataframe of detailed decontam results
+
+</details>
+
+
+##### read_input_table()
+<details>
+  <summary>read an input table into a dataframe</summary>
+
+```R
+read_input_table <- function(file_name){
+  
+   # Get depth from file name
+   df <- read_delim(file = file_name, delim = "\t", comment = "#")
+   return(df)
+   
+}
+```
+**Function Parameter Definitions:**
+
+- `file_name` - path to file to be read
+
+**Returns:** a dataframe from input file
+
+</details>
+
+
+
+##### read_contig_table()
+<details>
+  <summary>Read Assembly-based contig annotation table</summary>
+
+  ```R
+read_contig_table <- function(file_name, sample_names){
+  
+  df <- read_input_table(file_name)
+
+  taxonomy_table <- df %>%
+    select(domain:species) %>%
+    mutate(domain=replace_na(domain, "Unclassified"))
+  
+  counts_table <- df %>% select(!!sample_names)
+
+  taxonomy_table  <- process_taxonomy(taxonomy_table)
+  taxonomy_table <- fix_names(taxonomy_table, "Other", ";_")
+
+  df <- bind_cols(taxonomy_table, counts_table)
+  
+  return(df)
+}
+
+```
+
+**Function Parameter Definitions:**
+
+- `file_name` - path to file to be read
+- `sample_names` - string of samples names to keep in the final dataframe
+
+**Returns:** a dataframe with cleaned taxonomy names
+
+</details>
+
+
+
+##### get_sample_names()
+<details>
+  <summary>retrieve the name of samples for which assemblies were generated</summary>
+
+  ```R
+get_sample_names <- function (assembly_summary) {
+  # assembly_summary - path to assembly summary file
+
+  overview_table <-  read_input_table(assembly_summary) %>%
+                       select(
+                         where( ~all(!is.na(.)) )
+                         ) # Drop columns were all its rows are NAs
+
+col_names <- names(overview_table) %>% str_remove_all("-assembly")
+sample_order <- col_names[-1] %>% sort()
+
+return(sample_order)
+
+}
+```
+**Function Parameter Definitions:**
+
+- `assembly_summary` - path to assembly summary file
+
+**Returns:** a character vector of sorted sample names
+
+</details>
+
+
+#### 8c. Set global variables
 
 ```R
 # Define custom theme for plotting
@@ -1149,13 +1366,15 @@ custom_palette <- c("#A6CEE3","#1F78B4","#B2DF8A","#33A02C","#FB9A99","#E31A1C",
                     "#666666","#1B9E77", "#E6AB02","#A6761D","#FFFF00FF","#FFFF99","#00FFFFFF",
                     "#B2182B","#FDDBC7","#D1E5F0","#CC0033","#FF00CC","#330033",
                     "#999933","#FF9933","#FFFAFAFF",colors()) 
-# remove white colors
+# Drop white colors
 custom_palette <- custom_palette[-c(21:23,
                                     grep(pattern = "white|snow|azure|gray|#FFFAFAFF|aliceblue",
                                          x = custom_palette, 
                                          ignore.case = TRUE)
                                    )
                                 ]
+# Heatmap color gradient - here from white to red
+colours <- colorRampPalette(c('white','red'))(255)
 ```
 
 **Input Data:** 
@@ -1171,9 +1390,11 @@ custom_palette <- custom_palette[-c(21:23,
 
 ---
 
-### 10. Taxonomic profiling using kaiju
+## Read-based Processing
 
-#### 10a. Build kaiju database
+### 9. Taxonomic profiling using kaiju
+
+#### 9a. Build kaiju database
 
 ```bash
 # Make directory that will hold all the download kaiju database
@@ -1200,7 +1421,7 @@ rm nr_euk/kaiju_db_nr_euk.bwt nr_euk/kaiju_db_nr_euk.sa
 - kaiju-db/names.dmp (names file)
 
 
-#### 10b. Kaiju Taxonomic Classification
+#### 9b. Kaiju Taxonomic Classification
 
 ```bash
 kaiju -f kaiju-db/nr_euk/kaiju_db_nr_euk.fmi -t kaiju-db/nodes.dmp \
@@ -1223,13 +1444,13 @@ kaiju -f kaiju-db/nr_euk/kaiju_db_nr_euk.fmi -t kaiju-db/nodes.dmp \
 
 - kaiju-db/nr_euk/kaiju_db_nr_euk.fmi (fmi file, output from [Step 9a](#9a-build-kaiju-database))
 - kaiju-db/nodes.dmp (nodes file, output from [Step 9a](#9a-build-kaiju-database))
-- sample_host_removed.fastq.gz (gzipped decontaminated reads fastq file, output from [Step 8](#8-host-removal))
+- sample_host_removed.fastq.gz (gzipped decontaminated reads fastq file, output from [Step 7b](#7b-remove-host-reads))
 
 **Output Data:**
 
 - sample_kaiju.out (kaiju output file)
 
-#### 10c. Compile kaiju taxonomy results
+#### 9c. Compile kaiju taxonomy results
 
 ```bash
 # Merge kaiju reports to one table at the species level
@@ -1259,7 +1480,7 @@ sed -i -E 's/file/sample/' merged_kaiju_table.tsv
 
 - **merged_kaiju_table.tsv** (Compiled kaiju table at the species taxon level)
 
-#### 10d. Convert kaiju output to krona format
+#### 9d. Convert kaiju output to krona format
 
 ```bash
 kaiju2krona -u -n kaiju-db/names.dmp -t kaiju-db/nodes.dmp \
@@ -1277,13 +1498,13 @@ kaiju2krona -u -n kaiju-db/names.dmp -t kaiju-db/nodes.dmp \
 **Input Data:**
 - kaiju-db/nodes.dmp (nodes file, output from [Step 9a](#9a-build-kaiju-database))
 - kaiju-db/names.dmp (names file, output from [Step 9a](#9a-build-kaiju-database))
-- sample_kaiju.out (kaiju output file, output from [Step 9ai](#9ai-read-taxonomic-classification-using-kaiju))
+- sample_kaiju.out (kaiju output file, output from [Step 9b](#9b-kaiju-taxonomic-classification))
 
 **Output Data:**
 
 - sample.krona (krona formatted kaiju output)
 
-#### 10e. Compile kaiju krona report
+#### 9e. Compile kaiju krona report
 
 ```bash
 # Find, list and write all .krona files to file 
@@ -1327,15 +1548,15 @@ ktImportText  -o kaiju-report.html ${KTEXT_FILES[*]}
                      sample_1.krona,sample_1 sample_2.krona,sample_2 .. sample_n.krona,sample_n.
 
 **Input Data:**
-*.krona (all sample .krona formatted files, output from [Step 9e](#9e-convert-kaiju-output-to-krona-format)) 
+*.krona (all sample .krona formatted files, output from [Step 9d](#9d-convert-kaiju-output-to-krona-format)) 
 
                       
 **Output Data:**
 
-- kaiju-report.html (compiled krona html report output)
+- **kaiju-report.html** (compiled krona html report output)
 
 
-#### 10f. Create kaiju species count table
+#### 9f. Create kaiju species count table
 
 ```R
 library(tidyverse)
@@ -1351,14 +1572,14 @@ write_csv(x = feature_table, file = "kaiju_species_table.csv")
 
 **Input Data:**
 
-- merged_kaiju_table.tsv (Compiled kaiju table at the species taxon level, from [Step 9c](#9c-compile-kaiju-taxonomy-results))
+- merged_kaiju_table.tsv (Compiled kaiju table at the species taxon level, from [Step 9c](#10c-compile-kaiju-taxonomy-results))
 
 **Output Data:**
 
 - kaiju_species_table.csv (kaiju species count table in csv format)
 
 
-#### 10g. Read-in tables
+#### 9g. Read-in tables
 
 ```R
 library(tidyverse)
@@ -1381,7 +1602,7 @@ species_table <- read_csv(file="kaiju_species_table.csv") %>%  as.data.frame()
 **Input Data:**
 
 - metadata_file  (path to sample-wise metadata file)
-- kaiju_species_table.csv (path to kaiju species taable from [step 10f](#10f-create-kaiju-species-count-table))
+- kaiju_species_table.csv (path to kaiju species table from [Step 9f](#9f-create-kaiju-species-count-table))
 
 **Output Data:**
 
@@ -1389,12 +1610,14 @@ species_table <- read_csv(file="kaiju_species_table.csv") %>%  as.data.frame()
 - `species_table` - a dataframe of species count per sample
 ---
 
-#### 10h. Taxonomy barplots
+#### 9h. Taxonomy barplots
 
 ```R
 library(tidyverse)
 
-filter_threshold=0.5
+# Threshold to filter out potential false positive
+# taxonomy assignments
+filter_threshold <- 0.5
 # Filter out Rare and non-microbial assignment
 # You can add as many species that you'd like to filter out
 # using the following syntax "|species_name1|species_name2"
@@ -1438,8 +1661,8 @@ ggsave(filename = "filtered-kaiju_species_plot.png", plot = p,
 
 **Input Data:**
 
-- `species_table` (a dataframe of species count per sample, output from [Step 10g](#10g-read-in-tables))
-- `metadata` - (a dataframe of sample-wise metadata, output from [Step 10g](#10g-read-in-tables))
+- `species_table` (a dataframe of species count per sample, output from [Step 9g](#9g-read-in-tables))
+- `metadata` - (a dataframe of sample-wise metadata, output from [Step 9g](#9g-read-in-tables))
 
 **Output Data:**
 
@@ -1448,16 +1671,19 @@ ggsave(filename = "filtered-kaiju_species_plot.png", plot = p,
 - **filtered-kaiju_species_plot.png** (barplot after filtering rare and non-microbial taxa)
 
 
-#### 10i. Feature decontamination
+#### 9i. Feature decontamination
 
-Feature decontamination with decontam. Decontam is an R package that statistically identifies contaminating features in a feature table
+> Feature (species) decontamination with decontam. Decontam is an R package that statistically identifies contaminating features in a feature table
 
 ```R
 library(tidyverse)
 library(decontam)
 feature_table <- read_csv("filtered-kaiju_species_table.csv")
+# Set to 0.5 for a more aggressive approach where species more prevalent
+# in the negative controls are considered contaminants
 contam_threshold <- 0.1
-# Control samples in this column should always be written as "Control_Sample" and true samples as "True_Sample"
+# Control samples in this column should always be written as 
+# "Control_Sample" and true samples as "True_Sample"
 prev_col <- "Sample_or_Control"
 freq_col <- "input_conc_ng"
 plot_width <- 18
@@ -1499,8 +1725,8 @@ ggsave(filename = "decontaminated-kaiju-species_plot.png", plot = p,
 
 **Input Data:**
 
-- `filtered-kaiju_species_table.csv`(a dataframe of species count per sample, output from [Step 10h](#10h-taxonomy-barplots))
-- `metadata`(a dataframe of sample-wise metadata, output from [Step 10g](#10g-read-in-tables))
+- `filtered-kaiju_species_table.csv`(path to filtered species count per sample, output from [Step 9h](#9h-taxonomy-barplots))
+- `metadata`(a dataframe of sample-wise metadata, output from [Step 9g](#9g-read-in-tables))
 
 **Output Data:**
 
@@ -1512,9 +1738,9 @@ ggsave(filename = "decontaminated-kaiju-species_plot.png", plot = p,
 
 ---
 
-### 11. Taxonomic Profiling using Kraken2
+### 10. Taxonomic Profiling using Kraken2
 
-#### 11a. Download kraken2 database
+#### 10a. Download kraken2 database
 
 ```bash 
 ## Download all microbial (including eukaryotes) - https://benlangmead.github.io/aws-indexes/k2
@@ -1563,7 +1789,7 @@ tar -xvzf k2_pluspfp.tar.gz
 
 - kraken2-db/  (a directory containing kraken 2 database files)
 
-#### 11b. Taxonomic Classification
+#### 10b. Taxonomic Classification
 
 ```bash
 kraken2 --db kraken2-db/ --gzip-compressed --threads NumberOfThreads --use-names \
@@ -1584,14 +1810,14 @@ kraken2 --db kraken2-db/ --gzip-compressed --threads NumberOfThreads --use-names
 **Input Data:**
 
 - kraken2-db/ (a direcory containing kraken 2 database files, output from [Step 10a](#10a-download-kraken2-database))
-- sample_host_removed.fastq.gz (gzipped reads fastq file, output from [Step 7d](#7d-generate-decontaminated-read-files))
+- sample_host_removed.fastq.gz (gzipped reads fastq file, output from [Step 7b](#7b-remove-host-reads))
 
 **Output Data:**
 
 - sample-kraken2-output.txt (kraken2 read-based output file (one line per read))
 - sample-kraken2-report.tsv (kraken2 report output file (one line per taxa, with number of reads assigned to it))
 
-#### 11c. Convert Kraken2 output to Krona format
+#### 10c. Convert Kraken2 output to Krona format
 
 ```bash
 kreport2krona.py --report-file sample-kraken2-report.tsv  --output sample.krona
@@ -1604,14 +1830,14 @@ kreport2krona.py --report-file sample-kraken2-report.tsv  --output sample.krona
 
 **Input Data:**
 
-- sample-kraken2-report.tsv (kraken report, output from [Step 10b](#10b-taxonomic-classification)
+- sample-kraken2-report.tsv (kraken report, output from [Step 10b](#10b-taxonomic-classification))
 
 **Output Data:**
 
 - sample.krona (krona formatted kraken2 output)
 
 
-#### 11d. Compile kraken2 krona report
+#### 10d. Compile kraken2 krona report
 
 ```bash
 # Find, list and write all .krona files to file 
@@ -1656,14 +1882,14 @@ ktImportText  -o kraken-report.html ${KTEXT_FILES[*]}
 
 **Input Data:**
 
-- *.krona (all sample .krona formatted files, output from [Step 10d](#10d-convert-kraken2-output-to-krona-format)) 
+- *.krona (all sample .krona formatted files, output from [Step 10c](#10c-convert-kraken2-output-to-krona-format)) 
 
                       
 **Output Data:**
 
-- kraken-report.html (compiled krona html report output)
+- **kraken-report.html** (compiled krona html report output)
 
-#### 11e. Create kraken species count table
+#### 10e. Create kraken species count table
 
 ```R
 library(tidyverse)
@@ -1689,7 +1915,7 @@ write_csv(x = species_table,
 
 - **kraken_species_table.csv** (kraken species count table in csv format)
 
-#### 11f. Read-in tables
+#### 10f. Read-in tables
 
 ```R
 library(tidyverse)
@@ -1723,12 +1949,14 @@ species_table <- species_table[,-match("species", colnames(species_table))]
 - `species_table` - a dataframe
 
 
-#### 11g. Taxonomy barplots
+#### 10g. Taxonomy barplots
 
 ```R
 library(tidyverse)
 
-filter_threshold=0.5
+# Threshold to filter out potential false positive
+# taxonomy assignments
+filter_threshold <- 0.5
 # Filter out Rare and non-microbial assignment
 # You can add as many species that you'd like to filter out
 # using the following syntax "|species_name1|species_name2"
@@ -1772,8 +2000,8 @@ ggsave(filename = "filtered-kraken_species_plot.png", plot = p,
 
 **Input Data:**
 
-- `species_table` (a dataframe of species count per sample, output from [Step 10g](#10g-read-in-tables))
-- `metadata` - (a dataframe of sample-wise metadata, output from [Step 10g](#10g-read-in-tables))
+- `species_table` (a dataframe of species count per sample, output from [Step 10f](#10f-read-in-tables))
+- `metadata` - (a dataframe of sample-wise metadata, output from [Step 10f](#10f-read-in-tables))
 
 **Output Data:**
 
@@ -1781,19 +2009,21 @@ ggsave(filename = "filtered-kraken_species_plot.png", plot = p,
 - **filtered-kraken_species_table.csv** (filtered relative abundance table)
 - **filtered-kraken_species_plot.png** (barplot after filtering rare and non-microbial taxa)
 
----
 
-#### 11h. Feature decontamination
+#### 10h. Feature decontamination
 
-Feature decontamination with decontam. Decontam is an R package that statistically identifies contaminating features in a feature table
+Feature decontamination with decontam. Decontam is an R package that statistically identifies contaminating features in a feature table.
 
 ```R
 library(tidyverse)
 library(decontam)
 
 feature_table <- read_csv("filtered-kraken_species_table.csv")
+# Set to 0.5 for a more aggressive approach where species more prevalent
+# in the negative controls are considered contaminants
 contam_threshold <- 0.1
-# Control samples in this column should always be written as "Control_Sample" and true samples as "True_Sample"
+# Control samples in this column should always be written as
+# "Control_Sample" and true samples as "True_Sample"
 prev_col <- "Sample_or_Control"
 freq_col <- "input_conc_ng"
 plot_width <- 18
@@ -1835,8 +2065,8 @@ ggsave(filename = "decontaminated-kraken-species_plot.png", plot = p,
 
 **Input Data:**
 
-- `filtered-kraken_species_table.csv`(a dataframe of species count per sample, output from [Step 11g](#11g-taxonomy-barplots))
-- `metadata`(a dataframe of sample-wise metadata, output from step[Step 11f](#11f-read-in-tables))
+- `filtered-kraken_species_table.csv`(path to species count per sample, output from [Step 10g](#10g-taxonomy-barplots))
+- `metadata`(a dataframe of sample-wise metadata, output from step[Step 10f](#10f-read-in-tables))
 
 **Output Data:**
 
@@ -1850,7 +2080,7 @@ ggsave(filename = "decontaminated-kraken-species_plot.png", plot = p,
 
 ## Assembly-based processing
 
-### 12. Sample assembly
+### 11. Sample assembly
 
 ```bash
 flye --meta --threads NumberOfThreads --out-dir sample/ \
@@ -1870,7 +2100,7 @@ mv sample/flye.log sample_flye.log
 
 **Input Data**
 
-- sample_host_removed.fastq.gz (decontaminated raw data in fastq format, output from [Step 8](#8-host-removal))
+- sample_host_removed.fastq.gz (decontaminated raw data in fastq format, output from [Step 7b](#7b-remove-host-reads))
 
 **Output Data**
 
@@ -1881,7 +2111,7 @@ mv sample/flye.log sample_flye.log
 
 ---
 
-### 13. Polish assembly
+### 12. Polish assembly
 
 ```bash
 medaka_consensus -t NumberOfThreads -i /path/to/decontaminated_raw_data/sample_host_removed.fastq.gz \
@@ -1899,7 +2129,7 @@ mv sample/consensus.fasta sample_polished.fasta
 
 **Input Data:**
 
-- /path/to/decontaminated_raw_data/sample_host_removed.fastq.gz (decontaminated raw data in fastq format, output from [Step 8](#8-host-removal))
+- /path/to/decontaminated_raw_data/sample_host_removed.fastq.gz (decontaminated raw data in fastq format, output from [Step 7b](#8b-remove-host-reads))
 - /path/to/assemblies/sample_assembly.fasta (sample assembly, output from [Step 11](#11-sample-assembly))
 
 **Output Data:**
@@ -1908,31 +2138,31 @@ mv sample/consensus.fasta sample_polished.fasta
 
 ---
 
-### 14. Renaming contigs and summarizing assemblies
+### 13. Renaming contigs and summarizing assemblies
 
-#### 14a. Renaming contig headers
+#### 13a. Renaming contig headers
 
 ```bash
-bit-rename-fasta-headers -i sample-1_polished.fasta -w c_sample-1 -o sample-1_assembly.fasta
+bit-rename-fasta-headers -i sample_polished.fasta -w c_sample -o sample_assembly.fasta
 ```
 
 **Parameter Definitions:**  
 
 - `-i` – input fasta file
-- `-w` – wanted header prefix (a number will be appended for each contig), starts with a “c_” to ensure they won’t start with a number which can be problematic
+- `-w` – wanted header prefix (a number will be appended for each contig), starts with a "c" to ensure they won't start with a number which can be problematic
 - `-o` – output fasta file
 
 
 **Input Data:**
 
-- sample-1_polished.fasta (polished assembly file from [step 12](#12-polish-assembly))
+- sample_polished.fasta (polished assembly file from [Step 12](#12-polish-assembly))
 
 **Output files:**
 
-- **sample-1-assembly.fasta** (contig-renamed assembly file)
+- **sample-assembly.fasta** (contig-renamed assembly file)
 
 
-#### 14b. Summarizing assemblies
+#### 13b. Summarizing assemblies
 
 ```bash
 bit-summarize-assembly -o assembly-summaries_GLmetagenomics.tsv *-assembly.fasta
@@ -1945,7 +2175,7 @@ bit-summarize-assembly -o assembly-summaries_GLmetagenomics.tsv *-assembly.fasta
 
 **Input Data:**
 
-- *-assembly.fasta (contig-renamed assembly files from [step 13a](#13a-renaming-contig-headers))
+- *-assembly.fasta (contig-renamed assembly files from [Step 13a](#13a-renaming-contig-headers))
 
 **Output files:**
 
@@ -1955,10 +2185,10 @@ bit-summarize-assembly -o assembly-summaries_GLmetagenomics.tsv *-assembly.fasta
 
 ---
 
-### 15. Gene prediction
+### 14. Gene prediction
 ```bash
-prodigal -a sample-1-genes.faa -d sample-1-genes.fasta -f gff -p meta -c -q \
-         -o sample-1-genes.gff -i sample-1-assembly.fasta
+prodigal -a sample-genes.faa -d sample-genes.fasta -f gff -p meta -c -q \
+         -o sample-genes.gff -i sample-assembly.fasta
 ```
 
 **Parameter Definitions:**
@@ -1974,47 +2204,47 @@ prodigal -a sample-1-genes.faa -d sample-1-genes.fasta -f gff -p meta -c -q \
 
 **Input Data:**
 
-- sample-1-assembly.fasta (contig-renamed assembly file from [step 5a](#5a-renaming-contig-headers))
+- sample-assembly.fasta (contig-renamed assembly file from [Step 13a](#13a-renaming-contig-headers))
 
 **Output Data:**
 
-- sample-1-genes.faa (gene-calls amino-acid fasta file)
-- sample-1-genes.fasta (gene-calls nucleotide fasta file)
-- **sample-1-genes.gff** (gene-calls in general feature format)
+- sample-genes.faa (gene-calls amino-acid fasta file)
+- sample-genes.fasta (gene-calls nucleotide fasta file)
+- **sample-genes.gff** (gene-calls in general feature format)
 
 <br>
 
-#### 15a. Remove line wraps in gene prediction output
+#### 14a. Remove line wraps in gene prediction output
 ```bash
-bit-remove-wraps sample-1-genes.faa > sample-1-genes.faa.tmp 2> /dev/null
-mv sample-1-genes.faa.tmp sample-1-genes.faa
+bit-remove-wraps sample-genes.faa > sample-genes.faa.tmp 2> /dev/null
+mv sample-genes.faa.tmp sample-genes.faa
 
-bit-remove-wraps sample-1-genes.fasta > sample-1-genes.fasta.tmp 2> /dev/null
-mv sample-1-genes.fasta.tmp sample-1-genes.fasta
+bit-remove-wraps sample-genes.fasta > sample-genes.fasta.tmp 2> /dev/null
+mv sample-genes.fasta.tmp sample-genes.fasta
 ```
 
 **Input Data:**
 
-- sample-1-genes.faa (gene-calls amino-acid fasta file, output from [Step 14](#14-gene-prediction))
-- sample-1-genes.fasta (gene-calls nucleotide fasta file, output from [Step 14](#14-gene-prediction))
+- sample-genes.faa (gene-calls amino-acid fasta file, output from [Step 14](#14-gene-prediction))
+- sample-genes.fasta (gene-calls nucleotide fasta file, output from [Step 14](#14-gene-prediction))
 
 **Output Data:**
 
-- **sample-1-genes.faa** (gene-calls amino-acid fasta file with line wraps removed)
-- **sample-1-genes.fasta** (gene-calls nucleotide fasta file with line wraps removed)
+- **sample-genes.faa** (gene-calls amino-acid fasta file with line wraps removed)
+- **sample-genes.fasta** (gene-calls nucleotide fasta file with line wraps removed)
 
 <br>
 
 ---
 
-### 16. Functional annotation
+### 15. Functional annotation
 > **Note:**  
 > The annotation process overwrites the same temporary directory by default. When running multiple 
 processses at a time, it is necessary to specify a specific temporary directory with the 
 `--tmp-dir` argument as shown below.
 
 
-#### 16a. Downloading reference database of HMM models (only needs to be done once)
+#### 15a. Downloading reference database of HMM models (only needs to be done once)
 
 ```bash
 curl -LO ftp://ftp.genome.jp/pub/db/kofam/profiles.tar.gz
@@ -2023,11 +2253,11 @@ tar -xzvf profiles.tar.gz
 gunzip ko_list.gz 
 ```
 
-#### 16b. Running KEGG annotation
+#### 15b. Running KEGG annotation
 
 ```bash
-exec_annotation -p profiles/ -k ko_list --cpu NumberOfThreads -f detail-tsv -o sample-1-KO-tab.tmp \
-                --tmp-dir sample-1-tmp-KO --report-unannotated sample-1-genes.faa 
+exec_annotation -p profiles/ -k ko_list --cpu NumberOfThreads -f detail-tsv -o sample-KO-tab.tmp \
+                --tmp-dir sample-tmp-KO --report-unannotated sample-genes.faa 
 ```
 
 **Parameter Definitions:**
@@ -2039,27 +2269,27 @@ exec_annotation -p profiles/ -k ko_list --cpu NumberOfThreads -f detail-tsv -o s
 - `-o` – specifies the output file name
 - `--tmp-dir` – specifies the temporary directory to write to (needed if running more than one process concurrently, see Notes above)
 - `--report-unannotated` – specifies to generate an output for each entry
-- `sample-1-genes.faa` – the input file is specified as a positional argument 
+- `sample-genes.faa` – the input file is specified as a positional argument 
 
 
 **Input Data:**
 
-- sample-1-genes.faa (amino-acid fasta file, from [step 6](#6-gene-prediction))
+- sample-genes.faa (amino-acid fasta file, from [Step 14](#14-gene-prediction))
 - profiles/ (reference directory holding the KO HMMs)
 - ko_list (reference list of KOs to scan for)
 
 **Output Data:**
 
-- sample-1-KO-tab.tmp (table of KO annotations assigned to gene IDs)
+- sample-KO-tab.tmp (table of KO annotations assigned to gene IDs)
 
 
-#### 16c. Filtering output to retain only those passing the KO-specific score and top hits
+#### 15c. Filtering output to retain only those passing the KO-specific score and top hits
 
 ```bash
-bit-filter-KOFamScan-results -i sample-1-KO-tab.tmp -o sample-1-annotations.tsv
+bit-filter-KOFamScan-results -i sample-KO-tab.tmp -o sample-annotations.tsv
 
 # removing temporary files
-rm -rf sample-1-tmp-KO/ sample-1-KO-annots.tmp
+rm -rf sample-tmp-KO/ sample-KO-annots.tmp
 ```
 
 **Parameter Definitions:**  
@@ -2069,31 +2299,31 @@ rm -rf sample-1-tmp-KO/ sample-1-KO-annots.tmp
 
 **Input Data:**
 
-- sample-1-KO-tab.tmp (table of KO annotations assigned to gene IDs from [step 7b](#7b-running-kegg-annotation))
+- sample-KO-tab.tmp (table of KO annotations assigned to gene IDs from [Step 15b](#15b-running-kegg-annotation))
 
 **Output Data:**
 
-- sample-1-annotations.tsv (table of KO annotations assigned to gene IDs)
+- sample-annotations.tsv (table of KO annotations assigned to gene IDs)
 
 <br>
 
 ---
 
-### 17. Taxonomic classification
+### 16. Taxonomic classification
 
-#### 17a. Pulling and un-packing pre-built reference db (only needs to be done once)
+#### 16a. Pulling and un-packing pre-built reference db (only needs to be done once)
 
 ```bash
 wget tbb.bio.uu.nl/bastiaan/CAT_prepare/CAT_prepare_20200618.tar.gz
 tar -xvzf CAT_prepare_20200618.tar.gz
 ```
 
-#### 17b. Running taxonomic classification
+#### 16b. Running taxonomic classification
 
 ```bash
-CAT contigs -c sample-1-assembly.fasta -d CAT_prepare_20200618/2020-06-18_database/ \
-            -t CAT_prepare_20200618/2020-06-18_taxonomy/ -p sample-1-genes.faa \
-            -o sample-1-tax-out.tmp -n NumberOfThreads -r 3 --top 4 --I_know_what_Im_doing --no-stars
+CAT contigs -c sample-assembly.fasta -d CAT_prepare_20200618/2020-06-18_database/ \
+            -t CAT_prepare_20200618/2020-06-18_taxonomy/ -p sample-genes.faa \
+            -o sample-tax-out.tmp -n NumberOfThreads -r 3 --top 4 --I_know_what_Im_doing --no-stars
 ```
 
 **Parameter Definitions:**  
@@ -2111,18 +2341,18 @@ CAT contigs -c sample-1-assembly.fasta -d CAT_prepare_20200618/2020-06-18_databa
 
 **Input Data:**
 
-- sample-1-assembly.fasta (assembly file from [step 5a](#5a-renaming-contig-headers))
-- sample-1-genes.faa (gene-calls amino-acid fasta file from [step 6](#6-gene-prediction))
+- sample-assembly.fasta (assembly file from [Step 13a](#13a-renaming-contig-headers))
+- sample-genes.faa (gene-calls amino-acid fasta file from [Step 14](#14-gene-prediction))
 
 **Output Data:**
 
-- sample-1-tax-out.tmp.ORF2LCA.txt (gene-calls taxonomy file)
-- sample-1-tax-out.tmp.contig2classification.txt (contig taxonomy file)
+- sample-tax-out.tmp.ORF2LCA.txt (gene-calls taxonomy file)
+- sample-tax-out.tmp.contig2classification.txt (contig taxonomy file)
 
-#### 17c. Adding taxonomy info from taxids to genes
+#### 16c. Adding taxonomy info from taxids to genes
 
 ```bash
-CAT add_names -i sample-1-tax-out.tmp.ORF2LCA.txt -o sample-1-gene-tax-out.tmp \
+CAT add_names -i sample-tax-out.tmp.ORF2LCA.txt -o sample-gene-tax-out.tmp \
               -t CAT_prepare_20200618/2020-06-18_taxonomy/ --only_official --exclude-scores
 ```
 
@@ -2136,16 +2366,16 @@ CAT add_names -i sample-1-tax-out.tmp.ORF2LCA.txt -o sample-1-gene-tax-out.tmp \
 
 **Input Data:**
 
-- sample-1-tax-out.tmp.ORF2LCA.txt (gene-calls taxonomy file from [step 8b](#8b-running-taxonomic-classification))
+- sample-tax-out.tmp.ORF2LCA.txt (gene-calls taxonomy file from [Step 16b](#16b-running-taxonomic-classification))
 
 **Output Data:**
 
-- sample-1-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added)
+- sample-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added)
 
-#### 17d. Adding taxonomy info from taxids to contigs
+#### 16d. Adding taxonomy info from taxids to contigs
 
 ```bash
-CAT add_names -i sample-1-tax-out.tmp.contig2classification.txt -o sample-1-contig-tax-out.tmp \
+CAT add_names -i sample-tax-out.tmp.contig2classification.txt -o sample-contig-tax-out.tmp \
               -t CAT-ref/2020-06-18_taxonomy/ --only_official --exclude-scores
 ```
 
@@ -2159,60 +2389,60 @@ CAT add_names -i sample-1-tax-out.tmp.contig2classification.txt -o sample-1-cont
 
 **Input Data:**
 
-- sample-1-tax-out.tmp.contig2classification.txt (contig taxonomy file from [step 8b](#8b-running-taxonomic-classification))
+- sample-tax-out.tmp.contig2classification.txt (contig taxonomy file from [Step 16b](#16b-running-taxonomic-classification))
 
 **Output Data:**
 
-- sample-1-contig-tax-out.tmp (contig taxonomy file with lineage info added)
+- sample-contig-tax-out.tmp (contig taxonomy file with lineage info added)
 
 
-#### 17e. Formatting gene-level output with awk and sed
+#### 16e. Formatting gene-level output with awk and sed
 
 ```bash
 awk -F $'\t' ' BEGIN { OFS=FS } { if ( $3 == "lineage" ) { print $1,$3,$5,$6,$7,$8,$9,$10,$11 } \
     else if ( $2 == "ORF has no hit to database" || $2 ~ /^no taxid found/ ) \
     { print $1,"NA","NA","NA","NA","NA","NA","NA","NA" } else { n=split($3,lineage,";"); \
-    print $1,lineage[n],$5,$6,$7,$8,$9,$10,$11 } } ' sample-1-gene-tax-out.tmp | \
+    print $1,lineage[n],$5,$6,$7,$8,$9,$10,$11 } } ' sample-gene-tax-out.tmp | \
     sed 's/no support/NA/g' | sed 's/superkingdom/domain/' | sed 's/# ORF/gene_ID/' | \
-    sed 's/lineage/taxid/'  > sample-1-gene-tax-out.tsv
+    sed 's/lineage/taxid/'  > sample-gene-tax-out.tsv
 ```
 
 **Input Data:**
 
-- sample-1-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added from [step 8c](#8c-adding-taxonomy-info-from-taxids-to-genes))
+- sample-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added from [Step 16c](#16c-adding-taxonomy-info-from-taxids-to-genes))
 
 **Output Data:**
 
-- sample-1-gene-tax-out.tsv (gene-calls taxonomy file with lineage info added reformatted)
+- sample-gene-tax-out.tsv (gene-calls taxonomy file with lineage info added reformatted)
 
-#### 17f. Formatting contig-level output with awk and sed
+#### 16f. Formatting contig-level output with awk and sed
 
 ```bash
 awk -F $'\t' ' BEGIN { OFS=FS } { if ( $2 == "classification" ) { print $1,$4,$6,$7,$8,$9,$10,$11,$12 } \
     else if ( $2 == "no taxid assigned" ) { print $1,"NA","NA","NA","NA","NA","NA","NA","NA" } \
-    else { n=split($4,lineage,";"); print $1,lineage[n],$6,$7,$8,$9,$10,$11,$12 } } ' sample-1-contig-tax-out.tmp | \
+    else { n=split($4,lineage,";"); print $1,lineage[n],$6,$7,$8,$9,$10,$11,$12 } } ' sample-contig-tax-out.tmp | \
     sed 's/no support/NA/g' | sed 's/superkingdom/domain/' | sed 's/^# contig/contig_ID/' | \
-    sed 's/lineage/taxid/' > sample-1-contig-tax-out.tsv
+    sed 's/lineage/taxid/' > sample-contig-tax-out.tsv
 
   # clearing intermediate files
-rm sample-1*.tmp*
+rm sample*.tmp*
 ```
 
 **Input Data:**
 
-- sample-1-contig-tax-out.tmp (contig taxonomy file with lineage info added from [step 8d](#8d-adding-taxonomy-info-from-taxids-to-contigs))
+- sample-contig-tax-out.tmp (contig taxonomy file with lineage info added from [Step 16d](#16d-adding-taxonomy-info-from-taxids-to-contigs))
 
 **Output Data:**
 
-- sample-1-contig-tax-out.tsv (contig taxonomy file with lineage info added reformatted)
+- sample-contig-tax-out.tsv (contig taxonomy file with lineage info added reformatted)
 
 <br>
 
 ---
 
-### 18. Read-Mapping
+### 17. Read-Mapping
 
-#### 18a. Align Reads to Sample Assembly
+#### 17a. Align Reads to Sample Assembly
 
 ```bash
 minimap2 -a -x map-ont \
@@ -2230,13 +2460,13 @@ minimap2 -a -x map-ont \
 **Input Data**
 
 - /path/to/assemblies/sample_assembly.fasta (Sample assembly, output from [Step 13a](#13a-renaming-contig-headers))
-- /path/to/trimmed_reads/sample_host_removed.fastq.gz (Filtered and trimmed reads, output from [Step 8](#8-host-removal))
+- /path/to/trimmed_reads/sample_host_removed.fastq.gz (Filtered and trimmed reads, output from [Step 7b](#7b-remove-host-reads))
 
 **Output Data**
 
-- sample.sam (Reads aligned to contaminant assembly)
+- sample.sam (Reads aligned to sample assembly)
 
-#### 18b. Sort and Index Assembly Alignments
+#### 17b. Sort and Index Assembly Alignments
 
 ```bash
 # Sort Sam, convert to bam and create index
@@ -2258,7 +2488,7 @@ samtools index sample_sorted.bam sample_sorted.bam.bai
 
 **Input Data:**
 
-- sample.sam (Reads aligned to sample assembly, output from [Step 13c](#13c-read-mapping))
+- sample.sam (Reads aligned to sample assembly, output from [Step 17a](#17a-align-reads-to-sample-assembly))
 
 **Output Data:**
 
@@ -2269,18 +2499,18 @@ samtools index sample_sorted.bam sample_sorted.bam.bai
 
 ---
 
-### 19. Getting coverage information and filtering based on detection
+### 18. Getting coverage information and filtering based on detection
 > **Note:**  
 > “Detection” is a measure of what proportion of a reference sequence recruited reads 
 (see the discussion of detection [here](http://merenlab.org/2017/05/08/anvio-views/#detection)). 
 Filtering based on detection is one way of helping to mitigate non-specific read-recruitment.
 
-#### 19a. Filtering coverage levels based on detection
+#### 18a. Filtering coverage levels based on detection
 
 ```bash
   # pileup.sh comes from the bbduk.sh package
-pileup.sh -in sample-1.bam fastaorf=sample-1-genes.fasta outorf=sample-1-gene-cov-and-det.tmp \
-          out=sample-1-contig-cov-and-det.tmp
+pileup.sh -in sample.bam fastaorf=sample-genes.fasta outorf=sample-gene-cov-and-det.tmp \
+          out=sample-contig-cov-and-det.tmp
 ```
 
 **Parameter Definitions:**  
@@ -2290,104 +2520,115 @@ pileup.sh -in sample-1.bam fastaorf=sample-1-genes.fasta outorf=sample-1-gene-co
 - `outorf=` – the output gene-coverage tsv file
 - `out=` – the output contig-coverage tsv file
 
+**Input Data:**
 
-#### 19b. Filtering gene and contig coverage based on requiring 50% detection and parsing down to just gene ID and coverage
+- sample.bam (mapping file from [Step 17b](#17b-sort-and-index-assembly-alignments))
+- sample-genes.fasta (gene-calls nucleotide fasta file from [Step 14](#14-gene-prediction))
+
+
+**Output Data:**
+
+- sample-gene-cov-and-det.tmp (gene-coverage tsv file)
+- sample-contig-cov-and-det.tmp (contig-coverage tsv file)
+
+
+#### 18b. Filtering gene and contig coverage based on requiring 50% detection and parsing down to just gene ID and coverage
 
 ```bash
 # Filtering gene coverage
-grep -v "#" sample-1-gene-cov-and-det.tmp | awk -F $'\t' ' BEGIN { OFS=FS } { if ( $10 <= 0.5 ) $4 = 0 } \
-     { print $1,$4 } ' > sample-1-gene-cov.tmp
+grep -v "#" sample-gene-cov-and-det.tmp | awk -F $'\t' ' BEGIN { OFS=FS } { if ( $10 <= 0.5 ) $4 = 0 } \
+     { print $1,$4 } ' > sample-gene-cov.tmp
 
-cat <( printf "gene_ID\tcoverage\n" ) sample-1-gene-cov.tmp > sample-1-gene-coverages.tsv
+cat <( printf "gene_ID\tcoverage\n" ) sample-gene-cov.tmp > sample-gene-coverages.tsv
 
 # Filtering contig coverage
-grep -v "#" sample-1-contig-cov-and-det.tmp | awk -F $'\t' ' BEGIN { OFS=FS } { if ( $5 <= 50 ) $2 = 0 } \
-     { print $1,$2 } ' > sample-1-contig-cov.tmp
+grep -v "#" sample-contig-cov-and-det.tmp | awk -F $'\t' ' BEGIN { OFS=FS } { if ( $5 <= 50 ) $2 = 0 } \
+     { print $1,$2 } ' > sample-contig-cov.tmp
 
-cat <( printf "contig_ID\tcoverage\n" ) sample-1-contig-cov.tmp > sample-1-contig-coverages.tsv
+cat <( printf "contig_ID\tcoverage\n" ) sample-contig-cov.tmp > sample-contig-coverages.tsv
 
 # removing intermediate files
-rm sample-1-*.tmp
+rm sample-*.tmp
 ```
 
 **Input Data:**
 
-- sample-1.bam (mapping file from [step 9b](#9b-performing-mapping-conversion-to-bam-and-sorting))
-- sample-1-genes.fasta (gene-calls nucleotide fasta file from [step 6](#6-gene-prediction))
+- sample-gene-cov-and-det.tmp (temporary gene-coverage tsv file from [Step 18a](#18a-filtering-coverage-levels-based-on-detection))
+- sample-contig-cov-and-det.tmp (temporary contig-coverage tsv file from [Step 18a](#18a-filtering-coverage-levels-based-on-detection))
 
 **Output Data:**
 
-- sample-1-gene-coverages.tsv (table with gene-level coverages)
-- sample-1-contig-coverages.tsv (table with contig-level coverages)
+- sample-gene-coverages.tsv (table with gene-level coverages)
+- sample-contig-coverages.tsv (table with contig-level coverages)
 
 <br>
 
 ---
 
-### 20. Combining gene-level coverage, taxonomy, and functional annotations into one table for each sample
+### 19. Combining gene-level coverage, taxonomy, and functional annotations into one table for each sample
 > **Note:**  
 > Just uses `paste`, `sed`, and `awk`, which are all standard in any Unix-like environment.  
 
 ```bash
-paste <( tail -n +2 sample-1-gene-coverages.tsv | sort -V -k 1 ) <( tail -n +2 sample-1-annotations.tsv | sort -V -k 1 | cut -f 2- ) \
-      <( tail -n +2 sample-1-gene-tax-out.tsv | sort -V -k 1 | cut -f 2- ) > sample-1-gene-tab.tmp
+paste <( tail -n +2 sample-gene-coverages.tsv | sort -V -k 1 ) <( tail -n +2 sample-annotations.tsv | sort -V -k 1 | cut -f 2- ) \
+      <( tail -n +2 sample-gene-tax-out.tsv | sort -V -k 1 | cut -f 2- ) > sample-gene-tab.tmp
 
-paste <( head -n 1 sample-1-gene-coverages.tsv ) <( head -n 1 sample-1-annotations.tsv | cut -f 2- ) \
-      <( head -n 1 sample-1-gene-tax-out.tsv | cut -f 2- ) > sample-1-header.tmp
+paste <( head -n 1 sample-gene-coverages.tsv ) <( head -n 1 sample-annotations.tsv | cut -f 2- ) \
+      <( head -n 1 sample-gene-tax-out.tsv | cut -f 2- ) > sample-header.tmp
 
-cat sample-1-header.tmp sample-1-gene-tab.tmp > sample-1-gene-coverage-annotation-and-tax.tsv
+cat sample-header.tmp sample-gene-tab.tmp > sample-gene-coverage-annotation-and-tax.tsv
 
   # removing intermediate files
-rm sample-1*tmp sample-1-gene-coverages.tsv sample-1-annotations.tsv sample-1-gene-tax-out.tsv
+rm sample*tmp sample-gene-coverages.tsv sample-annotations.tsv sample-gene-tax-out.tsv
 ```
 
 **Input Data:**
 
-- sample-1-gene-coverages.tsv (table with gene-level coverages from [step 10b](#10b-filtering-gene-coverage-based-on-requiring-50-detection-and-parsing-down-to-just-gene-id-and-coverage))
-- sample-1-annotations.tsv (table of KO annotations assigned to gene IDs from [step 7c](#7c-filtering-output-to-retain-only-those-passing-the-ko-specific-score-and-top-hits))
-- sample-1-gene-tax-out.tsv (gene-level taxonomic classifications from [step 8f](#8f-formatting-contig-level-output-with-awk-and-sed))
+- sample-gene-coverages.tsv (table with gene-level coverages from [Step 18b](#18b-filtering-gene-and-contig-coverage-based-on-requiring-50-detection-and-parsing-down-to-just-gene-id-and-coverage))
+- sample-annotations.tsv (table of KO annotations assigned to gene IDs from [Step 15c](#15c-filtering-output-to-retain-only-those-passing-the-ko-specific-score-and-top-hits))
+- sample-gene-tax-out.tsv (gene-level taxonomic classifications from [Step 16f](#16f-formatting-contig-level-output-with-awk-and-sed))
 
 
 **Output Data:**
 
-- **sample-1-gene-coverage-annotation-and-tax.tsv** (table with combined gene coverage, annotation, and taxonomy info)
+- **sample-gene-coverage-annotation-and-tax.tsv** (table with combined gene coverage, annotation, and taxonomy info)
 
 <br>
 
 ---
 
-### 21. Combining contig-level coverage and taxonomy into one table for each sample
+### 20. Combining contig-level coverage and taxonomy into one table for each sample
 > **Note:**  
 > Just uses `paste`, `sed`, and `awk`, which are all standard in any Unix-like environment.  
 
 ```bash
-paste <( tail -n +2 sample-1-contig-coverages.tsv | sort -V -k 1 ) \
-      <( tail -n +2 sample-1-contig-tax-out.tsv | sort -V -k 1 | cut -f 2- ) > sample-1-contig.tmp
+paste <( tail -n +2 sample-contig-coverages.tsv | sort -V -k 1 ) \
+      <( tail -n +2 sample-contig-tax-out.tsv | sort -V -k 1 | cut -f 2- ) > sample-contig.tmp
 
-paste <( head -n 1 sample-1-contig-coverages.tsv ) <( head -n 1 sample-1-contig-tax-out.tsv | cut -f 2- ) \
-      > sample-1-contig-header.tmp
+paste <( head -n 1 sample-contig-coverages.tsv ) <( head -n 1 sample-contig-tax-out.tsv | cut -f 2- ) \
+      > sample-contig-header.tmp
       
-cat sample-1-contig-header.tmp sample-1-contig.tmp > sample-1-contig-coverage-and-tax.tsv
+cat sample-contig-header.tmp sample-contig.tmp > sample-contig-coverage-and-tax.tsv
 
   # removing intermediate files
-rm sample-1*tmp sample-1-contig-coverages.tsv sample-1-contig-tax-out.tsv
+rm sample*tmp sample-contig-coverages.tsv sample-contig-tax-out.tsv
 ```
 
 **Input Data:**
 
-- sample-1-contig-coverages.tsv (table with contig-level coverages from [step 10b](#10b-filtering-gene-coverage-based-on-requiring-50-detection-and-parsing-down-to-just-gene-id-and-coverage))
-- sample-1-contig-tax-out.tsv (contig-level taxonomic classifications from [step 8f](#8f-formatting-contig-level-output-with-awk-and-sed))
+- sample-contig-coverages.tsv (table with contig-level coverages from [Step 18b](#18b-filtering-gene-and-contig-coverage-based-on-requiring-50-detection-and-parsing-down-to-just-gene-id-and-coverage))
+- sample-contig-tax-out.tsv (contig-level taxonomic classifications from [Step 16f](#16f-formatting-contig-level-output-with-awk-and-sed))
 
 
 **Output Data:**
 
-- **sample-1-contig-coverage-and-tax.tsv** (table with combined contig coverage and taxonomy info)
+- **sample-contig-coverage-and-tax.tsv** (table with combined contig coverage and taxonomy info)
 
 <br>
 
 ---
 
-### 22. Generating normalized, gene- and contig-level coverage summary tables of KO-annotations and taxonomy across samples
+### 21. Generating normalized, gene- and contig-level coverage summary tables of KO-annotations and taxonomy across samples
 
 > **Note:**  
 > * To combine across samples to generate these summary tables, we need the same "units". This is done for annotations 
@@ -2399,7 +2640,7 @@ by the length of the gene). These have been normalized by making the total cover
 each individual gene-level coverage its proportion of that 1,000,000 total. So basically percent, but out of 1,000,000 
 instead of 100 to make the numbers more friendly. 
 
-#### 22a. Generating gene-level coverage summary tables
+#### 21a. Generating gene-level coverage summary tables
 
 ```bash
 bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o Combined
@@ -2414,7 +2655,7 @@ bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o Combi
 
 **Input Data:**
 
-- *-gene-coverage-annotation-and-tax.tsv (tables with combined gene coverage, annotation, and taxonomy info generated for individual samples from [step 11](#11-combining-gene-level-coverage-taxonomy-and-functional-annotations-into-one-table-for-each-sample))
+- *-gene-coverage-annotation-and-tax.tsv (tables with combined gene coverage, annotation, and taxonomy info generated for individual samples from [Step 19](#19-combining-gene-level-coverage-taxonomy-and-functional-annotations-into-one-table-for-each-sample))
 
 **Output Data:**
 
@@ -2424,7 +2665,335 @@ bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o Combi
 - **Combined-gene-level-taxonomy-coverages_GLmetagenomics.tsv** (table with all samples combined based on gene-level taxonomic classifications)
 
 
-#### 22b. Generating contig-level coverage summary tables
+#### 21b. Gene-level taxonomy heatmaps
+
+```R
+library(tidyverse)
+library(pheatmap)
+
+# Abundant taxa with CPM > 1000
+abundance_threshold <- 1000
+
+sample_order <- get_sample_names("assembly-summaries_GLmetagenomics.tsv")
+# Read-in gene table
+gene_taxonomy_table <-  read_contig_table("Combined-gene-level-taxonomy-coverages-CPM_GLmetagenomics.tsv", sample_order)
+
+# Summarize gene table
+species_gene_table <- gene_taxonomy_table %>%
+  select(species, !!sample_order) %>% 
+  group_by(species) %>% 
+  summarise(across(everything(), sum)) 
+
+# Convert gene dataframe table to a matrix table
+gene.m <- species_gene_table %>% as.data.frame()
+# Write out gene taxonomy table
+write_csv(x = gene.m, file = "gene_taxonomy_table.csv")
+
+rownames(gene.m) <- gene.m[['species']]
+gene.m <- gene.m[,-match("species", colnames(gene.m))] %>% as.matrix()
+
+
+#------ All gene taxonomy assignments
+
+# Drop unclassified assignments
+mat2plot <- gene.m[-match("Unclassified;_;_;_;_;_;_", rownames(gene.m)),]
+
+png(filename = "All-genes-taxonomy-heatmap_GLmetagenomics.png", 
+    width = plot_width, height = plot_height, units = "in", res=300)
+pheatmap(mat = mat2plot,
+         cluster_cols = FALSE, 
+         cluster_rows = FALSE, 
+         col = colours, 
+         angle_col = 0, 
+         display_numbers = TRUE,
+         fontsize = 12,
+         number_format = "%.0f")
+dev.off()
+
+
+#------ Abundant gene taxonomy assignments
+
+taxa <- rowSums(gene.m) %>% sort()
+abund_taxa <- taxa[ taxa > abundance_threshold ] %>% names
+abund_gene.m <- gene.m[abund_taxa,]
+
+
+# Drop unclassified assignments
+mat2plot <- abund_gene.m[-match("Unclassified;_;_;_;_;_;_", rownames(abund_gene.m)),]
+
+png(filename = "Abundant-genes-taxonomy-heatmap_GLmetagenomics.png", 
+    width = plot_width, height = plot_height, units = "in", res=300)
+pheatmap(mat = mat2plot,
+         cluster_cols = FALSE, 
+         cluster_rows = FALSE, 
+         col = colours, 
+         angle_col = 0, 
+         display_numbers = TRUE,
+         fontsize = 12,
+         number_format = "%.0f")
+dev.off()
+```
+
+**Input data:**
+- assembly-summaries_GLmetagenomics.tsv (table of assembly summary statistics, output from [Step 13b](#13b-summarizing-assemblies))
+- Combined-gene-level-taxonomy-coverages-CPM_GLmetagenomics.tsv (table with all samples combined based on gene-level taxonomic classifications, output from [Step 21a](#21a-generating-gene-level-coverage-summary-tables)) 
+
+**Output data:**
+- gene_taxonomy_table.csv (aggregated gene taxonomy table)
+- **All-genes-taxonomy-heatmap_GLmetagenomics.png** (heatmap of all genes taxonomy assignments)
+- **Abundant-genes-taxonomy-heatmap_GLmetagenomics.png** (heatmap of abundant genes taxonomy assignments)
+
+#### 21c. Gene-level taxonomy decontamination
+
+```R
+library(tidyverse)
+library(decontam)
+# Set to 0.5 for a more aggressive approach where species more prevalent
+# in the negative controls are considered contaminants
+contam_threshold <- 0.1
+# Control samples in this column should always be written as 
+# "Control_Sample" and true samples as "True_Sample"
+prev_col <- "Sample_or_Control"
+freq_col <- "input_conc_ng"
+plot_width <- 18
+plot_height <- 8
+
+# Read-in metadata
+metdata_file <- "/path/to/sample/metadata"
+samples_column <- "Sample_ID"
+metadata <- read_delim(file=metdata_file , delim = "\t") %>% as.data.frame()
+row.names(metadata) <- metadata[,samples_column]
+
+# Read-in featusre table
+gene.m <- read_csv("gene_taxonomy_table.csv")
+rownames(gene.m) <- gene.m[['species']]
+gene.m <- gene.m[,-match("species", colnames(gene.m))] %>% as.matrix()
+feature_table <- gene.m
+
+
+contamdf <- run_decontam(feature_table, metadata, contam_threshold, prev_col, freq_col)
+
+# Write decontam results table to file
+write_csv(x = contamdf %>% rownames_to_column("Species"), file = "decontam-gene-taxonomy_results.csv")
+
+# Get the list of contaminats identified by decontam
+contaminants <- contamdf %>%
+                as.data.frame %>%
+                rownames_to_column("Species") %>%
+                filter(contaminant == TRUE) %>% pull(Species)
+
+# Drop contaminant features identified by decontam
+decontaminated_table <- feature_table %>% 
+                as.data.frame  %>% 
+                rownames_to_column("Species") %>% 
+                filter(str_detect(Species, 
+                                  pattern = str_c(contaminants,
+                                                  collapse = "|"),
+                                  negate = TRUE)) %>%
+                select(-Species) %>% as.matrix
+
+
+# Write decontaminated species table to file
+write_csv(x = decontaminated_table, file = "decontaminated-gene-taxonomy_table.csv")
+
+# Get the index of species (contaminants and unclassified) to drop
+non_microbial <- "Unclassified;_;_;_;_;_;_"
+species_to_drop_index <- grep(x = rownames(feature_table), 
+                              str_c(c(contaminants,non_microbial), 
+                                    collapse = "|"))
+
+mat2plot <- feature_table[-species_to_drop_index,]
+png(filename = "decontaminated-gene-taxonomy-heatmap_GLmetagenomics.png", 
+    width = plot_width, height = plot_height, units = "in", res=300)
+pheatmap(mat = mat2plot,
+         cluster_cols = FALSE, 
+         cluster_rows = FALSE, 
+         col = colours, 
+         angle_col = 0, 
+         display_numbers = TRUE,
+         fontsize = 14, 
+         number_format = "%.0f")
+dev.off()
+
+```
+
+**Input data:**
+
+- metadata_file  (path to sample-wise metadata file)
+- gene_taxonomy_table.csv (aggregated gene taxonomy table, output from [Step 21b](#21b-gene-level-taxonomy-heatmaps))
+
+**Output data:**
+
+- **decontam-gene-taxonomy_results.csv** (decontam's results table)
+- **decontaminated-gene-taxonomy_table.csv** (decontaminated species table)
+- **decontaminated-gene-taxonomy-heatmap_GLmetagenomics.png** (heatmap after filtering out contaminants)
+
+
+
+#### 21d. Gene-level KO functions heatmaps
+
+```R
+library(tidyverse)
+library(pheatmap)
+
+# Abundant functions with CPM > 2000
+abundance_threshold <- 2000
+
+sample_order <- get_sample_names("assembly-summaries_GLmetagenomics.tsv")
+# Read-in KO functions table
+functions_table <- read_input_table("Combined-gene-level-KO-function-coverages-CPM_GLmetagenomics.tsv") %>%
+                    select(KO_ID, KO_function, !!sample_order)
+
+# Subset table and then convert from datafame to matrix
+functions.m <- functions_table[,sample_order] %>% as.matrix()
+rownames(functions.m) <- functions_table$KO_ID
+table2write <-  functions.m %>% 
+                      as.data.frame() %>% rownames_to_column("KO_ID") %>%
+                      filter(KO_ID != "Not annotated") # Drop unannotated / unclassified
+# Write out  taxonomy table
+write_csv(x = table2write  , file = "genes-KO-functions_table.csv")
+
+
+#------ All KO functions assignments
+
+# Drop unclassified assignments
+mat2plot <- functions.m[-match("Not annotated", rownames(functions.m),]
+
+png(filename = "All-genes-KO-functions-heatmap_GLmetagenomics.png", 
+    width = plot_width, height = plot_height, units = "in", res=300)
+pheatmap(mat = mat2plot,
+         cluster_cols = FALSE, 
+         cluster_rows = FALSE, 
+         col = colours, 
+         angle_col = 0, 
+         display_numbers = TRUE,
+         fontsize = 12,
+         number_format = "%.0f")
+dev.off()
+
+
+#------ Abundant KO functions assignments
+
+functions <- rowSums(functions.m) %>% sort()
+abund_functions <- functions[ functions > abundance_threshold ] %>% names
+abund_functions.m <- functions.m[abund_functions,]
+
+
+# Drop unannotated assignments
+mat2plot <- abund_functions.m[-match("Not annotated", rownames(abund_functions.m)),]
+
+png(filename = "Abundant-genes-KO-functions-heatmap_GLmetagenomics.png", 
+    width = plot_width, height = plot_height, units = "in", res=300)
+pheatmap(mat = mat2plot,
+         cluster_cols = FALSE, 
+         cluster_rows = FALSE, 
+         col = colours, 
+         angle_col = 0, 
+         display_numbers = TRUE,
+         fontsize = 12,
+         number_format = "%.0f")
+dev.off()
+```
+
+**Parameter Definitions:**  
+
+
+**Input data:**
+- assembly-summaries_GLmetagenomics.tsv (table of assembly summary statistics, output from [Step 13b](#13b-summarizing-assemblies))
+- Combined-gene-level-KO-function-coverages-CPM_GLmetagenomics.tsv (table with all samples combined based on KO annotations; normalized to coverage per million genes covered, output from [Step 21a](#21a-generating-gene-level-coverage-summary-tables))
+
+**Output data:**
+- genes-KO-functions_table.csv (aggregated and subsetted gene KO functions table)
+- **All-genes-KO-functions-heatmap_GLmetagenomics.png** (heatmap of gene-wise KO function assignments)
+- **Abundant-genes-KO-functions-heatmap_GLmetagenomics.png** (heatmap of gene-wise abundant KO function assignments)
+
+#### 21e. Gene-level KO functions decontamination
+
+```R
+library(tidyverse)
+library(decontam)
+# Set to 0.5 for a more aggressive approach where species more prevalent
+# in the negative controls are considered contaminants
+contam_threshold <- 0.1 
+# Control samples in this column should always be written as "Control_Sample" and true samples as "True_Sample"
+prev_col <- "Sample_or_Control"
+freq_col <- "input_conc_ng"
+plot_width <- 18
+plot_height <- 8
+
+# Read-in metadata
+metdata_file <- "/path/to/sample/metadata"
+samples_column <- "Sample_ID"
+metadata <- read_delim(file=metdata_file , delim = "\t") %>% as.data.frame()
+row.names(metadata) <- metadata[,samples_column]
+
+# Read-in feature table
+functions.m <- read_csv("genes-KO-functions_table.csv")
+rownames(functions.m) <- functions.m[['KO_ID']]
+gene.m <- functions.m[,-match("KO_ID", colnames(functions.m))] %>% as.matrix()
+feature_table <- functions.m
+
+
+contamdf <- run_decontam(feature_table, metadata, contam_threshold, prev_col, freq_col)
+
+# Write decontam results table to file
+write_csv(x = contamdf %>% rownames_to_column("KO_ID"), file = "decontam-gene-KO-functions_results.csv")
+
+# Get the list of contaminants identified by decontam
+contaminants <- contamdf %>%
+                as.data.frame %>%
+                rownames_to_column("KO_ID") %>%
+                filter(contaminant == TRUE) %>% pull(KO_ID)
+
+# Drop contaminant features identified by decontam
+decontaminated_table <- feature_table %>% 
+                as.data.frame  %>% 
+                rownames_to_column("KO_ID") %>% 
+                filter(str_detect(Species, 
+                                  pattern = str_c(contaminants,
+                                                  collapse = "|"),
+                                  negate = TRUE)) %>%
+                select(-KO_ID) %>% as.matrix
+
+
+# Write decontaminated species table to file
+write_csv(x = decontaminated_table, file = "decontaminated-gene-KO-functions_table.csv")
+
+# Get the index of species (contaminants and unclassified) to drop
+unclassified <- "Not annotated"
+functions_to_drop_index <- grep(x = rownames(feature_table), 
+                              str_c(c(contaminants,unclassified), 
+                                    collapse = "|"))
+
+mat2plot <- feature_table[-functions_to_drop_index,]
+png(filename = "decontaminated-gene-KO-functions-heatmap_GLmetagenomics.png", 
+    width = plot_width, height = plot_height, units = "in", res=300)
+pheatmap(mat = mat2plot,
+         cluster_cols = FALSE, 
+         cluster_rows = FALSE, 
+         col = colours, 
+         angle_col = 0, 
+         display_numbers = TRUE,
+         fontsize = 14, 
+         number_format = "%.0f")
+dev.off()
+
+```
+
+**Input data:**
+
+- metadata_file  (path to sample-wise metadata file)
+- gene_taxonomy_table.csv (agggregated gene taxomy table, output from [Step 21b](#21b-gene-level-taxonomy-heatmaps))
+
+**Output data:**
+
+- **decontam-gene-KO-functions_results.csv** (decontam's results table)
+- **decontaminated-gene-KO-functions_table.csv** (decontaminated functions table)
+- **decontaminated-gene-KO-functions-heatmap_GLmetagenomics.png** (heatmap after filtering out contaminants)
+
+
+
+#### 21f. Generating contig-level coverage summary tables
 
 ```bash
 bit-GL-combine-contig-tax-tables *-contig-coverage-and-tax.tsv -o Combined
@@ -2433,13 +3002,12 @@ bit-GL-combine-contig-tax-tables *-contig-coverage-and-tax.tsv -o Combined
 **Parameter Definitions:**  
 
 - `*-contig-coverage-and-tax.tsv` - positional arguments specifying the input tsv files, can be provided as a space-delimited list of files, or with wildcards like above
-
 - `-o` – specifies the output prefix
 
 
 **Input Data:**
 
-- *-contig-coverage-annotation-and-tax.tsv (tables with combined contig coverage, annotation, and taxonomy info generated for individual samples from [step 12](#12-combining-contig-level-coverage-and-taxonomy-into-one-table-for-each-sample))
+- *-contig-coverage-annotation-and-tax.tsv (tables with combined contig coverage, annotation, and taxonomy info generated for individual samples from [Step 20](#20-combining-contig-level-coverage-and-taxonomy-into-one-table-for-each-sample))
 
 **Output Data:**
 
@@ -2448,20 +3016,184 @@ bit-GL-combine-contig-tax-tables *-contig-coverage-and-tax.tsv -o Combined
 
 <br>
 
+
+#### 21g. Contig-level Heatmaps
+
+```R
+plot_width <- 20
+plot_height <- 30
+sample_order <- get_sample_names("assembly-summaries_GLmetagenomics.tsv")
+
+contig_table <-  read_contig_table("Combined-contig-level-taxonomy-coverages-CPM_GLmetagenomics.tsv", sample_order)
+species_contig_table <- contig_table %>% select(species, !!sample_order)
+
+contig.m <- species_contig_table %>%
+  group_by(species) %>%
+  summarise(across(everything(), sum)) %>%
+  filter(species != "Unclassified;_;_;_;_;_;_") %>% # Drop unclassifed
+  as.data.frame()
+
+# Write out contig taxonomy table
+write_csv(x = contig.m, file = "contig_taxonomy_table.csv")
+
+rownames(contig.m) <- contig.m[['species']]
+contig.m <- contig.m[,-match("species", colnames(contig.m))] %>% as.matrix()
+
+#------ All contig taxonomy assignments
+
+# Drop unclassified assignments
+mat2plot <- contig.m[-match("Unclassified;_;_;_;_;_;_", rownames(contig.m)),]
+
+png(filename = "All-contig-taxonomy-heatmap_GLmetagenomics.png", 
+    width = plot_width, height = plot_height, units = "in", res=300)
+pheatmap(mat = mat2plot,
+         cluster_cols = FALSE, 
+         cluster_rows = FALSE, 
+         col = colours, 
+         angle_col = 0, 
+         display_numbers = TRUE,
+         fontsize = 12,
+         number_format = "%.0f")
+dev.off()
+
+
+#------ Abundant contig taxonomy assignments
+
+taxa <- rowSums(contig.m) %>% sort()
+abund_taxa <- taxa[ taxa > abundance_threshold ] %>% names
+abund_contig.m <- contig.m[abund_taxa,]
+
+mat2plot <- abund_contig.m[-match("Unclassified;_;_;_;_;_;_", rownames(abund_contig.m)),]
+
+png(filename = "Abundant-contig-taxonomy-heatmap_GLmetagenomics.png", 
+    width = plot_width, height = plot_height, units = "in", res=300)
+pheatmap(mat = mat2plot,
+         cluster_cols = FALSE, 
+         cluster_rows = FALSE, 
+         col = colours, 
+         angle_col = 0, 
+         display_numbers = TRUE,
+         fontsize = 12,
+         number_format = "%.0f")
+dev.off()
+```
+
+
+**Parameter Definitions:**  
+
+
+**Input data:**
+
+- assembly-summaries_GLmetagenomics.tsv (table of assembly summary statistics, output from [Step 13b](#13b-summarizing-assemblies))
+- Combined-contig-level-taxonomy-coverages-CPM_GLmetagenomics.tsv (table with all samples combined based on contig-level taxonomic classifications; normalized to coverage per million genes covered from [Step 21f](#21f-generating-contig-level-coverage-summary-tables))
+
+**Output data:**
+
+- contig_taxonomy_table.csv (aggregated contig taxonomy)
+- **All-contig-taxonomy-heatmap_GLmetagenomics.png** (All contig level taxonomy heatmap)
+- **Abundant-contig-taxonomy-heatmap_GLmetagenomics.png** (Abundant contig level taxonomy heatmap)
+
+
+#### 21h. Contig-level decontamination
+
+```R
+library(tidyverse)
+library(decontam)
+# Set to 0.5 for a more aggressive approach where species more prevalent
+# in the negative controls are considered contaminants
+contam_threshold <- 0.1
+# Control samples in this column should always be written as
+# "Control_Sample" and true samples as "True_Sample"
+prev_col <- "Sample_or_Control"
+freq_col <- "input_conc_ng"
+plot_width <- 18
+plot_height <- 8
+
+# Read-in metadata
+metdata_file <- "/path/to/sample/metadata"
+samples_column <- "Sample_ID"
+metadata <- read_delim(file=metdata_file , delim = "\t") %>% as.data.frame()
+row.names(metadata) <- metadata[,samples_column]
+
+# Read-in feature table
+contig.m <- read_csv("contig_taxonomy_table.csv")
+rownames(contig.m) <- contig.m[['species']]
+contig.m <- contig.m[,-match("species", colnames(contig.m))] %>% as.matrix()
+feature_table <- contig.m
+
+
+contamdf <- run_decontam(feature_table, metadata, contam_threshold, prev_col, freq_col)
+
+# Write decontam results table to file
+write_csv(x = contamdf %>% rownames_to_column("Species"), file = "decontam-gene-taxonomy_results.csv")
+
+# Get a list of contaminants identified by decontam
+contaminants <- contamdf %>%
+                as.data.frame %>%
+                rownames_to_column("Species") %>%
+                filter(contaminant == TRUE) %>% pull(Species)
+
+# Drop contaminant features identified by decontam
+decontaminated_table <- feature_table %>% 
+                as.data.frame  %>% 
+                rownames_to_column("Species") %>% 
+                filter(str_detect(Species, 
+                                  pattern = str_c(contaminants,
+                                                  collapse = "|"),
+                                  negate = TRUE)) %>%
+                select(-Species) %>% as.matrix
+
+
+# Write decontaminated species table to file
+write_csv(x = decontaminated_table, file = "decontaminated-gene-taxonomy_table.csv")
+
+# Get the index of species (contaminants and unclassified) to drop
+non_microbial <- "Unclassified;_;_;_;_;_;_"
+species_to_drop_index <- grep(x = rownames(feature_table), 
+                              str_c(c(contaminants,non_microbial), 
+                                    collapse = "|"))
+
+mat2plot <- feature_table[-species_to_drop_index,]
+png(filename = "decontaminated-contig-taxonomy-heatmap_GLmetagenomics.png", 
+    width = plot_width, height = plot_height, units = "in", res=300)
+pheatmap(mat = mat2plot,
+         cluster_cols = FALSE, 
+         cluster_rows = FALSE, 
+         col = colours, 
+         angle_col = 0, 
+         display_numbers = TRUE,
+         fontsize = 14, 
+         number_format = "%.0f")
+dev.off()
+
+```
+
+**Input data:**
+
+- metadata_file  (path to sample-wise metadata file)
+- contig_taxonomy_table.csv (aggregated contig taxonomy table, output from [Step 21g](#21g-contig-level-heatmaps))
+
+**Output data:**
+
+- **decontam-contig-taxonomy_results.csv** (decontam's results table)
+- **decontaminated-contig-taxonomy_table.csv** (decontaminated species table)
+- **decontaminated-contig-taxonomy-heatmap_GLmetagenomics.png** (heatmap after filtering out contaminants)
+
+
 ---
 
-### 23. **M**etagenome-**A**ssembled **G**enome (MAG) recovery
+### 22. **M**etagenome-**A**ssembled **G**enome (MAG) recovery
 
-#### 23a. Binning contigs
+#### 22a. Binning contigs
 
 ```bash
-jgi_summarize_bam_contig_depths --outputDepth sample-1-metabat-assembly-depth.tsv --percentIdentity 97 --minContigLength 1000 --minContigDepth 1.0  --referenceFasta sample-1-assembly.fasta sample-1.bam
+jgi_summarize_bam_contig_depths --outputDepth sample-metabat-assembly-depth.tsv --percentIdentity 97 --minContigLength 1000 --minContigDepth 1.0  --referenceFasta sample-assembly.fasta sample.bam
 
-metabat2  --inFile sample-1-assembly.fasta --outFile sample-1 --abdFile sample-1-metabat-assembly-depth.tsv -t NumberOfThreads
+metabat2  --inFile sample-assembly.fasta --outFile sample --abdFile sample-metabat-assembly-depth.tsv -t NumberOfThreads
 
-mkdir sample-1-bins
-mv sample-1*bin*.fasta sample-1-bins
-zip -r sample-1-bins.zip sample-1-bins
+mkdir sample-bins
+mv sample*bin*.fasta sample-bins
+zip -r sample-bins.zip sample-bins
 ```
 
 **Parameter Definitions:**  
@@ -2471,7 +3203,7 @@ zip -r sample-1-bins.zip sample-1-bins
 -  `--minContigLength` – minimum contig length to include
 -  `--minContigDepth` – minimum contig depth to include
 -  `--referenceFasta` – the assembly fasta file generated in step 5a
--  `sample-1.bam` – final positional arguments are the bam files generated in step 9
+-  `sample.bam` – final positional arguments are the bam files generated in step 9
 -  `--inFile` - the assembly fasta file generated in step 5a
 -  `--outFile` - the prefix of the identified bins output files
 -  `--abdFile` - the depth file generated by the previous `jgi_summarize_bam_contig_depths` command
@@ -2480,16 +3212,16 @@ zip -r sample-1-bins.zip sample-1-bins
 
 **Input Data:**
 
-- sample-1-assembly.fasta (assembly fasta file created in [step 5a](#5a-renaming-contig-headers))
-- sample-1.bam (bam file created in [step 9b](#9b-performing-mapping-conversion-to-bam-and-sorting))
+- sample-assembly.fasta (assembly fasta file created in [Step 13a](#13a-renaming-contig-headers))
+- sample.bam (bam file created in [Step 17b](#17b-sort-and-index-assembly-alignments))
 
 **Output Data:**
 
-- **sample-1-metabat-assembly-depth.tsv** (tab-delimited summary of coverages)
-- sample-1-bins/sample-1-bin\*.fasta (fasta files of recovered bins)
-- **sample-1-bins.zip** (zip file containing fasta files of recovered bins)
+- **sample-metabat-assembly-depth.tsv** (tab-delimited summary of coverages)
+- sample-bins/sample-bin\*.fasta (fasta files of recovered bins)
+- **sample-bins.zip** (zip file containing fasta files of recovered bins)
 
-#### 23b. Bin quality assessment
+#### 22b. Bin quality assessment
 Utilizes the default `checkm` database available [here](https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz), `checkm_data_2015_01_16.tar.gz`.
 
 ```bash
@@ -2507,14 +3239,14 @@ checkm lineage_wf -f bins-overview_GLmetagenomics.tsv --tab_table -x fa ./ check
 
 **Input Data:**
 
-- sample-1-bins/sample-1-bin\*.fasta (bin fasta files generated in [step 14a](#14a-binning-contigs))
+- sample-bins/sample-bin\*.fasta (bin fasta files generated in [Step 22a](#22a-binning-contigs))
 
 **Output Data:**
 
 - **bins-overview_GLmetagenomics.tsv** (tab-delimited file with quality estimates per bin)
 - checkm-output-dir (directory holding detailed checkm outputs)
 
-#### 23c. Filtering MAGs
+#### 22c. Filtering MAGs
 
 ```bash
 cat <( head -n 1 bins-overview_GLmetagenomics.tsv ) \
@@ -2541,7 +3273,7 @@ done
 
 **Input Data:**
 
-- bins-overview_GLmetagenomics.tsv (tab-delimited file with quality estimates per bin from [step 14b](#14b-bin-quality-assessment))
+- bins-overview_GLmetagenomics.tsv (tab-delimited file with quality estimates per bin from [Step 22b](#22b-bin-quality-assessment))
 
 **Output Data:**
 
@@ -2550,7 +3282,7 @@ done
 - **\*-MAGs.zip** (zip files containing directories of high-quality MAGs)
 
 
-#### 23d. MAG taxonomic classification
+#### 22d. MAG taxonomic classification
 Uses default `gtdbtk` database setup with program's `download.sh` command.
 
 ```bash
@@ -2567,13 +3299,13 @@ gtdbtk classify_wf --genome_dir MAGs/ -x fa --out_dir gtdbtk-output-dir  --skip_
 
 **Input Data:**
 
-- MAGs/\*.fasta (directory holding high-quality MAGs from [step 14c](#14c-filtering-mags))
+- MAGs/\*.fasta (directory holding high-quality MAGs from [Step 22c](#22c-filtering-mags))
 
 **Output Data:**
 
 - gtdbtk-output-dir/gtdbtk.\*.summary.tsv (files with assigned taxonomy and info)
 
-#### 23e. Generating overview table of all MAGs
+#### 22e. Generating overview table of all MAGs
 
 ```bash
 # combine summaries
@@ -2613,10 +3345,10 @@ cat MAGs-overview-header.tmp MAGs-overview-sorted.tmp \
 
 **Input Data:**
 
-- assembly-summaries_GLmetagenomics.tsv (table of assembly summary statistics from [step 5b](#5b-summarizing-assemblies))
-- MAGs/\*.fasta (directory holding high-quality MAGs from [step 14c](#14c-filtering-mags))
-- checkm-MAGs-overview.tsv (tab-delimited file with quality estimates per MAG from [step 14c](#14c-filtering-mags))
-- gtdbtk-output-dir/gtdbtk.\*.summary.tsv (directory of files with assigned taxonomy and info from [step 14d](#14d-mag-taxonomic-classification))
+- assembly-summaries_GLmetagenomics.tsv (table of assembly summary statistics from [Step 13b](#13b-summarizing-assemblies))
+- MAGs/\*.fasta (directory holding high-quality MAGs from [Step 22c](#23c-filtering-mags))
+- checkm-MAGs-overview.tsv (tab-delimited file with quality estimates per MAG from [Step 22c](#22c-filtering-mags))
+- gtdbtk-output-dir/gtdbtk.\*.summary.tsv (directory of files with assigned taxonomy and info from [Step 22d](#22d-mag-taxonomic-classification))
 
 **Output Data:**
 
@@ -2627,9 +3359,9 @@ cat MAGs-overview-header.tmp MAGs-overview-sorted.tmp \
 
 ---
 
-### 24. Generating MAG-level functional summary overview
+### 23. Generating MAG-level functional summary overview
 
-#### 24a. Getting KO annotations per MAG
+#### 23a. Getting KO annotations per MAG
 This utilizes the helper script [`parse-MAG-annots.py`](../Workflow_Documentation/NF_MGIllumina/workflow_code/bin/parse-MAG-annots.py) 
 
 ```bash
@@ -2659,15 +3391,15 @@ done
 
 **Input Data:**
 
-- \*-gene-coverage-annotation-and-tax.tsv (sample gene-coverage-annotation-and-tax.tsv file generated in [step 11](#11-combining-gene-level-coverage-taxonomy-and-functional-annotations-into-one-table-for-each-sample))
-- MAGs/\*.fasta (directory holding high-quality MAGs from [step 14c](#14c-filtering-mags))
+- \*-gene-coverage-annotation-and-tax.tsv (sample gene-coverage-annotation-and-tax.tsv file generated in [Step 19](#19-combining-gene-level-coverage-taxonomy-and-functional-annotations-into-one-table-for-each-sample))
+- MAGs/\*.fasta (directory holding high-quality MAGs from [Step 22c](#22c-filtering-mags))
 
 **Output Data:**
 
 - **MAG-level-KO-annotations_GLmetagenomics.tsv** (tab-delimited table holding MAGs and their KO annotations)
 
 
-#### 24b. Summarizing KO annotations with KEGG-Decoder
+#### 23b. Summarizing KO annotations with KEGG-Decoder
 
 ```bash
 KEGG-decoder -v interactive -i MAG-level-KO-annotations_GLmetagenomics.tsv -o MAG-KEGG-Decoder-out_GLmetagenomics.tsv
@@ -2676,12 +3408,12 @@ KEGG-decoder -v interactive -i MAG-level-KO-annotations_GLmetagenomics.tsv -o MA
 **Parameter Definitions:**  
 
 - `-v interactive` – specifies to create an interactive html output
-- `-i` – specifies the input MAG-level-KO-annotations_GLmetagenomics.tsv file generated in [step 15a](#15a-getting-ko-annotations-per-mag)
+- `-i` – specifies the input MAG-level-KO-annotations_GLmetagenomics.tsv file generated in [Step 23a](#23a-getting-ko-annotations-per-mag)
 - `-o` – specifies the output table
 
 **Input Data:**
 
-- MAG-level-KO-annotations_GLmetagenomics.tsv (tab-delimited table holding MAGs and their KO annotations, generated in [step 15a](#15a-getting-ko-annotations-per-mag))
+- MAG-level-KO-annotations_GLmetagenomics.tsv (tab-delimited table holding MAGs and their KO annotations, generated in [Step 23a](#23a-getting-ko-annotations-per-mag))
 
 **Output Data:**
 
