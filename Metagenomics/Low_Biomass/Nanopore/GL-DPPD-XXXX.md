@@ -156,7 +156,6 @@ Barbara Novak (GeneLab Data Processing Lead)
 | R | 4.5.1 | [https://www.r-project.org](https://www.r-project.org) |
 |Bioconductor | 3.21 | [https://www.bioconductor.org](https://www.bioconductor.org) |
 |decontam| 1.28.0 | [https://www.bioconductor.org/packages/release/bioc/html/decontam.html](https://www.bioconductor.org/packages/release/bioc/html/decontam.html) |
-|glue| 1.8.0 | [https://cran.r-project.org/web/packages/glue/index.html](https://cran.r-project.org/web/packages/glue/index.html) |
 |optparse| 1.7.5 |[https://cran.r-project.org/web/packages/optparse/index.html](https://cran.r-project.org/web/packages/optparse/index.html) |
 |pavian| 1.2.1 | [https://github.com/fbreitwieser/pavian](https://github.com/fbreitwieser/pavian) |
 |pheatmap| 1.0.13 | [https://cran.r-project.org/package=pheatmap](https://cran.r-project.org/package=pheatmap) |
@@ -782,6 +781,7 @@ kraken2-build --clean --db kraken2_host_db/
 - kraken2_host_db/ - Kraken2 database directory
 
 #### 7b. Remove host reads
+
 ```bash
 kraken2 --db kraken2_host_db/ --gzip-compressed --threads NumberOfThreads --use-names \
         --output sample-kraken2-output.txt --report sample-kraken2-report.tsv \
@@ -825,7 +825,6 @@ gzip sample_host_removed.fastq
 library(decontam)
 library(phyloseq)
 library(tidyverse)
-library(glue)
 library(pheatmap)
 library(pavian)
 ```
@@ -839,15 +838,17 @@ library(pavian)
   ```R
   get_last_assignment <- function(taxonomy_string, split_by=';', remove_prefix=NULL) {
 
+    # Spilt taxonomy string by the supplied delimiter 'split_by'
+    # then convert the list of parts to a vector of parts
     split_names <- strsplit(x =  taxonomy_string , split = split_by) %>% 
       unlist()
-    
+    # Get the last part of the split string
     level_name <- split_names[[length(split_names)]]
     
     if(level_name == "_"){
       return(taxonomy_string)
     }
-    
+    # remove an unwanted prefix if specified
     if(!is.null(remove_prefix)){
       level_name <- gsub(pattern = remove_prefix, replacement = '', x = level_name)
     }
@@ -857,7 +858,7 @@ library(pavian)
   ```
 
   **Function Parameter Definitions:**
-  - `taxonomy_string` - a character string containing a list of taxonomy assignments
+  - `taxonomy_string` - a character string containing a list of taxonomy assignments separated by `split_by`
   - `split_by=` - a character string containing a regular expression used to split the `taxonomy_string`
   - `remove_prefix=` - a character string containing a regular expression to be matched and removed, default=`NULL`
 
@@ -866,7 +867,7 @@ library(pavian)
 
 ##### mutate_taxonomy()
 <details>
-  <summary>ensure that the taxonomy column is named "taxonomy" and aggregate duplicates to ensure that taxonomy names are unique</summary>
+  <summary>mutate taxonomy column to contain the lowest taxonomy assignment</summary>
 
   ```R
   mutate_taxonomy <- function(df, taxonomy_column="taxonomy") {
@@ -874,7 +875,7 @@ library(pavian)
     # make sure that the taxonomy column is always named taxonomy
     col_index <- which(colnames(df) == taxonomy_column)
     colnames(df)[col_index] <- 'taxonomy'
-    df <- df %>% dplyr::mutate(across( where(is.numeric), \(x) tidyr::replace_na(x,0)  ) )%>% 
+    df <- df %>% dplyr::mutate(across( where(is.numeric), function(x) tidyr::replace_na(x,0)  ) )%>% 
       dplyr::mutate(taxonomy=map_chr(taxonomy,.f = function(taxon_name=.x){
         last_assignment <- get_last_assignment(taxon_name) 
         last_assignment  <- gsub(pattern = "\\[|\\]|'", replacement = '',x = last_assignment)
@@ -891,7 +892,7 @@ library(pavian)
   - `df` - a dataframe containing the taxonomy assignments
   - `taxonomy_column=` - name of the column in `df` containing the taxonomy assignments, default="taxonomy"
 
-  **Returns:** a dataframe with unique taxonomy names stored in a column named "taxonomy"
+  **Returns:** a dataframe with unique last taxonomy names stored in a column named "taxonomy"
 
 </details>
 
@@ -904,11 +905,11 @@ library(pavian)
   
     abs_abun_df <-  read_delim(file = file_path,
                                delim = "\t",
-                               col_names = TRUE) %>% 
+                               col_names = TRUE) %>% # read input table
              select(sample, reads, taxonomy=!!sym(taxon_col)) %>%
-             pivot_wider(names_from = "sample", values_from = "reads",
-                             names_sort = TRUE) %>%
-             mutate_taxonomy
+             pivot_wider(names_from = "sample", values_from = "reads", 
+                             names_sort = TRUE) %>% # convert long dataframe to wide dataframe
+             mutate_taxonomy # mutate the taxonomy coxlumn such that it contains only lowest taxonomy assignment
   
     # Set the taxon names as row names, drop the taxonomy column and convert to a matrix
     rownames(abs_abun_df) <- abs_abun_df[,"taxonomy"]
@@ -936,7 +937,7 @@ library(pavian)
   process_kraken_table <- function(reports_dir) {
 
     reports <- read_reports(reports_dir)
-
+    # Retrieve sample names from file names
     samples <- names(reports) %>%
                   str_split("-") %>%
                   map_chr(function(x) pluck(x, 1))
@@ -957,12 +958,14 @@ library(pavian)
       as.data.frame() %>% 
       rename(species=name)
 
+    # Set rownames as species name, drop species column
+    # and convert table from dataframe to matrix
     species_names <- species_table[,"species"]
     rownames(species_table) <- species_names
     species_table <- species_table[,-(which(colnames(species_table) == "species"))]
     species_table <- as.matrix(species_table)
     
-    return(species_table)\
+    return(species_table)
   }
   ```
 
@@ -986,11 +989,11 @@ library(pavian)
                         mutate( across(everything(), function(x) (x/sum(x, na.rm = TRUE))*100 ) )  %>% # calculate species relative abundance per sample
         select(
                 where( ~all(!is.na(.)) )
-              )  %>% # drop columns where none of the reads were classified or were non-microbial
+              )  %>% # drop columns where none of the reads were classified or were non-microbial (NA)
               rownames_to_column("Species") 
-      
+
+    # Set rownames as species name and drop species column  
     rownames(abund_table) <- abund_table$Species
-      
     abund_table <- abund_table[, -match(x = "Species", colnames(abund_table))] %>% t
 
     return(abund_table)
@@ -1012,25 +1015,27 @@ library(pavian)
   ```R
   filter_rare <- function(species_table, non_microbial, threshold=1) {
     
+    # Drop species listed in 'non_microbial' regex
     clean_tab_count  <-  species_table %>% 
                          as.data.frame %>% 
                          rownames_to_column("Species") %>% 
                          filter(str_detect(Species, non_microbial, negate = TRUE))  
-    
+    # Calculate species relative abundance
     clean_tab <- clean_tab_count %>% 
-      mutate( across( where(is.numeric), \(x) (x/sum(x, na.rm = TRUE))*100 ) )
-    
+      mutate( across( where(is.numeric), function(x) (x/sum(x, na.rm = TRUE))*100 ) )
+    # Set rownames as species name and drop species column  
     rownames(clean_tab) <- clean_tab$Species
     clean_tab  <- clean_tab[,-1] 
     
     
-    # Get species with relative abundance less than 1% in all samples
-    rare_species <- map(clean_tab, .f = \(col) rownames(clean_tab)[col < threshold])
+    # Get species with relative abundance less than `threshold` in all samples
+    rare_species <- map(clean_tab, .f = function(col) rownames(clean_tab)[col < threshold])
     rare <- Reduce(intersect, rare_species)
     
+    # Set rownames as species name and drop species column  
     rownames(clean_tab_count) <- clean_tab_count$Species
     clean_tab_count  <- clean_tab_count[,-1] 
-    
+    # Drop rare species
     abund_table <- clean_tab_count[!(rownames(clean_tab_count) %in% rare), ]
     
     return(abund_table)
@@ -1038,11 +1043,11 @@ library(pavian)
   ```
 
   **Function Parameter Definitions:**
-  - `species_table` - the dataframe to filter
-  - `non_microbial` - a character vector denoting the string used to identify a species as non-microbial
+  - `species_table` - the species matrix to filter with species and samples as rows and columns, respectively.
+  - `non_microbial` - a regex denoting the string used to identify a species as non-microbial or unwanted
   - `threshold=` - abundance threshold used to determine if the relative abundance is rare, value denotes a percentage between 0 and 100.
 
-  **Returns:** a dataframe with rare and non_microbial assignments removed
+  **Returns:** a dataframe with rare and non_microbial/unwanted species removed
 </details>
 
 
@@ -1052,20 +1057,20 @@ library(pavian)
 
   ```R
   # Make bar plot
-  make_plot <- function(abund_table, metadata, colors2use, publication_format) {
-    
+  make_plot <- function(abund_table, metadata, colors2use, publication_format, samples_column="Sample_ID", prefix_to_remove="barcode") {
+    # Prepare table
     abund_table_wide <- abund_table %>% 
         as.data.frame() %>% 
-        rownames_to_column("Sample_ID") %>% 
-        inner_join(metadata) %>% 
+        rownames_to_column(samples_column) %>% 
+        inner_join(metadata) %>% # join abundance table and metadata by `samples_column`
         select(!!!colnames(metadata), everything()) %>% 
-        mutate(Sample_ID = Sample_ID %>% str_remove("barcode"))
-        
+        mutate(Sample_ID = Sample_ID %>% str_remove(prefix_to_remove))
+    # Convert table from wide to log format for plotting    
     abund_table_long <- abund_table_wide  %>%
         pivot_longer(-colnames(metadata), 
                     names_to = "Species",
                     values_to = "relative_abundance")
-      
+    # Make relative abundance plot  
     p <- ggplot(abund_table_long, mapping = aes(x=Sample_ID, y=relative_abundance, fill=Species)) +
          geom_col() +
          scale_fill_manual(values = colors2use) + 
@@ -1077,19 +1082,21 @@ library(pavian)
   ```
 
   **Function Parameter Definitions:**
-  - `abund_table` - a dataframe containing the data to plot
-  - `metadata` - a vector of strings specifying the data to include in the plot
+  - `abund_table` - a relative bundance dataframe with rows summing to 100%
+  - `metadata` - a metadata dataframe with samples as row and columns describing each sample
   - `colors2use` - a vector of strings specifying a custom color palette for coloring plots
-  - `publication_format` - a ggplot::theme object specifying the custom theme for plotting
+  - `publication_format` - a ggplot::theme object specifying a custom theme for plotting
+  - `samples_column` - a character column specifying the column in `metadata` holding sample names, default is "Sample_ID"
+  - `prefix_to_remove` - a string specifying a prefix or any character set to remove from sample names, default is "barcode"
 
-  **Returns:** a ggplot bar plot
+  **Returns:** a relative abundance stacked bar plot
 
 </details>
 
 
 ##### run_decontam()
 <details>
-  <summary>Feature table decoxntamination with decontam</summary>
+  <summary>Feature table decontamination with decontam</summary>
 
   ```R
   run_decontam <- function(feature_table, metadata, contam_threshold=0.1, prev_col=NULL, freq_col=NULL) {
@@ -1097,8 +1104,8 @@ library(pavian)
     sub_metadata <- metadata[colnames(feature_table),]
     # Modify NTC concentration
     # Often times the user may set the NTC concentration to zero because they think nothing 
-    # should be in the negative control but decontam fails if the value is zero.
-    # to prevent decontam from failing we use a very small concentration value
+    # should be in the negative control but decontam fails if the value is set to zero.
+    # To prevent decontam from failing, we replace zero with a very small concentration value
     # 0.0000001
     if (!is.null(freq_col)) {
 
@@ -1115,11 +1122,12 @@ library(pavian)
     # Create phyloseq object
     ps <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE), sample_data(sub_metadata))
 
-    # In our phyloseq object, "Sample_or_Control" is the sample variable that holds  the negative 
-    # control information. We’ll summarize that data as a logical variable, with TRUE for control 
-    # samples, as that is the form required by isContaminant
+    # In our phyloseq object, `prev_col` is the sample variable that holds the negative 
+    # control information. We'll summarize the data as a logical variable, with TRUE for control 
+    # samples, as that is the form required by isContaminant.
+    # The line below assumes that control samples will always be named "Control_Sample"
+    # in the `prev_col`.
     sample_data(ps)$is.neg <- sample_data(ps)[[prev_col]] == "Control_Sample"
-    contamdf <- isContaminant(ps, neg="is.neg", conc="input_conc_ng") # thresheld = 0.1 - default
 
     # Run Decontam 
     if (!is.null(freq_col) && !is.null(prev_col)) {   
@@ -1139,8 +1147,8 @@ library(pavian)
     
     } else {
 
-      cat("Both freq_col and prev_col cannot be set tdo NULL\n")
-      cat("please supply either one or both column names in your metadata")
+      cat("Both freq_col and prev_col cannot be set to NULL.\n")
+      cat("Please supply either one or both column names in your metadata")
       cat("for frequency and prevalence based analysis, respectively\n")
       stop()
 
@@ -1151,10 +1159,10 @@ library(pavian)
   ```
 
   **Function Parameter Definitions:**
-  - `metadata` - a vector of strings specifying the data to include in the plot
-  - `feature_table` -  feature matrix to decontaminate with sample names as column and features as row
+  - `metadata` - a metadata dataframe with samples as row and columns describing each sample
+  - `feature_table` -  feature [species, functions etc.] matrix to decontaminate with sample names as column and features as row
   - `prev_col` - a character column in metadata to be used for prevalence based analysis. Controls in this column should always be names "Control_Sample"
-  - `freq_col` - a numeric column in metadata to be use for frequency based analysis
+  - `freq_col` - a numeric column in metadata to be used for frequency based analysis
   - `contam_threshold` -  the probability threshold below which (strictly less than) the null-hypothesis 
                           (not a contaminant) should be rejected in favor of the alternate hypothesis (contaminant).
 
@@ -1171,28 +1179,28 @@ process_taxonomy <- function(taxonomy, prefix='\\w__') {
   
   taxonomy <- apply(X = taxonomy, MARGIN = 2, FUN = as.character) 
 
-  # replace NAa with Other and delete the D_num__ prefix from the taxonomy names
+  # replace NAs and empty cells with "Other" and delete the `prefix` from taxonomy names
   for (rank in colnames(taxonomy)) {
-    #delete the taxonomy prefix
+    # Delete the taxonomy prefix
     taxonomy[,rank] <- gsub(pattern = prefix, x = taxonomy[, rank],
                             replacement = '')
     indices <- which(is.na(taxonomy[,rank]))
     taxonomy[indices, rank] <- rep(x = "Other", times=length(indices)) 
-    #replace empty cell
+    # Replace empty cells with "Other"
     indices <- which(taxonomy[,rank] == "")
     taxonomy[indices,rank] <- rep(x = "Other", times=length(indices))
   }
+  # Replace underscore with space
   taxonomy <- apply(X = taxonomy,MARGIN = 2,
                     FUN =  gsub,pattern = "_",replacement = " ") %>% 
-    as.data.frame(stringAsfactor=F)
+    as.data.frame(stringAsfactor=FALSE)
   return(taxonomy)
-}
 
 ```
 **Function Parameter Definitions:**
 
-- `taxonomy` - is a string specifying the taxonomic assignment file name
-- `prefix`  - is a regular expression specifying the characters to remove
+- `taxonomy` - is a taxonomy assignment dataframe with ranks [Phylum, Class .. Species] as columns and taxonomy assignments as rows
+- `prefix`  - is a regular expression specifying a character sequence to remove
               from taxon names
 
 **Returns:** a dataframe of reformated taxonomy names
@@ -1210,8 +1218,10 @@ format_taxonomy_table <- function(taxonomy,stringToReplace="Other",
   
   for (taxa_index in seq_along(taxonomy)) {
     
+    # Get the row indices of the current taxonomy columns 
+    # with rows matching the sting in `stringToReplace`
     indices <- grep(x = taxonomy[,taxa_index], pattern = stringToReplace)
-    
+    # Replace the value in that row with the value in the adjacent cell concated with `suffix` 
     taxonomy[indices,taxa_index] <- 
       paste0(taxonomy[indices,taxa_index-1],
              rep(x = suffix, times=length(indices)))
@@ -1223,7 +1233,7 @@ format_taxonomy_table <- function(taxonomy,stringToReplace="Other",
 ```
 **Function Parameter Definitions:**
 - `taxonomy` -  taxonomy dataframe with taxonomy ranks as column names
-- `stringToReplace` - a vector of regex strings specifying what to replace
+- `stringToReplace` - a regex string specifying what to replace
 - `suffix` - string specifying the replacement value
 
 **Returns:** a dataframe of reformated taxonomy names
@@ -1249,22 +1259,21 @@ fix_names<- function(taxonomy,stringToReplace,suffix){
 ```
 **Function Parameter Definitions:**
 - `taxonomy` -  taxonomy dataframe with taxonomy ranks as column names
-- `stringToReplace` - a vector of regex strings specifying what to replace
+- `stringToReplace` - a regex string specifying what to replace
 - `suffix` - string specifying the replacement value
 
-**Returns:** a dataframe of detailed decontam results
+**Returns:** a dataframe of reformated/cleaned taxonomy names
 
 </details>
 
 
 ##### read_input_table()
 <details>
-  <summary>read an input table into a dataframe</summary>
+  <summary>read an input table into a tibble</summary>
 
 ```R
 read_input_table <- function(file_name){
   
-   # Get depth from file name
    df <- read_delim(file = file_name, delim = "\t", comment = "#")
    return(df)
    
@@ -1273,8 +1282,7 @@ read_input_table <- function(file_name){
 **Function Parameter Definitions:**
 
 - `file_name` - path to file to be read
-
-**Returns:** a dataframe from input file
+**Returns:** a tibble generated from the input file
 
 </details>
 
@@ -1289,15 +1297,20 @@ read_contig_table <- function(file_name, sample_names){
   
   df <- read_input_table(file_name)
 
+  # Subset taxoxnomy portion (domain:species) of input table
+  # and replace empty/Na domain assignments with "Unclassified"
   taxonomy_table <- df %>%
     select(domain:species) %>%
     mutate(domain=replace_na(domain, "Unclassified"))
   
+  # Subset count table
   counts_table <- df %>% select(!!sample_names)
 
+  # Mutate taxonomy mames
   taxonomy_table  <- process_taxonomy(taxonomy_table)
   taxonomy_table <- fix_names(taxonomy_table, "Other", ";_")
 
+  # Column bind taxonomy dataframe with species count dataframe
   df <- bind_cols(taxonomy_table, counts_table)
   
   return(df)
@@ -1307,10 +1320,10 @@ read_contig_table <- function(file_name, sample_names){
 
 **Function Parameter Definitions:**
 
-- `file_name` - path to file to be read
+- `file_name` - path to contig taxonomy assignment file to be read
 - `sample_names` - string of samples names to keep in the final dataframe
 
-**Returns:** a dataframe with cleaned taxonomy names
+**Returns:** a dataframe with cleaned taxonomy names and sample species count
 
 </details>
 
@@ -1318,11 +1331,11 @@ read_contig_table <- function(file_name, sample_names){
 
 ##### get_sample_names()
 <details>
-  <summary>retrieve the name of samples for which assemblies were generated</summary>
+  <summary>retrieve sample names for which assemblies were generated</summary>
 
   ```R
 get_sample_names <- function (assembly_summary) {
-  # assembly_summary - path to assembly summary file
+
 
   overview_table <-  read_input_table(assembly_summary) %>%
                        select(
@@ -1383,7 +1396,7 @@ colours <- colorRampPalette(c('white','red'))(255)
 
 **Output Data:**
 
-- `publication_format` (a ggplot::theme object specifying the custom theme for plotting)
+- `publication_format` (a ggplot::theme object specifying a custom theme for plotting)
 - `custom_palette` (a vector of strings specifying a custom color palette for coloring plots)
 
 <br>
@@ -1397,7 +1410,7 @@ colours <- colorRampPalette(c('white','red'))(255)
 #### 9a. Build kaiju database
 
 ```bash
-# Make directory that will hold all the download kaiju database
+# Make a directory that will hold the downloaded kaiju database
 mkdir kaiju-db/ && cd kaiju-db/
 # Download kaiju's reference database
 kaiju-makedb -s nr_euk -t NumberOfThreads
@@ -1433,10 +1446,10 @@ kaiju -f kaiju-db/nr_euk/kaiju_db_nr_euk.fmi -t kaiju-db/nodes.dmp \
 
 **Parameter Definitions:**
 
-- `-f` - specifies path to the Kaiju database (.fmi) file
-- `-t` - specifies path to the Kaiju nodes.dmp file
+- `-f` - specifies path to the kaiju database (.fmi) file
+- `-t` - specifies path to the kaiju nodes.dmp file
 - `-z` - number of parallel processing threads to use
-- `-E` - specifies the minimum E-value in Greedy mode (default: 0.01)
+- `-E` - specifies the minimum E-value in Greedy mode (default: 1e-05)
 - `-i` - specifies path to the input file
 - `-o` - specifies the name of output file
 
@@ -1457,18 +1470,18 @@ kaiju -f kaiju-db/nr_euk/kaiju_db_nr_euk.fmi -t kaiju-db/nodes.dmp \
   kaiju2table -t nodes.dmp -n names.dmp -p -r species \
               -o merged_kaiju_table.tsv *_kaiju.out
 
-# Covert the file names to sample names
+# Convert file names to sample names
 sed -i -E 's/.+\/(.+)_kaiju\.out/\1/g' merged_kaiju_table.tsv && \
 sed -i -E 's/file/sample/' merged_kaiju_table.tsv
 ```
 
 **Parameter Definitions:**
 
-- `-n` - specifies path to the Kaiju names.dmp file
-- `-t` - specifies path to the Kaiju nodes.dmp file
+- `-n` - specifies path to the kaiju names.dmp file
+- `-t` - specifies path to the kaiju nodes.dmp file
 - `-r` - specifies taxonomic rank, must be one of: phylum, class, order, family, genus, species
 - `-o` - specifies the name of krona formatted kaiju output file
-- `*_kaiju.out` - positional argument specifying the path to the Kaiju output file (output from [Step 9ai](#9ai-read-taxonomic-classification-using-kaiju))
+- `*_kaiju.out` - positional argument specifying the path to the kaiju output file (output from [Step 9ai](#9ai-read-taxonomic-classification-using-kaiju))
 
 **Input Data:**
 
@@ -1490,9 +1503,9 @@ kaiju2krona -u -n kaiju-db/names.dmp -t kaiju-db/nodes.dmp \
 **Parameter Definitions:**
 
 - `-u` - include count for unclassified reads in output
-- `-n` - specifies path to the Kaiju names.dmp file
-- `-t` - specifies path to the Kaiju nodes.dmp file
-- `-i` - specifies path to the Kaiju output file (output from [Step 9b](#9b-kaiju-taxonomic-classification))
+- `-n` - specifies path to the kaiju names.dmp file
+- `-t` - specifies path to the kaiju nodes.dmp file
+- `-i` - specifies path to the kaiju output file (output from [Step 9b](#9b-kaiju-taxonomic-classification))
 - `-o` - specifies the name of krona formatted kaiju output file
 
 **Input Data:**
@@ -1544,7 +1557,7 @@ ktImportText  -o kaiju-report.html ${KTEXT_FILES[*]}
 **ktImportText**
 
 - `-o` - specifies the compiled output html file name
-- `${KTEXT_FILES[*]}` - a array positional arguement with the follow content: 
+- `${KTEXT_FILES[*]}` - an array positional arguement with the following content: 
                      sample_1.krona,sample_1 sample_2.krona,sample_2 .. sample_n.krona,sample_n.
 
 **Input Data:**
@@ -1568,11 +1581,11 @@ write_csv(x = feature_table, file = "kaiju_species_table.csv")
 
 - `file_path` - path to compiled kaiju table at the species taxon level
 - `x`  - feature table dataframe to write to file
-- `file` - path to where to write kaiju count table per sample.
+- `file` - path to where to write kaiju count table per sample
 
 **Input Data:**
 
-- merged_kaiju_table.tsv (Compiled kaiju table at the species taxon level, from [Step 9c](#10c-compile-kaiju-taxonomy-results))
+- merged_kaiju_table.tsv (compiled kaiju table at the species taxon level, from [Step 9c](#10c-compile-kaiju-taxonomy-results))
 
 **Output Data:**
 
@@ -1618,7 +1631,7 @@ library(tidyverse)
 # Threshold to filter out potential false positive
 # taxonomy assignments
 filter_threshold <- 0.5
-# Filter out Rare and non-microbial assignment
+# Filter out Rare and non-microbial assignments.
 # You can add as many species that you'd like to filter out
 # using the following syntax "|species_name1|species_name2"
 non_microbial <- "Unclassifed|unclassified|Homo sapien|cannot|uncultured|unidentified"
@@ -1636,7 +1649,7 @@ ggsave(filename =  "unfiltered-kaiju_species_plot.png", plot = p,
        device = "png", width = plot_width, height = plot_height, units = "in", dpi = 300)
 
 
-# Get species with relative abundance greater than filter_threshold in all samples
+# Get species with relative abundance greater than `filter_threshold` in all samples
 # Drop rare and non-microbial assignments
 filtered_species_table  <- filter_rare(species_table, non_microbial, threshold=filter_threshold)
 
@@ -1656,7 +1669,7 @@ ggsave(filename = "filtered-kaiju_species_plot.png", plot = p,
 
 **Parameter Definitions:**
 
-- `filter_threshold` - a decimal threshold from 0-1 for filter out rare species i.e potential fals epositives.
+- `filter_threshold` - a decimal threshold from 0-1 for filtering out rare species i.e potential false epositives.
 - `non_microbial` - a regex string  listing out assignmnets to drop before filtering based on the `filter_threshold` above. 
 
 **Input Data:**
@@ -1678,6 +1691,8 @@ ggsave(filename = "filtered-kaiju_species_plot.png", plot = p,
 ```R
 library(tidyverse)
 library(decontam)
+library(phyloseq)
+
 feature_table <- read_csv("filtered-kaiju_species_table.csv")
 # Set to 0.5 for a more aggressive approach where species more prevalent
 # in the negative controls are considered contaminants
@@ -1694,7 +1709,7 @@ contamdf <- run_decontam(feature_table, metadata, contam_threshold, prev_col, fr
 # Write decontam results table to file
 write_csv(x = contamdf %>% rownames_to_column("Species"), file = "decontam-kaiju_results.csv")
 
-# Get the list of contaminats identified by decontam
+# Get the list of contaminants identified by decontam
 contaminants <- contamdf %>%
                 as.data.frame %>%
                 rownames_to_column("Species") %>%
@@ -1730,7 +1745,7 @@ ggsave(filename = "decontaminated-kaiju-species_plot.png", plot = p,
 
 **Output Data:**
 
-- **decontam-kaiju_results.csv** (decontam's results table)
+- **decontam-kaiju_results.csv** (decontam's result table)
 - **decontaminated-kaiju_species_table.csv** (decontaminated species table)
 - **decontaminated-kaiju-species_plot.png** (barplot after filtering out contaminants)
 
@@ -1771,9 +1786,9 @@ tar -xvzf k2_pluspfp.tar.gz
 
 **wget**
 
-- `O` - name of file to download the url content to.
-- `--timeout=3600` - specifies the network timeout to seconds seconds
-- `--tries=0` - retry downdload infinitely.
+- `O` - name of file to download the url content to
+- `--timeout=3600` - specifies the network timeout in seconds
+- `--tries=0` - retry downdload infinitely
 - `--continue` -  continue getting a partially-downloaded file
 - `*_URL` - position arguement specifying the url to download a particular resource from.
 
@@ -1782,7 +1797,7 @@ tar -xvzf k2_pluspfp.tar.gz
 
 - `INSPECT_URL=` - url specifying the location of kraken2 inspect file
 - `LIRARY_REPORT_URL=` -  url specifying the location of kraken2 library report file
-- `MD5_URL=` -  url specifying the location of md5 file of kraken database
+- `MD5_URL=` -  url specifying the location of the md5 file of the kraken database
 - `DB_URL=` - url specifying the location of the main kraken database archive in .tar.gz format
 
 **Output Data:**
@@ -1809,7 +1824,7 @@ kraken2 --db kraken2-db/ --gzip-compressed --threads NumberOfThreads --use-names
 
 **Input Data:**
 
-- kraken2-db/ (a direcory containing kraken 2 database files, output from [Step 10a](#10a-download-kraken2-database))
+- kraken2-db/ (a directory containing kraken 2 database files, output from [Step 10a](#10a-download-kraken2-database))
 - sample_host_removed.fastq.gz (gzipped reads fastq file, output from [Step 7b](#7b-remove-host-reads))
 
 **Output Data:**
@@ -1877,7 +1892,7 @@ ktImportText  -o kraken-report.html ${KTEXT_FILES[*]}
 **ktImportText**
 
 - `-o` - specifies the compiled output html file name
-- `${KTEXT_FILES[*]}` - a array positional arguement with the follow content: 
+- `${KTEXT_FILES[*]}` - an array positional arguement with the following content: 
                      sample_1.krona,sample_1 sample_2.krona,sample_2 .. sample_n.krona,sample_n.
 
 **Input Data:**
@@ -1935,7 +1950,7 @@ species_table <- species_table[,-match("species", colnames(species_table))]
 
 **Parameter Definitions:**
 
-- `file` - path to input tables
+- `file` - path to input table
 - `delim` - file delimiter 
 
 **Input Data:**
@@ -1945,8 +1960,8 @@ species_table <- species_table[,-match("species", colnames(species_table))]
 
 **Output Data:**
 
-- `metadata` - a dataframe of sample-wise metadata
-- `species_table` - a dataframe
+- metadata (a dataframe of sample-wise metadata)
+- species_table (a dataframe of species count with rows and columns as species and sample names, respectively)
 
 
 #### 10g. Taxonomy barplots
@@ -1957,7 +1972,7 @@ library(tidyverse)
 # Threshold to filter out potential false positive
 # taxonomy assignments
 filter_threshold <- 0.5
-# Filter out Rare and non-microbial assignment
+# Filter out Rare and non-microbial assignments.
 # You can add as many species that you'd like to filter out
 # using the following syntax "|species_name1|species_name2"
 non_microbial <- "Unclassifed|unclassified|Homo sapien"
@@ -1975,7 +1990,7 @@ ggsave(filename =  "unfiltered-kraken_species_plot.png", plot = p, device = "png
        width = plot_width, height = plot_height, units = "in", dpi = 300)
 
 
-# Get species with relative abundance greater than filter_threshold in all samples
+# Get species with relative abundance greater than `filter_threshold` in all samples
 # Drop rare and non-microbial assignments
 filtered_species_table  <- filter_rare(species_table, non_microbial, threshold=filter_threshold)
 
@@ -1995,8 +2010,8 @@ ggsave(filename = "filtered-kraken_species_plot.png", plot = p,
 
 **Parameter Definitions:**
 
-- `filter_threshold` - a decimal threshold from 0-1 for filter out rare species i.e potential fals epositives.
-- `non_microbial` - a regex string  listing out assignmnets to drop before filtering based on the `filter_threshold` above. 
+- `filter_threshold` - a decimal threshold from 0-1 to filter out rare species i.e potential false positives
+- `non_microbial` - a regex string listing out assignments to drop before filtering based on the `filter_threshold` above 
 
 **Input Data:**
 
@@ -2017,13 +2032,15 @@ Feature decontamination with decontam. Decontam is an R package that statistical
 ```R
 library(tidyverse)
 library(decontam)
+library(phyloseq)
 
 feature_table <- read_csv("filtered-kraken_species_table.csv")
 # Set to 0.5 for a more aggressive approach where species more prevalent
 # in the negative controls are considered contaminants
 contam_threshold <- 0.1
 # Control samples in this column should always be written as
-# "Control_Sample" and true samples as "True_Sample"
+# "Control_Sample" and true samples as "True_Sample" for the function below to
+# function properly.
 prev_col <- "Sample_or_Control"
 freq_col <- "input_conc_ng"
 plot_width <- 18
@@ -2031,10 +2048,10 @@ plot_height <- 8
 
 contamdf <- run_decontam(feature_table, metadata, contam_threshold, prev_col, freq_col)
 
-# Write decontam results table to file
+# Write decontam result table to file
 write_csv(x = contamdf %>% rownames_to_column("Species"), file = "decontam-kraken_results.csv")
 
-# Get the list of contaminats identified by decontam
+# Get the list of contaminants identified by decontam
 contaminants <- contamdf %>%
                 as.data.frame %>%
                 rownames_to_column("Species") %>%
@@ -2070,7 +2087,7 @@ ggsave(filename = "decontaminated-kraken-species_plot.png", plot = p,
 
 **Output Data:**
 
-- **decontam-kraken_results.csv** (decontam's results table)
+- **decontam-kraken_results.csv** (decontam's result table)
 - **decontaminated-kraken_species_table.csv** (decontaminated species table)
 - **decontaminated-kraken-species_plot.png** (barplot after filtering out contaminants)
 
@@ -2448,7 +2465,7 @@ rm sample*.tmp*
 minimap2 -a -x map-ont \
         -t NumberOfThreads \
         sample_assembly.fasta sample_host_removed.fastq.gz \
-        > sample.sam  2> sample-mapping-info.txt | 
+        > sample.sam  2> sample-mapping-info.txt
 ```
 
 **Parameter Definitions:**
@@ -2748,6 +2765,8 @@ dev.off()
 ```R
 library(tidyverse)
 library(decontam)
+library(phyloseq)
+
 # Set to 0.5 for a more aggressive approach where species more prevalent
 # in the negative controls are considered contaminants
 contam_threshold <- 0.1
@@ -2912,8 +2931,10 @@ dev.off()
 ```R
 library(tidyverse)
 library(decontam)
+library(phyloseq)
+
 # Set to 0.5 for a more aggressive approach where species more prevalent
-# in the negative controls are considered contaminants
+# in negative controls are considered contaminants
 contam_threshold <- 0.1 
 # Control samples in this column should always be written as "Control_Sample" and true samples as "True_Sample"
 prev_col <- "Sample_or_Control"
@@ -3099,6 +3120,8 @@ dev.off()
 ```R
 library(tidyverse)
 library(decontam)
+library(phyloseq)
+
 # Set to 0.5 for a more aggressive approach where species more prevalent
 # in the negative controls are considered contaminants
 contam_threshold <- 0.1
