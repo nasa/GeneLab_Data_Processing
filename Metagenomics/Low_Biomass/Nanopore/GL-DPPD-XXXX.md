@@ -1661,6 +1661,11 @@ filtered_species_table  <- filter_rare(species_table, non_microbial, threshold=f
 filtered_species_table <- count_to_rel_abundance(filtered_species_table)
 
 # Write filtered table to file
+table2write <- filtered_species_table %>%
+                 t %>%
+                as.data.frame() %>%
+                rownames_to_column("Species")
+
 write_csv(x = filtered_species_table, file = "filtered-kaiju_species_table.csv")
 
 # Make plot after filtering
@@ -1696,7 +1701,11 @@ library(tidyverse)
 library(decontam)
 library(phyloseq)
 
-feature_table <- read_csv("filtered-kaiju_species_table.csv")
+feature_table <- read_csv("filtered-kaiju_species_table.csv") %>%
+                  as.data.frame()
+
+ rownames(feature_table) <- feature_table$Species
+ feature_table <- feature_table[,-1]  %>% as.matrix()
 # Set to 0.5 for a more aggressive approach where species more prevalent
 # in the negative controls are considered contaminants
 contam_threshold <- 0.1
@@ -2002,7 +2011,12 @@ filtered_species_table  <- filter_rare(species_table, non_microbial, threshold=f
 filtered_species_table <- count_to_rel_abundance(filtered_species_table)
 
 # Write filtered table to file
-write_csv(x = filtered_species_table, file = "filtered-kraken_species_table.csv")
+table2write <- filtered_species_table %>%
+                 t %>%
+                 as.data.frame() %>%
+                rownames_to_column("Species")
+
+write_csv(x = table2write , file = "filtered-kraken_species_table.csv")
 
 # Make plot after filtering
 p <- make_plot(filtered_species_table , metadata, custom_palette, publication_format)
@@ -2037,7 +2051,12 @@ library(tidyverse)
 library(decontam)
 library(phyloseq)
 
-feature_table <- read_csv("filtered-kraken_species_table.csv")
+feature_table <- read_csv("filtered-kraken_species_table.csv") %>%
+                  as.data.frame()
+
+ rownames(feature_table) <- feature_table$Species
+ feature_table <- feature_table[,-1]  %>% as.matrix()
+ 
 # Set to 0.5 for a more aggressive approach where species more prevalent
 # in the negative controls are considered contaminants
 contam_threshold <- 0.1
