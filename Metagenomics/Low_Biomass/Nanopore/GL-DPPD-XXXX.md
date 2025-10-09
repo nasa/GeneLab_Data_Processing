@@ -1734,14 +1734,21 @@ decontaminated_table <- feature_table %>%
                 filter(str_detect(Species, 
                                   pattern = str_c(contaminants,
                                                   collapse = "|"),
-                                  negate = TRUE)) %>%
-                select(-Species) %>% as.matrix
+                                  negate = TRUE))
+
+rownames(decontaminated_table) <- decontaminated_table$Species
+decontaminated_table <- decontaminated_table[,-1] %>% as.matrix
 
 # Convert count matrix to relative abundance matrix
 decontaminated_species_table <- count_to_rel_abundance(decontaminated_table)
 
 # Write decontaminated species table to file
-write_csv(x = decontaminated_species_table, file = "decontaminated-kaiju_species_table.csv")
+table2write <- decontaminated_species_table %>%
+                 t %>%
+                 as.data.frame() %>%
+                rownames_to_column("Species")
+
+write_csv(x = table2write, file = "decontaminated-kaiju_species_table.csv")
 
 # Make plot after filtering out contaminants
 p <- make_plot(decontaminated_species_table , metadata, custom_palette, publication_format)
@@ -2086,14 +2093,21 @@ decontaminated_table <- feature_table %>%
                 filter(str_detect(Species, 
                                   pattern = str_c(contaminants,
                                                   collapse = "|"),
-                                  negate = TRUE)) %>%
-                select(-Species) %>% as.matrix
+                                  negate = TRUE))
+
+rownames(decontaminated_table) <- decontaminated_table$Species
+decontaminated_table <- decontaminated_table[,-1] %>% as.matrix
 
 # Convert count matrix to relative abundance matrix
 decontaminated_species_table <- count_to_rel_abundance(decontaminated_table)
 
 # Write decontaminated species table to file
-write_csv(x = decontaminated_species_table, file = "decontaminated-kraken_species_table.csv")
+table2write <- decontaminated_species_table %>%
+                 t %>%
+                 as.data.frame() %>%
+                rownames_to_column("Species")
+
+write_csv(x = table2write, file = "decontaminated-kraken_species_table.csv")
 
 # Make plot after filtering out contaminants
 p <- make_plot(decontaminated_species_table , metadata, custom_palette, publication_format)
