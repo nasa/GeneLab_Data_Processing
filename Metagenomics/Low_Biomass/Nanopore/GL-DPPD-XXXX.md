@@ -1666,7 +1666,7 @@ table2write <- filtered_species_table %>%
                 as.data.frame() %>%
                 rownames_to_column("Species")
 
-write_csv(x = filtered_species_table, file = "filtered-kaiju_species_table.csv")
+write_csv(x = table2write, file = "filtered-kaiju_species_table.csv")
 
 # Make plot after filtering
 p <- make_plot(filtered_species_table , metadata, custom_palette, publication_format)
@@ -2056,7 +2056,7 @@ feature_table <- read_csv("filtered-kraken_species_table.csv") %>%
 
  rownames(feature_table) <- feature_table$Species
  feature_table <- feature_table[,-1]  %>% as.matrix()
- 
+
 # Set to 0.5 for a more aggressive approach where species more prevalent
 # in the negative controls are considered contaminants
 contam_threshold <- 0.1
