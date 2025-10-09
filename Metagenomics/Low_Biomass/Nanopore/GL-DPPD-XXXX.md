@@ -705,7 +705,7 @@ multiqc --zip-data-dir \
   wget -O host.tar.gz --timeout=3600 --tries=0 --continue  host_url
 
   mkdir kraken2_host_db/ && \
-  tar -zxvf -C kraken2_host_db/ && \
+  tar -zxvf host.tar.gz -C kraken2_host_db/ && \
   rm -rf  host.tar.gz # Cleaning up
 ```
 
@@ -1057,28 +1057,31 @@ library(pavian)
 
   ```R
   # Make bar plot
-  make_plot <- function(abund_table, metadata, colors2use, publication_format, samples_column="Sample_ID", prefix_to_remove="barcode") {
-    # Prepare table
-    abund_table_wide <- abund_table %>% 
-        as.data.frame() %>% 
-        rownames_to_column(samples_column) %>% 
-        inner_join(metadata) %>% # join abundance table and metadata by `samples_column`
-        select(!!!colnames(metadata), everything()) %>% 
-        mutate(Sample_ID = Sample_ID %>% str_remove(prefix_to_remove))
-    # Convert table from wide to log format for plotting    
-    abund_table_long <- abund_table_wide  %>%
-        pivot_longer(-colnames(metadata), 
-                    names_to = "Species",
-                    values_to = "relative_abundance")
-    # Make relative abundance plot  
-    p <- ggplot(abund_table_long, mapping = aes(x=Sample_ID, y=relative_abundance, fill=Species)) +
-         geom_col() +
-         scale_fill_manual(values = colors2use) + 
-         labs(x=NULL, y="Relative Abundance (%)") + 
-         publication_format
+make_plot <- function(abund_table, metadata, colors2use, publication_format,
+                      samples_column="Sample_ID", prefix_to_remove="barcode"){
+  
+abund_table_wide <- abund_table %>% 
+    as.data.frame() %>% 
+    rownames_to_column(samples_column) %>% 
+    inner_join(metadata) %>% 
+    select(!!!colnames(metadata), everything()) %>% 
+    mutate(!!samples_column := !!sym(samples_column) %>% str_remove(prefix_to_remove))
+    
+  
+abund_table_long <- abund_table_wide  %>%
+    pivot_longer(-colnames(metadata), 
+                 names_to = "Species",
+                 values_to = "relative_abundance")
+  
+p <- ggplot(abund_table_long, mapping = aes(x=!!sym(samples_column), 
+                                              y=relative_abundance, fill=Species)) +
+    geom_col() +
+    scale_fill_manual(values = colors2use) + 
+    labs(x=NULL, y="Relative Abundance (%)") + 
+    publication_format
 
-    return(p)
-  }
+return(p)
+}
   ```
 
   **Function Parameter Definitions:**
@@ -1133,7 +1136,7 @@ library(pavian)
     if (!is.null(freq_col) && !is.null(prev_col)) {   
 
       # Run decontam in both prevalence and frequency modes
-      contamdf <- isContaminant(ps, neg=prev_col, conc=freq_col, threshold=contam_threshold) 
+      contamdf <- isContaminant(ps, neg="is.neg", conc=freq_col, threshold=contam_threshold) 
 
     } else if(!is.null(freq_col)) {
       
@@ -1143,7 +1146,7 @@ library(pavian)
     } else if(!is.null(prev_col)){
 
       # Run decontam in prevalence mode
-      contamdf <- isContaminant(ps, conc=freq_col, threshold=contam_threshold)
+      contamdf <- isContaminant(ps, neg="is.neg", threshold=contam_threshold)
     
     } else {
 
