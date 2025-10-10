@@ -1577,7 +1577,10 @@ ktImportText  -o kaiju-report.html ${KTEXT_FILES[*]}
 ```R
 library(tidyverse)
 feature_table <- process_kaiju_table (file_path="merged_kaiju_table.tsv")
-write_csv(x = feature_table, file = "kaiju_species_table.csv")
+table2write <- feature_table  %>%
+                as.data.frame() %>%
+                rownames_to_column("Species")
+write_csv(x = table2write, file = "kaiju_species_table.csv")
 ```
 
 **Parameter Definitions:**
@@ -1608,6 +1611,8 @@ row.names(metadata) <- metadata[,samples_column]
 
 # Read-in feature table
 species_table <- read_csv(file="kaiju_species_table.csv") %>%  as.data.frame()
+rownames(species_tablee) <- species_table$Species
+species_table <- species_table[,-1]  %>% as.matrix()
 ```
 
 **Parameter Definitions:**
@@ -1931,7 +1936,11 @@ library(pavian)
 
 reports_dir <- "/path/to/directory/with/*-kraken2-report.tsv"
 species_table <- process_kraken_table(reports_dir)
-write_csv(x = species_table, 
+table2write <- species_table  %>%
+                as.data.frame() %>%
+                rownames_to_column("Species")
+
+write_csv(x = table2write, 
           file = "kraken_species_table.csv")
 ```
 
@@ -1962,9 +1971,9 @@ metadata <- read_delim(file=metdata_file , delim = "\t") %>% as.data.frame()
 row.names(metadata) <- metadata[,samples_column]
 # Read-in feature table
 species_table <- read_csv(file="kraken_species_table.csv") %>%  as.data.frame()
-rownames(species_table) <- species_table$species
+rownames(species_table) <- species_table$Species
 # Drop the species column
-species_table <- species_table[,-match("species", colnames(species_table))]
+species_table <- species_table[,-match("Species", colnames(species_table))]
 ```
 
 **Parameter Definitions:**
