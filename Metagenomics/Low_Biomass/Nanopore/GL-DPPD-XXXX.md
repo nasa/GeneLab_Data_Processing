@@ -705,7 +705,7 @@ multiqc --zip-data-dir \
   wget -O host.tar.gz --timeout=3600 --tries=0 --continue  host_url
 
   mkdir kraken2_host_db/ && \
-  tar -zxvf -C kraken2_host_db/ && \
+  tar -zxvf host.tar.gz -C kraken2_host_db/ && \
   rm -rf  host.tar.gz # Cleaning up
 ```
 
@@ -1057,28 +1057,31 @@ library(pavian)
 
   ```R
   # Make bar plot
-  make_plot <- function(abund_table, metadata, colors2use, publication_format, samples_column="Sample_ID", prefix_to_remove="barcode") {
-    # Prepare table
-    abund_table_wide <- abund_table %>% 
-        as.data.frame() %>% 
-        rownames_to_column(samples_column) %>% 
-        inner_join(metadata) %>% # join abundance table and metadata by `samples_column`
-        select(!!!colnames(metadata), everything()) %>% 
-        mutate(Sample_ID = Sample_ID %>% str_remove(prefix_to_remove))
-    # Convert table from wide to log format for plotting    
-    abund_table_long <- abund_table_wide  %>%
-        pivot_longer(-colnames(metadata), 
-                    names_to = "Species",
-                    values_to = "relative_abundance")
-    # Make relative abundance plot  
-    p <- ggplot(abund_table_long, mapping = aes(x=Sample_ID, y=relative_abundance, fill=Species)) +
-         geom_col() +
-         scale_fill_manual(values = colors2use) + 
-         labs(x=NULL, y="Relative Abundance (%)") + 
-         publication_format
+make_plot <- function(abund_table, metadata, colors2use, publication_format,
+                      samples_column="Sample_ID", prefix_to_remove="barcode"){
+  
+abund_table_wide <- abund_table %>% 
+    as.data.frame() %>% 
+    rownames_to_column(samples_column) %>% 
+    inner_join(metadata) %>% 
+    select(!!!colnames(metadata), everything()) %>% 
+    mutate(!!samples_column := !!sym(samples_column) %>% str_remove(prefix_to_remove))
+    
+  
+abund_table_long <- abund_table_wide  %>%
+    pivot_longer(-colnames(metadata), 
+                 names_to = "Species",
+                 values_to = "relative_abundance")
+  
+p <- ggplot(abund_table_long, mapping = aes(x=!!sym(samples_column), 
+                                              y=relative_abundance, fill=Species)) +
+    geom_col() +
+    scale_fill_manual(values = colors2use) + 
+    labs(x=NULL, y="Relative Abundance (%)") + 
+    publication_format
 
-    return(p)
-  }
+return(p)
+}
   ```
 
   **Function Parameter Definitions:**
@@ -1133,7 +1136,7 @@ library(pavian)
     if (!is.null(freq_col) && !is.null(prev_col)) {   
 
       # Run decontam in both prevalence and frequency modes
-      contamdf <- isContaminant(ps, neg=prev_col, conc=freq_col, threshold=contam_threshold) 
+      contamdf <- isContaminant(ps, neg="is.neg", conc=freq_col, threshold=contam_threshold) 
 
     } else if(!is.null(freq_col)) {
       
@@ -1143,7 +1146,7 @@ library(pavian)
     } else if(!is.null(prev_col)){
 
       # Run decontam in prevalence mode
-      contamdf <- isContaminant(ps, conc=freq_col, threshold=contam_threshold)
+      contamdf <- isContaminant(ps, neg="is.neg", threshold=contam_threshold)
     
     } else {
 
@@ -1574,7 +1577,10 @@ ktImportText  -o kaiju-report.html ${KTEXT_FILES[*]}
 ```R
 library(tidyverse)
 feature_table <- process_kaiju_table (file_path="merged_kaiju_table.tsv")
-write_csv(x = feature_table, file = "kaiju_species_table.csv")
+table2write <- feature_table  %>%
+                as.data.frame() %>%
+                rownames_to_column("Species")
+write_csv(x = table2write, file = "kaiju_species_table.csv")
 ```
 
 **Parameter Definitions:**
@@ -1605,6 +1611,8 @@ row.names(metadata) <- metadata[,samples_column]
 
 # Read-in feature table
 species_table <- read_csv(file="kaiju_species_table.csv") %>%  as.data.frame()
+rownames(species_tablee) <- species_table$Species
+species_table <- species_table[,-1]  %>% as.matrix()
 ```
 
 **Parameter Definitions:**
@@ -1658,7 +1666,12 @@ filtered_species_table  <- filter_rare(species_table, non_microbial, threshold=f
 filtered_species_table <- count_to_rel_abundance(filtered_species_table)
 
 # Write filtered table to file
-write_csv(x = filtered_species_table, file = "filtered-kaiju_species_table.csv")
+table2write <- filtered_species_table %>%
+                 t %>%
+                as.data.frame() %>%
+                rownames_to_column("Species")
+
+write_csv(x = table2write, file = "filtered-kaiju_species_table.csv")
 
 # Make plot after filtering
 p <- make_plot(filtered_species_table , metadata, custom_palette, publication_format)
@@ -1693,7 +1706,11 @@ library(tidyverse)
 library(decontam)
 library(phyloseq)
 
-feature_table <- read_csv("filtered-kaiju_species_table.csv")
+feature_table <- read_csv("filtered-kaiju_species_table.csv") %>%
+                  as.data.frame()
+
+ rownames(feature_table) <- feature_table$Species
+ feature_table <- feature_table[,-1]  %>% as.matrix()
 # Set to 0.5 for a more aggressive approach where species more prevalent
 # in the negative controls are considered contaminants
 contam_threshold <- 0.1
@@ -1722,14 +1739,21 @@ decontaminated_table <- feature_table %>%
                 filter(str_detect(Species, 
                                   pattern = str_c(contaminants,
                                                   collapse = "|"),
-                                  negate = TRUE)) %>%
-                select(-Species) %>% as.matrix
+                                  negate = TRUE))
+
+rownames(decontaminated_table) <- decontaminated_table$Species
+decontaminated_table <- decontaminated_table[,-1] %>% as.matrix
 
 # Convert count matrix to relative abundance matrix
 decontaminated_species_table <- count_to_rel_abundance(decontaminated_table)
 
 # Write decontaminated species table to file
-write_csv(x = decontaminated_species_table, file = "decontaminated-kaiju_species_table.csv")
+table2write <- decontaminated_species_table %>%
+                 t %>%
+                 as.data.frame() %>%
+                rownames_to_column("Species")
+
+write_csv(x = table2write, file = "decontaminated-kaiju_species_table.csv")
 
 # Make plot after filtering out contaminants
 p <- make_plot(decontaminated_species_table , metadata, custom_palette, publication_format)
@@ -1912,7 +1936,11 @@ library(pavian)
 
 reports_dir <- "/path/to/directory/with/*-kraken2-report.tsv"
 species_table <- process_kraken_table(reports_dir)
-write_csv(x = species_table, 
+table2write <- species_table  %>%
+                as.data.frame() %>%
+                rownames_to_column("Species")
+
+write_csv(x = table2write, 
           file = "kraken_species_table.csv")
 ```
 
@@ -1943,9 +1971,9 @@ metadata <- read_delim(file=metdata_file , delim = "\t") %>% as.data.frame()
 row.names(metadata) <- metadata[,samples_column]
 # Read-in feature table
 species_table <- read_csv(file="kraken_species_table.csv") %>%  as.data.frame()
-rownames(species_table) <- species_table$species
+rownames(species_table) <- species_table$Species
 # Drop the species column
-species_table <- species_table[,-match("species", colnames(species_table))]
+species_table <- species_table[,-match("Species", colnames(species_table))]
 ```
 
 **Parameter Definitions:**
@@ -1999,7 +2027,12 @@ filtered_species_table  <- filter_rare(species_table, non_microbial, threshold=f
 filtered_species_table <- count_to_rel_abundance(filtered_species_table)
 
 # Write filtered table to file
-write_csv(x = filtered_species_table, file = "filtered-kraken_species_table.csv")
+table2write <- filtered_species_table %>%
+                 t %>%
+                 as.data.frame() %>%
+                rownames_to_column("Species")
+
+write_csv(x = table2write , file = "filtered-kraken_species_table.csv")
 
 # Make plot after filtering
 p <- make_plot(filtered_species_table , metadata, custom_palette, publication_format)
@@ -2034,7 +2067,12 @@ library(tidyverse)
 library(decontam)
 library(phyloseq)
 
-feature_table <- read_csv("filtered-kraken_species_table.csv")
+feature_table <- read_csv("filtered-kraken_species_table.csv") %>%
+                  as.data.frame()
+
+ rownames(feature_table) <- feature_table$Species
+ feature_table <- feature_table[,-1]  %>% as.matrix()
+
 # Set to 0.5 for a more aggressive approach where species more prevalent
 # in the negative controls are considered contaminants
 contam_threshold <- 0.1
@@ -2064,14 +2102,21 @@ decontaminated_table <- feature_table %>%
                 filter(str_detect(Species, 
                                   pattern = str_c(contaminants,
                                                   collapse = "|"),
-                                  negate = TRUE)) %>%
-                select(-Species) %>% as.matrix
+                                  negate = TRUE))
+
+rownames(decontaminated_table) <- decontaminated_table$Species
+decontaminated_table <- decontaminated_table[,-1] %>% as.matrix
 
 # Convert count matrix to relative abundance matrix
 decontaminated_species_table <- count_to_rel_abundance(decontaminated_table)
 
 # Write decontaminated species table to file
-write_csv(x = decontaminated_species_table, file = "decontaminated-kraken_species_table.csv")
+table2write <- decontaminated_species_table %>%
+                 t %>%
+                 as.data.frame() %>%
+                rownames_to_column("Species")
+
+write_csv(x = table2write, file = "decontaminated-kraken_species_table.csv")
 
 # Make plot after filtering out contaminants
 p <- make_plot(decontaminated_species_table , metadata, custom_palette, publication_format)
