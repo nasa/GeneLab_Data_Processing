@@ -1869,7 +1869,7 @@ ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}rarefaction_cur
 
 * `ps.rarefied` (a phyloseq object of the sample features (i.e. ASV) with feature counts derived from the `feature_table`, resampled such that all samples have the same library size)
 * rarefaction_curves_<tech_type>_GLAmpSeq.png (plot containing the rarefaction curves for each sample)
-* **alpha_diversity/rarefaction_depth_<tech_type>_GLAmpSeq.txt** (rarefaction depth value used in alpha analysis)
+* alpha_diversity/rarefaction_depth_<tech_type>_GLAmpSeq.txt (rarefaction depth value used in alpha analysis)
 
 <br>
 
@@ -2320,7 +2320,7 @@ zip -q euclidean_distance_plots_<tech_type>_GLAmpSeq.zip euclidean*.png
 * **beta_diversity/<distance_method>_adonis_table\_<tech_type>_GLAmpSeq.csv** (comma-separated table(s) containing the degrees of freedom (df), sum of squares (SumOfSqs), coefficient of determination (R^2), F-statistic (statistic), and p-value for the model (variation explained by experimental groups) and residual (unexplained variation) sources of variation (terms) for the specified distance analysis, Euclidean or Bray-Curtis)
 * **beta_diversity/<distance_method>_variance_table\_<tech_type>_GLAmpSeq.csv** (comma-separated table(s) containing the degrees of freedom (df), sum of squares (sumsq), mean square (meansq), F-statistic (statistic), and p-value for the groups (variation explained by experimental groups) and residual (unexplained variation) sources of variation (terms) for the specified distance analysis, Euclidean or Bray-Curtis)
 * **beta_diversity/vsd_validation_plot\_<tech_type>_GLAmpSeq.png** (VST transformation validation diagnostic plot)
-* **beta_diversity/rarefaction_depth\_<tech_type>_GLAmpSeq.txt** (rarefaction depth value used in beta analysis)
+* beta_diversity/rarefaction_depth\_<tech_type>_GLAmpSeq.txt (rarefaction depth value used in beta analysis)
 
 <br>
 
