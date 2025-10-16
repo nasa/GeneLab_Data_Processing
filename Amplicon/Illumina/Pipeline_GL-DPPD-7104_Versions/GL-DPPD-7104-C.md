@@ -168,6 +168,13 @@ Software Updates and Changes:
 > Exact processing commands for specific datasets are available in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory of this repository, and/or are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 >
 > Output files listed in **bold** below are included with each Amplicon Seq processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
+> 
+> ***Note:** All output files have an assay suffix ("_GLAmpSeq") added as indicated below. For this assay type, each output file also 
+> has a "<tech_type>" suffix added before the assay suffix to uniquely identify files that were created using different 
+> amplicon technologies (for example: "16S", "18S", "ITS"). The <tech_type> string (which includes a leading "_") is derived from the 
+> "Parameter Value: Library Selection" column in the OSDR assay table.*
+
+
 
 ---
 
@@ -774,7 +781,7 @@ library(hexbin)
     if(method == 'rarefy'){
       # Create phyloseq object
       ASV_physeq <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
-                            sample_data(metadata))
+                             sample_data(metadata))
 
       # Get the count for every sample sorted in ascending order
       seq_per_sample <- colSums(feature_table) %>% sort()
@@ -782,17 +789,16 @@ library(hexbin)
       depth <- min(seq_per_sample)
 
       # Error if the number of sequences per sample left after filtering is 
-    # insufficient for diversity analysis
-    if(max(seq_per_sample) < 100){
+      # insufficient for diversity analysis
+      if(max(seq_per_sample) < 100){
       
-      warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure{assay_suffix}.txt")
-      writeLines(
-        text = glue("The maximum sequence count per sample ({max(seq_per_sample)}) is less than 100.
-Therefore, beta diversity analysis with rarefaction cannot be performed. Check VST method normalization instead."),
-        con = warning_file
-      )
-      return(NULL)   # stop rarefaction branch, but don't kill script
-    }
+        warning_file <- glue("{beta_diversity_out_dir}/beta_diversity_failure_<tech_type>_GLAmpSeq.txt")
+        writeLines(
+          text = glue("The maximum sequence count per sample ({max(seq_per_sample)}) is less than 100. Therefore, beta diversity analysis with rarefaction cannot be performed. Check VST method normalization instead."),
+          con = warning_file
+        )
+        return(NULL)   # stop rarefaction branch, but don't kill script
+      }
 
       # Loop through the sequences per sample and return the count
       # nearest to the minimum required rarefaction depth
@@ -805,22 +811,20 @@ Therefore, beta diversity analysis with rarefaction cannot be performed. Check V
       }
 
       # Error if the depth that ends up being used is also less than 100
-    if(depth < 100){
-      
-      warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure{assay_suffix}.txt")
-      writeLines(
-        text = glue("The rarefaction depth being used in the analysis ({depth}) is less than 100.
-Therefore, beta diversity analysis with rarefaction cannot be performed. Check VST method normalization instead."),
-        con = warning_file
-      )
-      return(NULL)   # stop rarefaction branch, but don't kill script
-    } 
+      if(depth < 100){
+        
+        warning_file <- glue("{beta_diversity_out_dir}/beta_diversity_failure_<tech_type>_GLAmpSeq.txt")
+        writeLines(
+          text = glue("The rarefaction depth being used in the analysis ({depth}) is less than 100. Therefore, beta diversity analysis with rarefaction cannot be performed. Check VST method normalization instead."),
+          con = warning_file
+        )
+        return(NULL)   # stop rarefaction branch, but don't kill script
+      } 
     
-    #Warning if rarefaction depth is between 100 and 500
-    if (depth > 100 && depth < 500) {
-      warning(glue("Rarefaction depth ({depth}) is between 100 and 500.
-Beta diversity results may be unreliable."))
-    }
+      #Warning if rarefaction depth is between 100 and 500
+      if (depth > 100 && depth < 500) {
+        warning(glue("Rarefaction depth ({depth}) is between 100 and 500. Beta diversity results may be unreliable."))
+      }
 
       #----- Rarefy sample counts to even depth per sample
       ps <- rarefy_even_depth(physeq = ASV_physeq,
@@ -829,25 +833,25 @@ Beta diversity results may be unreliable."))
                               replace = FALSE,
                               verbose = FALSE)
 
-    # ---- Group check ----
-    survived_samples <- sample_names(ps)
-    remaining_groups <- unique(metadata[rownames(metadata) %in% survived_samples, groups_colname])
-    
-    if(length(remaining_groups) < 2){
-      warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure{assay_suffix}.txt")
-      writeLines(
-        text = glue("Not enough groups remain after rarefaction at {depth} (only {length(remaining_groups)}). Skipping beta diversity with rarefaction."),
-        con = warning_file
-      )
-      return(NULL)  # stop analysis, like depth failure
-    }
+      # ---- Group check ----
+      survived_samples <- sample_names(ps)
+      remaining_groups <- unique(metadata[rownames(metadata) %in% survived_samples, groups_colname])
+      
+      if(length(remaining_groups) < 2){
+        warning_file <- glue("{beta_diversity_out_dir}/beta_diversity_failure_<tech_type>_GLAmpSeq.txt")
+        writeLines(
+          text = glue("Not enough groups remain after rarefaction at {depth} (only {length(remaining_groups)}). Skipping beta diversity with rarefaction."),
+          con = warning_file
+        )
+        return(NULL)  # stop analysis, like depth failure
+      }
 
-    # Write rarefaction depth used into file
-    depth_file <- glue("{beta_diversity_out_dir}{output_prefix}rarefaction_depth{assay_suffix}.txt")
-    writeLines(
-      text = as.character(depth),
-      con = depth_file
-    )
+      # Write rarefaction depth used into file
+      depth_file <- glue("{beta_diversity_out_dir}/rarefaction_depth_<tech_type>_GLAmpSeq.txt")
+      writeLines(
+        text = as.character(depth),
+        con = depth_file
+      )
     
     # Variance Stabilizing Transformation
     }else if(method == "vst"){
@@ -864,8 +868,8 @@ Beta diversity results may be unreliable."))
       # Create VST normalized counts matrix
       # ~1 means no design
       deseq_counts <- DESeqDataSetFromMatrix(countData = feature_table,
-                                            colData = metadata,
-                                            design = ~1)
+                                             colData = metadata,
+                                             design = ~1)
       deseq_counts_vst <- varianceStabilizingTransformation(deseq_counts)
       vst_trans_count_tab <- assay(deseq_counts_vst)
 
@@ -1023,20 +1027,22 @@ Beta diversity results may be unreliable."))
                         hjust = 0.3, vjust = -0.4, size = 4)
     }
 
-  # Add annotations to pcoa plot
-  p <-  p +  labs(x = label_PC1, y = label_PC2, color = legend_title) +
-      coord_fixed(sqrt(eigen_vals[2]/eigen_vals[1])) +
-      scale_color_manual(values = group_colors) +
-      theme_bw() + theme(text = element_text(size = 15, face="bold"),
-                        legend.direction = "vertical",
-                        legend.justification = "center",
-                        legend.title = element_text(hjust=0.1)) +
-      annotate("text", x = Inf, y = -Inf,
-              label = paste("R2:", toString(round(r2_value, 3))),
-              hjust = 1.1, vjust = -2, size = 4)+
-      annotate("text", x = Inf, y = -Inf,
+    # Add annotations to pcoa plot
+    p <-  p + labs(x = label_PC1, y = label_PC2, color = legend_title) +
+          coord_fixed(sqrt(eigen_vals[2]/eigen_vals[1])) +
+          scale_color_manual(values = group_colors) +
+          theme_bw() + 
+          theme(text = element_text(size = 15, face="bold"),
+                legend.direction = "vertical",
+                legend.justification = "center",
+                legend.title = element_text(hjust=0.1)) +
+          annotate("text", x = Inf, y = -Inf,
+                   label = paste("R2:", toString(round(r2_value, 3))),
+                   hjust = 1.1, vjust = -2, size = 4) +
+          annotate("text", x = Inf, y = -Inf,
               label = paste("Pr(>F)", toString(round(prf_value,4))),
-              hjust = 1.1, vjust = -0.5, size = 4) + ggtitle("PCoA")
+              hjust = 1.1, vjust = -0.5, size = 4) + 
+          ggtitle("PCoA")
 
     return(p)
   }
@@ -1073,7 +1079,7 @@ Beta diversity results may be unreliable."))
     return(abun_features.m)
   }
   ```
-**Function Parameter Definitions:**
+  **Function Parameter Definitions:**
   - `feature_table=` - dataframe containing feature/ASV counts with samples as columns and features as rows
   - `cut_off_percent=0.75` - decimal value between 0.001 and 1 specifying the fraction of the total number of samples to determine the most abundant features; by default it removes features that are not present in 3/4 of the total number of samples
 
@@ -1234,7 +1240,7 @@ Beta diversity results may be unreliable."))
     }
     if(is.null(taxa_to_group)){
       message(glue::glue("Rare taxa were not grouped. please provide a higher threshold than {threshold} for grouping rare taxa, only numbers are allowed."))
-    return(abund_table)
+      return(abund_table)
     }
 
     if(rare_taxa){
@@ -1320,7 +1326,6 @@ Beta diversity results may be unreliable."))
     uid <- get_uid(taxonomy, division_filter = search_string)
     tax_ids <- uid[1:length(uid)]
     return(tax_ids)
-    
   }
   ```
   **Function Parameter Definitions:**
@@ -1405,9 +1410,9 @@ Beta diversity results may be unreliable."))
   <summary>calculates the geometric mean</summary>
 
   ```R
-    gm_mean <- function(x, na.rm=TRUE) {
-      exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
-    }
+  gm_mean <- function(x, na.rm=TRUE) {
+    exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+  }
   ```
   **Function Parameter Definitions:**
   - `x=` - a numeric vector specifying the values to calculate the geometirc mean on
@@ -1421,37 +1426,33 @@ Beta diversity results may be unreliable."))
   <summary>Plots ASV sparsity. A modification of DESeq2::plotSparsity to generate a ggplot.</summary>
 
   ```R
-    plotSparsity <- function (x, normalized = TRUE, feature="ASV", ...) {
-  
-  
-      if (is(x, "DESeqDataSet")) {
+  plotSparsity <- function (x, normalized = TRUE, feature="ASV", ...) {
 
-            x <- counts(x, normalized = normalized)
-      }
+    if (is(x, "DESeqDataSet")) {
+          x <- counts(x, normalized = normalized)
+    }
+
+    rs <- MatrixGenerics::rowSums(x)
+    rmx <- apply(x, 1, max)
+
+    # Prepare plot dataframe
+    df <- data.frame(rs=rs, rmx=rmx) %>% 
+          mutate(x=rs, y=rmx/rs) %>% 
+          filter(x>0)
   
-      rs <- MatrixGenerics::rowSums(x)
-      rmx <- apply(x, 1, max)
-
-      # Prepare plot dataframe
-      df <- data.frame(rs=rs, rmx=rmx) %>% 
-               mutate(x=rs, y=rmx/rs) %>% 
-               filter(x>0)
-    
-      # Plot
-      ggplot(data = df, aes(x=x, y=y), ...) +
-        geom_point(size=3) +
-        scale_x_log10() + 
-        scale_y_continuous(limits = c(0,1)) +
-        theme_bw() +
-        labs(title = glue("Concentration of {feature} counts over total sum of {feature} counts"),
-             x=glue("Sum of counts per {feature}"),
-             y=glue("Max {feature} count / Sum of {feature} counts")) + 
-        theme(axis.text = element_text(face = "bold", size = 12),
-              axis.title = element_text(face = "bold", size = 14),
-              title = element_text(face = "bold", size = 14))
-
-  }
-    
+    # Plot
+    ggplot(data = df, aes(x=x, y=y), ...) +
+      geom_point(size=3) +
+      scale_x_log10() + 
+      scale_y_continuous(limits = c(0,1)) +
+      theme_bw() +
+      labs(title = glue("Concentration of {feature} counts over total sum of {feature} counts"),
+            x=glue("Sum of counts per {feature}"),
+            y=glue("Max {feature} count / Sum of {feature} counts")) + 
+      theme(axis.text = element_text(face = "bold", size = 12),
+            axis.title = element_text(face = "bold", size = 14),
+            title = element_text(face = "bold", size = 14))
+  }    
   ```
   **Function Parameter Definitions:**
   - `x=` -  a matrix or DESeqDataSet to plot
@@ -1461,7 +1462,6 @@ Beta diversity results may be unreliable."))
 
   **Returns:** a sparsity plot of type ggplot
 </details>
-
 
 <br>
 
@@ -1512,8 +1512,6 @@ publication_format <- theme_bw() +
 ```R
 diff_abund_out_dir <- "differential_abundance/"
 if(!dir.exists(diff_abund_out_dir)) dir.create(diff_abund_out_dir)
-assay_suffix <- "_GLAmpSeq"
-output_prefix <- ""
 custom_palette <- {COLOR_VECTOR}
 groups_colname <- "groups"
 sample_colname <- "Sample Name"
@@ -1527,7 +1525,7 @@ metadata <- read_csv(file = metadata_file) %>% as.data.frame()
 row.names(metadata) <- metadata[[sample_colname]]
 # Write out Sample Table
 write_csv(x = metadata %>% select(!!sym(sample_colname), !!sym(groups_colname)),
-          file = glue("{diff_abund_out_dir}{output_prefix}SampleTable_<tech_type>{assay_suffix}.csv"))
+          file = glue("{diff_abund_out_dir}/SampleTable_<tech_type>_GLAmpSeq.csv"))
 
 # Delete sample column since the rownames now contain sample names
 metadata[,sample_colname] <- NULL
@@ -1548,7 +1546,7 @@ contrasts_df <- data.frame(
   check.names = FALSE
 )
 write_csv(x = contrasts_df,
-          file = glue("{diff_abund_out_dir}{output_prefix}contrasts_<tech_type>{assay_suffix}.csv"))
+          file = glue("{diff_abund_out_dir}/contrasts_<tech_type>_GLAmpSeq.csv"))
 
 # Add colors to metadata that equals the number of groups
 num_colors <- length(group_levels)
@@ -1595,8 +1593,6 @@ taxonomy_table <- read.table(file = taxonomy_file, header = TRUE,
 **Input Data:**
 
 * `diff_abund_out_dir` (a string specifying the path to the output folder for the differential abundance results, default is "differential_abundance/")
-* `assay_suffix` (a string specifying the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq")
-* `output_prefix` (a string specifying an additional prefix to be added to the output files; default is no additional prefix, "")
 * `groups_colname` (a string specifying the name of the column in the metadata table containing the group names)
 * `sample_colname` (a string specifying the name of the column in the metadata table containing the sample names)
 * `custom_palette` (a vector of strings specifying a custom color palette for coloring plots, output from [6b.iii. Set Variables](#6biii-set-variables))
@@ -1615,7 +1611,7 @@ taxonomy_table <- read.table(file = taxonomy_file, header = TRUE,
 * `deseq2_sample_names` (a character vector of unique sample names)
 * `group_colors` (a named character vector of colors for each group)
 * `group_levels` (a character vector of unique group names)
-* **differential_abundance/SampleTable_<tech_type>_GLAmpSeq.csv** (a comma-separated file containing a table with two columns: "Sample Name" and "groups"; the output_prefix denotes the method used to compute the differential abundance)
+* **differential_abundance/SampleTable_<tech_type>_GLAmpSeq.csv** (a comma-separated file containing a table with two columns: "Sample Name" and "groups")
 * **differential_abundance/contrasts_<tech_type>_GLAmpSeq.csv** (a comma-separated file listing all pairwise group comparisons)
 
 <br>
@@ -1741,8 +1737,6 @@ group_colors <- {NAMED_VECTOR}
 groups_colname <- "groups"
 rarefaction_depth <- 500
 legend_title <- "Groups"
-assay_suffix <- "_GLAmpSeq"
-output_prefix <- ""
 
 # Create phyloseq object
 ASV_physeq <- phyloseq(otu_table(feature_table, taxa_are_rows = TRUE),
@@ -1759,7 +1753,7 @@ depth <- min(seq_per_sample)
 # insufficient for diversity analysis
 if(max(seq_per_sample) < 100){
  
-  warning_file <- glue("{alpha_diversity_out_dir}{output_prefix}alpha_diversity_failure_<tech_type>{assay_suffix}.txt")
+  warning_file <- glue("{alpha_diversity_out_dir}/alpha_diversity_failure_<tech_type>_GLAmpSeq.txt")
   writeLines(
     text = glue("The maximum sequence count per sample ({max(seq_per_sample)}) is less than 100.
 Therefore, alpha diversity analysis cannot be performed."),
@@ -1779,8 +1773,8 @@ for (count in seq_per_sample) {
 
 # Error if the depth that ends up being used is also less than 100
 if(depth < 100){
- 
-  warning_file <- glue("{alpha_diversity_out_dir}{output_prefix}alpha_diversity_failure_<tech_type>{assay_suffix}.txt")
+  
+  warning_file <- glue("{alpha_diversity_out_dir}/alpha_diversity_failure_<tech_type>_GLAmpSeq.txt")
   writeLines(
     text = glue("The rarefaction depth being used in the analysis ({depth}) is less than 100.
 Therefore, alpha diversity analysis cannot be performed."),
@@ -1805,7 +1799,7 @@ ps.rarefied <- rarefy_even_depth(physeq = ASV_physeq,
                                  verbose = FALSE)
 
 # Write rarefaction depth used into file to be used in protocol
-depth_file <- glue("{alpha_diversity_out_dir}{output_prefix}rarefaction_depth_<tech_type>{assay_suffix}.txt")
+depth_file <- glue("{alpha_diversity_out_dir}/rarefaction_depth_<tech_type>_GLAmpSeq.txt")
 writeLines(
   text = as.character(depth),
   con = depth_file
@@ -1847,7 +1841,7 @@ rareplot <- ggplot(p, aes(x = Sample, y = Species,
         panel.grid.minor = element_blank(),
         plot.margin = margin(t = 10, r = 20, b = 10, l = 10, unit = "pt"))
 
-ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}rarefaction_curves_<tech_type>{assay_suffix}.png"),
+ggsave(filename = glue("{alpha_diversity_out_dir}/rarefaction_curves_<tech_type>_GLAmpSeq.png"),
        plot=rareplot, width = 14, height = 8.33, dpi = 300, limitsize = FALSE)
 ```
 
@@ -1857,8 +1851,6 @@ ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}rarefaction_cur
 * `rarefaction_depth` (an integer specifying the minimum number of reads to simulate during rarefaction for alpha diversity estimation)
 * `groups_colname` (a string specifying the name of the column in the `sample_info_tab` table containing the group names)
 * `legend_title` (a string specifying the legend title for plotting)
-* `assay_suffix` (a string specifying the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq")
-* `output_prefix` (a string specifying an additional prefix to be added to the output files; default is no additional prefix, "")
 * `sample_info_tab` (a dataframe containing a subset of the metadata dataframe with only the groups and color columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
 * `feature_table` (a dataframe containing a filtered subset of the samples feature dataframe (i.e. ASV), output from [6b.v. Preprocessing](#6bv-preprocessing))
 * `taxonomy_table` (a dataframe containing a filtered subset of the feature taxonomy dataframe with ASV taxonomy assignments, output from [6b.v. Preprocessing](#6bv-preprocessing))
@@ -1877,8 +1869,6 @@ ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}rarefaction_cur
 ```R
 metadata <- {DATAFRAME}
 groups_colname <- "groups"
-assay_suffix <- "_GLAmpSeq"
-output_prefix <- ""
 
 # ------------------  Richness and diversity estimates  ------------------#
 
@@ -1900,7 +1890,7 @@ diversity_stats <- map_dfr(.x = diversity_metrics, function(metric){
   number_of_groups <- merged_table[,groups_colname] %>% unique() %>% length()
   
   if (number_of_groups < 2){
-    warning_file <- glue("{alpha_diversity_out_dir}{output_prefix}alpha_diversity_warning.txt")
+    warning_file <- glue("{alpha_diversity_out_dir}/<tech_type>_alpha_diversity_warning.txt")
     original_groups <- length(unique(metadata[[groups_colname]]))
     writeLines(
       text = glue("Group count information:
@@ -1940,7 +1930,7 @@ Please ensure that your metadata contains two or more groups to compare..."),
 
 # Write diversity statistics table to file
 write_csv(x = diversity_stats, 
-            file = glue("{alpha_diversity_out_dir}/{output_prefix}statistics_table_<tech_type>{assay_suffix}.csv"))
+            file = glue("{alpha_diversity_out_dir}/statistics_table_<tech_type>_GLAmpSeq.csv"))
 
 # Get different letters indicating statistically significant group comparisons for every diversity metric
 comp_letters <- data.frame(group = group_levels)
@@ -1989,14 +1979,12 @@ diversity_table <- metadata %>%
 
 # Write diversity summary table to file 
 write_csv(x = diversity_table,
-            file = glue("{alpha_diversity_out_dir}/{output_prefix}summary_table_<tech_type>{assay_suffix}.csv"))
+            file = glue("{alpha_diversity_out_dir}/summary_table_<tech_type>_GLAmpSeq.csv"))
 ```
 
 **Input Data:**
 
 * `groups_colname` (a string specifying the name of the column in the metadata table containing the group names)
-* `assay_suffix` (a string specifying the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq")
-* `output_prefix` (a string specifying an additional prefix to be added to the output files; default is no additional prefix, "")
 * `metadata` (a dataframe containing the sample metadata, with samples as row names and sample info as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
 * `ps.rarefied` (a phyloseq object of the sample features (i.e. ASV) with feature counts, resampled such that all samples have the same library size, output from [7a. Rarefaction Curves](#7a-rarefaction-curves))
 * `group_levels` (a character vector of unique group names, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
@@ -2015,8 +2003,6 @@ sample_info_tab <- {DATAFRAME}
 metadata <- {DATAFRAME}
 groups_colname <- "groups"
 legend_title <- "Groups"
-assay_suffix <- "_GLAmpSeq"
-output_prefix <- ""
 
 # ------------------ Make richness by sample dot plots ---------------------- #
 
@@ -2057,7 +2043,7 @@ richness_by_sample <- ggplot(richness_by_sample$data %>%
   )
 
 # Save sample plot
-ggsave(filename = glue("{alpha_diversity_out_dir}/{output_prefix}richness_and_diversity_estimates_by_sample_<tech_type>{assay_suffix}.png"),
+ggsave(filename = glue("{alpha_diversity_out_dir}/richness_and_diversity_estimates_by_sample_<tech_type>_GLAmpSeq.png"),
        plot=richness_by_sample, width = 14, height = 8.33, 
        dpi = 300, units = "in", limitsize = FALSE)
 
@@ -2119,7 +2105,7 @@ richness_by_group <- wrap_plots(p, ncol = 2, guides = 'collect') +
 
 # Save group plot
 width <- 3.6 * length(group_levels)
-ggsave(filename = glue("{output_prefix}richness_and_diversity_estimates_by_group_<tech_type>{assay_suffix}.png"),
+ggsave(filename = glue("richness_and_diversity_estimates_by_group_<tech_type>_GLAmpSeq.png"),
        plot=richness_by_group, width = width, 
        height = 8.33, dpi = 300, units = "in",
        path = alpha_diversity_out_dir)
@@ -2133,8 +2119,6 @@ ggsave(filename = glue("{output_prefix}richness_and_diversity_estimates_by_group
 
 * `groups_colname` (a string specifying the name of the column in the metadata table containing the group names)
 * `legend_title` (a string specifying the legend title for plotting)
-* `assay_suffix` (a string specifying the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq")
-* `output_prefix` (a string specifying an additional prefix to be added to the output files; default is no additional prefix, "")
 * `metadata` (a dataframe containing the sample metadata, with samples as row names and sample info as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
 * `sample_info_tab` (a dataframe containing a subset of the metadata dataframe with only the groups and color columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
 * `ps.rarefied` (a phyloseq object of the sample features (i.e. ASV) with feature counts, resampled such that all samples have the same library size, output from [7a. Rarefaction Curves](#7a-rarefaction-curves))
@@ -2190,8 +2174,6 @@ group_colors <- {NAMED_VECTOR}
 groups_colname <- "groups"
 rarefaction_depth <- 500
 legend_title <- "Groups"
-assay_suffix <- "_GLAmpSeq"
-output_prefix <- ""
 distance_methods <- c("euclidean", "bray")
 normalization_methods <- c("vst", "rarefy")
 
@@ -2231,7 +2213,7 @@ if (is.null(ps)) {
           title = element_text(face = "bold", size = 14))
   
   # Save VSD validation plot
-  ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}vsd_validation_plot_<tech_type>{assay.suffix}.png"),
+  ggsave(filename = glue("{beta_diversity_out_dir}/vsd_validation_plot_<tech_type>_GLAmpSeq.png"),
          plot = mead_sd_plot, width = 14, height = 10, 
          dpi = 300, units = "in", limitsize = FALSE)
   }
@@ -2245,7 +2227,7 @@ if (is.null(ps)) {
                               group_colors, legend_title)
 
   # Save dendrogram
-  ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_dendrogram_<tech_type>{assay_suffix}.png"),
+  ggsave(filename = glue("{beta_diversity_out_dir}/{distance_method}_dendrogram_<tech_type>_GLAmpSeq.png"),
        plot = dendrogram, width = 14, height = 10, 
        dpi = 300, units = "in", limitsize = FALSE)
 
@@ -2254,16 +2236,16 @@ if (is.null(ps)) {
 
   stats_res <- run_stats(dist_obj, metadata, groups_colname)
   write_csv(x = stats_res$variance, 
-            file = glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_variance_table_<tech_type>{assay_suffix}.csv"))
+            file = glue("{beta_diversity_out_dir}/{distance_method}_variance_table_<tech_type>_GLAmpSeq.csv"))
 
   write_csv(x = stats_res$adonis, 
-            file = glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_adonis_table_<tech_type>{assay_suffix}.csv"))
+            file = glue("{beta_diversity_out_dir}/{distance_method}_adonis_table_<tech_type>_GLAmpSeq.csv"))
 
   #---------------------------- Make PCoA
   # Unlabeled PCoA plot
   ordination_plot_u <- plot_pcoa(ps, stats_res, distance_method, 
                                  groups_colname, group_colors, legend_title) 
-  ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_without_labels_<tech_type>{assay_suffix}.png"),
+  ggsave(filename=glue("{beta_diversity_out_dir}/{distance_method}_PCoA_without_labels_<tech_type>_GLAmpSeq.png"),
        plot=ordination_plot_u, width = 14, height = 8.33, 
        dpi = 300, units = "in", limitsize = FALSE)
 
@@ -2271,7 +2253,7 @@ if (is.null(ps)) {
   ordination_plot <- plot_pcoa(ps, stats_res, distance_method,
                                groups_colname, group_colors, legend_title,
                                addtext=TRUE) 
-  ggsave(filename=glue("{beta_diversity_out_dir}/{output_prefix}{distance_method}_PCoA_w_labels_<tech_type>{assay_suffix}.png"),
+  ggsave(filename=glue("{beta_diversity_out_dir}/{distance_method}_PCoA_w_labels_<tech_type>_GLAmpSeq.png"),
        plot=ordination_plot, width = 14, height = 8.33, 
        dpi = 300, units = "in", limitsize = FALSE)
 
@@ -2302,8 +2284,6 @@ zip -q euclidean_distance_plots_<tech_type>_GLAmpSeq.zip euclidean*.png
 * `rarefaction_depth` (an integer specifying the minimum number of reads to simulate during rarefaction)
 * `groups_colname` (a string specifying the name of the column in the metadata table containing the group names)
 * `legend_title` (a string specifying the legend title for plotting)
-* `assay_suffix` (a string specifying the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq")
-* `output_prefix` (a string specifying an additional prefix to be added to the output files; default is no additional prefix, "")
 * `normalization_methods` (a string vector specifying the method(s) to use for normalizing sample counts; "vst" (variance stabilizing transform) and "rarefy" (rarefaction) are supported)
 * `distance_methods` (a string vector specifying the method(s) to use to calculate the distance between samples; "vst" transformed data uses "euclidean" (Euclidean distance) and "rarefy" transformed data uses "bray" (Bray-Curtis distance))
 * `metadata` (a dataframe containing the sample metadata, with samples as row names and sample info as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
@@ -2339,8 +2319,6 @@ taxonomy_table <- {DATAFRAME}
 custom_palette <- {COLOR_VECTOR}
 publication_format <- {GGPLOT_THEME}
 groups_colname <- "groups"
-assay_suffix <- "_GLAmpSeq"
-output_prefix <- ""
 
 # -------------------------Prepare feature tables -------------------------- #
 # For ITS and 18S datasets the taxonomy columns may also contain kingdom and division taxonomy levels
@@ -2427,7 +2405,7 @@ walk2(.x = relAbundance_tbs_rare_grouped, .y = taxon_levels,
                                  hjust = 0.5, vjust = 0.5)) + 
                                labs(x=NULL)
                           
-                          ggsave(filename = glue("{taxonomy_plots_out_dir}/{output_prefix}samples_{taxon_level}_<tech_type>{assay_suffix}.png"),
+                          ggsave(filename = glue("{taxonomy_plots_out_dir}/samples_{taxon_level}_<tech_type>_GLAmpSeq.png"),
                                  plot=p, width = plot_width, height = 8.5, dpi = 300, limitsize = FALSE)
                           
                            })
@@ -2503,7 +2481,7 @@ walk2(.x = group_relAbundance_tbs, .y = taxon_levels,
                                  hjust = 0.5, vjust = 0.5)) + 
                                labs(x = NULL , y = y_lab, fill = tools::toTitleCase(taxon_level)) + 
                                scale_fill_manual(values = custom_palette)
-                             ggsave(filename = glue("{taxonomy_plots_out_dir}/{output_prefix}groups_{taxon_level}_<tech_type>{assay_suffix}.png"),
+                             ggsave(filename = glue("{taxonomy_plots_out_dir}/groups_{taxon_level}_<tech_type>_GLAmpSeq.png"),
                                     plot=p, width = plot_width, height = 10, dpi = 300, limitsize = FALSE)
                            })
 ```
@@ -2529,8 +2507,6 @@ zip -q group_taxonomy_plots_<tech_type>_GLAmpSeq.zip groups_<tech_type>_GLAmpSeq
 **Input Data:**
 
 * `groups_colname` (a string specifying the name of the column in the metadata table containing the group names)
-* `assay_suffix` (a string specifying the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq")
-* `output_prefix` (a string specifying an additional prefix to be added to the output files; default is no additional prefix, "")
 * `metadata` (a dataframe containing the sample metadata, with samples as row names and sample info as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
 * `feature_table` (a dataframe containing a filtered subset of the samples feature dataframe (i.e. ASV), output from [6b.v. Preprocessing](#6bv-preprocessing))
 * `taxonomy_table` (a dataframe containing a filtered subset of the feature taxonomy dataframe with ASV taxonomy assignments, output from [6b.v. Preprocessing](#6bv-preprocessing))
@@ -2574,9 +2550,7 @@ taxonomy_table <- {DATAFRAME}
 feature <- "ASV"
 groups_colname <- "groups"
 samples_column <- "Sample Name"
-assay_suffix <- "_GLAmpSeq"
 target_region <- "16S" # "16S", "18S" or "ITS"
-output_prefix <- ""
 prevalence_cutoff <- 0
 library_cutoff <- 0
 remove_struc_zero <- FALSE
@@ -2715,7 +2689,7 @@ final_results_bc1 <- map(pairwise_comp_df, function(col){
     # Write to log file
     writeLines(log_msg, 
               file.path(diff_abund_out_dir, 
-                       glue("{output_prefix}ancombc1_failure.txt")))
+                       glue("<tech_type>_ancombc1_failure.txt")))
     
     # Print to console and quit
     message(log_msg)
@@ -2818,7 +2792,7 @@ volcano_plots <- map(comp_names, function(comparison){
     theme(legend.position="top", legend.key = element_rect(colour=NA),
           plot.caption = element_text(face = 'bold.italic'))
   # Save plot
-  file_name <- glue("{output_prefix}{comparison %>% str_replace_all('[:space:]+','_')}_volcano_<tech_type>{assay.suffix}.png")
+  file_name <- glue("{comparison %>% str_replace_all('[:space:]+','_')}_volcano_<tech_type>_GLAmpSeq.png")
   ggsave(filename = file_name,
          plot = p, device = "png", width = plot_width_inches,
          height = plot_height_inches, units = "in",
@@ -2927,7 +2901,7 @@ merged_df <- merged_df %>%
   mutate(across(where(is.matrix), as.numeric))
 
 # Write out results of differential abundance using ANCOMBC 1
-output_file <- glue("{diff_abund_out_dir}/{output_prefix}ancombc1_differential_abundance_<tech_type>{assay_suffix}.csv")
+output_file <- glue("{diff_abund_out_dir}/ancombc1_differential_abundance_<tech_type>_GLAmpSeq.csv")
 # Write combined table to file but before that drop
 # all columns of inferred differential abundance by ANCOMBC 
 write_csv(merged_df %>%
@@ -2972,8 +2946,6 @@ zip -q ancombc1_volcano_plots_<tech_type>_GLAmpSeq.zip *_volcano_<tech_type>_GLA
 * `feature` (a string specifying the feature type, i.e. "ASV" or "OTU")
 * `groups_colname` (a string specifying the name of the column in the metadata table containing the group names)
 * `samples_column` (a string specifying the name of the column in the metadata table containing the sample names)
-* `assay_suffix` (a string specifying the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq")
-* `output_prefix` (a string specifying an additional prefix to be added to the output files; default is no additional prefix, "")
 * `threads` (a number specifying the number of cpus to use for parallel processing)
 * `prevalence_cutoff` (a decimal between 0 and 1 specifying the proportion of samples required to contain a taxon in order to keep the taxon when `remove_rare` (set in [Step 6b.iv. Preprocessing](#6bv-preprocessing)) is set to TRUE; default is 0, i.e. do not exclude any taxon / feature)
 * `library_cutoff` (a numerical variable specifying the number of total counts a sample must have across all features to be retained when `remove_rare` (set in [Step 6b.iv. Preprocessing](#6bv-preprocessing)) is set to TRUE; default is 0, i.e. no samples will be dropped)
@@ -3022,8 +2994,6 @@ feature <- "ASV"
 target_region <- "16S" # "16S" , "18S" or "ITS"
 groups_colname <- "groups"
 samples_column <- "Sample Name"
-assay_suffix <- "_GLAmpSeq"
-output_prefix <- ""
 prevalence_cutoff <- 0  # from [Step 6b.v. Preprocessing]
 library_cutoff <- 0  # from [Step 6b.v. Preprocessing]
 remove_struc_zero <- FALSE
@@ -3143,7 +3113,7 @@ tryCatch({
               paste("- Sample sizes per group:"),
               paste("  ", paste(names(table(tse[[group]])), "=", table(tse[[group]]), collapse="\n  ")),
               "\nPossibly insufficient data for ANCOMBC2 analysis. Consider adjusting filtering parameters or group assignments."), 
-            file.path(diff_abund_out_dir, glue("{output_prefix}ancombc2_failure.txt")))
+            file.path(diff_abund_out_dir, glue("<tech_type>_ancombc2_failure.txt")))
   quit(status = 0)
 })
 
@@ -3278,7 +3248,7 @@ merged_df <- merged_df %>%
   left_join(group_means_df, by = feature)
 
 # Writing out results of differential abundance using ANCOMBC2...
-output_file <- glue("{diff_abund_out_dir}{output_prefix}ancombc2_differential_abundance_<tech_type>{assay_suffix}.csv")
+output_file <- glue("{diff_abund_out_dir}/ancombc2_differential_abundance_<tech_type>_GLAmpSeq.csv")
 # Write out merged stats table but before that 
 # drop ANCOMBC inferred differential abundance columns
 write_csv(merged_df %>%
@@ -3347,7 +3317,7 @@ volcano_plots <- map(uniq_comps, function(comparison){
           plot.caption = element_text(face = 'bold.italic'))
 
   # Save plot
-  file_name <-  glue("{output_prefix}{comparison %>% str_replace_all('[:space:]+','_')}_volcano<_tech_type>{assay.suffix}.png")
+  file_name <-  glue("{comparison %>% str_replace_all('[:space:]+','_')}_volcano<_tech_type>_GLAmpSeq.png")
   ggsave(filename = file_name,
          plot = p, device = "png",
          width = plot_width_inches,
@@ -3398,8 +3368,6 @@ zip -q ancombc2_volcano_plots_<tech_type>_GLAmpSeq.zip *_volcano_<tech_type>_GLA
 * `feature` (a string specifying the feature type, i.e. "ASV" or "OTU")
 * `groups_colname` (a string specifying the name of the column in the metadata table containing the group names)
 * `samples_column` (a string specifying the name of the column in the metadata table containing the sample names)
-* `assay_suffix` (a string specifying the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq")
-* `output_prefix` (a string specifying an additional prefix to be added to the output files; default is no additional prefix, "")
 * `threads` (a number specifying the number of cpus to use for parallel processing)
 * `prevalence_cutoff` (a decimal between 0 and 1 specifying the proportion of samples required to contain a taxon in order to keep the taxon when `remove_rare` (set in [Step 6b.iv. Preprocessing](#6bv-preprocessing)) is set to TRUE; default is 0, i.e. do not exclude any taxon/feature)
 * `library_cutoff` (a numerical value specifying the number of total counts a sample must have across all features to be retained when `remove_rare` (set in [Step 6b.iv. Preprocessing](#6bv-preprocessing)) is set to TRUE; default is 0, i.e. no samples will be dropped)
@@ -3446,9 +3414,7 @@ taxonomy_table <- {DATAFRAME}
 feature <- "ASV"
 samples_column <- "Sample Name"
 groups_colname <- "groups" 
-assay_suffix <- "_GLAmpSeq"
 target_region <- "16S" # "16S", "18S" or "ITS"
-output_prefix <- ""
 
 # Get long asv taxonomy names and clean
 species <- taxonomy_table %>%
@@ -3500,7 +3466,7 @@ deseq_modeled <- tryCatch({
 
     writeLines(c("Error:", e2$message,
                 "\nUsing gene-wise estimates as final estimates instead of standard curve fitting."), 
-              file.path(diff_abund_out_dir, glue("{output_prefix}deseq2_warning.txt")))
+              file.path(diff_abund_out_dir, glue("<tech_type>_deseq2_warning.txt")))
     
     # Use gene-wise estimates as final estimates
     deseq_obj <- estimateDispersionsGeneEst(deseq_obj)
@@ -3513,7 +3479,7 @@ deseq_modeled <- tryCatch({
 
 # Make ASV Sparsity plot
 sparsity_plot <- plotSparsity(deseq_modeled) 
-ggsave(filename = glue("{diff_abund_out_dir}/{output_prefix}asv_sparsity_plot_<tech_type>{assay.suffix}.png"),
+ggsave(filename = glue("{diff_abund_out_dir}/asv_sparsity_plot_<tech_type>_GLAmpSeq.png"),
        plot = sparsity_plot, width = 14, height = 10, dpi = 300, units = "in")
 
 # Get unique group comparison as a matrix
@@ -3645,7 +3611,7 @@ merged_df <- merged_df %>%
   mutate(across(where(is.matrix), as.numeric)) # convert meatrix columns to numeric columns
 
 # Defining the output file
-output_file <- glue("{diff_abund_out_dir}/{output_prefix}deseq2_differential_abundance_<tech_type>{assay_suffix}.csv")
+output_file <- glue("{diff_abund_out_dir}/deseq2_differential_abundance_<tech_type>_GLAmpSeq.csv")
 # Writing out results of differential abundance using DESeq2
 # after dropping baseMean columns
 write_csv(merged_df %>%
@@ -3710,7 +3676,7 @@ walk(pairwise_comp_df, function(col){
   # Replace space in group name with underscore 
   group1 <- str_replace_all(group1, "[:space:]+", "_")
   group2 <- str_replace_all(group2, "[:space:]+", "_")
-  ggsave(filename = glue("{output_prefix}({group2})v({group1})_volcano_<tech_type>{assay_suffix}.png"),
+  ggsave(filename = glue("({group2})v({group1})_volcano_<tech_type>_GLAmpSeq.png"),
          plot = p,
          width = plot_width_inches, 
          height = plot_height_inches, 
@@ -3745,8 +3711,6 @@ zip -q deseq2_volcano_plots_<tech_type>_GLAmpSeq.zip *_volcano_<tech_type>_GLAmp
 * `feature` (a string specifying the feature type, i.e. "ASV" or "OTU")
 * `groups_colname` (a string specifying the name of the column in the metadata table containing the group names)
 * `samples_column` (a string specifying the name of the column in the metadata table containing the sample names)
-* `assay_suffix` (a string specifying the suffix to be added to output files; default is the Genelab assay suffix, "_GLAmpSeq")
-* `output_prefix` (a string specifying an additional prefix to be added to the output files; default is no additional prefix, "")
 * `target_region` (a string specifying the amplicon target region; options are either "16S", "18S", or "ITS")
 * `metadata` (a dataframe containing the sample metadata, with samples as row names and sample info as columns, output from [6b.iv. Read-in Input Tables](#6biv-read-in-input-tables))
 * `feature_table` (a dataframe containing a filtered subset of the samples feature dataframe (i.e. ASV), output from [6b.v. Preprocessing](#6bv-preprocessing))
