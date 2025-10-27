@@ -187,13 +187,13 @@ dorado basecaller ${model} ${input_directory} \
 
 **Parameter Definitions:**
 
-- `--no-trim` - skips trimming of barcodes, adapters, and primers
-- `--device` - specifies CPU or GPU device; specifying 'auto' chooses either 'cpu' or 'gpu' depending on detected presence of a GPU device
-- `--recursive` - enables recursive scanning through input directory to load FAST5 and/or POD5 files
-- `--kit-name` - The nanopore barcoding kit used during sequencing preparation. Enables barcoding with the provided kit name; see [dorado documentation](https://software-docs.nanoporetech.com/dorado/1.1.1/barcoding/barcoding/) for a full list of accepted kit names
-- `--min-qscore` - specifies the minimum Q-score, reads with a mean Q-score below this threshold are discarded (default to `7` for this pipeline)
-- `model` - positional argument specifying the basecalling model to use or a path to the model directory. `hac` chooses the high accuracy model.
-- `input_directory` - positional argument specifying the location of the raw data in POD5 or FAST5 format
+- `model` - Positional argument specifying the basecalling model to use or a path to the model directory. `hac` chooses the high accuracy model.
+- `input_directory` - Positional argument specifying the location of the raw data in POD5 or FAST5 format.
+- `--no-trim` - Skips trimming of barcodes, adapters, and primers.
+- `--device` - Specifies CPU or GPU device; specifying 'auto' chooses either 'cpu' or 'gpu' depending on detected presence of a GPU device.
+- `--recursive` - Enables recursive scanning through input directory to load FAST5 and/or POD5 files.
+- `--kit-name` - The nanopore barcoding kit used during sequencing preparation. Enables barcoding with the provided kit name; see [dorado documentation](https://software-docs.nanoporetech.com/dorado/1.1.1/barcoding/barcoding/) for a full list of accepted kit names.
+- `--min-qscore` - Specifies the minimum Q-score, reads with a mean Q-score below this threshold are discarded (default to `7` for this pipeline).
 
 **Input Data:**
 
@@ -222,10 +222,11 @@ dorado demux \
 
 **Parameter Definitions:**
 
-- `--output-dir` - specifies the output folder that is the root of the nested output structure. 
-- `--emit-fastq` - specifies that output is fastq format
-- `--emit-summary` - creates a summary listing each read and its classified barcode.
-- `--kit-name` - The nanopore barcoding kit used during sequencing preparation. Enables barcoding with the provided kit name; see [dorado documentation](https://software-docs.nanoporetech.com/dorado/1.1.1/barcoding/barcoding/) for a full list of accepted kit names
+- `--output-dir` - Specifies the output folder that is the root of the nested output structure. 
+- `--emit-fastq` - Specifies that output is fastq format.
+- `--emit-summary` - Creates a summary listing each read and its classified barcode.
+- `--kit-name` - The nanopore barcoding kit used during sequencing preparation. Enables barcoding with the provided kit name; see [dorado documentation](https://software-docs.nanoporetech.com/dorado/1.1.1/barcoding/barcoding/) for a full list of accepted kit names.
+- `basecalled.bam` - Positional argument specifying the input bam file.
 
 **Input Data:**
 
@@ -235,18 +236,19 @@ dorado demux \
 
 - /path/to/fastq/output/\*_barcode\*.fastq (demultiplexed reads in fastq format)
 - /path/to/fastq/output/\*_unclassified.fastq (unclassified reads in fastq format)
-- /path/to/fastq/output/barcoding_summary.txt (barcode summary file listing each read, the file it was assigned to, and its classified barcode )
+- /path/to/fastq/output/barcoding_summary.txt (barcode summary file listing each read, the file it was assigned to, and its classified barcode)
 
 
 #### 2b. Concatenate files for each sample
 
 ```bash
-# Change to directory containing split fastq files generated from step 2a. split fastq above
+# Change to directory containing split fastq files generated from step 2a. 
 cd /path/to/fastq/output/ # output of step 2a
-# Get unique barcode names from demultiplexed file names
-BARCODES=($(ls -1 *fastq* |sed -E 's/.+_(barcode[0-9]+)_.+/\1/g' | sort -u))
 
-# Concat separate barcode/sample fastq files into per sample fastq gzippped files
+# Get unique barcode names from demultiplexed file names
+BARCODES=($(ls -1 *fastq* | sed -E 's/.+_(barcode[0-9]+)_.+/\1/g' | sort -u))
+
+# Concat separate barcode/sample fastq files into per sample fastq gzipped files
 [ -d raw_data/ ] || mkdir raw_data/
 for sample in ${BARCODES[*]}; do
 
@@ -260,7 +262,8 @@ done
 
 **Parameter Definitions:**
 
-- `| gzip --to-stdout` - sends output from `cat` to `gzip` to create compressed fastq.gz file
+- `cat ${sample}/*` - Concatenates all fastq files with the same barcode into one fastq file.
+- `| gzip --to-stdout` - Sends the concatenated fastq file output from the `cat` command to the `gzip` command to create a compressed fastq.gz file for each barcode.
 
 **Input Data:**
 
@@ -283,17 +286,18 @@ NanoPlot --only-report \
          --prefix sample_ \
          --outdir /path/to/raw_nanoplot_output \
          --threads NumberOfThreads \
-         --fastq /path/to/raw_data/sample.fastq.gz
+         --fastq \
+         /path/to/raw_data/sample.fastq.gz
 ```
 
 **Parameter Definitions:**
 
-- `--outdir` – specifies the output directory to store results
-- `--only-report` - output only the report files
-- `--prefix` - adds a sample specific prefix to the name of each output file
-- `--threads` - number of parallel processing threads to use
-- `--fastq` - specifies that the input data is in a fastq format
-- `/path/to/raw_data/sample.fastq.gz` – the input reads are specified as a positional argument
+- `--only-report` - Output only the report files.
+- `--prefix` - Adds a sample specific prefix to the name of each output file.
+- `--outdir` – Specifies the output directory to store results.
+- `--threads` - Number of parallel processing threads to use.
+- `--fastq` - Specifies that the input data is in fastq format.
+- `/path/to/raw_data/sample.fastq.gz` – The input reads, specified as a positional argument.
 
 **Input Data:**
 
@@ -302,7 +306,7 @@ NanoPlot --only-report \
 **Output Data:**
 
 - **/path/to/raw_nanoplot_output/sample_NanoPlot-report.html** (NanoPlot html summary)
-- /path/to/raw_nanoplot_output/sample_NanoPlot_<date>_<time>.log (NanoPlot log file)
+- /path/to/raw_nanoplot_output/sample_NanoPlot_\<date\>_\<time\>.log (NanoPlot log file)
 - /path/to/raw_nanoplot_output/sample_NanoStats.txt (text file containing basic statistics)
 
 #### 3b. Compile Raw Data QC
@@ -311,16 +315,17 @@ NanoPlot --only-report \
 multiqc --zip-data-dir \
         --outdir raw_multiqc_report \
         --filename raw_multiqc \
-        --interactive /path/to/raw_nanoplot_output/
+        --interactive \
+        /path/to/raw_nanoplot_output/
 ```
 
 **Parameter Definitions:**
 
-- `--zip-data-dir` - compress the data directory
-- `--outdir` – the output directory to store results
-- `--filename` – the filename prefix of results
-- `--interactive` - force multiqc to always create interactive javascript plots
-- `/path/to/raw_nanoplot_output/` – the directory holding the output data from the NanoPlot run, provided as a positional argument
+- `--zip-data-dir` - Compress the data directory.
+- `--outdir` – Specifies the output directory to store results.
+- `--filename` – Specifies the filename prefix of results.
+- `--interactive` - Force multiqc to always create interactive javascript plots.
+- `/path/to/raw_nanoplot_output/` – The directory holding the output data from the NanoPlot run, provided as a positional argument.
 
 **Input Data:**
 
