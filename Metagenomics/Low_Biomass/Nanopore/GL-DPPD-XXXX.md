@@ -283,7 +283,7 @@ done
 
 ```bash 
 NanoPlot --only-report \
-         --prefix sample_ \
+         --prefix sample_raw_ \
          --outdir /path/to/raw_nanoplot_output \
          --threads NumberOfThreads \
          --fastq \
@@ -305,9 +305,9 @@ NanoPlot --only-report \
 
 **Output Data:**
 
-- **/path/to/raw_nanoplot_output/sample_NanoPlot-report.html** (NanoPlot html summary)
-- /path/to/raw_nanoplot_output/sample_NanoPlot_\<date\>_\<time\>.log (NanoPlot log file)
-- /path/to/raw_nanoplot_output/sample_NanoStats.txt (text file containing basic statistics)
+- **/path/to/raw_nanoplot_output/sample_raw_NanoPlot-report.html** (NanoPlot html summary)
+- /path/to/raw_nanoplot_output/sample_raw_NanoPlot_\<date\>_\<time\>.log (NanoPlot log file)
+- /path/to/raw_nanoplot_output/sample_raw_NanoStats.txt (text file containing basic statistics)
 
 #### 3b. Compile Raw Data QC
 
@@ -329,7 +329,7 @@ multiqc --zip-data-dir \
 
 **Input Data:**
 
-- /path/to/raw_nanoplot_output/*NanoStats.txt (NanoPlot output data, from [Step 3a](#3a-raw-data-qc))
+- /path/to/raw_nanoplot_output/*raw_NanoStats.txt (NanoPlot output data, from [Step 3a](#3a-raw-data-qc))
 
 **Output Data:**
 
@@ -350,8 +350,10 @@ filtlong --min_length 200 --min_mean_q 8 /path/to/raw_data/sample.fastq.gz > sam
 
 **Parameter Definitions:**
 
-- `--min_length` – specifies the minimum read length to retain (default to `200` for this pipeline)
-- `--min_mean_q` – specifies the minimum mean read quality (default to `8` for this pipeline)
+- `--min_length` – Specifies the minimum read length to retain (default to `200` for this pipeline).
+- `--min_mean_q` – Specifies the minimum mean read quality to retain (default to `8` for this pipeline).
+- `/path/to/raw_data/sample.fastq.gz` - The path to the input fastq file, provided as a positional argument.
+- `> sample_filtered.fastq` - Redirects the output to a sample_filtered.fastq file.
 
 **Input Data:**
 
@@ -366,19 +368,21 @@ filtlong --min_length 200 --min_mean_q 8 /path/to/raw_data/sample.fastq.gz > sam
 
 ```bash
 NanoPlot --only-report \
-         --prefix sample_ \
+         --prefix sample_filtered_ \
          --outdir /path/to/filtered_nanoplot_output \
          --threads NumberOfThreads \
-         --fastq sample_filtered.fastq
+         --fastq \
+         sample_filtered.fastq
 ```
 
 **Parameter Definitions:**
 
-- `--outdir` – specifies the output directory to store results
-- `--only-report` - output only the report files
-- `--prefix` - adds a sample specific prefix to the name of each output file
-- `--threads` - number of parallel processing threads to use
-- `sample_filtered.fastq` – the input reads are specified as a positional argument
+- `--only-report` - Output only the report files.
+- `--prefix` - Adds a sample specific prefix to the name of each output file.
+- `--outdir` – Specifies the output directory to store results.
+- `--threads` - Number of parallel processing threads to use.
+- `--fastq` - Specifies that the input data is in fastq format.
+- `sample_filtered.fastq` – The input reads, specified as a positional argument.
 
 **Input Data:**
 
@@ -386,9 +390,9 @@ NanoPlot --only-report \
 
 **Output Data:**
 
-- **/path/to/filtered_nanoplot_output/sample_NanoPlot-report.html** (NanoPlot html summary)
-- /path/to/filtered_nanoplot_output/sample_NanoPlot_<date>_<time>.log (NanoPlot log file)
-- /path/to/filtered_nanoplot_output/sample_NanoStats.txt (text file containing basic statistics)
+- **/path/to/filtered_nanoplot_output/sample_filtered_NanoPlot-report.html** (NanoPlot html summary)
+- /path/to/filtered_nanoplot_output/sample_filtered_NanoPlot_\<date\>_\<time\>.log (NanoPlot log file)
+- /path/to/filtered_nanoplot_output/sample_filtered_NanoStats.txt (text file containing basic statistics)
 
 #### 4c. Compile Filtered Data QC
 
@@ -396,20 +400,21 @@ NanoPlot --only-report \
 multiqc  --zip-data-dir \ 
          --outdir filtered_multiqc_report \
          --filename filtered_multiqc \
-         --interactive /path/to/filtered_nanoplot_output/
+         --interactive \
+         /path/to/filtered_nanoplot_output/
 ```
 
 **Parameter Definitions:**
 
-- `--zip-data-dir` - compress the data directory
-- `--outdir` – the output directory to store results
-- `--filename` – the filename prefix of results
-- `--interactive` - force multiqc to always create interactive javascript plots
-- `/path/to/filtered_nanoplot_output/` – the directory holding the output data from the NanoPlot run, provided as a positional argument
+- `--zip-data-dir` - Compress the data directory.
+- `--outdir` – Specifies the output directory to store results.
+- `--filename` – Specifies the filename prefix of results.
+- `--interactive` - Force multiqc to always create interactive javascript plots.
+- `/path/to/filtered_nanoplot_output/` – The directory holding the output data from the NanoPlot run, provided as a positional argument.
 
 **Input Data:**
 
-- /path/to/filtered_nanoplot_output/*NanoStats.txt (NanoPlot output data, from [Step 4b](#4b-filtered-data-qc))
+- /path/to/filtered_nanoplot_output/*filtered_NanoStats.txt (NanoPlot output data, from [Step 4b](#4b-filtered-data-qc))
 
 **Output Data:**
 
@@ -425,17 +430,19 @@ multiqc  --zip-data-dir \
 #### 5a. Trim Filtered Data
 
 ```bash
-porechop --input sample_filtered.fastq --threads NumberOfThreads \
-         --discard_middle --output sample_trimmed.fastq  > sample_porechop.log
+porechop --input sample_filtered.fastq \
+         --threads NumberOfThreads \
+         --discard_middle \
+         --output sample_trimmed.fastq  > sample_porechop.log
 ```
 
 **Parameter Definitions:**
 
-- `--input` – the input read file in fastq format
-- `--threads` - number of parallel processing threads to use
-- `--discard_middle` -  reads with middle adapters will be discarded
-- `--output` - trimmed reads output fastq filename
-- `> sample_porechop.log` - capture stdout in a log file
+- `--input` – Specifies the input sequence file in fastq format.
+- `--threads` - Number of parallel processing threads to use.
+- `--discard_middle` -  Reads with middle adapters will be discarded.
+- `--output` - Specifies the trimmed reads output fastq filename.
+- `> sample_porechop.log` - Redirects the standard output to a log file.
 
 **Input Data:**
 
@@ -444,24 +451,27 @@ porechop --input sample_filtered.fastq --threads NumberOfThreads \
 **Output Data:**
 
 - **sample_trimmed.fastq** (filtered and trimmed reads)
+- sample_porechop.log (porechop standard output containing trimming info)
 
 #### 5b. Trimmed Data QC
 
 ```bash
 NanoPlot --only-report \
-         --prefix sample_ \
+         --prefix sample_trimmed_ \
          --outdir /path/to/trimmed_nanoplot_output \
          --threads NumberOfThreads \
-         --fastq sample_trimmed.fastq
+         --fastq \
+         sample_trimmed.fastq
 ```
 
 **Parameter Definitions:**
 
-- `--outdir` – specifies the output directory to store results
-- `--only-report` - output only the report files
-- `--prefix` - adds a sample specific prefix to the name of each output file
-- `--threads` - number of parallel processing threads to use
-- `sample_trimmed.fastq` – the input reads are specified as a positional argument
+- `--only-report` - Output only the report files.
+- `--prefix` - Adds a sample specific prefix to the name of each output file.
+- `--outdir` – Specifies the output directory to store results.
+- `--threads` - Number of parallel processing threads to use.
+- `--fastq` - Specifies that the input data is in fastq format.
+- `sample_trimmed.fastq` – The input reads, specified as a positional argument.
 
 **Input Data:**
 
@@ -469,9 +479,9 @@ NanoPlot --only-report \
 
 **Output Data:**
 
-- **/path/to/trimmed_nanoplot_output/sample_NanoPlot-report.html** (NanoPlot html summary)
-- /path/to/trimmed_nanoplot_output/sample_NanoPlot_<date>_<time>.log (NanoPlot log file)
-- /path/to/trimmed_nanoplot_output/sample_NanoStats.txt (text file containing basic statistics)
+- **/path/to/trimmed_nanoplot_output/sample_trimmed_NanoPlot-report.html** (NanoPlot html summary)
+- /path/to/trimmed_nanoplot_output/sample_trimmed_NanoPlot_<date>_<time>.log (NanoPlot log file)
+- /path/to/trimmed_nanoplot_output/sample_trimmed_NanoStats.txt (text file containing basic statistics)
 
 #### 5c. Compile Trimmed Data QC
 
@@ -479,20 +489,21 @@ NanoPlot --only-report \
 multiqc --zip-data-dir \ 
         --outdir trimmed_multiqc_report \
         --filename trimmed_multiqc \
-        --interactive /path/to/trimmed_nanoplot_output/
+        --interactive \
+        /path/to/trimmed_nanoplot_output/
 ```
 
 **Parameter Definitions:**
 
-- `--zip-data-dir` - compress the data directory
-- `--outdir` – the output directory to store results
-- `--filename` – the filename prefix of results
-- `--interactive` - force multiqc to always create interactive javascript plots
-- `/path/to/trimmed_nanoplot_output/` – the directory holding the output data from the NanoPlot run, provided as a positional argument
+- `--zip-data-dir` - Compress the data directory.
+- `--outdir` – Specifies the output directory to store results.
+- `--filename` – Specifies the filename prefix of results.
+- `--interactive` - Force multiqc to always create interactive javascript plots.
+- `/path/to/trimmed_nanoplot_output/` – The directory holding the output data from the NanoPlot run, provided as a positional argument.
 
 **Input Data:**
 
-- /path/to/trimmed_nanoplot_output/*NanoStats.txt (NanoPlot output data, output from [Step 5b](#5b-trimmed-data-qc))
+- /path/to/trimmed_nanoplot_output/*trimmed_NanoStats.txt (NanoPlot output data, output from [Step 5b](#5b-trimmed-data-qc))
 
 **Output Data:**
 
