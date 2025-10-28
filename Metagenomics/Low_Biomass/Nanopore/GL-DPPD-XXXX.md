@@ -480,7 +480,7 @@ NanoPlot --only-report \
 **Output Data:**
 
 - **/path/to/trimmed_nanoplot_output/sample_trimmed_NanoPlot-report.html** (NanoPlot html summary)
-- /path/to/trimmed_nanoplot_output/sample_trimmed_NanoPlot_<date>_<time>.log (NanoPlot log file)
+- /path/to/trimmed_nanoplot_output/sample_trimmed_NanoPlot_\<date\>_\<time\>.log (NanoPlot log file)
 - /path/to/trimmed_nanoplot_output/sample_trimmed_NanoStats.txt (text file containing basic statistics)
 
 #### 5c. Compile Trimmed Data QC
@@ -516,22 +516,23 @@ multiqc --zip-data-dir \
 
 ### 6. Contaminant Removal
 
-> A major issue with low biomass data is the high potential for contamination due to the low amount of DNA extracted in the sample for sequencing.  Because negative control/blank samples should by theory be contaminant free, any sequence detected in the negative control is a potential contaminant. To filter out contaminants found in negative control samples that may have been due to cross contamination in the lab, we use a read mapping approach. First negative/blank control samples reads are assembled then filtered and trimmed reads mapped to the assembled contigs. Reads mapping to the assembled contigs are categorized as contaminants and are therefore filtered out and thus excluded from further analyses.
+> A major issue with low biomass data is the high potential for contamination due to the low amount of DNA extracted from the samples. Because negative control/blank samples should by theory be contaminant free, any sequence detected in the negative control is a potential contaminant. To filter out contaminants found in negative control samples that may have been due to cross contamination in the lab, we use a read mapping approach. First negative/blank control sample reads are assembled then the filtered and trimmed reads from each low-biomass sample are mapped to the assembled contigs from the negative/blank control samples. Reads mapping to the assembled contigs are categorized as contaminants and are therefore filtered out and thus excluded from downstream analyses.
 
 ### 6a. Assemble Contaminants
 
 ```bash
-flye --meta --threads NumberOfThreads \
+flye --meta \
+     --threads NumberOfThreads \
      --out-dir /path/to/contaminant_assembly \
      --nano-raw /path/to/blank_samples/\*_trimmed.fastq
 ```
 
 **Parameter Definitions:**
 
-- `--meta` – use metagenome/uneven coverage mode
-- `--threads` - number of parallel processing threads to use
-- `--out-dir` - output directory
-- `--nano-raw` - specifies that input is from Oxford Nanopore regular raw reads. This adds a polishing step for error correction after the assembly is generated.
+- `--meta` – Use metagenome/uneven coverage mode.
+- `--threads` - Number of parallel processing threads to use.
+- `--out-dir` - Specifies the output directory.
+- `--nano-raw` - Specifies that input is from Oxford Nanopore regular raw reads. This adds a polishing step for error correction after the assembly is generated.
 
 **Input Data**
 
