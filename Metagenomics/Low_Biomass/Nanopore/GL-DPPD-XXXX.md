@@ -536,11 +536,11 @@ flye --meta \
 
 **Input Data**
 
-- *_trimmed.fastq (one or more trimmed reads from blank samples, output from [Step 5a](#5a-trim-filtered-data))
+- *_trimmed.fastq (one or more trimmed reads from blank (negative control) samples, output from [Step 5a](#5a-trim-filtered-data))
 
 **Output Data**
 
-- /path/to/contaminant_assembly/assembly.fasta (Assembly built from reads in blank samples in fasta format)
+- /path/to/contaminant_assembly/assembly.fasta (assembly built from reads in blank samples in fasta format)
 
 <br>
 
@@ -550,32 +550,47 @@ flye --meta \
 
 ```bash
 # Build contaminant index
-minimap2 -t NumberOfThreads -a -x splice -d blanks.mmi /path/to/contaminant_assembly/assembly.fasta
+minimap2 -t NumberOfThreads \
+         -a \
+         -x splice \
+         -d blanks.mmi \
+         /path/to/contaminant_assembly/assembly.fasta
 
 # Map reads to index
-minimap2 -t NumberOfThreads -a -x splice blanks.mmi /path/to/trimmed_reads/sample_trimmed.fastq  > sample.sam
+minimap2 -t NumberOfThreads \
+         -a \
+         -x splice \
+         blanks.mmi \
+         /path/to/trimmed_reads/sample_trimmed.fastq  > sample.sam
 ```
 
 **Parameter Definitions:**
 
-- `-t` - number of parallel processing threads
-- `-a` – output in SAM format
-- `-x splice` - specifies preset for spliced alignment of long reads
-- `-d` - specifies the output file for the index
+- `-t` - Number of parallel processing threads.
+- `-a` – Output in SAM format.
+- `-x splice` - Specifies preset for spliced alignment of long reads.
+- `-d` - Specifies the output file for the index (specific to the build contaminant index command).
+- `/path/to/contaminant_assembly/assembly.fasta` - Specifies the input file in fasta format, provided as a positional argument (specific to the build contaminant index command).
+- `blanks.mmi` - Specifies the index file in mmi format, provided as a positional argument (specific to the map reads command).
+- `/path/to/trimmed_reads/sample_trimmed.fastq` - Specifies the input file in fastq format, provided as a positional argument (specific to the map reads command).
+- `> sample.sam` - Redirects the output of the map reads command to a separate SAM file (specific to the map reads command).
 
 **Input Data**
 
-- /path/to/contaminant_assembly/assembly.fasta (Contaminant assembly, output from [Step 6a](#6-assemble-contaminants))
-- /path/to/trimmed_reads/sample_trimmed.fastq (Filtered and trimmed reads, output from [Step 5a](#5a-trim-filtered-data))
+- /path/to/contaminant_assembly/assembly.fasta (contaminant assembly, output from [Step 6a](#6-assemble-contaminants))
+- /path/to/trimmed_reads/sample_trimmed.fastq (filtered and trimmed reads, output from [Step 5a](#5a-trim-filtered-data))
 
 **Output Data**
 
-- sample.sam (Reads aligned to contaminant assembly)
+- blanks.mmi (contaminant index in MMI format)
+- sample.sam (reads aligned to contaminant assembly in SAM format)
 
 #### 6c. Sort and Index Contaminant Alignments
 ```bash
 # Sort Sam, convert to bam and create index
-samtools sort --threads NumberOfThreads -o sample_sorted.bam sample.sam > sample_sort.log 2>&1
+samtools sort --threads NumberOfThreads \
+              -o sample_sorted.bam \
+              sample.sam > sample_sort.log 2>&1
 
 samtools index sample_sorted.bam sample_sorted.bam.bai
 ```
@@ -583,22 +598,24 @@ samtools index sample_sorted.bam sample_sorted.bam.bai
 **Parameter Definitions:**
 
 **samtools sort**
-- `--threads` - number of parallel processing threads to use
-- `-o` - specifies the output file for the sorted reads
-- `sample.sam` - positional argument specifying the input SAM file
+- `--threads` - Number of parallel processing threads to use.
+- `-o` - Specifies the output file for the aligned and sorted reads.
+- `sample.sam` - Specifies the input SAM file, provided as a positional argument.
+- `> sample_sort.log 2>&1` - Redirects the standard output to a log file. 
 
 **samtools index**
-- `sample_sorted.bam` - positional argument specifying the input BAM file to be indexed
-- `sample_sorted.bam.bai` - positional argument specifying the name of the index file
+- `sample_sorted.bam` - The input BAM file, provided as a positional argument.
+- `sample_sorted.bam.bai` - The output index file, provided as a positional argument.
 
 **Input Data:**
 
-- sample.sam (Reads aligned to contaminant assembly, output from [Step 6b](#6b-build-contaminant-index-and-map-reads))
+- sample.sam (reads aligned to contaminant assembly, output from [Step 6b](#6b-build-contaminant-index-and-map-reads))
 
 **Output Data:**
 
-- sample_sorted.bam (sorted mapping to contaminant assembly)
-- sample_sorted.bam.bai (index of sorted mapping to contaminant assembly)
+- sample_sorted.bam (sorted mapping to contaminant assembly file)
+- sample_sorted.bam.bai (index of sorted mapping to contaminant assembly file)
+- sample_sort.log (log file containing the samtools sort standard output)
 
 #### 6d. Gather Contaminant Mapping Metrics
 
@@ -611,22 +628,31 @@ samtools idxstats sample_sorted.bam  > sample_idxstats.txt 2> sample_idxstats.lo
 
 **Parameter Definitions:**
 
-- `flagstat` - positional argument specifying the program for counting the number of alignments for each SAM FLAG type
-- `stats` - positional argument specifying the program for producing comprehensive statistics from the alignment file
-- `idxstats` - positional argument specifying the program for producing contig alignment summary statistics
-- `--remove-dups` - excludes reads marked as duplicates from comprehensive statistics
-- `sample_sorted.bam` - positional argument specifying the input BAM file
+- `flagstat` - Positional argument specifying the program for counting the number of alignments for each SAM FLAG type.
+- `stats` - Positional argument specifying the program for producing comprehensive statistics from the alignment file.
+- `idxstats` - Positional argument specifying the program for producing contig alignment summary statistics.
+- `--remove-dups` - Excludes reads marked as duplicates from the comprehensive statistics.
+- `sample_sorted.bam` - Positional argument specifying the input BAM file.
+- `> sample_flagstats.txt` - Redirects the flagstat standard output to a text file.
+- `2> sample_flagstats.log` - Redirects the flagstat standard error to a log file.
+- `> sample_stats.txt` - Redirects the stats standard output to a text file.
+- `2> sample_stats.log` - Redirects the stats standard error to a log file.
+- `> sample_idxstats.txt` - Redirects the idxstats standard output to a text file.
+- `2> sample_idxstats.log` - Redirects the idxstats standard error to a log file.
 
 **Input Data:**
 
-- sample_sorted.bam (sorted mapping to contaminant assembly, output from [Step 6c](#6c-sort-and-index-contaminant-alignments))
-- sample_sorted.bam.bai (index of sorted mapping to contaminant assembly, output from [Step 6c](#6c-sort-and-index-contaminant-alignments))
+- sample_sorted.bam (sorted mapping to contaminant assembly file, output from [Step 6c](#6c-sort-and-index-contaminant-alignments))
+- sample_sorted.bam.bai (index of sorted mapping to contaminant assembly file, output from [Step 6c](#6c-sort-and-index-contaminant-alignments))
 
 **Output Data:**
 
 - sample_flagstats.txt (SAM FLAG counts)
+- sample_flagstats.log (log file containing the flagstat standard error)
 - sample_stats.txt (comprehensive alignment statistics)
+- sample_stats.log (log file containing the stats standard error)
 - sample_idxstats.txt (contig alignment summary statistics)
+- sample_idxstats.log (log file containing the idxstats standard error)
 
 #### 6e. Generate Decontaminated Read Files
 ```bash
@@ -636,49 +662,51 @@ samtools fastq -t -f 4 sample_sorted.bam | gzip --to-stdout > sample_blank_remov
 
 **Parameter Definitions:**
 
-- `fastq` - positional argument specifying the program for generating fastq files from a SAM/BAM file
-- `-t` - copy RG, BC, and QT tags to the FASTQ header line
-- `-f 4` - only retain unmapped reads that have been marked with the SAM "segment unmapped" FLAG (4)
-- `sample_sorted.bam` - positional argument specifying the input BAM file
-- `| gzip --to-stdout` - sends output from `samtools fastq` to `gzip` to create compressed fastq.gz file
-- `> sample_blank_removed.fastq.gz` - specifies the name of the file used to store the fastq.gz output
+- `fastq` - Positional argument specifying the program for generating fastq files from a SAM/BAM file.
+- `-t` - Copy RG, BC, and QT tags to the FASTQ header line.
+- `-f 4` - Only retain unmapped reads that have been marked with the SAM "segment unmapped" FLAG (4).
+- `sample_sorted.bam` - Positional argument specifying the input BAM file.
+- `| gzip --to-stdout` - Sends output from `samtools fastq` to `gzip` command to create a compressed fastq.gz file.
+- `--to-stdout` - Sends the output from the `gzip` command to standard out.
+- `> sample_blank_removed.fastq.gz` - Redirects the `gzip` standard output to a fastq.gz file.
 
 **Input Data:**
 
-- sample_sorted.bam (sorted mapping to contaminant assembly, output from [Step 6c](#6c-sort-and-index-contaminant-alignments))
+- sample_sorted.bam (sorted mapping to contaminant assembly file, output from [Step 6c](#6c-sort-and-index-contaminant-alignments))
 
 **Output Data:**
 
-- sample_blank_removed.fastq.gz (blank removed reads in fastq format)
+- sample_blank_removed.fastq.gz (filtered and trimmed sample reads with contaminants removed in fastq format)
 
 #### 6f. Contaminant Removal QC
 
 ```bash
 NanoPlot --only-report \
-         --prefix sample_ \
+         --prefix sample_noblank_ \
          --outdir /path/to/noblank_nanoplot_output \
          --threads NumberOfThreads \
-         --fastq sample_blank_removed.fastq.gz
+         --fastq \
+         sample_blank_removed.fastq.gz
 ```
 
 **Parameter Definitions:**
 
-- `--outdir` – specifies the output directory to store results
-- `--only-report` - output only the report files
-- `--prefix` - adds a sample specific prefix to the name of each output file
-- `--threads` - number of parallel processing threads to use
-- `--fastq` - specifies that the input data is in a fastq format
-- `sample_blank_removed.fastq.gz` – the input reads are specified as a positional argument
+- `--only-report` - Output only the report files.
+- `--prefix` - Adds a sample specific prefix to the name of each output file.
+- `--outdir` – Specifies the output directory to store results.
+- `--threads` - Number of parallel processing threads to use.
+- `--fastq` - Specifies that the input data is in fastq format.
+- `sample_blank_removed.fastq.gz` – The input reads, specified as a positional argument.
 
 **Input Data:**
 
-- sample_blank_removed.fastq.gz (blank removed reads, output from [Step 6e](#6e-generate-decontaminated-read-files))
+- sample_blank_removed.fastq.gz (filtered and trimmed sample reads with contaminants removed, output from [Step 6e](#6e-generate-decontaminated-read-files))
 
 **Output Data:**
 
-- **/path/to/noblank_nanoplot_output/sample_NanoPlot-report.html** (NanoPlot html summary)
-- /path/to/noblank_nanoplot_output/sample_NanoPlot_<date>_<time>.log (NanoPlot log file)
-- /path/to/noblank_nanoplot_output/sample_NanoStats.txt (text file containing basic statistics)
+- **/path/to/noblank_nanoplot_output/sample_noblank_NanoPlot-report.html** (NanoPlot html summary)
+- /path/to/noblank_nanoplot_output/sample_noblank_NanoPlot_\<date\>_\<time\>.log (NanoPlot log file)
+- /path/to/noblank_nanoplot_output/sample_noblank_NanoStats.txt (text file containing basic statistics)
 
 
 #### 6g. Compile Contaminant Removal QC
@@ -687,25 +715,26 @@ NanoPlot --only-report \
 multiqc --zip-data-dir \ 
         --outdir noblank_multiqc_report \
         --filename noblank_multiqc \
-        --interactive /path/to/noblank_nanoplot_output/
+        --interactive \
+        /path/to/noblank_nanoplot_output/
 ```
 
 **Parameter Definitions:**
 
-- `--zip-data-dir` - compress the data directory
-- `--outdir` – the output directory to store results
-- `--filename` – the filename prefix of results
-- `--interactive` - force multiqc to always create interactive javascript plots
-- `/path/to/noblank_nanoplot_output/` – the directory holding the output data from the NanoPlot run, provided as a positional argument
+- `--zip-data-dir` - Compress the data directory.
+- `--outdir` – Specifies the output directory to store results.
+- `--filename` – Specifies the filename prefix of results.
+- `--interactive` - Force multiqc to always create interactive javascript plots.
+- `/path/to/noblank_nanoplot_output/` – The directory holding the output data from the NanoPlot run, provided as a positional argument.
 
 **Input Data:**
 
-- /path/to/noblank_nanoplot_output/*NanoStats.txt (NanoPlot output data, output from [Step 6f](#6f-contaminant-removal-qc))
+- /path/to/noblank_nanoplot_output/*noblank_NanoStats.txt (NanoPlot output data, output from [Step 6f](#6f-contaminant-removal-qc))
 
 **Output Data:**
 
-- **noblank_multiqc_report/noblank_multiqc.html** (multiqc output html summary)
-- **noblank_multiqc_report/noblank_multiqc_data.zip** (zip archive containing multiqc output data)
+- **noblank_multiqc.html** (multiqc output html summary)
+- **noblank_multiqc_data.zip** (zip archive containing multiqc output data)
 
 <br>
 
