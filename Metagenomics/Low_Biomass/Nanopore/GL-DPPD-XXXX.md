@@ -657,7 +657,7 @@ samtools idxstats sample_sorted.bam  > sample_idxstats.txt 2> sample_idxstats.lo
 #### 6e. Generate Decontaminated Read Files
 ```bash
 # Retain reads that do not map to contaminants
-samtools fastq -t -f 4 sample_sorted.bam | gzip --to-stdout > sample_blank_removed.fastq.gz
+samtools fastq -t -f 4 sample_sorted.bam | gzip --to-stdout > sample_decontam.fastq.gz
 ```
 
 **Parameter Definitions:**
@@ -668,7 +668,7 @@ samtools fastq -t -f 4 sample_sorted.bam | gzip --to-stdout > sample_blank_remov
 - `sample_sorted.bam` - Positional argument specifying the input BAM file.
 - `| gzip --to-stdout` - Sends output from `samtools fastq` to `gzip` command to create a compressed fastq.gz file.
 - `--to-stdout` - Sends the output from the `gzip` command to standard out.
-- `> sample_blank_removed.fastq.gz` - Redirects the `gzip` standard output to a fastq.gz file.
+- `> sample_decontam.fastq.gz` - Redirects the `gzip` standard output to a fastq.gz file.
 
 **Input Data:**
 
@@ -676,17 +676,17 @@ samtools fastq -t -f 4 sample_sorted.bam | gzip --to-stdout > sample_blank_remov
 
 **Output Data:**
 
-- sample_blank_removed.fastq.gz (filtered and trimmed sample reads with contaminants removed in fastq format)
+- sample_decontam.fastq.gz (filtered and trimmed sample reads with contaminants removed in fastq format)
 
 #### 6f. Contaminant Removal QC
 
 ```bash
 NanoPlot --only-report \
          --prefix sample_noblank_ \
-         --outdir /path/to/noblank_nanoplot_output \
+         --outdir /path/to/decontam_nanoplot_output \
          --threads NumberOfThreads \
          --fastq \
-         sample_blank_removed.fastq.gz
+         sample_decontam.fastq.gz
 ```
 
 **Parameter Definitions:**
@@ -696,27 +696,27 @@ NanoPlot --only-report \
 - `--outdir` – Specifies the output directory to store results.
 - `--threads` - Number of parallel processing threads to use.
 - `--fastq` - Specifies that the input data is in fastq format.
-- `sample_blank_removed.fastq.gz` – The input reads, specified as a positional argument.
+- `sample_decontam.fastq.gz` – The input reads, specified as a positional argument.
 
 **Input Data:**
 
-- sample_blank_removed.fastq.gz (filtered and trimmed sample reads with contaminants removed, output from [Step 6e](#6e-generate-decontaminated-read-files))
+- sample_decontam.fastq.gz (filtered and trimmed sample reads with contaminants removed, output from [Step 6e](#6e-generate-decontaminated-read-files))
 
 **Output Data:**
 
-- **/path/to/noblank_nanoplot_output/sample_noblank_NanoPlot-report.html** (NanoPlot html summary)
-- /path/to/noblank_nanoplot_output/sample_noblank_NanoPlot_\<date\>_\<time\>.log (NanoPlot log file)
-- /path/to/noblank_nanoplot_output/sample_noblank_NanoStats.txt (text file containing basic statistics)
+- **/path/to/decontam_nanoplot_output/sample_decontam_NanoPlot-report.html** (NanoPlot html summary)
+- /path/to/decontam_nanoplot_output/sample_decontam_NanoPlot_\<date\>_\<time\>.log (NanoPlot log file)
+- /path/to/decontam_nanoplot_output/sample_decontam_NanoStats.txt (text file containing basic statistics)
 
 
 #### 6g. Compile Contaminant Removal QC
 
 ```bash
 multiqc --zip-data-dir \ 
-        --outdir noblank_multiqc_report \
-        --filename noblank_multiqc \
+        --outdir decontam_multiqc_report \
+        --filename decontam_multiqc \
         --interactive \
-        /path/to/noblank_nanoplot_output/
+        /path/to/decontam_nanoplot_output/
 ```
 
 **Parameter Definitions:**
@@ -725,136 +725,127 @@ multiqc --zip-data-dir \
 - `--outdir` – Specifies the output directory to store results.
 - `--filename` – Specifies the filename prefix of results.
 - `--interactive` - Force multiqc to always create interactive javascript plots.
-- `/path/to/noblank_nanoplot_output/` – The directory holding the output data from the NanoPlot run, provided as a positional argument.
+- `/path/to/decontam_nanoplot_output/` – The directory holding the output data from the NanoPlot run, provided as a positional argument.
 
 **Input Data:**
 
-- /path/to/noblank_nanoplot_output/*noblank_NanoStats.txt (NanoPlot output data, output from [Step 6f](#6f-contaminant-removal-qc))
+- /path/to/decontam_nanoplot_output/*decontam_NanoStats.txt (NanoPlot output data, output from [Step 6f](#6f-contaminant-removal-qc))
 
 **Output Data:**
 
-- **noblank_multiqc.html** (multiqc output html summary)
-- **noblank_multiqc_data.zip** (zip archive containing multiqc output data)
+- **decontam_multiqc.html** (multiqc output html summary)
+- **decontam_multiqc_data.zip** (zip archive containing multiqc output data)
 
 <br>
 
 ---
 
-### 7. Host Removal
+### 7. Human Read Removal
 
-#### 7a. Build or download host database
-
-##### 7a.i. Download from URL
+#### 7a. Build Kraken2 Database
 
 ```bash
-  # Downloading and unpacking database from ${host_url}
-  wget -O host.tar.gz --timeout=3600 --tries=0 --continue  host_url
+kraken2-build --download-library human \
+              --db kraken2_human_db \
+              --threads numberOfThreads \
+              --no-masking
 
-  mkdir kraken2_host_db/ && \
-  tar -zxvf host.tar.gz -C kraken2_host_db/ && \
-  rm -rf  host.tar.gz # Cleaning up
+kraken2-build --download-taxonomy \
+              --db kraken2_human_db/
+
+kraken2-build --build \
+              --db kraken2_human_db/ \
+              --threads numberOfThreads
+ 
+kraken2-build --clean \
+              --db kraken2_human_db/
 ```
 
 **Parameter Definitions:**
 
-- `--timeout` - network timeout in seconds
-- `--tries` - number of times to retry the download
-- `--continue` - continue getting a partially downloaded file (if it exists)
-- `host_url` - positional argument specifying the URl for the host database
-
-**Output Data:**
-
-- kraken2_host_db/ - Kraken2 database directory
-
-
-##### 7a.ii. Build from custom reference
-
-```bash
-# Install taxonomy       
-kraken2-build --download-taxonomy --db kraken2_host_db/
-# Add sequence to your database's genomic library
-kraken2-build --add-to-library host_assembly.fasta --db kraken2_host_db/ --no-masking
-# Once your library is finalized, build the database
-kraken2-build --build --db kraken2_host_db/
-```
-
-**Parameter Definitions:**
-
-- `--download-taxonomy` - downloads taxonomic mapping information
-- `--add-to-library host_assembly.fasta` - specifies to add assembly fasta to library
-- `--db` - specifies the output directory for the kraken database
-- `--build` - specifies to construct kraken2-formatted database
+- `--download-library` - Specifies the reference name/type to download.
+- `--db` - Specifies the directory to put the database in.
+- `--threads` - Number of parallel processing threads to use.
+- `--no-masking` - Prevents masking of low-complexity sequences. For additional 
+                   information see the [kraken documentation for masking](https://github.com/DerrickWood/kraken2/wiki/Manual#masking-of-low-complexity-sequences).
+- `--download-taxonomy` - Downloads taxonomic mapping information.
+- `--build` - Specifies to construct kraken2-formatted database.
+- `--clean` - Specifies to remove unnecessary intermediate files.
 
 **Input Data:**
 
-- `host_assembly.fasta` - host genome assembly in fasta format 
+- `human` - database name to download (specified with the `--download-library` parameter above)
 
 **Output Data:**
 
-- kraken2_host_db/ - Kraken2 database directory
+- kraken2_human_db/ - Kraken2 human database directory, containing hash.k2d, opts.k2d, and taxo.k2d files 
 
 
-##### 7a.iii. Build from host name
+#### 7b. Remove Human Reads
 
 ```bash
-# Build kraken reference from host_name
-kraken2-build --download-library host_name  -db kraken2_host_db/ \
-              --threads numberOfThreads  --no-masking
-kraken2-build --download-taxonomy --db kraken2_host_db/
-kraken2-build --build --db kraken2_host_db/ --threads numberOfThreads 
-kraken2-build --clean --db kraken2_host_db/
+kraken2 --db kraken2_human_db \
+        --gzip-compressed \
+        --threads NumberOfThreads \
+        --use-names \
+        --output sample-kraken2-output.txt \
+        --report sample-kraken2-report.tsv \
+        --unclassified-out sample_HRrm.fasta \
+        sample_decontam.fastq.gz
+
+# add ">" before each sequence name and gzip fasta output file
+sed -i -E 's/^([a-z0-9])/>\1/g' sample_HRrm.fasta | gzip 
 ```
 
 **Parameter Definitions:**
 
-- `--download-library` - specifies the reference name/type to download, host_name must 
-                         be one of: "archaea", "bacteria", "plasmid", "viral", "human", 
-                         "fungi", "plant", "protozoa", "nr", "nt", "UniVec", "UniVec_Core"
-- `--db` - specifies the directory we are putting the database in
-- `--threads` - number of parallel processing threads to use
-- `--no-masking` - prevents masking of low-complexity sequences. For additional 
-                   information see the [kraken documentation for masking](https://github.com/DerrickWood/kraken2/wiki/Manual#masking-of-low-complexity-sequences)
-- `--download-taxonomy` - downloads taxonomic mapping information
-- `--build` - specifies to construct kraken2-formatted database
-- `--clean` - specifies to remove unnecessarily intermediate files
+- `--db` - Specifies the directory holding the kraken2 database.
+- `--gzip-compressed` - Specifies that the input fastq files are gzip-compressed.
+- `--threads` - Number of parallel processing threads to use.
+- `--use-names` - Specifies adding taxa names in addition to taxon IDs.
+- `--output` - Specifies the name of the kraken2 read-based output file (one line per read).
+- `--report` - Specifies the name of the kraken2 report output file (one line per taxa, with number of reads assigned to it).
+- `--unclassified-out` - Specifies the name of the output file containing reads that were not classified, i.e non-human reads.
+- `sample_decontam.fastq.gz` - Positional argument specifying the input read file.
 
 **Input Data:**
 
-- `host_name` - host database name (one of those specified in `--download-library` above)
-
-**Output Data:**
-
-- kraken2_host_db/ - Kraken2 database directory
-
-#### 7b. Remove host reads
-
-```bash
-kraken2 --db kraken2_host_db/ --gzip-compressed --threads NumberOfThreads --use-names \
-        --output sample-kraken2-output.txt --report sample-kraken2-report.tsv \
-        --unclassified-out sample_host_removed.fastq sample_blank_removed.fastq.gz
-gzip sample_host_removed.fastq
-```
-
-**Parameter Definitions:**
-
-- `--db` - specifies the directory holding the kraken2 database files created in [Step 7a](#7a-build-or-download-host-database)
-- `--gzip-compressed` - specifies the input fastq files are gzip-compressed
-- `--threads` - number of parallel processing threads to use
-- `--use-names` - specifies adding taxa names in addition to taxon IDs
-- `--output` - specifies the name of the kraken2 read-based output file (one line per read)
-- `--report` - specifies the name of the kraken2 report output file (one line per taxa, with number of reads assigned to it)
-- `--unclassified-out` - name of output file of reads that were not classified i.e non-host reads.
-- `sample_blank_removed.fastq.gz` - positional argument specifying the input read file
-
-**Input Data:**
-
-- sample_blank_removed.fastq.gz (gzipped blank removed fastq file, output from [Step 6d](#6d-generate-decontaminated-read-files))
+- kraken2_human_db/ (kraken2 human database directory, output from [Step 7a](#7a-build-kraken2-database))
+- sample_decontam.fastq.gz (filtered and trimmed sample reads with contaminants removed, output from [Step 6e](#6e-generate-decontaminated-read-files))
 
 **Output Data:**
 
 - sample-kraken2-output.txt (kraken2 read-based output file (one line per read))
 - sample-kraken2-report.tsv (kraken2 report output file (one line per taxa, with number of reads assigned to it))
-- **sample_host_removed.fastq.gz** (host-read removed, gzipped fastq file)
+- **sample_HRrm.fasta.gz** (filtered and trimmed sample reads with both contaminants and human reads removed, gzipped fasta file)
+
+
+#### 7c. Compile Human Read Removal QC
+
+```bash
+multiqc --zip-data-dir \ 
+        --outdir HRrm_multiqc_report \
+        --filename HRrm_multiqc \
+        --interactive \
+        /path/to/*kraken2-report.tsv
+```
+
+**Parameter Definitions:**
+
+- `--zip-data-dir` - Compress the data directory.
+- `--outdir` – Specifies the output directory to store results.
+- `--filename` – Specifies the filename prefix of results.
+- `--interactive` - Force multiqc to always create interactive javascript plots.
+- `/path/to/*kraken2-report.tsv` – The kraken2 output report files, provided as a positional argument.
+
+**Input Data:**
+
+- /path/to/*kraken2-report.tsv (kraken2 report files, output from [Step 7b](#7b-remove-human-reads))
+
+**Output Data:**
+
+- **HRrm_multiqc.html** (multiqc output html summary)
+- **HRrm_multiqc_data.zip** (zip archive containing multiqc output data)
 
 <br>
 
