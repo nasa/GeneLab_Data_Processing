@@ -4,7 +4,7 @@
 
 ---
 
-**Date:** October MM, 2025  
+**Date:** November MM, 2025  
 **Revision:** -  
 **Document Number:** GL-DPPD-7116  
 
@@ -209,7 +209,7 @@ dorado basecaller ${model} ${input_directory} \
 
 ### 2. Demultiplexing
 
-#### 2a. Split fastq
+#### 2a. Split Fastq
 
 ```bash
 dorado demux \
@@ -239,7 +239,7 @@ dorado demux \
 - /path/to/fastq/output/barcoding_summary.txt (barcode summary file listing each read, the file it was assigned to, and its classified barcode)
 
 
-#### 2b. Concatenate files for each sample
+#### 2b. Concatenate Files For Each Sample
 
 ```bash
 # Change to directory containing split fastq files generated from step 2a. 
@@ -340,7 +340,7 @@ multiqc --zip-data-dir \
 
 ---
 
-### 4. Quality filtering
+### 4. Quality Filtering
 
 #### 4a. Filter Raw Data
 
@@ -1445,23 +1445,25 @@ colours <- colorRampPalette(c('white','red'))(255)
 
 ## Read-based Processing
 
-### 9. Taxonomic profiling using kaiju
+### 9. Taxonomic Profiling Using Kaiju
 
-#### 9a. Build kaiju database
+#### 9a. Build Kaiju Database
 
 ```bash
 # Make a directory that will hold the downloaded kaiju database
 mkdir kaiju-db/ && cd kaiju-db/
+
 # Download kaiju's reference database
 kaiju-makedb -s nr_euk -t NumberOfThreads
-# Cleaning up
+
+# Clean up
 rm nr_euk/kaiju_db_nr_euk.bwt nr_euk/kaiju_db_nr_euk.sa
 ```
 
 **Parameter Definitions:**
 
-- `-t` - number of parallel processing threads to use
-- `-s nr_euk` - specifies to download NCBI's nr and additionally including fungi and microbial eukaryotes databases
+- `-s nr_euk` - Specifies to download the subset of the NCBI BLAST nr (non-redundant) database containing all proteins belonging to Archaea, bacteria, and viruses, and additionally include proteins from fungi and microbial eukaryotes.
+- `-t` - Number of parallel processing threads to use.
 
 **Input Data:**
 
@@ -1469,107 +1471,119 @@ rm nr_euk/kaiju_db_nr_euk.bwt nr_euk/kaiju_db_nr_euk.sa
 
 **Output Data:**
 
-- kaiju-db/nr_euk/kaiju_db_nr_euk.fmi (fmi file)
-- kaiju-db/nodes.dmp (nodes file)
-- kaiju-db/names.dmp (names file)
+- kaiju-db/nr_euk/kaiju_db_nr_euk.fmi (FM-index file containing the main Kaiju database index)
+- kaiju-db/nr_euk/kaiju_db_nr_euk.faa (FASTA amino acid file containing the protein sequences used to build the .fmi index file)
+- kaiju-db/nodes.dmp (taxonomy hierarchy file from the NCBI Taxonomy database defining the parent-child relationships in the taxonomic tree)
+- kaiju-db/names.dmp (taxonomy names file from the NCBI Taxonomy database that maps taxonomic IDs to their scientific names)
+- kaiju-db/merged.dmp (merged taxonomy IDs file from the NCBI Taxonomy database that maps deprecated taxonomic IDs to current ones)
 
 
 #### 9b. Kaiju Taxonomic Classification
 
 ```bash
-kaiju -f kaiju-db/nr_euk/kaiju_db_nr_euk.fmi -t kaiju-db/nodes.dmp \
-    -z NumberOfThreads \
-    -E 1e-05 \
-    -i /path/to/decontaminated_reads/sample_host_removed.fastq.gz \
-    -o sample_kaiju.out
+kaiju -f kaiju-db/nr_euk/kaiju_db_nr_euk.fmi \
+      -t kaiju-db/nodes.dmp \
+      -z NumberOfThreads \
+      -E 1e-05 \
+      -i /path/to/sample_HRrm.fasta.gz \
+      -o sample_kaiju.out
 ```
 
 **Parameter Definitions:**
 
-- `-f` - specifies path to the kaiju database (.fmi) file
-- `-t` - specifies path to the kaiju nodes.dmp file
-- `-z` - number of parallel processing threads to use
-- `-E` - specifies the minimum E-value in Greedy mode (default: 1e-05)
-- `-i` - specifies path to the input file
-- `-o` - specifies the name of output file
+- `-f` - Specifies the path to the kaiju database index file (.fmi).
+- `-t` - Specifies the path to the kaiju taxonomy hierarchy file (nodes.dmp).
+- `-z` - Number of parallel processing threads to use.
+- `-E` - Specifies the minimum E-value to use for filter matches (an E-value of 1e-05 means that there's a 0.001% chance that the matches identified occurred randomly).
+- `-i` - Specifies path to the input file.
+- `-o` - Specifies the name of the output file.
 
 **Input Data:**
 
-- kaiju-db/nr_euk/kaiju_db_nr_euk.fmi (fmi file, output from [Step 9a](#9a-build-kaiju-database))
-- kaiju-db/nodes.dmp (nodes file, output from [Step 9a](#9a-build-kaiju-database))
-- sample_host_removed.fastq.gz (gzipped decontaminated reads fastq file, output from [Step 7b](#7b-remove-host-reads))
+- kaiju-db/nr_euk/kaiju_db_nr_euk.fmi (FM-index file containing the main Kaiju database index, output from [Step 9a](#9a-build-kaiju-database))
+- kaiju-db/nodes.dmp (kaiju taxonomy hierarchy nodes file, output from [Step 9a](#9a-build-kaiju-database))
+- sample_HRrm.fasta.gz (filtered and trimmed sample reads with both contaminants and human reads removed, gzipped fasta file, output from [Step 7b](#7b-remove-host-reads))
 
 **Output Data:**
 
 - sample_kaiju.out (kaiju output file)
 
-#### 9c. Compile kaiju taxonomy results
+#### 9c. Compile Kaiju Taxonomy Results
 
 ```bash
-# Merge kaiju reports to one table at the species level
-  kaiju2table -t nodes.dmp -n names.dmp -p -r species \
-              -o merged_kaiju_table.tsv *_kaiju.out
+# Merge kaiju reports to one table at each taxonomic level, phylum, class, order, family, genus, species 
+kaiju2table -t nodes.dmp \
+            -n names.dmp \
+            -p \
+            -r ${TAXON_LEVEL} \
+            -o merged_kaiju_summary_${TAXON_LEVEL}.tsv \
+            *_kaiju.out
 
 # Convert file names to sample names
-sed -i -E 's/.+\/(.+)_kaiju\.out/\1/g' merged_kaiju_table.tsv && \
-sed -i -E 's/file/sample/' merged_kaiju_table.tsv
+sed -i -E 's/.+\/(.+)_kaiju\.out/\1/g' merged_kaiju_summary_${TAXON_LEVEL}.tsv && \
+sed -i -E 's/file/sample/' merged_kaiju_summary_${TAXON_LEVEL}.tsv
 ```
 
 **Parameter Definitions:**
 
-- `-n` - specifies path to the kaiju names.dmp file
-- `-t` - specifies path to the kaiju nodes.dmp file
-- `-r` - specifies taxonomic rank, must be one of: phylum, class, order, family, genus, species
-- `-o` - specifies the name of krona formatted kaiju output file
-- `*_kaiju.out` - positional argument specifying the path to the kaiju output file (output from [Step 9ai](#9ai-read-taxonomic-classification-using-kaiju))
+- `-t` - Specifies the path to the kaiju taxonomy hierarchy file (nodes.dmp).
+- `-n` - Specifies the path to the kaiju taxonomy names file (names.dmp).
+- `-p` - Print the full taxon path instead of only the taxon name.
+- `-r` - Specifies taxonomic rank to print the taxon path to, must be one of: phylum, class, order, family, genus, species.
+- `-o` - Specifies the name of the kaiju taxon summary output file.
+- `*_kaiju.out` - Positional argument specifying the path to the kaiju output files for each sample. 
 
 **Input Data:**
 
-- kaiju-db/nodes.dmp (nodes file, output from [Step 9a](#9a-build-kaiju-database))
-- kaiju-db/names.dmp (names file, output from [Step 9a](#9a-build-kaiju-database))
-- *kaiju.out (kaiju report files, output from [Step 9b](#9b-kaiju-taxonomic-classification))
+- kaiju-db/nodes.dmp (kaiju taxonomy hierarchy nodes file, output from [Step 9a](#9a-build-kaiju-database))
+- kaiju-db/names.dmp (kaiju taxonomy names file, output from [Step 9a](#9a-build-kaiju-database))
+- *kaiju.out (kaiju output files, output from [Step 9b](#9b-kaiju-taxonomic-classification))
 
 **Output Data:**
 
-- **merged_kaiju_table.tsv** (Compiled kaiju table at the species taxon level)
+- **merged_kaiju_summary_${TAXON_LEVEL}.tsv** (compiled kaiju summary table for each taxon level)
 
-#### 9d. Convert kaiju output to krona format
+#### 9d. Convert Kaiju Output To Krona Format
 
 ```bash
-kaiju2krona -u -n kaiju-db/names.dmp -t kaiju-db/nodes.dmp \
-            -i sample_kaiju.out -o sample.krona
+kaiju2krona -u \
+            -n kaiju-db/names.dmp \
+            -t kaiju-db/nodes.dmp \
+            -i sample_kaiju.out \
+            -o sample.krona
 ```
 
 **Parameter Definitions:**
 
-- `-u` - include count for unclassified reads in output
-- `-n` - specifies path to the kaiju names.dmp file
-- `-t` - specifies path to the kaiju nodes.dmp file
-- `-i` - specifies path to the kaiju output file (output from [Step 9b](#9b-kaiju-taxonomic-classification))
-- `-o` - specifies the name of krona formatted kaiju output file
+- `-u` - Include count for unclassified reads in output.
+- `-n` - Specifies the path to the kaiju taxonomy names file (names.dmp).
+- `-t` - Specifies the path to the kaiju taxonomy hierarchy file (nodes.dmp).
+- `-i` - Specifies the path to the kaiju output file.
+- `-o` - Specifies the name of krona formatted kaiju output file.
 
 **Input Data:**
-- kaiju-db/nodes.dmp (nodes file, output from [Step 9a](#9a-build-kaiju-database))
-- kaiju-db/names.dmp (names file, output from [Step 9a](#9a-build-kaiju-database))
+- kaiju-db/names.dmp (kaiju taxonomy names file, output from [Step 9a](#9a-build-kaiju-database))
+- kaiju-db/nodes.dmp (kaiju taxonomy hierarchy nodes file, output from [Step 9a](#9a-build-kaiju-database))
 - sample_kaiju.out (kaiju output file, output from [Step 9b](#9b-kaiju-taxonomic-classification))
 
 **Output Data:**
 
 - sample.krona (krona formatted kaiju output)
 
-#### 9e. Compile kaiju krona report
+#### 9e. Compile Kaiju Krona Reports
 
 ```bash
-# Find, list and write all .krona files to file 
-find . -type f -name "*.krona" |sort -uV > krona_files.txt
+# Create a file containing a sorted list of all .krona files 
+find . -type f -name "*.krona" | sort -uV > krona_files.txt
 
+# Create a file containing a sorted list of all sample names
 FILES=($(find . -type f -name "*.krona"))
 basename --multiple --suffix='.krona' ${FILES[*]} | sort -uV  > sample_names.txt
 
 # Create ktImportText input format files
 KTEXT_FILES=($(paste -d',' "krona_files.txt" "sample_names.txt"))
 
-# Create html   
+# Create html containing krona plot  
 ktImportText  -o kaiju-report.html ${KTEXT_FILES[*]}
 ```
 
@@ -1577,39 +1591,42 @@ ktImportText  -o kaiju-report.html ${KTEXT_FILES[*]}
 
 **find**
 
-- `-type f` -  specifies that the type of file to find is a regular file
-- `-name "*.krona"` - specifies to find files ending with the .krona suffix  
+- `-type f` -  Specifies that the type of file to find is a regular file.
+- `-name "*.krona"` - Specifies to find files ending with the .krona suffix.  
 
 **sort**
 
-- `-u` - specifies to perform a unique sort
-- `-V` - specifies to perform a mixed type of sorting
+- `-u` - Specifies to perform a unique sort.
+- `-V` - Specifies to perform a mixed type of sorting with names containing numbers within text.
+- `> {}.txt` - Redirects the sorted list to a separate text file.
 
 **basename**
 
-- `--multiple` - support multiple arguments and treat each as a file name
-- `--suffix='.krona'` - remove a trailing '.krona' suffix
+- `--multiple` - Support multiple arguments and treat each as a file name.
+- `--suffix='.krona'` - Remove a trailing '.krona' suffix.
 
 **paste**
 
-- `-d','` - paste both krona and sample files together line by line delimited by comma ','
+- `-d','` - Paste both krona and sample files together line by line delimited by comma ','.
 
 **ktImportText**
 
-- `-o` - specifies the compiled output html file name
-- `${KTEXT_FILES[*]}` - an array positional arguement with the following content: 
-                     sample_1.krona,sample_1 sample_2.krona,sample_2 .. sample_n.krona,sample_n.
+- `-o` - Specifies the compiled output html file name.
+- `${KTEXT_FILES[*]}` - An array positional arguement with the following content: 
+                     sample_1.krona,sample_1 sample_2.krona,sample_2 ... sample_n.krona,sample_n.
 
 **Input Data:**
-*.krona (all sample .krona formatted files, output from [Step 9d](#9d-convert-kaiju-output-to-krona-format)) 
+- *.krona (all sample .krona formatted files, output from [Step 9d](#9d-convert-kaiju-output-to-krona-format)) 
 
                       
 **Output Data:**
 
-- **kaiju-report.html** (compiled krona html report output)
+- krona_files.txt (sorted list of all *.krona files)
+- sample_names.txt (sorted list of all sample names)
+- **kaiju-report.html** (compiled krona html report containing all samples)
 
 
-#### 9f. Create kaiju species count table
+#### 9f. Create Kaiju Species Count Table --- START HERE ---
 
 ```R
 library(tidyverse)
