@@ -1,8 +1,7 @@
 channels:
     - conda-forge
     - bioconda
-    - defaults
     - biobakery
 dependencies:
     - humann=3.9
-    - metaphlan=4.10
+    - metaphlan=4.1.0
