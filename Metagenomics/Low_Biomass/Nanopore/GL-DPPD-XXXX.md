@@ -1831,14 +1831,14 @@ ggsave(filename = "decontaminated-kaiju-species_plot.png", plot = p,
 
 ---
 
-### 10. Taxonomic Profiling using Kraken2
+### 10. Taxonomic Profiling Using Kraken2
 
-#### 10a. Download kraken2 database
+#### 10a. Download Kraken2 Database
 
 ```bash 
 ## Download all microbial (including eukaryotes) - https://benlangmead.github.io/aws-indexes/k2
 
-# Downloading and building kraken2's pluspfp database which contains that standard database + plants + protists + fungi..
+# Downloading and building kraken2's pluspfp database which contains the standard database (Refseq archaea, bacteria, viral, plasmid, human1, UniVec_Core) + plants + protists + fungi
 
 mkdir kraken2-db/ && cd kraken2-db/
 
@@ -1864,62 +1864,121 @@ tar -xvzf k2_pluspfp.tar.gz
 
 **wget**
 
-- `O` - name of file to download the url content to
-- `--timeout=3600` - specifies the network timeout in seconds
-- `--tries=0` - retry downdload infinitely
-- `--continue` -  continue getting a partially-downloaded file
-- `*_URL` - position arguement specifying the url to download a particular resource from.
+- `O` - Name of file to download the url content to.
+- `--timeout=3600` - Specifies the network timeout in seconds.
+- `--tries=0` - Retry download infinitely.
+- `--continue` -  Continue getting a partially-downloaded file.
+- `*_URL` - Position arguement specifying the url to download a particular resource from.
 
 
 **Input Data:**
 
 - `INSPECT_URL=` - url specifying the location of kraken2 inspect file
-- `LIRARY_REPORT_URL=` -  url specifying the location of kraken2 library report file
-- `MD5_URL=` -  url specifying the location of the md5 file of the kraken database
+- `LIRARY_REPORT_URL=` - url specifying the location of kraken2 library report file
+- `MD5_URL=` - url specifying the location of the md5 file of the kraken database
 - `DB_URL=` - url specifying the location of the main kraken database archive in .tar.gz format
 
 **Output Data:**
 
-- kraken2-db/  (a directory containing kraken 2 database files)
+- kraken2-db/  (a directory containing kraken2 database files)
 
-#### 10b. Taxonomic Classification
+#### 10b. Kraken2 Taxonomic Classification
 
 ```bash
-kraken2 --db kraken2-db/ --gzip-compressed --threads NumberOfThreads --use-names \
-        --output sample-kraken2-output.txt --report sample-kraken2-report.tsv \
-        /path/to/decontaminated_reads/sample_host_removed.fastq.gz
+kraken2 --db kraken2-db/ \
+        --gzip-compressed \
+        --threads NumberOfThreads \
+        --use-names \
+        --output sample-kraken2-output.txt \
+        --report sample-kraken2-report.tsv \
+        /path/to/sample_HRrm.fasta.gz
 ```
 
 **Parameter Definitions:**
 
-- `--db` - specifies the directory holding the kraken2 database files 
-- `--gzip-compressed` - specifies the input fastq files are gzip-compressed
-- `--threads` - number of parallel processing threads to use
-- `--use-names` - specifies adding taxa names in addition to taxids
-- `--output` - specifies the name of the kraken2 read-based output file (one line per read)
-- `--report` - specifies the name of the kraken2 report output file (one line per taxa, with number of reads assigned to it)
-- `sample_host_removed.fastq.gz` - positional argument specifying the input read file
+- `--db` - Specifies the directory holding the kraken2 database files. 
+- `--gzip-compressed` - Specifies the input files are gzip-compressed.
+- `--threads` - Number of parallel processing threads to use.
+- `--use-names` - Specifies to add taxa names in addition to taxids.
+- `--output` - Specifies the name of the kraken2 read-based output file.
+- `--report` - Specifies the name of the kraken2 report output file.
+- `sample_HRrm.fasta.gz` - Positional argument specifying the input file.
 
 **Input Data:**
 
-- kraken2-db/ (a directory containing kraken 2 database files, output from [Step 10a](#10a-download-kraken2-database))
-- sample_host_removed.fastq.gz (gzipped reads fastq file, output from [Step 7b](#7b-remove-host-reads))
+- kraken2-db/ (a directory containing kraken2 database files, output from [Step 10a](#10a-download-kraken2-database))
+- sample_HRrm.fasta.gz (filtered and trimmed sample reads with both contaminants and human reads removed, gzipped fasta file, output from [Step 7b](#7b-remove-host-reads))
 
 **Output Data:**
 
 - sample-kraken2-output.txt (kraken2 read-based output file (one line per read))
 - sample-kraken2-report.tsv (kraken2 report output file (one line per taxa, with number of reads assigned to it))
 
-#### 10c. Convert Kraken2 output to Krona format
+
+#### 10c. Compile Kraken2 Taxonomy Results
+
+##### 10ci. Create Merged Kraken2 Taxonomy Table
 
 ```bash
-kreport2krona.py --report-file sample-kraken2-report.tsv  --output sample.krona
+combine_kreports.py --output merged-kraken2-table.tsv \
+                    --report-files sample1-kraken2-report.tsv sample2-kraken2-report.tsv ... sampleN-kraken2-report.tsv \
+                    --sample-names sample1 sample2 ... sampleN
 ```
 
 **Parameter Definitions:**
 
-- `--output` - specifies the name of the krona output file
-- `--report-file` - specifies the name of the input kraken2 report file
+- `--output` - Specifies the name of the kraken2 compiled results output file.
+- `--report-files` - Specifies the name of each input kraken2 report file to compile.
+- `--sample-names` - Specifies the name of each sample. 
+
+**Input Data:**
+
+- \*-kraken2-report.tsv (kraken report from each sample to compile, outputs from [Step 10b](#10b-taxonomic-classification))
+
+**Output Data:**
+
+- **merged-kraken2-table.tsv** (table containing compiled kraken2 reports)
+
+
+##### 10cii. Compile Kraken2 Taxonomy Reports
+
+```bash
+multiqc --zip-data-dir \ 
+        --outdir kraken2_multiqc_report \
+        --filename kraken2_multiqc \
+        --interactive \
+        /path/to/*kraken2-report.tsv
+```
+
+**Parameter Definitions:**
+
+- `--zip-data-dir` - Compress the data directory.
+- `--outdir` - Specifies the output directory to store results.
+- `--filename` - Specifies the filename prefix of results.
+- `--interactive` - Force multiqc to always create interactive javascript plots.
+- `/path/to/*kraken2-report.tsv` - The kraken2 output report files, provided as a positional argument.
+
+**Input Data:**
+
+- \*-kraken2-report.tsv (kraken report from each sample to compile, outputs from [Step 10b](#10b-taxonomic-classification))
+
+**Output Data:**
+
+- **kraken2_multiqc.html** (multiqc output html summary)
+- **kraken2_multiqc_data.zip** (zip archive containing multiqc output data)
+
+
+#### 10d. Convert Kraken2 Output to Krona Format
+
+```bash
+kreport2krona.py --report-file sample-kraken2-report.tsv  \
+                 --output sample.krona
+```
+
+**Parameter Definitions:**
+
+- `--report-file` - Specifies the name of the input kraken2 report file.
+- `--output` - Specifies the name of the krona output file.
 
 **Input Data:**
 
@@ -1930,11 +1989,11 @@ kreport2krona.py --report-file sample-kraken2-report.tsv  --output sample.krona
 - sample.krona (krona formatted kraken2 output)
 
 
-#### 10d. Compile kraken2 krona report
+#### 10e. Compile Kraken2 Krona Reports
 
 ```bash
 # Find, list and write all .krona files to file 
-find . -type f -name "*.krona" |sort -uV > krona_files.txt
+find . -type f -name "*.krona" | sort -uV > krona_files.txt
 
 FILES=($(find . -type f -name "*.krona"))
 basename --multiple --suffix='.krona' ${FILES[*]} | sort -uV  > sample_names.txt
@@ -1943,46 +2002,49 @@ basename --multiple --suffix='.krona' ${FILES[*]} | sort -uV  > sample_names.txt
 KTEXT_FILES=($(paste -d',' "krona_files.txt" "sample_names.txt"))
 
 # Create html   
-ktImportText  -o kraken-report.html ${KTEXT_FILES[*]}
+ktImportText -o kraken2-report.html ${KTEXT_FILES[*]}
 ```
 
 **Parameter Definitions:**
 
 **find**
 
-- `-type f` -  specifies that the type of file to find is a regular file
-- `-name "*.krona"` - specifies to find files ending with the .krona suffix  
+- `-type f` -  Specifies that the type of file to find is a regular file.
+- `-name "*.krona"` - Specifies to find files ending with the .krona suffix.  
 
 **sort**
 
-- `-u` - specifies to perform a unique sort
-- `-V` - specifies to perform a mixed type of sorting
+- `-u` - Specifies to perform a unique sort.
+- `-V` - Specifies to perform a mixed type of sorting with names containing numbers within text.
+- `> {}.txt` - Redirects the sorted list to a separate text file.
 
 **basename**
 
-- `--multiple` - support multiple arguments and treat each as a file name
-- `--suffix='.krona'` - remove a trailing '.krona' suffix
+- `--multiple` - Support multiple arguments and treat each as a file name.
+- `--suffix='.krona'` - Remove a trailing '.krona' suffix.
 
 **paste**
 
-- `-d','` - paste both krona and sample files together line by line delimited by comma ','
+- `-d','` - Paste both krona and sample files together line by line delimited by comma ','.
 
 **ktImportText**
 
-- `-o` - specifies the compiled output html file name
-- `${KTEXT_FILES[*]}` - an array positional arguement with the following content: 
-                     sample_1.krona,sample_1 sample_2.krona,sample_2 .. sample_n.krona,sample_n.
+- `-o` - Specifies the compiled output html file name.
+- `${KTEXT_FILES[*]}` - An array positional arguement with the following content: sample_1.krona,sample_1 sample_2.krona,sample_2 .. sample_n.krona,sample_n.
 
 **Input Data:**
 
-- *.krona (all sample .krona formatted files, output from [Step 10c](#10c-convert-kraken2-output-to-krona-format)) 
+- *.krona (all sample .krona formatted files, output from [Step 10d](#10d-convert-kraken2-output-to-krona-format)) 
 
                       
 **Output Data:**
 
-- **kraken-report.html** (compiled krona html report output)
+- krona_files.txt (sorted list of all *.krona files)
+- sample_names.txt (sorted list of all sample names)
+- **kraken2-report.html** (compiled krona html report containing all samples)
 
-#### 10e. Create kraken species count table
+
+#### 10f. Create Kraken2 Species Count Table
 
 ```R
 library(tidyverse)
@@ -2012,7 +2074,8 @@ write_csv(x = table2write,
 
 - **kraken_species_table.csv** (kraken species count table in csv format)
 
-#### 10f. Read-in tables
+
+#### 10g. Read-in tables
 
 ```R
 library(tidyverse)
@@ -2038,7 +2101,7 @@ species_table <- species_table[,-match("Species", colnames(species_table))]
 **Input Data:**
 
 - metadata_file  (path to sample-wise metadata file)
-- kraken_species_table.csv (path to kraken species taable)
+- kraken_species_table.csv (path to kraken species table)
 
 **Output Data:**
 
@@ -2046,7 +2109,7 @@ species_table <- species_table[,-match("Species", colnames(species_table))]
 - species_table (a dataframe of species count with rows and columns as species and sample names, respectively)
 
 
-#### 10g. Taxonomy barplots
+#### 10h. Taxonomy barplots
 
 ```R
 library(tidyverse)
@@ -2102,8 +2165,8 @@ ggsave(filename = "filtered-kraken_species_plot.png", plot = p,
 
 **Input Data:**
 
-- `species_table` (a dataframe of species count per sample, output from [Step 10f](#10f-read-in-tables))
-- `metadata` - (a dataframe of sample-wise metadata, output from [Step 10f](#10f-read-in-tables))
+- `species_table` (a dataframe of species count per sample, output from [Step 10g](#10g-read-in-tables))
+- `metadata` - (a dataframe of sample-wise metadata, output from [Step 10g](#10g-read-in-tables))
 
 **Output Data:**
 
@@ -2112,7 +2175,7 @@ ggsave(filename = "filtered-kraken_species_plot.png", plot = p,
 - **filtered-kraken_species_plot.png** (barplot after filtering rare and non-microbial taxa)
 
 
-#### 10h. Feature decontamination
+#### 10i. Feature decontamination
 
 Feature decontamination with decontam. Decontam is an R package that statistically identifies contaminating features in a feature table.
 
@@ -2181,8 +2244,8 @@ ggsave(filename = "decontaminated-kraken-species_plot.png", plot = p,
 
 **Input Data:**
 
-- `filtered-kraken_species_table.csv`(path to species count per sample, output from [Step 10g](#10g-taxonomy-barplots))
-- `metadata`(a dataframe of sample-wise metadata, output from step[Step 10f](#10f-read-in-tables))
+- `filtered-kraken_species_table.csv`(path to species count per sample, output from [Step 10h](#10h-taxonomy-barplots))
+- `metadata`(a dataframe of sample-wise metadata, output from step[Step 10g](#10g-read-in-tables))
 
 **Output Data:**
 
