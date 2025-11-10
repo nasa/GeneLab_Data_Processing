@@ -1626,7 +1626,7 @@ ktImportText  -o kaiju-report.html ${KTEXT_FILES[*]}
 - **kaiju-report.html** (compiled krona html report containing all samples)
 
 
-#### 9f. Create Kaiju Species Count Table --- START HERE ---
+#### 9f. Create Kaiju Species Count Table --- START NEEDS REVIEW ---
 
 ```R
 library(tidyverse)
@@ -1751,7 +1751,7 @@ ggsave(filename = "filtered-kaiju_species_plot.png", plot = p,
 - **filtered-kaiju_species_plot.png** (barplot after filtering rare and non-microbial taxa)
 
 
-#### 9i. Feature decontamination
+#### 9i. Feature decontamination --- END NEEDS REVIEW ---
 
 > Feature (species) decontamination with decontam. Decontam is an R package that statistically identifies contaminating features in a feature table
 
@@ -2044,7 +2044,7 @@ ktImportText -o kraken2-report.html ${KTEXT_FILES[*]}
 - **kraken2-report.html** (compiled krona html report containing all samples)
 
 
-#### 10f. Create Kraken2 Species Count Table
+#### 10f. Create Kraken2 Species Count Table --- START NEEDS REVIEW ---
 
 ```R
 library(tidyverse)
@@ -2175,7 +2175,7 @@ ggsave(filename = "filtered-kraken_species_plot.png", plot = p,
 - **filtered-kraken_species_plot.png** (barplot after filtering rare and non-microbial taxa)
 
 
-#### 10i. Feature decontamination
+#### 10i. Feature decontamination --- END NEEDS REVIEW ---
 
 Feature decontamination with decontam. Decontam is an R package that statistically identifies contaminating features in a feature table.
 
@@ -2257,13 +2257,16 @@ ggsave(filename = "decontaminated-kraken-species_plot.png", plot = p,
 
 ---
 
-## Assembly-based processing
+## Assembly-based Processing
 
-### 11. Sample assembly
+### 11. Sample Assembly
 
 ```bash
-flye --meta --threads NumberOfThreads --out-dir sample/ \
-     --nano-hq /path/to/decontaminated_raw_data/sample_host_removed.fastq.gz
+flye --meta \
+     --threads NumberOfThreads \
+     --out-dir sample/ \
+     --nano-hq \
+     /path/to/sample_HRrm.fasta.gz
 
 # rename output files            
 mv sample/assembly.fasta sample_assembly.fasta
@@ -2272,14 +2275,15 @@ mv sample/flye.log sample_flye.log
 
 **Parameter Definitions:**
 
-- `--meta` – use metagenome/uneven coverage mode
-- `--threads` - number of parallel processing threads to use
-- `--out-dir` - Output directory
-- `--nano-hq` - specifies that input is from Oxford Nanopore high-quality reads (Guppy5+ SUP or Q20, <5% error). This skips a genome polishing step since the assembly will be polished with medaka in the next step
+- `--meta` – Use metagenome/uneven coverage mode.
+- `--threads` - Number of parallel processing threads to use.
+- `--out-dir` - Specifies the name of the output directory.
+- `--nano-hq` - Specifies that input is from Oxford Nanopore high-quality reads (Guppy5+ SUP or Q20, <5% error). This skips a genome polishing step since the assembly will be polished with medaka in the next step.
+- `/path/to/sample_HRrm.fasta.gz` - Path to the input file, specified as a positional argument.
 
 **Input Data**
 
-- sample_host_removed.fastq.gz (decontaminated raw data in fastq format, output from [Step 7b](#7b-remove-host-reads))
+- sample_HRrm.fasta.gz (filtered and trimmed sample reads with both contaminants and human reads removed, gzipped fasta file, output from [Step 7b](#7b-remove-host-reads))
 
 **Output Data**
 
@@ -2290,25 +2294,27 @@ mv sample/flye.log sample_flye.log
 
 ---
 
-### 12. Polish assembly
+### 12. Polish Assembly
 
 ```bash
-medaka_consensus -t NumberOfThreads -i /path/to/decontaminated_raw_data/sample_host_removed.fastq.gz \
-  -d /path/to/assemblies/sample_assembly.fasta -o sample/
+medaka_consensus -t NumberOfThreads \
+                 -i /path/to/sample_HRrm.fasta.gz \
+                 -d /path/to/assemblies/sample_assembly.fasta \
+                 -o sample/
   
 mv sample/consensus.fasta sample_polished.fasta
 ```
 
 **Parameter Definitions:**
 
-- `-t` - number of parallel processing threads to use
-- `-i` - specifies path to input read files used in creating the assembly
-- `-d` - specifies path to the assembly fasta file
-- `-o` - specifies the output directory
+- `-t` - Number of parallel processing threads to use.
+- `-i` - Specifies path to input read files used in creating the assembly.
+- `-d` - Specifies path to the assembly fasta file.
+- `-o` - Specifies the output directory.
 
 **Input Data:**
 
-- /path/to/decontaminated_raw_data/sample_host_removed.fastq.gz (decontaminated raw data in fastq format, output from [Step 7b](#8b-remove-host-reads))
+- sample_HRrm.fasta.gz (filtered and trimmed sample reads with both contaminants and human reads removed, gzipped fasta file, output from [Step 7b](#7b-remove-host-reads))
 - /path/to/assemblies/sample_assembly.fasta (sample assembly, output from [Step 11](#11-sample-assembly))
 
 **Output Data:**
@@ -2317,19 +2323,21 @@ mv sample/consensus.fasta sample_polished.fasta
 
 ---
 
-### 13. Renaming contigs and summarizing assemblies
+### 13. Rename Contigs and Summarize Assemblies
 
-#### 13a. Renaming contig headers
+#### 13a. Rename Contig Headers
 
 ```bash
-bit-rename-fasta-headers -i sample_polished.fasta -w c_sample -o sample_assembly.fasta
+bit-rename-fasta-headers -i sample_polished.fasta \
+                         -w c_sample \
+                         -o sample_assembly.fasta
 ```
 
 **Parameter Definitions:**  
 
-- `-i` – input fasta file
-- `-w` – wanted header prefix (a number will be appended for each contig), starts with a "c" to ensure they won't start with a number which can be problematic
-- `-o` – output fasta file
+- `-i` – Specifies the input fasta file.
+- `-w` – Specifies the wanted header prefix (a number will be appended for each contig), starts with a "c" to ensure they won't start with a number which can be problematic.
+- `-o` – Specifies the output fasta file.
 
 
 **Input Data:**
@@ -2341,16 +2349,17 @@ bit-rename-fasta-headers -i sample_polished.fasta -w c_sample -o sample_assembly
 - **sample-assembly.fasta** (contig-renamed assembly file)
 
 
-#### 13b. Summarizing assemblies
+#### 13b. Summarize Assemblies
 
 ```bash
-bit-summarize-assembly -o assembly-summaries_GLmetagenomics.tsv *-assembly.fasta
+bit-summarize-assembly -o assembly-summaries_GLmetagenomics.tsv \
+                       *-assembly.fasta
 ```
 
 **Parameter Definitions:**  
 
-- `-o` – output summary table
-- `*-assembly.fasta` - multiple input assemblies provided as positional arguments
+- `-o` – Specifies the output summary table.
+- `*-assembly.fasta` - Specifies the input assemblies to summarize, provided as positional arguments.
 
 **Input Data:**
 
