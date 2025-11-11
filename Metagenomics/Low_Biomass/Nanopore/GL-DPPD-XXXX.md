@@ -2373,22 +2373,31 @@ bit-summarize-assembly -o assembly-summaries_GLmetagenomics.tsv \
 
 ---
 
-### 14. Gene prediction
+### 14. Gene Prediction
+
+#### 14a. Generate Gene Predictions
+
 ```bash
-prodigal -a sample-genes.faa -d sample-genes.fasta -f gff -p meta -c -q \
-         -o sample-genes.gff -i sample-assembly.fasta
+prodigal -a sample-genes.faa \
+         -d sample-genes.fasta \
+         -f gff \
+         -p meta \
+         -c \
+         -q \
+         -o sample-genes.gff \
+         -i sample-assembly.fasta
 ```
 
 **Parameter Definitions:**
 
-- `-a` – specifies the output amino acid sequences file
-- `-d` – specifies the output nucleotide sequences file
-- `-f` – specifies the output format gene-calls file
-- `-p` – specifies which mode to run the gene-caller in 
-- `-c` – no incomplete genes reported 
-- `-q` – run in quiet mode (don’t output process on each contig) 
-- `-o` – specifies the name of the output gene-calls file 
-- `-i` – specifies the input assembly
+- `-a` – Specifies the output amino acid sequences file.
+- `-d` – Specifies the output nucleotide sequences file.
+- `-f` – Specifies the gene-calls output format, gff = GFF format.
+- `-p` – Specifies which mode to run the gene-caller in. 
+- `-c` – No incomplete genes reported. 
+- `-q` – Run in quiet mode (don’t output process on each contig). 
+- `-o` – Specifies the name of the output gene-calls file. 
+- `-i` – Specifies the input assembly file.
 
 **Input Data:**
 
@@ -2402,7 +2411,8 @@ prodigal -a sample-genes.faa -d sample-genes.fasta -f gff -p meta -c -q \
 
 <br>
 
-#### 14a. Remove line wraps in gene prediction output
+#### 14b. Remove Line Wraps In Gene Prediction Output
+
 ```bash
 bit-remove-wraps sample-genes.faa > sample-genes.faa.tmp 2> /dev/null
 mv sample-genes.faa.tmp sample-genes.faa
@@ -2413,8 +2423,8 @@ mv sample-genes.fasta.tmp sample-genes.fasta
 
 **Input Data:**
 
-- sample-genes.faa (gene-calls amino-acid fasta file, output from [Step 14](#14-gene-prediction))
-- sample-genes.fasta (gene-calls nucleotide fasta file, output from [Step 14](#14-gene-prediction))
+- sample-genes.faa (gene-calls amino-acid fasta file, output from [Step 14a](#14a-gene-prediction))
+- sample-genes.fasta (gene-calls nucleotide fasta file, output from [Step 14a](#14a-gene-prediction))
 
 **Output Data:**
 
@@ -2425,14 +2435,17 @@ mv sample-genes.fasta.tmp sample-genes.fasta
 
 ---
 
-### 15. Functional annotation
+### 15. Functional Annotation
+
 > **Note:**  
 > The annotation process overwrites the same temporary directory by default. When running multiple 
 processses at a time, it is necessary to specify a specific temporary directory with the 
 `--tmp-dir` argument as shown below.
 
 
-#### 15a. Downloading reference database of HMM models (only needs to be done once)
+#### 15a. Download Reference Database of HMM Models
+
+> **Note:** This step only needs to be done once.
 
 ```bash
 curl -LO ftp://ftp.genome.jp/pub/db/kofam/profiles.tar.gz
@@ -2441,40 +2454,48 @@ tar -xzvf profiles.tar.gz
 gunzip ko_list.gz 
 ```
 
-#### 15b. Running KEGG annotation
+#### 15b. Run KEGG Annotation
 
 ```bash
-exec_annotation -p profiles/ -k ko_list --cpu NumberOfThreads -f detail-tsv -o sample-KO-tab.tmp \
-                --tmp-dir sample-tmp-KO --report-unannotated sample-genes.faa 
+exec_annotation -p profiles/ \
+                -k ko_list \
+                --cpu NumberOfThreads \
+                -f detail-tsv \
+                -o sample-KO-tab.tmp \
+                --tmp-dir sample-tmp-KO \
+                --report-unannotated \
+                sample-genes.faa 
 ```
 
 **Parameter Definitions:**
 
-- `-p` – specifies the directory holding the downloaded reference HMMs
-- `-k` – specifies the downloaded reference KO  (Kegg Orthology) terms 
-- `--cpu` – specifies the number of searches to run in parallel
-- `-f` – specifies the output format
-- `-o` – specifies the output file name
-- `--tmp-dir` – specifies the temporary directory to write to (needed if running more than one process concurrently, see Notes above)
-- `--report-unannotated` – specifies to generate an output for each entry
-- `sample-genes.faa` – the input file is specified as a positional argument 
+- `-p` – Specifies the directory holding the downloaded reference HMMs.
+- `-k` – Specifies the downloaded reference KO  (Kegg Orthology) terms. 
+- `--cpu` – Specifies the number of searches to run in parallel.
+- `-f` – Specifies the output format.
+- `-o` – Specifies the output file name.
+- `--tmp-dir` – Specifies the temporary directory to write to (needed if running more than one process concurrently, see Note above).
+- `--report-unannotated` – Specifies to generate an output for each entry, event when no KO is assigned.
+- `sample-genes.faa` – Specifies the input file, provided as a positional argument. 
 
 
 **Input Data:**
 
-- sample-genes.faa (amino-acid fasta file, from [Step 14](#14-gene-prediction))
-- profiles/ (reference directory holding the KO HMMs)
-- ko_list (reference list of KOs to scan for)
+- sample-genes.faa (amino-acid fasta file, output from [Step 14b](#14b-remove-line-wraps-in-gene-prediction-output))
+- profiles/ (reference directory holding the KO HMMs, downloaded in [Step 15a](15a-download-reference-database-of-hmm-models))
+- ko_list (reference list of KOs to scan for, downloaded in [Step 15a](15a-download-reference-database-of-hmm-models))
 
 **Output Data:**
 
 - sample-KO-tab.tmp (table of KO annotations assigned to gene IDs)
 
 
-#### 15c. Filtering output to retain only those passing the KO-specific score and top hits
+#### 15c. Filter KO Outputs
+*Filter KO outputs to retain only those passing the KO-specific score and top hits.*
 
 ```bash
-bit-filter-KOFamScan-results -i sample-KO-tab.tmp -o sample-annotations.tsv
+bit-filter-KOFamScan-results -i sample-KO-tab.tmp \
+                             -o sample-annotations.tsv
 
 # removing temporary files
 rm -rf sample-tmp-KO/ sample-KO-annots.tmp
@@ -2482,12 +2503,12 @@ rm -rf sample-tmp-KO/ sample-KO-annots.tmp
 
 **Parameter Definitions:**  
 
-- `-i` – specifies the input table
-- `-o` – specifies the output table
+- `-i` – Specifies the input table.
+- `-o` – Specifies the output table.
 
 **Input Data:**
 
-- sample-KO-tab.tmp (table of KO annotations assigned to gene IDs from [Step 15b](#15b-running-kegg-annotation))
+- sample-KO-tab.tmp (table of KO annotations assigned to gene IDs, output from [Step 15b](#15b-run-kegg-annotation))
 
 **Output Data:**
 
@@ -2496,8 +2517,6 @@ rm -rf sample-tmp-KO/ sample-KO-annots.tmp
 <br>
 
 ---
-
-### 16. Taxonomic classification
 
 #### 16a. Pulling and un-packing pre-built reference db (only needs to be done once)
 
