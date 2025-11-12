@@ -2518,92 +2518,115 @@ rm -rf sample-tmp-KO/ sample-KO-annots.tmp
 
 ---
 
-#### 16a. Pulling and un-packing pre-built reference db (only needs to be done once)
+### 16. Taxonomic Classification 
+
+#### 16a. Pull and Unpack Pre-built Reference DB 
+
+> **Note:** This step only needs to be done once.
 
 ```bash
 wget tbb.bio.uu.nl/bastiaan/CAT_prepare/CAT_prepare_20200618.tar.gz
 tar -xvzf CAT_prepare_20200618.tar.gz
 ```
 
-#### 16b. Running taxonomic classification
+#### 16b. Run Taxonomic Classification
 
 ```bash
-CAT contigs -c sample-assembly.fasta -d CAT_prepare_20200618/2020-06-18_database/ \
-            -t CAT_prepare_20200618/2020-06-18_taxonomy/ -p sample-genes.faa \
-            -o sample-tax-out.tmp -n NumberOfThreads -r 3 --top 4 --I_know_what_Im_doing --no-stars
+CAT contigs -c sample-assembly.fasta \
+            -d CAT_prepare_20200618/2020-06-18_database/ \
+            -t CAT_prepare_20200618/2020-06-18_taxonomy/ \
+            -p sample-genes.faa \
+            -o sample-tax-out.tmp \
+            -n NumberOfThreads \
+            -r 3 \
+            --top 4 \
+            --I_know_what_Im_doing \
+            --no-stars
 ```
 
 **Parameter Definitions:**  
 
-- `-c` – specifies the input assembly fasta file
-- `-d` – specifies the CAT reference sequence database
-- `-t` – specifies the CAT reference taxonomy database
-- `-p` – specifies the input protein fasta file
-- `-o` – specifies the output prefix
-- `-n` – specifies the number of CPU cores to use
-- `-r` – specifies the number of top protein hits to consider in assigning tax
-- `--top` – specifies the number of protein alignments to store
-- `--I_know_what_Im_doing` – allows us to alter the `--top` parameter
-- `--no-stars` - suppress marking of suggestive taxonomic assignments
+- `-c` – Specifies the input assembly fasta file.
+- `-d` – Specifies the CAT reference sequence database.
+- `-t` – Specifies the CAT reference taxonomy database.
+- `-p` – Specifies the input protein fasta file.
+- `-o` – Specifies the output file prefix.
+- `-n` – Specifies the number of CPU cores to use.
+- `-r` – Specifies the number of top protein hits to consider in assigning taxonomy.
+- `--top` – Specifies the number of protein alignments to store.
+- `--I_know_what_Im_doing` – Allows us to alter the `--top` parameter.
+- `--no-stars` - Suppress marking of suggestive taxonomic assignments.
 
 **Input Data:**
 
-- sample-assembly.fasta (assembly file from [Step 13a](#13a-renaming-contig-headers))
-- sample-genes.faa (gene-calls amino-acid fasta file from [Step 14](#14-gene-prediction))
+- CAT_prepare_20200618/2020-06-18_database/ (directory holding the CAT reference sequence database, output from [Step 16a](16a-pull-and-unpack-pre-built-reference-db))
+- CAT_prepare_20200618/2020-06-18_taxonomy/ (directory holding the CAT reference taxonomy database, output from [Step 16a](16a-pull-and-unpack-pre-built-reference-db))
+- sample-assembly.fasta (contig-renamed assembly file from [Step 13a](#13a-rename-contig-headers))
+- sample-genes.faa (amino-acid fasta file, output from [Step 14b](#14b-remove-line-wraps-in-gene-prediction-output))
 
 **Output Data:**
 
 - sample-tax-out.tmp.ORF2LCA.txt (gene-calls taxonomy file)
 - sample-tax-out.tmp.contig2classification.txt (contig taxonomy file)
 
-#### 16c. Adding taxonomy info from taxids to genes
+
+#### 16c. Add Taxonomy Info From Taxids To Genes
 
 ```bash
-CAT add_names -i sample-tax-out.tmp.ORF2LCA.txt -o sample-gene-tax-out.tmp \
-              -t CAT_prepare_20200618/2020-06-18_taxonomy/ --only_official --exclude-scores
+CAT add_names -i sample-tax-out.tmp.ORF2LCA.txt \
+              -o sample-gene-tax-out.tmp \
+              -t CAT_prepare_20200618/2020-06-18_taxonomy/ \
+              --only_official \
+              --exclude-scores
 ```
 
 **Parameter Definitions:**  
 
-- `-i` – specifies the input taxonomy file
-- `-o` – specifies the output file 
-- `-t` – specifies the CAT reference taxonomy database
-- `--only_official` – specifies to add only standard taxonomic ranks
-- `--exclude-scores` - specifies to exclude bit-score support scores in the lineage
+- `-i` – Specifies the input taxonomy file.
+- `-o` – Specifies the output file name.
+- `-t` – Specifies the CAT reference taxonomy database.
+- `--only_official` – Specifies to add only standard taxonomic ranks.
+- `--exclude-scores` - Specifies to exclude bit-score support scores in the lineage.
 
 **Input Data:**
 
-- sample-tax-out.tmp.ORF2LCA.txt (gene-calls taxonomy file from [Step 16b](#16b-running-taxonomic-classification))
+- sample-tax-out.tmp.ORF2LCA.txt (gene-calls taxonomy file, output from [Step 16b](#16b-run-taxonomic-classification))
+- CAT_prepare_20200618/2020-06-18_taxonomy/ (directory holding the CAT reference taxonomy database, output from [Step 16a](#16a-pull-and-unpack-pre-built-reference-db))
 
 **Output Data:**
 
 - sample-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added)
 
-#### 16d. Adding taxonomy info from taxids to contigs
+
+#### 16d. Add Taxonomy Info From Taxids To Contigs
 
 ```bash
-CAT add_names -i sample-tax-out.tmp.contig2classification.txt -o sample-contig-tax-out.tmp \
-              -t CAT-ref/2020-06-18_taxonomy/ --only_official --exclude-scores
+CAT add_names -i sample-tax-out.tmp.contig2classification.txt \
+              -o sample-contig-tax-out.tmp \
+              -t CAT_prepare_20200618/2020-06-18_taxonomy/ \
+              --only_official \
+              --exclude-scores
 ```
 
 **Parameter Definitions:**  
 
-- `-i` – specifies the input taxonomy file
-- `-o` – specifies the output file 
-- `-t` – specifies the CAT reference taxonomy database
-- `--only_official` – specifies to add only standard taxonomic ranks
-- `--exclude-scores` - specifies to exclude bit-score support scores in the lineage
+- `-i` – Specifies the input taxonomy file.
+- `-o` – Specifies the output file name.
+- `-t` – Specifies the CAT reference taxonomy database.
+- `--only_official` – Specifies to add only standard taxonomic ranks.
+- `--exclude-scores` - Specifies to exclude bit-score support scores in the lineage.
 
 **Input Data:**
 
-- sample-tax-out.tmp.contig2classification.txt (contig taxonomy file from [Step 16b](#16b-running-taxonomic-classification))
+- sample-tax-out.tmp.contig2classification.txt (contig taxonomy file, output from [Step 16b](#16b-run-taxonomic-classification))
+- CAT_prepare_20200618/2020-06-18_taxonomy/ (directory holding the CAT reference taxonomy database, output from [Step 16a](#16a-pull-and-unpack-pre-built-reference-db))
 
 **Output Data:**
 
 - sample-contig-tax-out.tmp (contig taxonomy file with lineage info added)
 
 
-#### 16e. Formatting gene-level output with awk and sed
+#### 16e. Format Gene-level Output With awk and sed
 
 ```bash
 awk -F $'\t' ' BEGIN { OFS=FS } { if ( $3 == "lineage" ) { print $1,$3,$5,$6,$7,$8,$9,$10,$11 } \
@@ -2616,13 +2639,14 @@ awk -F $'\t' ' BEGIN { OFS=FS } { if ( $3 == "lineage" ) { print $1,$3,$5,$6,$7,
 
 **Input Data:**
 
-- sample-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added from [Step 16c](#16c-adding-taxonomy-info-from-taxids-to-genes))
+- sample-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added, output from [Step 16c](#16c-add-taxonomy-info-from-taxids-to-genes))
 
 **Output Data:**
 
-- sample-gene-tax-out.tsv (gene-calls taxonomy file with lineage info added reformatted)
+- sample-gene-tax-out.tsv (reformatted gene-calls taxonomy file with lineage info)
 
-#### 16f. Formatting contig-level output with awk and sed
+
+#### 16f. Format Contig-level Output With awk and sed
 
 ```bash
 awk -F $'\t' ' BEGIN { OFS=FS } { if ( $2 == "classification" ) { print $1,$4,$6,$7,$8,$9,$10,$11,$12 } \
@@ -2637,11 +2661,11 @@ rm sample*.tmp*
 
 **Input Data:**
 
-- sample-contig-tax-out.tmp (contig taxonomy file with lineage info added from [Step 16d](#16d-adding-taxonomy-info-from-taxids-to-contigs))
+- sample-contig-tax-out.tmp (contig taxonomy file with lineage info added, output from [Step 16d](#16d-add-taxonomy-info-from-taxids-to-contigs))
 
 **Output Data:**
 
-- sample-contig-tax-out.tsv (contig taxonomy file with lineage info added reformatted)
+- sample-contig-tax-out.tsv (reformatted contig taxonomy file with lineage info)
 
 <br>
 
@@ -2652,32 +2676,42 @@ rm sample*.tmp*
 #### 17a. Align Reads to Sample Assembly
 
 ```bash
-minimap2 -a -x map-ont \
-        -t NumberOfThreads \
-        sample_assembly.fasta sample_host_removed.fastq.gz \
-        > sample.sam  2> sample-mapping-info.txt
+minimap2 -a \
+         -x map-ont \
+         -t NumberOfThreads \
+         sample_assembly.fasta \
+         sample_HRrm.fasta.gz \
+         > sample.sam  2> sample-mapping-info.txt
 ```
 
 **Parameter Definitions:**
 
-- `-t` - number of parallel processing threads to use
-- `-a` – output in SAM format
-- `-x map-ont` - specifies preset for mapping Nanopore reads to a reference
+- `-a` – Output in SAM format.
+- `-x map-ont` - Specifies preset for mapping Nanopore reads to a reference.
+- `-t` - Number of parallel processing threads to use
+- `sample_assembly.fasta` – Assembly fasta file, provided as a positional argument.
+- `sample_HRrm.fasta.gz` - Input sequence data file, provided as a positional argument.
+- `> sample.sam` - Redirects the output to a separate file.
+- `2> sample-mapping-info.txt` - Redirects the standar error to a separate file.
 
 **Input Data**
 
-- /path/to/assemblies/sample_assembly.fasta (Sample assembly, output from [Step 13a](#13a-renaming-contig-headers))
-- /path/to/trimmed_reads/sample_host_removed.fastq.gz (Filtered and trimmed reads, output from [Step 7b](#7b-remove-host-reads))
+- sample-assembly.fasta (contig-renamed assembly file, output from [Step 13a](#13a-rename-contig-headers))
+- sample_HRrm.fasta.gz (filtered and trimmed sample reads with both contaminants and human reads removed, gzipped fasta file, output from [Step 7b](#7b-remove-host-reads))
 
 **Output Data**
 
-- sample.sam (Reads aligned to sample assembly)
+- sample.sam (reads aligned to sample assembly in SAM format)
+- **sample-mapping-info.txt** (read mapping information)
+
 
 #### 17b. Sort and Index Assembly Alignments
 
 ```bash
 # Sort Sam, convert to bam and create index
-samtools sort --threads NumberOfThreads -o sample_sorted.bam sample.sam > sample_sort.log 2>&1
+samtools sort --threads NumberOfThreads \
+              -o sample_sorted.bam \
+              sample.sam > sample_sort.log 2>&1
 
 samtools index sample_sorted.bam sample_sorted.bam.bai
 ```
@@ -2685,52 +2719,55 @@ samtools index sample_sorted.bam sample_sorted.bam.bai
 **Parameter Definitions:**
 
 **samtools sort**
-- `--threads` - number of parallel processing threads to use
-- `-o` - specifies the output file for the sorted reads
-- `sample.sam` - positional argument specifying the input SAM file
+- `--threads` - Number of parallel processing threads to use.
+- `-o` - Specifies the output file for the sorted aligned reads.
+- `sample.sam` - Positional argument specifying the input SAM file.
+- `> sample_sort.log 2>&1` - Redirects the standard output and standard error to a separate file.
 
 **samtools index**
-- `sample_sorted.bam` - positional argument specifying the input BAM file to be sorted
-- `sample_sorted.bam.bai` - positional argument specifying the name of the index file
+- `sample_sorted.bam` - Positional argument specifying the input BAM file to be sorted.
+- `sample_sorted.bam.bai` - Positional argument specifying the name of the index file.
 
 **Input Data:**
 
-- sample.sam (Reads aligned to sample assembly, output from [Step 17a](#17a-align-reads-to-sample-assembly))
+- sample.sam (reads aligned to sample assembly, output from [Step 17a](#17a-align-reads-to-sample-assembly))
 
 **Output Data:**
 
-- sample_sorted.bam (sorted mapping to sample assembly)
-- sample_sorted.bam.bai (index of sorted mapping to sample assembly)
+- **sample_sorted.bam** (sorted mapping to sample assembly, in BAM format)
+- **sample_sorted.bam.bai** (index of sorted mapping to sample assembly)
 
 <br>
 
 ---
 
-### 18. Getting coverage information and filtering based on detection
+### 18. Get Coverage Information and Filter Based On Detection
 > **Note:**  
 > “Detection” is a measure of what proportion of a reference sequence recruited reads 
 (see the discussion of detection [here](http://merenlab.org/2017/05/08/anvio-views/#detection)). 
 Filtering based on detection is one way of helping to mitigate non-specific read-recruitment.
 
-#### 18a. Filtering coverage levels based on detection
+#### 18a. Filter Coverage Levels Based On Detection
 
 ```bash
-  # pileup.sh comes from the bbduk.sh package
-pileup.sh -in sample.bam fastaorf=sample-genes.fasta outorf=sample-gene-cov-and-det.tmp \
+# pileup.sh comes from the bbduk.sh package
+pileup.sh -in sample.bam \
+          fastaorf=sample-genes.fasta \
+          outorf=sample-gene-cov-and-det.tmp \
           out=sample-contig-cov-and-det.tmp
 ```
 
 **Parameter Definitions:**  
 
-- `-in` – the input bam file
-- `fastaorf=` – input gene-calls nucleotide fasta file
-- `outorf=` – the output gene-coverage tsv file
-- `out=` – the output contig-coverage tsv file
+- `-in` – Specifies the input BAM file.
+- `fastaorf=` – Specifies the input gene-calls nucleotide fasta file.
+- `outorf=` – Specifies the output gene-coverage tsv file name.
+- `out=` – Specifies the output contig-coverage tsv file name.
 
 **Input Data:**
 
-- sample.bam (mapping file from [Step 17b](#17b-sort-and-index-assembly-alignments))
-- sample-genes.fasta (gene-calls nucleotide fasta file from [Step 14](#14-gene-prediction))
+- sample.bam (sorted mapping to sample assembly BAM file, output from [Step 17b](#17b-sort-and-index-assembly-alignments))
+- sample-genes.fasta (gene-calls nucleotide fasta file, output from [Step 14a](#14a-gene-prediction))
 
 
 **Output Data:**
@@ -2739,17 +2776,21 @@ pileup.sh -in sample.bam fastaorf=sample-genes.fasta outorf=sample-gene-cov-and-
 - sample-contig-cov-and-det.tmp (contig-coverage tsv file)
 
 
-#### 18b. Filtering gene and contig coverage based on requiring 50% detection and parsing down to just gene ID and coverage
+#### 18b. Filter Gene and Contig Coverage Based Detection
+
+> *The following commands filter gene and contig coverage tsv files to only keep genes and contigs with at least 50% detection (as defined above) then parse the tables to retain only gene IDs and respective coverage.*
 
 ```bash
 # Filtering gene coverage
-grep -v "#" sample-gene-cov-and-det.tmp | awk -F $'\t' ' BEGIN { OFS=FS } { if ( $10 <= 0.5 ) $4 = 0 } \
+grep -v "#" sample-gene-cov-and-det.tmp | \
+awk -F $'\t' ' BEGIN { OFS=FS } { if ( $10 <= 0.5 ) $4 = 0 } \
      { print $1,$4 } ' > sample-gene-cov.tmp
 
 cat <( printf "gene_ID\tcoverage\n" ) sample-gene-cov.tmp > sample-gene-coverages.tsv
 
 # Filtering contig coverage
-grep -v "#" sample-contig-cov-and-det.tmp | awk -F $'\t' ' BEGIN { OFS=FS } { if ( $5 <= 50 ) $2 = 0 } \
+grep -v "#" sample-contig-cov-and-det.tmp | \
+awk -F $'\t' ' BEGIN { OFS=FS } { if ( $5 <= 50 ) $2 = 0 } \
      { print $1,$2 } ' > sample-contig-cov.tmp
 
 cat <( printf "contig_ID\tcoverage\n" ) sample-contig-cov.tmp > sample-contig-coverages.tsv
@@ -2760,8 +2801,8 @@ rm sample-*.tmp
 
 **Input Data:**
 
-- sample-gene-cov-and-det.tmp (temporary gene-coverage tsv file from [Step 18a](#18a-filtering-coverage-levels-based-on-detection))
-- sample-contig-cov-and-det.tmp (temporary contig-coverage tsv file from [Step 18a](#18a-filtering-coverage-levels-based-on-detection))
+- sample-gene-cov-and-det.tmp (temporary gene-coverage tsv file, output from [Step 18a](#18a-filter-coverage-levels-based-on-detection))
+- sample-contig-cov-and-det.tmp (temporary contig-coverage tsv file, output from [Step 18a](#18a-filter-coverage-levels-based-on-detection))
 
 **Output Data:**
 
@@ -2772,28 +2813,32 @@ rm sample-*.tmp
 
 ---
 
-### 19. Combining gene-level coverage, taxonomy, and functional annotations into one table for each sample
+### 19. Combine Gene-level Coverage, Taxonomy, and Functional Annotations For Each Sample
 > **Note:**  
-> Just uses `paste`, `sed`, and `awk`, which are all standard in any Unix-like environment.  
+> Just uses `paste`, `sed`, and `awk` standard Unix commands to combine gene-level coverage, taxonomy, and functional annotations into one table for each sample.  
 
 ```bash
-paste <( tail -n +2 sample-gene-coverages.tsv | sort -V -k 1 ) <( tail -n +2 sample-annotations.tsv | sort -V -k 1 | cut -f 2- ) \
-      <( tail -n +2 sample-gene-tax-out.tsv | sort -V -k 1 | cut -f 2- ) > sample-gene-tab.tmp
+paste <( tail -n +2 sample-gene-coverages.tsv | sort -V -k 1 ) \
+      <( tail -n +2 sample-annotations.tsv | sort -V -k 1 | cut -f 2- ) \
+      <( tail -n +2 sample-gene-tax-out.tsv | sort -V -k 1 | cut -f 2- ) \
+      > sample-gene-tab.tmp
 
-paste <( head -n 1 sample-gene-coverages.tsv ) <( head -n 1 sample-annotations.tsv | cut -f 2- ) \
-      <( head -n 1 sample-gene-tax-out.tsv | cut -f 2- ) > sample-header.tmp
+paste <( head -n 1 sample-gene-coverages.tsv ) \
+      <( head -n 1 sample-annotations.tsv | cut -f 2- ) \
+      <( head -n 1 sample-gene-tax-out.tsv | cut -f 2- ) \
+      > sample-header.tmp
 
 cat sample-header.tmp sample-gene-tab.tmp > sample-gene-coverage-annotation-and-tax.tsv
 
-  # removing intermediate files
+# removing intermediate files
 rm sample*tmp sample-gene-coverages.tsv sample-annotations.tsv sample-gene-tax-out.tsv
 ```
 
 **Input Data:**
 
-- sample-gene-coverages.tsv (table with gene-level coverages from [Step 18b](#18b-filtering-gene-and-contig-coverage-based-on-requiring-50-detection-and-parsing-down-to-just-gene-id-and-coverage))
-- sample-annotations.tsv (table of KO annotations assigned to gene IDs from [Step 15c](#15c-filtering-output-to-retain-only-those-passing-the-ko-specific-score-and-top-hits))
-- sample-gene-tax-out.tsv (gene-level taxonomic classifications from [Step 16f](#16f-formatting-contig-level-output-with-awk-and-sed))
+- sample-gene-coverages.tsv (table with gene-level coverages, output from [Step 18b](#18b-filter-gene-and-contig-coverage-based-on-detection))
+- sample-annotations.tsv (table of KO annotations assigned to gene IDs, output from [Step 15c](#15c-filter-ko-outputs))
+- sample-gene-tax-out.tsv (reformatted gene-calls taxonomy file with lineage info, output from [Step 16e](#16e-format-gene-level-output-with-awk-and-sed))
 
 
 **Output Data:**
@@ -2804,27 +2849,29 @@ rm sample*tmp sample-gene-coverages.tsv sample-annotations.tsv sample-gene-tax-o
 
 ---
 
-### 20. Combining contig-level coverage and taxonomy into one table for each sample
+### 20. Combine Contig-level Coverage and Taxonomy For Each Sample
 > **Note:**  
-> Just uses `paste`, `sed`, and `awk`, which are all standard in any Unix-like environment.  
+> Just uses `paste`, `sed`, and `awk` standard Unix commands to combine contig-level coverage and taxonomy into one table for each sample.
 
 ```bash
 paste <( tail -n +2 sample-contig-coverages.tsv | sort -V -k 1 ) \
-      <( tail -n +2 sample-contig-tax-out.tsv | sort -V -k 1 | cut -f 2- ) > sample-contig.tmp
+      <( tail -n +2 sample-contig-tax-out.tsv | sort -V -k 1 | cut -f 2- ) \
+      > sample-contig.tmp
 
-paste <( head -n 1 sample-contig-coverages.tsv ) <( head -n 1 sample-contig-tax-out.tsv | cut -f 2- ) \
+paste <( head -n 1 sample-contig-coverages.tsv ) \
+      <( head -n 1 sample-contig-tax-out.tsv | cut -f 2- ) \
       > sample-contig-header.tmp
       
 cat sample-contig-header.tmp sample-contig.tmp > sample-contig-coverage-and-tax.tsv
 
-  # removing intermediate files
+# removing intermediate files
 rm sample*tmp sample-contig-coverages.tsv sample-contig-tax-out.tsv
 ```
 
 **Input Data:**
 
-- sample-contig-coverages.tsv (table with contig-level coverages from [Step 18b](#18b-filtering-gene-and-contig-coverage-based-on-requiring-50-detection-and-parsing-down-to-just-gene-id-and-coverage))
-- sample-contig-tax-out.tsv (contig-level taxonomic classifications from [Step 16f](#16f-formatting-contig-level-output-with-awk-and-sed))
+- sample-contig-coverages.tsv (table with contig-level coverages, output from [Step 18b](#18b-filter-gene-and-contig-coverage-based-on-detection))
+- sample-contig-tax-out.tsv (reformatted contig taxonomy file with lineage info, output from [Step 16f](#16f-format-contig-level-output-with-awk-and-sed))
 
 
 **Output Data:**
