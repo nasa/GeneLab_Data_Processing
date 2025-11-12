@@ -2882,34 +2882,35 @@ rm sample*tmp sample-contig-coverages.tsv sample-contig-tax-out.tsv
 
 ---
 
-### 21. Generating normalized, gene- and contig-level coverage summary tables of KO-annotations and taxonomy across samples
+### 21. Generate Normalized, Gene- and Contig-level Coverage Summary Tables of KO-annotations and Taxonomy Across Samples
 
 > **Note:**  
 > * To combine across samples to generate these summary tables, we need the same "units". This is done for annotations 
 based on the assigned KO terms, and all non-annotated functions are included together as "Not annotated". It is done for 
-taxonomic classifications based on taxids (full lineages included in the table), and any not classified are included 
+taxonomic classifications based on taxids (full lineages included in the table), and any genes not classified are included 
 together as "Not classified". 
 > * The values we are working with are coverage per gene (so they are number of bases recruited to the gene normalized 
 by the length of the gene). These have been normalized by making the total coverage of a sample 1,000,000 and setting 
 each individual gene-level coverage its proportion of that 1,000,000 total. So basically percent, but out of 1,000,000 
 instead of 100 to make the numbers more friendly. 
 
-#### 21a. Generating gene-level coverage summary tables
+#### 21a. Generate Gene-level Coverage Summary Tables
 
 ```bash
-bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o Combined
+bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv \
+                                 -o Combined
 ```
 
 **Parameter Definitions:**  
 
-- `*-gene-coverage-annotation-and-tax.tsv` - positional arguments specifying the input tsv files, can be provided as a space-delimited list of files, or with wildcards like above
+- `*-gene-coverage-annotation-and-tax.tsv` - Positional arguments specifying the input tsv files, can be provided as a space-delimited list of files, or with wildcards like above.
 
-- `-o` – specifies the output prefix
+- `-o` – Specifies the output file prefix.
 
 
 **Input Data:**
 
-- *-gene-coverage-annotation-and-tax.tsv (tables with combined gene coverage, annotation, and taxonomy info generated for individual samples from [Step 19](#19-combining-gene-level-coverage-taxonomy-and-functional-annotations-into-one-table-for-each-sample))
+- *-gene-coverage-annotation-and-tax.tsv (tables with combined gene coverage, annotation, and taxonomy info generated for individual samples, output from [Step 19](#19-combine-gene-level-coverage-taxonomy-and-functional-annotations-for-each-sample))
 
 **Output Data:**
 
@@ -2919,7 +2920,7 @@ bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o Combi
 - **Combined-gene-level-taxonomy-coverages_GLmetagenomics.tsv** (table with all samples combined based on gene-level taxonomic classifications)
 
 
-#### 21b. Gene-level taxonomy heatmaps
+#### 21b. Gene-level taxonomy heatmaps --- START NEEDS REVIEW ---
 
 ```R
 library(tidyverse)
@@ -3163,7 +3164,7 @@ dev.off()
 - **All-genes-KO-functions-heatmap_GLmetagenomics.png** (heatmap of gene-wise KO function assignments)
 - **Abundant-genes-KO-functions-heatmap_GLmetagenomics.png** (heatmap of gene-wise abundant KO function assignments)
 
-#### 21e. Gene-level KO functions decontamination
+#### 21e. Gene-level KO functions decontamination --- END NEEDS REVIEW ---
 
 ```R
 library(tidyverse)
@@ -3251,7 +3252,7 @@ dev.off()
 
 
 
-#### 21f. Generating contig-level coverage summary tables
+#### 21f. Generate Contig-level Coverage Summary Tables
 
 ```bash
 bit-GL-combine-contig-tax-tables *-contig-coverage-and-tax.tsv -o Combined
@@ -3259,23 +3260,23 @@ bit-GL-combine-contig-tax-tables *-contig-coverage-and-tax.tsv -o Combined
 
 **Parameter Definitions:**  
 
-- `*-contig-coverage-and-tax.tsv` - positional arguments specifying the input tsv files, can be provided as a space-delimited list of files, or with wildcards like above
-- `-o` – specifies the output prefix
+- `*-contig-coverage-and-tax.tsv` - Positional arguments specifying the input tsv files, can be provided as a space-delimited list of files, or with wildcards like above.
+- `-o` – Specifies the output file prefix.
 
 
 **Input Data:**
 
-- *-contig-coverage-annotation-and-tax.tsv (tables with combined contig coverage, annotation, and taxonomy info generated for individual samples from [Step 20](#20-combining-contig-level-coverage-and-taxonomy-into-one-table-for-each-sample))
+- *-contig-coverage-and-tax.tsv (tables with combined contig coverage and taxonomy info generated for individual samples, output from [Step 20](#20-combine-contig-level-coverage-and-taxonomy-for-each-sample))
 
 **Output Data:**
 
-- **Combined-contig-level-taxonomy-coverages-CPM_GLmetagenomics.tsv** (table with all samples combined based on contig-level taxonomic classifications; normalized to coverage per million genes covered)
+- **Combined-contig-level-taxonomy-coverages-CPM_GLmetagenomics.tsv** (table with all samples combined based on contig-level taxonomic classifications; normalized to coverage per million contigs covered)
 - **Combined-contig-level-taxonomy-coverages_GLmetagenomics.tsv** (table with all samples combined based on contig-level taxonomic classifications)
 
 <br>
 
 
-#### 21g. Contig-level Heatmaps
+#### 21g. Contig-level Heatmaps --- START NEEDS REVIEW ---
 
 ```R
 plot_width <- 20
@@ -3352,7 +3353,7 @@ dev.off()
 - **Abundant-contig-taxonomy-heatmap_GLmetagenomics.png** (Abundant contig level taxonomy heatmap)
 
 
-#### 21h. Contig-level decontamination
+#### 21h. Contig-level decontamination --- END NEEDS REVIEW ---
 
 ```R
 library(tidyverse)
@@ -3442,14 +3443,22 @@ dev.off()
 
 ---
 
-### 22. **M**etagenome-**A**ssembled **G**enome (MAG) recovery
+### 22. **M**etagenome-**A**ssembled **G**enome (MAG) Recovery
 
-#### 22a. Binning contigs
+#### 22a. Bin Contigs
 
 ```bash
-jgi_summarize_bam_contig_depths --outputDepth sample-metabat-assembly-depth.tsv --percentIdentity 97 --minContigLength 1000 --minContigDepth 1.0  --referenceFasta sample-assembly.fasta sample.bam
+jgi_summarize_bam_contig_depths --outputDepth sample-metabat-assembly-depth.tsv \
+                                --percentIdentity 97 \
+                                --minContigLength 1000 \
+                                --minContigDepth 1.0  \
+                                --referenceFasta sample-assembly.fasta \
+                                sample.bam
 
-metabat2  --inFile sample-assembly.fasta --outFile sample --abdFile sample-metabat-assembly-depth.tsv -t NumberOfThreads
+metabat2  --inFile sample-assembly.fasta \
+          --outFile sample \
+          --abdFile sample-metabat-assembly-depth.tsv \
+          -t NumberOfThreads
 
 mkdir sample-bins
 mv sample*bin*.fasta sample-bins
@@ -3458,22 +3467,27 @@ zip -r sample-bins.zip sample-bins
 
 **Parameter Definitions:**  
 
--  `--outputDepth` – specifies the output depth file
--  `--percentIdentity` – minimum end-to-end percent identity of a mapped read to be included
--  `--minContigLength` – minimum contig length to include
--  `--minContigDepth` – minimum contig depth to include
--  `--referenceFasta` – the assembly fasta file generated in step 5a
--  `sample.bam` – final positional arguments are the bam files generated in step 9
--  `--inFile` - the assembly fasta file generated in step 5a
--  `--outFile` - the prefix of the identified bins output files
--  `--abdFile` - the depth file generated by the previous `jgi_summarize_bam_contig_depths` command
--  `-t` - number of parallel processing threads to use
+**jgi_summarize_bam_contig_depths**
+
+-  `--outputDepth` – Specifies the output depth file name.
+-  `--percentIdentity` – Minimum end-to-end percent identity of a mapped read to be included.
+-  `--minContigLength` – Minimum contig length to include.
+-  `--minContigDepth` – Minimum contig depth to include.
+-  `--referenceFasta` – Specifies the input assembly fasta file.
+-  `sample.bam` – Input alignment BAM file, specified as a positional argument.
+
+**metabat2**
+
+-  `--inFile` - Specifies the input assembly fasta file.
+-  `--outFile` - Specifies the prefix of the identified bins output files.
+-  `--abdFile` - The depth file generated by the previous `jgi_summarize_bam_contig_depths` command.
+-  `-t` - Number of parallel processing threads to use.
 
 
 **Input Data:**
 
-- sample-assembly.fasta (assembly fasta file created in [Step 13a](#13a-renaming-contig-headers))
-- sample.bam (bam file created in [Step 17b](#17b-sort-and-index-assembly-alignments))
+- sample-assembly.fasta (contig-renamed assembly file from [Step 13a](#13a-renaming-contig-headers))
+- sample.bam (sorted mapping to sample assembly BAM file, output from [Step 17b](#17b-sort-and-index-assembly-alignments))
 
 **Output Data:**
 
@@ -3481,32 +3495,36 @@ zip -r sample-bins.zip sample-bins
 - sample-bins/sample-bin\*.fasta (fasta files of recovered bins)
 - **sample-bins.zip** (zip file containing fasta files of recovered bins)
 
-#### 22b. Bin quality assessment
-Utilizes the default `checkm` database available [here](https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz), `checkm_data_2015_01_16.tar.gz`.
+#### 22b. Bin quality assessment 
+> Utilizes the default `checkm` database available [here](https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz), `checkm_data_2015_01_16.tar.gz`.
 
 ```bash
-checkm lineage_wf -f bins-overview_GLmetagenomics.tsv --tab_table -x fa ./ checkm-output-dir
+checkm lineage_wf -f bins-overview_GLmetagenomics.tsv \
+                  --tab_table \
+                  -x fasta \
+                  ./ \
+                  checkm-output-dir
 ```
 
 **Parameter Definitions:**  
 
--  `lineage_wf` – specifies the workflow being utilized
--  `-f` – specifies the output summary file
--  `--tab_table` – specifies the output summary file should be a tab-delimited table
--  `-x` – specifies the extension that is on the bin fasta files that are being assessed
--  `./` – first positional argument at end specifies the directory holding the bins generated in step 14a
--  `checkm-output-dir` – second positional argument at end specifies the primary checkm output directory with detailed information
+-  `lineage_wf` – Specifies the workflow being utilized.
+-  `-f` – Specifies the output summary file name.
+-  `--tab_table` – Specifies the output summary file should be a tab-delimited table.
+-  `-x` – Specifies the extension that is on the bin fasta files that are being assessed.
+-  `./` – Specifies the directory holding the bins, provided as a positional argument.
+-  `checkm-output-dir` – Specifies the primary checkm output directory, provided as a positional argument.
 
 **Input Data:**
 
-- sample-bins/sample-bin\*.fasta (bin fasta files generated in [Step 22a](#22a-binning-contigs))
+- sample-bins/sample-bin\*.fasta (fasta files of recovered bins, output from [Step 22a](#22a-bin-contigs))
 
 **Output Data:**
 
 - **bins-overview_GLmetagenomics.tsv** (tab-delimited file with quality estimates per bin)
-- checkm-output-dir (directory holding detailed checkm outputs)
+- checkm-output-dir/ (directory holding detailed checkm outputs)
 
-#### 22c. Filtering MAGs
+#### 22c. Filter MAGs
 
 ```bash
 cat <( head -n 1 bins-overview_GLmetagenomics.tsv ) \
@@ -3542,30 +3560,33 @@ done
 - **\*-MAGs.zip** (zip files containing directories of high-quality MAGs)
 
 
-#### 22d. MAG taxonomic classification
-Uses default `gtdbtk` database setup with program's `download.sh` command.
+#### 22d. MAG Taxonomic Classification
+> Uses default `gtdbtk` database setup with program's `download.sh` command.
 
 ```bash
-gtdbtk classify_wf --genome_dir MAGs/ -x fa --out_dir gtdbtk-output-dir  --skip_ani_screen
+gtdbtk classify_wf --genome_dir MAGs/ \
+                   -x fasta \
+                   --out_dir gtdbtk-output-dir \
+                   --skip_ani_screen
 ```
 
 **Parameter Definitions:**  
 
--  `classify_wf` – specifies the workflow being utilized
--  `--genome_dir` – specifies the directory holding the MAGs generated in step 14c
--  `-x` – specifies the extension that is on the MAG fasta files that are being taxonomically classified
--  `--out_dir` – specifies the output directory
--  `--skip_ani_screen`  - specifies to skip ani_screening step to classify genomes using mash and skani
+-  `classify_wf` – Specifies the workflow being utilized.
+-  `--genome_dir` – Specifies the directory holding the MAGs to classify.
+-  `-x` – Specifies the extension that is on the MAG fasta files that are being taxonomically classified.
+-  `--out_dir` – Specifies the output directory name.
+-  `--skip_ani_screen`  - Specifies to skip ani_screening step to classify genomes using mash and skani.
 
 **Input Data:**
 
-- MAGs/\*.fasta (directory holding high-quality MAGs from [Step 22c](#22c-filtering-mags))
+- MAGs/\*.fasta (directory holding high-quality MAGs, output from [Step 22c](#22c-filter-mags))
 
 **Output Data:**
 
 - gtdbtk-output-dir/gtdbtk.\*.summary.tsv (files with assigned taxonomy and info)
 
-#### 22e. Generating overview table of all MAGs
+#### 22e. Generate Overview Table Of All MAGs
 
 ```bash
 # combine summaries
@@ -3605,10 +3626,10 @@ cat MAGs-overview-header.tmp MAGs-overview-sorted.tmp \
 
 **Input Data:**
 
-- assembly-summaries_GLmetagenomics.tsv (table of assembly summary statistics from [Step 13b](#13b-summarizing-assemblies))
-- MAGs/\*.fasta (directory holding high-quality MAGs from [Step 22c](#23c-filtering-mags))
-- checkm-MAGs-overview.tsv (tab-delimited file with quality estimates per MAG from [Step 22c](#22c-filtering-mags))
-- gtdbtk-output-dir/gtdbtk.\*.summary.tsv (directory of files with assigned taxonomy and info from [Step 22d](#22d-mag-taxonomic-classification))
+- assembly-summaries_GLmetagenomics.tsv (table of assembly summary statistics, output from [Step 13b](#13b-summarize-assemblies))
+- MAGs/\*.fasta (directory holding high-quality MAGs, output from [Step 22c](#23c-filter-mags))
+- checkm-MAGs-overview.tsv (tab-delimited file with quality estimates per MAG, output from [Step 22c](#22c-filter-mags))
+- gtdbtk-output-dir/gtdbtk.\*.summary.tsv (directory of files with assigned taxonomy and info, output from [Step 22d](#22d-mag-taxonomic-classification))
 
 **Output Data:**
 
@@ -3619,10 +3640,10 @@ cat MAGs-overview-header.tmp MAGs-overview-sorted.tmp \
 
 ---
 
-### 23. Generating MAG-level functional summary overview
+### 23. Generate MAG-level Functional Summary Overview
 
-#### 23a. Getting KO annotations per MAG
-This utilizes the helper script [`parse-MAG-annots.py`](../Workflow_Documentation/NF_MGIllumina/workflow_code/bin/parse-MAG-annots.py) 
+#### 23a. Get KO Annotations Per MAG
+> This utilizes the helper script [`parse-MAG-annots.py`](../Workflow_Documentation/NF_MGIllumina/workflow_code/bin/parse-MAG-annots.py) 
 
 ```bash
 for file in $( ls MAGs/*.fasta )
@@ -3634,7 +3655,8 @@ do
     grep "^>" ${file} | tr -d ">" > ${MAG_ID}-contigs.tmp
 
     python parse-MAG-annots.py -i annotations-and-taxonomy/${sample_ID}-gene-coverage-annotation-and-tax.tsv \
-                               -w ${MAG_ID}-contigs.tmp -M ${MAG_ID} \
+                               -w ${MAG_ID}-contigs.tmp \
+                               -M ${MAG_ID} \
                                -o MAG-level-KO-annotations_GLmetagenomics.tsv
 
     rm ${MAG_ID}-contigs.tmp
@@ -3644,36 +3666,38 @@ done
 
 **Parameter Definitions:**  
 
-- `-i` – specifies the input sample gene-coverage-annotation-and-tax.tsv file generated in step 11
--  `-w` – specifies the appropriate temporary file holding all the contigs in the current MAG
-- `-M` – specifies the current MAG unique identifier
-- `-o` – specifies the output file
+- `-i` – Specifies the input sample TSV file containing sample coverage, annotation, and taxonomy info.
+- `-w` – Specifies the appropriate temporary file holding all the contigs in the current MAG.
+- `-M` – Specifies the current MAG unique identifier.
+- `-o` – Specifies the output file name.
 
 **Input Data:**
 
-- \*-gene-coverage-annotation-and-tax.tsv (sample gene-coverage-annotation-and-tax.tsv file generated in [Step 19](#19-combining-gene-level-coverage-taxonomy-and-functional-annotations-into-one-table-for-each-sample))
-- MAGs/\*.fasta (directory holding high-quality MAGs from [Step 22c](#22c-filtering-mags))
+- \*-gene-coverage-annotation-and-tax.tsv (tables with combined gene coverage, annotation, and taxonomy info generated for individual samples, output from [Step 19](#19-combine-gene-level-coverage-taxonomy-and-functional-annotations-for-each-sample))
+- MAGs/\*.fasta (directory holding high-quality MAGs, output from [Step 22c](#22c-filter-mags))
 
 **Output Data:**
 
 - **MAG-level-KO-annotations_GLmetagenomics.tsv** (tab-delimited table holding MAGs and their KO annotations)
 
 
-#### 23b. Summarizing KO annotations with KEGG-Decoder
+#### 23b. Summarize KO Annotations With KEGG-Decoder
 
 ```bash
-KEGG-decoder -v interactive -i MAG-level-KO-annotations_GLmetagenomics.tsv -o MAG-KEGG-Decoder-out_GLmetagenomics.tsv
+KEGG-decoder -v interactive \
+             -i MAG-level-KO-annotations_GLmetagenomics.tsv \
+             -o MAG-KEGG-Decoder-out_GLmetagenomics.tsv
 ```
 
 **Parameter Definitions:**  
 
-- `-v interactive` – specifies to create an interactive html output
-- `-i` – specifies the input MAG-level-KO-annotations_GLmetagenomics.tsv file generated in [Step 23a](#23a-getting-ko-annotations-per-mag)
-- `-o` – specifies the output table
+- `-v interactive` – Specifies to create an interactive html output.
+- `-i` – Specifies the input tab-delimited table holding MAGs and their KO annotations.
+- `-o` – Specifies the output table.
 
 **Input Data:**
 
-- MAG-level-KO-annotations_GLmetagenomics.tsv (tab-delimited table holding MAGs and their KO annotations, generated in [Step 23a](#23a-getting-ko-annotations-per-mag))
+- MAG-level-KO-annotations_GLmetagenomics.tsv (tab-delimited table holding MAGs and their KO annotations, output from [Step 23a](#23a-getting-ko-annotations-per-mag))
 
 **Output Data:**
 
