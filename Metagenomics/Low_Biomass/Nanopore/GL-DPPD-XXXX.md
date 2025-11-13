@@ -4,9 +4,9 @@
 
 ---
 
-**Date:** XXX NN, 2025  
+**Date:** November MM, 2025  
 **Revision:** -  
-**Document Number:** GL-DPPD-XXXX  
+**Document Number:** GL-DPPD-7116  
 
 **Submitted by:**  
 Olabiyi A. Obayomi (GeneLab Analysis Team)  
@@ -48,81 +48,83 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [6e. Generate Decontaminated Read Files](#6e-generate-decontaminated-read-files)
       - [6f. Contaminant Removal QC](#6f-contaminant-removal-qc)
       - [6g. Compile Contaminant Removal QC](#6g-compile-contaminant-removal-qc)
-    - [7. Host Removal](#7-host-removal)
-      - [7a. Build or download host database](#7a-build-or-download-host-database)
-        - [7a.i. Download from URL](#7ai-download-from-url)
-        - [7a.ii. Build from custom reference](#7aii-build-from-custom-reference)
-        - [7a.iii. Build from host name](#7aiii-build-from-host-name)
-      - [7b. Remove Host Reads](#7b-remove-host-reads)
+    - [7. Human Read Removal](#7-human-read-removal)
+      - [7a. Build Kraken2 Database](#7a-build-kraken2-database)
+      - [7b. Remove Human Reads](#7b-remove-human-reads)
+      - [7c. Compile Human Read Removal QC](#7c-compile-human-read-removal-qc)
     - [8. R Environment Setup](#8-r-environment-setup)
-      - [8a. Load libraries](#8a-load-libraries)
+      - [8a. Load Libraries](#8a-load-libraries)
       - [8b. Define Custom Functions](#8b-define-custom-functions)
       - [8c. Set global variables](#8c-set-global-variables)
   - [**Read-based processing**](#read-based-processing)
     - [9. Taxonomic profiling using kaiju](#9-taxonomic-profiling-using-kaiju)
-      - [9a. Build kaiju database](#9a-build-kaiju-database)
+      - [9a. Build Kaiju Database](#9a-build-kaiju-database)
       - [9b. Kaiju Taxonomic Classification](#9b-kaiju-taxonomic-classification)
-      - [9c. Compile kaiju taxonomy results](#9c-compile-kaiju-taxonomy-results)
-      - [9d. Convert kaiju output to krona format](#9d-convert-kaiju-output-to-krona-format)
-      - [9e. Compile kaiju krona report](#9e-compile-kaiju-krona-report)
-      - [9f. Create kaiju species count table](#9f-create-kaiju-species-count-table)
-      - [9g. Read-in tables](#9g-read-in-tables)
-      - [9h. Taxonomy barplots](#9h-taxonomy-barplots)
-      - [9i. Feature decontamination](#9i-feature-decontamination)
-    - [10. Taxonomic Profiling using Kraken2](#10-taxonomic-profiling-using-kraken2)
-      - [10a. Download kraken2 database](#10a-download-kraken2-database)
-      - [10b. Taxonomic Classification](#10b-taxonomic-classification)
-      - [10c. Convert Kraken2 output to Krona format](#10c-convert-kraken2-output-to-krona-format)
-      - [10d. Compile kraken2 krona report](#10d-compile-kraken2-krona-report)
-      - [10e. Create kraken species count table](#10e-create-kraken-species-count-table)
-      - [10f. Read-in tables](#10f-read-in-tables)
-      - [10g. Taxonomy barplots](#10g-taxonomy-barplots)
-      - [10h. Feature decontamination](#10h-feature-decontamination)
+      - [9c. Compile Kaiju Taxonomy Results](#9c-compile-kaiju-taxonomy-results)
+      - [9d. Convert Kaiju Output To Krona Format](#9d-convert-kaiju-output-to-krona-format)
+      - [9e. Compile Kaiju Krona Reports](#9e-compile-kaiju-krona-reports)
+      - [9f. Create Kaiju Species Count Table](#9f-create-kaiju-species-count-table)
+      - [9g. Read-in Tables](#9g-read-in-tables)
+      - [9h. Taxonomy Barplots](#9h-taxonomy-barplots)
+      - [9i. Feature Decontamination](#9i-feature-decontamination)
+    - [10. Taxonomic Profiling Using Kraken2](#10-taxonomic-profiling-using-kraken2)
+      - [10a. Download Kraken2 Database](#10a-download-kraken2-database)
+      - [10b. Kraken2 Taxonomic Classification](#10b-kraken2-taxonomic-classification)
+      - [10c. Compile Kraken2 Taxonomy Results](#10c-compile-kraken2-taxonomy-results)
+        - [10ci. Create Merged Kraken2 Taxonomy Table](10ci-create-merged-kraken2-taxonomy-table)
+        - [10cii. Compile Kraken2 Taxonomy Reports](10cii-compile-kraken2-taxonomy-reports)
+      - [10d. Convert Kraken2 Output to Krona Format](#10d-convert-kraken2-output-to-krona-format)
+      - [10e. Compile Kraken2 Krona Reports](#10e-compile-kraken2-krona-reports)
+      - [10f. Create Kraken2 Species Count Table](#10f-create-kraken2-species-count-table)
+      - [10g. Read-in Tables](#10g-read-in-tables)
+      - [10h. Taxonomy Barplots](#10h-taxonomy-barplots)
+      - [10i. Feature Decontamination](#10i-feature-decontamination)
   - [**Assembly-based processing**](#assembly-based-processing)
-    - [11. Sample assembly](#11-sample-assembly)
-    - [12. Polish assembly](#12-polish-assembly)
-    - [13. Renaming contigs and summarizing assemblies](#13-renaming-contigs-and-summarizing-assemblies)
-      - [13a. Renaming contig headers](#13a-renaming-contig-headers)
-      - [13b. Summarizing assemblies](#13b-summarizing-assemblies)
-    - [14. Gene prediction](#14-gene-prediction)
-      - [14a. Remove line wraps in gene prediction output](#14a-remove-line-wraps-in-gene-prediction-output)
-    - [15. Functional annotation](#15-functional-annotation)
-      - [15a. Downloading reference database of HMM models (only needs to be done once)](#15a-downloading-reference-database-of-hmm-models-only-needs-to-be-done-once)
-      - [15b. Running KEGG annotation](#15b-running-kegg-annotation)
-      - [15c. Filtering output to retain only those passing the KO-specific score and top hits](#15c-filtering-output-to-retain-only-those-passing-the-ko-specific-score-and-top-hits)
-    - [16. Taxonomic classification](#16-taxonomic-classification)
-      - [16a. Pulling and un-packing pre-built reference db (only needs to be done once)](#16a-pulling-and-un-packing-pre-built-reference-db-only-needs-to-be-done-once)
-      - [16b. Running taxonomic classification](#16b-running-taxonomic-classification)
-      - [16c. Adding taxonomy info from taxids to genes](#16c-adding-taxonomy-info-from-taxids-to-genes)
-      - [16d. Adding taxonomy info from taxids to contigs](#16d-adding-taxonomy-info-from-taxids-to-contigs)
-      - [16e. Formatting gene-level output with awk and sed](#16e-formatting-gene-level-output-with-awk-and-sed)
-      - [16f. Formatting contig-level output with awk and sed](#16f-formatting-contig-level-output-with-awk-and-sed)
-    - [17. Read-mapping](#17-read-mapping)
+    - [11. Sample Assembly](#11-sample-assembly)
+    - [12. Polish Assembly](#12-polish-assembly)
+    - [13. Rename Contigs and Summarize Assemblies](#13-rename-contigs-and-summarize-assemblies)
+      - [13a. Rename Contig Headers](#13a-rename-contig-headers)
+      - [13b. Summarize Assemblies](#13b-summarize-assemblies)
+    - [14. Gene Prediction](#14-gene-prediction)
+      - [14a. Generate Gene Predictions](14a-generate-gene-predictions)
+      - [14b. Remove Line Wraps In Gene Prediction Output](#14a-remove-line-wraps-in-gene-prediction-output)
+    - [15. Functional Annotation](#15-functional-annotation)
+      - [15a. Download Reference Database of HMM Models](#15a-download-reference-database-of-hmm-models)
+      - [15b. Run KEGG Annotation](#15b-run-kegg-annotation)
+      - [15c. Filter KO Outputs](#15c-filter-ko-outputs)
+    - [16. Taxonomic Classification](#16-taxonomic-classification)
+      - [16a. Pull and Unpack Pre-built Reference DB](#16a-pull-and-unpack-pre-built-reference-db)
+      - [16b. Run Taxonomic Classification](#16b-run-taxonomic-classification)
+      - [16c. Add Taxonomy Info From Taxids To Genes](#16c-add-taxonomy-info-from-taxids-to-genes)
+      - [16d. Add Taxonomy Info From Taxids To Contigs](#16d-add-taxonomy-info-from-taxids-to-contigs)
+      - [16e. Format Gene-level Output With awk and sed](#16e-format-gene-level-output-with-awk-and-sed)
+      - [16f. Format Contig-level Output With awk and sed](#16f-format-contig-level-output-with-awk-and-sed)
+    - [17. Read-Mapping](#17-read-mapping)
       - [17a. Align Reads to Sample Assembly](#17a-align-reads-to-sample-assembly)
       - [17b. Sort and Index Assembly Alignments](#17b-sort-and-index-assembly-alignments)
-    - [18. Getting coverage information and filtering based on detection](#18-getting-coverage-information-and-filtering-based-on-detection)
-      - [18a. Filtering coverage levels based on detection](#18a-filtering-coverage-levels-based-on-detection)
-      - [18b. Filtering gene and contig coverage based on requiring 50% detection and parsing down to just gene ID and coverage](#18b-filtering-gene-and-contig-coverage-based-on-requiring-50-detection-and-parsing-down-to-just-gene-id-and-coverage)
-    - [19. Combining gene-level coverage, taxonomy, and functional annotations into one table for each sample](#19-combining-gene-level-coverage-taxonomy-and-functional-annotations-into-one-table-for-each-sample)
-    - [20. Combining contig-level coverage and taxonomy into one table for each sample](#20-combining-contig-level-coverage-and-taxonomy-into-one-table-for-each-sample)
-    - [21. Generating normalized, gene- and contig-level coverage summary tables of KO-annotations and taxonomy across samples](#21-generating-normalized-gene--and-contig-level-coverage-summary-tables-of-ko-annotations-and-taxonomy-across-samples)
-      - [21a. Generating gene-level coverage summary tables](#21a-generating-gene-level-coverage-summary-tables)
+    - [18. Get Coverage Information and Filter Based On Detection](#18-get-coverage-information-and-filter-based-on-detection)
+      - [18a. Filter Coverage Levels Based On Detection](#18a-filter-coverage-levels-based-on-detection)
+      - [18b. Filter Gene and Contig Coverage Based On Detection](#18b-filter-gene-and-contig-coverage-based-on-detection)
+    - [19. Combine Gene-level Coverage, Taxonomy, and Functional Annotations For Each Sample](#19-combine-gene-level-coverage-taxonomy-and-functional-annotations-for-each-sample)
+    - [20. Combine Contig-level Coverage and Taxonomy For Each Sample](#20-combine-contig-level-coverage-and-taxonomy-for-each-sample)
+    - [21. Generate Normalized, Gene- and Contig-level Coverage Summary Tables of KO-annotations and Taxonomy Across Samples](#21-generate-normalized-gene--and-contig-level-coverage-summary-tables-of-ko-annotations-and-taxonomy-across-samples)
+      - [21a. Generate Gene-level Coverage Summary Tables](#21a-generate-gene-level-coverage-summary-tables)
       - [21b. Gene-level taxonomy heatmaps](#21b-gene-level-taxonomy-heatmaps)
       - [21c. Gene-level taxonomy decontamination](#21c-gene-level-taxonomy-decontamination)
       - [21d. Gene-level KO functions heatmaps](#21d-gene-level-ko-functions-heatmaps)
       - [21e. Gene-level KO functions decontamination](#21e-gene-level-ko-functions-decontamination)
-      - [21f. Generating contig-level coverage summary tables](#21f-generating-contig-level-coverage-summary-tables)
+      - [21f. Generate contig-level coverage summary tables](#21f-generate-contig-level-coverage-summary-tables)
       - [21g. Contig-level Heatmaps](#21g-contig-level-heatmaps)
       - [21h. Contig-level decontamination](#21h-contig-level-decontamination)
     - [22. **M**etagenome-**A**ssembled **G**enome (MAG) recovery](#22-metagenome-assembled-genome-mag-recovery)
-      - [22a. Binning contigs](#22a-binning-contigs)
-      - [22b. Bin quality assessment](#22b-bin-quality-assessment)
-      - [22c. Filtering MAGs](#22c-filtering-mags)
-      - [22d. MAG taxonomic classification](#22d-mag-taxonomic-classification)
-      - [22e. Generating overview table of all MAGs](#22e-generating-overview-table-of-all-mags)
-    - [23. Generating MAG-level functional summary overview](#23-generating-mag-level-functional-summary-overview)
-      - [23a. Getting KO annotations per MAG](#23a-getting-ko-annotations-per-mag)
-      - [23b. Summarizing KO annotations with KEGG-Decoder](#23b-summarizing-ko-annotations-with-kegg-decoder)
+      - [22a. Bin Contigs](#22a-bin-contigs)
+      - [22b. Bin Quality Assessment](#22b-bin-quality-assessment)
+      - [22c. Filter MAGs](#22c-filter-mags)
+      - [22d. MAG Taxonomic Classification](#22d-mag-taxonomic-classification)
+      - [22e. Generate Overview Table Of All MAGs](#22e-generate-overview-table-of-all-mags)
+    - [23. Generate MAG-level Functional Summary Overview](#23-generate-mag-level-functional-summary-overview)
+      - [23a. Get KO Annotations Per MAG](#23a-get-ko-annotations-per-mag)
+      - [23b. Summarize KO Annotations With KEGG-Decoder](#23b-summarize-ko-annotations-with-kegg-decoder)
 
 
 
@@ -187,13 +189,13 @@ dorado basecaller ${model} ${input_directory} \
 
 **Parameter Definitions:**
 
-- `--no-trim` - skips trimming of barcodes, adapters, and primers
-- `--device` - specifies CPU or GPU device; specifying 'auto' chooses either 'cpu' or 'gpu' depending on detected presence of a GPU device
-- `--recursive` - enables recursive scanning through input directory to load FAST5 and/or POD5 files
-- `--kit-name` - The nanopore barcoding kit used during sequencing preparation. Enables barcoding with the provided kit name; see [dorado documentation](https://software-docs.nanoporetech.com/dorado/1.1.1/barcoding/barcoding/) for a full list of accepted kit names
-- `--min-qscore` - specifies the minimum Q-score, reads with a mean Q-score below this threshold are discarded (default to `7` for this pipeline)
-- `model` - positional argument specifying the basecalling model to use or a path to the model directory. `hac` chooses the high accuracy model.
-- `input_directory` - positional argument specifying the location of the raw data in POD5 or FAST5 format
+- `model` - Positional argument specifying the basecalling model to use or a path to the model directory. `hac` chooses the high accuracy model.
+- `input_directory` - Positional argument specifying the location of the raw data in POD5 or FAST5 format.
+- `--no-trim` - Skips trimming of barcodes, adapters, and primers.
+- `--device` - Specifies CPU or GPU device; specifying 'auto' chooses either 'cpu' or 'gpu' depending on detected presence of a GPU device.
+- `--recursive` - Enables recursive scanning through input directory to load FAST5 and/or POD5 files.
+- `--kit-name` - The nanopore barcoding kit used during sequencing preparation. Enables barcoding with the provided kit name; see [dorado documentation](https://software-docs.nanoporetech.com/dorado/1.1.1/barcoding/barcoding/) for a full list of accepted kit names.
+- `--min-qscore` - Specifies the minimum Q-score, reads with a mean Q-score below this threshold are discarded (default to `7` for this pipeline).
 
 **Input Data:**
 
@@ -209,7 +211,7 @@ dorado basecaller ${model} ${input_directory} \
 
 ### 2. Demultiplexing
 
-#### 2a. Split fastq
+#### 2a. Split Fastq
 
 ```bash
 dorado demux \
@@ -222,10 +224,11 @@ dorado demux \
 
 **Parameter Definitions:**
 
-- `--output-dir` - specifies the output folder that is the root of the nested output structure. 
-- `--emit-fastq` - specifies that output is fastq format
-- `--emit-summary` - creates a summary listing each read and its classified barcode.
-- `--kit-name` - The nanopore barcoding kit used during sequencing preparation. Enables barcoding with the provided kit name; see [dorado documentation](https://software-docs.nanoporetech.com/dorado/1.1.1/barcoding/barcoding/) for a full list of accepted kit names
+- `--output-dir` - Specifies the output folder that is the root of the nested output structure. 
+- `--emit-fastq` - Specifies that output is fastq format.
+- `--emit-summary` - Creates a summary listing each read and its classified barcode.
+- `--kit-name` - The nanopore barcoding kit used during sequencing preparation. Enables barcoding with the provided kit name; see [dorado documentation](https://software-docs.nanoporetech.com/dorado/1.1.1/barcoding/barcoding/) for a full list of accepted kit names.
+- `basecalled.bam` - Positional argument specifying the input bam file.
 
 **Input Data:**
 
@@ -235,18 +238,19 @@ dorado demux \
 
 - /path/to/fastq/output/\*_barcode\*.fastq (demultiplexed reads in fastq format)
 - /path/to/fastq/output/\*_unclassified.fastq (unclassified reads in fastq format)
-- /path/to/fastq/output/barcoding_summary.txt (barcode summary file listing each read, the file it was assigned to, and its classified barcode )
+- /path/to/fastq/output/barcoding_summary.txt (barcode summary file listing each read, the file it was assigned to, and its classified barcode)
 
 
-#### 2b. Concatenate files for each sample
+#### 2b. Concatenate Files For Each Sample
 
 ```bash
-# Change to directory containing split fastq files generated from step 2a. split fastq above
+# Change to directory containing split fastq files generated from step 2a. 
 cd /path/to/fastq/output/ # output of step 2a
-# Get unique barcode names from demultiplexed file names
-BARCODES=($(ls -1 *fastq* |sed -E 's/.+_(barcode[0-9]+)_.+/\1/g' | sort -u))
 
-# Concat separate barcode/sample fastq files into per sample fastq gzippped files
+# Get unique barcode names from demultiplexed file names
+BARCODES=($(ls -1 *fastq* | sed -E 's/.+_(barcode[0-9]+)_.+/\1/g' | sort -u))
+
+# Concat separate barcode/sample fastq files into per sample fastq gzipped files
 [ -d raw_data/ ] || mkdir raw_data/
 for sample in ${BARCODES[*]}; do
 
@@ -260,7 +264,8 @@ done
 
 **Parameter Definitions:**
 
-- `| gzip --to-stdout` - sends output from `cat` to `gzip` to create compressed fastq.gz file
+- `cat ${sample}/*` - Concatenates all fastq files with the same barcode into one fastq file.
+- `| gzip --to-stdout` - Sends the concatenated fastq file output from the `cat` command to the `gzip` command to create a compressed fastq.gz file for each barcode.
 
 **Input Data:**
 
@@ -280,20 +285,21 @@ done
 
 ```bash 
 NanoPlot --only-report \
-         --prefix sample_ \
+         --prefix sample_raw_ \
          --outdir /path/to/raw_nanoplot_output \
          --threads NumberOfThreads \
-         --fastq /path/to/raw_data/sample.fastq.gz
+         --fastq \
+         /path/to/raw_data/sample.fastq.gz
 ```
 
 **Parameter Definitions:**
 
-- `--outdir` – specifies the output directory to store results
-- `--only-report` - output only the report files
-- `--prefix` - adds a sample specific prefix to the name of each output file
-- `--threads` - number of parallel processing threads to use
-- `--fastq` - specifies that the input data is in a fastq format
-- `/path/to/raw_data/sample.fastq.gz` – the input reads are specified as a positional argument
+- `--only-report` - Output only the report files.
+- `--prefix` - Adds a sample specific prefix to the name of each output file.
+- `--outdir` – Specifies the output directory to store results.
+- `--threads` - Number of parallel processing threads to use.
+- `--fastq` - Specifies that the input data is in fastq format.
+- `/path/to/raw_data/sample.fastq.gz` – The input reads, specified as a positional argument.
 
 **Input Data:**
 
@@ -301,9 +307,9 @@ NanoPlot --only-report \
 
 **Output Data:**
 
-- **/path/to/raw_nanoplot_output/sample_NanoPlot-report.html** (NanoPlot html summary)
-- /path/to/raw_nanoplot_output/sample_NanoPlot_<date>_<time>.log (NanoPlot log file)
-- /path/to/raw_nanoplot_output/sample_NanoStats.txt (text file containing basic statistics)
+- **/path/to/raw_nanoplot_output/sample_raw_NanoPlot-report.html** (NanoPlot html summary)
+- /path/to/raw_nanoplot_output/sample_raw_NanoPlot_\<date\>_\<time\>.log (NanoPlot log file)
+- /path/to/raw_nanoplot_output/sample_raw_NanoStats.txt (text file containing basic statistics)
 
 #### 3b. Compile Raw Data QC
 
@@ -311,20 +317,21 @@ NanoPlot --only-report \
 multiqc --zip-data-dir \
         --outdir raw_multiqc_report \
         --filename raw_multiqc \
-        --interactive /path/to/raw_nanoplot_output/
+        --interactive \
+        /path/to/raw_nanoplot_output/
 ```
 
 **Parameter Definitions:**
 
-- `--zip-data-dir` - compress the data directory
-- `--outdir` – the output directory to store results
-- `--filename` – the filename prefix of results
-- `--interactive` - force multiqc to always create interactive javascript plots
-- `/path/to/raw_nanoplot_output/` – the directory holding the output data from the NanoPlot run, provided as a positional argument
+- `--zip-data-dir` - Compress the data directory.
+- `--outdir` – Specifies the output directory to store results.
+- `--filename` – Specifies the filename prefix of results.
+- `--interactive` - Force multiqc to always create interactive javascript plots.
+- `/path/to/raw_nanoplot_output/` – The directory holding the output data from the NanoPlot run, provided as a positional argument.
 
 **Input Data:**
 
-- /path/to/raw_nanoplot_output/*NanoStats.txt (NanoPlot output data, from [Step 3a](#3a-raw-data-qc))
+- /path/to/raw_nanoplot_output/*raw_NanoStats.txt (NanoPlot output data, from [Step 3a](#3a-raw-data-qc))
 
 **Output Data:**
 
@@ -335,7 +342,7 @@ multiqc --zip-data-dir \
 
 ---
 
-### 4. Quality filtering
+### 4. Quality Filtering
 
 #### 4a. Filter Raw Data
 
@@ -345,8 +352,10 @@ filtlong --min_length 200 --min_mean_q 8 /path/to/raw_data/sample.fastq.gz > sam
 
 **Parameter Definitions:**
 
-- `--min_length` – specifies the minimum read length to retain (default to `200` for this pipeline)
-- `--min_mean_q` – specifies the minimum mean read quality (default to `8` for this pipeline)
+- `--min_length` – Specifies the minimum read length to retain (default to `200` for this pipeline).
+- `--min_mean_q` – Specifies the minimum mean read quality to retain (default to `8` for this pipeline).
+- `/path/to/raw_data/sample.fastq.gz` - The path to the input fastq file, provided as a positional argument.
+- `> sample_filtered.fastq` - Redirects the output to a sample_filtered.fastq file.
 
 **Input Data:**
 
@@ -361,19 +370,21 @@ filtlong --min_length 200 --min_mean_q 8 /path/to/raw_data/sample.fastq.gz > sam
 
 ```bash
 NanoPlot --only-report \
-         --prefix sample_ \
+         --prefix sample_filtered_ \
          --outdir /path/to/filtered_nanoplot_output \
          --threads NumberOfThreads \
-         --fastq sample_filtered.fastq
+         --fastq \
+         sample_filtered.fastq
 ```
 
 **Parameter Definitions:**
 
-- `--outdir` – specifies the output directory to store results
-- `--only-report` - output only the report files
-- `--prefix` - adds a sample specific prefix to the name of each output file
-- `--threads` - number of parallel processing threads to use
-- `sample_filtered.fastq` – the input reads are specified as a positional argument
+- `--only-report` - Output only the report files.
+- `--prefix` - Adds a sample specific prefix to the name of each output file.
+- `--outdir` – Specifies the output directory to store results.
+- `--threads` - Number of parallel processing threads to use.
+- `--fastq` - Specifies that the input data is in fastq format.
+- `sample_filtered.fastq` – The input reads, specified as a positional argument.
 
 **Input Data:**
 
@@ -381,9 +392,9 @@ NanoPlot --only-report \
 
 **Output Data:**
 
-- **/path/to/filtered_nanoplot_output/sample_NanoPlot-report.html** (NanoPlot html summary)
-- /path/to/filtered_nanoplot_output/sample_NanoPlot_<date>_<time>.log (NanoPlot log file)
-- /path/to/filtered_nanoplot_output/sample_NanoStats.txt (text file containing basic statistics)
+- **/path/to/filtered_nanoplot_output/sample_filtered_NanoPlot-report.html** (NanoPlot html summary)
+- /path/to/filtered_nanoplot_output/sample_filtered_NanoPlot_\<date\>_\<time\>.log (NanoPlot log file)
+- /path/to/filtered_nanoplot_output/sample_filtered_NanoStats.txt (text file containing basic statistics)
 
 #### 4c. Compile Filtered Data QC
 
@@ -391,20 +402,21 @@ NanoPlot --only-report \
 multiqc  --zip-data-dir \ 
          --outdir filtered_multiqc_report \
          --filename filtered_multiqc \
-         --interactive /path/to/filtered_nanoplot_output/
+         --interactive \
+         /path/to/filtered_nanoplot_output/
 ```
 
 **Parameter Definitions:**
 
-- `--zip-data-dir` - compress the data directory
-- `--outdir` – the output directory to store results
-- `--filename` – the filename prefix of results
-- `--interactive` - force multiqc to always create interactive javascript plots
-- `/path/to/filtered_nanoplot_output/` – the directory holding the output data from the NanoPlot run, provided as a positional argument
+- `--zip-data-dir` - Compress the data directory.
+- `--outdir` – Specifies the output directory to store results.
+- `--filename` – Specifies the filename prefix of results.
+- `--interactive` - Force multiqc to always create interactive javascript plots.
+- `/path/to/filtered_nanoplot_output/` – The directory holding the output data from the NanoPlot run, provided as a positional argument.
 
 **Input Data:**
 
-- /path/to/filtered_nanoplot_output/*NanoStats.txt (NanoPlot output data, from [Step 4b](#4b-filtered-data-qc))
+- /path/to/filtered_nanoplot_output/*filtered_NanoStats.txt (NanoPlot output data, from [Step 4b](#4b-filtered-data-qc))
 
 **Output Data:**
 
@@ -420,17 +432,19 @@ multiqc  --zip-data-dir \
 #### 5a. Trim Filtered Data
 
 ```bash
-porechop --input sample_filtered.fastq --threads NumberOfThreads \
-         --discard_middle --output sample_trimmed.fastq  > sample_porechop.log
+porechop --input sample_filtered.fastq \
+         --threads NumberOfThreads \
+         --discard_middle \
+         --output sample_trimmed.fastq  > sample_porechop.log
 ```
 
 **Parameter Definitions:**
 
-- `--input` – the input read file in fastq format
-- `--threads` - number of parallel processing threads to use
-- `--discard_middle` -  reads with middle adapters will be discarded
-- `--output` - trimmed reads output fastq filename
-- `> sample_porechop.log` - capture stdout in a log file
+- `--input` – Specifies the input sequence file in fastq format.
+- `--threads` - Number of parallel processing threads to use.
+- `--discard_middle` -  Reads with middle adapters will be discarded.
+- `--output` - Specifies the trimmed reads output fastq filename.
+- `> sample_porechop.log` - Redirects the standard output to a log file.
 
 **Input Data:**
 
@@ -439,24 +453,27 @@ porechop --input sample_filtered.fastq --threads NumberOfThreads \
 **Output Data:**
 
 - **sample_trimmed.fastq** (filtered and trimmed reads)
+- sample_porechop.log (porechop standard output containing trimming info)
 
 #### 5b. Trimmed Data QC
 
 ```bash
 NanoPlot --only-report \
-         --prefix sample_ \
+         --prefix sample_trimmed_ \
          --outdir /path/to/trimmed_nanoplot_output \
          --threads NumberOfThreads \
-         --fastq sample_trimmed.fastq
+         --fastq \
+         sample_trimmed.fastq
 ```
 
 **Parameter Definitions:**
 
-- `--outdir` – specifies the output directory to store results
-- `--only-report` - output only the report files
-- `--prefix` - adds a sample specific prefix to the name of each output file
-- `--threads` - number of parallel processing threads to use
-- `sample_trimmed.fastq` – the input reads are specified as a positional argument
+- `--only-report` - Output only the report files.
+- `--prefix` - Adds a sample specific prefix to the name of each output file.
+- `--outdir` – Specifies the output directory to store results.
+- `--threads` - Number of parallel processing threads to use.
+- `--fastq` - Specifies that the input data is in fastq format.
+- `sample_trimmed.fastq` – The input reads, specified as a positional argument.
 
 **Input Data:**
 
@@ -464,9 +481,9 @@ NanoPlot --only-report \
 
 **Output Data:**
 
-- **/path/to/trimmed_nanoplot_output/sample_NanoPlot-report.html** (NanoPlot html summary)
-- /path/to/trimmed_nanoplot_output/sample_NanoPlot_<date>_<time>.log (NanoPlot log file)
-- /path/to/trimmed_nanoplot_output/sample_NanoStats.txt (text file containing basic statistics)
+- **/path/to/trimmed_nanoplot_output/sample_trimmed_NanoPlot-report.html** (NanoPlot html summary)
+- /path/to/trimmed_nanoplot_output/sample_trimmed_NanoPlot_\<date\>_\<time\>.log (NanoPlot log file)
+- /path/to/trimmed_nanoplot_output/sample_trimmed_NanoStats.txt (text file containing basic statistics)
 
 #### 5c. Compile Trimmed Data QC
 
@@ -474,20 +491,21 @@ NanoPlot --only-report \
 multiqc --zip-data-dir \ 
         --outdir trimmed_multiqc_report \
         --filename trimmed_multiqc \
-        --interactive /path/to/trimmed_nanoplot_output/
+        --interactive \
+        /path/to/trimmed_nanoplot_output/
 ```
 
 **Parameter Definitions:**
 
-- `--zip-data-dir` - compress the data directory
-- `--outdir` – the output directory to store results
-- `--filename` – the filename prefix of results
-- `--interactive` - force multiqc to always create interactive javascript plots
-- `/path/to/trimmed_nanoplot_output/` – the directory holding the output data from the NanoPlot run, provided as a positional argument
+- `--zip-data-dir` - Compress the data directory.
+- `--outdir` – Specifies the output directory to store results.
+- `--filename` – Specifies the filename prefix of results.
+- `--interactive` - Force multiqc to always create interactive javascript plots.
+- `/path/to/trimmed_nanoplot_output/` – The directory holding the output data from the NanoPlot run, provided as a positional argument.
 
 **Input Data:**
 
-- /path/to/trimmed_nanoplot_output/*NanoStats.txt (NanoPlot output data, output from [Step 5b](#5b-trimmed-data-qc))
+- /path/to/trimmed_nanoplot_output/*trimmed_NanoStats.txt (NanoPlot output data, output from [Step 5b](#5b-trimmed-data-qc))
 
 **Output Data:**
 
@@ -500,30 +518,31 @@ multiqc --zip-data-dir \
 
 ### 6. Contaminant Removal
 
-> A major issue with low biomass data is the high potential for contamination due to the low amount of DNA extracted in the sample for sequencing.  Because negative control/blank samples should by theory be contaminant free, any sequence detected in the negative control is a potential contaminant. To filter out contaminants found in negative control samples that may have been due to cross contamination in the lab, we use a read mapping approach. First negative/blank control samples reads are assembled then filtered and trimmed reads mapped to the assembled contigs. Reads mapping to the assembled contigs are categorized as contaminants and are therefore filtered out and thus excluded from further analyses.
+> A major issue with low biomass data is the high potential for contamination due to the low amount of DNA extracted from the samples. Because negative control/blank samples should by theory be contaminant free, any sequence detected in the negative control is a potential contaminant. To filter out contaminants found in negative control samples that may have been due to cross contamination in the lab, we use a read mapping approach. First negative/blank control sample reads are assembled then the filtered and trimmed reads from each low-biomass sample are mapped to the assembled contigs from the negative/blank control samples. Reads mapping to the assembled contigs are categorized as contaminants and are therefore filtered out and thus excluded from downstream analyses.
 
 ### 6a. Assemble Contaminants
 
 ```bash
-flye --meta --threads NumberOfThreads \
+flye --meta \
+     --threads NumberOfThreads \
      --out-dir /path/to/contaminant_assembly \
      --nano-raw /path/to/blank_samples/\*_trimmed.fastq
 ```
 
 **Parameter Definitions:**
 
-- `--meta` – use metagenome/uneven coverage mode
-- `--threads` - number of parallel processing threads to use
-- `--out-dir` - output directory
-- `--nano-raw` - specifies that input is from Oxford Nanopore regular raw reads. This adds a polishing step for error correction after the assembly is generated.
+- `--meta` – Use metagenome/uneven coverage mode.
+- `--threads` - Number of parallel processing threads to use.
+- `--out-dir` - Specifies the output directory.
+- `--nano-raw` - Specifies that input is from Oxford Nanopore regular raw reads. This adds a polishing step for error correction after the assembly is generated.
 
 **Input Data**
 
-- *_trimmed.fastq (one or more trimmed reads from blank samples, output from [Step 5a](#5a-trim-filtered-data))
+- *_trimmed.fastq (one or more trimmed reads from blank (negative control) samples, output from [Step 5a](#5a-trim-filtered-data))
 
 **Output Data**
 
-- /path/to/contaminant_assembly/assembly.fasta (Assembly built from reads in blank samples in fasta format)
+- /path/to/contaminant_assembly/assembly.fasta (assembly built from reads in blank samples in fasta format)
 
 <br>
 
@@ -533,32 +552,47 @@ flye --meta --threads NumberOfThreads \
 
 ```bash
 # Build contaminant index
-minimap2 -t NumberOfThreads -a -x splice -d blanks.mmi /path/to/contaminant_assembly/assembly.fasta
+minimap2 -t NumberOfThreads \
+         -a \
+         -x splice \
+         -d blanks.mmi \
+         /path/to/contaminant_assembly/assembly.fasta
 
 # Map reads to index
-minimap2 -t NumberOfThreads -a -x splice blanks.mmi /path/to/trimmed_reads/sample_trimmed.fastq  > sample.sam
+minimap2 -t NumberOfThreads \
+         -a \
+         -x splice \
+         blanks.mmi \
+         /path/to/trimmed_reads/sample_trimmed.fastq  > sample.sam
 ```
 
 **Parameter Definitions:**
 
-- `-t` - number of parallel processing threads
-- `-a` – output in SAM format
-- `-x splice` - specifies preset for spliced alignment of long reads
-- `-d` - specifies the output file for the index
+- `-t` - Number of parallel processing threads.
+- `-a` – Output in SAM format.
+- `-x splice` - Specifies preset for spliced alignment of long reads.
+- `-d` - Specifies the output file for the index (specific to the build contaminant index command).
+- `/path/to/contaminant_assembly/assembly.fasta` - Specifies the input file in fasta format, provided as a positional argument (specific to the build contaminant index command).
+- `blanks.mmi` - Specifies the index file in mmi format, provided as a positional argument (specific to the map reads command).
+- `/path/to/trimmed_reads/sample_trimmed.fastq` - Specifies the input file in fastq format, provided as a positional argument (specific to the map reads command).
+- `> sample.sam` - Redirects the output of the map reads command to a separate SAM file (specific to the map reads command).
 
 **Input Data**
 
-- /path/to/contaminant_assembly/assembly.fasta (Contaminant assembly, output from [Step 6a](#6-assemble-contaminants))
-- /path/to/trimmed_reads/sample_trimmed.fastq (Filtered and trimmed reads, output from [Step 5a](#5a-trim-filtered-data))
+- /path/to/contaminant_assembly/assembly.fasta (contaminant assembly, output from [Step 6a](#6-assemble-contaminants))
+- /path/to/trimmed_reads/sample_trimmed.fastq (filtered and trimmed reads, output from [Step 5a](#5a-trim-filtered-data))
 
 **Output Data**
 
-- sample.sam (Reads aligned to contaminant assembly)
+- blanks.mmi (contaminant index in MMI format)
+- sample.sam (reads aligned to contaminant assembly in SAM format)
 
 #### 6c. Sort and Index Contaminant Alignments
 ```bash
 # Sort Sam, convert to bam and create index
-samtools sort --threads NumberOfThreads -o sample_sorted.bam sample.sam > sample_sort.log 2>&1
+samtools sort --threads NumberOfThreads \
+              -o sample_sorted.bam \
+              sample.sam > sample_sort.log 2>&1
 
 samtools index sample_sorted.bam sample_sorted.bam.bai
 ```
@@ -566,22 +600,24 @@ samtools index sample_sorted.bam sample_sorted.bam.bai
 **Parameter Definitions:**
 
 **samtools sort**
-- `--threads` - number of parallel processing threads to use
-- `-o` - specifies the output file for the sorted reads
-- `sample.sam` - positional argument specifying the input SAM file
+- `--threads` - Number of parallel processing threads to use.
+- `-o` - Specifies the output file for the aligned and sorted reads.
+- `sample.sam` - Specifies the input SAM file, provided as a positional argument.
+- `> sample_sort.log 2>&1` - Redirects the standard output to a log file. 
 
 **samtools index**
-- `sample_sorted.bam` - positional argument specifying the input BAM file to be indexed
-- `sample_sorted.bam.bai` - positional argument specifying the name of the index file
+- `sample_sorted.bam` - The input BAM file, provided as a positional argument.
+- `sample_sorted.bam.bai` - The output index file, provided as a positional argument.
 
 **Input Data:**
 
-- sample.sam (Reads aligned to contaminant assembly, output from [Step 6b](#6b-build-contaminant-index-and-map-reads))
+- sample.sam (reads aligned to contaminant assembly, output from [Step 6b](#6b-build-contaminant-index-and-map-reads))
 
 **Output Data:**
 
-- sample_sorted.bam (sorted mapping to contaminant assembly)
-- sample_sorted.bam.bai (index of sorted mapping to contaminant assembly)
+- sample_sorted.bam (sorted mapping to contaminant assembly file)
+- sample_sorted.bam.bai (index of sorted mapping to contaminant assembly file)
+- sample_sort.log (log file containing the samtools sort standard output)
 
 #### 6d. Gather Contaminant Mapping Metrics
 
@@ -594,221 +630,224 @@ samtools idxstats sample_sorted.bam  > sample_idxstats.txt 2> sample_idxstats.lo
 
 **Parameter Definitions:**
 
-- `flagstat` - positional argument specifying the program for counting the number of alignments for each SAM FLAG type
-- `stats` - positional argument specifying the program for producing comprehensive statistics from the alignment file
-- `idxstats` - positional argument specifying the program for producing contig alignment summary statistics
-- `--remove-dups` - excludes reads marked as duplicates from comprehensive statistics
-- `sample_sorted.bam` - positional argument specifying the input BAM file
+- `flagstat` - Positional argument specifying the program for counting the number of alignments for each SAM FLAG type.
+- `stats` - Positional argument specifying the program for producing comprehensive statistics from the alignment file.
+- `idxstats` - Positional argument specifying the program for producing contig alignment summary statistics.
+- `--remove-dups` - Excludes reads marked as duplicates from the comprehensive statistics.
+- `sample_sorted.bam` - Positional argument specifying the input BAM file.
+- `> sample_flagstats.txt` - Redirects the flagstat standard output to a text file.
+- `2> sample_flagstats.log` - Redirects the flagstat standard error to a log file.
+- `> sample_stats.txt` - Redirects the stats standard output to a text file.
+- `2> sample_stats.log` - Redirects the stats standard error to a log file.
+- `> sample_idxstats.txt` - Redirects the idxstats standard output to a text file.
+- `2> sample_idxstats.log` - Redirects the idxstats standard error to a log file.
 
 **Input Data:**
 
-- sample_sorted.bam (sorted mapping to contaminant assembly, output from [Step 6c](#6c-sort-and-index-contaminant-alignments))
-- sample_sorted.bam.bai (index of sorted mapping to contaminant assembly, output from [Step 6c](#6c-sort-and-index-contaminant-alignments))
+- sample_sorted.bam (sorted mapping to contaminant assembly file, output from [Step 6c](#6c-sort-and-index-contaminant-alignments))
+- sample_sorted.bam.bai (index of sorted mapping to contaminant assembly file, output from [Step 6c](#6c-sort-and-index-contaminant-alignments))
 
 **Output Data:**
 
 - sample_flagstats.txt (SAM FLAG counts)
+- sample_flagstats.log (log file containing the flagstat standard error)
 - sample_stats.txt (comprehensive alignment statistics)
+- sample_stats.log (log file containing the stats standard error)
 - sample_idxstats.txt (contig alignment summary statistics)
+- sample_idxstats.log (log file containing the idxstats standard error)
 
 #### 6e. Generate Decontaminated Read Files
 ```bash
 # Retain reads that do not map to contaminants
-samtools fastq -t -f 4 sample_sorted.bam | gzip --to-stdout > sample_blank_removed.fastq.gz
+samtools fastq -t -f 4 sample_sorted.bam | gzip --to-stdout > sample_decontam.fastq.gz
 ```
 
 **Parameter Definitions:**
 
-- `fastq` - positional argument specifying the program for generating fastq files from a SAM/BAM file
-- `-t` - copy RG, BC, and QT tags to the FASTQ header line
-- `-f 4` - only retain unmapped reads that have been marked with the SAM "segment unmapped" FLAG (4)
-- `sample_sorted.bam` - positional argument specifying the input BAM file
-- `| gzip --to-stdout` - sends output from `samtools fastq` to `gzip` to create compressed fastq.gz file
-- `> sample_blank_removed.fastq.gz` - specifies the name of the file used to store the fastq.gz output
+- `fastq` - Positional argument specifying the program for generating fastq files from a SAM/BAM file.
+- `-t` - Copy RG, BC, and QT tags to the FASTQ header line.
+- `-f 4` - Only retain unmapped reads that have been marked with the SAM "segment unmapped" FLAG (4).
+- `sample_sorted.bam` - Positional argument specifying the input BAM file.
+- `| gzip --to-stdout` - Sends output from `samtools fastq` to `gzip` command to create a compressed fastq.gz file.
+- `--to-stdout` - Sends the output from the `gzip` command to standard out.
+- `> sample_decontam.fastq.gz` - Redirects the `gzip` standard output to a fastq.gz file.
 
 **Input Data:**
 
-- sample_sorted.bam (sorted mapping to contaminant assembly, output from [Step 6c](#6c-sort-and-index-contaminant-alignments))
+- sample_sorted.bam (sorted mapping to contaminant assembly file, output from [Step 6c](#6c-sort-and-index-contaminant-alignments))
 
 **Output Data:**
 
-- sample_blank_removed.fastq.gz (blank removed reads in fastq format)
+- sample_decontam.fastq.gz (filtered and trimmed sample reads with contaminants removed in fastq format)
 
 #### 6f. Contaminant Removal QC
 
 ```bash
 NanoPlot --only-report \
-         --prefix sample_ \
-         --outdir /path/to/noblank_nanoplot_output \
+         --prefix sample_noblank_ \
+         --outdir /path/to/decontam_nanoplot_output \
          --threads NumberOfThreads \
-         --fastq sample_blank_removed.fastq.gz
+         --fastq \
+         sample_decontam.fastq.gz
 ```
 
 **Parameter Definitions:**
 
-- `--outdir` – specifies the output directory to store results
-- `--only-report` - output only the report files
-- `--prefix` - adds a sample specific prefix to the name of each output file
-- `--threads` - number of parallel processing threads to use
-- `--fastq` - specifies that the input data is in a fastq format
-- `sample_blank_removed.fastq.gz` – the input reads are specified as a positional argument
+- `--only-report` - Output only the report files.
+- `--prefix` - Adds a sample specific prefix to the name of each output file.
+- `--outdir` – Specifies the output directory to store results.
+- `--threads` - Number of parallel processing threads to use.
+- `--fastq` - Specifies that the input data is in fastq format.
+- `sample_decontam.fastq.gz` – The input reads, specified as a positional argument.
 
 **Input Data:**
 
-- sample_blank_removed.fastq.gz (blank removed reads, output from [Step 6e](#6e-generate-decontaminated-read-files))
+- sample_decontam.fastq.gz (filtered and trimmed sample reads with contaminants removed, output from [Step 6e](#6e-generate-decontaminated-read-files))
 
 **Output Data:**
 
-- **/path/to/noblank_nanoplot_output/sample_NanoPlot-report.html** (NanoPlot html summary)
-- /path/to/noblank_nanoplot_output/sample_NanoPlot_<date>_<time>.log (NanoPlot log file)
-- /path/to/noblank_nanoplot_output/sample_NanoStats.txt (text file containing basic statistics)
+- **/path/to/decontam_nanoplot_output/sample_decontam_NanoPlot-report.html** (NanoPlot html summary)
+- /path/to/decontam_nanoplot_output/sample_decontam_NanoPlot_\<date\>_\<time\>.log (NanoPlot log file)
+- /path/to/decontam_nanoplot_output/sample_decontam_NanoStats.txt (text file containing basic statistics)
 
 
 #### 6g. Compile Contaminant Removal QC
 
 ```bash
 multiqc --zip-data-dir \ 
-        --outdir noblank_multiqc_report \
-        --filename noblank_multiqc \
-        --interactive /path/to/noblank_nanoplot_output/
+        --outdir decontam_multiqc_report \
+        --filename decontam_multiqc \
+        --interactive \
+        /path/to/decontam_nanoplot_output/
 ```
 
 **Parameter Definitions:**
 
-- `--zip-data-dir` - compress the data directory
-- `--outdir` – the output directory to store results
-- `--filename` – the filename prefix of results
-- `--interactive` - force multiqc to always create interactive javascript plots
-- `/path/to/noblank_nanoplot_output/` – the directory holding the output data from the NanoPlot run, provided as a positional argument
+- `--zip-data-dir` - Compress the data directory.
+- `--outdir` – Specifies the output directory to store results.
+- `--filename` – Specifies the filename prefix of results.
+- `--interactive` - Force multiqc to always create interactive javascript plots.
+- `/path/to/decontam_nanoplot_output/` – The directory holding the output data from the NanoPlot run, provided as a positional argument.
 
 **Input Data:**
 
-- /path/to/noblank_nanoplot_output/*NanoStats.txt (NanoPlot output data, output from [Step 6f](#6f-contaminant-removal-qc))
+- /path/to/decontam_nanoplot_output/*decontam_NanoStats.txt (NanoPlot output data, output from [Step 6f](#6f-contaminant-removal-qc))
 
 **Output Data:**
 
-- **noblank_multiqc_report/noblank_multiqc.html** (multiqc output html summary)
-- **noblank_multiqc_report/noblank_multiqc_data.zip** (zip archive containing multiqc output data)
+- **decontam_multiqc.html** (multiqc output html summary)
+- **decontam_multiqc_data.zip** (zip archive containing multiqc output data)
 
 <br>
 
 ---
 
-### 7. Host Removal
+### 7. Human Read Removal
 
-#### 7a. Build or download host database
-
-##### 7a.i. Download from URL
+#### 7a. Build Kraken2 Database
 
 ```bash
-  # Downloading and unpacking database from ${host_url}
-  wget -O host.tar.gz --timeout=3600 --tries=0 --continue  host_url
+kraken2-build --download-library human \
+              --db kraken2_human_db \
+              --threads numberOfThreads \
+              --no-masking
 
-  mkdir kraken2_host_db/ && \
-  tar -zxvf host.tar.gz -C kraken2_host_db/ && \
-  rm -rf  host.tar.gz # Cleaning up
+kraken2-build --download-taxonomy \
+              --db kraken2_human_db/
+
+kraken2-build --build \
+              --db kraken2_human_db/ \
+              --threads numberOfThreads
+ 
+kraken2-build --clean \
+              --db kraken2_human_db/
 ```
 
 **Parameter Definitions:**
 
-- `--timeout` - network timeout in seconds
-- `--tries` - number of times to retry the download
-- `--continue` - continue getting a partially downloaded file (if it exists)
-- `host_url` - positional argument specifying the URl for the host database
-
-**Output Data:**
-
-- kraken2_host_db/ - Kraken2 database directory
-
-
-##### 7a.ii. Build from custom reference
-
-```bash
-# Install taxonomy       
-kraken2-build --download-taxonomy --db kraken2_host_db/
-# Add sequence to your database's genomic library
-kraken2-build --add-to-library host_assembly.fasta --db kraken2_host_db/ --no-masking
-# Once your library is finalized, build the database
-kraken2-build --build --db kraken2_host_db/
-```
-
-**Parameter Definitions:**
-
-- `--download-taxonomy` - downloads taxonomic mapping information
-- `--add-to-library host_assembly.fasta` - specifies to add assembly fasta to library
-- `--db` - specifies the output directory for the kraken database
-- `--build` - specifies to construct kraken2-formatted database
+- `--download-library` - Specifies the reference name/type to download.
+- `--db` - Specifies the directory to put the database in.
+- `--threads` - Number of parallel processing threads to use.
+- `--no-masking` - Prevents masking of low-complexity sequences. For additional 
+                   information see the [kraken documentation for masking](https://github.com/DerrickWood/kraken2/wiki/Manual#masking-of-low-complexity-sequences).
+- `--download-taxonomy` - Downloads taxonomic mapping information.
+- `--build` - Specifies to construct kraken2-formatted database.
+- `--clean` - Specifies to remove unnecessary intermediate files.
 
 **Input Data:**
 
-- `host_assembly.fasta` - host genome assembly in fasta format 
+- `human` - database name to download (specified with the `--download-library` parameter above)
 
 **Output Data:**
 
-- kraken2_host_db/ - Kraken2 database directory
+- kraken2_human_db/ - Kraken2 human database directory, containing hash.k2d, opts.k2d, and taxo.k2d files 
 
 
-##### 7a.iii. Build from host name
+#### 7b. Remove Human Reads
 
 ```bash
-# Build kraken reference from host_name
-kraken2-build --download-library host_name  -db kraken2_host_db/ \
-              --threads numberOfThreads  --no-masking
-kraken2-build --download-taxonomy --db kraken2_host_db/
-kraken2-build --build --db kraken2_host_db/ --threads numberOfThreads 
-kraken2-build --clean --db kraken2_host_db/
+kraken2 --db kraken2_human_db \
+        --gzip-compressed \
+        --threads NumberOfThreads \
+        --use-names \
+        --output sample-kraken2-output.txt \
+        --report sample-kraken2-report.tsv \
+        --unclassified-out sample_HRrm.fasta \
+        sample_decontam.fastq.gz
+
+# add ">" before each sequence name and gzip fasta output file
+sed -i -E 's/^([a-z0-9])/>\1/g' sample_HRrm.fasta | gzip 
 ```
 
 **Parameter Definitions:**
 
-- `--download-library` - specifies the reference name/type to download, host_name must 
-                         be one of: "archaea", "bacteria", "plasmid", "viral", "human", 
-                         "fungi", "plant", "protozoa", "nr", "nt", "UniVec", "UniVec_Core"
-- `--db` - specifies the directory we are putting the database in
-- `--threads` - number of parallel processing threads to use
-- `--no-masking` - prevents masking of low-complexity sequences. For additional 
-                   information see the [kraken documentation for masking](https://github.com/DerrickWood/kraken2/wiki/Manual#masking-of-low-complexity-sequences)
-- `--download-taxonomy` - downloads taxonomic mapping information
-- `--build` - specifies to construct kraken2-formatted database
-- `--clean` - specifies to remove unnecessarily intermediate files
+- `--db` - Specifies the directory holding the kraken2 database.
+- `--gzip-compressed` - Specifies that the input fastq files are gzip-compressed.
+- `--threads` - Number of parallel processing threads to use.
+- `--use-names` - Specifies adding taxa names in addition to taxon IDs.
+- `--output` - Specifies the name of the kraken2 read-based output file (one line per read).
+- `--report` - Specifies the name of the kraken2 report output file (one line per taxa, with number of reads assigned to it).
+- `--unclassified-out` - Specifies the name of the output file containing reads that were not classified, i.e non-human reads.
+- `sample_decontam.fastq.gz` - Positional argument specifying the input read file.
 
 **Input Data:**
 
-- `host_name` - host database name (one of those specified in `--download-library` above)
-
-**Output Data:**
-
-- kraken2_host_db/ - Kraken2 database directory
-
-#### 7b. Remove host reads
-
-```bash
-kraken2 --db kraken2_host_db/ --gzip-compressed --threads NumberOfThreads --use-names \
-        --output sample-kraken2-output.txt --report sample-kraken2-report.tsv \
-        --unclassified-out sample_host_removed.fastq sample_blank_removed.fastq.gz
-gzip sample_host_removed.fastq
-```
-
-**Parameter Definitions:**
-
-- `--db` - specifies the directory holding the kraken2 database files created in [Step 7a](#7a-build-or-download-host-database)
-- `--gzip-compressed` - specifies the input fastq files are gzip-compressed
-- `--threads` - number of parallel processing threads to use
-- `--use-names` - specifies adding taxa names in addition to taxon IDs
-- `--output` - specifies the name of the kraken2 read-based output file (one line per read)
-- `--report` - specifies the name of the kraken2 report output file (one line per taxa, with number of reads assigned to it)
-- `--unclassified-out` - name of output file of reads that were not classified i.e non-host reads.
-- `sample_blank_removed.fastq.gz` - positional argument specifying the input read file
-
-**Input Data:**
-
-- sample_blank_removed.fastq.gz (gzipped blank removed fastq file, output from [Step 6d](#6d-generate-decontaminated-read-files))
+- kraken2_human_db/ (kraken2 human database directory, output from [Step 7a](#7a-build-kraken2-database))
+- sample_decontam.fastq.gz (filtered and trimmed sample reads with contaminants removed, output from [Step 6e](#6e-generate-decontaminated-read-files))
 
 **Output Data:**
 
 - sample-kraken2-output.txt (kraken2 read-based output file (one line per read))
 - sample-kraken2-report.tsv (kraken2 report output file (one line per taxa, with number of reads assigned to it))
-- **sample_host_removed.fastq.gz** (host-read removed, gzipped fastq file)
+- **sample_HRrm.fasta.gz** (filtered and trimmed sample reads with both contaminants and human reads removed, gzipped fasta file)
+
+
+#### 7c. Compile Human Read Removal QC
+
+```bash
+multiqc --zip-data-dir \ 
+        --outdir HRrm_multiqc_report \
+        --filename HRrm_multiqc \
+        --interactive \
+        /path/to/*kraken2-report.tsv
+```
+
+**Parameter Definitions:**
+
+- `--zip-data-dir` - Compress the data directory.
+- `--outdir` – Specifies the output directory to store results.
+- `--filename` – Specifies the filename prefix of results.
+- `--interactive` - Force multiqc to always create interactive javascript plots.
+- `/path/to/*kraken2-report.tsv` – The kraken2 output report files, provided as a positional argument.
+
+**Input Data:**
+
+- /path/to/*kraken2-report.tsv (kraken2 report files, output from [Step 7b](#7b-remove-human-reads))
+
+**Output Data:**
+
+- **HRrm_multiqc.html** (multiqc output html summary)
+- **HRrm_multiqc_data.zip** (zip archive containing multiqc output data)
 
 <br>
 
@@ -1408,23 +1447,25 @@ colours <- colorRampPalette(c('white','red'))(255)
 
 ## Read-based Processing
 
-### 9. Taxonomic profiling using kaiju
+### 9. Taxonomic Profiling Using Kaiju
 
-#### 9a. Build kaiju database
+#### 9a. Build Kaiju Database
 
 ```bash
 # Make a directory that will hold the downloaded kaiju database
 mkdir kaiju-db/ && cd kaiju-db/
+
 # Download kaiju's reference database
 kaiju-makedb -s nr_euk -t NumberOfThreads
-# Cleaning up
+
+# Clean up
 rm nr_euk/kaiju_db_nr_euk.bwt nr_euk/kaiju_db_nr_euk.sa
 ```
 
 **Parameter Definitions:**
 
-- `-t` - number of parallel processing threads to use
-- `-s nr_euk` - specifies to download NCBI's nr and additionally including fungi and microbial eukaryotes databases
+- `-s nr_euk` - Specifies to download the subset of the NCBI BLAST nr (non-redundant) database containing all proteins belonging to Archaea, bacteria, and viruses, and additionally include proteins from fungi and microbial eukaryotes.
+- `-t` - Number of parallel processing threads to use.
 
 **Input Data:**
 
@@ -1432,107 +1473,119 @@ rm nr_euk/kaiju_db_nr_euk.bwt nr_euk/kaiju_db_nr_euk.sa
 
 **Output Data:**
 
-- kaiju-db/nr_euk/kaiju_db_nr_euk.fmi (fmi file)
-- kaiju-db/nodes.dmp (nodes file)
-- kaiju-db/names.dmp (names file)
+- kaiju-db/nr_euk/kaiju_db_nr_euk.fmi (FM-index file containing the main Kaiju database index)
+- kaiju-db/nr_euk/kaiju_db_nr_euk.faa (FASTA amino acid file containing the protein sequences used to build the .fmi index file)
+- kaiju-db/nodes.dmp (taxonomy hierarchy file from the NCBI Taxonomy database defining the parent-child relationships in the taxonomic tree)
+- kaiju-db/names.dmp (taxonomy names file from the NCBI Taxonomy database that maps taxonomic IDs to their scientific names)
+- kaiju-db/merged.dmp (merged taxonomy IDs file from the NCBI Taxonomy database that maps deprecated taxonomic IDs to current ones)
 
 
 #### 9b. Kaiju Taxonomic Classification
 
 ```bash
-kaiju -f kaiju-db/nr_euk/kaiju_db_nr_euk.fmi -t kaiju-db/nodes.dmp \
-    -z NumberOfThreads \
-    -E 1e-05 \
-    -i /path/to/decontaminated_reads/sample_host_removed.fastq.gz \
-    -o sample_kaiju.out
+kaiju -f kaiju-db/nr_euk/kaiju_db_nr_euk.fmi \
+      -t kaiju-db/nodes.dmp \
+      -z NumberOfThreads \
+      -E 1e-05 \
+      -i /path/to/sample_HRrm.fasta.gz \
+      -o sample_kaiju.out
 ```
 
 **Parameter Definitions:**
 
-- `-f` - specifies path to the kaiju database (.fmi) file
-- `-t` - specifies path to the kaiju nodes.dmp file
-- `-z` - number of parallel processing threads to use
-- `-E` - specifies the minimum E-value in Greedy mode (default: 1e-05)
-- `-i` - specifies path to the input file
-- `-o` - specifies the name of output file
+- `-f` - Specifies the path to the kaiju database index file (.fmi).
+- `-t` - Specifies the path to the kaiju taxonomy hierarchy file (nodes.dmp).
+- `-z` - Number of parallel processing threads to use.
+- `-E` - Specifies the minimum E-value to use for filter matches (an E-value of 1e-05 means that there's a 0.001% chance that the matches identified occurred randomly).
+- `-i` - Specifies path to the input file.
+- `-o` - Specifies the name of the output file.
 
 **Input Data:**
 
-- kaiju-db/nr_euk/kaiju_db_nr_euk.fmi (fmi file, output from [Step 9a](#9a-build-kaiju-database))
-- kaiju-db/nodes.dmp (nodes file, output from [Step 9a](#9a-build-kaiju-database))
-- sample_host_removed.fastq.gz (gzipped decontaminated reads fastq file, output from [Step 7b](#7b-remove-host-reads))
+- kaiju-db/nr_euk/kaiju_db_nr_euk.fmi (FM-index file containing the main Kaiju database index, output from [Step 9a](#9a-build-kaiju-database))
+- kaiju-db/nodes.dmp (kaiju taxonomy hierarchy nodes file, output from [Step 9a](#9a-build-kaiju-database))
+- sample_HRrm.fasta.gz (filtered and trimmed sample reads with both contaminants and human reads removed, gzipped fasta file, output from [Step 7b](#7b-remove-host-reads))
 
 **Output Data:**
 
 - sample_kaiju.out (kaiju output file)
 
-#### 9c. Compile kaiju taxonomy results
+#### 9c. Compile Kaiju Taxonomy Results
 
 ```bash
-# Merge kaiju reports to one table at the species level
-  kaiju2table -t nodes.dmp -n names.dmp -p -r species \
-              -o merged_kaiju_table.tsv *_kaiju.out
+# Merge kaiju reports to one table at each taxonomic level, phylum, class, order, family, genus, species 
+kaiju2table -t nodes.dmp \
+            -n names.dmp \
+            -p \
+            -r ${TAXON_LEVEL} \
+            -o merged_kaiju_summary_${TAXON_LEVEL}.tsv \
+            *_kaiju.out
 
 # Convert file names to sample names
-sed -i -E 's/.+\/(.+)_kaiju\.out/\1/g' merged_kaiju_table.tsv && \
-sed -i -E 's/file/sample/' merged_kaiju_table.tsv
+sed -i -E 's/.+\/(.+)_kaiju\.out/\1/g' merged_kaiju_summary_${TAXON_LEVEL}.tsv && \
+sed -i -E 's/file/sample/' merged_kaiju_summary_${TAXON_LEVEL}.tsv
 ```
 
 **Parameter Definitions:**
 
-- `-n` - specifies path to the kaiju names.dmp file
-- `-t` - specifies path to the kaiju nodes.dmp file
-- `-r` - specifies taxonomic rank, must be one of: phylum, class, order, family, genus, species
-- `-o` - specifies the name of krona formatted kaiju output file
-- `*_kaiju.out` - positional argument specifying the path to the kaiju output file (output from [Step 9ai](#9ai-read-taxonomic-classification-using-kaiju))
+- `-t` - Specifies the path to the kaiju taxonomy hierarchy file (nodes.dmp).
+- `-n` - Specifies the path to the kaiju taxonomy names file (names.dmp).
+- `-p` - Print the full taxon path instead of only the taxon name.
+- `-r` - Specifies taxonomic rank to print the taxon path to, must be one of: phylum, class, order, family, genus, species.
+- `-o` - Specifies the name of the kaiju taxon summary output file.
+- `*_kaiju.out` - Positional argument specifying the path to the kaiju output files for each sample. 
 
 **Input Data:**
 
-- kaiju-db/nodes.dmp (nodes file, output from [Step 9a](#9a-build-kaiju-database))
-- kaiju-db/names.dmp (names file, output from [Step 9a](#9a-build-kaiju-database))
-- *kaiju.out (kaiju report files, output from [Step 9b](#9b-kaiju-taxonomic-classification))
+- kaiju-db/nodes.dmp (kaiju taxonomy hierarchy nodes file, output from [Step 9a](#9a-build-kaiju-database))
+- kaiju-db/names.dmp (kaiju taxonomy names file, output from [Step 9a](#9a-build-kaiju-database))
+- *kaiju.out (kaiju output files, output from [Step 9b](#9b-kaiju-taxonomic-classification))
 
 **Output Data:**
 
-- **merged_kaiju_table.tsv** (Compiled kaiju table at the species taxon level)
+- **merged_kaiju_summary_${TAXON_LEVEL}.tsv** (compiled kaiju summary table for each taxon level)
 
-#### 9d. Convert kaiju output to krona format
+#### 9d. Convert Kaiju Output To Krona Format
 
 ```bash
-kaiju2krona -u -n kaiju-db/names.dmp -t kaiju-db/nodes.dmp \
-            -i sample_kaiju.out -o sample.krona
+kaiju2krona -u \
+            -n kaiju-db/names.dmp \
+            -t kaiju-db/nodes.dmp \
+            -i sample_kaiju.out \
+            -o sample.krona
 ```
 
 **Parameter Definitions:**
 
-- `-u` - include count for unclassified reads in output
-- `-n` - specifies path to the kaiju names.dmp file
-- `-t` - specifies path to the kaiju nodes.dmp file
-- `-i` - specifies path to the kaiju output file (output from [Step 9b](#9b-kaiju-taxonomic-classification))
-- `-o` - specifies the name of krona formatted kaiju output file
+- `-u` - Include count for unclassified reads in output.
+- `-n` - Specifies the path to the kaiju taxonomy names file (names.dmp).
+- `-t` - Specifies the path to the kaiju taxonomy hierarchy file (nodes.dmp).
+- `-i` - Specifies the path to the kaiju output file.
+- `-o` - Specifies the name of krona formatted kaiju output file.
 
 **Input Data:**
-- kaiju-db/nodes.dmp (nodes file, output from [Step 9a](#9a-build-kaiju-database))
-- kaiju-db/names.dmp (names file, output from [Step 9a](#9a-build-kaiju-database))
+- kaiju-db/names.dmp (kaiju taxonomy names file, output from [Step 9a](#9a-build-kaiju-database))
+- kaiju-db/nodes.dmp (kaiju taxonomy hierarchy nodes file, output from [Step 9a](#9a-build-kaiju-database))
 - sample_kaiju.out (kaiju output file, output from [Step 9b](#9b-kaiju-taxonomic-classification))
 
 **Output Data:**
 
 - sample.krona (krona formatted kaiju output)
 
-#### 9e. Compile kaiju krona report
+#### 9e. Compile Kaiju Krona Reports
 
 ```bash
-# Find, list and write all .krona files to file 
-find . -type f -name "*.krona" |sort -uV > krona_files.txt
+# Create a file containing a sorted list of all .krona files 
+find . -type f -name "*.krona" | sort -uV > krona_files.txt
 
+# Create a file containing a sorted list of all sample names
 FILES=($(find . -type f -name "*.krona"))
 basename --multiple --suffix='.krona' ${FILES[*]} | sort -uV  > sample_names.txt
 
 # Create ktImportText input format files
 KTEXT_FILES=($(paste -d',' "krona_files.txt" "sample_names.txt"))
 
-# Create html   
+# Create html containing krona plot  
 ktImportText  -o kaiju-report.html ${KTEXT_FILES[*]}
 ```
 
@@ -1540,39 +1593,42 @@ ktImportText  -o kaiju-report.html ${KTEXT_FILES[*]}
 
 **find**
 
-- `-type f` -  specifies that the type of file to find is a regular file
-- `-name "*.krona"` - specifies to find files ending with the .krona suffix  
+- `-type f` -  Specifies that the type of file to find is a regular file.
+- `-name "*.krona"` - Specifies to find files ending with the .krona suffix.  
 
 **sort**
 
-- `-u` - specifies to perform a unique sort
-- `-V` - specifies to perform a mixed type of sorting
+- `-u` - Specifies to perform a unique sort.
+- `-V` - Specifies to perform a mixed type of sorting with names containing numbers within text.
+- `> {}.txt` - Redirects the sorted list to a separate text file.
 
 **basename**
 
-- `--multiple` - support multiple arguments and treat each as a file name
-- `--suffix='.krona'` - remove a trailing '.krona' suffix
+- `--multiple` - Support multiple arguments and treat each as a file name.
+- `--suffix='.krona'` - Remove a trailing '.krona' suffix.
 
 **paste**
 
-- `-d','` - paste both krona and sample files together line by line delimited by comma ','
+- `-d','` - Paste both krona and sample files together line by line delimited by comma ','.
 
 **ktImportText**
 
-- `-o` - specifies the compiled output html file name
-- `${KTEXT_FILES[*]}` - an array positional arguement with the following content: 
-                     sample_1.krona,sample_1 sample_2.krona,sample_2 .. sample_n.krona,sample_n.
+- `-o` - Specifies the compiled output html file name.
+- `${KTEXT_FILES[*]}` - An array positional arguement with the following content: 
+                     sample_1.krona,sample_1 sample_2.krona,sample_2 ... sample_n.krona,sample_n.
 
 **Input Data:**
-*.krona (all sample .krona formatted files, output from [Step 9d](#9d-convert-kaiju-output-to-krona-format)) 
+- *.krona (all sample .krona formatted files, output from [Step 9d](#9d-convert-kaiju-output-to-krona-format)) 
 
                       
 **Output Data:**
 
-- **kaiju-report.html** (compiled krona html report output)
+- krona_files.txt (sorted list of all *.krona files)
+- sample_names.txt (sorted list of all sample names)
+- **kaiju-report.html** (compiled krona html report containing all samples)
 
 
-#### 9f. Create kaiju species count table
+#### 9f. Create Kaiju Species Count Table --- START NEEDS REVIEW ---
 
 ```R
 library(tidyverse)
@@ -1697,7 +1753,7 @@ ggsave(filename = "filtered-kaiju_species_plot.png", plot = p,
 - **filtered-kaiju_species_plot.png** (barplot after filtering rare and non-microbial taxa)
 
 
-#### 9i. Feature decontamination
+#### 9i. Feature decontamination --- END NEEDS REVIEW ---
 
 > Feature (species) decontamination with decontam. Decontam is an R package that statistically identifies contaminating features in a feature table
 
@@ -1777,14 +1833,14 @@ ggsave(filename = "decontaminated-kaiju-species_plot.png", plot = p,
 
 ---
 
-### 10. Taxonomic Profiling using Kraken2
+### 10. Taxonomic Profiling Using Kraken2
 
-#### 10a. Download kraken2 database
+#### 10a. Download Kraken2 Database
 
 ```bash 
 ## Download all microbial (including eukaryotes) - https://benlangmead.github.io/aws-indexes/k2
 
-# Downloading and building kraken2's pluspfp database which contains that standard database + plants + protists + fungi..
+# Downloading and building kraken2's pluspfp database which contains the standard database (Refseq archaea, bacteria, viral, plasmid, human1, UniVec_Core) + plants + protists + fungi
 
 mkdir kraken2-db/ && cd kraken2-db/
 
@@ -1810,62 +1866,121 @@ tar -xvzf k2_pluspfp.tar.gz
 
 **wget**
 
-- `O` - name of file to download the url content to
-- `--timeout=3600` - specifies the network timeout in seconds
-- `--tries=0` - retry downdload infinitely
-- `--continue` -  continue getting a partially-downloaded file
-- `*_URL` - position arguement specifying the url to download a particular resource from.
+- `O` - Name of file to download the url content to.
+- `--timeout=3600` - Specifies the network timeout in seconds.
+- `--tries=0` - Retry download infinitely.
+- `--continue` -  Continue getting a partially-downloaded file.
+- `*_URL` - Position arguement specifying the url to download a particular resource from.
 
 
 **Input Data:**
 
 - `INSPECT_URL=` - url specifying the location of kraken2 inspect file
-- `LIRARY_REPORT_URL=` -  url specifying the location of kraken2 library report file
-- `MD5_URL=` -  url specifying the location of the md5 file of the kraken database
+- `LIRARY_REPORT_URL=` - url specifying the location of kraken2 library report file
+- `MD5_URL=` - url specifying the location of the md5 file of the kraken database
 - `DB_URL=` - url specifying the location of the main kraken database archive in .tar.gz format
 
 **Output Data:**
 
-- kraken2-db/  (a directory containing kraken 2 database files)
+- kraken2-db/  (a directory containing kraken2 database files)
 
-#### 10b. Taxonomic Classification
+#### 10b. Kraken2 Taxonomic Classification
 
 ```bash
-kraken2 --db kraken2-db/ --gzip-compressed --threads NumberOfThreads --use-names \
-        --output sample-kraken2-output.txt --report sample-kraken2-report.tsv \
-        /path/to/decontaminated_reads/sample_host_removed.fastq.gz
+kraken2 --db kraken2-db/ \
+        --gzip-compressed \
+        --threads NumberOfThreads \
+        --use-names \
+        --output sample-kraken2-output.txt \
+        --report sample-kraken2-report.tsv \
+        /path/to/sample_HRrm.fasta.gz
 ```
 
 **Parameter Definitions:**
 
-- `--db` - specifies the directory holding the kraken2 database files 
-- `--gzip-compressed` - specifies the input fastq files are gzip-compressed
-- `--threads` - number of parallel processing threads to use
-- `--use-names` - specifies adding taxa names in addition to taxids
-- `--output` - specifies the name of the kraken2 read-based output file (one line per read)
-- `--report` - specifies the name of the kraken2 report output file (one line per taxa, with number of reads assigned to it)
-- `sample_host_removed.fastq.gz` - positional argument specifying the input read file
+- `--db` - Specifies the directory holding the kraken2 database files. 
+- `--gzip-compressed` - Specifies the input files are gzip-compressed.
+- `--threads` - Number of parallel processing threads to use.
+- `--use-names` - Specifies to add taxa names in addition to taxids.
+- `--output` - Specifies the name of the kraken2 read-based output file.
+- `--report` - Specifies the name of the kraken2 report output file.
+- `sample_HRrm.fasta.gz` - Positional argument specifying the input file.
 
 **Input Data:**
 
-- kraken2-db/ (a directory containing kraken 2 database files, output from [Step 10a](#10a-download-kraken2-database))
-- sample_host_removed.fastq.gz (gzipped reads fastq file, output from [Step 7b](#7b-remove-host-reads))
+- kraken2-db/ (a directory containing kraken2 database files, output from [Step 10a](#10a-download-kraken2-database))
+- sample_HRrm.fasta.gz (filtered and trimmed sample reads with both contaminants and human reads removed, gzipped fasta file, output from [Step 7b](#7b-remove-host-reads))
 
 **Output Data:**
 
 - sample-kraken2-output.txt (kraken2 read-based output file (one line per read))
 - sample-kraken2-report.tsv (kraken2 report output file (one line per taxa, with number of reads assigned to it))
 
-#### 10c. Convert Kraken2 output to Krona format
+
+#### 10c. Compile Kraken2 Taxonomy Results
+
+##### 10ci. Create Merged Kraken2 Taxonomy Table
 
 ```bash
-kreport2krona.py --report-file sample-kraken2-report.tsv  --output sample.krona
+combine_kreports.py --output merged-kraken2-table.tsv \
+                    --report-files sample1-kraken2-report.tsv sample2-kraken2-report.tsv ... sampleN-kraken2-report.tsv \
+                    --sample-names sample1 sample2 ... sampleN
 ```
 
 **Parameter Definitions:**
 
-- `--output` - specifies the name of the krona output file
-- `--report-file` - specifies the name of the input kraken2 report file
+- `--output` - Specifies the name of the kraken2 compiled results output file.
+- `--report-files` - Specifies the name of each input kraken2 report file to compile.
+- `--sample-names` - Specifies the name of each sample. 
+
+**Input Data:**
+
+- \*-kraken2-report.tsv (kraken report from each sample to compile, outputs from [Step 10b](#10b-taxonomic-classification))
+
+**Output Data:**
+
+- **merged-kraken2-table.tsv** (table containing compiled kraken2 reports)
+
+
+##### 10cii. Compile Kraken2 Taxonomy Reports
+
+```bash
+multiqc --zip-data-dir \ 
+        --outdir kraken2_multiqc_report \
+        --filename kraken2_multiqc \
+        --interactive \
+        /path/to/*kraken2-report.tsv
+```
+
+**Parameter Definitions:**
+
+- `--zip-data-dir` - Compress the data directory.
+- `--outdir` - Specifies the output directory to store results.
+- `--filename` - Specifies the filename prefix of results.
+- `--interactive` - Force multiqc to always create interactive javascript plots.
+- `/path/to/*kraken2-report.tsv` - The kraken2 output report files, provided as a positional argument.
+
+**Input Data:**
+
+- \*-kraken2-report.tsv (kraken report from each sample to compile, outputs from [Step 10b](#10b-taxonomic-classification))
+
+**Output Data:**
+
+- **kraken2_multiqc.html** (multiqc output html summary)
+- **kraken2_multiqc_data.zip** (zip archive containing multiqc output data)
+
+
+#### 10d. Convert Kraken2 Output to Krona Format
+
+```bash
+kreport2krona.py --report-file sample-kraken2-report.tsv  \
+                 --output sample.krona
+```
+
+**Parameter Definitions:**
+
+- `--report-file` - Specifies the name of the input kraken2 report file.
+- `--output` - Specifies the name of the krona output file.
 
 **Input Data:**
 
@@ -1876,11 +1991,11 @@ kreport2krona.py --report-file sample-kraken2-report.tsv  --output sample.krona
 - sample.krona (krona formatted kraken2 output)
 
 
-#### 10d. Compile kraken2 krona report
+#### 10e. Compile Kraken2 Krona Reports
 
 ```bash
 # Find, list and write all .krona files to file 
-find . -type f -name "*.krona" |sort -uV > krona_files.txt
+find . -type f -name "*.krona" | sort -uV > krona_files.txt
 
 FILES=($(find . -type f -name "*.krona"))
 basename --multiple --suffix='.krona' ${FILES[*]} | sort -uV  > sample_names.txt
@@ -1889,46 +2004,49 @@ basename --multiple --suffix='.krona' ${FILES[*]} | sort -uV  > sample_names.txt
 KTEXT_FILES=($(paste -d',' "krona_files.txt" "sample_names.txt"))
 
 # Create html   
-ktImportText  -o kraken-report.html ${KTEXT_FILES[*]}
+ktImportText -o kraken2-report.html ${KTEXT_FILES[*]}
 ```
 
 **Parameter Definitions:**
 
 **find**
 
-- `-type f` -  specifies that the type of file to find is a regular file
-- `-name "*.krona"` - specifies to find files ending with the .krona suffix  
+- `-type f` -  Specifies that the type of file to find is a regular file.
+- `-name "*.krona"` - Specifies to find files ending with the .krona suffix.  
 
 **sort**
 
-- `-u` - specifies to perform a unique sort
-- `-V` - specifies to perform a mixed type of sorting
+- `-u` - Specifies to perform a unique sort.
+- `-V` - Specifies to perform a mixed type of sorting with names containing numbers within text.
+- `> {}.txt` - Redirects the sorted list to a separate text file.
 
 **basename**
 
-- `--multiple` - support multiple arguments and treat each as a file name
-- `--suffix='.krona'` - remove a trailing '.krona' suffix
+- `--multiple` - Support multiple arguments and treat each as a file name.
+- `--suffix='.krona'` - Remove a trailing '.krona' suffix.
 
 **paste**
 
-- `-d','` - paste both krona and sample files together line by line delimited by comma ','
+- `-d','` - Paste both krona and sample files together line by line delimited by comma ','.
 
 **ktImportText**
 
-- `-o` - specifies the compiled output html file name
-- `${KTEXT_FILES[*]}` - an array positional arguement with the following content: 
-                     sample_1.krona,sample_1 sample_2.krona,sample_2 .. sample_n.krona,sample_n.
+- `-o` - Specifies the compiled output html file name.
+- `${KTEXT_FILES[*]}` - An array positional arguement with the following content: sample_1.krona,sample_1 sample_2.krona,sample_2 .. sample_n.krona,sample_n.
 
 **Input Data:**
 
-- *.krona (all sample .krona formatted files, output from [Step 10c](#10c-convert-kraken2-output-to-krona-format)) 
+- *.krona (all sample .krona formatted files, output from [Step 10d](#10d-convert-kraken2-output-to-krona-format)) 
 
                       
 **Output Data:**
 
-- **kraken-report.html** (compiled krona html report output)
+- krona_files.txt (sorted list of all *.krona files)
+- sample_names.txt (sorted list of all sample names)
+- **kraken2-report.html** (compiled krona html report containing all samples)
 
-#### 10e. Create kraken species count table
+
+#### 10f. Create Kraken2 Species Count Table --- START NEEDS REVIEW ---
 
 ```R
 library(tidyverse)
@@ -1958,7 +2076,8 @@ write_csv(x = table2write,
 
 - **kraken_species_table.csv** (kraken species count table in csv format)
 
-#### 10f. Read-in tables
+
+#### 10g. Read-in tables
 
 ```R
 library(tidyverse)
@@ -1984,7 +2103,7 @@ species_table <- species_table[,-match("Species", colnames(species_table))]
 **Input Data:**
 
 - metadata_file  (path to sample-wise metadata file)
-- kraken_species_table.csv (path to kraken species taable)
+- kraken_species_table.csv (path to kraken species table)
 
 **Output Data:**
 
@@ -1992,7 +2111,7 @@ species_table <- species_table[,-match("Species", colnames(species_table))]
 - species_table (a dataframe of species count with rows and columns as species and sample names, respectively)
 
 
-#### 10g. Taxonomy barplots
+#### 10h. Taxonomy barplots
 
 ```R
 library(tidyverse)
@@ -2048,8 +2167,8 @@ ggsave(filename = "filtered-kraken_species_plot.png", plot = p,
 
 **Input Data:**
 
-- `species_table` (a dataframe of species count per sample, output from [Step 10f](#10f-read-in-tables))
-- `metadata` - (a dataframe of sample-wise metadata, output from [Step 10f](#10f-read-in-tables))
+- `species_table` (a dataframe of species count per sample, output from [Step 10g](#10g-read-in-tables))
+- `metadata` - (a dataframe of sample-wise metadata, output from [Step 10g](#10g-read-in-tables))
 
 **Output Data:**
 
@@ -2058,7 +2177,7 @@ ggsave(filename = "filtered-kraken_species_plot.png", plot = p,
 - **filtered-kraken_species_plot.png** (barplot after filtering rare and non-microbial taxa)
 
 
-#### 10h. Feature decontamination
+#### 10i. Feature decontamination --- END NEEDS REVIEW ---
 
 Feature decontamination with decontam. Decontam is an R package that statistically identifies contaminating features in a feature table.
 
@@ -2127,8 +2246,8 @@ ggsave(filename = "decontaminated-kraken-species_plot.png", plot = p,
 
 **Input Data:**
 
-- `filtered-kraken_species_table.csv`(path to species count per sample, output from [Step 10g](#10g-taxonomy-barplots))
-- `metadata`(a dataframe of sample-wise metadata, output from step[Step 10f](#10f-read-in-tables))
+- `filtered-kraken_species_table.csv`(path to species count per sample, output from [Step 10h](#10h-taxonomy-barplots))
+- `metadata`(a dataframe of sample-wise metadata, output from step[Step 10g](#10g-read-in-tables))
 
 **Output Data:**
 
@@ -2140,13 +2259,16 @@ ggsave(filename = "decontaminated-kraken-species_plot.png", plot = p,
 
 ---
 
-## Assembly-based processing
+## Assembly-based Processing
 
-### 11. Sample assembly
+### 11. Sample Assembly
 
 ```bash
-flye --meta --threads NumberOfThreads --out-dir sample/ \
-     --nano-hq /path/to/decontaminated_raw_data/sample_host_removed.fastq.gz
+flye --meta \
+     --threads NumberOfThreads \
+     --out-dir sample/ \
+     --nano-hq \
+     /path/to/sample_HRrm.fasta.gz
 
 # rename output files            
 mv sample/assembly.fasta sample_assembly.fasta
@@ -2155,14 +2277,15 @@ mv sample/flye.log sample_flye.log
 
 **Parameter Definitions:**
 
-- `--meta` – use metagenome/uneven coverage mode
-- `--threads` - number of parallel processing threads to use
-- `--out-dir` - Output directory
-- `--nano-hq` - specifies that input is from Oxford Nanopore high-quality reads (Guppy5+ SUP or Q20, <5% error). This skips a genome polishing step since the assembly will be polished with medaka in the next step
+- `--meta` – Use metagenome/uneven coverage mode.
+- `--threads` - Number of parallel processing threads to use.
+- `--out-dir` - Specifies the name of the output directory.
+- `--nano-hq` - Specifies that input is from Oxford Nanopore high-quality reads (Guppy5+ SUP or Q20, <5% error). This skips a genome polishing step since the assembly will be polished with medaka in the next step.
+- `/path/to/sample_HRrm.fasta.gz` - Path to the input file, specified as a positional argument.
 
 **Input Data**
 
-- sample_host_removed.fastq.gz (decontaminated raw data in fastq format, output from [Step 7b](#7b-remove-host-reads))
+- sample_HRrm.fasta.gz (filtered and trimmed sample reads with both contaminants and human reads removed, gzipped fasta file, output from [Step 7b](#7b-remove-host-reads))
 
 **Output Data**
 
@@ -2173,25 +2296,27 @@ mv sample/flye.log sample_flye.log
 
 ---
 
-### 12. Polish assembly
+### 12. Polish Assembly
 
 ```bash
-medaka_consensus -t NumberOfThreads -i /path/to/decontaminated_raw_data/sample_host_removed.fastq.gz \
-  -d /path/to/assemblies/sample_assembly.fasta -o sample/
+medaka_consensus -t NumberOfThreads \
+                 -i /path/to/sample_HRrm.fasta.gz \
+                 -d /path/to/assemblies/sample_assembly.fasta \
+                 -o sample/
   
 mv sample/consensus.fasta sample_polished.fasta
 ```
 
 **Parameter Definitions:**
 
-- `-t` - number of parallel processing threads to use
-- `-i` - specifies path to input read files used in creating the assembly
-- `-d` - specifies path to the assembly fasta file
-- `-o` - specifies the output directory
+- `-t` - Number of parallel processing threads to use.
+- `-i` - Specifies path to input read files used in creating the assembly.
+- `-d` - Specifies path to the assembly fasta file.
+- `-o` - Specifies the output directory.
 
 **Input Data:**
 
-- /path/to/decontaminated_raw_data/sample_host_removed.fastq.gz (decontaminated raw data in fastq format, output from [Step 7b](#8b-remove-host-reads))
+- sample_HRrm.fasta.gz (filtered and trimmed sample reads with both contaminants and human reads removed, gzipped fasta file, output from [Step 7b](#7b-remove-host-reads))
 - /path/to/assemblies/sample_assembly.fasta (sample assembly, output from [Step 11](#11-sample-assembly))
 
 **Output Data:**
@@ -2200,19 +2325,21 @@ mv sample/consensus.fasta sample_polished.fasta
 
 ---
 
-### 13. Renaming contigs and summarizing assemblies
+### 13. Rename Contigs and Summarize Assemblies
 
-#### 13a. Renaming contig headers
+#### 13a. Rename Contig Headers
 
 ```bash
-bit-rename-fasta-headers -i sample_polished.fasta -w c_sample -o sample_assembly.fasta
+bit-rename-fasta-headers -i sample_polished.fasta \
+                         -w c_sample \
+                         -o sample_assembly.fasta
 ```
 
 **Parameter Definitions:**  
 
-- `-i` – input fasta file
-- `-w` – wanted header prefix (a number will be appended for each contig), starts with a "c" to ensure they won't start with a number which can be problematic
-- `-o` – output fasta file
+- `-i` – Specifies the input fasta file.
+- `-w` – Specifies the wanted header prefix (a number will be appended for each contig), starts with a "c" to ensure they won't start with a number which can be problematic.
+- `-o` – Specifies the output fasta file.
 
 
 **Input Data:**
@@ -2224,16 +2351,17 @@ bit-rename-fasta-headers -i sample_polished.fasta -w c_sample -o sample_assembly
 - **sample-assembly.fasta** (contig-renamed assembly file)
 
 
-#### 13b. Summarizing assemblies
+#### 13b. Summarize Assemblies
 
 ```bash
-bit-summarize-assembly -o assembly-summaries_GLmetagenomics.tsv *-assembly.fasta
+bit-summarize-assembly -o assembly-summaries_GLmetagenomics.tsv \
+                       *-assembly.fasta
 ```
 
 **Parameter Definitions:**  
 
-- `-o` – output summary table
-- `*-assembly.fasta` - multiple input assemblies provided as positional arguments
+- `-o` – Specifies the output summary table.
+- `*-assembly.fasta` - Specifies the input assemblies to summarize, provided as positional arguments.
 
 **Input Data:**
 
@@ -2247,22 +2375,31 @@ bit-summarize-assembly -o assembly-summaries_GLmetagenomics.tsv *-assembly.fasta
 
 ---
 
-### 14. Gene prediction
+### 14. Gene Prediction
+
+#### 14a. Generate Gene Predictions
+
 ```bash
-prodigal -a sample-genes.faa -d sample-genes.fasta -f gff -p meta -c -q \
-         -o sample-genes.gff -i sample-assembly.fasta
+prodigal -a sample-genes.faa \
+         -d sample-genes.fasta \
+         -f gff \
+         -p meta \
+         -c \
+         -q \
+         -o sample-genes.gff \
+         -i sample-assembly.fasta
 ```
 
 **Parameter Definitions:**
 
-- `-a` – specifies the output amino acid sequences file
-- `-d` – specifies the output nucleotide sequences file
-- `-f` – specifies the output format gene-calls file
-- `-p` – specifies which mode to run the gene-caller in 
-- `-c` – no incomplete genes reported 
-- `-q` – run in quiet mode (don’t output process on each contig) 
-- `-o` – specifies the name of the output gene-calls file 
-- `-i` – specifies the input assembly
+- `-a` – Specifies the output amino acid sequences file.
+- `-d` – Specifies the output nucleotide sequences file.
+- `-f` – Specifies the gene-calls output format, gff = GFF format.
+- `-p` – Specifies which mode to run the gene-caller in. 
+- `-c` – No incomplete genes reported. 
+- `-q` – Run in quiet mode (don’t output process on each contig). 
+- `-o` – Specifies the name of the output gene-calls file. 
+- `-i` – Specifies the input assembly file.
 
 **Input Data:**
 
@@ -2276,7 +2413,8 @@ prodigal -a sample-genes.faa -d sample-genes.fasta -f gff -p meta -c -q \
 
 <br>
 
-#### 14a. Remove line wraps in gene prediction output
+#### 14b. Remove Line Wraps In Gene Prediction Output
+
 ```bash
 bit-remove-wraps sample-genes.faa > sample-genes.faa.tmp 2> /dev/null
 mv sample-genes.faa.tmp sample-genes.faa
@@ -2287,8 +2425,8 @@ mv sample-genes.fasta.tmp sample-genes.fasta
 
 **Input Data:**
 
-- sample-genes.faa (gene-calls amino-acid fasta file, output from [Step 14](#14-gene-prediction))
-- sample-genes.fasta (gene-calls nucleotide fasta file, output from [Step 14](#14-gene-prediction))
+- sample-genes.faa (gene-calls amino-acid fasta file, output from [Step 14a](#14a-gene-prediction))
+- sample-genes.fasta (gene-calls nucleotide fasta file, output from [Step 14a](#14a-gene-prediction))
 
 **Output Data:**
 
@@ -2299,14 +2437,17 @@ mv sample-genes.fasta.tmp sample-genes.fasta
 
 ---
 
-### 15. Functional annotation
+### 15. Functional Annotation
+
 > **Note:**  
 > The annotation process overwrites the same temporary directory by default. When running multiple 
 processses at a time, it is necessary to specify a specific temporary directory with the 
 `--tmp-dir` argument as shown below.
 
 
-#### 15a. Downloading reference database of HMM models (only needs to be done once)
+#### 15a. Download Reference Database of HMM Models
+
+> **Note:** This step only needs to be done once.
 
 ```bash
 curl -LO ftp://ftp.genome.jp/pub/db/kofam/profiles.tar.gz
@@ -2315,40 +2456,48 @@ tar -xzvf profiles.tar.gz
 gunzip ko_list.gz 
 ```
 
-#### 15b. Running KEGG annotation
+#### 15b. Run KEGG Annotation
 
 ```bash
-exec_annotation -p profiles/ -k ko_list --cpu NumberOfThreads -f detail-tsv -o sample-KO-tab.tmp \
-                --tmp-dir sample-tmp-KO --report-unannotated sample-genes.faa 
+exec_annotation -p profiles/ \
+                -k ko_list \
+                --cpu NumberOfThreads \
+                -f detail-tsv \
+                -o sample-KO-tab.tmp \
+                --tmp-dir sample-tmp-KO \
+                --report-unannotated \
+                sample-genes.faa 
 ```
 
 **Parameter Definitions:**
 
-- `-p` – specifies the directory holding the downloaded reference HMMs
-- `-k` – specifies the downloaded reference KO  (Kegg Orthology) terms 
-- `--cpu` – specifies the number of searches to run in parallel
-- `-f` – specifies the output format
-- `-o` – specifies the output file name
-- `--tmp-dir` – specifies the temporary directory to write to (needed if running more than one process concurrently, see Notes above)
-- `--report-unannotated` – specifies to generate an output for each entry
-- `sample-genes.faa` – the input file is specified as a positional argument 
+- `-p` – Specifies the directory holding the downloaded reference HMMs.
+- `-k` – Specifies the downloaded reference KO  (Kegg Orthology) terms. 
+- `--cpu` – Specifies the number of searches to run in parallel.
+- `-f` – Specifies the output format.
+- `-o` – Specifies the output file name.
+- `--tmp-dir` – Specifies the temporary directory to write to (needed if running more than one process concurrently, see Note above).
+- `--report-unannotated` – Specifies to generate an output for each entry, event when no KO is assigned.
+- `sample-genes.faa` – Specifies the input file, provided as a positional argument. 
 
 
 **Input Data:**
 
-- sample-genes.faa (amino-acid fasta file, from [Step 14](#14-gene-prediction))
-- profiles/ (reference directory holding the KO HMMs)
-- ko_list (reference list of KOs to scan for)
+- sample-genes.faa (amino-acid fasta file, output from [Step 14b](#14b-remove-line-wraps-in-gene-prediction-output))
+- profiles/ (reference directory holding the KO HMMs, downloaded in [Step 15a](15a-download-reference-database-of-hmm-models))
+- ko_list (reference list of KOs to scan for, downloaded in [Step 15a](15a-download-reference-database-of-hmm-models))
 
 **Output Data:**
 
 - sample-KO-tab.tmp (table of KO annotations assigned to gene IDs)
 
 
-#### 15c. Filtering output to retain only those passing the KO-specific score and top hits
+#### 15c. Filter KO Outputs
+*Filter KO outputs to retain only those passing the KO-specific score and top hits.*
 
 ```bash
-bit-filter-KOFamScan-results -i sample-KO-tab.tmp -o sample-annotations.tsv
+bit-filter-KOFamScan-results -i sample-KO-tab.tmp \
+                             -o sample-annotations.tsv
 
 # removing temporary files
 rm -rf sample-tmp-KO/ sample-KO-annots.tmp
@@ -2356,12 +2505,12 @@ rm -rf sample-tmp-KO/ sample-KO-annots.tmp
 
 **Parameter Definitions:**  
 
-- `-i` – specifies the input table
-- `-o` – specifies the output table
+- `-i` – Specifies the input table.
+- `-o` – Specifies the output table.
 
 **Input Data:**
 
-- sample-KO-tab.tmp (table of KO annotations assigned to gene IDs from [Step 15b](#15b-running-kegg-annotation))
+- sample-KO-tab.tmp (table of KO annotations assigned to gene IDs, output from [Step 15b](#15b-run-kegg-annotation))
 
 **Output Data:**
 
@@ -2371,94 +2520,115 @@ rm -rf sample-tmp-KO/ sample-KO-annots.tmp
 
 ---
 
-### 16. Taxonomic classification
+### 16. Taxonomic Classification 
 
-#### 16a. Pulling and un-packing pre-built reference db (only needs to be done once)
+#### 16a. Pull and Unpack Pre-built Reference DB 
+
+> **Note:** This step only needs to be done once.
 
 ```bash
 wget tbb.bio.uu.nl/bastiaan/CAT_prepare/CAT_prepare_20200618.tar.gz
 tar -xvzf CAT_prepare_20200618.tar.gz
 ```
 
-#### 16b. Running taxonomic classification
+#### 16b. Run Taxonomic Classification
 
 ```bash
-CAT contigs -c sample-assembly.fasta -d CAT_prepare_20200618/2020-06-18_database/ \
-            -t CAT_prepare_20200618/2020-06-18_taxonomy/ -p sample-genes.faa \
-            -o sample-tax-out.tmp -n NumberOfThreads -r 3 --top 4 --I_know_what_Im_doing --no-stars
+CAT contigs -c sample-assembly.fasta \
+            -d CAT_prepare_20200618/2020-06-18_database/ \
+            -t CAT_prepare_20200618/2020-06-18_taxonomy/ \
+            -p sample-genes.faa \
+            -o sample-tax-out.tmp \
+            -n NumberOfThreads \
+            -r 3 \
+            --top 4 \
+            --I_know_what_Im_doing \
+            --no-stars
 ```
 
 **Parameter Definitions:**  
 
-- `-c` – specifies the input assembly fasta file
-- `-d` – specifies the CAT reference sequence database
-- `-t` – specifies the CAT reference taxonomy database
-- `-p` – specifies the input protein fasta file
-- `-o` – specifies the output prefix
-- `-n` – specifies the number of CPU cores to use
-- `-r` – specifies the number of top protein hits to consider in assigning tax
-- `--top` – specifies the number of protein alignments to store
-- `--I_know_what_Im_doing` – allows us to alter the `--top` parameter
-- `--no-stars` - suppress marking of suggestive taxonomic assignments
+- `-c` – Specifies the input assembly fasta file.
+- `-d` – Specifies the CAT reference sequence database.
+- `-t` – Specifies the CAT reference taxonomy database.
+- `-p` – Specifies the input protein fasta file.
+- `-o` – Specifies the output file prefix.
+- `-n` – Specifies the number of CPU cores to use.
+- `-r` – Specifies the number of top protein hits to consider in assigning taxonomy.
+- `--top` – Specifies the number of protein alignments to store.
+- `--I_know_what_Im_doing` – Allows us to alter the `--top` parameter.
+- `--no-stars` - Suppress marking of suggestive taxonomic assignments.
 
 **Input Data:**
 
-- sample-assembly.fasta (assembly file from [Step 13a](#13a-renaming-contig-headers))
-- sample-genes.faa (gene-calls amino-acid fasta file from [Step 14](#14-gene-prediction))
+- CAT_prepare_20200618/2020-06-18_database/ (directory holding the CAT reference sequence database, output from [Step 16a](16a-pull-and-unpack-pre-built-reference-db))
+- CAT_prepare_20200618/2020-06-18_taxonomy/ (directory holding the CAT reference taxonomy database, output from [Step 16a](16a-pull-and-unpack-pre-built-reference-db))
+- sample-assembly.fasta (contig-renamed assembly file from [Step 13a](#13a-rename-contig-headers))
+- sample-genes.faa (amino-acid fasta file, output from [Step 14b](#14b-remove-line-wraps-in-gene-prediction-output))
 
 **Output Data:**
 
 - sample-tax-out.tmp.ORF2LCA.txt (gene-calls taxonomy file)
 - sample-tax-out.tmp.contig2classification.txt (contig taxonomy file)
 
-#### 16c. Adding taxonomy info from taxids to genes
+
+#### 16c. Add Taxonomy Info From Taxids To Genes
 
 ```bash
-CAT add_names -i sample-tax-out.tmp.ORF2LCA.txt -o sample-gene-tax-out.tmp \
-              -t CAT_prepare_20200618/2020-06-18_taxonomy/ --only_official --exclude-scores
+CAT add_names -i sample-tax-out.tmp.ORF2LCA.txt \
+              -o sample-gene-tax-out.tmp \
+              -t CAT_prepare_20200618/2020-06-18_taxonomy/ \
+              --only_official \
+              --exclude-scores
 ```
 
 **Parameter Definitions:**  
 
-- `-i` – specifies the input taxonomy file
-- `-o` – specifies the output file 
-- `-t` – specifies the CAT reference taxonomy database
-- `--only_official` – specifies to add only standard taxonomic ranks
-- `--exclude-scores` - specifies to exclude bit-score support scores in the lineage
+- `-i` – Specifies the input taxonomy file.
+- `-o` – Specifies the output file name.
+- `-t` – Specifies the CAT reference taxonomy database.
+- `--only_official` – Specifies to add only standard taxonomic ranks.
+- `--exclude-scores` - Specifies to exclude bit-score support scores in the lineage.
 
 **Input Data:**
 
-- sample-tax-out.tmp.ORF2LCA.txt (gene-calls taxonomy file from [Step 16b](#16b-running-taxonomic-classification))
+- sample-tax-out.tmp.ORF2LCA.txt (gene-calls taxonomy file, output from [Step 16b](#16b-run-taxonomic-classification))
+- CAT_prepare_20200618/2020-06-18_taxonomy/ (directory holding the CAT reference taxonomy database, output from [Step 16a](#16a-pull-and-unpack-pre-built-reference-db))
 
 **Output Data:**
 
 - sample-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added)
 
-#### 16d. Adding taxonomy info from taxids to contigs
+
+#### 16d. Add Taxonomy Info From Taxids To Contigs
 
 ```bash
-CAT add_names -i sample-tax-out.tmp.contig2classification.txt -o sample-contig-tax-out.tmp \
-              -t CAT-ref/2020-06-18_taxonomy/ --only_official --exclude-scores
+CAT add_names -i sample-tax-out.tmp.contig2classification.txt \
+              -o sample-contig-tax-out.tmp \
+              -t CAT_prepare_20200618/2020-06-18_taxonomy/ \
+              --only_official \
+              --exclude-scores
 ```
 
 **Parameter Definitions:**  
 
-- `-i` – specifies the input taxonomy file
-- `-o` – specifies the output file 
-- `-t` – specifies the CAT reference taxonomy database
-- `--only_official` – specifies to add only standard taxonomic ranks
-- `--exclude-scores` - specifies to exclude bit-score support scores in the lineage
+- `-i` – Specifies the input taxonomy file.
+- `-o` – Specifies the output file name.
+- `-t` – Specifies the CAT reference taxonomy database.
+- `--only_official` – Specifies to add only standard taxonomic ranks.
+- `--exclude-scores` - Specifies to exclude bit-score support scores in the lineage.
 
 **Input Data:**
 
-- sample-tax-out.tmp.contig2classification.txt (contig taxonomy file from [Step 16b](#16b-running-taxonomic-classification))
+- sample-tax-out.tmp.contig2classification.txt (contig taxonomy file, output from [Step 16b](#16b-run-taxonomic-classification))
+- CAT_prepare_20200618/2020-06-18_taxonomy/ (directory holding the CAT reference taxonomy database, output from [Step 16a](#16a-pull-and-unpack-pre-built-reference-db))
 
 **Output Data:**
 
 - sample-contig-tax-out.tmp (contig taxonomy file with lineage info added)
 
 
-#### 16e. Formatting gene-level output with awk and sed
+#### 16e. Format Gene-level Output With awk and sed
 
 ```bash
 awk -F $'\t' ' BEGIN { OFS=FS } { if ( $3 == "lineage" ) { print $1,$3,$5,$6,$7,$8,$9,$10,$11 } \
@@ -2471,13 +2641,14 @@ awk -F $'\t' ' BEGIN { OFS=FS } { if ( $3 == "lineage" ) { print $1,$3,$5,$6,$7,
 
 **Input Data:**
 
-- sample-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added from [Step 16c](#16c-adding-taxonomy-info-from-taxids-to-genes))
+- sample-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added, output from [Step 16c](#16c-add-taxonomy-info-from-taxids-to-genes))
 
 **Output Data:**
 
-- sample-gene-tax-out.tsv (gene-calls taxonomy file with lineage info added reformatted)
+- sample-gene-tax-out.tsv (reformatted gene-calls taxonomy file with lineage info)
 
-#### 16f. Formatting contig-level output with awk and sed
+
+#### 16f. Format Contig-level Output With awk and sed
 
 ```bash
 awk -F $'\t' ' BEGIN { OFS=FS } { if ( $2 == "classification" ) { print $1,$4,$6,$7,$8,$9,$10,$11,$12 } \
@@ -2492,11 +2663,11 @@ rm sample*.tmp*
 
 **Input Data:**
 
-- sample-contig-tax-out.tmp (contig taxonomy file with lineage info added from [Step 16d](#16d-adding-taxonomy-info-from-taxids-to-contigs))
+- sample-contig-tax-out.tmp (contig taxonomy file with lineage info added, output from [Step 16d](#16d-add-taxonomy-info-from-taxids-to-contigs))
 
 **Output Data:**
 
-- sample-contig-tax-out.tsv (contig taxonomy file with lineage info added reformatted)
+- sample-contig-tax-out.tsv (reformatted contig taxonomy file with lineage info)
 
 <br>
 
@@ -2507,32 +2678,42 @@ rm sample*.tmp*
 #### 17a. Align Reads to Sample Assembly
 
 ```bash
-minimap2 -a -x map-ont \
-        -t NumberOfThreads \
-        sample_assembly.fasta sample_host_removed.fastq.gz \
-        > sample.sam  2> sample-mapping-info.txt
+minimap2 -a \
+         -x map-ont \
+         -t NumberOfThreads \
+         sample_assembly.fasta \
+         sample_HRrm.fasta.gz \
+         > sample.sam  2> sample-mapping-info.txt
 ```
 
 **Parameter Definitions:**
 
-- `-t` - number of parallel processing threads to use
-- `-a` – output in SAM format
-- `-x map-ont` - specifies preset for mapping Nanopore reads to a reference
+- `-a` – Output in SAM format.
+- `-x map-ont` - Specifies preset for mapping Nanopore reads to a reference.
+- `-t` - Number of parallel processing threads to use
+- `sample_assembly.fasta` – Assembly fasta file, provided as a positional argument.
+- `sample_HRrm.fasta.gz` - Input sequence data file, provided as a positional argument.
+- `> sample.sam` - Redirects the output to a separate file.
+- `2> sample-mapping-info.txt` - Redirects the standar error to a separate file.
 
 **Input Data**
 
-- /path/to/assemblies/sample_assembly.fasta (Sample assembly, output from [Step 13a](#13a-renaming-contig-headers))
-- /path/to/trimmed_reads/sample_host_removed.fastq.gz (Filtered and trimmed reads, output from [Step 7b](#7b-remove-host-reads))
+- sample-assembly.fasta (contig-renamed assembly file, output from [Step 13a](#13a-rename-contig-headers))
+- sample_HRrm.fasta.gz (filtered and trimmed sample reads with both contaminants and human reads removed, gzipped fasta file, output from [Step 7b](#7b-remove-host-reads))
 
 **Output Data**
 
-- sample.sam (Reads aligned to sample assembly)
+- sample.sam (reads aligned to sample assembly in SAM format)
+- **sample-mapping-info.txt** (read mapping information)
+
 
 #### 17b. Sort and Index Assembly Alignments
 
 ```bash
 # Sort Sam, convert to bam and create index
-samtools sort --threads NumberOfThreads -o sample_sorted.bam sample.sam > sample_sort.log 2>&1
+samtools sort --threads NumberOfThreads \
+              -o sample_sorted.bam \
+              sample.sam > sample_sort.log 2>&1
 
 samtools index sample_sorted.bam sample_sorted.bam.bai
 ```
@@ -2540,52 +2721,55 @@ samtools index sample_sorted.bam sample_sorted.bam.bai
 **Parameter Definitions:**
 
 **samtools sort**
-- `--threads` - number of parallel processing threads to use
-- `-o` - specifies the output file for the sorted reads
-- `sample.sam` - positional argument specifying the input SAM file
+- `--threads` - Number of parallel processing threads to use.
+- `-o` - Specifies the output file for the sorted aligned reads.
+- `sample.sam` - Positional argument specifying the input SAM file.
+- `> sample_sort.log 2>&1` - Redirects the standard output and standard error to a separate file.
 
 **samtools index**
-- `sample_sorted.bam` - positional argument specifying the input BAM file to be sorted
-- `sample_sorted.bam.bai` - positional argument specifying the name of the index file
+- `sample_sorted.bam` - Positional argument specifying the input BAM file to be sorted.
+- `sample_sorted.bam.bai` - Positional argument specifying the name of the index file.
 
 **Input Data:**
 
-- sample.sam (Reads aligned to sample assembly, output from [Step 17a](#17a-align-reads-to-sample-assembly))
+- sample.sam (reads aligned to sample assembly, output from [Step 17a](#17a-align-reads-to-sample-assembly))
 
 **Output Data:**
 
-- sample_sorted.bam (sorted mapping to sample assembly)
-- sample_sorted.bam.bai (index of sorted mapping to sample assembly)
+- **sample_sorted.bam** (sorted mapping to sample assembly, in BAM format)
+- **sample_sorted.bam.bai** (index of sorted mapping to sample assembly)
 
 <br>
 
 ---
 
-### 18. Getting coverage information and filtering based on detection
+### 18. Get Coverage Information and Filter Based On Detection
 > **Note:**  
 > “Detection” is a measure of what proportion of a reference sequence recruited reads 
 (see the discussion of detection [here](http://merenlab.org/2017/05/08/anvio-views/#detection)). 
 Filtering based on detection is one way of helping to mitigate non-specific read-recruitment.
 
-#### 18a. Filtering coverage levels based on detection
+#### 18a. Filter Coverage Levels Based On Detection
 
 ```bash
-  # pileup.sh comes from the bbduk.sh package
-pileup.sh -in sample.bam fastaorf=sample-genes.fasta outorf=sample-gene-cov-and-det.tmp \
+# pileup.sh comes from the bbduk.sh package
+pileup.sh -in sample.bam \
+          fastaorf=sample-genes.fasta \
+          outorf=sample-gene-cov-and-det.tmp \
           out=sample-contig-cov-and-det.tmp
 ```
 
 **Parameter Definitions:**  
 
-- `-in` – the input bam file
-- `fastaorf=` – input gene-calls nucleotide fasta file
-- `outorf=` – the output gene-coverage tsv file
-- `out=` – the output contig-coverage tsv file
+- `-in` – Specifies the input BAM file.
+- `fastaorf=` – Specifies the input gene-calls nucleotide fasta file.
+- `outorf=` – Specifies the output gene-coverage tsv file name.
+- `out=` – Specifies the output contig-coverage tsv file name.
 
 **Input Data:**
 
-- sample.bam (mapping file from [Step 17b](#17b-sort-and-index-assembly-alignments))
-- sample-genes.fasta (gene-calls nucleotide fasta file from [Step 14](#14-gene-prediction))
+- sample.bam (sorted mapping to sample assembly BAM file, output from [Step 17b](#17b-sort-and-index-assembly-alignments))
+- sample-genes.fasta (gene-calls nucleotide fasta file, output from [Step 14a](#14a-gene-prediction))
 
 
 **Output Data:**
@@ -2594,17 +2778,21 @@ pileup.sh -in sample.bam fastaorf=sample-genes.fasta outorf=sample-gene-cov-and-
 - sample-contig-cov-and-det.tmp (contig-coverage tsv file)
 
 
-#### 18b. Filtering gene and contig coverage based on requiring 50% detection and parsing down to just gene ID and coverage
+#### 18b. Filter Gene and Contig Coverage Based On Detection
+
+> *The following commands filter gene and contig coverage tsv files to only keep genes and contigs with at least 50% detection (as defined above) then parse the tables to retain only gene IDs and respective coverage.*
 
 ```bash
 # Filtering gene coverage
-grep -v "#" sample-gene-cov-and-det.tmp | awk -F $'\t' ' BEGIN { OFS=FS } { if ( $10 <= 0.5 ) $4 = 0 } \
+grep -v "#" sample-gene-cov-and-det.tmp | \
+awk -F $'\t' ' BEGIN { OFS=FS } { if ( $10 <= 0.5 ) $4 = 0 } \
      { print $1,$4 } ' > sample-gene-cov.tmp
 
 cat <( printf "gene_ID\tcoverage\n" ) sample-gene-cov.tmp > sample-gene-coverages.tsv
 
 # Filtering contig coverage
-grep -v "#" sample-contig-cov-and-det.tmp | awk -F $'\t' ' BEGIN { OFS=FS } { if ( $5 <= 50 ) $2 = 0 } \
+grep -v "#" sample-contig-cov-and-det.tmp | \
+awk -F $'\t' ' BEGIN { OFS=FS } { if ( $5 <= 50 ) $2 = 0 } \
      { print $1,$2 } ' > sample-contig-cov.tmp
 
 cat <( printf "contig_ID\tcoverage\n" ) sample-contig-cov.tmp > sample-contig-coverages.tsv
@@ -2615,8 +2803,8 @@ rm sample-*.tmp
 
 **Input Data:**
 
-- sample-gene-cov-and-det.tmp (temporary gene-coverage tsv file from [Step 18a](#18a-filtering-coverage-levels-based-on-detection))
-- sample-contig-cov-and-det.tmp (temporary contig-coverage tsv file from [Step 18a](#18a-filtering-coverage-levels-based-on-detection))
+- sample-gene-cov-and-det.tmp (temporary gene-coverage tsv file, output from [Step 18a](#18a-filter-coverage-levels-based-on-detection))
+- sample-contig-cov-and-det.tmp (temporary contig-coverage tsv file, output from [Step 18a](#18a-filter-coverage-levels-based-on-detection))
 
 **Output Data:**
 
@@ -2627,28 +2815,32 @@ rm sample-*.tmp
 
 ---
 
-### 19. Combining gene-level coverage, taxonomy, and functional annotations into one table for each sample
+### 19. Combine Gene-level Coverage, Taxonomy, and Functional Annotations For Each Sample
 > **Note:**  
-> Just uses `paste`, `sed`, and `awk`, which are all standard in any Unix-like environment.  
+> Just uses `paste`, `sed`, and `awk` standard Unix commands to combine gene-level coverage, taxonomy, and functional annotations into one table for each sample.  
 
 ```bash
-paste <( tail -n +2 sample-gene-coverages.tsv | sort -V -k 1 ) <( tail -n +2 sample-annotations.tsv | sort -V -k 1 | cut -f 2- ) \
-      <( tail -n +2 sample-gene-tax-out.tsv | sort -V -k 1 | cut -f 2- ) > sample-gene-tab.tmp
+paste <( tail -n +2 sample-gene-coverages.tsv | sort -V -k 1 ) \
+      <( tail -n +2 sample-annotations.tsv | sort -V -k 1 | cut -f 2- ) \
+      <( tail -n +2 sample-gene-tax-out.tsv | sort -V -k 1 | cut -f 2- ) \
+      > sample-gene-tab.tmp
 
-paste <( head -n 1 sample-gene-coverages.tsv ) <( head -n 1 sample-annotations.tsv | cut -f 2- ) \
-      <( head -n 1 sample-gene-tax-out.tsv | cut -f 2- ) > sample-header.tmp
+paste <( head -n 1 sample-gene-coverages.tsv ) \
+      <( head -n 1 sample-annotations.tsv | cut -f 2- ) \
+      <( head -n 1 sample-gene-tax-out.tsv | cut -f 2- ) \
+      > sample-header.tmp
 
 cat sample-header.tmp sample-gene-tab.tmp > sample-gene-coverage-annotation-and-tax.tsv
 
-  # removing intermediate files
+# removing intermediate files
 rm sample*tmp sample-gene-coverages.tsv sample-annotations.tsv sample-gene-tax-out.tsv
 ```
 
 **Input Data:**
 
-- sample-gene-coverages.tsv (table with gene-level coverages from [Step 18b](#18b-filtering-gene-and-contig-coverage-based-on-requiring-50-detection-and-parsing-down-to-just-gene-id-and-coverage))
-- sample-annotations.tsv (table of KO annotations assigned to gene IDs from [Step 15c](#15c-filtering-output-to-retain-only-those-passing-the-ko-specific-score-and-top-hits))
-- sample-gene-tax-out.tsv (gene-level taxonomic classifications from [Step 16f](#16f-formatting-contig-level-output-with-awk-and-sed))
+- sample-gene-coverages.tsv (table with gene-level coverages, output from [Step 18b](#18b-filter-gene-and-contig-coverage-based-on-detection))
+- sample-annotations.tsv (table of KO annotations assigned to gene IDs, output from [Step 15c](#15c-filter-ko-outputs))
+- sample-gene-tax-out.tsv (reformatted gene-calls taxonomy file with lineage info, output from [Step 16e](#16e-format-gene-level-output-with-awk-and-sed))
 
 
 **Output Data:**
@@ -2659,27 +2851,29 @@ rm sample*tmp sample-gene-coverages.tsv sample-annotations.tsv sample-gene-tax-o
 
 ---
 
-### 20. Combining contig-level coverage and taxonomy into one table for each sample
+### 20. Combine Contig-level Coverage and Taxonomy For Each Sample
 > **Note:**  
-> Just uses `paste`, `sed`, and `awk`, which are all standard in any Unix-like environment.  
+> Just uses `paste`, `sed`, and `awk` standard Unix commands to combine contig-level coverage and taxonomy into one table for each sample.
 
 ```bash
 paste <( tail -n +2 sample-contig-coverages.tsv | sort -V -k 1 ) \
-      <( tail -n +2 sample-contig-tax-out.tsv | sort -V -k 1 | cut -f 2- ) > sample-contig.tmp
+      <( tail -n +2 sample-contig-tax-out.tsv | sort -V -k 1 | cut -f 2- ) \
+      > sample-contig.tmp
 
-paste <( head -n 1 sample-contig-coverages.tsv ) <( head -n 1 sample-contig-tax-out.tsv | cut -f 2- ) \
+paste <( head -n 1 sample-contig-coverages.tsv ) \
+      <( head -n 1 sample-contig-tax-out.tsv | cut -f 2- ) \
       > sample-contig-header.tmp
       
 cat sample-contig-header.tmp sample-contig.tmp > sample-contig-coverage-and-tax.tsv
 
-  # removing intermediate files
+# removing intermediate files
 rm sample*tmp sample-contig-coverages.tsv sample-contig-tax-out.tsv
 ```
 
 **Input Data:**
 
-- sample-contig-coverages.tsv (table with contig-level coverages from [Step 18b](#18b-filtering-gene-and-contig-coverage-based-on-requiring-50-detection-and-parsing-down-to-just-gene-id-and-coverage))
-- sample-contig-tax-out.tsv (contig-level taxonomic classifications from [Step 16f](#16f-formatting-contig-level-output-with-awk-and-sed))
+- sample-contig-coverages.tsv (table with contig-level coverages, output from [Step 18b](#18b-filter-gene-and-contig-coverage-based-on-detection))
+- sample-contig-tax-out.tsv (reformatted contig taxonomy file with lineage info, output from [Step 16f](#16f-format-contig-level-output-with-awk-and-sed))
 
 
 **Output Data:**
@@ -2690,34 +2884,35 @@ rm sample*tmp sample-contig-coverages.tsv sample-contig-tax-out.tsv
 
 ---
 
-### 21. Generating normalized, gene- and contig-level coverage summary tables of KO-annotations and taxonomy across samples
+### 21. Generate Normalized, Gene- and Contig-level Coverage Summary Tables of KO-annotations and Taxonomy Across Samples
 
 > **Note:**  
 > * To combine across samples to generate these summary tables, we need the same "units". This is done for annotations 
 based on the assigned KO terms, and all non-annotated functions are included together as "Not annotated". It is done for 
-taxonomic classifications based on taxids (full lineages included in the table), and any not classified are included 
+taxonomic classifications based on taxids (full lineages included in the table), and any genes not classified are included 
 together as "Not classified". 
 > * The values we are working with are coverage per gene (so they are number of bases recruited to the gene normalized 
 by the length of the gene). These have been normalized by making the total coverage of a sample 1,000,000 and setting 
 each individual gene-level coverage its proportion of that 1,000,000 total. So basically percent, but out of 1,000,000 
 instead of 100 to make the numbers more friendly. 
 
-#### 21a. Generating gene-level coverage summary tables
+#### 21a. Generate Gene-level Coverage Summary Tables
 
 ```bash
-bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o Combined
+bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv \
+                                 -o Combined
 ```
 
 **Parameter Definitions:**  
 
-- `*-gene-coverage-annotation-and-tax.tsv` - positional arguments specifying the input tsv files, can be provided as a space-delimited list of files, or with wildcards like above
+- `*-gene-coverage-annotation-and-tax.tsv` - Positional arguments specifying the input tsv files, can be provided as a space-delimited list of files, or with wildcards like above.
 
-- `-o` – specifies the output prefix
+- `-o` – Specifies the output file prefix.
 
 
 **Input Data:**
 
-- *-gene-coverage-annotation-and-tax.tsv (tables with combined gene coverage, annotation, and taxonomy info generated for individual samples from [Step 19](#19-combining-gene-level-coverage-taxonomy-and-functional-annotations-into-one-table-for-each-sample))
+- *-gene-coverage-annotation-and-tax.tsv (tables with combined gene coverage, annotation, and taxonomy info generated for individual samples, output from [Step 19](#19-combine-gene-level-coverage-taxonomy-and-functional-annotations-for-each-sample))
 
 **Output Data:**
 
@@ -2727,7 +2922,7 @@ bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax.tsv -o Combi
 - **Combined-gene-level-taxonomy-coverages_GLmetagenomics.tsv** (table with all samples combined based on gene-level taxonomic classifications)
 
 
-#### 21b. Gene-level taxonomy heatmaps
+#### 21b. Gene-level taxonomy heatmaps --- START NEEDS REVIEW ---
 
 ```R
 library(tidyverse)
@@ -2971,7 +3166,7 @@ dev.off()
 - **All-genes-KO-functions-heatmap_GLmetagenomics.png** (heatmap of gene-wise KO function assignments)
 - **Abundant-genes-KO-functions-heatmap_GLmetagenomics.png** (heatmap of gene-wise abundant KO function assignments)
 
-#### 21e. Gene-level KO functions decontamination
+#### 21e. Gene-level KO functions decontamination --- END NEEDS REVIEW ---
 
 ```R
 library(tidyverse)
@@ -3059,7 +3254,7 @@ dev.off()
 
 
 
-#### 21f. Generating contig-level coverage summary tables
+#### 21f. Generate Contig-level Coverage Summary Tables
 
 ```bash
 bit-GL-combine-contig-tax-tables *-contig-coverage-and-tax.tsv -o Combined
@@ -3067,23 +3262,23 @@ bit-GL-combine-contig-tax-tables *-contig-coverage-and-tax.tsv -o Combined
 
 **Parameter Definitions:**  
 
-- `*-contig-coverage-and-tax.tsv` - positional arguments specifying the input tsv files, can be provided as a space-delimited list of files, or with wildcards like above
-- `-o` – specifies the output prefix
+- `*-contig-coverage-and-tax.tsv` - Positional arguments specifying the input tsv files, can be provided as a space-delimited list of files, or with wildcards like above.
+- `-o` – Specifies the output file prefix.
 
 
 **Input Data:**
 
-- *-contig-coverage-annotation-and-tax.tsv (tables with combined contig coverage, annotation, and taxonomy info generated for individual samples from [Step 20](#20-combining-contig-level-coverage-and-taxonomy-into-one-table-for-each-sample))
+- *-contig-coverage-and-tax.tsv (tables with combined contig coverage and taxonomy info generated for individual samples, output from [Step 20](#20-combine-contig-level-coverage-and-taxonomy-for-each-sample))
 
 **Output Data:**
 
-- **Combined-contig-level-taxonomy-coverages-CPM_GLmetagenomics.tsv** (table with all samples combined based on contig-level taxonomic classifications; normalized to coverage per million genes covered)
+- **Combined-contig-level-taxonomy-coverages-CPM_GLmetagenomics.tsv** (table with all samples combined based on contig-level taxonomic classifications; normalized to coverage per million contigs covered)
 - **Combined-contig-level-taxonomy-coverages_GLmetagenomics.tsv** (table with all samples combined based on contig-level taxonomic classifications)
 
 <br>
 
 
-#### 21g. Contig-level Heatmaps
+#### 21g. Contig-level Heatmaps --- START NEEDS REVIEW ---
 
 ```R
 plot_width <- 20
@@ -3160,7 +3355,7 @@ dev.off()
 - **Abundant-contig-taxonomy-heatmap_GLmetagenomics.png** (Abundant contig level taxonomy heatmap)
 
 
-#### 21h. Contig-level decontamination
+#### 21h. Contig-level decontamination --- END NEEDS REVIEW ---
 
 ```R
 library(tidyverse)
@@ -3250,14 +3445,22 @@ dev.off()
 
 ---
 
-### 22. **M**etagenome-**A**ssembled **G**enome (MAG) recovery
+### 22. **M**etagenome-**A**ssembled **G**enome (MAG) Recovery
 
-#### 22a. Binning contigs
+#### 22a. Bin Contigs
 
 ```bash
-jgi_summarize_bam_contig_depths --outputDepth sample-metabat-assembly-depth.tsv --percentIdentity 97 --minContigLength 1000 --minContigDepth 1.0  --referenceFasta sample-assembly.fasta sample.bam
+jgi_summarize_bam_contig_depths --outputDepth sample-metabat-assembly-depth.tsv \
+                                --percentIdentity 97 \
+                                --minContigLength 1000 \
+                                --minContigDepth 1.0  \
+                                --referenceFasta sample-assembly.fasta \
+                                sample.bam
 
-metabat2  --inFile sample-assembly.fasta --outFile sample --abdFile sample-metabat-assembly-depth.tsv -t NumberOfThreads
+metabat2  --inFile sample-assembly.fasta \
+          --outFile sample \
+          --abdFile sample-metabat-assembly-depth.tsv \
+          -t NumberOfThreads
 
 mkdir sample-bins
 mv sample*bin*.fasta sample-bins
@@ -3266,22 +3469,27 @@ zip -r sample-bins.zip sample-bins
 
 **Parameter Definitions:**  
 
--  `--outputDepth` – specifies the output depth file
--  `--percentIdentity` – minimum end-to-end percent identity of a mapped read to be included
--  `--minContigLength` – minimum contig length to include
--  `--minContigDepth` – minimum contig depth to include
--  `--referenceFasta` – the assembly fasta file generated in step 5a
--  `sample.bam` – final positional arguments are the bam files generated in step 9
--  `--inFile` - the assembly fasta file generated in step 5a
--  `--outFile` - the prefix of the identified bins output files
--  `--abdFile` - the depth file generated by the previous `jgi_summarize_bam_contig_depths` command
--  `-t` - number of parallel processing threads to use
+**jgi_summarize_bam_contig_depths**
+
+-  `--outputDepth` – Specifies the output depth file name.
+-  `--percentIdentity` – Minimum end-to-end percent identity of a mapped read to be included.
+-  `--minContigLength` – Minimum contig length to include.
+-  `--minContigDepth` – Minimum contig depth to include.
+-  `--referenceFasta` – Specifies the input assembly fasta file.
+-  `sample.bam` – Input alignment BAM file, specified as a positional argument.
+
+**metabat2**
+
+-  `--inFile` - Specifies the input assembly fasta file.
+-  `--outFile` - Specifies the prefix of the identified bins output files.
+-  `--abdFile` - The depth file generated by the previous `jgi_summarize_bam_contig_depths` command.
+-  `-t` - Number of parallel processing threads to use.
 
 
 **Input Data:**
 
-- sample-assembly.fasta (assembly fasta file created in [Step 13a](#13a-renaming-contig-headers))
-- sample.bam (bam file created in [Step 17b](#17b-sort-and-index-assembly-alignments))
+- sample-assembly.fasta (contig-renamed assembly file from [Step 13a](#13a-renaming-contig-headers))
+- sample.bam (sorted mapping to sample assembly BAM file, output from [Step 17b](#17b-sort-and-index-assembly-alignments))
 
 **Output Data:**
 
@@ -3289,32 +3497,36 @@ zip -r sample-bins.zip sample-bins
 - sample-bins/sample-bin\*.fasta (fasta files of recovered bins)
 - **sample-bins.zip** (zip file containing fasta files of recovered bins)
 
-#### 22b. Bin quality assessment
-Utilizes the default `checkm` database available [here](https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz), `checkm_data_2015_01_16.tar.gz`.
+#### 22b. Bin quality assessment 
+> Utilizes the default `checkm` database available [here](https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz), `checkm_data_2015_01_16.tar.gz`.
 
 ```bash
-checkm lineage_wf -f bins-overview_GLmetagenomics.tsv --tab_table -x fa ./ checkm-output-dir
+checkm lineage_wf -f bins-overview_GLmetagenomics.tsv \
+                  --tab_table \
+                  -x fasta \
+                  ./ \
+                  checkm-output-dir
 ```
 
 **Parameter Definitions:**  
 
--  `lineage_wf` – specifies the workflow being utilized
--  `-f` – specifies the output summary file
--  `--tab_table` – specifies the output summary file should be a tab-delimited table
--  `-x` – specifies the extension that is on the bin fasta files that are being assessed
--  `./` – first positional argument at end specifies the directory holding the bins generated in step 14a
--  `checkm-output-dir` – second positional argument at end specifies the primary checkm output directory with detailed information
+-  `lineage_wf` – Specifies the workflow being utilized.
+-  `-f` – Specifies the output summary file name.
+-  `--tab_table` – Specifies the output summary file should be a tab-delimited table.
+-  `-x` – Specifies the extension that is on the bin fasta files that are being assessed.
+-  `./` – Specifies the directory holding the bins, provided as a positional argument.
+-  `checkm-output-dir` – Specifies the primary checkm output directory, provided as a positional argument.
 
 **Input Data:**
 
-- sample-bins/sample-bin\*.fasta (bin fasta files generated in [Step 22a](#22a-binning-contigs))
+- sample-bins/sample-bin\*.fasta (fasta files of recovered bins, output from [Step 22a](#22a-bin-contigs))
 
 **Output Data:**
 
 - **bins-overview_GLmetagenomics.tsv** (tab-delimited file with quality estimates per bin)
-- checkm-output-dir (directory holding detailed checkm outputs)
+- checkm-output-dir/ (directory holding detailed checkm outputs)
 
-#### 22c. Filtering MAGs
+#### 22c. Filter MAGs
 
 ```bash
 cat <( head -n 1 bins-overview_GLmetagenomics.tsv ) \
@@ -3350,30 +3562,33 @@ done
 - **\*-MAGs.zip** (zip files containing directories of high-quality MAGs)
 
 
-#### 22d. MAG taxonomic classification
-Uses default `gtdbtk` database setup with program's `download.sh` command.
+#### 22d. MAG Taxonomic Classification
+> Uses default `gtdbtk` database setup with program's `download.sh` command.
 
 ```bash
-gtdbtk classify_wf --genome_dir MAGs/ -x fa --out_dir gtdbtk-output-dir  --skip_ani_screen
+gtdbtk classify_wf --genome_dir MAGs/ \
+                   -x fasta \
+                   --out_dir gtdbtk-output-dir \
+                   --skip_ani_screen
 ```
 
 **Parameter Definitions:**  
 
--  `classify_wf` – specifies the workflow being utilized
--  `--genome_dir` – specifies the directory holding the MAGs generated in step 14c
--  `-x` – specifies the extension that is on the MAG fasta files that are being taxonomically classified
--  `--out_dir` – specifies the output directory
--  `--skip_ani_screen`  - specifies to skip ani_screening step to classify genomes using mash and skani
+-  `classify_wf` – Specifies the workflow being utilized.
+-  `--genome_dir` – Specifies the directory holding the MAGs to classify.
+-  `-x` – Specifies the extension that is on the MAG fasta files that are being taxonomically classified.
+-  `--out_dir` – Specifies the output directory name.
+-  `--skip_ani_screen`  - Specifies to skip ani_screening step to classify genomes using mash and skani.
 
 **Input Data:**
 
-- MAGs/\*.fasta (directory holding high-quality MAGs from [Step 22c](#22c-filtering-mags))
+- MAGs/\*.fasta (directory holding high-quality MAGs, output from [Step 22c](#22c-filter-mags))
 
 **Output Data:**
 
 - gtdbtk-output-dir/gtdbtk.\*.summary.tsv (files with assigned taxonomy and info)
 
-#### 22e. Generating overview table of all MAGs
+#### 22e. Generate Overview Table Of All MAGs
 
 ```bash
 # combine summaries
@@ -3413,10 +3628,10 @@ cat MAGs-overview-header.tmp MAGs-overview-sorted.tmp \
 
 **Input Data:**
 
-- assembly-summaries_GLmetagenomics.tsv (table of assembly summary statistics from [Step 13b](#13b-summarizing-assemblies))
-- MAGs/\*.fasta (directory holding high-quality MAGs from [Step 22c](#23c-filtering-mags))
-- checkm-MAGs-overview.tsv (tab-delimited file with quality estimates per MAG from [Step 22c](#22c-filtering-mags))
-- gtdbtk-output-dir/gtdbtk.\*.summary.tsv (directory of files with assigned taxonomy and info from [Step 22d](#22d-mag-taxonomic-classification))
+- assembly-summaries_GLmetagenomics.tsv (table of assembly summary statistics, output from [Step 13b](#13b-summarize-assemblies))
+- MAGs/\*.fasta (directory holding high-quality MAGs, output from [Step 22c](#23c-filter-mags))
+- checkm-MAGs-overview.tsv (tab-delimited file with quality estimates per MAG, output from [Step 22c](#22c-filter-mags))
+- gtdbtk-output-dir/gtdbtk.\*.summary.tsv (directory of files with assigned taxonomy and info, output from [Step 22d](#22d-mag-taxonomic-classification))
 
 **Output Data:**
 
@@ -3427,10 +3642,10 @@ cat MAGs-overview-header.tmp MAGs-overview-sorted.tmp \
 
 ---
 
-### 23. Generating MAG-level functional summary overview
+### 23. Generate MAG-level Functional Summary Overview
 
-#### 23a. Getting KO annotations per MAG
-This utilizes the helper script [`parse-MAG-annots.py`](../Workflow_Documentation/NF_MGIllumina/workflow_code/bin/parse-MAG-annots.py) 
+#### 23a. Get KO Annotations Per MAG
+> This utilizes the helper script [`parse-MAG-annots.py`](../Workflow_Documentation/NF_MGIllumina/workflow_code/bin/parse-MAG-annots.py) 
 
 ```bash
 for file in $( ls MAGs/*.fasta )
@@ -3442,7 +3657,8 @@ do
     grep "^>" ${file} | tr -d ">" > ${MAG_ID}-contigs.tmp
 
     python parse-MAG-annots.py -i annotations-and-taxonomy/${sample_ID}-gene-coverage-annotation-and-tax.tsv \
-                               -w ${MAG_ID}-contigs.tmp -M ${MAG_ID} \
+                               -w ${MAG_ID}-contigs.tmp \
+                               -M ${MAG_ID} \
                                -o MAG-level-KO-annotations_GLmetagenomics.tsv
 
     rm ${MAG_ID}-contigs.tmp
@@ -3452,36 +3668,38 @@ done
 
 **Parameter Definitions:**  
 
-- `-i` – specifies the input sample gene-coverage-annotation-and-tax.tsv file generated in step 11
--  `-w` – specifies the appropriate temporary file holding all the contigs in the current MAG
-- `-M` – specifies the current MAG unique identifier
-- `-o` – specifies the output file
+- `-i` – Specifies the input sample TSV file containing sample coverage, annotation, and taxonomy info.
+- `-w` – Specifies the appropriate temporary file holding all the contigs in the current MAG.
+- `-M` – Specifies the current MAG unique identifier.
+- `-o` – Specifies the output file name.
 
 **Input Data:**
 
-- \*-gene-coverage-annotation-and-tax.tsv (sample gene-coverage-annotation-and-tax.tsv file generated in [Step 19](#19-combining-gene-level-coverage-taxonomy-and-functional-annotations-into-one-table-for-each-sample))
-- MAGs/\*.fasta (directory holding high-quality MAGs from [Step 22c](#22c-filtering-mags))
+- \*-gene-coverage-annotation-and-tax.tsv (tables with combined gene coverage, annotation, and taxonomy info generated for individual samples, output from [Step 19](#19-combine-gene-level-coverage-taxonomy-and-functional-annotations-for-each-sample))
+- MAGs/\*.fasta (directory holding high-quality MAGs, output from [Step 22c](#22c-filter-mags))
 
 **Output Data:**
 
 - **MAG-level-KO-annotations_GLmetagenomics.tsv** (tab-delimited table holding MAGs and their KO annotations)
 
 
-#### 23b. Summarizing KO annotations with KEGG-Decoder
+#### 23b. Summarize KO Annotations With KEGG-Decoder
 
 ```bash
-KEGG-decoder -v interactive -i MAG-level-KO-annotations_GLmetagenomics.tsv -o MAG-KEGG-Decoder-out_GLmetagenomics.tsv
+KEGG-decoder -v interactive \
+             -i MAG-level-KO-annotations_GLmetagenomics.tsv \
+             -o MAG-KEGG-Decoder-out_GLmetagenomics.tsv
 ```
 
 **Parameter Definitions:**  
 
-- `-v interactive` – specifies to create an interactive html output
-- `-i` – specifies the input MAG-level-KO-annotations_GLmetagenomics.tsv file generated in [Step 23a](#23a-getting-ko-annotations-per-mag)
-- `-o` – specifies the output table
+- `-v interactive` – Specifies to create an interactive html output.
+- `-i` – Specifies the input tab-delimited table holding MAGs and their KO annotations.
+- `-o` – Specifies the output table.
 
 **Input Data:**
 
-- MAG-level-KO-annotations_GLmetagenomics.tsv (tab-delimited table holding MAGs and their KO annotations, generated in [Step 23a](#23a-getting-ko-annotations-per-mag))
+- MAG-level-KO-annotations_GLmetagenomics.tsv (tab-delimited table holding MAGs and their KO annotations, output from [Step 23a](#23a-getting-ko-annotations-per-mag))
 
 **Output Data:**
 
