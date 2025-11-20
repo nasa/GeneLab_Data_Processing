@@ -2,7 +2,7 @@
 
 
 ## General workflow info
-The current pipeline for how GeneLab removes host DNA from Illumina metagenomics sequencing data (MGRemoveHostReads), [GL-DPPD-7105-B.md](../../Pipeline_GL-DPPD-7105_Versions/GL-DPPD-7105-B.md), is implemented as a [Nextflow](https://www.nextflow.io/docs/stable/index.html) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) containers or [conda](https://docs.conda.io/en/latest/) environments to install/run all tools. This workflow (NF_MGRemoveHostReads) is run using the command line interface (CLI) of any unix-based system. While knowledge of creating or modifying Nextflow workflows is not required to run the workflow as-is, the [Nextflow documentation](https://www.nextflow.io/docs/stable/index.html) is a useful resource for users who wish to modify and/or extend the workflow.
+The current GeneLab Host Identification and Removal pipeline for metagenomics sequencing (MGRemoveHostReads), [GL-DPPD-7105-B.md](../../Pipeline_GL-DPPD-7105_Versions/GL-DPPD-7105-B.md), is implemented as a [Nextflow](https://www.nextflow.io/docs/stable/index.html) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) containers or [conda](https://docs.conda.io/en/latest/) environments to install/run all tools. This workflow (NF_MGRemoveHostReads) is run using the command line interface (CLI) of any unix-based system. While knowledge of creating or modifying Nextflow workflows is not required to run the workflow as-is, the [Nextflow documentation](https://www.nextflow.io/docs/stable/index.html) is a useful resource for users who wish to modify and/or extend the workflow.
 
 <br>
 
@@ -65,7 +65,7 @@ We recommend installing Singularity on a system wide level as per the associated
 
 ### 2. Download the Workflow Files
 
-All files required for utilizing the NF_MGRemoveHostReads GeneLab workflow for removing host reads from Illumina metagenomics sequencing data are in the [workflow_code](workflow_code) directory. To get a copy of the latest *NF_MGRemoveHostReads* version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
+All files required for utilizing the NF_MGRemoveHostReads GeneLab workflow for removing host reads from metagenomics sequencing data are in the [workflow_code](workflow_code) directory. To get a copy of the latest *NF_MGRemoveHostReads* version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
 
 ```bash
 wget <insert URL here>
