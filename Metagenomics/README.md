@@ -5,7 +5,7 @@
 ## Select a specific pipeline for more info:
 
 * [Estimating host reads](Estimate_host_reads_in_raw_data)
-* [Removing human reads](Remove_human_reads_from_raw_data)  
+* [Removing host reads](Remove_host_reads)  
 * [Illumina](Illumina)  
 
 <br>
