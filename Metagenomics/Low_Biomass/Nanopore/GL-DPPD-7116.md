@@ -52,80 +52,84 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [7e. Generate Decontaminated Read Files](#7e-generate-decontaminated-read-files)
       - [7f. Contaminant Removal QC](#7f-contaminant-removal-qc)
       - [7g. Compile Contaminant Removal QC](#7g-compile-contaminant-removal-qc)
-    - [8. R Environment Setup](#8-r-environment-setup)
-      - [8a. Load Libraries](#8a-load-libraries)
-      - [8b. Define Custom Functions](#8b-define-custom-functions)
-      - [8c. Set global variables](#8c-set-global-variables)
+    - [8. Host Read Removal](#8-host-read-removal)
+      - [8a. Build Kraken2 Database](#8a-build-kraken2-database)
+      - [8b. Remove Host Reads](#8b-remove-host-reads)
+      - [8c. Compile Host Read Removal QC](#8c-compile-host-read-removal-qc)
+    - [9. R Environment Setup](#9-r-environment-setup)
+      - [9a. Load Libraries](#9a-load-libraries)
+      - [9b. Define Custom Functions](#9b-define-custom-functions)
+      - [9c. Set global variables](#9c-set-global-variables)
   - [**Read-based processing**](#read-based-processing)
-    - [9. Taxonomic profiling using kaiju](#9-taxonomic-profiling-using-kaiju)
-      - [9a. Build Kaiju Database](#9a-build-kaiju-database)
-      - [9b. Kaiju Taxonomic Classification](#9b-kaiju-taxonomic-classification)
-      - [9c. Compile Kaiju Taxonomy Results](#9c-compile-kaiju-taxonomy-results)
-      - [9d. Convert Kaiju Output To Krona Format](#9d-convert-kaiju-output-to-krona-format)
-      - [9e. Compile Kaiju Krona Reports](#9e-compile-kaiju-krona-reports)
-      - [9f. Create Kaiju Species Count Table](#9f-create-kaiju-species-count-table)
-      - [9g. Read-in Tables](#9g-read-in-tables)
-      - [9h. Taxonomy Barplots](#9h-taxonomy-barplots)
-      - [9i. Feature Decontamination](#9i-feature-decontamination)
-    - [10. Taxonomic Profiling Using Kraken2](#10-taxonomic-profiling-using-kraken2)
-      - [10a. Download Kraken2 Database](#10a-download-kraken2-database)
-      - [10b. Kraken2 Taxonomic Classification](#10b-kraken2-taxonomic-classification)
-      - [10c. Compile Kraken2 Taxonomy Results](#10c-compile-kraken2-taxonomy-results)
-        - [10ci. Create Merged Kraken2 Taxonomy Table](#10ci-create-merged-kraken2-taxonomy-table)
-        - [10cii. Compile Kraken2 Taxonomy Reports](#10cii-compile-kraken2-taxonomy-reports)
-      - [10d. Convert Kraken2 Output to Krona Format](#10d-convert-kraken2-output-to-krona-format)
-      - [10e. Compile Kraken2 Krona Reports](#10e-compile-kraken2-krona-reports)
-      - [10f. Create Kraken2 Species Count Table](#10f-create-kraken2-species-count-table)
+    - [10. Taxonomic profiling using kaiju](#10-taxonomic-profiling-using-kaiju)
+      - [10a. Build Kaiju Database](#10a-build-kaiju-database)
+      - [10b. Kaiju Taxonomic Classification](#10b-kaiju-taxonomic-classification)
+      - [10c. Compile Kaiju Taxonomy Results](#10c-compile-kaiju-taxonomy-results)
+      - [10d. Convert Kaiju Output To Krona Format](#10d-convert-kaiju-output-to-krona-format)
+      - [10e. Compile Kaiju Krona Reports](#10e-compile-kaiju-krona-reports)
+      - [10f. Create Kaiju Species Count Table](#10f-create-kaiju-species-count-table)
       - [10g. Read-in Tables](#10g-read-in-tables)
       - [10h. Taxonomy Barplots](#10h-taxonomy-barplots)
       - [10i. Feature Decontamination](#10i-feature-decontamination)
+    - [11. Taxonomic Profiling Using Kraken2](#11-taxonomic-profiling-using-kraken2)
+      - [11a. Download Kraken2 Database](#11a-download-kraken2-database)
+      - [11b. Kraken2 Taxonomic Classification](#11b-kraken2-taxonomic-classification)
+      - [11c. Compile Kraken2 Taxonomy Results](#11c-compile-kraken2-taxonomy-results)
+        - [11ci. Create Merged Kraken2 Taxonomy Table](#11ci-create-merged-kraken2-taxonomy-table)
+        - [11cii. Compile Kraken2 Taxonomy Reports](#11cii-compile-kraken2-taxonomy-reports)
+      - [11d. Convert Kraken2 Output to Krona Format](#11d-convert-kraken2-output-to-krona-format)
+      - [11e. Compile Kraken2 Krona Reports](#11e-compile-kraken2-krona-reports)
+      - [11f. Create Kraken2 Species Count Table](#11f-create-kraken2-species-count-table)
+      - [11g. Read-in Tables](#11g-read-in-tables)
+      - [11h. Taxonomy Barplots](#11h-taxonomy-barplots)
+      - [11i. Feature Decontamination](#11i-feature-decontamination)
   - [**Assembly-based processing**](#assembly-based-processing)
-    - [11. Sample Assembly](#11-sample-assembly)
-    - [12. Polish Assembly](#12-polish-assembly)
-    - [13. Rename Contigs and Summarize Assemblies](#13-rename-contigs-and-summarize-assemblies)
-      - [13a. Rename Contig Headers](#13a-rename-contig-headers)
-      - [13b. Summarize Assemblies](#13b-summarize-assemblies)
-    - [14. Gene Prediction](#14-gene-prediction)
-      - [14a. Generate Gene Predictions](14a-generate-gene-predictions)
-      - [14b. Remove Line Wraps In Gene Prediction Output](#14a-remove-line-wraps-in-gene-prediction-output)
-    - [15. Functional Annotation](#15-functional-annotation)
-      - [15a. Download Reference Database of HMM Models](#15a-download-reference-database-of-hmm-models)
-      - [15b. Run KEGG Annotation](#15b-run-kegg-annotation)
-      - [15c. Filter KO Outputs](#15c-filter-ko-outputs)
-    - [16. Taxonomic Classification](#16-taxonomic-classification)
-      - [16a. Pull and Unpack Pre-built Reference DB](#16a-pull-and-unpack-pre-built-reference-db)
-      - [16b. Run Taxonomic Classification](#16b-run-taxonomic-classification)
-      - [16c. Add Taxonomy Info From Taxids To Genes](#16c-add-taxonomy-info-from-taxids-to-genes)
-      - [16d. Add Taxonomy Info From Taxids To Contigs](#16d-add-taxonomy-info-from-taxids-to-contigs)
-      - [16e. Format Gene-level Output With awk and sed](#16e-format-gene-level-output-with-awk-and-sed)
-      - [16f. Format Contig-level Output With awk and sed](#16f-format-contig-level-output-with-awk-and-sed)
-    - [17. Read-Mapping](#17-read-mapping)
-      - [17a. Align Reads to Sample Assembly](#17a-align-reads-to-sample-assembly)
-      - [17b. Sort and Index Assembly Alignments](#17b-sort-and-index-assembly-alignments)
-    - [18. Get Coverage Information and Filter Based On Detection](#18-get-coverage-information-and-filter-based-on-detection)
-      - [18a. Filter Coverage Levels Based On Detection](#18a-filter-coverage-levels-based-on-detection)
-      - [18b. Filter Gene and Contig Coverage Based On Detection](#18b-filter-gene-and-contig-coverage-based-on-detection)
-    - [19. Combine Gene-level Coverage, Taxonomy, and Functional Annotations For Each Sample](#19-combine-gene-level-coverage-taxonomy-and-functional-annotations-for-each-sample)
-    - [20. Combine Contig-level Coverage and Taxonomy For Each Sample](#20-combine-contig-level-coverage-and-taxonomy-for-each-sample)
-    - [21. Generate Normalized, Gene- and Contig-level Coverage Summary Tables of KO-annotations and Taxonomy Across Samples](#21-generate-normalized-gene--and-contig-level-coverage-summary-tables-of-ko-annotations-and-taxonomy-across-samples)
-      - [21a. Generate Gene-level Coverage Summary Tables](#21a-generate-gene-level-coverage-summary-tables)
-      - [21b. Generate Contig-level Coverage Summary Tables](#21f-generate-contig-level-coverage-summary-tables)
-    - [22. **M**etagenome-**A**ssembled **G**enome (MAG) recovery](#22-metagenome-assembled-genome-mag-recovery)
-      - [22a. Bin Contigs](#22a-bin-contigs)
-      - [22b. Bin Quality Assessment](#22b-bin-quality-assessment)
-      - [22c. Filter MAGs](#22c-filter-mags)
-      - [22d. MAG Taxonomic Classification](#22d-mag-taxonomic-classification)
-      - [22e. Generate Overview Table Of All MAGs](#22e-generate-overview-table-of-all-mags)
-    - [23. Generate MAG-level Functional Summary Overview](#23-generate-mag-level-functional-summary-overview)
-      - [23a. Get KO Annotations Per MAG](#23a-get-ko-annotations-per-mag)
-      - [23b. Summarize KO Annotations With KEGG-Decoder](#23b-summarize-ko-annotations-with-kegg-decoder)
-    - [24. Decontamination and Visualization of Contig- and Gene-taxonomy and Gene-function Outputs](#24-decontamination-and-visualization-of-contig--and-gene-taxonomy-and-gene-function-outputs)
-      - [24a. Gene-level taxonomy heatmaps](#24a-gene-level-taxonomy-heatmaps)
-      - [24b. Gene-level taxonomy decontamination](#24b-gene-level-taxonomy-decontamination)
-      - [24c. Gene-level KO functions heatmaps](#24c-gene-level-ko-functions-heatmaps)
-      - [24d. Gene-level KO functions decontamination](#24d-gene-level-ko-functions-decontamination)
-      - [24e. Contig-level heatmaps](#24e-contig-level-heatmaps)
-      - [24f. Contig-level decontamination](#24f-contig-level-decontamination)
+    - [12. Sample Assembly](#12-sample-assembly)
+    - [13. Polish Assembly](#13-polish-assembly)
+    - [14. Rename Contigs and Summarize Assemblies](#14-rename-contigs-and-summarize-assemblies)
+      - [14a. Rename Contig Headers](#14a-rename-contig-headers)
+      - [14b. Summarize Assemblies](#14b-summarize-assemblies)
+    - [15. Gene Prediction](#15-gene-prediction)
+      - [15a. Generate Gene Predictions](15a-generate-gene-predictions)
+      - [15b. Remove Line Wraps In Gene Prediction Output](#15a-remove-line-wraps-in-gene-prediction-output)
+    - [16. Functional Annotation](#16-functional-annotation)
+      - [16a. Download Reference Database of HMM Models](#16a-download-reference-database-of-hmm-models)
+      - [16b. Run KEGG Annotation](#16b-run-kegg-annotation)
+      - [16c. Filter KO Outputs](#16c-filter-ko-outputs)
+    - [17. Taxonomic Classification](#17-taxonomic-classification)
+      - [17a. Pull and Unpack Pre-built Reference DB](#17a-pull-and-unpack-pre-built-reference-db)
+      - [17b. Run Taxonomic Classification](#17b-run-taxonomic-classification)
+      - [17c. Add Taxonomy Info From Taxids To Genes](#17c-add-taxonomy-info-from-taxids-to-genes)
+      - [17d. Add Taxonomy Info From Taxids To Contigs](#17d-add-taxonomy-info-from-taxids-to-contigs)
+      - [17e. Format Gene-level Output With awk and sed](#17e-format-gene-level-output-with-awk-and-sed)
+      - [17f. Format Contig-level Output With awk and sed](#17f-format-contig-level-output-with-awk-and-sed)
+    - [18. Read-Mapping](#17-read-mapping)
+      - [18a. Align Reads to Sample Assembly](#18a-align-reads-to-sample-assembly)
+      - [18b. Sort and Index Assembly Alignments](#18b-sort-and-index-assembly-alignments)
+    - [19. Get Coverage Information and Filter Based On Detection](#19-get-coverage-information-and-filter-based-on-detection)
+      - [19a. Filter Coverage Levels Based On Detection](#19a-filter-coverage-levels-based-on-detection)
+      - [19b. Filter Gene and Contig Coverage Based On Detection](#19b-filter-gene-and-contig-coverage-based-on-detection)
+    - [20. Combine Gene-level Coverage, Taxonomy, and Functional Annotations For Each Sample](#20-combine-gene-level-coverage-taxonomy-and-functional-annotations-for-each-sample)
+    - [21. Combine Contig-level Coverage and Taxonomy For Each Sample](#21-combine-contig-level-coverage-and-taxonomy-for-each-sample)
+    - [22. Generate Normalized, Gene- and Contig-level Coverage Summary Tables of KO-annotations and Taxonomy Across Samples](#22-generate-normalized-gene--and-contig-level-coverage-summary-tables-of-ko-annotations-and-taxonomy-across-samples)
+      - [22a. Generate Gene-level Coverage Summary Tables](#22a-generate-gene-level-coverage-summary-tables)
+      - [22b. Generate Contig-level Coverage Summary Tables](#22b-generate-contig-level-coverage-summary-tables)
+    - [23. **M**etagenome-**A**ssembled **G**enome (MAG) recovery](#23-metagenome-assembled-genome-mag-recovery)
+      - [23a. Bin Contigs](#23a-bin-contigs)
+      - [23b. Bin Quality Assessment](#23b-bin-quality-assessment)
+      - [23c. Filter MAGs](#23c-filter-mags)
+      - [23d. MAG Taxonomic Classification](#23d-mag-taxonomic-classification)
+      - [23e. Generate Overview Table Of All MAGs](#23e-generate-overview-table-of-all-mags)
+    - [24. Generate MAG-level Functional Summary Overview](#24-generate-mag-level-functional-summary-overview)
+      - [24a. Get KO Annotations Per MAG](#24a-get-ko-annotations-per-mag)
+      - [24b. Summarize KO Annotations With KEGG-Decoder](#24b-summarize-ko-annotations-with-kegg-decoder)
+    - [25. Decontamination and Visualization of Contig- and Gene-taxonomy and Gene-function Outputs](#25-decontamination-and-visualization-of-contig--and-gene-taxonomy-and-gene-function-outputs)
+      - [25a. Gene-level taxonomy heatmaps](#25a-gene-level-taxonomy-heatmaps)
+      - [25b. Gene-level taxonomy decontamination](#25b-gene-level-taxonomy-decontamination)
+      - [25c. Gene-level KO functions heatmaps](#25c-gene-level-ko-functions-heatmaps)
+      - [25d. Gene-level KO functions decontamination](#25d-gene-level-ko-functions-decontamination)
+      - [25e. Contig-level heatmaps](#25e-contig-level-heatmaps)
+      - [25f. Contig-level decontamination](#25f-contig-level-decontamination)
 
 
 ---
@@ -395,7 +399,7 @@ NanoPlot --only-report \
 
 **Output Data:**
 
-- **/path/to/filtered_nanoplot_output/sample_filtered_NanoPlot-report.html** (NanoPlot html summary)
+- **/path/to/filtered_nanoplot_output/sample_filtered_NanoPlot-report_GLlblMetag.html** (NanoPlot html summary)
 - /path/to/filtered_nanoplot_output/sample_filtered_NanoPlot_\<date\>_\<time\>.log (NanoPlot log file)
 - /path/to/filtered_nanoplot_output/sample_filtered_NanoStats.txt (text file containing basic statistics)
 
@@ -484,7 +488,7 @@ NanoPlot --only-report \
 
 **Output Data:**
 
-- **/path/to/trimmed_nanoplot_output/sample_trimmed_NanoPlot-report.html** (NanoPlot html summary)
+- **/path/to/trimmed_nanoplot_output/sample_trimmed_NanoPlot-report_GLlblMetag.html** (NanoPlot html summary)
 - /path/to/trimmed_nanoplot_output/sample_trimmed_NanoPlot_\<date\>_\<time\>.log (NanoPlot log file)
 - /path/to/trimmed_nanoplot_output/sample_trimmed_NanoStats.txt (text file containing basic statistics)
 
@@ -631,7 +635,7 @@ multiqc --zip-data-dir \
 
 ### 7. Contaminant Removal
 
-> A major issue with low biomass data is the high potential for contamination due to the low amount of DNA extracted from the samples. Because negative control/blank samples should by theory be contaminant free, any sequence detected in the negative control is a potential contaminant. To filter out contaminants found in negative control samples that may have been due to cross contamination in the lab, we use a read mapping approach. First negative/blank control sample reads are assembled then the filtered and trimmed reads from each low-biomass sample are mapped to the assembled contigs from the negative/blank control samples. Reads mapping to the assembled contigs are categorized as contaminants and are therefore filtered out and thus excluded from downstream analyses.
+> A major issue with low biomass data is the high potential for contamination due to the low amount of DNA extracted from the samples. Because negative control/blank samples should by theory be contaminant free, any sequence detected in the negative control is a potential contaminant. To filter out contaminants found in negative control samples that may have been due to cross contamination in the lab, we use a read mapping approach. First negative/blank control sample reads are assembled then the filtered, trimmed, and human-removed reads from each low-biomass sample are mapped to the assembled contigs from the negative/blank control samples. Reads mapping to the assembled contigs are categorized as contaminants and are therefore filtered out and thus excluded from downstream analyses.
 
 ### 7a. Assemble Contaminants
 
@@ -639,7 +643,7 @@ multiqc --zip-data-dir \
 flye --meta \
      --threads NumberOfThreads \
      --out-dir /path/to/contaminant_assembly \
-     --nano-raw /path/to/blank_samples/\*_GLlblMetag_HRrm.fastq.gz
+     --nano-raw /path/to/blank_samples/\*_HRrm_GLlblMetag.fastq.gz
 
 # rename output
 mv assembly.fasta blank-assembly.fasta
@@ -655,7 +659,7 @@ mv flye.log blank-flye.log
 
 **Input Data**
 
-- *_GLlblMetag_HRrm.fastq.gz (one or more trimmed, HRrm reads from blank (negative control) samples, output from [Step 6b](#6b-remove-human-reads))
+- *_HRrm_GLlblMetag.fastq.gz (one or more filtered, trimmed, and HRrm reads from blank (negative control) samples, output from [Step 6b](#6b-remove-human-reads))
 
 **Output Data**
 
@@ -696,7 +700,7 @@ minimap2 -t NumberOfThreads \
 **Input Data**
 
 - /path/to/contaminant_assembly/blank-assembly.fasta (contaminant assembly, output from [Step 7a](#7-assemble-contaminants))
-- sample_HRrm_GLlblMetag.fastq.gz (filtered and trimmed reads, output from [Step 6b](#6b-remove-human-reads))
+- sample_HRrm_GLlblMetag.fastq.gz (filtered, trimmed, and HRrm reads, output from [Step 6b](#6b-remove-human-reads))
 
 **Output Data**
 
@@ -774,7 +778,7 @@ samtools idxstats sample_sorted.bam  > sample_idxstats.txt 2> sample_idxstats.lo
 #### 7e. Generate Decontaminated Read Files
 ```bash
 # Retain reads that do not map to contaminants
-samtools fastq -t -f 4 -o sample_GLlblMetag_decontam.fastq.gz -0 sample_GLlblMetag_decontam.fastq.gz sample_sorted.bam 
+samtools fastq -t -f 4 -o sample_decontam_GLlblMetag.fastq.gz -0 sample_decontam_GLlblMetag.fastq.gz sample_sorted.bam 
 ```
 
 **Parameter Definitions:**
@@ -782,8 +786,8 @@ samtools fastq -t -f 4 -o sample_GLlblMetag_decontam.fastq.gz -0 sample_GLlblMet
 - `fastq` - Positional argument specifying the program for generating fastq files from a SAM/BAM file.
 - `-t` - Copy RG, BC, and QT tags to the FASTQ header line.
 - `-f 4` - Only retain unmapped reads that have been marked with the SAM "segment unmapped" FLAG (4).
-- `-o sample_GLlblMetag_decontam.fastq.gz` - Send reads flagged as either read1 or read2 to the named file (.gz ending ensures compressed output)
-- `-0 sample_GLlblMetag_decontam.fastq.gz` - Send reads flagged as both read1 and read2 or neither to the same named file
+- `-o sample_decontam_GLlblMetag.fastq.gz` - Send reads flagged as either read1 or read2 to the named file (.gz ending ensures compressed output)
+- `-0 sample_decontam_GLlblMetag.fastq.gz` - Send reads flagged as both read1 and read2 or neither to the same named file
 - `sample_sorted.bam` - Positional argument specifying the input BAM file.
 
 **Input Data:**
@@ -792,7 +796,7 @@ samtools fastq -t -f 4 -o sample_GLlblMetag_decontam.fastq.gz -0 sample_GLlblMet
 
 **Output Data:**
 
-- **sample_GLlblMetag_decontam.fastq.gz** (filtered and trimmed sample reads with contaminants removed in fastq format)
+- **sample_decontam_GLlblMetag.fastq.gz** (filtered, trimmed, and HRrm sample reads with contaminants removed in fastq format)
 
 #### 7f. Contaminant Removal QC
 
@@ -802,7 +806,7 @@ NanoPlot --only-report \
          --outdir /path/to/decontam_nanoplot_output \
          --threads NumberOfThreads \
          --fastq \
-         sample_GLlblMetag_decontam.fastq.gz
+         sample_decontam_GLlblMetag.fastq.gz
 ```
 
 **Parameter Definitions:**
@@ -812,11 +816,11 @@ NanoPlot --only-report \
 - `--outdir` – Specifies the output directory to store results.
 - `--threads` - Number of parallel processing threads to use.
 - `--fastq` - Specifies that the input data is in fastq format.
-- `sample_GLlblMetag_decontam.fastq.gz` – The input reads, specified as a positional argument.
+- `sample_decontam_GLlblMetag.fastq.gz` – The input reads, specified as a positional argument.
 
 **Input Data:**
 
-- sample_GLlblMetag_decontam.fastq.gz (filtered and trimmed sample reads with all contaminants removed, output from [Step 7e](#7e-generate-decontaminated-read-files))
+- sample_decontam_GLlblMetag.fastq.gz (filtered, trimmed, and HRrm sample reads with all contaminants removed, output from [Step 7e](#7e-generate-decontaminated-read-files))
 
 **Output Data:**
 
@@ -858,16 +862,13 @@ multiqc --zip-data-dir \
 
 ### 8. Host Read Removal
 
-If the samples were derived from a host organism other than human, potential host reads
-should be identified and removed. This step is optional.
+If the samples were derived from a host organism other than human, potential host reads should be identified and removed. This step is optional.
 
 #### 8a. Build Kraken2 Database
 
 > **Note:** It is recommended to use NCBI genome files with kraken2 because sequences not downloaded from 
 NCBI may require explicit assignment of taxonomy information before they can be used to build the 
 database, as mentioned in the [Kraken2 Documentation](https://github.com/DerrickWood/kraken2/blob/master/docs/MANUAL.markdown).
-
-```bash
 
 ```bash
 # Download NCBI taxonomic information 
@@ -911,11 +912,11 @@ kraken2 --db kraken2_host_db \
         --use-names \
         --output sample-kraken2-output.txt \
         --report sample-kraken2-report.tsv \
-        --unclassified-out sample_GLlblMetag_HostRm.fastq \
-        sample_trimmed_fastq.gz
+        --unclassified-out sample_HostRm_GLlblMetag.fastq \
+        sample_decontam_GLlblMetag.fastq.gz
 
 # gzip fastq output file
-gzip sample_GLlblMetag_HostRm.fastq
+gzip sample_HostRm_GLlblMetag.fastq
 ```
 
 **Parameter Definitions:**
@@ -927,18 +928,18 @@ gzip sample_GLlblMetag_HostRm.fastq
 - `--output` - Specifies the name of the kraken2 read-based output file (one line per read).
 - `--report` - Specifies the name of the kraken2 report output file (one line per taxa, with number of reads assigned to it).
 - `--unclassified-out` - Specifies the name of the output file containing reads that were not classified, i.e non-human reads.
-- `sample_trimmed.fastq.gz` - Positional argument specifying the input read file.
+- `sample_decontam_GLlblMetag.fastq.gz` - Positional argument specifying the input read file.
 
 **Input Data:**
 
 - kraken2_host_db/ (kraken2 host database directory, output from [Step 8a](#8a-build-kraken2-database))
-- sample_*decontam.fastq.gz (filtered and trimmed sample reads with contaminants removed, output from [Step 5a](#5a-trim-filtered-data))
+- sample_decontam_GLlblMetag.fastq.gz (filtered, trimmed, HRrm and contaminant-removed sample reads, output from [Step 7e](#7e-generate-decontaminated-read-files))
 
 **Output Data:**
 
 - sample-kraken2-output.txt (kraken2 read-based output file (one line per read))
 - sample-kraken2-report.tsv (kraken2 report output file (one line per taxa, with number of reads assigned to it))
-- **sample_GLlblMetag_HostRm.fastq.gz** (filtered and trimmed sample reads with both contaminants and human reads removed, gzipped fasta file)
+- **sample_HostRm_GLlblMetag.fastq.gz** (filtered, trimmed, HRrm and contaminant-removed sample reads with all host reads removed, gzipped fastq file)
 
 
 #### 8c. Compile Host Read Removal QC
@@ -961,7 +962,7 @@ multiqc --zip-data-dir \
 
 **Input Data:**
 
-- /path/to/*kraken2-report.tsv (kraken2 report files, output from [Step 7b](#7b-remove-human-reads))
+- /path/to/*kraken2-report.tsv (kraken2 report files, output from [Step 8b](#8b-remove-host-reads))
 
 **Output Data:**
 
@@ -1869,7 +1870,7 @@ kaiju -f kaiju-db/nr_euk/kaiju_db_nr_euk.fmi \
       -t kaiju-db/nodes.dmp \
       -z NumberOfThreads \
       -E 1e-05 \
-      -i /path/to/sample_GLlblMetag_decontam.fastq.gz \
+      -i /path/to/sample_decontam_GLlblMetag.fastq.gz \
       -o sample_kaiju.out
 ```
 
@@ -1886,7 +1887,7 @@ kaiju -f kaiju-db/nr_euk/kaiju_db_nr_euk.fmi \
 
 - kaiju-db/nr_euk/kaiju_db_nr_euk.fmi (FM-index file containing the main Kaiju database index, output from [Step 9a](#9a-build-kaiju-database))
 - kaiju-db/nodes.dmp (kaiju taxonomy hierarchy nodes file, output from [Step 9a](#9a-build-kaiju-database))
-- sample_GLlblMetag_decontam.fastq.gz or sample_GLlblMetag_HostRm.fastq.gz (filtered and trimmed sample reads with both 
+- sample_decontam_GLlblMetag.fastq.gz or sample_HostRm_GLlblMetag.fastq.gz (filtered and trimmed sample reads with both 
     contaminants and human reads (and optionally host reads) removed, gzipped fasta file, 
     output from [Step 7e](#7e-generate-decontaminated-read-files) or [Step 8b](#8b-remove-host-reads))
 
@@ -2286,7 +2287,7 @@ kraken2 --db kraken2-db/ \
         --use-names \
         --output sample-kraken2-output.txt \
         --report sample-kraken2-report.tsv \
-        /path/to/sample_GLlblMetag_decontam.fastq.gz
+        /path/to/sample_decontam_GLlblMetag.fastq.gz
 ```
 
 **Parameter Definitions:**
@@ -2297,12 +2298,12 @@ kraken2 --db kraken2-db/ \
 - `--use-names` - Specifies to add taxa names in addition to taxids.
 - `--output` - Specifies the name of the kraken2 read-based output file.
 - `--report` - Specifies the name of the kraken2 report output file.
-- `sample_GLlblMetag_decontam.fastq.gz` - Positional argument specifying the input file.
+- `sample_decontam_GLlblMetag.fastq.gz` - Positional argument specifying the input file.
 
 **Input Data:**
 
 - kraken2-db/ (a directory containing kraken2 database files, output from [Step 10a](#10a-download-kraken2-database))
-- sample_GLlblMetag_decontam.fastq.gz or sample_GLlblMetag_HostRm.fastq.gz (filtered and trimmed sample reads with both 
+- sample_decontam_GLlblMetag.fastq.gz or sample_HostRm_GLlblMetag.fastq.gz (filtered and trimmed sample reads with both 
     contaminants and human reads (and, optionally, host reads) removed, gzipped fasta file, 
     output from [Step 7e](#7e-generate-decontaminated-read-files) or [Step 8b](#8b-remove-host-reads))
 
@@ -2636,7 +2637,7 @@ flye --meta \
      --threads NumberOfThreads \
      --out-dir sample/ \
      --nano-hq \
-     /path/to/sample_GLlblMetag_decontam.fastq.gz
+     /path/to/sample_decontam_GLlblMetag.fastq.gz
 
 # rename output files            
 mv sample/assembly.fasta sample_assembly.fasta
@@ -2649,11 +2650,11 @@ mv sample/flye.log sample_assembly.log
 - `--threads` - Number of parallel processing threads to use.
 - `--out-dir` - Specifies the name of the output directory.
 - `--nano-hq` - Specifies that input is from Oxford Nanopore high-quality reads (Guppy5+ SUP or Q20, <5% error). This skips a genome polishing step since the assembly will be polished with medaka in the next step.
-- `/path/to/sample_GLlblMetag_decontam.fastq.gz` - Path to the input file, specified as a positional argument.
+- `/path/to/sample_decontam_GLlblMetag.fastq.gz` - Path to the input file, specified as a positional argument.
 
 **Input Data**
 
-- sample_GLlblMetag_decontam.fastq.gz or sample_GLlblMetag_HostRm.fastq.gz (filtered and trimmed sample reads with both 
+- sample_decontam_GLlblMetag.fastq.gz or sample_HostRm_GLlblMetag.fastq.gz (filtered and trimmed sample reads with both 
     contaminants and human reads (and optionally host reads) removed, gzipped fasta file, 
     output from [Step 7e](#7e-generate-decontaminated-read-files) or [Step 8b](#8b-remove-host-reads))
 
@@ -2670,7 +2671,7 @@ mv sample/flye.log sample_assembly.log
 
 ```bash
 medaka_consensus -t NumberOfThreads \
-                 -i /path/to/sample_GLlblMetag_decontam.fastq.gz \
+                 -i /path/to/sample_decontam_GLlblMetag.fastq.gz \
                  -d /path/to/assemblies/sample_assembly.fasta \
                  -o sample/
   
@@ -2686,7 +2687,7 @@ mv sample/consensus.fasta sample_polished.fasta
 
 **Input Data:**
 
-- sample_GLlblMetag_decontam.fastq.gz or sample_GLlblMetag_HostRm.fastq.gz (filtered and trimmed sample reads with both 
+- sample_decontam_GLlblMetag.fastq.gz or sample_HostRm_GLlblMetag.fastq.gz (filtered and trimmed sample reads with both 
     contaminants and human reads (and optionally host reads) removed, gzipped fasta file, 
     output from [Step 7e](#7e-generate-decontaminated-read-files) or [Step 8b](#8b-remove-host-reads))
 - /path/to/assemblies/sample_assembly.fasta (sample assembly, output from [Step 11](#11-sample-assembly))
@@ -3054,7 +3055,7 @@ minimap2 -a \
          -x map-ont \
          -t NumberOfThreads \
          sample_assembly.fasta \
-         sample_GLlblMetag_decontam.fastq.gz \
+         sample_decontam_GLlblMetag.fastq.gz \
          > sample.sam  2> sample-mapping-info.txt
 ```
 
@@ -3064,14 +3065,14 @@ minimap2 -a \
 - `-x map-ont` - Specifies preset for mapping Nanopore reads to a reference.
 - `-t` - Number of parallel processing threads to use
 - `sample_assembly.fasta` – Assembly fasta file, provided as a positional argument.
-- `sample_GLlblMetag_decontam.fastq.gz` - Input sequence data file, provided as a positional argument.
+- `sample_decontam_GLlblMetag.fastq.gz` - Input sequence data file, provided as a positional argument.
 - `> sample.sam` - Redirects the output to a separate file.
 - `2> sample-mapping-info.txt` - Redirects the standar error to a separate file.
 
 **Input Data**
 
 - sample-assembly.fasta (contig-renamed assembly file, output from [Step 13a](#13a-rename-contig-headers))
-- sample_GLlblMetag_decontam.fastq.gz or sample_GLlblMetag_HostRm.fastq.gz (filtered and trimmed sample reads with both 
+- sample_decontam_GLlblMetag.fastq.gz or sample_HostRm_GLlblMetag.fastq.gz (filtered and trimmed sample reads with both 
     contaminants and human reads (and optionally host reads) removed, gzipped fasta file, 
     output from [Step 7e](#7e-generate-decontaminated-read-files) or [Step 8b](#8b-remove-host-reads))
 
