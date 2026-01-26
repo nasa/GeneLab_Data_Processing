@@ -4,7 +4,7 @@
 
 ---
 
-**Date:** November MM, 2025  
+**Date:** January MM, 2026  
 **Revision:** -  
 **Document Number:** GL-DPPD-7116  
 
@@ -70,9 +70,9 @@ Barbara Novak (GeneLab Data Processing Lead)
     - [10. Taxonomic Profiling Using Kraken2](#10-taxonomic-profiling-using-kraken2)
       - [10a. Download Kraken2 Database](#10a-download-kraken2-database)
       - [10b. Kraken2 Taxonomic Classification](#10b-kraken2-taxonomic-classification)
-      - [10c. Compile Kraken2 Taxonomy ](#10c-compile-kraken2-taxonomy-results)
-        - [10ci.](#10ci-create-merged-kraken2-taxonomy-table)
-        - [10cii.](#10cii-compile-kraken2-taxonomy-reports)
+      - [10c. Compile Kraken2 Taxonomy Results](#10c-compile-kraken2-taxonomy-results)
+        - [10ci. Create Merged Kraken2 Taxonomy Table](#10ci-create-merged-kraken2-taxonomy-table)
+        - [10cii. Compile Kraken2 Taxonomy Reports](#10cii-compile-kraken2-taxonomy-reports)
       - [10d. Convert Kraken2 Output to Krona Format](#10d-convert-kraken2-output-to-krona-format)
       - [10e. Compile Kraken2 Krona Reports](#10e-compile-kraken2-krona-reports)
       - [10f. Create Kraken2 Species Count Table](#10f-create-kraken2-species-count-table)
@@ -306,7 +306,7 @@ NanoPlot --only-report \
 
 **Input Data:**
 
-- /path/to/raw_data/sample.fastq.gz (raw reads, output from [Step 2b](#2b-concatenate-files-for-each-sample))
+- /path/to/raw_data/sample.fastq.gz (concatenated raw reads, output from [Step 2b](#2b-concatenate-files-for-each-sample))
 
 **Output Data:**
 
@@ -362,7 +362,7 @@ filtlong --min_length 200 --min_mean_q 8 /path/to/raw_data/sample.fastq.gz > sam
 
 **Input Data:**
 
-- /path/to/raw_data/sample.fastq.gz (raw reads, output from [Step 2b](#2b-concatenate-files-for-each-sample))
+- /path/to/raw_data/sample.fastq.gz (concatenated raw reads, output from [Step 2b](#2b-concatenate-files-for-each-sample))
 
 **Output Data:**
 
@@ -552,7 +552,7 @@ kraken2-build --clean --db kraken2-human-db/
 
 **Input Data:**
 
-- `human.fasta` (fasta file containing human genome)
+- `human.fasta` (fasta file containing human genome, SPECIFY WHERE THIS GEONOME CAME FROM)
 
 **Output Data:**
 
@@ -567,11 +567,11 @@ kraken2 --db kraken2_human_db \
         --use-names \
         --output sample-kraken2-output.txt \
         --report sample-kraken2-report.tsv \
-        --unclassified-out sample_GLlblMetag_HRrm.fastq \
+        --unclassified-out sample_HRrm_GLlblMetag.fastq \
         sample_trimmed_fastq.gz
 
 # gzip fastq output file
-gzip sample_GLlblMetag_HRrm.fastq
+gzip sample_HRrm_GLlblMetag.fastq
 ```
 
 **Parameter Definitions:**
@@ -587,14 +587,14 @@ gzip sample_GLlblMetag_HRrm.fastq
 
 **Input Data:**
 
-- kraken2_human_db/ (kraken2 human database directory, output from [Step 7a](#7a-build-kraken2-database))
-- sample_trimmed.fastq.gz (filtered and trimmed sample reads with contaminants removed, output from [Step 5a](#5a-trim-filtered-data))
+- kraken2_human_db/ (kraken2 human database directory, output from [Step 6a](#6a-build-kraken2-database))
+- sample_trimmed.fastq.gz (filtered and trimmed sample reads, output from [Step 5a](#5a-trim-filtered-data))
 
 **Output Data:**
 
 - sample-kraken2-output.txt (kraken2 read-based output file (one line per read))
 - sample-kraken2-report.tsv (kraken2 report output file (one line per taxa, with number of reads assigned to it))
-- **sample_GLlblMetag_HRrm.fastq.gz** (filtered and trimmed sample reads with both contaminants and human reads removed, gzipped fasta file)
+- **sample_HRrm_GLlblMetag.fastq.gz** (filtered and trimmed sample reads with human reads removed, gzipped fastq file)
 
 
 #### 6c. Compile Human Read Removal QC
@@ -617,7 +617,7 @@ multiqc --zip-data-dir \
 
 **Input Data:**
 
-- /path/to/*kraken2-report.tsv (kraken2 report files, output from [Step 7b](#7b-remove-human-reads))
+- /path/to/*kraken2-report.tsv (kraken2 report files, output from [Step 6b](#6b-remove-human-reads))
 
 **Output Data:**
 
@@ -679,7 +679,7 @@ minimap2 -t NumberOfThreads \
          -a \
          -x splice \
          blanks.mmi \
-         sample_GLlblMetag_HRrm.fastq.gz  > sample.sam 2> sample-mapping-info.txt
+         sample_HRrm_GLlblMetag.fastq.gz  > sample.sam 2> sample-mapping-info.txt
 ```
 
 **Parameter Definitions:**
@@ -690,13 +690,13 @@ minimap2 -t NumberOfThreads \
 - `-d` - Specifies the output file for the index (specific to the build contaminant index command).
 - `/path/to/contaminant_assembly/blank-assembly.fasta` - Specifies the input file in fasta format, provided as a positional argument (specific to the build contaminant index command).
 - `blanks.mmi` - Specifies the index file in mmi format, provided as a positional argument (specific to the map reads command).
-- `/path/to/trimmed_reads/sample_GLlblMetag_HRrm.fastq.gz` - Specifies the input file in fastq format, provided as a positional argument (specific to the map reads command).
+- `/path/to/trimmed_reads/sample_HRrm_GLlblMetag.fastq.gz` - Specifies the input file in fastq format, provided as a positional argument (specific to the map reads command).
 - `> sample.sam` - Redirects the output of the map reads command to a separate SAM file (specific to the map reads command).
 
 **Input Data**
 
 - /path/to/contaminant_assembly/blank-assembly.fasta (contaminant assembly, output from [Step 7a](#7-assemble-contaminants))
-- sample_GLlblMetag_HRrm.fastq.gz (filtered and trimmed reads, output from [Step 6b](#6b-remove-human-reads))
+- sample_HRrm_GLlblMetag.fastq.gz (filtered and trimmed reads, output from [Step 6b](#6b-remove-human-reads))
 
 **Output Data**
 
