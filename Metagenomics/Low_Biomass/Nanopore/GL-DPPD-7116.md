@@ -973,11 +973,11 @@ multiqc --zip-data-dir \
 
 ---
 
-### 8. R Environment Setup
+### 9. R Environment Setup
 
 > Taxonomy bar plots, heatmaps and feature decontamination with decontam are performed in R.
 
-#### 8a. Load libraries
+#### 9a. Load libraries
 
 ```R
 library(decontam)
@@ -987,7 +987,7 @@ library(pheatmap)
 library(pavian)
 ```
 
-#### 8b. Define Custom Functions
+#### 9b. Define Custom Functions
 
 ##### get_last_assignment()
 <details>
@@ -1052,7 +1052,7 @@ library(pavian)
   - `df` - a dataframe containing the taxonomy assignments
   - `taxonomy_column=` - name of the column in `df` containing the taxonomy assignments, default="taxonomy"
 
-  **Returns:** a dataframe with unique last taxonomy names stored in a column named "taxonomy"
+  **Returns:** dataframe, `df`, with unique last taxonomy names stored in a column named "taxonomy"
 
 </details>
 
@@ -1101,7 +1101,7 @@ library(pavian)
   - `file_path` - file path to the tab-delimited kaiju output table file
   - `taxon_col=`- name of the taxon column in the input data file, default="taxon_name"
 
-  **Returns:** a dataframe with reformated kaiju output
+  **Returns:** dataframe, `abs_abun_matrix`, with reformated kaiju output
 
 </details>
 
@@ -1153,7 +1153,7 @@ library(pavian)
   **Function Parameter Definitions:**
   - `reports_dir` - path to a directory containing kraken2 reports 
 
-  **Returns:** a kraken species count matrix with samples and species as columns and rows, respectively.
+  **Returns:** a kraken species count matrix, `species_table`, with samples and species as columns and rows, respectively.
 
 </details>
 
@@ -1177,7 +1177,7 @@ library(pavian)
   - `mat` - a feature count matrix with features as rows and samples as columns
   - `cpm_threshold = 1000` - threshold to identify abundant features
 
-  **Returns:** a species relative abundance matrix with samples and species as rows and column, respectively.
+  **Returns:** a species relative abundance matrix, `abund_features.m`, with samples and species as rows and columns, respectively.
 </details>
 
 ##### count_to_rel_abundance()
@@ -1209,7 +1209,7 @@ library(pavian)
   **Function Parameter Definitions:**
   - `species_table` - a species count matrix with samples and species as columns and rows, respectively.
 
-  **Returns:** a species relative abundance matrix with samples and species as rows and column, respectively.
+  **Returns:** a species relative abundance matrix, `abund_table`, with samples and species as rows and columns, respectively.
 
 </details>
 
@@ -1252,7 +1252,7 @@ library(pavian)
   - `non_microbial` - a regular expression denoting the names used to identify a species as non-microbial or unwanted
   - `threshold=` - abundance threshold used to determine if the relative abundance is rare, value denotes a percentage between 0 and 100.
 
-  **Returns:** a dataframe with rare and non_microbial/unwanted species removed
+  **Returns:** dataframe, `abund_table`, with rare and non_microbial/unwanted species removed
 </details>
 
 ##### group_low_abund_taxa()
@@ -1311,7 +1311,7 @@ library(pavian)
   - `rare_taxa` - a boolean specifying if only rare taxa should be returned
   - `threshold` - a max abundance threshold for defining taxa as rare
 
-  **Returns:** a relative abundance matrix with rare taxa grouped or with non-rare taxa filtered out
+  **Returns:** a relative abundance matrix, `abund_table`, with rare taxa grouped or with non-rare taxa filtered out
 
 </details>
 
@@ -1356,7 +1356,7 @@ library(pavian)
   - `samples_column` - a character column specifying the column in `metadata` holding sample names, default is "Sample_ID"
   - `prefix_to_remove` - a string specifying a prefix or any character set to remove from sample names, default is "barcode"
 
-  **Returns:** a relative abundance stacked bar plot
+  **Returns:** a relative abundance stacked bar plot, `p`
 
 </details>
 
@@ -1409,10 +1409,10 @@ library(pavian)
   - `output_prefix` - a character string specifying the unique name to add to the output file names 
                       used to denote the data type/source, for example "unfiltered-kaiju_species"
   - `assay_suffix` - a character string specifying the GeneLab assay suffix (default: "_GLlblMetag")
-  - `publication_format` - a ggplot::theme object specifying a custom theme for plotting, from [Step 8c](#8c-set-global-variables)
-  - `custom_palette` - a vector of strings specifying a custom color palette for coloring plots, from [Step 8c](#8c-set-global-variables)
+  - `publication_format` - a ggplot::theme object specifying a custom theme for plotting, from [Step 9c](#9c-set-global-variables)
+  - `custom_palette` - a vector of strings specifying a custom color palette for coloring plots, from [Step 9c](#9c-set-global-variables)
 
-  **Returns:** a relative abundance stacked bar plot
+  **Returns:** a relative abundance stacked bar plot, `p`
 
 </details>
 
@@ -1482,7 +1482,7 @@ library(pavian)
   - `output_prefix` - a character string specifying the unique name to add to the output file names 
                       used to denote the data type/source, for example "unfiltered-kaiju_species"
   - `assay_suffix` - a character string specifying the GeneLab assay suffix (default: "_GLlblMetag")
-  - `custom_palette` - a vector of strings specifying a custom color palette for coloring plots, from [Step 8c](#8c-set-global-variables)
+  - `custom_palette` - a vector of strings specifying a custom color palette for coloring plots, from [Step 9c](#9c-set-global-variables)
 
 </details>
 
@@ -1554,7 +1554,7 @@ library(pavian)
   - `contam_threshold` -  the probability threshold below which (strictly less than) the null-hypothesis 
                           (not a contaminant) should be rejected in favor of the alternate hypothesis (contaminant).
 
-  **Returns:** a dataframe of detailed decontam results
+  **Returns:** dataframe, `contamdf`, containing detailed decontam results
 </details>
 
 ##### feature_decontam() 
@@ -1642,7 +1642,7 @@ library(pavian)
   - {classification_method}_decontam_species_table_GLlblMetag.csv - decontaminated feature table file
   - {classification_method}_decontam_results_GLlblMetag.csv - Decontam results file
 
-  **Returns:** a dataframe containing the decontaminated feature table
+  **Returns:** dataframe, `decontaminated_table`, containing the decontaminated feature table
 
 </details>
 
@@ -1679,7 +1679,7 @@ library(pavian)
   - `prefix`  - is a regular expression specifying a character sequence to remove
                 from taxon names
 
-  **Returns:** a dataframe of reformated taxonomy names
+  **Returns:** dataframe, `taxonomy`, containing reformated taxonomy names
 
 </details>
 
@@ -1712,7 +1712,7 @@ library(pavian)
   - `stringToReplace` - a regex string specifying what to replace
   - `suffix` - string specifying the replacement value
 
-  **Returns:** a dataframe of reformated/cleaned taxonomy names
+  **Returns:** dataframe, `taxonomy`, containing reformated/cleaned taxonomy names
 
 </details>
 
@@ -1747,15 +1747,15 @@ library(pavian)
   ```
 
   **Custom Functions Used:**
-  [process_taxonomy](#process_taxonomy)
-  [fix_names()](#fix_names)
+  [process_taxonomy()](#process_taxonomy)  
+  [fix_names()](#fix_names)   
 
   **Function Parameter Definitions:**
 
   - `file_name` - path to contig taxonomy assignment file to be read
   - `sample_names` - string of samples names to keep in the final dataframe
 
-  **Returns:** a dataframe with cleaned taxonomy names and sample species count
+  **Returns:** dataframe, `df`, containing cleaned taxonomy names and sample species count
 
 </details>
 
@@ -1780,12 +1780,12 @@ library(pavian)
 
   - `assembly_summary` - path to assembly summary file
 
-  **Returns:** a character vector of sorted sample names
+  **Returns:** a character vector, `sample_order`, of sorted sample names
 
 </details>
 
 
-#### 8c. Set global variables
+#### 9c. Set global variables
 
 ```R
 # Define custom theme for plotting
@@ -1830,7 +1830,7 @@ custom_palette <- custom_palette[-c(21:23,
 
 ## Read-based Processing
 
-### 9. Taxonomic Profiling Using Kaiju
+### 10. Taxonomic Profiling Using Kaiju
 
 #### 9a. Build Kaiju Database
 
@@ -2319,7 +2319,7 @@ kraken2 --db kraken2-db/ \
 
 ```R
 species_table <- merge_kraken_reports(reports-dir='/path/to/kraken2/reports')
-write_csv(x = species_table, file = "merged-kraken2-table.csv")
+write_csv(x = species_table, file = "kraken2_species_table_GLlblMetag.csv")
 ```
 
 **Custom Functions Used:**
