@@ -1,0 +1,6 @@
+name,species,refseq,genome,fasta
+human,Homo sapiens,GCF_000001405.39,GRCh38.p13,https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz
+mouse,Mus musculus,GCF_000001635.27,GRCm39,https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/635/GCF_000001635.27_GRCm39/GCF_000001635.27_GRCm39_genomic.fna.gz
+arabidopsis,Arabidopsis thaliana,GCF_000001735.4,TAIR10,https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/735/GCF_000001735.4_TAIR10.1/GCF_000001735.4_TAIR10.1_genomic.fna.gz
+lettuce,Lactuca sativa,GCF_002870075.4,Lsat_Salinas_v11,https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/002/870/075/GCF_002870075.4_Lsat_Salinas_v11/GCF_002870075.4_Lsat_Salinas_v11_genomic.fna.gz
+tomato,Solanum lycopersicum,GCF_036512215.1,SLM_r2.1,https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/036/512/215/GCF_036512215.1_SLM_r2.1/GCF_036512215.1_SLM_r2.1_cds_from_genomic.fna.gz
