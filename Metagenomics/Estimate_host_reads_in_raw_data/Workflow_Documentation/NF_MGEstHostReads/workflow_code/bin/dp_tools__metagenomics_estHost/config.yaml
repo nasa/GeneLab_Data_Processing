@@ -1,0 +1,150 @@
+# TOP LEVEL
+NAME: "metagenomics"
+VERSION: "1"
+
+Staging:
+  General:
+    Required Metadata:
+      From ISA:
+
+        - ISA Field Name: 
+            - Characteristics[Organism]
+            - Characteristics[organism]
+          ISA Table Source: Sample
+          Runsheet Column Name: organism
+          Processing Usage: >-
+            Mapping to the appropriate alignment reference and annotation databases.
+          Example: Microbiota
+
+        - ISA Field Name: 
+            - Characteristics[host organism]
+            - Characteristics[Host Organism]
+            - Characteristics[Host organism]
+          ISA Table Source: Sample
+          Runsheet Column Name: host organism
+          Processing Usage: >-
+            Mapping to the appropriate alignment reference and annotation databases.
+          Example: Mus musculus
+
+        - ISA Field Name: Sample Name
+          ISA Table Source: Assay
+          Runsheet Column Name: sample_name
+          Runsheet Index: true
+          Processing Usage: >-
+            Sample name is used as a unique sample identifier during processing
+          Example: Atha_Col-0_Root_WT_Ctrl_45min_Rep1_GSM502538
+    
+        - ISA Field Name: 
+            - Parameter Value[library layout]
+            - Parameter Value[Library Layout]
+            - Parameter Value: library layout
+          ISA Table Source: Assay
+          Runsheet Column Name: paired_end
+          Remapping: {"PAIRED":true, "Paired":true, "SINGLE":false, "Single":false}
+          Processing Usage: >-
+            Indicates if the sequencing was paired end. This controls how a variety of tools are invoked 
+            including in-house written scripts.
+          Example: 'TRUE'
+
+        # this entry denotes the following:
+        # retrieve from that ISA field name
+        # multiple values (separated by ",")
+        # index those to certain runsheet columns
+        # if the index doesn't exist, optional prevents raising an exception
+        # GLDS URL Mapping means the names are searched against the GLDS filelisting json for urls
+        # an exception will be raised if one and only one url is not mapped to each filename
+        - ISA Field Name: 
+            - Parameter Value[Merged Sequence Data File]
+            - Characteristics[Merged Sequence Data File]
+            - Raw Data File
+          ISA Table Source: Assay
+          Multiple Values Per Entry: true
+          Multiple Values Delimiter: '\s*,\s*' # whitespace surrounded comma
+          Runsheet Column Name: 
+            - {'name':'read1_path', 'index':0}
+            - {'name':'read2_path', 'index':1, 'optional':true}
+          GLDS URL Mapping: True
+          Processing Usage: >-
+            Location to the raw data fastq file. May be a url or local path.
+          Example: 'https://genelab-data.ndc.nasa.gov/genelab/static/media/dataset/GLDS-194_rna...'
+
+        - ISA Field Name: 
+            - Parameter Value[Merged Sequence Data File]
+            - Characteristics[Merged Sequence Data File]
+            - Raw Data File
+          ISA Table Source: Assay
+          Multiple Values Per Entry: true
+          Multiple Values Delimiter: '\s*,\s*' # whitespace surrounded comma
+          Runsheet Column Name: 
+            - {'name':'raw_R1_suffix', 'index':0}
+            - {'name':'raw_R2_suffix', 'index':1, 'optional':true}
+          
+          Processing Usage: >-
+            Raw data fastq file.
+          Example: '_R1_raw.fastq.gz or _raw.fastq.gz for SE'
+
+        - ISA Field Name: Factor Value[{factor_name}]
+          ISA Table Source: [Assay, Sample]
+          Runsheet Column Name: Factor Value[{factor_name}]
+          Matches Multiple Columns: true
+          Match Regex: "Factor Value\\[.*\\]"
+          Append Column Following: "Unit"
+          Processing Usage: >-
+            Factor values in a study. Used to assign experimental groups for each sample.
+            Note: On the runsheet, a subsequent 'Unit' Column value will be 
+            suffix-concatenated if it exists.
+          Example: Basal Control
+    
+        - ISA Field Name: Unit
+          ISA Table Source: [Assay, Sample]
+          Runsheet Column Name: null
+          Matches Multiple Columns: true
+          Autoload: false # handled by factor value loading above
+          Processing Usage: >-
+            Unit to be suffix-concatenated onto prior Factor value columns.
+          Example: day
+
+      From User:
+        # Removed since unused by Processing via the runsheet
+        # - Runsheet Column Name: GLDS
+        #   Processing Usage: >-
+        #     The GLDS accession number
+        #   Example: GLDS-205
+  
+        - Runsheet Column Name: read1_path
+          # used to generate candidate file names for searching GLDS repository filelisting
+          Data Asset Keys: ["raw forward reads fastq GZ", "raw reads fastq GZ"]
+          Processing Usage: >-
+            The location of either the forward reads (paired end) or only reads file (single end) 
+            raw fastq file. Can be either a url or local path.
+            Note: For GLDS raw data assets, either the filelisting json API or the OpenAPI
+            may be used to retrieve urls given the array data filename (sourced from ISA archive).
+          Example: /some/local/path OR https://genelab-data.ndc.nasa.gov/genelab/static/media/dataset/GLDS-123_microarray_E-MTAB-3289.raw.1.zip?version=1
+    
+  
+        - Runsheet Column Name: read2_path
+          Data Asset Keys: ["raw reverse reads fastq GZ"]
+          Processing Usage: >-
+            The location of either the reverse reads (paired end)
+            raw fastq file. Can be either a url or local path.
+            For single end studies, this should be an empty string.
+            Note: For GLDS raw data assets, either the filelisting json API or the OpenAPI
+            may be used to retrieve urls given the array data filename (sourced from ISA archive).
+          Example: /some/local/path OR https://genelab-data.ndc.nasa.gov/genelab/static/media/dataset/GLDS-123_microarray_E-MTAB-3289.raw.1.zip?version=1
+
+ISA Meta:
+  Valid Study Assay Technology And Measurement Types:
+    - measurement: "Metagenomic sequencing"
+      technology: "Whole-Genome Shotgun Sequencing"
+
+  # this is prepended to all file names in the curation assay table
+  Global file prefix: "{datasystem}_metagenomics_"
+
+  # # configuration related to updating investigation file
+  # # each must refer to a STUDY PROCESS in the 'ISA_investigation.yaml' file
+  # # LEADCAP_organism should be the studied organisms scientific name with a leading cap
+  # Post Processing Add Study Protocol: 
+  #   GeneLab Methyl-Seq data processing protocol::{LEADCAP_organism} V1
+
+data assets:
+    # resource categories: *neverPublished
