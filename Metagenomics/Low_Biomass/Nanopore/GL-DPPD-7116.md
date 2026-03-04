@@ -177,12 +177,11 @@ Barbara Novak (GeneLab Data Processing Lead)
 
 ## Pre-processing
 
-
 ### 1. Basecalling
 
 ```bash
 model="hac" # high accuracy model
-input_directory=/path/to/pod5/or/fast5/data
+input_directory=/path/to/pod5/data
 kit_name=SQK-RPB004
 
 dorado basecaller ${model} ${input_directory} \
@@ -196,16 +195,16 @@ dorado basecaller ${model} ${input_directory} \
 **Parameter Definitions:**
 
 - `model` - Positional argument specifying the basecalling model to use or a path to the model directory. `hac` chooses the high accuracy model.
-- `input_directory` - Positional argument specifying the location of the raw data in POD5 or FAST5 format.
+- `input_directory` - Positional argument specifying the location of the raw data in POD5 format.
 - `--no-trim` - Skips trimming of barcodes, adapters, and primers.
 - `--device` - Specifies CPU or GPU device; specifying 'auto' chooses either 'cpu' or 'gpu' depending on detected presence of a GPU device.
-- `--recursive` - Enables recursive scanning through input directory to load FAST5 and/or POD5 files.
+- `--recursive` - Enables recursive scanning through input directory to load POD5 files.
 - `--kit-name` - The nanopore barcoding kit used during sequencing preparation. Enables barcoding with the provided kit name; see [dorado documentation](https://software-docs.nanoporetech.com/dorado/1.1.1/barcoding/barcoding/) for a full list of accepted kit names.
 - `--min-qscore` - Specifies the minimum Q-score, reads with a mean Q-score below this threshold are discarded (default to `8`).
 
 **Input Data:**
 
-- *pod5 and/or *fast5 (raw nanopore data)
+- *pod5 (raw nanopore data)
 
 **Output Data:**
 
@@ -296,6 +295,8 @@ NanoPlot --only-report \
          --threads NumberOfThreads \
          --fastq \
          /path/to/raw_data/sample.fastq.gz
+
+mv /path/to/raw_nanoplot_output/sample_raw_NanoPlot-report.html /path/to/raw_nanoplot_output/sample_raw_NanoPlot-report_GLlblMetag.html
 ```
 
 **Parameter Definitions:**
@@ -313,7 +314,7 @@ NanoPlot --only-report \
 
 **Output Data:**
 
-- **/path/to/raw_nanoplot_output/sample_raw_NanoPlot-report.html** (NanoPlot html summary)
+- **/path/to/raw_nanoplot_output/sample_raw_NanoPlot-report_GLlblMetag.html** (NanoPlot html summary)
 - /path/to/raw_nanoplot_output/sample_raw_NanoPlot_\<date\>_\<time\>.log (NanoPlot log file)
 - /path/to/raw_nanoplot_output/sample_raw_NanoStats.txt (text file containing basic statistics)
 
@@ -381,6 +382,8 @@ NanoPlot --only-report \
          --threads NumberOfThreads \
          --fastq \
          sample_filtered.fastq
+
+mv /path/to/filtered_nanoplot_output/sample_filtered_NanoPlot-report.html /path/to/filtered_nanoplot_output/sample_filtered_NanoPlot-report_GLlblMetag.html
 ```
 
 **Parameter Definitions:**
@@ -470,6 +473,8 @@ NanoPlot --only-report \
          --threads NumberOfThreads \
          --fastq \
          sample_trimmed.fastq.gz
+
+mv /path/to/trimmed_nanoplot_output/sample_trimmed_NanoPlot-report.html /path/to/trimmed_nanoplot_output/sample_trimmed_NanoPlot-report_GLlblMetag.html
 ```
 
 **Parameter Definitions:**
@@ -802,11 +807,13 @@ samtools fastq -t -f 4 -o sample_decontam_GLlblMetag.fastq.gz -0 sample_decontam
 
 ```bash
 NanoPlot --only-report \
-         --prefix sample_noblank_ \
+         --prefix sample_decontam_ \
          --outdir /path/to/decontam_nanoplot_output \
          --threads NumberOfThreads \
          --fastq \
          sample_decontam_GLlblMetag.fastq.gz
+
+mv /path/to/decontam_nanoplot_output/sample_decontam_NanoPlot-report.html /path/to/decontam_nanoplot_output/sample_decontam_NanoPlot-report_GLlblMetag.html
 ```
 
 **Parameter Definitions:**
@@ -1352,7 +1359,7 @@ library(pavian)
   ```
 
   **Function Parameter Definitions:**
-  - `abund_table` - a relative bundance dataframe with rows summing to 100%
+  - `abund_table` - a relative abundance dataframe with rows summing to 100%
   - `metadata` - a metadata dataframe with samples as row and columns describing each sample
   - `custom_palette` - a vector of strings specifying a custom color palette for coloring plots
   - `publication_format` - a ggplot::theme object specifying a custom theme for plotting
@@ -1378,7 +1385,7 @@ library(pavian)
     feature_table <- feature_table[, -1]
 
     # Prepare metadata
-    metadata <- read_delim(metdata_file, delim = ",") %>% as.data.frame
+    metadata <- read_delim(metadata_table_file, delim = ",") %>% as.data.frame
     row.names(metadata) <- metadata[, samples_column]
 
     # compute abundances from counts
@@ -1389,7 +1396,7 @@ library(pavian)
          facet_wrap(~Description, nrow=1, scales = "free_x")
 
     number_of_species <- p$data$Species %>% unique() %>% length()
-    # Don't save legend if the number of species to plot is gsreater than 30
+    # Don't save legend if the number of species to plot is greater than 30
     if(number_of_species > 30) {
       p <- p + theme(legend.position = "none")
     }
@@ -1624,7 +1631,7 @@ library(pavian)
   - `frequency_column` - a character string specifying the column in `metadata` to use for frequency based analysis, default: "concentration"
   - `prevalence_column` - a character string specifying the column in `metadata` to use for prevalence based analysis, default: "NTC"
   - `ntc_name` - a character string specifying the value in the prevalence column for all negative template control samples, default: "TRUE"
-  - `threshold` - a number between 0 and 1 specfying the decontam threshold for both prevalence and frequency based analyses. default: 0.1
+  - `threshold` - a number between 0 and 1 specifying the decontam threshold for both prevalence and frequency based analyses. default: 0.1
   - `output_prefix` - a character string specifying the unique name to add to the output file names 
                       used to denote the data type/source, for example "unfiltered-kaiju_species"
   - `classification_method` - a character string specifying the tool used to generate the classifications ['kaiju', 'kraken2', 'metaphlan', 'contig-taxonomy', 'gene-taxonomy', 'gene-function']
@@ -1680,7 +1687,7 @@ library(pavian)
   <summary>clean taxonomy names</summary>
 
   ```R
-  fix_names<- function(taxonomy,stringToReplace="Othe",suffix=";Other"){
+  fix_names<- function(taxonomy,stringToReplace="Other",suffix=";_"){
     
     for(index in seq_along(stringToReplace)){
 
@@ -1688,7 +1695,7 @@ library(pavian)
         # Get the row indices of the current taxonomy columns
         # with rows matching the sting in `stringToReplace`
         indices <- grep(x = taxonomy[,taxa_index], pattern = stringToReplace)
-        # Replace the value in that row with the value in the adjacent cell concated with `suffix`
+        # Replace the value in that row with the value in the adjacent cell concatenated with `suffix`
         taxonomy[indices,taxa_index] <-
           paste0(taxonomy[indices,taxa_index-1],
                 rep(x = suffix, times=length(indices)))
@@ -1717,7 +1724,7 @@ library(pavian)
   
     df <- read_delim(file = file_name, delim = "\t", comment = "#")
 
-    # Subset taxoxnomy portion (domain:species) of input table
+    # Subset taxonomy portion (domain:species) of input table
     # and replace empty/Na domain assignments with "Unclassified"
     taxonomy_table <- df %>%
       select(domain:species) %>%
@@ -1726,7 +1733,7 @@ library(pavian)
     # Subset count table
     counts_table <- df %>% select(!!any_of(sample_names))
 
-    # Mutate taxonomy mames
+    # Mutate taxonomy names
     taxonomy_table  <- process_taxonomy(taxonomy_table)
     taxonomy_table <- fix_names(taxonomy_table, "Other", ";_")
 
@@ -2039,7 +2046,7 @@ output_file <- "kaiju_filtered_species_table_GLlblMetag.csv"
 threshold <- 0.5
 
 # string used to define non-microbial taxa
-non_microbial <- "UNCLASSIFIED|Unclassifed|unclassified|Homo sapien|cannot|uncultured|unidentified"
+non_microbial <- "UNCLASSIFIED|Unclassified|unclassified|Homo sapien|cannot|uncultured|unidentified"
 
 # read in feature table
 feature_table <- read_csv(input_file) %>% as.data.frame
@@ -2107,7 +2114,7 @@ p <- make_barplot(metadata_file = metadata_file, feature_table_file = filtered_s
                   feature_column = "Species", samples_column = "sample_id", group_column = "group",
                   publication_format = publication_format, custom_palette = custom_palette)
 
-# Save interactive unfilterted plot
+# Save interactive unfiltered plot
 htmlwidgets::saveWidget(ggplotly(p), glue("kaiju_unfiltered_species_barplot_GLlblMetag.html"), selfcontained = TRUE)
 
 # Save static filtered plot
@@ -2132,7 +2139,7 @@ htmlwidgets::saveWidget(ggplotly(p), glue("kaiju_filtered_species_barplot_GLlblM
 
 - `kaiju_species_table_GLlblMetag.csv` (a file containing the species count table, output from [Step 10f](#10f-create-kaiju-species-count-table))
 - `kaiju_filtered_species_table_GLlblMetag.csv` (a file containing the filtered species count table, output from [Step 10g](#10g-filter-kaiju-species-count-table))
-- `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping samplenames to group metadata)
+- `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 
 **Output Data:**
@@ -2200,7 +2207,7 @@ htmlwidgets::saveWidget(ggplotly(p), glue("kaiju_decontam_species_barplot_GLlblM
 **Input Data:**
 
 - `kaiju_filtered_species_table_GLlblMetag.csv`(path to filtered species count per sample, output from [Step 10g](#10g-filter-kaiju-species-count-table))
-- `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping samplenames to group metadata)
+- `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 **Output Data:**
 
@@ -2229,8 +2236,8 @@ INSPECT_URL=https://genome-idx.s3.amazonaws.com/kraken/pluspfp_20250714/inspect.
 wget ${INSPECT_URL}
 
 # Library report
-LIRARY_REPORT_URL=https://genome-idx.s3.amazonaws.com/kraken/pluspfp_20250714/library_report.tsv
-wget ${LIRARY_REPORT_URL}
+LIBRARY_REPORT_URL=https://genome-idx.s3.amazonaws.com/kraken/pluspfp_20250714/library_report.tsv
+wget ${LIBRARY_REPORT_URL}
 
 # Md5sums
 MD5_URL=https://genome-idx.s3.amazonaws.com/kraken/pluspfp_20250714/pluspfp.md5 
@@ -2249,7 +2256,7 @@ tar -xvzf k2_pluspfp.tar.gz
 - `--timeout=3600` - Specifies the network timeout in seconds.
 - `--tries=0` - Retry download infinitely.
 - `--continue` -  Continue getting a partially-downloaded file.
-- `*_URL` - Position arguement specifying the url to download a particular resource from.
+- `*_URL` - Position argument specifying the url to download a particular resource from.
 
 *tar*
 - `-xvzf` - unpack the specified *tar.gz archive in verbose mode
@@ -2257,7 +2264,7 @@ tar -xvzf k2_pluspfp.tar.gz
 **Input Data:**
 
 - `INSPECT_URL=` - url specifying the location of kraken2 inspect file
-- `LIRARY_REPORT_URL=` - url specifying the location of kraken2 library report file
+- `LIBRARY_REPORT_URL=` - url specifying the location of kraken2 library report file
 - `MD5_URL=` - url specifying the location of the md5 file of the kraken database
 - `DB_URL=` - url specifying the location of the main kraken database archive in .tar.gz format
 
@@ -2412,7 +2419,7 @@ ktImportText -o kraken2-report_GLlblMetag.html ${KTEXT_FILES[*]}
 
 *ktImportText*
 - `-o` - Specifies the compiled output html file name.
-- `${KTEXT_FILES[*]}` - An array positional arguement with the following content: sample_1.krona,sample_1 sample_2.krona,sample_2 .. sample_n.krona,sample_n.
+- `${KTEXT_FILES[*]}` - An array positional argument with the following content: sample_1.krona,sample_1 sample_2.krona,sample_2 .. sample_n.krona,sample_n.
 
 **Input Data:**
 
@@ -2437,7 +2444,7 @@ output_file <- "kraken2_filtered_species_table_GLlblMetag.csv"
 threshold <- 0.5
 
 # string used to define non-microbial taxa
-non_microbial <- "UNCLASSIFIED|Unclassifed|unclassified|Homo sapien|cannot|uncultured|unidentified"
+non_microbial <- "UNCLASSIFIED|Unclassified|unclassified|Homo sapien|cannot|uncultured|unidentified"
 
 # read in feature table
 feature_table <- read_csv(input_file) %>% as.data.frame
@@ -2498,7 +2505,7 @@ p <- make_barplot(metadata_file = metadata_file, feature_table_file = filtered_s
                   feature_column = "Species", samples_column = "sample_id", group_column = "group",
                   publication_format = publication_format, custom_palette = custom_palette)
 
-# Save interactive unfilterted plot
+# Save interactive unfiltered plot
 htmlwidgets::saveWidget(ggplotly(p), glue("kraken2_unfiltered_species_barplot_GLlblMetag.html"), selfcontained = TRUE)
 
 # Save static filtered plot
@@ -2522,7 +2529,7 @@ htmlwidgets::saveWidget(ggplotly(p), glue("kraken2_filtered_species_barplot_GLlb
 
 - `kraken2_species_table_GLlblMetag.csv` (path to kaiju species table from [Step 11ci.](#11ci-create-merged-kraken2-taxonomy-table))
 - `kraken2_filtered_species_table_GLlblMetag.csv` (a file containing the filtered species count table, output from [Step 11f](#11f-filter-kraken2-species-count-table))
-- `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping samplenames to group metadata)
+- `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 **Output Data:**
 
@@ -2590,7 +2597,7 @@ htmlwidgets::saveWidget(ggplotly(p), glue("kraken2_decontam_species_barplot_GLlb
 **Input Data:**
 
 - `kraken2_filtered_species_table_GLlblMetag.csv`(path to filtered species count per sample, output from [Step 11f](#11f-filter-kraken2-species-count-table))
-- `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping samplenames to group metadata)
+- `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 **Output Data:**
 
@@ -2792,7 +2799,7 @@ mv sample-genes.fasta.tmp sample-genes_GLlblMetag.fasta
 
 > **Note:**  
 > The annotation process overwrites the same temporary directory by default. When running multiple 
-processses at a time, it is necessary to specify a specific temporary directory with the 
+processes at a time, it is necessary to specify a specific temporary directory with the 
 `--tmp-dir` argument as shown below.
 
 
@@ -3045,7 +3052,7 @@ minimap2 -a \
 - `sample_assembly.fasta` – Assembly fasta file, provided as a positional argument.
 - `sample_decontam_GLlblMetag.fastq.gz` - Input sequence data file, provided as a positional argument.
 - `> sample.sam` - Redirects the output to a separate file.
-- `2> sample-mapping-info.txt` - Redirects the standar error to a separate file.
+- `2> sample-mapping-info.txt` - Redirects the standard error to a separate file.
 
 **Input Data**
 
@@ -3565,7 +3572,7 @@ KEGG-decoder -v interactive \
 
 - **MAG-KEGG-Decoder-out_GLlblMetag.tsv** (tab-delimited table holding MAGs and their proportions of 
                                            genes held known to be required for specific pathways/metabolisms)
-- **MAG-KEGG-Decoder-out_GLlbnMetag.html** (interactive heatmap html file of the above output table)
+- **MAG-KEGG-Decoder-out_GLlblMetag.html** (interactive heatmap html file of the above output table)
 
 <br>
 
@@ -3594,7 +3601,7 @@ species_gene_table <- gene_taxonomy_table %>%
   select(species, !!any_of(sample_names)) %>% 
   group_by(species) %>% 
   summarise(across(everything(), sum)) %>% 
-  filter(species != "Unclassified;_;_;_;_;_;_") %>% # Drop unclassifed
+  filter(species != "Unclassified;_;_;_;_;_;_") %>% # Drop unclassified
   as.data.frame
 
 rownames(species_gene_table) <- species_gene_table[[1]]
@@ -3691,7 +3698,7 @@ make_heatmap(metadata, decontaminated_table,
 **Input Data:**
 
 - `gene_taxonomy_table.csv`(aggregated gene taxonomy table with samples in columns and species in rows, from [Step 25a](#25a-gene-level-taxonomy-heatmaps))
-- `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping samplenames to group metadata)
+- `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 **Output Data:**
 
@@ -3817,7 +3824,7 @@ make_heatmap(metadata, decontaminated_table,
 **Input Data:**
 
 - `genes-KO-functions_table.csv`(aggregated gene KO functions table table with samples in columns and KO_ID in rows, from [Step 25c](#25c-gene-level-ko-functions-heatmaps))
-- `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping samplenames to group metadata)
+- `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 **Output Data:**
 
@@ -3847,7 +3854,7 @@ species_contig_table <- contig_taxonomy_table %>%
   select(species, !!any_of(sample_names)) %>%
   group_by(species) %>%
   summarise(across(everything(), sum)) %>% 
-  filter(species != "Unclassified;_;_;_;_;_;_") %>% # Drop unclassifed
+  filter(species != "Unclassified;_;_;_;_;_;_") %>% # Drop unclassified
   as.data.frame
 
 rownames(species_contig_table) <- species_contig_table[[1]]
@@ -3944,7 +3951,7 @@ make_heatmap(metadata, decontaminated_table,
 **Input Data:**
 
 - `contig_taxonomy_table.csv`(aggregated contig taxonomy table with samples in columns and species in rows, from [Step 25f](#25f-contig-level-heatmaps))
-- `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping samplenames to group metadata)
+- `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 **Output Data:**
 
