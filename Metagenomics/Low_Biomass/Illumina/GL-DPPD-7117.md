@@ -812,7 +812,7 @@ library(pavian)
   ```R
   get_abundant_features <- function(mat, cpm_threshold = 1000){
   
-    features <- rowSums(mat) %>% sort()
+    features <- rowSums(mat, na.rm = TRUE) %>% sort()
     
     abund_features <- features[features > cpm_threshold] %>% names
     
@@ -1024,23 +1024,36 @@ library(pavian)
     rownames(feature_table) <- feature_table[[1]]
     feature_table <- feature_table[, -1]
 
+    number_of_species <- nrow(feature_table)
+
+    if (number_of_species > length(custom_palette)) {
+      N <- number_of_species / length(custom_palette)
+      custom_palette <- rep(custom_palette, times = N * 2)
+    }
+
     # Prepare metadata
     metadata <- read_delim(metadata_table_file, delim = ",") %>% as.data.frame
     row.names(metadata) <- metadata[, samples_column]
 
     # compute abundances from counts
     abund_table <- count_to_rel_abundance(feature_table)
+
+    metadata <- metadata %>%
+                mutate(!!sym(group_column) := str_wrap(!!sym(group_column) %>%
+                         str_replace_all("_", " "), width = 10)
+                )
     
     # create plot
     p <- make_plot(abund_table, metadata, custom_palette, publication_format, samples_column) +
-         facet_wrap(~Description, nrow=1, scales = "free_x")
+         facet_wrap(~Description, nrow = 1, scales = "free_x", labeller = label_wrap_gen(width = 10)) +
+         theme(axis.text.x = element_text(angle = 90))
 
     number_of_species <- p$data$Species %>% unique() %>% length()
     # Don't save legend if the number of species to plot is greater than 30
     if(number_of_species > 30) {
       p <- p + theme(legend.position = "none")
     }
-
+    
     return(p)
 
   }
@@ -1148,6 +1161,7 @@ library(pavian)
           )
         )
       sub_metadata[, freq_col] <- as.numeric(sub_metadata[, freq_col])
+      sub_metadata[, prev_col] <- tolower(sub_metadata[, prev_col])
 
     }
 
@@ -1220,6 +1234,9 @@ library(pavian)
     row.names(metadata) <- metadata[, samples_column]
 
     # Run decontam
+    # Assign prev and freq column names to NULL if the values in the supplied columns aren't unique
+    if(length(unique(metadata[, prev_col])) == 1) prev_col <- NULL
+    if(length(unique(metadata[, freq_col])) == 1) freq_col <- NULL
     contamdf <- run_decontam(feature_table, metadata, threshold, prev_col, freq_col, ntc_name) 
 
     contamdf <- as.data.frame(contamdf) %>% rownames_to_column(feature_column)
@@ -1678,7 +1695,7 @@ write_csv(x = table2write, file = "kaiju_species_table_GLlbsMetag.csv")
 ```R
 library(tidyverse)
 
-input_file <- "kaiju_species_table_GLlbsMetag.csv"
+feature_table_file <- "kaiju_species_table_GLlbsMetag.csv"
 output_file <- "kaiju_filtered_species_table_GLlbsMetag.csv"
 threshold <- 0.5
 
@@ -1686,7 +1703,9 @@ threshold <- 0.5
 non_microbial <- "UNCLASSIFIED|Unclassified|unclassified|Homo sapien|cannot|uncultured|unidentified"
 
 # read in feature table
-feature_table <- read_csv(input_file) %>% as.data.frame()
+feature_table <- read_delim(feature_table_file) %>%
+                 mutate( across(where(is.numeric), function(col) replace_na(col, 0)) ) %>%
+                 as.data.frame()
 feature_name <- colnames(feature_table)[1]
 rownames(feature_table) <- feature_table[,1]
 feature_table <- feature_table[, -1]
@@ -2077,7 +2096,7 @@ ktImportText -o kraken2-report_GLlbsMetag.html ${KTEXT_FILES[*]}
 ```R
 library(tidyverse)
 
-input_file <- "kraken2_species_table_GLlbsMetag.csv"
+feature_table_file <- "kraken2_species_table_GLlbsMetag.csv"
 output_file <- "kraken2_filtered_species_table_GLlbsMetag.csv"
 threshold <- 0.5
 
@@ -2085,7 +2104,9 @@ threshold <- 0.5
 non_microbial <- "UNCLASSIFIED|Unclassified|unclassified|Homo sapien|cannot|uncultured|unidentified"
 
 # read in feature table
-feature_table <- read_csv(input_file) %>% as.data.frame
+feature_table <- read_delim(feature_table_file) %>%
+                 mutate( across(where(is.numeric), function(col) replace_na(col, 0)) ) %>%
+                 as.data.frame()
 feature_name <- colnames(feature_table)[1]
 rownames(feature_table) <- feature_table[,1]
 feature_table <- feature_table[, -1]
@@ -2566,7 +2587,7 @@ write_csv(x = table2write, file = "Metaphlan_species_table_GLlbsMetag.csv")
 ```R
 library(tidyverse)
 
-input_file <- "Metaphlan_species_table_GLlbsMetag.csv"
+feature_table_file <- "Metaphlan_species_table_GLlbsMetag.csv"
 output_file <- "Metaphlan_filtered_species_table_GLlbsMetag.csv"
 threshold <- 0.5
 
@@ -2574,7 +2595,9 @@ threshold <- 0.5
 non_microbial <- "UNCLASSIFIED"
 
 # read in feature table
-feature_table <- read_csv(input_file) %>% as.data.frame
+feature_table <- read_delim(feature_table_file) %>%
+                 mutate( across(where(is.numeric), function(col) replace_na(col, 0)) ) %>%
+                 as.data.frame()
 feature_name <- colnames(feature_table)[1]
 rownames(feature_table) <- feature_table[,1]
 feature_table <- feature_table[, -1]
