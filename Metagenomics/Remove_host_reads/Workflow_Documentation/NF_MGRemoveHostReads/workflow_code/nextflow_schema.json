@@ -46,7 +46,8 @@
     },
     "ref_dbs_dir": {
       "type": "string",
-      "description": "path to kraken2 databases"
+      "description": "path to kraken2 databases",
+      "default": "./kraken2DBs"
     },
     "reads_outdir": {
       "type": "string",
@@ -67,8 +68,19 @@
     },
     "trace_timestamp": {
       "type": "string",
-      "default": "2026-02-13_09-22-42",
       "hidden": true
+    },
+    "ref_fasta": {
+      "type": "string"
+    },
+    "assembly_name": {
+      "type": "string"
+    },
+    "assembly_acc": {
+      "type": "string"
+    },
+    "db_url": {
+      "type": "string"
     }
   },
   "required": ["ref_dbs_dir", "sample_id_list", "reads_dir"]

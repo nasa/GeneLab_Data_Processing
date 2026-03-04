@@ -4,12 +4,14 @@ nextflow.enable.dsl=2
 include { paramsHelp         } from 'plugin/nf-schema'
 include { validateParameters } from 'plugin/nf-schema'
 
+include { PARSE_HOSTS_TABLE  } from './modules/parse_hosts_table.nf'
+
 include { KRAKEN2_DB         } from './modules/kraken2_db.nf'
 include { KRAKEN_2           } from './modules/kraken2.nf'
 include { SUMMARY            } from './modules/summary.nf'
 include { COMPILE_SUMMARY    } from './modules/summary.nf'
 
-include { SOFTWARE_VERSIONS  } from './modules/utils.nf'
+include { SOFTWARE_VERSIONS  } from './modules/software_versions.nf'
 include { GENERATE_PROTOCOL  } from './modules/generate_protocol.nf'
 
 workflow {
@@ -22,31 +24,40 @@ workflow {
     // Capture software versions
     software_versions_ch = channel.empty()
 
-    // Get host info
-    host_info = channel
-        .fromPath(params.hosts_table)
-        .splitCsv(header:true)
-        .filter { row -> row.name.toLowerCase() == params.host.toLowerCase() }  // match host
-        .map { row ->
-            def host_id   = row.name.replaceAll(' ', '_').toLowerCase() 
-            tuple(row.name, host_id, row.species, row.refseq, row.genome, row.fasta) }
-
-    host_info
-    .ifEmpty { error("INPUT ERROR: Host '${params.host}' not found in hosts table '${params.hosts_table}'") }
-    
-    // Check if kraken2 database already exists or needs to be built
     def host_id = params.host.replaceAll(' ', '_').toLowerCase()
     def host_db = file("${params.ref_dbs_dir}/kraken2-${host_id}-db")
-    def db_exists = host_db.exists()
 
-    if (db_exists)
-        database_ch = channel.value(host_db)
-    else {
-        build_ch = host_info.map { name, hostID, species, refseq, genome, fasta -> tuple(name, host_id, fasta) }
-        KRAKEN2_DB(build_ch, params.ref_dbs_dir)
-        database_ch = KRAKEN2_DB.out.first()
+    if (host_db.exists()) {
+        // Database already exists in storeDir - assembly name and accession might be used by GENERATE_PROTOCOL (if mainfest.txt doesn't exist in db folder)
+        reference_fasta     = channel.value("")
+        reference_genome    = params.assembly_name ? channel.value(params.assembly_name) : channel.value("")
+        reference_accession = params.assembly_acc  ? channel.value(params.assembly_acc)  : channel.value("")
+
+    } else if ( params.db_url ) {
+        // Option 1: pre-built DB - only assembly_name and assembly_acc needed
+        reference_fasta       = channel.value([])
+        reference_genome      = params.assembly_name  ? channel.value(params.assembly_name) : channel.value("unknown")
+        reference_accession   = params.assembly_acc   ? channel.value(params.assembly_acc)  : channel.value("unknown")
+
+    } else if ( params.ref_fasta ) {
+        // Option 2: custom FASTA - assembly_name and assembly_acc should also be set
+        reference_fasta       = channel.value(params.ref_fasta)
+        reference_genome      = params.assembly_name  ? channel.value(params.assembly_name) : channel.value("unknown")
+        reference_accession   = params.assembly_acc   ? channel.value(params.assembly_acc)  : channel.value("unknown")
+
+    } else {
+        // Option 3: parse hosts.csv
+        PARSE_HOSTS_TABLE(params.hosts_table, host_id)
+        reference_fasta       = PARSE_HOSTS_TABLE.out.reference_fasta_url
+        reference_genome      = PARSE_HOSTS_TABLE.out.reference_genome
+        reference_accession   = PARSE_HOSTS_TABLE.out.reference_accession
+        // Note: for hosts like human where genome/accession are not in hosts.csv,
+        // PARSE_HOSTS_TABLE will emit null - protocol will fall back to manifest.txt
     }
-    
+
+    KRAKEN2_DB(host_id, reference_fasta)
+    database_ch = KRAKEN2_DB.out.build.first()
+
     channel
         .fromPath(params.sample_id_list)
         .splitText()
@@ -64,28 +75,33 @@ workflow {
         .set {generated_reads_ch}
 
     KRAKEN_2(database_ch, generated_reads_ch, params.out_suffix)
-    KRAKEN_2.out.version | mix(software_versions_ch) | set{software_versions_ch}
     
     // Generate summary and compile into one file
     SUMMARY(KRAKEN_2.out.output, KRAKEN_2.out.report)
     COMPILE_SUMMARY(SUMMARY.out.collect(), channel.fromPath(params.sample_id_list), params.host) 
 
     // Software Version Capturing - combining all captured software versions
+    KRAKEN_2.out.version | mix(KRAKEN2_DB.out.version.ifEmpty(""))
+                         | mix(software_versions_ch)
+                         | set{software_versions_ch}
+
     nf_version = "Nextflow Version ".concat("${nextflow.version}")
     nextflow_version_ch = channel.value(nf_version)
 
     //  Write software versions to file
-    software_versions_ch | map { it -> it.text.strip() }
+    software_versions_ch | filter { it }
+                         | map { it -> it.text.strip() }
                          | unique
                          | mix(nextflow_version_ch)
                          | collectFile({it -> it}, newLine: true, cache: false)
                          | SOFTWARE_VERSIONS
-
-    // Protocol always needs name, refseq ID, and genome build
-    protocol_ch = host_info.map { name, hostID, species, refseq, genome, fasta -> tuple(name, refseq, genome) }
     
-    def protocol = host_db.resolve('read-removal-protocol-text.txt')
-    protocol_out = GENERATE_PROTOCOL(protocol_ch, SOFTWARE_VERSIONS.out, channel.value(protocol))
+    protocol_out = GENERATE_PROTOCOL(
+                        params.host, 
+                        reference_genome, 
+                        reference_accession,
+                        SOFTWARE_VERSIONS.out,
+                        database_ch)
     
     publish:
     protocol_out = protocol_out
