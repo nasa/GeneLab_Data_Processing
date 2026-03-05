@@ -71,16 +71,20 @@
       "hidden": true
     },
     "ref_fasta": {
-      "type": "string"
+      "type": "string",
+      "description": "Specifies a custom reference FASTA file to use by providing a local path or a URL"
     },
     "assembly_name": {
-      "type": "string"
+      "type": "string",
+      "description": "Specifies the assembly name for the host reference genome"
     },
     "assembly_acc": {
-      "type": "string"
+      "type": "string",
+      "description": "Specifies the assembly accession number for the host reference genome"
     },
     "db_url": {
-      "type": "string"
+      "type": "string",
+      "description": "Specifies a URL to download a pre-built Kraken2 database from"
     }
   },
   "required": ["ref_dbs_dir", "sample_id_list", "reads_dir"]
