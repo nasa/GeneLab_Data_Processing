@@ -89,7 +89,7 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [10b. Summarize Assemblies](#10b-summarize-assemblies)
     - [11. Gene Prediction](#11-gene-prediction)
       - [11a. Generate Gene Predictions](11a-generate-gene-predictions)
-      - [11b. Remove Line Wraps In Gene Prediction Output](#11a-remove-line-wraps-in-gene-prediction-output)
+      - [11b. Remove Line Wraps In Gene Prediction Output](#11b-remove-line-wraps-in-gene-prediction-output)
     - [12. Functional Annotation](#12-functional-annotation)
       - [12a. Download Reference Database of HMM Models](#12a-download-reference-database-of-hmm-models)
       - [12b. Run KEGG Annotation](#12b-run-kegg-annotation)
@@ -104,7 +104,7 @@ Barbara Novak (GeneLab Data Processing Lead)
     - [14. Read-Mapping](#14-read-mapping)
       - [14a. Build Reference Index](#14a-build-reference-index)
       - [14b. Align Reads to Sample Assembly](#14b-align-reads-to-sample-assembly)
-      - [14c. Sort and Index Assembly Alignments](#14c-sort-and-index-assembly-alignments)
+      - [14c. Sort Assembly Alignments](#14c-sort-assembly-alignments)
     - [15. Get Coverage Information and Filter Based On Detection](#15-get-coverage-information-and-filter-based-on-detection)
       - [15a. Filter Coverage Levels Based On Detection](#15a-filter-coverage-levels-based-on-detection)
       - [15b. Filter Gene and Contig Coverage Based On Detection](#15b-filter-gene-and-contig-coverage-based-on-detection)
@@ -442,7 +442,7 @@ rm -rf sample1.sam
 
 **Output Data**
 
-- sample1_R[12]_decontam_GLlbsMetag.fastq.gz (decontaminated reads)
+- **sample1_R[12]_decontam_GLlbsMetag.fastq.gz** (decontaminated reads)
 - sample-mapping-info.txt (bowtie2 mapping log file)
 
 <br>
@@ -2934,7 +2934,7 @@ exec_annotation -p profiles/ \
                 -o sample-KO-tab.tmp \
                 --tmp-dir sample-tmp-KO \
                 --report-unannotated \
-                sample-genes.faa 
+                sample-genes_GLlbsMetag.faa 
 ```
 
 **Parameter Definitions:**
@@ -2946,12 +2946,12 @@ exec_annotation -p profiles/ \
 - `-o` – Specifies the output file name.
 - `--tmp-dir` – Specifies the temporary directory to write to (needed if running more than one process concurrently, see Note above).
 - `--report-unannotated` – Specifies to generate an output for each entry, event when no KO is assigned.
-- `sample-genes.faa` – Specifies the input file, provided as a positional argument. 
+- `sample-genes_GLlbsMetag.faa` – Specifies the input file, provided as a positional argument. 
 
 
 **Input Data:**
 
-- sample-genes.faa (amino-acid fasta file, output from [Step 11b](#11b-remove-line-wraps-in-gene-prediction-output))
+- sample-genes_GLlbsMetag.faa (amino-acid fasta file, output from [Step 11b](#11b-remove-line-wraps-in-gene-prediction-output))
 - profiles/ (reference directory holding the KO HMMs, downloaded in [Step 12a](#12a-download-reference-database-of-hmm-models))
 - ko_list (reference list of KOs to scan for, downloaded in [Step 12a](#12a-download-reference-database-of-hmm-models))
 
@@ -3002,10 +3002,10 @@ tar -xvzf CAT_prepare_20200618.tar.gz
 #### 13b. Run Taxonomic Classification
 
 ```bash
-CAT contigs -c sample-assembly.fasta \
+CAT contigs -c sample-assembly_GLlbsMetag.fasta \
             -d CAT_prepare_20200618/2020-06-18_database/ \
             -t CAT_prepare_20200618/2020-06-18_taxonomy/ \
-            -p sample-genes.faa \
+            -p sample-genes_GLlbsMetag.faa \
             -o sample-tax-out.tmp \
             -n NumberOfThreads \
             -r 3 \
@@ -3031,8 +3031,8 @@ CAT contigs -c sample-assembly.fasta \
 
 - CAT_prepare_20200618/2020-06-18_database/ (directory holding the CAT reference sequence database, output from [Step 13a](13a-pull-and-unpack-pre-built-reference-db))
 - CAT_prepare_20200618/2020-06-18_taxonomy/ (directory holding the CAT reference taxonomy database, output from [Step 13a](13a-pull-and-unpack-pre-built-reference-db))
-- sample-assembly.fasta (contig-renamed assembly file from [Step 10a](#10a-rename-contig-headers))
-- sample-genes.faa (amino-acid fasta file, output from [Step 11b](#11b-remove-line-wraps-in-gene-prediction-output))
+- sample-assembly_GLlbsMetag.fasta (contig-renamed assembly file from [Step 10a](#10a-rename-contig-headers))
+- sample-genes_GLlbsMetag.faa (amino-acid fasta file, output from [Step 11b](#11b-remove-line-wraps-in-gene-prediction-output))
 
 **Output Data:**
 
@@ -3156,7 +3156,7 @@ bowtie2-build sample1_assembly_GLlbsMetag.fasta sample1-index
 
 **Input Data:**
 
-- `sample1_assembly.fasta` (contig-renamed assembly file, output from [Step 10a](#10a-rename-contig-headers))
+- `sample1-assembly_GLlbsMetag.fasta` (contig-renamed assembly file, output from [Step 10a](#10a-rename-contig-headers))
 
 **Output Data:**
 
@@ -3181,7 +3181,7 @@ bowtie2 --mm --quiet --threads ${task.cpus} \
 - `-2` – specifies the reverse reads to map
 - `--no-unal` - Suppress SAM records for reads that did not align.
 - `> sample1.sam` - Redirects the output of the map reads command to a SAM file.
-- `2> sample1-mapping-info.txt` – capture the printed summary results in a log file
+- `2> sample1-mapping-info_GLlbsMetag.txt` – capture the printed summary results in a log file
 
 
 **Input Data**
@@ -3197,15 +3197,13 @@ bowtie2 --mm --quiet --threads ${task.cpus} \
 - **sample-mapping-info_GLlbsMetag.txt** (read mapping information)
 
 
-#### 14c. Sort and Index Assembly Alignments
+#### 14c. Sort Assembly Alignments
 
 ```bash
 # Sort Sam, convert to bam and create index
 samtools sort --threads NumberOfThreads \
-              -o sample_sorted.bam \
+              -o sample_GLlbsMetag.bam \
               sample.sam > sample_sort.log 2>&1
-
-samtools index sample_sorted.bam sample_sorted.bam.bai
 ```
 
 **Parameter Definitions:**
@@ -3215,9 +3213,6 @@ samtools index sample_sorted.bam sample_sorted.bam.bai
 - `-o` - Specifies the output file for the sorted aligned reads.
 - `sample.sam` - Positional argument specifying the input SAM file.
 - `> sample_sort.log 2>&1` - Redirects the standard output and standard error to a separate file.
-*samtools index*
-- `sample_sorted.bam` - Positional argument specifying the input BAM file to be sorted.
-- `sample_sorted.bam.bai` - Positional argument specifying the name of the index file.
 
 **Input Data:**
 
@@ -3225,8 +3220,7 @@ samtools index sample_sorted.bam sample_sorted.bam.bai
 
 **Output Data:**
 
-- **sample_sorted_GLlbsMetag.bam** (sorted mapping to sample assembly, in BAM format)
-- **sample_sorted_GLlbsMetag.bam.bai** (index of sorted mapping to sample assembly)
+- **sample_GLlbsMetag.bam** (sorted mapping to sample assembly, in BAM format)
 
 <br>
 
@@ -3242,7 +3236,7 @@ Filtering based on detection is one way of helping to mitigate non-specific read
 
 ```bash
 # pileup.sh comes from the bbduk.sh package
-pileup.sh -in sample.bam \
+pileup.sh -in sample_GLlbsMetag.bam \
           fastaorf=sample-genes_GLlbsMetag.fasta \
           outorf=sample-gene-cov-and-det.tmp \
           out=sample-contig-cov-and-det.tmp
@@ -3257,7 +3251,7 @@ pileup.sh -in sample.bam \
 
 **Input Data:**
 
-- sample.bam (sorted mapping to sample assembly BAM file, output from [Step 14c](#14c-sort-and-index-assembly-alignments))
+- sample_GLlbsMetag.bam (sorted mapping to sample assembly BAM file, output from [Step 14c](#14c-sort-and-index-assembly-alignments))
 - sample-genes_GLlbsMetag.fasta (gene-calls nucleotide fasta file, output from [Step 11b](#11b-remove-line-wraps-in-gene-prediction-output))
 
 
@@ -3277,14 +3271,14 @@ grep -v "#" sample-gene-cov-and-det.tmp | \
 awk -F $'\t' ' BEGIN { OFS=FS } { if ( $10 <= 0.5 ) $4 = 0 } \
      { print $1,$4 } ' > sample-gene-cov.tmp
 
-cat <( printf "gene_ID\tcoverage\n" ) sample-gene-cov.tmp > sample-gene-coverages_GLlbsMetag.tsv
+cat <( printf "gene_ID\tcoverage\n" ) sample-gene-cov.tmp > sample-gene-coverages.tsv
 
 # Filtering contig coverage
 grep -v "#" sample-contig-cov-and-det.tmp | \
 awk -F $'\t' ' BEGIN { OFS=FS } { if ( $5 <= 50 ) $2 = 0 } \
      { print $1,$2 } ' > sample-contig-cov.tmp
 
-cat <( printf "contig_ID\tcoverage\n" ) sample-contig-cov.tmp > sample-contig-coverages_GLlbsMetag.tsv
+cat <( printf "contig_ID\tcoverage\n" ) sample-contig-cov.tmp > sample-contig-coverages.tsv
 
 # removing intermediate files
 rm sample-*.tmp
@@ -3297,8 +3291,8 @@ rm sample-*.tmp
 
 **Output Data:**
 
-- sample-gene-coverages_GLlbsMetag.tsv (table with gene-level coverages)
-- sample-contig-coverages_GLlbsMetag.tsv (table with contig-level coverages)
+- sample-gene-coverages.tsv (table with gene-level coverages)
+- sample-contig-coverages.tsv (table with contig-level coverages)
 
 <br>
 
@@ -3450,17 +3444,17 @@ jgi_summarize_bam_contig_depths --outputDepth sample-metabat-assembly-depth.tsv 
                                 --percentIdentity 97 \
                                 --minContigLength 1000 \
                                 --minContigDepth 1.0  \
-                                --referenceFasta sample-assembly.fasta \
-                                sample.bam
+                                --referenceFasta sample-assembly_GLlbsMetag.fasta \
+                                sample_GLlbsMetag.bam
 
-metabat2  --inFile sample-assembly.fasta \
+metabat2  --inFile sample-assembly_GLlbsMetag.fasta \
           --outFile sample \
           --abdFile sample-metabat-assembly-depth.tsv \
           -t NumberOfThreads
 
 mkdir sample-bins
 mv sample*bin*.fasta sample-bins
-zip -r sample-bins.zip sample-bins
+zip -r sample-bins_GLlbsMetag.zip sample-bins
 ```
 
 **Parameter Definitions:**  
@@ -3471,7 +3465,7 @@ zip -r sample-bins.zip sample-bins
 -  `--minContigLength` – Minimum contig length to include.
 -  `--minContigDepth` – Minimum contig depth to include.
 -  `--referenceFasta` – Specifies the input assembly fasta file.
--  `sample.bam` – Input alignment BAM file, specified as a positional argument.
+-  `sample_GLlbsMetag.bam` – Input alignment BAM file, specified as a positional argument.
 
 *metabat2*
 -  `--inFile` - Specifies the input assembly fasta file.
@@ -3482,14 +3476,14 @@ zip -r sample-bins.zip sample-bins
 
 **Input Data:**
 
-- sample-assembly.fasta (contig-renamed assembly file from [Step 10a](#10a-renaming-contig-headers))
-- sample.bam (sorted mapping to sample assembly BAM file, output from [Step 14c](#14c-sort-and-index-assembly-alignments))
+- sample-assembly_GLlbsMetag.fasta (contig-renamed assembly file from [Step 10a](#10a-renaming-contig-headers))
+- sample_GLlbsMetag.bam (sorted mapping to sample assembly BAM file, output from [Step 14c](#14c-sort-assembly-alignments))
 
 **Output Data:**
 
-- **sample-metabat-assembly-depth.tsv** (tab-delimited summary of coverages)
+- **sample-metabat-assembly-depth_GLlbsMetag.tsv** (tab-delimited summary of coverages)
 - sample-bins/sample-bin\*.fasta (fasta files of recovered bins)
-- **sample-bins.zip** (zip file containing fasta files of recovered bins)
+- **sample-bins_GLlbsMetag.zip** (zip file containing fasta files of recovered bins)
 
 #### 19b. Bin quality assessment 
 > Utilizes the default `checkm` database available [here](https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz), `checkm_data_2015_01_16.tar.gz`.
