@@ -1380,7 +1380,7 @@ library(pavian)
                            output_prefix, assay_suffix = "_GLlblMetag",
                            publication_format, custom_palette) {
     # Prepare feature table
-    feature_table <- read_csv(feature_table_file)
+    feature_table <- read_delim(feature_table_file)
     rownames(feature_table) <- feature_table[[1]]
     feature_table <- feature_table[, -1]
 
@@ -1584,12 +1584,12 @@ library(pavian)
                                threshold = 0.1, classification_method, 
                                output_prefix, assay_suffix = "_GLlblMetag") {
     # Prepare feature table
-    feature_table <- read_csv(feature_table_file) %>%  as.data.frame
+    feature_table <- read_delim(feature_table_file) %>%  as.data.frame
     rownames(feature_table) <- feature_table[[1]]
     feature_table <- feature_table[, -1]  %>% as.matrix()
 
     # Prepare metadata
-    metadata <- read_csv(metadata_file) %>% as.data.frame
+    metadata <- read_delim(metadata_file) %>% as.data.frame
     row.names(metadata) <- metadata[, samples_column]
 
     # Run decontam
@@ -1600,9 +1600,12 @@ library(pavian)
 
     contamdf <- as.data.frame(contamdf) %>% rownames_to_column(feature_column)
 
+    type <- 'species'
+    if (classification_method == 'gene-function') { type <- "KO" }
+
     # Write decontaminated feature table and decontam's primary results
-    outfile <- glue("{output_prefix}{classification_method}_decontam_results{assay_suffix}.csv")
-    write_csv(x = contamdf, file = outfile)
+    outfile <- glue("{output_prefix}_decontam_results{assay_suffix}.tsv")
+    write_tsv(x = contamdf, file = outfile)
 
     # Get the list of contaminants identified by decontam
     contaminants <- contamdf %>%
@@ -1624,8 +1627,8 @@ library(pavian)
       rownames(decontaminated_table) <- decontaminated_table[[feature_column]]
       decontaminated_table <- decontaminated_table[,-1] %>% as.matrix
 
-      outfile <- glue("{output_prefix}{classification_method}_decontam_species_table{assay_suffix}.csv")
-      write_csv(x = decontaminated_table, file = outfile)
+      outfile <- glue("{output_prefix}_decontam_{type}_table{assay_suffix}.tsv")
+      write_tsv(x = decontaminated_table, file = outfile)
 
       return(decontaminated_table)
 
@@ -1655,8 +1658,8 @@ library(pavian)
   - `assay_suffix` - a character string specifying the GeneLab assay suffix (default: "_GLlblMetag")
 
   **Output Data:**
-  - {classification_method}_decontam_species_table_GLlblMetag.csv - decontaminated feature table file
-  - {classification_method}_decontam_results_GLlblMetag.csv - Decontam results file
+  - {output_prefix}_decontam_{species|KO}_table_GLlblMetag.tsv - decontaminated feature table file
+  - {output_prefix}_decontam_results_GLlblMetag.tsv - Decontam results file
 
   **Returns:** dataframe, `decontaminated_table`, containing the decontaminated feature table
 
@@ -2031,7 +2034,7 @@ feature_table <- process_kaiju_table(file_path="merged_kaiju_table_GLlblMetag.ts
 table2write <- feature_table  %>%
                 as.data.frame %>%
                 rownames_to_column("Species")
-write_csv(x = table2write, file = "kaiju_species_table_GLlblMetag.csv")
+write_tsv(x = table2write, file = "kaiju_species_table_GLlblMetag.tsv")
 ```
 
 **Custom Functions Used:**
@@ -2050,7 +2053,7 @@ write_csv(x = table2write, file = "kaiju_species_table_GLlblMetag.csv")
 
 **Output Data:**
 
-- **kaiju_species_table_GLlblMetag.csv** (kaiju species count table in csv format)
+- **kaiju_species_table_GLlblMetag.tsv** (kaiju species count table in tsv format)
 
 
 #### 10g. Filter Kaiju Species Count Table
@@ -2058,8 +2061,8 @@ write_csv(x = table2write, file = "kaiju_species_table_GLlblMetag.csv")
 ```R
 library(tidyverse)
 
-feature_table_file <- "kaiju_species_table_GLlblMetag.csv"
-output_file <- "kaiju_filtered_species_table_GLlblMetag.csv"
+feature_table_file <- "kaiju_species_table_GLlblMetag.tsv"
+output_file <- "kaiju_filtered_species_table_GLlblMetag.tsv"
 threshold <- 0.5
 
 # string used to define non-microbial taxa
@@ -2085,7 +2088,7 @@ table2write <- group_low_abund_taxa(abund_table, threshold = threshold)  %>%
   t %>% as.data.frame %>%
   rownames_to_column(feature_name)
 
-write_csv(x = table2write, file = output_file)
+write_tsv(x = table2write, file = output_file)
 ```
 
 **Custom Functions Used:**
@@ -2099,11 +2102,11 @@ write_csv(x = table2write, file = output_file)
 
 **Input Data:**
 
-- kaiju_species_table_GLlblMetag.csv (path to kaiju species table from [Step 10f](#10f-create-kaiju-species-count-table))
+- kaiju_species_table_GLlblMetag.tsv (path to kaiju species table from [Step 10f](#10f-create-kaiju-species-count-table))
 
 **Output Data:**
 
-- **kaiju_filtered_species_table_GLlblMetag.csv** - a file containing the filtered species table
+- **kaiju_filtered_species_table_GLlblMetag.tsv** - a file containing the filtered species table
 
 ---
 
@@ -2112,8 +2115,8 @@ write_csv(x = table2write, file = output_file)
 ```R
 library(tidyverse)
 
-species_table_file <- "kaiju_species_table_GLlblMetag.csv"
-filtered_species_table_file <- "kaiju_filtered_species_table_GLlblMetag.csv"
+species_table_file <- "kaiju_species_table_GLlblMetag.tsv"
+filtered_species_table_file <- "kaiju_filtered_species_table_GLlblMetag.tsv"
 metadata_file <- "/path/to/sample/metadata"
 number_samples <- 10 
 
@@ -2156,8 +2159,8 @@ htmlwidgets::saveWidget(ggplotly(p), glue("kaiju_filtered_species_barplot_GLlblM
 
 **Input Data:**
 
-- `kaiju_species_table_GLlblMetag.csv` (a file containing the species count table, output from [Step 10f](#10f-create-kaiju-species-count-table))
-- `kaiju_filtered_species_table_GLlblMetag.csv` (a file containing the filtered species count table, output from [Step 10g](#10g-filter-kaiju-species-count-table))
+- `kaiju_species_table_GLlblMetag.tsv` (a file containing the species count table, output from [Step 10f](#10f-create-kaiju-species-count-table))
+- `kaiju_filtered_species_table_GLlblMetag.tsv` (a file containing the filtered species count table, output from [Step 10g](#10g-filter-kaiju-species-count-table))
 - `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 
@@ -2178,7 +2181,7 @@ library(tidyverse)
 library(decontam)
 library(phyloseq)
 
-feature_table_file <- "kaiju_filtered_species_table_GLlblMetag.csv"
+feature_table_file <- "kaiju_filtered_species_table_GLlblMetag.tsv"
 metadata_table <- "/path/to/sample/metadata"
 number_samples <- NumberOfSamples # integer indicating how many samples are in the file
 
@@ -2195,7 +2198,7 @@ decontaminated_table <- feature_decontam(metadata_file = metadata_table,
                                          frequency_column = "concentration", 
                                          threshold = 0.1, 
                                          classification_method = "kaiju", 
-                                         output_prefix = "", 
+                                         output_prefix = "kaiju", 
                                          assay_suffix = "_GLlblMetag")
 
 # Convert count matrix to relative abundance matrix
@@ -2225,13 +2228,13 @@ htmlwidgets::saveWidget(ggplotly(p), glue("kaiju_decontam_species_barplot_GLlblM
 
 **Input Data:**
 
-- `kaiju_filtered_species_table_GLlblMetag.csv`(path to filtered species count per sample, output from [Step 10g](#10g-filter-kaiju-species-count-table))
+- `kaiju_filtered_species_table_GLlblMetag.tsv`(path to filtered species count per sample, output from [Step 10g](#10g-filter-kaiju-species-count-table))
 - `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 **Output Data:**
 
-- **kaiju_decontam_results_GLlblMetag.csv** (decontam's result table, output from [feature_decontam() function](#feature_decontam))
-- **kaiju_decontam_species_table_GLlblMetag.csv** (decontaminated species table, output from [feature_decontam() function](#feature_decontam))
+- **kaiju_decontam_results_GLlblMetag.tsv** (decontam's result table, output from [feature_decontam() function](#feature_decontam))
+- **kaiju_decontam_species_table_GLlblMetag.tsv** (decontaminated species table, output from [feature_decontam() function](#feature_decontam))
 - kaiju_decontam_species_barplot_GLlblMetag.png (barplot after filtering out contaminants)
 - **kaiju_decontam_species_barplot_GLlblMetag.html** (barplot after filtering out contaminants)
 
@@ -2332,7 +2335,7 @@ kraken2 --db kraken2-db/ \
 
 ```R
 species_table <- merge_kraken_reports(reports-dir = '/path/to/kraken2/reports')
-write_csv(x = species_table, file = "kraken2_species_table_GLlblMetag.csv")
+write_tsv(x = species_table, file = "kraken2_species_table_GLlblMetag.tsv")
 ```
 
 **Custom Functions Used:**
@@ -2351,7 +2354,7 @@ write_csv(x = species_table, file = "kraken2_species_table_GLlblMetag.csv")
 
 **Output Data:**
 
-- **kraken2_species_table_GLlblMetag.csv** (kraken species count table in csv format)
+- **kraken2_species_table_GLlblMetag.tsv** (kraken species count table in tsv format)
 
 ##### 11cii. Compile Kraken2 Taxonomy Reports
 
@@ -2458,8 +2461,8 @@ ktImportText -o kraken2-report_GLlblMetag.html ${KTEXT_FILES[*]}
 ```R
 library(tidyverse)
 
-feature_table_file <- "kraken2_species_table_GLlblMetag.csv"
-output_file <- "kraken2_filtered_species_table_GLlblMetag.csv"
+feature_table_file <- "kraken2_species_table_GLlblMetag.tsv"
+output_file <- "kraken2_filtered_species_table_GLlblMetag.tsv"
 threshold <- 0.5
 
 # string used to define non-microbial taxa
@@ -2478,7 +2481,7 @@ table2write <- filter_rare(feature_table, non_microbial, threshold = threshold) 
   as.data.frame %>%
   rownames_to_column(feature_name)
 
-write_csv(x = table2write, file = output_file)
+write_tsv(x = table2write, file = output_file)
 ```
 
 **Custom Functions Used:**
@@ -2492,11 +2495,11 @@ write_csv(x = table2write, file = output_file)
 
 **Input Data:**
 
-- kraken2_species_table_GLlblMetag.csv (path to kaiju species table from [Step 11ci.](#11ci-create-merged-kraken2-taxonomy-table))
+- kraken2_species_table_GLlblMetag.tsv (path to kaiju species table from [Step 11ci.](#11ci-create-merged-kraken2-taxonomy-table))
 
 **Output Data:**
 
-- **kraken2_filtered_species_table_GLlblMetag.csv** - a file containing the filtered species table
+- **kraken2_filtered_species_table_GLlblMetag.tsv** - a file containing the filtered species table
 
 ---
 
@@ -2505,8 +2508,8 @@ write_csv(x = table2write, file = output_file)
 ```R
 library(tidyverse)
 
-species_table_file <- "kraken2_species_table_GLlblMetag.csv"
-filtered_species_table_file <- "kraken2_filtered_species_table_GLlblMetag.csv"
+species_table_file <- "kraken2_species_table_GLlblMetag.tsv"
+filtered_species_table_file <- "kraken2_filtered_species_table_GLlblMetag.tsv"
 metadata_file <- "/path/to/sample/metadata"
 number_samples <- 10 
 
@@ -2548,8 +2551,8 @@ htmlwidgets::saveWidget(ggplotly(p), glue("kraken2_filtered_species_barplot_GLlb
 
 **Input Data:**
 
-- `kraken2_species_table_GLlblMetag.csv` (path to kaiju species table from [Step 11ci.](#11ci-create-merged-kraken2-taxonomy-table))
-- `kraken2_filtered_species_table_GLlblMetag.csv` (a file containing the filtered species count table, output from [Step 11f](#11f-filter-kraken2-species-count-table))
+- `kraken2_species_table_GLlblMetag.tsv` (path to kaiju species table from [Step 11ci.](#11ci-create-merged-kraken2-taxonomy-table))
+- `kraken2_filtered_species_table_GLlblMetag.tsv` (a file containing the filtered species count table, output from [Step 11f](#11f-filter-kraken2-species-count-table))
 - `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 **Output Data:**
@@ -2570,7 +2573,7 @@ library(tidyverse)
 library(decontam)
 library(phyloseq)
 
-feature_table_file <- "kraken2_filtered_species_table_GLlblMetag.csv"
+feature_table_file <- "kraken2_filtered_species_table_GLlblMetag.tsv"
 metadata_table <- "/path/to/sample/metadata"
 number_samples <- NumberOfSamples # integer indicating how many samples are in the file
 
@@ -2587,7 +2590,7 @@ decontaminated_table <- feature_decontam(metadata_file = metadata_table,
                                          frequency_column = "concentration", 
                                          threshold = 0.1, 
                                          classification_method = "kraken2", 
-                                         output_prefix = "", 
+                                         output_prefix = "kraken2", 
                                          assay_suffix = "_GLlblMetag")
 
 # Convert count matrix to relative abundance matrix
@@ -2617,13 +2620,13 @@ htmlwidgets::saveWidget(ggplotly(p), glue("kraken2_decontam_species_barplot_GLlb
 
 **Input Data:**
 
-- `kraken2_filtered_species_table_GLlblMetag.csv`(path to filtered species count per sample, output from [Step 11f](#11f-filter-kraken2-species-count-table))
+- `kraken2_filtered_species_table_GLlblMetag.tsv`(path to filtered species count per sample, output from [Step 11f](#11f-filter-kraken2-species-count-table))
 - `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 **Output Data:**
 
-- **kraken2_decontam_results_GLlblMetag.csv** (decontam's result table, output from [feature_decontam() function](#feature_decontam))
-- **kraken2_decontam_species_table_GLlblMetag.csv** (decontaminated species table, output from [feature_decontam() function](#feature_decontam))
+- **kraken2_decontam_results_GLlblMetag.tsv** (decontam's result table, output from [feature_decontam() function](#feature_decontam))
+- **kraken2_decontam_species_table_GLlblMetag.tsv** (decontaminated species table, output from [feature_decontam() function](#feature_decontam))
 - kraken2_decontam_species_barplot_GLlblMetag.png (barplot after filtering out contaminants)
 - **kraken2_decontam_species_barplot_GLlblMetag.html** (barplot after filtering out contaminants)
 
@@ -3630,7 +3633,7 @@ metadata <- metadata %>% arrange(!!sym(group_column))
 
 table2write = species_gene_table %>% as.data.frame %>% rownames_to_column("species")
 # Write out gene taxonomy table
-write_csv(x = table2write, file = "gene_taxonomy_table.csv")
+write_tsv(x = table2write, file = "gene_taxonomy_table.tsv")
 
 make_heatmap(metadata, species_gene_table, 
              samples_column="sample_id", group_column = "group", 
@@ -3651,7 +3654,7 @@ make_heatmap(metadata, species_gene_table,
     [Step 22a](#22a-generating-gene-level-coverage-summary-tables)) 
 
 **Output data:**
-- gene_taxonomy_table.csv (aggregated gene taxonomy table with samples in columns and species in rows)
+- gene_taxonomy_table.tsv (aggregated gene taxonomy table with samples in columns and species in rows)
 - **Combined-gene-level-taxonomy_heatmap_GLlblMetag.png** (heatmap of all gene taxonomy assignments)
 
 #### 25b. Gene-level Taxonomy Decontamination
@@ -3661,7 +3664,7 @@ library(tidyverse)
 library(decontam)
 library(phyloseq)
 
-feature_table_file <- "gene_taxonomy_table.csv"
+feature_table_file <- "gene_taxonomy_table.tsv"
 metadata_table <- "/path/to/sample/metadata"
 number_samples <- NumberOfSamples # integer indicating how many samples are in the file
 
@@ -3682,8 +3685,8 @@ decontaminated_table <- feature_decontam(metadata_file = metadata_table,
                                          ntc_name = "TRUE", 
                                          frequency_column = "concentration", 
                                          threshold = 0.1, 
-                                         classification_method = "Combined-gene-level-taxonomy", 
-                                         output_prefix = "", 
+                                         classification_method = "gene-taxonomy", 
+                                         output_prefix = "Combined-gene-level-taxonomy", 
                                          assay_suffix = "_GLlblMetag")
 
 # Get common samples and re-arrange feature table and metadata
@@ -3712,13 +3715,13 @@ make_heatmap(metadata, decontaminated_table,
 
 **Input Data:**
 
-- `gene_taxonomy_table.csv`(aggregated gene taxonomy table with samples in columns and species in rows, from [Step 25a](#25a-gene-level-taxonomy-heatmaps))
+- `gene_taxonomy_table.tsv`(aggregated gene taxonomy table with samples in columns and species in rows, from [Step 25a](#25a-gene-level-taxonomy-heatmaps))
 - `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 **Output Data:**
 
-- **Combined-gene-level-taxonomy_decontam_results_GLlblMetag.csv** (decontam's results table)
-- **Combined-gene-level-taxonomy_decontam_species_table_GLlblMetag.csv** (decontaminated species table)
+- **Combined-gene-level-taxonomy_decontam_results_GLlblMetag.tsv** (decontam's results table, output from [feature_decontam() function](#feature_decontam))
+- **Combined-gene-level-taxonomy_decontam_species_table_GLlblMetag.tsv** (decontaminated gene-level taxonomy, output from [feature_decontam() function](#feature_decontam))
 - **Combined-gene-level-taxonomy_decontam_heatmap_GLlblMetag.png** (gene-level taxonomy heatmap after filtering out contaminants)
 
 #### 25c. Gene-level KO Functions Heatmaps
@@ -3751,7 +3754,7 @@ rownames(functions.m) <- functions_table$KO_ID
 table2write <- functions.m %>% as.data.frame %>%
                rownames_to_column("KO_ID")
 # Write out  taxonomy table
-write_csv(x = table2write  , file = "genes-KO-functions_table.csv")
+write_tsv(x = table2write  , file = "genes-KO-functions_table.tsv")
 
 # Get common samples and re-arrange feature table and metadata
 common_samples <- intersect(colnames(functions_table), rownames(metadata))
@@ -3777,7 +3780,7 @@ make_heatmap(metadata, table2write,
     [Step 22a](#22a-generate-gene-level-coverage-summary-tables)
 
 **Output data:**
-- genes-KO-functions_table.csv (aggregated and subsetted gene KO function table)
+- genes-KO-functions_table.tsv (aggregated and subsetted gene KO function table)
 - **Combined-gene-level-KO-function_heatmap_GLlblMetag.png** (heatmap of all gene-level KO function assignments)
 
 #### 25d. Gene-level KO Functions Decontamination
@@ -3787,7 +3790,7 @@ library(tidyverse)
 library(decontam)
 library(phyloseq)
 
-feature_table_file <- "genes-KO-functions_table.csv"
+feature_table_file <- "genes-KO-functions_table.tsv"
 metadata_table <- "/path/to/sample/metadata"
 number_samples <- NumberOfSamples # integer indicating how many samples are in the file
 
@@ -3808,8 +3811,8 @@ decontaminated_table <- feature_decontam(metadata_file = metadata_table,
                                          ntc_name = "TRUE", 
                                          frequency_column = "concentration", 
                                          threshold = 0.1, 
-                                         classification_method = "Combined-gene-level-KO-function", 
-                                         output_prefix = "", 
+                                         classification_method = "gene-function", 
+                                         output_prefix = "Combined-gene-level-KO-function", 
                                          assay_suffix = "_GLlblMetag")
 
 # Get common samples and re-arrange feature table and metadata
@@ -3838,13 +3841,13 @@ make_heatmap(metadata, decontaminated_table,
 
 **Input Data:**
 
-- `genes-KO-functions_table.csv`(aggregated gene KO functions table table with samples in columns and KO_ID in rows, from [Step 25c](#25c-gene-level-ko-functions-heatmaps))
+- `genes-KO-functions_table.tsv`(aggregated gene KO functions table table with samples in columns and KO_ID in rows, from [Step 25c](#25c-gene-level-ko-functions-heatmaps))
 - `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 **Output Data:**
 
-- **Combined-gene-level-KO-function_decontam_results_GLlblMetag.csv** (decontam's results table)
-- **Combined-gene-level-KO-function_decontam_species_table_GLlblMetag.csv** (decontaminated gene-level KO functions table)
+- **Combined-gene-level-KO-function_decontam_results_GLlblMetag.tsv** (decontam results table, output from [feature_decontam() function](#feature_decontam))
+- **Combined-gene-level-KO-function_decontam_KO_table_GLlblMetag.tsv** (decontaminated gene-level KO functions table, output from [feature_decontam() function](#feature_decontam))
 - **Combined-gene-level-KO-function_decontam_heatmap_GLlblMetag.png** (gene-level KO functions heatmap after filtering out contaminants)
 
 
@@ -3883,7 +3886,7 @@ metadata <- metadata %>% arrange(!!sym(group_column))
 
 table2write = species_contig_table %>% as.data.frame %>% rownames_to_column("species")
 # Write out contig taxonomy table
-write_csv(x = table2write, file = "contig_taxonomy_table.csv")
+write_tsv(x = table2write, file = "contig_taxonomy_table.tsv")
 
 make_heatmap(metadata, species_contig_table, 
              samples_column="sample_id", group_column = "group", 
@@ -3903,7 +3906,7 @@ make_heatmap(metadata, species_contig_table,
     [Step 21b](#21b-generate-contig-level-coverage-summary-tables)) 
 
 **Output data:**
-- contig_taxonomy_table.csv (aggregated contig taxonomy table with samples in columns and species in rows)
+- contig_taxonomy_table.tsv (aggregated contig taxonomy table with samples in columns and species in rows)
 - **Combined-contig-level-taxonomy_heatmap_GLlblMetag.png** (heatmap of all contig taxonomy assignments)
 
 #### 25g. Contig-level Decontamination
@@ -3913,7 +3916,7 @@ library(tidyverse)
 library(decontam)
 library(phyloseq)
 
-feature_table_file <- "contig_taxonomy_table.csv"
+feature_table_file <- "contig_taxonomy_table.tsv"
 metadata_table <- "/path/to/sample/metadata"
 number_samples <- NumberOfSamples # integer indicating how many samples are in the file
 
@@ -3934,8 +3937,8 @@ decontaminated_table <- feature_decontam(metadata_file = metadata_table,
                                          ntc_name = "TRUE", 
                                          frequency_column = "concentration", 
                                          threshold = 0.1, 
-                                         classification_method = "Combined-contig-level-taxonomy", 
-                                         output_prefix = "", 
+                                         classification_method = "contig-taxonomy", 
+                                         output_prefix = "Combined-contig-level-taxonomy", 
                                          assay_suffix = "_GLlblMetag")
 
 # Get common samples and re-arrange feature table and metadata
@@ -3965,12 +3968,12 @@ make_heatmap(metadata, decontaminated_table,
 
 **Input Data:**
 
-- `contig_taxonomy_table.csv`(aggregated contig taxonomy table with samples in columns and species in rows, from [Step 25f](#25f-contig-level-heatmaps))
+- `contig_taxonomy_table.tsv`(aggregated contig taxonomy table with samples in columns and species in rows, from [Step 25f](#25f-contig-level-heatmaps))
 - `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 **Output Data:**
 
-- **Combined-contig-level-taxonomy_decontam_results_GLlblMetag.csv** (decontam's results table)
-- **Combined-contig-level-taxonomy_decontam_species_table_GLlblMetag.csv** (decontaminated contig-level species table)
+- **Combined-contig-level-taxonomy_decontam_results_GLlblMetag.tsv** (decontam's results table, output from [feature_decontam() function](#feature_decontam))
+- **Combined-contig-level-taxonomy_decontam_species_table_GLlblMetag.tsv** (decontaminated contig-level taxonomy, output from [feature_decontam() function](#feature_decontam))
 - **Combined-contig-level-taxonomy_decontam_heatmap_GLlblMetag.png** (contig-level heatmap after filtering out contaminants)
 
