@@ -2351,17 +2351,17 @@ mv sample1-humann3-out-dir/sample1_humann_temp/sample1_metaphlan_bugs_list.tsv \
 
 ```bash
 # they need to be in their own directories
-mkdir genefamily-results/ pathabundance-results/ pathcoverage-results/
+mkdir gene-family-results/ path-abundance-results/ path-coverage-results/
 
 # copying results from humann3 step
-cp *-humann3-out-dir/*genefamilies.tsv genefamily-results/
-cp *-humann3-out-dir/*abundance.tsv pathabundance-results/
-cp *-humann3-out-dir/*coverage.tsv pathcoverage-results/
+cp *-humann3-out-dir/*genefamilies.tsv gene-family-results/
+cp *-humann3-out-dir/*abundance.tsv path-abundance-results/
+cp *-humann3-out-dir/*coverage.tsv path-coverage-results/
 
 # join results across samples
-humann_join_tables -i genefamily-results/ -o gene-families.tsv
-humann_join_tables -i pathabundance-results/ -o path-abundances.tsv
-humann_join_tables -i pathcoverage-results/ -o path-coverages.tsv
+humann_join_tables -i gene-family-results/ -o gene-families.tsv
+humann_join_tables -i path-abundance-results/ -o pathway-abundances.tsv
+humann_join_tables -i path-coverage-results/ -o pathway-coverages.tsv
 ```
 
 **Parameter Definitions:**  
@@ -2376,8 +2376,8 @@ humann_join_tables -i pathcoverage-results/ -o path-coverages.tsv
 **Output Data:**
 
 - gene-families.tsv (Combined gene family table in tab-separated format.)
-- path-abundances.tsv (Combined path abundances table in tab-separated format.)
-- path-coverages.tsv (Combined path coverages table in tab-separated format.)
+- pathway-abundances.tsv (Combined path abundances table in tab-separated format.)
+- pathway-coverages.tsv (Combined path coverages table in tab-separated format.)
 
 #### 8d. Split Results Tables
 
@@ -2388,13 +2388,13 @@ humann_split_stratified_table -i gene-families.tsv -o ./
 mv gene-families_stratified.tsv Gene-families-grouped-by-taxa_GLlbsMetag.tsv
 mv gene-families_unstratified.tsv Gene-families_GLlbsMetag.tsv
 
-humann_split_stratified_table -i path-abundances.tsv -o ./
-mv path-abundances_stratified.tsv Path-abundances-grouped-by-taxa_GLlbsMetag.tsv
-mv path-abundances_unstratified.tsv Path-abundances_GLlbsMetag.tsv
+humann_split_stratified_table -i pathway-abundances.tsv -o ./
+mv pathway-abundances_stratified.tsv Pathway-abundances-grouped-by-taxa_GLlbsMetag.tsv
+mv pathway-abundances_unstratified.tsv Pathway-abundances_GLlbsMetag.tsv
 
-humann2_split_stratified_table -i path-coverages.tsv -o ./
-mv path-coverages_stratified.tsv Path-coverages-grouped-by-taxa_GLlbsMetag.tsv
-mv path-coverages_unstratified.tsv Path-coverages_GLlbsMetag.tsv
+humann2_split_stratified_table -i pathway-coverages.tsv -o ./
+mv pathway-coverages_stratified.tsv Pathway-coverages-grouped-by-taxa_GLlbsMetag.tsv
+mv pathway-coverages_unstratified.tsv Pathway-coverages_GLlbsMetag.tsv
 ```
 
 **Parameter Definitions:**  
@@ -2405,24 +2405,24 @@ mv path-coverages_unstratified.tsv Path-coverages_GLlbsMetag.tsv
 **Input Data:**
 
 - gene-families.tsv (Combined gene family table from [Step 8c](#8c-merge-multiple-sample-functional-profiles))
-- path-abundances.tsv (Combined path abundances table from [Step 8c](#8c-merge-multiple-sample-functional-profiles))
-- path-coverages.tsv (Combined path coverages table from [Step 8c](#8c-merge-multiple-sample-functional-profiles))
+- pathway-abundances.tsv (Combined path abundances table from [Step 8c](#8c-merge-multiple-sample-functional-profiles))
+- pathway-coverages.tsv (Combined path coverages table from [Step 8c](#8c-merge-multiple-sample-functional-profiles))
 
 **Output Data:**
 
 - Gene-families-grouped-by-taxa_GLlbsMetag.tsv (Gene families grouped by taxa)
 - Gene-families_GLlbsMetag.tsv (Non-taxonomically grouped gene families)
-- Path-abundances-grouped-by-taxa_GLlbsMetag.tsv (Path abundances grouped by taxa)
-- Path-abundances_GLlbsMetag.tsv  (Non-taxonomically grouped gene families)
-- Path-coverages-grouped-by-taxa_GLlbsMetag.tsv (Path coverages grouped by taxa)
-- Path-coverages_GLlbsMetag.tsv (Non-taxonomically groups path coverages)
+- pathway-abundances-grouped-by-taxa_GLlbsMetag.tsv (Path abundances grouped by taxa)
+- pathway-abundances_GLlbsMetag.tsv  (Non-taxonomically grouped gene families)
+- pathway-coverages-grouped-by-taxa_GLlbsMetag.tsv (Path coverages grouped by taxa)
+- pathway-coverages_GLlbsMetag.tsv (Non-taxonomically groups path coverages)
 
 #### 8e. Normalize Gene Families and Pathway Abundances Tables
 Generates some normalized tables of the read-based functional outputs from humann that are more readily suitable for across sample comparisons.
 
 ```bash
 humann_renorm_table -i Gene-families_GLlbsMetag.tsv -o Gene-families-cpm_GLlbsMetag.tsv --update-snames
-humann_renorm_table -i Path-abundances_GLlbsMetag.tsv -o Path-abundances-cpm_GLlbsMetag.tsv --update-snames
+humann_renorm_table -i Pathway-abundances_GLlbsMetag.tsv -o Pathway-abundances-cpm_GLlbsMetag.tsv --update-snames
 ```
 
 **Parameter Definitions:**  
@@ -2434,12 +2434,12 @@ humann_renorm_table -i Path-abundances_GLlbsMetag.tsv -o Path-abundances-cpm_GLl
 **Input Data:**
 
 - Gene-families_GLlbsMetag.tsv (Non-taxonomically grouped gene families, from [Step 8d](#8d-split-results-tables))
-- Path-abundances_GLlbsMetag.tsv (Non-taxonomically grouped gene families, from [Step 8d](#8d-split-results-tables))
+- Pathway-abundances_GLlbsMetag.tsv (Non-taxonomically grouped gene families, from [Step 8d](#8d-split-results-tables))
 
 **Output Data:**
 
 - Gene-families-cpm_GLlbsMetag.tsv (Normalized non-taxonomically grouped gene families)
-- Path-abundances-cpm_GLlbsMetag.tsv (Normalized on-taxonomically grouped gene families)
+- Pathway-abundances-cpm_GLlbsMetag.tsv (Normalized on-taxonomically grouped gene families)
 
 #### 8f. Generate Normalized Gene-family Table Grouped by Kegg Orthologs (KOs)
 
