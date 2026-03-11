@@ -132,6 +132,7 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [25g. Contig-level Heatmaps](#25g-contig-level-heatmaps)
       - [25h. Contig-level Feature Filtering](#25h-contig-level-feature-filtering)
       - [25i. Contig-level Decontamination](#25i-contig-level-decontamination)
+    - [26. Generate Assembly-based Processing Overview](#26-generate-assembly-based-processing-overview)
 
 
 ---
@@ -3028,7 +3029,7 @@ awk -F $'\t' ' BEGIN { OFS=FS } { if ( $3 == "lineage" ) { print $1,$3,$5,$6,$7,
     { print $1,"NA","NA","NA","NA","NA","NA","NA","NA" } else { n=split($3,lineage,";"); \
     print $1,lineage[n],$5,$6,$7,$8,$9,$10,$11 } } ' sample-gene-tax-out.tmp | \
     sed 's/no support/NA/g' | sed 's/superkingdom/domain/' | sed 's/# ORF/gene_ID/' | \
-    sed 's/lineage/taxid/'  > sample-gene-tax-out.tsv
+    sed 's/lineage/taxid/'  > sample-gene-tax.tsv
 ```
 
 **Input Data:**
@@ -3037,7 +3038,7 @@ awk -F $'\t' ' BEGIN { OFS=FS } { if ( $3 == "lineage" ) { print $1,$3,$5,$6,$7,
 
 **Output Data:**
 
-- sample-gene-tax-out.tsv (reformatted gene-calls taxonomy file with lineage info)
+- sample-gene-tax.tsv (reformatted gene-calls taxonomy file with lineage info)
 
 
 #### 17f. Format Contig-level Output With awk and sed
@@ -3047,7 +3048,7 @@ awk -F $'\t' ' BEGIN { OFS=FS } { if ( $2 == "classification" ) { print $1,$4,$6
     else if ( $2 == "no taxid assigned" ) { print $1,"NA","NA","NA","NA","NA","NA","NA","NA" } \
     else { n=split($4,lineage,";"); print $1,lineage[n],$6,$7,$8,$9,$10,$11,$12 } } ' sample-contig-tax-out.tmp | \
     sed 's/no support/NA/g' | sed 's/superkingdom/domain/' | sed 's/^# contig/contig_ID/' | \
-    sed 's/lineage/taxid/' > sample-contig-tax-out.tsv
+    sed 's/lineage/taxid/' > sample-contig-tax.tsv
 
   # clearing intermediate files
 rm sample*.tmp*
@@ -3059,7 +3060,7 @@ rm sample*.tmp*
 
 **Output Data:**
 
-- sample-contig-tax-out.tsv (reformatted contig taxonomy file with lineage info)
+- sample-contig-tax.tsv (reformatted contig taxonomy file with lineage info)
 
 <br>
 
@@ -3209,25 +3210,25 @@ rm sample-*.tmp
 ```bash
 paste <( tail -n +2 sample-gene-coverages.tsv | sort -V -k 1 ) \
       <( tail -n +2 sample-annotations.tsv | sort -V -k 1 | cut -f 2- ) \
-      <( tail -n +2 sample-gene-tax-out.tsv | sort -V -k 1 | cut -f 2- ) \
+      <( tail -n +2 sample-gene-tax.tsv | sort -V -k 1 | cut -f 2- ) \
       > sample-gene-tab.tmp
 
 paste <( head -n 1 sample-gene-coverages.tsv ) \
       <( head -n 1 sample-annotations.tsv | cut -f 2- ) \
-      <( head -n 1 sample-gene-tax-out.tsv | cut -f 2- ) \
+      <( head -n 1 sample-gene-tax.tsv | cut -f 2- ) \
       > sample-header.tmp
 
 cat sample-header.tmp sample-gene-tab.tmp > sample-gene-coverage-annotation-and-tax_GLlblMetag.tsv
 
 # removing intermediate files
-rm sample*tmp sample-gene-coverages.tsv sample-annotations.tsv sample-gene-tax-out.tsv
+rm sample*tmp sample-gene-coverages.tsv sample-annotations.tsv sample-gene-tax.tsv
 ```
 
 **Input Data:**
 
 - sample-gene-coverages.tsv (table with gene-level coverages, output from [Step 19b](#19b-filter-gene-and-contig-coverage-based-on-detection))
 - sample-annotations.tsv (table of KO annotations assigned to gene IDs, output from [Step 16c](#16c-filter-ko-outputs))
-- sample-gene-tax-out.tsv (reformatted gene-calls taxonomy file with lineage info, output from [Step 17e](#17e-format-gene-level-output-with-awk-and-sed))
+- sample-gene-tax.tsv (reformatted gene-calls taxonomy file with lineage info, output from [Step 17e](#17e-format-gene-level-output-with-awk-and-sed))
 
 
 **Output Data:**
@@ -3245,23 +3246,23 @@ rm sample*tmp sample-gene-coverages.tsv sample-annotations.tsv sample-gene-tax-o
 
 ```bash
 paste <( tail -n +2 sample-contig-coverages.tsv | sort -V -k 1 ) \
-      <( tail -n +2 sample-contig-tax-out.tsv | sort -V -k 1 | cut -f 2- ) \
+      <( tail -n +2 sample-contig-tax.tsv | sort -V -k 1 | cut -f 2- ) \
       > sample-contig.tmp
 
 paste <( head -n 1 sample-contig-coverages.tsv ) \
-      <( head -n 1 sample-contig-tax-out.tsv | cut -f 2- ) \
+      <( head -n 1 sample-contig-tax.tsv | cut -f 2- ) \
       > sample-contig-header.tmp
       
 cat sample-contig-header.tmp sample-contig.tmp > sample-contig-coverage-and-tax_GLlblMetag.tsv
 
 # removing intermediate files
-rm sample*tmp sample-contig-coverages.tsv sample-contig-tax-out.tsv
+rm sample*tmp sample-contig-coverages.tsv sample-contig-tax.tsv
 ```
 
 **Input Data:**
 
 - sample-contig-coverages.tsv (table with contig-level coverages, output from [Step 19b](#19b-filter-gene-and-contig-coverage-based-on-detection))
-- sample-contig-tax-out.tsv (reformatted contig taxonomy file with lineage info, output from [Step 17f](#17f-format-contig-level-output-with-awk-and-sed))
+- sample-contig-tax.tsv (reformatted contig taxonomy file with lineage info, output from [Step 17f](#17f-format-contig-level-output-with-awk-and-sed))
 
 
 **Output Data:**
@@ -3317,18 +3318,18 @@ mv "Combined-gene-level-taxonomy-coverages.tsv Combined-gene-level-taxonomy-cove
 #### 22b. Generate Contig-level Coverage Summary Tables
 
 ```bash
-bit-GL-combine-contig-tax-tables *-contig-coverage-and-tax.tsv -o Combined
+bit-GL-combine-contig-tax-tables *-contig-coverage-and-tax_GLlblMetag.tsv -o Combined
 ```
 
 **Parameter Definitions:**  
 
-- `*-contig-coverage-and-tax.tsv` - Positional arguments specifying the input tsv files, can be provided as a space-delimited list of files, or with wildcards like above.
+- `*-contig-coverage-and-tax_GLlblMetag.tsv` - Positional arguments specifying the input tsv files, can be provided as a space-delimited list of files, or with wildcards like above.
 - `-o` – Specifies the output file prefix.
 
 
 **Input Data:**
 
-- *-contig-coverage-and-tax.tsv (tables with combined contig coverage and taxonomy info generated for individual samples, output from [Step 21](#21-combine-contig-level-coverage-and-taxonomy-for-each-sample))
+- *-contig-coverage-and-tax_GLlblMetag.tsv (tables with combined contig coverage and taxonomy info generated for individual samples, output from [Step 21](#21-combine-contig-level-coverage-and-taxonomy-for-each-sample))
 
 **Output Data:**
 
@@ -3569,7 +3570,7 @@ done
 
 **Input Data:**
 
-- \*-gene-coverage-annotation-and-tax.tsv (tables with combined gene coverage, annotation, and taxonomy info generated for individual samples, output from [Step 20](#20-combine-gene-level-coverage-taxonomy-and-functional-annotations-for-each-sample)
+- \*-gene-coverage-annotation-and-tax_GLlblMetag.tsv (tables with combined gene coverage, annotation, and taxonomy info generated for individual samples, output from [Step 20](#20-combine-gene-level-coverage-taxonomy-and-functional-annotations-for-each-sample)
 - MAGs/\*.fasta (directory holding high-quality MAGs, output from [Step 23c](#23c-filter-mags))
 
 **Output Data:**
@@ -4170,4 +4171,35 @@ make_heatmap(metadata, decontaminated_table,
 - **Combined-contig-level-taxonomy_decontam_results_GLlblMetag.tsv** (decontam's results table, output from [feature_decontam() function](#feature_decontam))
 - **Combined-contig-level-taxonomy_decontam_species_table_GLlblMetag.tsv** (decontaminated contig-level taxonomy, output from [feature_decontam() function](#feature_decontam))
 - **Combined-contig-level-taxonomy_decontam_heatmap_GLlblMetag.png** (contig-level heatmap after filtering out contaminants, output from [make_heatmap() function](#make_heatmap))
+
+### 26. Generate Assembly-based Processing Overview
+> This utilizes the helper script [`generate-assembly-based-overview-table.sh`](https://github.com/nasa/GeneLab_Metagenomics_Workflow/blob/DEV/bin/generate-assembly-based-overview-table.sh) 
+
+```bash
+bash generate-assembly-based-overview-table.sh sample_ids_file.txt \
+  assemblies/ predicted-genes/ read-mapping/ bins/ MAGs/ \
+  Assembly-based-processing-overview_GLlbsMetag.tsv
+```
+
+**Parameter Definitions:**
+
+- `sample_ids_file.txt` - A file listing the sample names, one on each row, provided as a positional argument.
+- `assemblies/` - The directory holding the contig-renamed assembly files generated in [Step 14a](#14a-rename-contig-headers), provided as a positional argument.
+- `predicted-genes/` - The directory holding the gene-calls ammino-acid fasta files generated in [Step 15b](#15b-remove-line-wraps-in-gene-prediction-output), provided as a positional argument.
+- `read-mapping/` - The directory holding the sorted mapping to the sample assembly in BAM format generated in [Step 18c](#18b-sort-assembly-alignments), provided as a positional argument.
+- `bins/` - The directory holding the recovered bins fasta files generated in [Step 23a](#23a-bin-contigs), provided as a positional argument.
+- `MAGs/` - The directory holding the high-quality MAGs fasta files generated in [Step 23c](#23c-filter-mags), provided as a positional argument.
+- `Assembly-based-processing-overview_GLlbsMetag.tsv` - name of the output file, provided as a positional argument.
+
+**Input Data:**
+
+- assemblies/\*.fasta (contig-renamed assembly files from [Step 14a](#14a-rename-contig-headers))
+- predicted-genes/\*.faa (gene-calls amino-acid fasta file with line wraps removed, output from [Step 15b](#15b-remove-line-wraps-in-gene-prediction-output))
+- read-mapping/\*.bam (sorted mapping to sample assembly, in BAM format, output from [Step 18b](#18b-sort-assembly-alignments))
+- bins/\*.fasta (fasta files of recovered bins, output from [Step 23a](#23a-bin-contigs))
+- MAGs/\*.fasta (directory holding high-quality MAGs, output from [Step 23c](#23c-filter-mags))
+
+**Output Data:**
+
+- **Assembly-based-processing-overview_GLlbsMetag.tsv** (Tab delimited text file providing a summary of assembly-based processing results for each sample)
 
