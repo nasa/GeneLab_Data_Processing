@@ -1154,8 +1154,6 @@ library(pavian)
     # and convert table from dataframe to matrix
     species_names <- species_table[, "species"]
     rownames(species_table) <- species_names
-    species_table <- species_table[,-(which(colnames(species_table) == "species"))]
-    species_table <- as.matrix(species_table)
     
     return(species_table)
   }
@@ -3345,7 +3343,7 @@ bit-GL-combine-contig-tax-tables *-contig-coverage-and-tax_GLlblMetag.tsv -o Com
 #### 23a. Bin Contigs
 
 ```bash
-jgi_summarize_bam_contig_depths --outputDepth sample-metabat-assembly-depth.tsv \
+jgi_summarize_bam_contig_depths --outputDepth sample-metabat-assembly-depth_GLlblMetag.tsv \
                                 --percentIdentity 97 \
                                 --minContigLength 1000 \
                                 --minContigDepth 1.0  \
@@ -3354,7 +3352,7 @@ jgi_summarize_bam_contig_depths --outputDepth sample-metabat-assembly-depth.tsv 
 
 metabat2  --inFile sample-assembly_GLlblMetag.fasta \
           --outFile sample \
-          --abdFile sample-metabat-assembly-depth.tsv \
+          --abdFile sample-metabat-assembly-depth_GLlblMetag.tsv \
           -t NumberOfThreads
 
 mkdir sample-bins
@@ -3393,7 +3391,7 @@ zip -r sample-bins_GLlblMetag.zip sample-bins
 - **sample-bins_GLlblMetag.zip** (zip file containing fasta files of recovered bins)
 
 #### 23b. Bin Quality Assessment
-> Utilizes the default `checkm` database available [here](https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz), `checkm_data_2015_01_16.tar.gz`.
+> Utilizes the default `checkm` database [checkm_data_2015_01_16.tar.gz](https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz).
 
 ```bash
 checkm lineage_wf -f bins-overview_GLlblMetag.tsv \

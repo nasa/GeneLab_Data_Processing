@@ -794,8 +794,6 @@ library(pavian)
     # and convert table from dataframe to matrix
     species_names <- species_table[, "species"]
     rownames(species_table) <- species_names
-    species_table <- species_table[,-(which(colnames(species_table) == "species"))]
-    species_table <- as.matrix(species_table)
     
     return(species_table)
   }
@@ -2414,12 +2412,12 @@ mv pathway-coverages_unstratified.tsv Pathway-coverages_GLlbsMetag.tsv
 
 **Output Data:**
 
-- Gene-families-grouped-by-taxa_GLlbsMetag.tsv (Gene families grouped by taxa)
-- Gene-families_GLlbsMetag.tsv (Non-taxonomically grouped gene families)
-- pathway-abundances-grouped-by-taxa_GLlbsMetag.tsv (Path abundances grouped by taxa)
-- pathway-abundances_GLlbsMetag.tsv  (Non-taxonomically grouped gene families)
-- pathway-coverages-grouped-by-taxa_GLlbsMetag.tsv (Path coverages grouped by taxa)
-- pathway-coverages_GLlbsMetag.tsv (Non-taxonomically groups path coverages)
+- **Gene-families_GLlbsMetag.tsv** (gene-family abundances)
+- **Gene-families-grouped-by-taxa_GLlbsMetag.tsv** (gene-family abundances grouped by taxa)
+- **Pathway-abundances_GLlbsMetag.tsv**  (pathway abundances)
+- **Pathway-abundances-grouped-by-taxa_GLlbsMetag.tsv** (pathway abundances grouped by tax)
+- **Pathway-coverages_GLlbsMetag.tsv** (pathway coverages)
+- **Pathway-coverages-grouped-by-taxa_GLlbsMetag.tsv** (pathway coverages grouped by taxa)
 
 #### 8e. Normalize Gene Families and Pathway Abundances Tables
 Generates some normalized tables of the read-based functional outputs from humann that are more readily suitable for across sample comparisons.
@@ -2437,13 +2435,12 @@ humann_renorm_table -i Pathway-abundances_GLlbsMetag.tsv -o Pathway-abundances-c
 
 **Input Data:**
 
-- Gene-families_GLlbsMetag.tsv (Non-taxonomically grouped gene families, from [Step 8d](#8d-split-results-tables))
-- Pathway-abundances_GLlbsMetag.tsv (Non-taxonomically grouped gene families, from [Step 8d](#8d-split-results-tables))
+- Gene-families_GLlbsMetag.tsv (gene-family abundances, from [Step 8d](#8d-split-results-tables))
+- Pathway-abundances_GLlbsMetag.tsv (pathway abundances, from [Step 8d](#8d-split-results-tables))
 
 **Output Data:**
-
-- Gene-families-cpm_GLlbsMetag.tsv (Normalized non-taxonomically grouped gene families)
-- Pathway-abundances-cpm_GLlbsMetag.tsv (Normalized on-taxonomically grouped gene families)
+- **Gene-families-cpm_GLlbsMetag.tsv** (gene-family abundances normalized to copies-per-million)
+- **Pathway-abundances-cpm_GLlbsMetag.tsv** (pathway abundances normalized to copies-per-million)
 
 #### 8f. Generate Normalized Gene-family Table Grouped by Kegg Orthologs (KOs)
 
@@ -2474,7 +2471,7 @@ humann_renorm_table -o Gene-families-KO-cpm_GLlbsMetag.tsv --update-snames
 
 **Output Data:**
 
-- Gene-families-KO-cpm_GLlbsMetag.tsv (Normalized gene-families with annotations based on Kegg Orthology terms)
+- **Gene-families-KO-cpm_GLlbsMetag.tsv** (KO term abundances normalized to copies-per-million)
 
 #### 8g. Combine MetaPhlan Taxonomy Tables
 
@@ -2499,7 +2496,7 @@ sed -i 's/_metaphlan_bugs_list//g' metaphlan-taxonomy_GLlbsMetag.tsv
 
 **Output Data:**
 
-- **metaphlan-taxonomy_GLlbsMetag.tsv** (MetaPhlan estimated taxonomic relative abundances)
+- **Metaphlan-taxonomy_GLlbsMetag.tsv** (MetaPhlan estimated taxonomic relative abundances)
 
 #### 8h. Create MetaPhlan Species Count Table
 
@@ -3456,7 +3453,7 @@ bit-GL-combine-contig-tax-tables *-contig-coverage-and-tax_GLlbsMetag.tsv -o Com
 #### 19a. Bin Contigs
 
 ```bash
-jgi_summarize_bam_contig_depths --outputDepth sample-metabat-assembly-depth.tsv \
+jgi_summarize_bam_contig_depths --outputDepth sample-metabat-assembly-depth-GLlbsMetag.tsv \
                                 --percentIdentity 97 \
                                 --minContigLength 1000 \
                                 --minContigDepth 1.0  \
@@ -3465,7 +3462,7 @@ jgi_summarize_bam_contig_depths --outputDepth sample-metabat-assembly-depth.tsv 
 
 metabat2  --inFile sample-assembly_GLlbsMetag.fasta \
           --outFile sample \
-          --abdFile sample-metabat-assembly-depth.tsv \
+          --abdFile sample-metabat-assembly-depth_GLlbsMetag.tsv \
           -t NumberOfThreads
 
 mkdir sample-bins
@@ -3502,7 +3499,7 @@ zip -r sample-bins_GLlbsMetag.zip sample-bins
 - **sample-bins_GLlbsMetag.zip** (zip file containing fasta files of recovered bins)
 
 #### 19b. Bin quality assessment
-> Utilizes the default `checkm` database available [here](https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz), `checkm_data_2015_01_16.tar.gz`.
+> Utilizes the default `checkm` database [checkm_data_2015_01_16.tar.gz](https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz).
 
 ```bash
 checkm lineage_wf -f bins-overview_GLlbsMetag.tsv \
