@@ -35,7 +35,7 @@ workflow {
 
     } else if ( params.db_url ) {
         // Option 1: pre-built DB - only assembly_name and assembly_acc needed
-        reference_fasta       = channel.value([])
+        reference_fasta       = channel.value("")
         reference_genome      = params.assembly_name  ? channel.value(params.assembly_name) : channel.value("unknown")
         reference_accession   = params.assembly_acc   ? channel.value(params.assembly_acc)  : channel.value("unknown")
 
@@ -78,7 +78,7 @@ workflow {
     
     // Generate summary and compile into one file
     SUMMARY(KRAKEN_2.out.output, KRAKEN_2.out.report)
-    COMPILE_SUMMARY(SUMMARY.out.collect(), channel.fromPath(params.sample_id_list), params.host) 
+    COMPILE_SUMMARY(SUMMARY.out.collect(), channel.fromPath(params.sample_id_list), host_id) 
 
     // Software Version Capturing - combining all captured software versions
     KRAKEN_2.out.version | mix(KRAKEN2_DB.out.version.ifEmpty(""))
@@ -115,11 +115,11 @@ workflow {
 
 output {
     protocol_out {
-        path "processing_info"
+        path "GeneLab"
     }
 
     software_versions {
-        path "processing_info"
+        path "GeneLab"
     }
 
     fastq_out {

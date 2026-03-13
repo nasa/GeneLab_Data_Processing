@@ -112,7 +112,7 @@ This workflow can be run by providing the path to a text file containing a singl
 It also requires setting the root directory for where kraken2 reference databases are (or will be) stored. The workflow assumes databases follow the naming convention `kraken2-<host>-db` and determines how to obtain the database in the following order:
 
 1. **Database already exists** in the provided root directory: the workflow reuses it directly, skipping the build step entirely.
-2. **Pre-built database URL**: the workflow downloads and unpacks the database into the root directory. An example is available in the [reference database info page](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Metagenomics/Remove_host_reads/Workflow_Documentation/SW_MGRemoveHumanReads-A/reference-database-info.md), which describes how the human database was generated for a previous version of this workflow and how to obtain it for reuse.
+2. **Pre-built database URL**: the workflow downloads and unpacks the database into the root directory. An example is available in the [reference database info page](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Metagenomics/Remove_host_reads/Workflow_Documentation/NF_MGRemoveHostReads/reference-database-info.md), which describes how the human database was generated for a previous version of this workflow and how to obtain it for reuse.
 3. **Custom FASTA file**: the workflow builds a database from scratch using the provided FASTA file (local path or URL).
 4. **hosts.csv lookup**: the workflow parses the hosts table [here](workflow_code/assets/hosts.csv) to retrieve the FASTA URL and build the database from scratch.
 
