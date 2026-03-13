@@ -1121,6 +1121,26 @@ library(pavian)
              annotation_colors = annotation_colors,
              number_format = "%.0f")
     dev.off()
+
+    # Plot only top 50 features as it is often difficult to visualize all features at once
+    if(length(sorted_features >= 50)) { 
+
+      top50 <- sorted_features[1:50]
+
+      png(filename = glue("{output_prefix}_top_50_heatmap{assay_suffix}.png"), width = width,
+          height = 12, units = "in", res=300)
+      pheatmap(mat = feature_table[names(top50), rownames(col_annotation)],
+               cluster_cols = FALSE, 
+               cluster_rows = FALSE,
+               col = colorRampPalette(c('white','red'))(255), 
+               angle_col = 90, 
+               display_numbers = TRUE, 
+               fontsize = 12, 
+               annotation_col = col_annotation,
+               annotation_colors = annotation_colors,
+               number_format = "%.0f")
+      dev.off()
+    }
   }
   ```
 
@@ -1134,7 +1154,7 @@ library(pavian)
   - `assay_suffix` - a character string specifying the GeneLab assay suffix (default: "_GLlbsMetag")
   - `custom_palette` - a vector of strings specifying a custom color palette for coloring plots, from [Step 5c](#5c-set-global-variables)
 
-  **Output Data:** heatmap png file, `{output_prefix}_heatmap{assay_suffix}.png`, of species/functions across samples from the input feature table
+  **Output Data:** 2 heatmap png files, `{output_prefix}_heatmap{assay_suffix}.png` and `{output_prefix}_top_50_heatmap{assay_suffix}.png`, of species/functions across samples from the input feature table
   
 </details>
 
@@ -1213,8 +1233,8 @@ library(pavian)
 
 #### feature_decontam()
 <details>
-  <summary>decontaminate a feature table</summary>
-  
+  <summary>decontaminate a feature table using the Decontam R package to statistically identify contaminating features in a feature table</summary>
+
   ```R
   library(tidyverse)
   library(glue)
@@ -1813,7 +1833,7 @@ htmlwidgets::saveWidget(ggplotly(p), glue("kaiju_filtered_species_barplot_GLlbsM
 
 #### 6i. Feature Decontamination
 
-> Feature (species) decontamination with decontam. Decontam is an R package that statistically identifies contaminating features in a feature table
+> Note: species_table and barplots are only generated if 1 or more contaminants were detected
 
 ```R
 library(tidyverse)
@@ -2206,8 +2226,7 @@ htmlwidgets::saveWidget(ggplotly(p), glue("kraken2_filtered_species_barplot_GLlb
 
 #### 7h. Feature Decontamination
 
-> Feature (species) decontamination with decontam. Decontam is an R package that statistically 
-  identifies contaminating features in a feature table
+> Note: species_table and barplots are only generated if 1 or more contaminants were detected
 
 ```R
 library(tidyverse)
@@ -2694,8 +2713,7 @@ htmlwidgets::saveWidget(ggplotly(p), glue("metaphlan_filtered_species_barplot_GL
 
 #### 8k. Feature Decontamination
 
-> Feature (species) decontamination with decontam. Decontam is an R package that statistically 
-  identifies contaminating features in a feature table
+> Note: species_table and barplots are only generated if 1 or more contaminants were detected
 
 ```R
 library(tidyverse)
@@ -3763,8 +3781,9 @@ make_heatmap(metadata, table2write,
   taxonomic classifications, output from [Step 18a](#18a-generate-gene-level-coverage-summary-tables)) 
 
 **Output data:**
-- Combined-gene-level-taxonomy_unfiltered_GLlbsMetag.tsv (aggregated gene taxonomy table with samples in columns and species in rows)
-- **Combined-gene-level-taxonomy_unfiltered_heatmap_GLlbsMetag.png** (heatmap of all gene taxonomy assignments, output from [make_heatmap() function](#make_heatmap))
+- Combined-gene-level-taxonomy_unfiltered_GLlbsMetag.tsv (aggregated gene-level taxonomy table with samples in columns and species in rows)
+- **Combined-gene-level-taxonomy_unfiltered_heatmap_GLlbsMetag.png** (heatmap of all gene-level taxonomy assignments, output from [make_heatmap() function](#make_heatmap))
+- **Combined-gene-level-taxonomy_unfiltered_top_50_heatmap_GLlbsMetag.png** (heatmap of the top 50 gene-level taxonomy assignments, output from [make_heatmap() function](#make_heatmap))
 
 #### 21b. Gene-level Taxonomy Feature Filtering
 
@@ -3833,9 +3852,12 @@ make_heatmap(metadata, table2write,
 **Output Data:**
 
 - **Combined-gene-level-taxonomy_filtered_GLlbsMetag.tsv** (filtered gene-level taxonomy, output from [get_abundant_features() function](#get_abundant_features))
-- **Combined-gene-level-taxonomy_filtered_heatmap_GLlbsMetag.png** (gene-level taxonomy heatmap after filtering out non-abundant features, output from [make_heatmap() function](#make_heatmap))
+- **Combined-gene-level-taxonomy_filtered_heatmap_GLlbsMetag.png** (heatmap of all gene-level taxonomy assignments after filtering out non-abundant features, output from [make_heatmap() function](#make_heatmap))
+- **Combined-gene-level-taxonomy_filtered_top_50_heatmap_GLlbsMetag.png** (heatmap of the top 50 gene taxonomy assignments after filtering out non-abundant features, output from [make_heatmap() function](#make_heatmap))
 
 #### 21c. Gene-level Taxonomy Decontamination
+
+> Note: species_table and heatmaps are only generated if 1 or more contaminants were detected
 
 ```R
 library(tidyverse)
@@ -3901,7 +3923,8 @@ make_heatmap(metadata, decontaminated_table,
 
 - **Combined-gene-level-taxonomy_decontam_results_GLlbsMetag.tsv** (decontam's results table, output from [feature_decontam() function](#feature_decontam))
 - **Combined-gene-level-taxonomy_decontam_species_table_GLlbsMetag.tsv** (decontaminated gene-level taxonomy, output from [feature_decontam() function](#feature_decontam))
-- **Combined-gene-level-taxonomy_decontam_heatmap_GLlbsMetag.png** (gene-level taxonomy heatmap after filtering out contaminants, output from [make_heatmap() function](#make_heatmap))
+- **Combined-gene-level-taxonomy_decontam_heatmap_GLlbsMetag.png** (heatmap of the gene-level taxonomy assignments after filtering out contaminants, output from [make_heatmap() function](#make_heatmap))
+- **Combined-gene-level-taxonomy_decontam_top_50_heatmap_GLlbsMetag.png** (heatmap of the top 50 gene-level taxonomy assignments after filtering out contaminants, output from [make_heatmap() function](#make_heatmap))
 
 #### 21d. Gene-level KO Functions Heatmaps
 
@@ -3950,8 +3973,9 @@ make_heatmap(metadata, table2write,
 
 **Output data:**
 
-- Combined-gene-level-KO-function_unfiltered_GLlbsMetag.tsv (aggregated and subsetted gene KO function table)
+- Combined-gene-level-KO-function_unfiltered_GLlbsMetag.tsv (aggregated and subsetted gene-level KO function table)
 - **Combined-gene-level-KO-function_unfiltered_heatmap_GLlbsMetag.png** (heatmap of all gene-level KO function assignments, output from [make_heatmap() function](#make_heatmap))
+- **Combined-gene-level-KO-function_unfiltered_top_50_heatmap_GLlbsMetag.png** (heatmap of the top 50 gene-level KO function assignments, output from [make_heatmap() function](#make_heatmap))
 
 #### 21e. Gene-level KO Functions Feature Filtering
 
@@ -4019,10 +4043,14 @@ make_heatmap(metadata, table2write,
 
 **Output Data:**
 
-- **Combined-gene-level-KO-function_filtered_GLlbsMetag.tsv** (filtered gene-level taxonomy, output from [get_abundant_features() function](#get_abundant_features))
-- **Combined-gene-level-KO-function_filtered_heatmap_GLlbsMetag.png** (gene-level taxonomy heatmap after filtering out non-abundant features, output from [make_heatmap() function](#make_heatmap))
+- **Combined-gene-level-KO-function_filtered_GLlbsMetag.tsv** (filtered gene-level KO function table, output from [get_abundant_features() function](#get_abundant_features))
+- **Combined-gene-level-KO-function_filtered_heatmap_GLlbsMetag.png** (heatmap of all gene-level KO function assignments after filtering out non-abundant features, output from [make_heatmap() function](#make_heatmap))
+- **Combined-gene-level-KO-function_filtered_top_50_heatmap_GLlbsMetag.png** (heatmap of the top 50 gene-level KO function assignments after filtering out non-abundant features, output from [make_heatmap() function](#make_heatmap))
+
 
 #### 21f. Gene-level KO Functions Decontamination
+
+> Note: species_table and heatmaps are only generated if 1 or more contaminants were detected
 
 ```R
 library(tidyverse)
@@ -4088,7 +4116,8 @@ make_heatmap(metadata, decontaminated_table,
 
 - **Combined-gene-level-KO-function_decontam_results_GLlbsMetag.tsv** (decontam results table, output from [feature_decontam() function](#feature_decontam))
 - **Combined-gene-level-KO-function_decontam_KO_table_GLlbsMetag.tsv** (decontaminated gene-level KO functions table, output from [feature_decontam() function](#feature_decontam))
-- **Combined-gene-level-KO-function_decontam_heatmap_GLlbsMetag.png** (gene-level KO functions heatmap after filtering out contaminants, output from [make_heatmap() function](#make_heatmap))
+- **Combined-gene-level-KO-function_decontam_heatmap_GLlbsMetag.png** (heatmap of all gene-level KO function assignments after filtering out contaminants, output from [make_heatmap() function](#make_heatmap))
+- **Combined-gene-level-KO-function_decontam_top_50_heatmap_GLlbsMetag.png** (heatmap of the top 50 gene-level KO function assignments after filtering out contaminants, output from [make_heatmap() function](#make_heatmap))
 
 
 #### 21g. Contig-level Heatmaps
@@ -4142,8 +4171,9 @@ make_heatmap(metadata, table2write,
 
 **Output data:**
 
-- Combined-contig-level-taxonomy_unfiltered_GLlbsMetag.tsv (aggregated contig taxonomy table with samples in columns and species in rows)
-- **Combined-contig-level-taxonomy_unfiltered_heatmap_GLlbsMetag.png** (heatmap of all contig taxonomy assignments, output from [make_heatmap() function](#make_heatmap))
+- Combined-contig-level-taxonomy_unfiltered_GLlbsMetag.tsv (aggregated contig-level taxonomy table with samples in columns and species in rows)
+- **Combined-contig-level-taxonomy_unfiltered_heatmap_GLlbsMetag.png** (heatmap of all contig-level taxonomy assignments, output from [make_heatmap() function](#make_heatmap))
+- **Combined-contig-level-taxonomy_unfiltered_top_50_heatmap_GLlbsMetag.png** (heatmap of the top 50 contig-level taxonomy assignments, output from [make_heatmap() function](#make_heatmap))
 
 #### 21h. Contig-level Feature Filtering
 
@@ -4210,10 +4240,13 @@ make_heatmap(metadata, table2write,
 
 **Output Data:**
 
-- **Combined-contig-level-taxonomy_filtered_GLlbsMetag.tsv** (filtered gene-level taxonomy, output from [get_abundant_features() function](#get_abundant_features))
-- **Combined-contig-level-taxonomy_filtered_heatmap_GLlbsMetag.png** (gene-level taxonomy heatmap after filtering out non-abundant features, output from [make_heatmap() function](#make_heatmap))
+- **Combined-contig-level-taxonomy_filtered_GLlbsMetag.tsv** (filtered contig-level taxonomy, output from [get_abundant_features() function](#get_abundant_features))
+- **Combined-contig-level-taxonomy_filtered_heatmap_GLlbsMetag.png** (heatmap of all contig-level taxonomy assignments after filtering out non-abundant features, output from [make_heatmap() function](#make_heatmap))
+- **Combined-contig-level-taxonomy_filtered_top_50_heatmap_GLlbsMetag.png** (heatmap of the top 50 contig-level taxonomy assignments after filtering out non-abundant features, output from [make_heatmap() function](#make_heatmap))
 
 #### 21i. Contig-level Decontamination
+
+>Note: species_table and heatmaps are only generated if 1 or more contaminants were detected
 
 ```R
 library(tidyverse)
@@ -4279,7 +4312,8 @@ make_heatmap(metadata, decontaminated_table,
 
 - **Combined-contig-level-taxonomy_decontam_results_GLlbsMetag.tsv** (decontam's results table, output from [feature_decontam() function](#feature_decontam))
 - **Combined-contig-level-taxonomy_decontam_species_table_GLlbsMetag.tsv** (decontaminated contig-level taxonomy table, output from [feature_decontam() function](#feature_decontam))
-- **Combined-contig-level-taxonomy_decontam_heatmap_GLlbsMetag.png** (contig-level heatmap after filtering out contaminants, output from [make_heatmap() function](#make_heatmap))
+- **Combined-contig-level-taxonomy_decontam_heatmap_GLlbsMetag.png** (heatmap of all contig-level taxonomy assignments after filtering out contaminants, output from [make_heatmap() function](#make_heatmap))
+- **Combined-contig-level-taxonomy_decontam_top_50_heatmap_GLlbsMetag.png** (heatmap of the top 50 contig-level taxonomy assignments after filtering out contaminants, output from [make_heatmap() function](#make_heatmap))
 
 ### 22. Generate Assembly-based Processing Overview
 > This utilizes the helper script [`generate-assembly-based-overview-table.sh`](https://github.com/nasa/GeneLab_Metagenomics_Workflow/blob/DEV/bin/generate-assembly-based-overview-table.sh) 
