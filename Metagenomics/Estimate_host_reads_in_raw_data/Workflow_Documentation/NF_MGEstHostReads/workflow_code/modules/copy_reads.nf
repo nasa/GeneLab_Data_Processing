@@ -1,5 +1,4 @@
 process COPY_READS {
-    publishDir "${params.outdir}/RawData/Fastq", mode: params.publishDir_mode
     tag "${ meta.id }"
 
     input:

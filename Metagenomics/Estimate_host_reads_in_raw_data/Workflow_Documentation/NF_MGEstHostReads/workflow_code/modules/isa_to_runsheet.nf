@@ -1,8 +1,6 @@
 process ISA_TO_RUNSHEET {
     tag "${params.osd}_${params.glds}"
 
-    publishDir "${params.outdir}/Metadata", mode: params.publishDir_mode
-
     input: 
         path isa_archive
         path dp_tools_plugin

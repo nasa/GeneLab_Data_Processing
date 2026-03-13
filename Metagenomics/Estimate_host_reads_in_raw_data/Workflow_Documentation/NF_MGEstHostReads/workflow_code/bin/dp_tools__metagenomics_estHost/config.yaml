@@ -136,6 +136,10 @@ ISA Meta:
   Valid Study Assay Technology And Measurement Types:
     - measurement: "Metagenomic sequencing"
       technology: "Whole-Genome Shotgun Sequencing"
+    - measurement: "Metagenomic sequencing"
+      technology: "long read low-biomass DNA Sequencing"
+    - measurement: "Metagenomic sequencing"
+      technology: "short read low-biomass DNA Sequencing"
 
   # this is prepended to all file names in the curation assay table
   Global file prefix: "{datasystem}_metagenomics_"

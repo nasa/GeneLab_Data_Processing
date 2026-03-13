@@ -1,18 +1,24 @@
 process GENERATE_PROTOCOL {
-
-    beforeScript "chmod +x ${projectDir}/bin/*"
-    tag "Generating your analysis protocol..."
-    publishDir "${params.outdir}/processing_info"
+    tag "Generating analysis protocol text for ${host}"
+    label 'python'
 
     input:
-        tuple val(host), val(refSeq_ID), val(genome)
+        val(host)
+        val(genome)
+        val(assembly_acc)
         path(software_versions)
-    
+        path(db_dir)
+
     output:
-        path("protocol.txt")
-    
+    path("protocol.txt"), emit: protocol
+
     script:
-        """
-        generate_protocol.sh ${software_versions} ${host} "${refSeq_ID}" ${genome} > protocol.txt
-        """
+    """
+    generate_protocol.py \\
+        --host "${host}" \\
+        --db-dir ${db_dir} \\
+        --assembly-name "${genome}" \\
+        --assembly-acc "${assembly_acc}" \\
+        --software-versions ${software_versions}
+    """
 }

@@ -1,7 +1,6 @@
 process KRAKEN_2 {
 
     tag "${meta.id}"
-    publishDir "${params.outdir}/results/kraken2-output"
 
     input:
     path database
