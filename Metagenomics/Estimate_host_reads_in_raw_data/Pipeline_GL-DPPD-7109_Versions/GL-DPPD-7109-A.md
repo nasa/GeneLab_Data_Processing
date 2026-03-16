@@ -19,7 +19,7 @@ Barbara Novak (GeneLab Data Processing Lead)
 
 ## Updates from previous revision
 * Updated kraken2 from version 2.1.1 to 2.1.6
-* In [Step 1](#1-build-kraken2-database), used kraken2's `k2` wrapper script for `download-taxonomy` because the script supports HTTPS download as mentioned [here](https://github.com/DerrickWood/kraken2/blob/master/docs/MANUAL.markdown#introducing-k2)
+* In [Step 1](#1-build-kraken2-database), replaced direct `kraken2-build` calls with kraken2's `k2` wrapper script, which provides a higher-level interface for database construction including HTTPS download support, as described [here](https://github.com/DerrickWood/kraken2/blob/master/docs/MANUAL.markdown#introducing-k2)
 
 ---
 
@@ -57,20 +57,24 @@ gunzip GCF_000001635.27_GRCm39_genomic.fna.gz
 
 # building kraken2 database
 k2 download-taxonomy --db kraken2-mouse-db/
-kraken2-build --add-to-library GCF_000001635.27_GRCm39_genomic.fna --no-masking --db kraken2-mouse-db/
-kraken2-build --build --db kraken2-mouse-db/ --threads 30 --no-masking
-kraken2-build --clean --db kraken2-mouse-db/
+k2 add-to-library --db kraken2-mouse-db/ --files GCF_000001635.27_GRCm39_genomic.fna --no-masking  --threads 30
+k2 build --db kraken2-mouse-db/ --threads 30 --kmer-len 35 --minimizer-len 31
+k2 clean --db kraken2-mouse-db/
 ```
 
 **Parameter Definitions:**
 
-* `download-taxonomy` - downloads taxonomic mapping information via [k2 wrapper script](https://github.com/DerrickWood/kraken2/blob/master/docs/MANUAL.markdown#introducing-k2)
-* `--add-to-library` - adds the fasta file to the library of sequences being included
-* `--db` - specifies the directory we are putting the database in
+* `download-taxonomy` - downloads taxonomic mapping information
+* `--db` - specifies the name of the directory for the kraken2 database
+* `add-to-library` - adds the contents of a specified fasta file to the library of sequences being included
+  * `--files` - specifies the fasta files to be added
+  * `--no-masking` - disables masking of low-complexity sequences. 
+                  For additional information see the [kraken documentation for masking](https://github.com/DerrickWood/kraken2/wiki/Manual#masking-of-low-complexity-sequences).
 * `--threads` - specifies the number of threads to use
-* `--no-masking` - prevents [masking](https://github.com/DerrickWood/kraken2/wiki/Manual#masking-of-low-complexity-sequences) of low-complexity sequences
-* `--build` - specifies to construct kraken2-formatted database
-* `--clean` - specifies to remove unnecessarily intermediate files
+* `build` - builds a kraken2-formatted database from the library files
+  * `--kmer-len` - k-mer length in bp (default: 35).
+  * `--minimizer-len` - minimizer length in bp (default: 31)
+* `clean` - removes unneeded intermediate files
 
 **Input data:**
 
