@@ -4,7 +4,7 @@
 
 ---
 
-**Date:**  November X, 2025  
+**Date:**  March X, 2026  
 **Revision:** A  
 **Document Number:** GL-DPPD-7109  
 
@@ -12,10 +12,9 @@
 Jihan Yehia (GeneLab Data Processing Team)  
 
 **Approved by:**  
-Samrawit Gebre (OSDR Project Manager)  
-Danielle Lopez (OSDR Deputy Project Manager)  
-Jonathan Galazka (OSDR Project Scientist)  
-Amanda Saravia-Butler (GeneLab Science Lead)  
+Jonathan Galazka (OSDR Project Manager)  
+Danielle Lopez (OSDR Deputy Project Manager)   
+Amanda Saravia-Butler (OSDR Subject Matter Expert)  
 Barbara Novak (GeneLab Data Processing Lead)  
 
 ## Updates from previous revision
