@@ -65,7 +65,7 @@ We recommend installing Singularity on a system wide level as per the associated
 
 ### 2. Download the Workflow Files
 
-All files required for utilizing the NF_MGRemoveHostReads GeneLab workflow for removing host reads from metagenomics sequencing data are in the [workflow_code](workflow_code) directory. To get a copy of the latest *NF_MGRemoveHostReads* version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
+All files required for utilizing the NF_MGRemoveHostReads GeneLab workflow for removing human or host reads from metagenomics sequencing data are in the [workflow_code](workflow_code) directory. To get a copy of the latest *NF_MGRemoveHostReads* version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
 
 ```bash
 wget <insert URL here>
@@ -164,7 +164,7 @@ nextflow run main.nf \
 * `--single_suffix` - raw reads suffix that follows the unique part of sample names  (type: string, default: "_raw.fastq.gz")
 * `--R1_suffix` - raw forward reads suffix that follows the unique part of sample names  (type: string, default: "_R1_raw.fastq.gz")
 * `--R2_suffix` - raw reverse reads suffix that follows the unique part of sample names  (type: string, default: "_R2_raw.fastq.gz")
-* `--out_suffix` - host-removed reads suffix that follows the unique part of sample names  (type: string, default: "_HRrm")
+* `--out_suffix` - human- or host-removed reads suffix that follows the unique part of sample names  (type: string, default: "_HRrm" for human-removed, or "_HostRm" for host-removed)
 * `--host` - host organism, should match the entry provided under `name` column in [hosts.csv](workflow_code/assets/hosts.csv) (type: string, default: "human")
 * `--db_url` - URL to download a pre-built Kraken2 database (type: string, default: ""). If provided, `--ref_fasta` is not required.
 * `--ref_fasta` - local path or URL of a custom reference genome FASTA file to build a Kraken2 database from (type: string, default: ""). If provided, `--assembly_name` and `--assembly_acc` are also recommended.
