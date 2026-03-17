@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com///nextflow_schema.json",
+  "title": "NASA GeneLab Data Processing Host Read Removal workflow parameters",
+  "description": "GeneLab workflow for removing human reads in metagenomics sequencing data, as described in GL-DPPD-7105-B",
+  "type": "object",
+  "properties": {
+    "is_single": {
+      "type": "boolean",
+      "default": false,
+      "description": "Are the reads single-ended?"
+    },
+    "sample_id_list": {
+      "type": "string",
+      "description": "list of unique sample IDs that identifies the files to process"
+    },
+    "reads_dir": {
+      "type": "string",
+      "description": "Path to input reads"
+    },
+    "R1_suffix": {
+      "type": "string",
+      "default": "_R1_raw.fastq.gz",
+      "description": "file suffix for mate1 reads"
+    },
+    "R2_suffix": {
+      "type": "string",
+      "default": "_R2_raw.fastq.gz",
+      "description": "file suffix for mate2 reads"
+    },
+    "single_suffix": {
+      "type": "string",
+      "default": "_raw.fastq.gz",
+      "description": "file suffix for single-ended reads"
+    },
+    "host": {
+      "type": "string",
+      "default": "human",
+      "description": "simple name of host organism"
+    },
+    "hosts_table": {
+      "type": "string",
+      "default": "${projectDir}/assets/hosts.csv",
+      "description": "comma-separated table of host information",
+      "hidden": true
+    },
+    "ref_dbs_dir": {
+      "type": "string",
+      "description": "path to kraken2 databases",
+      "default": "./kraken2DBs"
+    },
+    "reads_outdir": {
+      "type": "string",
+      "default": "${host}-removed-reads",
+      "description": "output folder for host-removed reads"
+    },
+    "out_suffix": {
+      "type": "string",
+      "default": "_HRrm",
+      "description": "file suffix for all output read files"
+    },
+    "publish_dir_mode": {
+      "type": "string",
+      "default": "link",
+      "description": "Nextflow workflow publish mode",
+      "enum": ["copy", "copyNoFollow", "link", "move", "relink", "symlink"],
+      "hidden": true
+    },
+    "trace_timestamp": {
+      "type": "string",
+      "hidden": true
+    },
+    "ref_fasta": {
+      "type": "string",
+      "description": "Specifies a custom reference FASTA file to use by providing a local path or a URL"
+    },
+    "assembly_name": {
+      "type": "string",
+      "description": "Specifies the assembly name for the host reference genome"
+    },
+    "assembly_acc": {
+      "type": "string",
+      "description": "Specifies the assembly accession number for the host reference genome"
+    },
+    "db_url": {
+      "type": "string",
+      "description": "Specifies a URL to download a pre-built Kraken2 database from"
+    }
+  },
+  "required": ["ref_dbs_dir", "sample_id_list", "reads_dir"]
+}
