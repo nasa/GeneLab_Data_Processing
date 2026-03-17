@@ -19,7 +19,7 @@ Barbara Novak (GeneLab Data Processing Lead)
 
 ## Updates from previous revision
 * Updated kraken2 from version 2.1.1 to 2.1.6
-* In [Step 1](#1-build-kraken2-database), used kraken2's `k2` wrapper script for `download-taxonomy` because the script supports HTTPS download as mentioned [here](https://github.com/DerrickWood/kraken2/blob/master/docs/MANUAL.markdown#introducing-k2)
+* In [Step 1](#1-build-kraken2-database), replaced direct `kraken2-build` calls with kraken2's `k2` wrapper script, which provides a higher-level interface for database construction including HTTPS download support, as described [here](https://github.com/DerrickWood/kraken2/blob/master/docs/MANUAL.markdown#introducing-k2)
 
 ---
 
@@ -56,7 +56,7 @@ For human read removal, building the database relies on kraken2 downloading the 
 which may include multiple different versions of the genome (for example, both [GRCh38.p14](https://www.ncbi.nlm.nih.gov/assembly/GCF_000001405.40) 
 and [T2T-CHM13v2.0](https://www.ncbi.nlm.nih.gov/assembly/GCF_009914755.1)). To use this pipeline for 
 read removal of hosts other than human, download the host fasta file and add it to the kraken2 database 
-using the [`kraken2-build --add-to-library` function as described in the [kraken2 documentation](https://github.com/DerrickWood/kraken2/wiki/Manual#custom-databases) or 
+using the [`k2 add-to-library` function as described in the [kraken2 documentation](https://github.com/DerrickWood/kraken2/wiki/Manual#add-to-library) or 
 in the NASA GeneLab [Estimate Host Reads pipeline](../../Estimate_host_reads_in_raw_data/Pipeline_GL-DPPD-7109_Versions/)
 
 > **Note:** It is recommended to use NCBI genome files with kraken2 because sequences not downloaded from 
@@ -65,32 +65,31 @@ database, as mentioned in the [Kraken2 Documentation](https://github.com/Derrick
 
 ```bash
 # download human fasta sequences
-kraken2-build --download-library human --db kraken2-human-db/ --threads 30 --no-masking
+k2 download-library --db kraken2-human-db/ --library human --threads 30 --no-masking
 
 # Download NCBI taxonomic information 
 k2 download-taxonomy --db kraken2-human-db/
 
 # Build the database
-kraken2-build --build --db kraken2-human-db/ --kmer-len 35 --minimizer-len 31 --threads 30
+k2 build --db kraken2-human-db/ --kmer-len 35 --minimizer-len 31 --threads 30
 
 # Clean up intermediate files
-kraken2-build --clean --db kraken2-human-db/
+k2 clean --db kraken2-human-db/
 ```
 
 **Parameter Definitions:**
-*kraken2-build*
-- `--download-library` - specifies the references to download (here the human reference genome)
-  - `--no-masking` - Disables masking of low-complexity sequences. For additional 
-                   information see the [kraken documentation for masking](https://github.com/DerrickWood/kraken2/wiki/Manual#masking-of-low-complexity-sequences).
-- `--db` - Specifies the name of the directory for the kraken2 database
-- `--build` - Instructs kraken2-build to build the kraken2 DB from the library files
-  - `--kmer-len` - K-mer length in bp (default: 35).
-  - `--minimizer-len` - Minimizer length in bp (default: 31)
-- `--clean` - Instructs kraken2-build to remove unneeded intermediate files.
 
-*k2*
-- `download-taxonomy` - downloads taxonomic mapping information via [k2 wrapper script](https://github.com/DerrickWood/kraken2/blob/master/docs/MANUAL.markdown#introducing-k2)
-- `--db` - Specifies the name of the directory for the kraken2 database
+- `download-library` - downloads the references-containing library
+  - `--library` - specifies the library to download (here the human reference genome)
+  - `--no-masking` - disables masking of low-complexity sequences. For additional 
+                   information see the [kraken documentation for masking](https://github.com/DerrickWood/kraken2/wiki/Manual#masking-of-low-complexity-sequences).
+- `--db` - specifies the name of the directory for the kraken2 database
+- `--threads` - specifies the number of threads to use
+- `download-taxonomy` - downloads taxonomic mapping information
+- `build` - builds a kraken2-formatted database from the library files
+  - `--kmer-len` - k-mer length in bp (default: 35).
+  - `--minimizer-len` - minimizer length in bp (default: 31)
+- `clean` - removes unneeded intermediate files
 
 **Input data:**
 
