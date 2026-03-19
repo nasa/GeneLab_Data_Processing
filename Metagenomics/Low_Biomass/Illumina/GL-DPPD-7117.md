@@ -515,33 +515,38 @@ should be identified and removed. This step is optional.
 
 > **Note:** It is recommended to use NCBI genome files with kraken2 because sequences not downloaded from 
 NCBI may require explicit assignment of taxonomy information before they can be used to build the 
-database, as mentioned in the [Kraken2 Documentation](https://github.com/DerrickWood/kraken2/blob/master/docs/MANUAL.markdown).
+database, as mentioned in the [Kraken2 Documentation](https://github.com/DerrickWood/kraken2/blob/master/docs/MANUAL.markdown). 
+This step uses the kraken2 [k2 wrapper script](https://github.com/DerrickWood/kraken2/blob/master/docs/MANUAL.markdown#introducing-k2) throughout
 
 ```bash
 # Download NCBI taxonomic information 
-kraken2-build --download-taxonomy --db kraken2-${hostname}-db/
+k2 download-taxonomy --db kraken2-${hostname}$-db/
 
-# Add genomic sequences to your database's genomic library
-kraken2-build --add-to-library ${hostname}.fasta --db kraken2-${hostname}-db/ --no-masking 
+# add host fasta sequences
+k2 add-to-library --files ${hostname}.fasta --db kraken2-${hostname}$-db/ --threads 30 --no-masking
 
 # Build the database
-kraken2-build --build --db kraken2-${hostname}-db/ --kmer-len 35 --minimizer-len 31
+k2 build --db kraken2-${hostname}$-db/ --kmer-len 35 --minimizer-len 31 --threads 30
 
 # Clean up intermediate files
-kraken2-build --clean --db kraken2-${hostname}-db/
+k2 clean --db kraken2-${hostname}$-db/
 ```
 
 **Parameter Definitions:**
 
-- `--download-taxonomy` - Instructs kraken2-build to download the NCBI taxonomic information.
-- `--db` - Specifies the name of the directory for the kraken2 database
-- `--add-to-library` - Instructs kraken2-build to add the contents of a file (`${hostname}.fasta`) to the kraken2 DB library
+- `download-taxonomy` - Chooses the taxonomy download function
+  - `--db` - Specifies the name of the directory for the kraken2 database
+- `add-to-library` - Chooses the download library function
+  - `--files` - Specifies the file(s) to add to the kraken2 database library
   - `--no-masking` - Disables masking of low-complexity sequences. For additional 
-                     information see the [kraken documentation for masking](https://github.com/DerrickWood/kraken2/wiki/Manual#masking-of-low-complexity-sequences).
-- `--build` - Instructs kraken2-build to build the kraken2 DB from the library files
+                   information see the [kraken documentation for masking](https://github.com/DerrickWood/kraken2/wiki/Manual#masking-of-low-complexity-sequences).
+  - `--db` - Specifies the name of the directory for the kraken2 database
+- `build` - Instructs k2 to build the kraken2 DB from the available library files
   - `--kmer-len` - K-mer length in bp (default: 35).
   - `--minimizer-len` - Minimizer length in bp (default: 31)
-- `--clean` - Instructs kraken2-build to remove unneeded intermediate files.
+  - `--db` - Specifies the name of the directory for the kraken2 database
+- `clean` - Instructs k2 to remove unneeded intermediate files.
+  - `--db` - Specifies the name of the directory for the kraken2 database
 - `{$hostname}` - Specifies the name of the host organism used to uniquely identify the kraken2 database
 
 **Input Data:**
@@ -1209,8 +1214,8 @@ library(tidyverse)
   <summary>Feature table decontamination with decontam</summary>
 
   ```R
-  run_decontam <- function(feature_table, metadata, contam_threshold=0.1, 
-                           prev_col = NULL, freq_col = NULL, ntc_name = "TRUE") {
+  run_decontam <- function(feature_table, metadata, contam_threshold=0.5, 
+                           prev_col = NULL, freq_col = NULL, ntc_name = "true") {
 
     # retain metadata for only the samples present in the input feature table
     sub_metadata <- metadata[colnames(feature_table), ]
@@ -1284,9 +1289,9 @@ library(tidyverse)
   ```R
   feature_decontam <- function(metadata_file, feature_table_file, 
                                feature_column = "Species", samples_column = "sample_id",
-                               prevalence_column = "NTC", ntc_name = "TRUE", 
+                               prevalence_column = "NTC", ntc_name = "true", 
                                frequency_column = "concentration", 
-                               threshold = 0.1, classification_method, 
+                               threshold = 0.5, classification_method, 
                                output_prefix, assay_suffix = "_GLlbsMetag") {
     # Prepare feature table
     feature_table <- read_delim(feature_table_file) %>%  as.data.frame
@@ -1817,16 +1822,16 @@ species_table_file <- "kaiju_species_table_GLlbsMetag.tsv"
 filtered_species_table_file <- "kaiju_filtered_species_table_GLlbsMetag.tsv"
 metadata_file <- "/path/to/sample/metadata"
 
-p <- make_barplot(metadata_file = metadata_file, feature_table_file = species_table_file, 
-                  feature_column = "Species", samples_column = "sample_id", group_column = "group",
-                  output_prefix = "kaiju_unfiltered_species", assay_suffix = "_GLlbsMetag",
-                  publication_format = publication_format, custom_palette = custom_palette)
+make_barplot(metadata_file = metadata_file, feature_table_file = species_table_file, 
+             feature_column = "Species", samples_column = "sample_id", group_column = "group",
+             output_prefix = "kaiju_unfiltered_species", assay_suffix = "_GLlbsMetag",
+             publication_format = publication_format, custom_palette = custom_palette)
 
 # Save static unfiltered plot
-p <- make_barplot(metadata_file = metadata_file, feature_table_file = filtered_species_table_file, 
-                  feature_column = "Species", samples_column = "sample_id", group_column = "group",
-                  output_prefix = "kaiju_filtered_species", assay_suffix = "_GLlbsMetag",
-                  publication_format = publication_format, custom_palette = custom_palette)
+make_barplot(metadata_file = metadata_file, feature_table_file = filtered_species_table_file, 
+             feature_column = "Species", samples_column = "sample_id", group_column = "group",
+             output_prefix = "kaiju_filtered_species", assay_suffix = "_GLlbsMetag",
+             publication_format = publication_format, custom_palette = custom_palette)
 ```
 
 **Custom Functions Used:**
@@ -1873,10 +1878,10 @@ decontaminated_table <- feature_decontam(metadata_file = metadata_table,
                                          output_prefix = "kaiju", 
                                          assay_suffix = "_GLlbsMetag")
 
-p <- make_barplot(metadata_file = metadata_table, feature_table_file = "kaiju_decontam_species_table_GLlbsMetag.tsv", 
-                  feature_column = "Species", samples_column = "sample_id", group_column = "group",
-                  output_prefix = "kraken2_decontam_species", assay_suffix = "_GLlbsMetag",
-                  publication_format = publication_format, custom_palette = custom_palette)
+make_barplot(metadata_file = metadata_table, feature_table_file = "kaiju_decontam_species_table_GLlbsMetag.tsv", 
+             feature_column = "Species", samples_column = "sample_id", group_column = "group",
+             output_prefix = "kraken2_decontam_species", assay_suffix = "_GLlbsMetag",
+             publication_format = publication_format, custom_palette = custom_palette)
 
 ```
 
@@ -2174,16 +2179,16 @@ species_table_file <- "kraken2_species_table_GLlbsMetag.tsv"
 filtered_species_table_file <- "kraken2_filtered_species_table_GLlbsMetag.tsv"
 metadata_file <- "/path/to/sample/metadata"
 
-p <- make_barplot(metadata_file = metadata_file, feature_table_file = species_table_file, 
-                  feature_column = "species", samples_column = "sample_id", group_column = "group",
-                  output_prefix = "kraken2_unfiltered_species", assay_suffix = "_GLlbsMetag",
-                  publication_format = publication_format, custom_palette = custom_palette)
+make_barplot(metadata_file = metadata_file, feature_table_file = species_table_file, 
+             feature_column = "species", samples_column = "sample_id", group_column = "group",
+             output_prefix = "kraken2_unfiltered_species", assay_suffix = "_GLlbsMetag",
+             publication_format = publication_format, custom_palette = custom_palette)
 
 # Save static unfiltered plot
-p <- make_barplot(metadata_file = metadata_file, feature_table_file = filtered_species_table_file, 
-                  feature_column = "Species", samples_column = "sample_id", group_column = "group",
-                  output_prefix = "kraken2_filtered_species", assay_suffix = "_GLlbsMetag",
-                  publication_format = publication_format, custom_palette = custom_palette)
+make_barplot(metadata_file = metadata_file, feature_table_file = filtered_species_table_file, 
+             feature_column = "Species", samples_column = "sample_id", group_column = "group",
+             output_prefix = "kraken2_filtered_species", assay_suffix = "_GLlbsMetag",
+             publication_format = publication_format, custom_palette = custom_palette)
 ```
 
 **Custom Functions Used:**
@@ -2230,10 +2235,10 @@ decontaminated_table <- feature_decontam(metadata_file = metadata_table,
                                          assay_suffix = "_GLlbsMetag")
 
 # Make plot after filtering out contaminants
-p <- make_barplot(metadata_file = metadata_table, feature_table_file = "kraken2_decontam_species_table_GLlbsMetag.tsv", 
-                  feature_column = "Species", samples_column = "sample_id", group_column = "group",
-                  output_prefix = "kraken2_decontam_species", assay_suffix = "_GLlbsMetag",
-                  publication_format = publication_format, custom_palette = custom_palette)
+make_barplot(metadata_file = metadata_table, feature_table_file = "kraken2_decontam_species_table_GLlbsMetag.tsv", 
+             feature_column = "Species", samples_column = "sample_id", group_column = "group",
+             output_prefix = "kraken2_decontam_species", assay_suffix = "_GLlbsMetag",
+             publication_format = publication_format, custom_palette = custom_palette)
 
 ```
 
@@ -2623,16 +2628,16 @@ species_table_file <- "metaphlan_species_table_GLlbsMetag.tsv"
 filtered_species_table_file <- "metaphlan_filtered_species_table_GLlbsMetag.tsv"
 metadata_file <- "/path/to/sample/metadata"
 
-p <- make_barplot(metadata_file = metadata_file, feature_table_file = species_table_file, 
-                  feature_column = "Species", samples_column = "sample_id", group_column = "group",
-                  output_prefix = "metaphlan_unfiltered_species", assay_suffix = "_GLlbsMetag",
-                  publication_format = publication_format, custom_palette = custom_palette)
+make_barplot(metadata_file = metadata_file, feature_table_file = species_table_file, 
+             feature_column = "Species", samples_column = "sample_id", group_column = "group",
+             output_prefix = "metaphlan_unfiltered_species", assay_suffix = "_GLlbsMetag",
+             publication_format = publication_format, custom_palette = custom_palette)
 
 # Save static unfiltered plot
-p <- make_barplot(metadata_file = metadata_file, feature_table_file = filtered_species_table_file, 
-                  feature_column = "Species", samples_column = "sample_id", group_column = "group",
-                  output_prefix = "metaphlan_filtered_species", assay_suffix = "_GLlbsMetag",
-                  publication_format = publication_format, custom_palette = custom_palette)
+make_barplot(metadata_file = metadata_file, feature_table_file = filtered_species_table_file, 
+             feature_column = "Species", samples_column = "sample_id", group_column = "group",
+             output_prefix = "metaphlan_filtered_species", assay_suffix = "_GLlbsMetag",
+             publication_format = publication_format, custom_palette = custom_palette)
 ```
 
 **Custom Functions Used:**
@@ -2677,10 +2682,10 @@ decontaminated_table <- feature_decontam(metadata_file = metadata_table,
                                          output_prefix = "metaphlan", 
                                          assay_suffix = "_GLlbsMetag")
 
-p <- make_barplot(metadata_file = metadata_table, feature_table_file = "metaphlan_decontam_species_table_GLlbsMetag.tsv", 
-                  feature_column = "Species", samples_column = "sample_id", group_column = "group",
-                  output_prefix = "metaphlan_decontam_species", assay_suffix = "_GLlbsMetag",
-                  publication_format = publication_format, custom_palette = custom_palette)
+make_barplot(metadata_file = metadata_table, feature_table_file = "metaphlan_decontam_species_table_GLlbsMetag.tsv", 
+             feature_column = "Species", samples_column = "sample_id", group_column = "group",
+             output_prefix = "metaphlan_decontam_species", assay_suffix = "_GLlbsMetag",
+             publication_format = publication_format, custom_palette = custom_palette)
 ```
 
 **Custom Functions Used:**
@@ -4035,9 +4040,9 @@ decontaminated_table <- feature_decontam(metadata_file = metadata_table,
                                          feature_column = "species", 
                                          samples_column = "sample_id",
                                          prevalence_column = "NTC", 
-                                         ntc_name = "TRUE", 
+                                         ntc_name = "true", 
                                          frequency_column = "concentration", 
-                                         threshold = 0.1, 
+                                         threshold = 0.5, 
                                          classification_method = "gene-taxonomy", 
                                          output_prefix = "Combined-gene-level-taxonomy", 
                                          assay_suffix = "_GLlbsMetag")
@@ -4193,28 +4198,17 @@ make_heatmap(metadata_table_file = metadata_table,
 feature_table_file <- "Combined-gene-level-KO-function_unfiltered_GLlbsMetag.tsv"
 metadata_table <- "/path/to/sample/metadata"
 
-# Prepare metadata
-metadata <- read_delim(metadata_file, delim = ",") %>% as.data.frame
-sample_names = metadata[, samples_column]
-row.names(metadata) <- sample_names
-
 decontaminated_table <- feature_decontam(metadata_file = metadata_table, 
                                          feature_table_file = feature_table_file, 
                                          feature_column = "KO_ID", 
                                          samples_column = "sample_id",
                                          prevalence_column = "NTC", 
-                                         ntc_name = "TRUE", 
+                                         ntc_name = "true", 
                                          frequency_column = "concentration", 
-                                         threshold = 0.1, 
+                                         threshold = 0.5, 
                                          classification_method = "gene-function", 
                                          output_prefix = "Combined-gene-level-KO-function", 
                                          assay_suffix = "_GLlbsMetag")
-
-# Get common samples and re-arrange feature table and metadata
-common_samples <- intersect(colnames(decontaminated_table), rownames(metadata))
-decontaminated_table <- decontaminated_table[, common_samples]
-metadata <- metadata[common_samples, ]
-metadata <- metadata %>% arrange(!!sym(group_column))
 
 make_heatmap(metadata_table_file = metadata_table, 
              feature_table_file = "Combined-gene-level-KO-function_decontam_KO_table_GLlbsMetag.tsv", 
@@ -4375,9 +4369,9 @@ decontaminated_table <- feature_decontam(metadata_file = metadata_table,
                                          feature_column = "species", 
                                          samples_column = "sample_id",
                                          prevalence_column = "NTC", 
-                                         ntc_name = "TRUE", 
+                                         ntc_name = "true", 
                                          frequency_column = "concentration", 
-                                         threshold = 0.1, 
+                                         threshold = 0.5, 
                                          classification_method = "contig-taxonomy", 
                                          output_prefix = "Combined-contig-level-taxonomy", 
                                          assay_suffix = "_GLlbsMetag")
