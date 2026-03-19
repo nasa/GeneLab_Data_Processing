@@ -2245,9 +2245,9 @@ decontaminated_table <- feature_decontam(metadata_file = metadata_table,
                                          output_prefix = "kaiju", 
                                          assay_suffix = "_GLlblMetag")
 
-make_barplot(metadata_file = metadata_table, feature_table_file = "kaiju_decontam_species_table_GLlbsMetag.tsv", 
+make_barplot(metadata_file = metadata_table, feature_table_file = "kaiju_decontam_species_table_GLlblMetag.tsv", 
              feature_column = "Species", samples_column = "sample_id", group_column = "group",
-             output_prefix = "kraken2_decontam_species", assay_suffix = "_GLlbsMetag",
+             output_prefix = "kraken2_decontam_species", assay_suffix = "_GLlblMetag",
              publication_format = publication_format, custom_palette = custom_palette)
 ```
 
@@ -2598,7 +2598,7 @@ decontaminated_table <- feature_decontam(metadata_file = metadata_table,
                                          output_prefix = "kraken2", 
                                          assay_suffix = "_GLlblMetag")
 
-make_barplot(metadata_file = metadata_table, feature_table_file = "kraken2_decontam_species_table_GLlbsMetag.tsv", 
+make_barplot(metadata_file = metadata_table, feature_table_file = "kraken2_decontam_species_table_GLlblMetag.tsv", 
              feature_column = "Species", samples_column = "sample_id", group_column = "group",
              output_prefix = "kraken2_decontam_species", assay_suffix = "_GLlblMetag",
              publication_format = publication_format, custom_palette = custom_palette)
