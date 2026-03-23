@@ -1,4 +1,4 @@
-# Bioinformatics pipeline for Low biomass long-read metagenomics data
+# Bioinformatics pipeline for Low biomass long-read metagenomics data <!-- omit in toc -->
 
 > **This document holds an overview and some example commands of how GeneLab processes low-biomass, long-read metagenomics datasets. Exact processing commands for specific datasets that have been released are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 
@@ -20,11 +20,11 @@ Barbara Novak (GeneLab Data Processing Lead)
 
 ---
 
-# Table of contents
+# Table of contents <!-- omit in toc -->
 
-- [**Software used**](#software-used)
-- [**General processing overview with example commands**](#general-processing-overview-with-example-commands)
-  - [**Pre-processing**](#pre-processing)
+- [Software used](#software-used)
+- [General processing overview with example commands](#general-processing-overview-with-example-commands)
+  - [Pre-processing](#pre-processing)
     - [1. Basecalling](#1-basecalling)
     - [2. Demultiplexing](#2-demultiplexing)
       - [2a. Split Fastq](#2a-split-fastq)
@@ -34,7 +34,7 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [3b. Compile Raw Data QC](#3b-compile-raw-data-qc)
     - [4. Quality Filtering](#4-quality-filtering)
       - [4a. Filter Raw Data](#4a-filter-raw-data)
-      - [4a. Filtered Data QC](#4b-filtered-data-qc)
+      - [4b. Filtered Data QC](#4b-filtered-data-qc)
       - [4c. Compile Filtered Data QC](#4c-compile-filtered-data-qc)
     - [5. Trimming](#5-trimming)
       - [5a. Trim Filtered Data](#5a-trim-filtered-data)
@@ -57,10 +57,10 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [8b. Remove Host Reads](#8b-remove-host-reads)
       - [8c. Compile Host Read Removal QC](#8c-compile-host-read-removal-qc)
     - [9. R Environment Setup](#9-r-environment-setup)
-      - [9a. Load Libraries](#9a-load-libraries)
+      - [9a. Load libraries](#9a-load-libraries)
       - [9b. Define Custom Functions](#9b-define-custom-functions)
       - [9c. Set global variables](#9c-set-global-variables)
-  - [**Read-based processing**](#read-based-processing)
+  - [Read-based Processing](#read-based-processing)
     - [10. Taxonomic Profiling Using Kaiju](#10-taxonomic-profiling-using-kaiju)
       - [10a. Build Kaiju Database](#10a-build-kaiju-database)
       - [10b. Kaiju Taxonomic Classification](#10b-kaiju-taxonomic-classification)
@@ -82,7 +82,7 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [11f. Filter Kraken2 Species Count Table](#11f-filter-kraken2-species-count-table)
       - [11g. Kraken2 Taxonomy Barplots](#11g-kraken2-taxonomy-barplots)
       - [11h. Kraken2 Feature Decontamination](#11h-kraken2-feature-decontamination)
-  - [**Assembly-based processing**](#assembly-based-processing)
+  - [Assembly-based Processing](#assembly-based-processing)
     - [12. Sample Assembly](#12-sample-assembly)
     - [13. Polish Assembly](#13-polish-assembly)
     - [14. Rename Contigs and Summarize Assemblies](#14-rename-contigs-and-summarize-assemblies)
@@ -113,7 +113,7 @@ Barbara Novak (GeneLab Data Processing Lead)
     - [22. Generate Normalized, Gene- and Contig-level Coverage Summary Tables of KO-annotations and Taxonomy Across Samples](#22-generate-normalized-gene--and-contig-level-coverage-summary-tables-of-ko-annotations-and-taxonomy-across-samples)
       - [22a. Generate Gene-level Coverage Summary Tables](#22a-generate-gene-level-coverage-summary-tables)
       - [22b. Generate Contig-level Coverage Summary Tables](#22b-generate-contig-level-coverage-summary-tables)
-    - [23. **M**etagenome-**A**ssembled **G**enome (MAG) recovery](#23-metagenome-assembled-genome-mag-recovery)
+    - [23. **M**etagenome-**A**ssembled **G**enome (MAG) Recovery](#23-metagenome-assembled-genome-mag-recovery)
       - [23a. Bin Contigs](#23a-bin-contigs)
       - [23b. Bin Quality Assessment](#23b-bin-quality-assessment)
       - [23c. Filter MAGs](#23c-filter-mags)
@@ -141,19 +141,19 @@ Barbara Novak (GeneLab Data Processing Lead)
 
 |Program|Version|Relevant Links|
 |:------|:-----:|------:|
-|bbduk| 38.86 |[https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/)|
+|bbduk| 38.86 |[https://bbmap.org](https://bbmap.org)|
 |bit| 1.8.53 |[https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit](https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit)|
 |CAT| 5.2.3 |[https://github.com/dutilh/CAT#cat-and-bat](https://github.com/dutilh/CAT#cat-and-bat)|
 |CheckM| 1.1.3 |[https://github.com/Ecogenomics/CheckM](https://github.com/Ecogenomics/CheckM)|
 |Dorado| 1.1.1| [https://github.com/nanoporetech/dorado](https://github.com/nanoporetech/dorado)|
-|filtlong| 0.2.1 |[https://github.com/rrwick/Filtlong](https://github.com/rrwick/Filtlong)|
+|Filtlong| 0.2.1 |[https://github.com/rrwick/Filtlong](https://github.com/rrwick/Filtlong)|
 |Flye| 2.9.5 | [https://github.com/mikolmogorov/Flye](https://github.com/mikolmogorov/Flye) |
 |GTDB-Tk| 2.4.0 |[https://github.com/Ecogenomics/GTDBTk](https://github.com/Ecogenomics/GTDBTk)|
 |Kaiju| 1.10.1 | [https://bioinformatics-centre.github.io/kaiju/](https://bioinformatics-centre.github.io/kaiju/) |
 |KEGG-Decoder| 1.2.2 |[https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder](https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder)
 |KOFamScan| 1.3.0 |[https://github.com/takaram/kofam_scan](https://github.com/takaram/kofam_scan)|
 |Kraken2| 2.1.6 | [https://github.com/DerrickWood/kraken2](https://github.com/DerrickWood/kraken2) |
-|KrakenTools | 1.2 | [https://ccb.jhu.edu/software/krakentools/](https://ccb.jhu.edu/software/krakentools/) |
+|KrakenTools| 1.2 | [https://ccb.jhu.edu/software/krakentools/](https://ccb.jhu.edu/software/krakentools/) |
 |Krona| 2.8.1 | [https://github.com/marbl/Krona/wiki](https://github.com/marbl/Krona/wiki)|
 |MetaBAT| 2.15 |[https://bitbucket.org/berkeleylab/metabat/src/master/](https://bitbucket.org/berkeleylab/metabat/src/master/)|
 |Minimap2| 2.28 | [https://github.com/lh3/minimap2](https://github.com/lh3/minimap2) |
@@ -655,7 +655,7 @@ multiqc --zip-data-dir \
 
 > A major issue with low biomass data is the high potential for contamination due to the low amount of DNA extracted from the samples. Because negative control/blank samples should by theory be contaminant free, any sequence detected in the negative control is a potential contaminant. To filter out contaminants found in negative control samples that may have been due to cross contamination in the lab, we use a read mapping approach. First negative/blank control sample reads are assembled then the filtered, trimmed, and human-removed reads from each low-biomass sample are mapped to the assembled contigs from the negative/blank control samples. Reads mapping to the assembled contigs are categorized as contaminants and are therefore filtered out and thus excluded from downstream analyses.
 
-### 7a. Assemble Contaminants
+#### 7a. Assemble Contaminants
 
 ```bash
 flye --meta \
@@ -1020,7 +1020,7 @@ library(tidyverse)
 
 #### 9b. Define Custom Functions
 
-#### get_last_assignment()
+#### get_last_assignment() <!-- omit in toc -->
 <details>
   <summary>retrieves the last taxonomy assignment from a taxonomy string</summary>
 
@@ -1055,7 +1055,7 @@ library(tidyverse)
 
 </details>
 
-#### mutate_taxonomy()
+#### mutate_taxonomy() <!-- omit in toc -->
 <details>
   <summary>mutate taxonomy column to contain the lowest taxonomy assignment</summary>
 
@@ -1089,7 +1089,7 @@ library(tidyverse)
 
 </details>
 
-#### process_kaiju_table()
+#### process_kaiju_table() <!-- omit in toc -->
 <details>
   <summary>reformat kaiju output table</summary>
 
@@ -1138,7 +1138,7 @@ library(tidyverse)
 
 </details>
 
-#### merge_kraken_reports()
+#### merge_kraken_reports() <!-- omit in toc -->
 <details>
   <summary>merge and process multiple kraken outputs to one species table</summary>
 
@@ -1182,7 +1182,7 @@ library(tidyverse)
 
 </details>
 
-#### get_abundant_features()
+#### get_abundant_features() <!-- omit in toc -->
 <details>
   <summary>Find abundant features based on the sum of feature values</summary>
   
@@ -1215,7 +1215,7 @@ library(tidyverse)
   
 </details>
 
-#### count_to_rel_abundance()
+#### count_to_rel_abundance() <!-- omit in toc -->
 <details>
   <summary>Convert species count matrix to relative abundance matrix</summary>
 
@@ -1248,8 +1248,7 @@ library(tidyverse)
 
 </details>
 
-
-#### filter_rare()
+#### filter_rare() <!-- omit in toc -->
 <details>
   <summary>filter out rare and non_microbial taxonomy assignments based on relative abundance</summary>
 
@@ -1291,7 +1290,7 @@ library(tidyverse)
 
 </details>
 
-#### group_low_abund_taxa()
+#### group_low_abund_taxa() <!-- omit in toc -->
 <details>
   <summary>Group rare taxa or return a table with only rare taxa</summary>
 
@@ -1351,7 +1350,7 @@ library(tidyverse)
 
 </details>
 
-#### make_plot()
+#### make_plot() <!-- omit in toc -->
 <details>
   <summary>create bar plot of relative abundance</summary>
 
@@ -1396,7 +1395,7 @@ library(tidyverse)
 
 </details>
 
-#### make_barplot()
+#### make_barplot() <!-- omit in toc -->
 <details>
   <summary>Creates barplots from a feature table file</summary>
   
@@ -1476,7 +1475,7 @@ library(tidyverse)
 
 </details>
 
-#### make_heatmap()
+#### make_heatmap() <!-- omit in toc -->
 <details>
   <summary>Creates heatmaps from a feature table file</summary>
   
@@ -1575,7 +1574,7 @@ library(tidyverse)
 
 </details>
 
-#### run_decontam()
+#### run_decontam() <!-- omit in toc -->
 <details>
   <summary>Feature table decontamination with decontam</summary>
 
@@ -1648,7 +1647,7 @@ library(tidyverse)
 
 </details>
 
-#### feature_decontam()
+#### feature_decontam() <!-- omit in toc -->
 <details>
   <summary>decontaminate a feature table using the Decontam R package to statistically identify contaminating features in a feature table</summary>
   
@@ -1741,7 +1740,7 @@ library(tidyverse)
 
 </details>
 
-#### process_taxonomy()
+#### process_taxonomy() <!-- omit in toc -->
 <details>
   <summary>process a taxonomy assignment table</summary>
 
@@ -1778,7 +1777,7 @@ library(tidyverse)
 
 </details>
 
-#### fix_names()
+#### fix_names() <!-- omit in toc -->
 <details>
   <summary>clean taxonomy names</summary>
 
@@ -1811,7 +1810,7 @@ library(tidyverse)
 
 </details>
 
-#### read_taxonomy_table()
+#### read_taxonomy_table() <!-- omit in toc -->
 <details>
   <summary>Read Assembly-based coverage annotation table</summary>
 
@@ -1852,7 +1851,7 @@ library(tidyverse)
 
 </details>
 
-#### get_samples()
+#### get_samples() <!-- omit in toc -->
 <details>
   <summary>retrieve sample names for which assemblies were generated</summary>
 

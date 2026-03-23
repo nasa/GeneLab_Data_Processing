@@ -1,4 +1,4 @@
-# Bioinformatics pipeline for Low biomass short-read metagenomics data
+# Bioinformatics pipeline for Low biomass short-read metagenomics data <!-- omit in toc -->
 
 > **This document holds an overview and some example commands of how GeneLab processes low-biomass, short-read metagenomics datasets. Exact processing commands for specific datasets that have been released are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 
@@ -20,41 +20,41 @@ Barbara Novak (GeneLab Data Processing Lead)
 
 ---
 
-# Table of contents
+# Table of contents <!-- omit in toc -->
 
-- [**Software used**](#software-used)
-- [**General processing overview with example commands**](#general-processing-overview-with-example-commands)
-  - [**Pre-processing**](#pre-processing)
+- [Software used](#software-used)
+- [General processing overview with example commands](#general-processing-overview-with-example-commands)
+  - [Pre-processing](#pre-processing)
     - [1. Raw Data QC](#1-raw-data-qc)
       - [1a. Raw Data QC](#1a-raw-data-qc)
       - [1b. Compile Raw Data QC](#1b-compile-raw-data-qc)
-    - [2. Trimming and Quality filtering](#2-trimming-and-quality-filtering)
+    - [2. Trimming and Quality Filtering](#2-trimming-and-quality-filtering)
       - [2a. Filter Quality and Trim Adapters](#2a-filter-quality-and-trim-adapters)
-      - [2b. Trim PolyG](#2b-trim-polyg)
+      - [2b. Trim polyG](#2b-trim-polyg)
       - [2c. Filtered Data QC](#2c-filtered-data-qc)
       - [2d. Compile Filtered Data QC](#2d-compile-filtered-data-qc)
     - [3. Contaminant Removal](#3-contaminant-removal)
       - [3a. Assemble Contaminants](#3a-assemble-contaminants)
       - [3b. Build Contaminant Index and Map Reads](#3b-build-contaminant-index-and-map-reads)
       - [3c. Contaminant Removal QC](#3c-contaminant-removal-qc)
-      - [3d. Compile Contaminant Removal QC](#3d-compile-contaminant-remove-qc)
-    - [4. Host read removal](#4-host-read-removal)
+      - [3d. Compile Contaminant Removal QC](#3d-compile-contaminant-removal-qc)
+    - [4. Host Read Removal](#4-host-read-removal)
       - [4a. Build Kraken2 Host Database](#4a-build-kraken2-host-database)
       - [4b. Remove Host Reads](#4b-remove-host-reads)
       - [4c. Compile Host Read Removal QC](#4c-compile-host-read-removal-qc)
     - [5. R Environment Setup](#5-r-environment-setup)
-      - [5a. Load Libraries](#5a-load-libraries)
+      - [5a. Load libraries](#5a-load-libraries)
       - [5b. Define Custom Functions](#5b-define-custom-functions)
       - [5c. Set global variables](#5c-set-global-variables)
-  - [**Read-based processing**](#read-based-processing)
-    - [6. Taxonomic profiling using kaiju](#6-taxonomic-profiling-using-kaiju)
+  - [Read-based Processing](#read-based-processing)
+    - [6. Taxonomic Profiling Using Kaiju](#6-taxonomic-profiling-using-kaiju)
       - [6a. Build Kaiju Database](#6a-build-kaiju-database)
       - [6b. Kaiju Taxonomic Classification](#6b-kaiju-taxonomic-classification)
       - [6c. Compile Kaiju Taxonomy Results](#6c-compile-kaiju-taxonomy-results)
       - [6d. Convert Kaiju Output To Krona Format](#6d-convert-kaiju-output-to-krona-format)
       - [6e. Compile Kaiju Krona Reports](#6e-compile-kaiju-krona-reports)
       - [6f. Create Kaiju Species Count Table](#6f-create-kaiju-species-count-table)
-      - [6g. Filter Kaiju Species Count Table ](#6g-filter-kaiju-species-count-table)
+      - [6g. Filter Kaiju Species Count Table](#6g-filter-kaiju-species-count-table)
       - [6h. Kaiju Taxonomy Barplots](#6h-kaiju-taxonomy-barplots)
       - [6i. Kaiju Feature Decontamination](#6i-kaiju-feature-decontamination)
     - [7. Taxonomic Profiling Using Kraken2](#7-taxonomic-profiling-using-kraken2)
@@ -69,7 +69,7 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [7g. Kraken2 Taxonomy Barplots](#7g-kraken2-taxonomy-barplots)
       - [7h. Kraken2 Feature Decontamination](#7h-kraken2-feature-decontamination)
     - [8. Taxonomic Profiling Using MetaPhlan](#8-taxonomic-profiling-using-metaphlan)
-      - [8a. Download and install HUMAnN databases](#8a-download-and-install-humann-databases)
+      - [8a. Download and Install HUMAnN databases](#8a-download-and-install-humann-databases)
       - [8b. HUMAnN/MetaPhlAn Taxonomic Classification](#8b-humannmetaphlan-taxonomic-classification)
       - [8c. Merge Multiple Sample Functional Profiles](#8c-merge-multiple-sample-functional-profiles)
       - [8d. Split Results Tables](#8d-split-results-tables)
@@ -85,7 +85,7 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [8l. Filter Humann Output](#8l-filter-humann-output)
       - [8m. Create Humann Function Heatmaps](#8m-create-humann-function-heatmaps)
       - [8n. Humann Feature Decontamination](#8n-humann-feature-decontamination)
-  - [**Assembly-based Processing**](#assembly-based-processing)
+  - [Assembly-based Processing](#assembly-based-processing)
     - [9. Sample Assembly](#9-sample-assembly)
     - [10. Rename Contigs and Summarize Assemblies](#10-rename-contigs-and-summarize-assemblies)
       - [10a. Rename Contig Headers](#10a-rename-contig-headers)
@@ -105,7 +105,7 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [13e. Format Gene-level Output With awk and sed](#13e-format-gene-level-output-with-awk-and-sed)
       - [13f. Format Contig-level Output With awk and sed](#13f-format-contig-level-output-with-awk-and-sed)
     - [14. Read-Mapping](#14-read-mapping)
-      - [14a. Build Reference Index](#14a-build-reference-index)
+      - [14a. Build reference index](#14a-build-reference-index)
       - [14b. Align Reads to Sample Assembly](#14b-align-reads-to-sample-assembly)
       - [14c. Sort Assembly Alignments](#14c-sort-assembly-alignments)
     - [15. Get Coverage Information and Filter Based On Detection](#15-get-coverage-information-and-filter-based-on-detection)
@@ -116,9 +116,9 @@ Barbara Novak (GeneLab Data Processing Lead)
     - [18. Generate Normalized, Gene- and Contig-level Coverage Summary Tables of KO-annotations and Taxonomy Across Samples](#18-generate-normalized-gene--and-contig-level-coverage-summary-tables-of-ko-annotations-and-taxonomy-across-samples)
       - [18a. Generate Gene-level Coverage Summary Tables](#18a-generate-gene-level-coverage-summary-tables)
       - [18b. Generate Contig-level Coverage Summary Tables](#18b-generate-contig-level-coverage-summary-tables)
-    - [19. **M**etagenome-**A**ssembled **G**enome (MAG) recovery](#19-metagenome-assembled-genome-mag-recovery)
+    - [19. **M**etagenome-**A**ssembled **G**enome (MAG) Recovery](#19-metagenome-assembled-genome-mag-recovery)
       - [19a. Bin Contigs](#19a-bin-contigs)
-      - [19b. Bin Quality Assessment](#19b-bin-quality-assessment)
+      - [19b. Bin quality assessment](#19b-bin-quality-assessment)
       - [19c. Filter MAGs](#19c-filter-mags)
       - [19d. MAG Taxonomic Classification](#19d-mag-taxonomic-classification)
       - [19e. Generate Overview Table Of All MAGs](#19e-generate-overview-table-of-all-mags)
@@ -143,26 +143,28 @@ Barbara Novak (GeneLab Data Processing Lead)
 
 |Program|Version|Relevant Links|
 |:------|:-----:|------:|
-|bbduk| 38.86 |[https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/)|
+|bbduk| 38.86 |[https://bbmap.org/](https://bbmap.org/)|
 |bit| 1.8.53 |[https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit](https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit)|
 |bowtie2| 2.4.1 | [https://bowtie-bio.sourceforge.net/bowtie2/index.shtml](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml)|
 |CAT| 5.2.3 |[https://github.com/dutilh/CAT#cat-and-bat](https://github.com/dutilh/CAT#cat-and-bat)|
 |CheckM| 1.1.3 |[https://github.com/Ecogenomics/CheckM](https://github.com/Ecogenomics/CheckM)|
 |fastp| 0.24.0 |[https://github.com/OpenGene/fastp](https://github.com/OpenGene/fastp)|
 |FastQC|0.12.1|[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
-|SPAdes| 4.1.0 | [https://github.com/ablab/spades](https://github.com/ablab/spades) |
 |GTDB-Tk| 2.4.0 |[https://github.com/Ecogenomics/GTDBTk](https://github.com/Ecogenomics/GTDBTk)|
 |HUMAnN| 3.9 |[https://github.com/biobakery/humann](https://github.com/biobakery/humann)|
 |Kaiju| 1.10.1 | [https://bioinformatics-centre.github.io/kaiju/](https://bioinformatics-centre.github.io/kaiju/) |
 |KEGG-Decoder| 1.2.2 |[https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder](https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder)
 |KOFamScan| 1.3.0 |[https://github.com/takaram/kofam_scan](https://github.com/takaram/kofam_scan)|
 |Kraken2| 2.1.6 | [https://github.com/DerrickWood/kraken2](https://github.com/DerrickWood/kraken2) |
+|KrakenTools | 1.2 | [https://ccb.jhu.edu/software/krakentools/](https://ccb.jhu.edu/software/krakentools/) |
 |Krona| 2.8.1 | [https://github.com/marbl/Krona/wiki](https://github.com/marbl/Krona/wiki)|
+|MEGAHIT| 1.2.9 |[https://github.com/voutcn/megahit#megahit](https://github.com/voutcn/megahit#megahit)|
 |MetaBAT| 2.15 |[https://bitbucket.org/berkeleylab/metabat/src/master/](https://bitbucket.org/berkeleylab/metabat/src/master/)|
 |MultiQC| 1.27.1 |[https://multiqc.info/](https://multiqc.info/)|
 |MetaPhlAn| 4.1.0 |[https://github.com/biobakery/MetaPhlAn](https://github.com/biobakery/MetaPhlAn)|
 |Prodigal| 2.6.3 |[https://github.com/hyattpd/Prodigal#prodigal](https://github.com/hyattpd/Prodigal#prodigal)|
 |samtools| 1.22.1 |[https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)|
+|SPAdes| 4.1.0 | [https://github.com/ablab/spades](https://github.com/ablab/spades) |
 | R | 4.5.1 | [https://www.r-project.org](https://www.r-project.org) |
 |Bioconductor | 3.21 | [https://www.bioconductor.org](https://www.bioconductor.org) |
 |decontam| 1.28.0 | [https://www.bioconductor.org/packages/release/bioc/html/decontam.html](https://www.bioconductor.org/packages/release/bioc/html/decontam.html) |
@@ -475,7 +477,7 @@ fastqc -o decontam_fastqc_output *decontam_GLlbsMetag.fastq.gz
 
 <br>
 
-#### 3d. Compile Contaminant Remove QC
+#### 3d. Compile Contaminant Removal QC
 
 ```bash
 multiqc --zip-data-dir \
@@ -652,7 +654,7 @@ library(tidyverse)
 
 #### 5b. Define Custom Functions
 
-#### get_last_assignment()
+#### get_last_assignment() <!-- omit in toc -->
 <details>
   <summary>retrieves the last taxonomy assignment from a taxonomy string</summary>
 
@@ -687,7 +689,7 @@ library(tidyverse)
 
 </details>
 
-#### mutate_taxonomy()
+#### mutate_taxonomy() <!-- omit in toc -->
 <details>
   <summary>mutate taxonomy column to contain the lowest taxonomy assignment</summary>
 
@@ -721,7 +723,7 @@ library(tidyverse)
 
 </details>
 
-#### process_kaiju_table()
+#### process_kaiju_table() <!-- omit in toc -->
 <details>
   <summary>reformat kaiju output table</summary>
 
@@ -771,7 +773,7 @@ library(tidyverse)
 
 </details>
 
-#### merge_kraken_reports()
+#### merge_kraken_reports() <!-- omit in toc -->
 <details>
   <summary>merge and process multiple kraken outputs to one species table</summary>
 
@@ -815,7 +817,7 @@ library(tidyverse)
 
 </details>
 
-#### get_abundant_features()
+#### get_abundant_features() <!-- omit in toc -->
 <details>
   <summary>Find abundant features based on the sum of feature values</summary>
   
@@ -849,7 +851,7 @@ library(tidyverse)
   
 </details>
 
-#### count_to_rel_abundance()
+#### count_to_rel_abundance() <!-- omit in toc -->
 <details>
   <summary>Convert species count matrix to relative abundance matrix</summary>
 
@@ -882,7 +884,7 @@ library(tidyverse)
 
 </details>
 
-#### filter_rare()
+#### filter_rare() <!-- omit in toc -->
 <details>
   <summary>filter out rare and non_microbial taxonomy assignments based on relative abundance</summary>
 
@@ -924,7 +926,7 @@ library(tidyverse)
 
 </details>
 
-#### group_low_abund_taxa()
+#### group_low_abund_taxa() <!-- omit in toc -->
 <details>
   <summary>Group rare taxa or return a table with only rare taxa</summary>
 
@@ -984,7 +986,7 @@ library(tidyverse)
 
 </details>
 
-#### make_plot()
+#### make_plot() <!-- omit in toc -->
 <details>
   <summary>Create stacked bar plots of relative abundance from input dataframes</summary>
 
@@ -1029,7 +1031,7 @@ library(tidyverse)
 
 </details>
 
-#### make_barplot()
+#### make_barplot() <!-- omit in toc -->
 <details>
   <summary>Parse Metadata and Feature table files in order to create stacked barplots of relative abundance.</summary>
   
@@ -1110,7 +1112,7 @@ library(tidyverse)
   
 </details>
 
-#### make_heatmap()
+#### make_heatmap() <!-- omit in toc -->
 <details>
   <summary>Creates heatmaps from a feature table file</summary>
   
@@ -1209,7 +1211,7 @@ library(tidyverse)
   
 </details>
 
-#### run_decontam()
+#### run_decontam() <!-- omit in toc -->
 <details>
   <summary>Feature table decontamination with decontam</summary>
 
@@ -1282,7 +1284,7 @@ library(tidyverse)
 
 </details>
 
-#### feature_decontam()
+#### feature_decontam() <!-- omit in toc -->
 <details>
   <summary>decontaminate a feature table using the Decontam R package to statistically identify contaminating features in a feature table</summary>
 
@@ -1374,7 +1376,7 @@ library(tidyverse)
   **Returns:** dataframe, `decontaminated_table`, containing the decontaminated feature table
 </details>
 
-#### process_taxonomy()
+#### process_taxonomy() <!-- omit in toc -->
 <details>
   <summary>process a taxonomy assignment table</summary>
 
@@ -1409,7 +1411,7 @@ library(tidyverse)
   **Returns:** dataframe, `taxonomy`, containing reformated taxonomy names
 </details>
 
-#### fix_names()
+#### fix_names() <!-- omit in toc -->
 <details>
   <summary>clean taxonomy names</summary>
 
@@ -1442,7 +1444,7 @@ library(tidyverse)
 
 </details>
 
-#### read_taxonomy_table()
+#### read_taxonomy_table() <!-- omit in toc -->
 <details>
   <summary>Read Assembly-based coverage annotation table</summary>
 
@@ -1482,7 +1484,7 @@ library(tidyverse)
 
 </details>
 
-#### get_samples()
+#### get_samples() <!-- omit in toc -->
 <details>
   <summary>retrieve sample names for which assemblies were generated</summary>
 
@@ -2494,7 +2496,7 @@ sed -i 's/_metaphlan_bugs_list//g' metaphlan-taxonomy_GLlbsMetag.tsv
 
 #### 8h. Create MetaPhlan Species Count Table
 
-#### 8hi. Get Sample Read Counts
+##### 8hi. Get Sample Read Counts
 
 ```bash
 unzip decontam_multiqc_GLlbsMetag_data.zip
@@ -2504,13 +2506,13 @@ grep _R1_decontam multiqc_fastqc.txt | awk 'BEGIN{FS="\t"; OFS="\t"}{print $1,in
 
 **Input Data:**
 
-- decontam_multiqc_GLlbsMetag_data.zip or HostRm_multiqc_GLlbsMetag_data.zip (multiqc data from [Step 3d](#3d-compile-contaminant-remove-qc) or [Step 4c](#4c-compile-host-read-removal-qc) if the optional host removal step was done, respectively)
+- decontam_multiqc_GLlbsMetag_data.zip or HostRm_multiqc_GLlbsMetag_data.zip (multiqc data from [Step 3d](#3d-compile-contaminant-removal-qc) or [Step 4c](#4c-compile-host-read-removal-qc) if the optional host removal step was done, respectively)
 
 **Output Data:**
 
 - reads_per_sample.txt (a 2-column tab delimited file with the sample names and read counts as column 1 and 2, respectively)
 
-#### 8hii. Process MetaPhlan Taxonomy Table
+##### 8hii. Process MetaPhlan Taxonomy Table
 
 ```R
 input_file <- "metaphlan-taxonomy_GLlbsMetag.tsv"
