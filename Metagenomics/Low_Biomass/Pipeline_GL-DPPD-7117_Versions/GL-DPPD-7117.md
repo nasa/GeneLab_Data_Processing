@@ -68,7 +68,7 @@ Barbara Novak (GeneLab Data Processing Lead)
       - [7f. Filter Kraken2 Species Count Table](#7f-filter-kraken2-species-count-table)
       - [7g. Kraken2 Taxonomy Barplots](#7g-kraken2-taxonomy-barplots)
       - [7h. Kraken2 Feature Decontamination](#7h-kraken2-feature-decontamination)
-    - [8. Taxonomic Profiling Using MetaPhlan](#8-taxonomic-profiling-using-metaphlan)
+    - [8. Taxonomic Profiling Using HUMAnN/MetaPhlan](#8-taxonomic-profiling-using-humannmetaphlan)
       - [8a. Download and Install HUMAnN databases](#8a-download-and-install-humann-databases)
       - [8b. HUMAnN/MetaPhlAn Taxonomic Classification](#8b-humannmetaphlan-taxonomic-classification)
       - [8c. Merge Multiple Sample Functional Profiles](#8c-merge-multiple-sample-functional-profiles)
@@ -601,7 +601,7 @@ gzip sample1_R2_HostRm_GLlbsMetag.fastq
 
 - sample-kraken2-output.txt (kraken2 read-based output file (one line per read))
 - sample-kraken2-report.tsv (kraken2 report output file (one line per taxa, with number of reads assigned to it))
-- **sample_HostRm_GLlbsMetag.fastq.gz** (filtered and trimmed sample reads with contaminants, human, and host reads removed, gzipped fasta file)
+- **sample_HostRm_GLlbsMetag.fastq.gz** (filtered and trimmed sample reads with contaminants, human, and host reads removed, gzipped fastq file)
 
 
 #### 4c. Compile Host Read Removal QC
@@ -1617,8 +1617,7 @@ kaiju -f kaiju-db/nr_euk/kaiju_db_nr_euk.fmi \
 - kaiju-db/nr_euk/kaiju_db_nr_euk.fmi (FM-index file containing the main Kaiju database index, output from [Step 6a](#6a-build-kaiju-database))
 - kaiju-db/nodes.dmp (kaiju taxonomy hierarchy nodes file, output from [Step 6a](#6a-build-kaiju-database))
 - *_R[12]_decontam.fastq.gz or *_R[12]_HostRm.fastq.gz (filtered and trimmed sample reads with both 
-    contaminants and human reads (and, optionally, host reads) removed, gzipped fasta file, 
-    output from [Step 3b](#3b-build-contaminant-index-and-map-reads) or [Step 4b](#4b-remove-host-reads))
+    contaminants and human reads (and, optionally, host reads) removed, output from [Step 3b](#3b-build-contaminant-index-and-map-reads) or [Step 4b](#4b-remove-host-reads))
 
 
 **Output Data:**
@@ -1994,8 +1993,7 @@ kraken2 --db kraken2-db/ \
 
 - kraken2-db/ (a directory containing kraken2 database files, output from [Step 7a](#7a-download-kraken2-database))
 - *_R[12]_decontam.fastq.gz or *_R[12]_HostRm.fastq.gz (filtered and trimmed sample reads with both 
-    contaminants and human reads (and, optionally, host reads) removed, gzipped fasta file, 
-    output from [Step 3b](#3b-build-contaminant-index-and-map-reads) or [Step 4b](#4b-remove-host-reads))
+    contaminants and human reads (and, optionally, host reads) removed, output from [Step 3b](#3b-build-contaminant-index-and-map-reads) or [Step 4b](#4b-remove-host-reads))
 
 
 **Output Data:**
@@ -2271,7 +2269,7 @@ make_barplot(metadata_file = metadata_table, feature_table_file = "kraken2_decon
 
 ---
 
-### 8. Taxonomic Profiling Using MetaPhlan
+### 8. Taxonomic Profiling Using HUMAnN/MetaPhlan
 
 #### 8a. Download and Install HUMAnN databases
 
@@ -2338,8 +2336,7 @@ mv sample1-humann3-out-dir/sample1_humann_temp/sample1_metaphlan_bugs_list.tsv \
 
 - `/path/to/humann3-db/` (HUMAnN databases installed in [Step 8a](#8a-download-and-install-humann-databases))
 - *_R[12]_decontam_GLlbsMetag.fastq.gz or *_R[12]_HostRm_GLlbsMetag.fastq.gz (filtered and trimmed sample reads with both 
-    contaminants and human reads (and, optionally, host reads) removed, gzipped fasta file, 
-    output from [Step 3b](#3b-build-contaminant-index-and-map-reads) or [Step 4b](#4b-remove-host-reads))
+    contaminants and human reads (and, optionally, host reads) removed, output from [Step 3b](#3b-build-contaminant-index-and-map-reads) or [Step 4b](#4b-remove-host-reads))
 
 **Output Data:**
 
@@ -2847,12 +2844,12 @@ make_heatmap(metadata_table_file = metadata_table,
 **Input Data:**
 
 - `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
-- `Gene-families-uniref_unfiltered_GLlbsMetag.tsv` (gene-family abundances table, output from [Step])
-- `Gene-families-KO_unfiltered_GLlbsMetag.tsv` (KO term abundances table, output from [Step])
-- `Pathway-abundances_unfiltered_GLlbsMetag.tsv` (pathway abundances table, output from [Step])
-- `Gene-families-uniref_filtered_GLlbsMetag.tsv` (filtered gene-family abundances table, output from [Step]) 
-- `Gene-families-KO_filtered_GLlbsMetag.tsv` (filtered KO term abundances table, output from [Step]) 
-- `Pathway-abundances_filtered_GLlbsMetag.tsv` (filtered Pathway abundances table, output from [Step]) 
+- `Gene-families-uniref_unfiltered_GLlbsMetag.tsv` (gene-family abundances table, output from [Step 8l](#8l-filter-humann-output))
+- `Gene-families-KO_unfiltered_GLlbsMetag.tsv` (KO term abundances table, output from [Step 8l](#8l-filter-humann-output))
+- `Pathway-abundances_unfiltered_GLlbsMetag.tsv` (pathway abundances table, output from [Step 8l](#8l-filter-humann-output))
+- `Gene-families-uniref_filtered_GLlbsMetag.tsv` (filtered gene-family abundances table, output from [Step 8l](#8l-filter-humann-output)) 
+- `Gene-families-KO_filtered_GLlbsMetag.tsv` (filtered KO term abundances table, output from [Step 8l](#8l-filter-humann-output)) 
+- `Pathway-abundances_filtered_GLlbsMetag.tsv` (filtered Pathway abundances table, output from [Step 8l](#8l-filter-humann-output)) 
 
 **Output Data:**
 
@@ -2952,9 +2949,9 @@ make_heatmap(metadata_table_file = metadata_table,
 
 **Input Data:**
 
-- `Gene-families-uniref_filtered_GLlbsMetag.tsv` (filtered gene-family abundances table, output from [Step]) 
-- `Gene-families-KO_filtered_GLlbsMetag.tsv` (filtered KO term abundances table, output from [Step]) 
-- `Pathway-abundances_filtered_GLlbsMetag.tsv` (filtered Pathway abundances table, output from [Step]) 
+- `Gene-families-uniref_filtered_GLlbsMetag.tsv` (filtered gene-family abundances table, output from [Step 8l](#8l-filter-humann-output)) 
+- `Gene-families-KO_filtered_GLlbsMetag.tsv` (filtered KO term abundances table, output from [Step 8l](#8l-filter-humann-output)) 
+- `Pathway-abundances_filtered_GLlbsMetag.tsv` (filtered Pathway abundances table, output from [Step 8l](#8l-filter-humann-output)) 
 - `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 **Output Data:**
@@ -2995,8 +2992,7 @@ megahit -1 sample1_R1_decontam_GLlbsMetag.fastq.gz -2 sample1_R2_decontam_GLlbsM
 **Input data:**
 
 - *_R[12]_decontam_GLlbsMetag.fastq.gz or *_R[12]_HostRm_GLlbsMetag.fastq.gz (filtered and trimmed sample reads with both 
-    contaminants and human reads (and, optionally, host reads) removed, gzipped fasta file, 
-    output from [Step 3b](#3b-build-contaminant-index-and-map-reads) or [Step 4b](#4b-remove-host-reads))
+    contaminants and human reads (and, optionally, host reads) removed, output from [Step 3b](#3b-build-contaminant-index-and-map-reads) or [Step 4b](#4b-remove-host-reads))
 
 **Output data:**
 
@@ -3411,8 +3407,7 @@ bowtie2 --mm --quiet --threads ${task.cpus} \
 
 - sample1-index (bowtie2 index files, output from [Step 14a](#14a-build-reference-index))
 - *_R[12]_decontam_GLlbsMetag.fastq.gz or *_R[12]_HostRm_GLlbsMetag.fastq.gz (filtered and trimmed sample reads with both 
-    contaminants and human reads (and, optionally, host reads) removed, gzipped fasta file, 
-    output from [Step 3b](#3b-build-contaminant-index-and-map-reads) or [Step 4b](#4b-remove-host-reads))
+    contaminants and human reads (and, optionally, host reads) removed, output from [Step 3b](#3b-build-contaminant-index-and-map-reads) or [Step 4b](#4b-remove-host-reads))
 
 **Output Data**
 
@@ -3452,7 +3447,7 @@ samtools sort --threads NumberOfThreads \
 ### 15. Get Coverage Information and Filter Based On Detection
 > **Note:**  
 > “Detection” is a measure of what proportion of a reference sequence recruited reads 
-(see the discussion of detection [here](http://merenlab.org/2017/05/08/anvio-views/#detection)). 
+(see the discussion of detection [here](https://merenlab.org/2017/05/08/anvio-views/#detection)). 
 Filtering based on detection is one way of helping to mitigate non-specific read-recruitment.
 
 #### 15a. Filter Coverage Levels Based On Detection
