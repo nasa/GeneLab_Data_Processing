@@ -9,7 +9,7 @@
 **Document Number:** GL-DPPD-7116  
 
 **Submitted by:**  
-Olabiyi A. Obayomi (GeneLab Analysis Team)  
+Olabiyi A. Obayomi (GeneLab Data Processing Team)  
 
 **Approved by:**  
 Jonathan Galazka (OSDR Project Manager)  
