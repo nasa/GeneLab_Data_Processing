@@ -4,17 +4,17 @@
 
 ---
 
-**Date:** October 28, 2024  
-**Revision:** -A  
-**Document Number:** GL-DPPD-7107  
+**Date:** April MM, 2026  
+**Revision:** -B  
+**Document Number:** GL-DPPD-71710716  
 
 **Submitted by:**  
-Olabiyi A. Obayomi (GeneLab Analysis Team)  
+Olabiyi A. Obayomi (GeneLab Data Processing Team)  
 
 **Approved by:**  
-Samrawit Gebre (OSDR Project Manager)  
-Lauren Sanders (OSDR Project Scientist)  
-Amanda Saravia-Butler (GeneLab Science Lead)  
+Jonathan Galazka (OSDR Project Manager)  
+Danielle Lopez (OSDR Deputy Project Manager)  
+Amanda Saravia-Butler (OSDR Subject Matter Expert)  
 Barbara Novak (GeneLab Data Processing Lead)  
 
 ---
