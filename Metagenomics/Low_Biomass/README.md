@@ -15,6 +15,10 @@
 
   - Contains the current and previous GeneLab low-biomass metagenomics consensus processing pipeline documentation for short-read (Illumina) data
 
+* [**Workflow_Documentation**](Workflow_Documentation)
+
+  - Contains instructions for installing and running the GeneLab MGIllumina workflow
+
 ---
 **Developed by:**  
 Olabiyi Obayomi
