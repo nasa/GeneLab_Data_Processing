@@ -2678,19 +2678,19 @@ metaphlan --install
 
 ```bash
   # forward and reverse reads need to be provided combined if paired-end (if not paired-end, single-end reads are provided to the --input argument next)
-cat sample1_R1_decontam_GLlblMetag.fastq.gz sample1_R2_decontam_GLlblMetag.fastq.gz > sample1-combined.fastq.gz
+cat sample_R1_decontam_GLlblMetag.fastq.gz sample_R2_decontam_GLlblMetag.fastq.gz > sample-combined.fastq.gz
 
-humann --input sample1-combined.fastq.gz \
-       --output sample1-humann3-out-dir \
+humann --input sample-combined.fastq.gz \
+       --output sample-humann3-out-dir \
        --threads NumberOfThreads \
-       --output-basename sample1 \
-       --metaphlan-options "--bowtie2db /path/to/humann3-db/ --unclassified_estimation --add_viruses --sample_id sample1" \
+       --output-basename sample \
+       --metaphlan-options "--bowtie2db /path/to/humann3-db/ --unclassified_estimation --add_viruses --sample_id sample" \
        --nucleotide-database /path/to/humann3-db/ \
        --protein-database /path/to/humann3-db/ \
        --bowtie-options "--sensitive --mm"
 
-mv sample1-humann3-out-dir/sample1_humann_temp/sample1_metaphlan_bugs_list.tsv \
-   sample1-humann3-out-dir/sample1_metaphlan_bugs_list.tsv
+mv sample-humann3-out-dir/sample_humann_temp/sample_metaphlan_bugs_list.tsv \
+   sample-humann3-out-dir/sample_metaphlan_bugs_list.tsv
 ```
 
 **Parameter Definitions:**  
@@ -2713,7 +2713,7 @@ mv sample1-humann3-out-dir/sample1_humann_temp/sample1_metaphlan_bugs_list.tsv \
 
 **Output Data:**
 
-- sample1-humann3-out-dir/ *humann output directory containing *genefamilies.tsv, *pathabundance.tsv, and *pathcoverage.tsv files)
+- sample-humann3-out-dir/ *humann output directory containing *genefamilies.tsv, *pathabundance.tsv, and *pathcoverage.tsv files)
 
 #### 12c. Merge Multiple Sample Functional Profiles
 
