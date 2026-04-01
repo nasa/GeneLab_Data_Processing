@@ -5,7 +5,7 @@
 ---
 
 **Date:** April MM, 2026  
-**Revision:** -B  
+**Revision:** B  
 **Document Number:** GL-DPPD-7107  
 
 **Submitted by:**  
@@ -17,6 +17,7 @@ Danielle Lopez (OSDR Deputy Project Manager)
 Amanda Saravia-Butler (OSDR Subject Matter Expert)  
 Barbara Novak (GeneLab Data Processing Lead)  
 
+
 ---
 
 ## Updates from previous version  <!-- omit in toc -->
@@ -24,25 +25,33 @@ Barbara Novak (GeneLab Data Processing Lead)
 Software Updates and Changes:
 
 | Program      | Previous Version | New Version |
-| :----------- | :--------------- | :---------- |
-| MultiQC      | 1.19             | 1.27.1      |
-| samtools     | 1.20             | 1.22.1      |
-| Kaiju        | N/A              | 1.10.1      |
-| fastp        | N/A              | 0.24.0      |
-| Kaiju        | N/A              | 1.10.1      |
-| Kraken2      | N/A              | 2.1.6       |
-| KrakenTools  | N/A              | 1.2         |
-| Krona        | N/A              | 2.8.1       |
-| SPAdes       | N/A              | 4.1.0       |
-| R            | N/A              | 4.5.1       |
-| Bioconductor | N/A              | 3.21        |
-| optparse     | N/A              | 1.7.5       |
-| pavian       | N/A              | 1.2.1       |
-| pheatmap     | N/A              | 1.0.13      |
-| phyloseq     | N/A              | 1.52.0      |
-| tidyverse    | N/A              | 2.0.0       |
+| :----------- | :--------------: | :---------: |
+| MultiQC      |       1.19       |   1.27.1    |
+| samtools     |       1.20       |   1.22.1    |
+| Kaiju        |       N/A        |   1.10.1    |
+| fastp        |       N/A        |    1.3.1    |
+| Kaiju        |       N/A        |   1.10.1    |
+| Kraken2      |       N/A        |    2.1.6    |
+| KrakenTools  |       N/A        |     1.2     |
+| Krona        |       N/A        |    2.8.1    |
+| SPAdes       |       N/A        |    4.1.0    |
+| R            |       N/A        |    4.5.3    |
+| htmlwidgets  |       N/A        |    1.6.4    |
+| pavian       |       N/A        |    1.2.0    |
+| pheatmap     |       N/A        |   1.0.13    |
+| phyloseq     |       N/A        |   1.54.0    |
+| plotly       |       N/A        |   4.12.0    |
+| dplyr        |       N/A        |    1.2.0    |
+| ggplot2      |       N/A        |    4.0.2    |
+| glue         |       N/A        |    1.8.0    |
+| purrr        |       N/A        |    1.2.1    |
+| readr        |       N/A        |    2.2.0    |
+| stringr      |       N/A        |    1.6.0    |
+| tibble       |       N/A        |    3.3.1    |
+| tidyr        |       N/A        |    1.3.2    |
+| htmlwidgets  |       N/A        |    1.6.4    |
 
-- Sync this pipeline with the new low-biomass pipelines (update formatting and definitions)
+- Synced this pipeline with the new low-biomass pipelines (update formatting and definitions)
 - Added new processing steps for additional taxonomic profiling tools and downstream processed data outputs in R
   - Add additional read-based processing taxonomic profiling methods:
     - Kaiju taxonomic profiling ([Step 18](#18-taxonomic-profiling-using-kaiju))
@@ -168,12 +177,12 @@ Software Updates and Changes:
 
 | Program      | Version | Relevant Links                                                                                                                                     |
 | :----------- | :-----: | :------------------------------------------------------------------------------------------------------------------------------------------------- |
-| bbduk        |  38.86  | [https://bbmap.org/](https://bbmap.org/)                                                                                                           |
-| bit          | 1.8.53  | [https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit](https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit)     |
-| bowtie2      |  2.4.1  | [https://bowtie-bio.sourceforge.net/bowtie2/index.shtml](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml)                                   |
-| CAT          |  5.2.3  | [https://github.com/dutilh/CAT#cat-and-bat](https://github.com/dutilh/CAT#cat-and-bat)                                                             |
+| BBTools      |  39.80  | [https://bbmap.org/](https://bbmap.org/)                                                                                                           |
+| bit          | 1.13.15 | [https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit](https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit)     |
+| bowtie2      |  2.5.5  | [https://bowtie-bio.sourceforge.net/bowtie2/index.shtml](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml)                                   |
+| CAT          |  5.2.3  | [https://github.com/MGXlab/CAT_pack](https://github.com/MGXlab/CAT_pack)                                                                           |
 | CheckM       |  1.1.3  | [https://github.com/Ecogenomics/CheckM](https://github.com/Ecogenomics/CheckM)                                                                     |
-| fastp        | 0.24.0  | [https://github.com/OpenGene/fastp](https://github.com/OpenGene/fastp)                                                                             |
+| fastp        |  1.3.1  | [https://github.com/OpenGene/fastp](https://github.com/OpenGene/fastp)                                                                             |
 | FastQC       | 0.12.1  | [https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)                           |
 | GTDB-Tk      |  2.4.0  | [https://github.com/Ecogenomics/GTDBTk](https://github.com/Ecogenomics/GTDBTk)                                                                     |
 | HUMAnN       |   3.9   | [https://github.com/biobakery/humann](https://github.com/biobakery/humann)                                                                         |
@@ -189,13 +198,22 @@ Software Updates and Changes:
 | MultiQC      | 1.27.1  | [https://multiqc.info/](https://multiqc.info/)                                                                                                     |
 | Prodigal     |  2.6.3  | [https://github.com/hyattpd/Prodigal#prodigal](https://github.com/hyattpd/Prodigal#prodigal)                                                       |
 | samtools     | 1.22.1  | [https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)                                                     |
-| R            |  4.5.1  | [https://www.r-project.org](https://www.r-project.org)                                                                                             |
-| Bioconductor |  3.21   | [https://www.bioconductor.org](https://www.bioconductor.org)                                                                                       |
-| optparse     |  1.7.5  | [https://cran.r-project.org/web/packages/optparse/index.html](https://cran.r-project.org/web/packages/optparse/index.html)                         |
-| pavian       |  1.2.1  | [https://github.com/fbreitwieser/pavian](https://github.com/fbreitwieser/pavian)                                                                   |
+| R            |  4.5.3  | [https://www.r-project.org](https://www.r-project.org)                                                                                             |
+| decontam     | 1.28.0  | [https://www.bioconductor.org/packages/release/bioc/html/decontam.html](https://www.bioconductor.org/packages/release/bioc/html/decontam.html)     |
+| dplyr        |  1.2.0  | [https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)                                                                                         |
+| ggplot2      |  4.0.2  | [https://ggplot2.tidyverse.org](https://ggplot2.tidyverse.org)                                                                                     |
+| htmlwidgets  |  1.6.4  | [http://www.htmlwidgets.org](http://www.htmlwidgets.org)                                                                                           |
+| glue         |  1.8.0  | [https://glue.tidyverse.org](https://glue.tidyverse.org)                                                                                           |
+| pavian       |  1.2.0* | [https://github.com/fbreitwieser/pavian](https://github.com/fbreitwieser/pavian)                                                                   |
 | pheatmap     | 1.0.13  | [https://cran.r-project.org/package=pheatmap](https://cran.r-project.org/package=pheatmap)                                                         |
-| phyloseq     | 1.52.0  | [https://www.bioconductor.org/packages/release/bioc/html/phyloseq.html](https://www.bioconductor.org/packages/release/bioc/html/phyloseq.html)     |
-| tidyverse    |  2.0.0  | [https://www.tidyverse.org](https://www.tidyverse.org)                                                                                             |
+| phyloseq     | 1.54.0  | [https://www.bioconductor.org/packages/release/bioc/html/phyloseq.html](https://www.bioconductor.org/packages/release/bioc/html/phyloseq.html)     |
+| plotly       | 4.12.0  | [https://plotly-r.com](https://plotly-r.com)                                                                                                       |
+| purrr        |  1.2.1  | [https://purrr.tidyverse.org](https://purrr.tidyverse.org)                                                                                         |
+| readr        |  2.2.0  | [https://readr.tidyverse.org](https://readr.tidyverse.org)                                                                                         |
+| stringr      |  1.6.0  | [https://stringr.tidyverse.org](https://stringr.tidyverse.org)                                                                                     |
+| tibble       |  3.3.1  | [https://tibble.tidyverse.org](https://tibble.tidyverse.orgtext)                                                                                   |
+| tidyr        |  1.3.2  | [https://tidyr.tidyverse.org](https://tidyr.tidyverse.orgtext)                                                                                     |
+> **Note:** pavian R package requires R version 4.0.5
 
 ---
 
@@ -217,8 +235,8 @@ fastqc -o HRrm_fastqc_output *HRrm_GLmetagenomics.fastq.gz
 
 **Parameter Definitions:**
 
-* `-o` – the output directory to store results
-* `*HRrm_GLmetagenomics.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces in between them
+- `-o` – the output directory to store results
+- `*HRrm_GLmetagenomics.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces in between them
 
 **Input data:**
 
@@ -226,9 +244,8 @@ fastqc -o HRrm_fastqc_output *HRrm_GLmetagenomics.fastq.gz
 
 **Output data:**
 
-* *fastqc.html (FastQC output html summary)
-* *fastqc.zip (FastQC output data)
-
+- *fastqc.html (FastQC output html summary)
+- *fastqc.zip (FastQC output data)
 
 #### 1b. Compile Raw Data QC
 
@@ -266,14 +283,14 @@ multiqc --zip-data-dir \
 #### 2a. Filter Quality and Trim Adapters
 
 ```bash
-fastp --in1 sample1_R1_HRrm_GLmetagenomics.fastq.gz --out1 temp_sample1_R1_filtered.fastq.gz \
-      --in2 sample1_R2_HRrm_GLmetagenomics.fastq.gz --out2 temp_sample1_R2_filtered.fastq.gz \
+fastp --in1 sample_R1_HRrm_GLmetagenomics.fastq.gz --out1 temp_sample_R1_filtered.fastq.gz \
+      --in2 sample_R2_HRrm_GLmetagenomics.fastq.gz --out2 temp_sample_R2_filtered.fastq.gz \
       --qualified_quality_phred  20 \
       --length_required 50 \
       --thread 2 \
-      --detect_adapter_for_pe \
-      --json sample1.fastp.json \
-      --html sample1.fastp.html 2> sample1-fastp.log
+      --detect_adapter_for_pe --disable_trim_poly_g \
+      --json sample.fastp.json \
+      --html sample.fastp.html 2> sample-fastp.log
 ```
 
 **Parameter Definitions:**
@@ -286,6 +303,7 @@ fastp --in1 sample1_R1_HRrm_GLmetagenomics.fastq.gz --out1 temp_sample1_R1_filte
 - `--length_required` - the minimum read length. Shorter reads will be discarded (default: 50)
 - `--thread` - number of worker threads (default: 2)
 - `--detect_adapter_for_pe` - for paired end data, enable auto-detection of adapters
+- `--disable_trim_poly_g` - explicitly disable automatic polyG trimming
 - `--json` - Specifies the json format report file name
 - `--html` - Specifies the html format report file name
 - `2> sample-fastp.log` - Redirects the stderr output to a log file.
@@ -301,15 +319,15 @@ fastp --in1 sample1_R1_HRrm_GLmetagenomics.fastq.gz --out1 temp_sample1_R1_filte
 #### 2b. Trim polyG
 
 ```bash
-fastp --in1 temp_sample1_R1_filtered.fastq.gz --out1 sample1_R1_filtered_GLmetagenomics.fastq.gz \
-      --in2 temp_sample1_R2_filtered.fastq.gz --out2 sample1_R2_filtered_GLmetagenomics.fastq.gz \
+fastp --in1 temp_sample_R1_filtered.fastq.gz --out1 sample_R1_filtered_GLmetagenomics.fastq.gz \
+      --in2 temp_sample_R2_filtered.fastq.gz --out2 sample_R2_filtered_GLmetagenomics.fastq.gz \
       --qualified_quality_phred  20 \
       --length_required 50 \
       --thread 2 \
       --detect_adapter_for_pe \
-      --json sample1.fastp.json \
-      --html sample1.fastp.html \
-      --trim_poly_g 2> sample1-fastp.log
+      --json sample.fastp.json \
+      --html sample.fastp.html \
+      --trim_poly_g 2> sample-fastp.log
 ```
 
 **Parameter Definitions:**
@@ -329,7 +347,7 @@ fastp --in1 temp_sample1_R1_filtered.fastq.gz --out1 sample1_R1_filtered_GLmetag
 
 **Input Data:**
 
-- /path/to/filtered_data/temp_sample1*.fastq.gz (round1 filtered/adapter trimmed reads, output from [Step 2a](#2a-filter-quality-and-trim-adapters)
+- /path/to/filtered_data/temp_sample*.fastq.gz (round1 filtered/adapter trimmed reads, output from [Step 2a](#2a-filter-quality-and-trim-adapters)
 
 **Output Data:**
 
@@ -356,7 +374,6 @@ fastqc -o filtered_fastqc_output/ *filtered_GLmetagenomics.fastq.gz
 
 - *fastqc.html (FastQC output html summary)
 - *fastqc.zip (FastQC output data)
-
 
 #### 2d. Compile Filtered/Trimmed Data QC
 
@@ -1138,15 +1155,15 @@ custom_palette <- custom_palette[-c(21:23,
 
 <br>  
 
-
 ---
 
 ## Assembly-based Processing
 
+
 ### 4. Sample assembly
 ```
-megahit -1 sample-1_R1_filtered_GLmetagenomics.fastq.gz -2 sample-1_R2_filtered_GLmetagenomics.fastq.gz \
-        -o sample-1-assembly -t NumberOfThreads --min-contig-length 500 > sample-1-assembly.log 2>&1
+megahit -1 sample_R1_filtered_GLmetagenomics.fastq.gz -2 sample_R2_filtered_GLmetagenomics.fastq.gz \
+        -o sample-assembly -t NumberOfThreads --min-contig-length 500 > sample-assembly.log 2>&1
 ```
 
 **Parameter Definitions:**  
@@ -1155,8 +1172,7 @@ megahit -1 sample-1_R1_filtered_GLmetagenomics.fastq.gz -2 sample-1_R2_filtered_
 -	`-o` – specifies output directory
 -	`-t` – specifies the number of threads to use
 -	`--min-contig-length` – specifies the minimum contig length to write out
--	`> sample1-assembly.log 2>&1` – sends stdout/stderr to log file
-
+-	`> sample-assembly.log 2>&1` – sends stdout/stderr to log file
 
 **Input data:**
 
@@ -1164,8 +1180,8 @@ megahit -1 sample-1_R1_filtered_GLmetagenomics.fastq.gz -2 sample-1_R2_filtered_
 
 **Output data:**
 
-* sample-1-assembly/final.contigs.fa (assembly file)
-* sample-1-assembly.log (log file)
+- sample-assembly/final.contigs.fa (assembly file)
+- sample-assembly.log (log file)
 
 <br>
 
@@ -1196,7 +1212,6 @@ bit-rename-fasta-headers -i sample/final.contigs.fa \
 
 - **sample-assembly_GLmetagenomics.fasta** (contig-renamed assembly file)
 
-
 #### 5b. Summarize assemblies
 
 ```bash
@@ -1216,7 +1231,6 @@ done
 
 -	`-o` – Specifies the output summary table.
 - `*-assembly_GLmetagenomics.fasta`	– Specifies the input assemblies to summarize, provided as positional arguments
-
 
 **Input data:**
 
@@ -1262,9 +1276,9 @@ prodigal -a sample-genes.faa \
 
 **Output data:**
 
-* sample-genes.faa (gene-calls amino-acid fasta file)
-* sample-genes.fasta (gene-calls nucleotide fasta file)
-* **sample-genes.gff** (gene-calls in general feature format)
+- sample-genes.faa (gene-calls amino-acid fasta file)
+- sample-genes.fasta (gene-calls nucleotide fasta file)
+- **sample-genes.gff** (gene-calls in general feature format)
 
 <br>
 
@@ -1294,7 +1308,6 @@ mv sample-genes.fasta.tmp sample-genes_GLmetagenomics.fasta
 
 > **Note:**  
 > The annotation process overwrites the same temporary directory by default. When running multiple processes at a time, it is necessary to specify a specific temporary directory with the `--tmp-dir` argument as shown below.
-
 
 #### 7a. Download reference database of HMM models
 
@@ -1330,8 +1343,6 @@ exec_annotation -p profiles/ \
 - `--report-unannotated` – Specifies to generate an output for each entry, event when no KO is assigned.
 - `sample-genes_GLmetagenomics.faa` – Specifies the input file, provided as a positional argument. 
 
-
-
 **Input data:**
 
 - sample-genes_GLmetagenomics.faa (amino-acid fasta file, from [Step 6b](#6b-remove-line-wraps-in-gene-prediction-output))
@@ -1340,8 +1351,7 @@ exec_annotation -p profiles/ \
 
 **Output data:**
 
-- sample-1-KO-tab.tmp (table of KO annotations assigned to gene IDs)
-
+- sample-KO-tab.tmp (table of KO annotations assigned to gene IDs)
 
 #### 7c. Filter KO Outputs
 *Filter KO outputs to retain only those passing the KO-specific score and top hits.*
@@ -1358,7 +1368,6 @@ rm -rf sample-tmp-KO/ sample-KO-annots.tmp
 
 - `-i` – Specifies the input table.
 - `-o` – Specifies the output table.
-
 
 **Input data:**
 
@@ -1388,7 +1397,7 @@ CAT contigs -c sample-assembly_GLmetagenomics.fasta \
             -d CAT_prepare_20200618/2020-06-18_database/ \
             -t CAT_prepare_20200618/2020-06-18_taxonomy/ \
             -p sample-genes_GLmetagenomics.faa \
-            -o sample-1-tax-out.tmp \
+            -o sample-tax-out.tmp \
             -n NumberOfThreads -r 3 \
             --top 4 \
             --I_know_what_Im_doing \
@@ -1408,7 +1417,6 @@ CAT contigs -c sample-assembly_GLmetagenomics.fasta \
 - `--I_know_what_Im_doing` – Allows us to alter the `--top` parameter.
 - `--no-stars` - Suppress marking of suggestive taxonomic assignments.
 
-
 **Input data:**
 
 - CAT_prepare_20200618/2020-06-18_database/ (directory holding the CAT reference sequence database, output from [Step 8a](#8a-pull-and-unpack-pre-built-reference-db))
@@ -1425,7 +1433,7 @@ CAT contigs -c sample-assembly_GLmetagenomics.fasta \
 
 ```bash
 CAT add_names -i sample-tax-out.tmp.ORF2LCA.txt \
-              -o sample-1-gene-tax-out.tmp \
+              -o sample-gene-tax-out.tmp \
               -t CAT_prepare_20200618/2020-06-18_taxonomy/ \
               --only_official \
               --exclude-scores
@@ -1448,13 +1456,11 @@ CAT add_names -i sample-tax-out.tmp.ORF2LCA.txt \
 
 - sample-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added)
 
-
-
 #### 8d. Add Taxonomy Info From Taxids To Contigs
 
 ```bash
-CAT add_names -i sample-1-tax-out.tmp.contig2classification.txt \
-              -o sample-1-contig-tax-out.tmp \
+CAT add_names -i sample-tax-out.tmp.contig2classification.txt \
+              -o sample-contig-tax-out.tmp \
               -t CAT_prepare_20200618/2020-06-18_taxonomy/ \
               --only_official \
               --exclude-scores
@@ -1468,7 +1474,6 @@ CAT add_names -i sample-1-tax-out.tmp.contig2classification.txt \
 - `--only_official` – Specifies to add only standard taxonomic ranks.
 - `--exclude-scores` - Specifies to exclude bit-score support scores in the lineage.
 
-
 **Input data:**
 
 - sample-tax-out.tmp.contig2classification.txt (contig taxonomy file from [Step 8b](#8b-run-taxonomic-classification))
@@ -1477,7 +1482,6 @@ CAT add_names -i sample-1-tax-out.tmp.contig2classification.txt \
 **Output data:**
 
 - sample-contig-tax-out.tmp (contig taxonomy file with lineage info added)
-
 
 #### 8e. Format Gene-level Output With awk and sed
 
@@ -1492,7 +1496,7 @@ awk -F $'\t' ' BEGIN { OFS=FS } { if ( $3 == "lineage" ) { print $1,$3,$5,$6,$7,
 
 **Input Data:**
 
-* sample-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added from [Step 8c](#8c-add-taxonomy-info-from-taxids-to-genes))
+- sample-gene-tax-out.tmp (gene-calls taxonomy file with lineage info added from [Step 8c](#8c-add-taxonomy-info-from-taxids-to-genes))
 
 **Output Data:**
 
@@ -1514,7 +1518,6 @@ rm sample*.tmp*
 **Input data:**
 
 - sample-contig-tax-out.tmp (contig taxonomy file with lineage info added from [Step 8d](#8d-add-taxonomy-info-from-taxids-to-contigs))
-
 
 **Output data:**
 
@@ -1577,7 +1580,6 @@ bowtie2 --mm --quiet --threads ${task.cpus} \
 - sample.sam (reads aligned to sample assembly in SAM format)
 - **sample-mapping-info_GLmetagenomics.txt** (read mapping information)
 
-
 #### 9c. Sort Assembly Alignments
 
 ```bash
@@ -1633,12 +1635,10 @@ pileup.sh -in sample_GLmetagenomics.bam \
 - sample_GLmetagenomics.bam (sorted mapping to sample assembly BAM file, output from [Step 9c](#9c-sort-assembly-alignments))
 - sample-genes_GLmetagenomics.fasta (gene-calls nucleotide fasta file, output from [Step 6b](#6b-remove-line-wraps-in-gene-prediction-output))
 
-
 **Output Data:**
 
 - sample-gene-cov-and-det.tmp (gene-coverage tsv file)
 - sample-contig-cov-and-det.tmp (contig-coverage tsv file)
-
 
 #### 10b. Filter Gene and Contig Coverage Based On Detection
 
@@ -1669,8 +1669,8 @@ rm sample-*.tmp
 
 **Output data:**
 
-* sample-gene-coverages.tsv (table with gene-level coverages)
-* sample-contig-coverages.tsv (table with contig-level coverages)
+- sample-gene-coverages.tsv (table with gene-level coverages)
+- sample-contig-coverages.tsv (table with contig-level coverages)
 
 <br>
 
@@ -1699,14 +1699,13 @@ rm sample*tmp sample-gene-coverages.tsv sample-annotations.tsv sample-gene-tax-o
 
 **Input data:**
 
-* sample-gene-coverages.tsv (table with gene-level coverages from [Step 10b](#10b-filter-gene-and-contig-coverage-based-on-detection))
-* sample-annotations.tsv (table of KO annotations assigned to gene IDs from [Step 7c](#7c-filter-ko-outputs))
-* sample-gene-tax-out.tsv (gene-level taxonomic classifications from [Step 8f](#8f-format-contig-level-output-with-awk-and-sed))
-
+- sample-gene-coverages.tsv (table with gene-level coverages from [Step 10b](#10b-filter-gene-and-contig-coverage-based-on-detection))
+- sample-annotations.tsv (table of KO annotations assigned to gene IDs from [Step 7c](#7c-filter-ko-outputs))
+- sample-gene-tax-out.tsv (gene-level taxonomic classifications from [Step 8f](#8f-format-contig-level-output-with-awk-and-sed))
 
 **Output data:**
 
-* **sample-gene-coverage-annotation-and-tax_GLmetagenomics.tsv** (table with combined gene coverage, annotation, and taxonomy info)
+- **sample-gene-coverage-annotation-and-tax_GLmetagenomics.tsv** (table with combined gene coverage, annotation, and taxonomy info)
 
 <br>
 
@@ -1736,7 +1735,6 @@ rm sample*tmp sample-contig-coverages.tsv sample-contig-tax-out.tsv
 - sample-contig-coverages.tsv (table with contig-level coverages from [Step 10b](#10b-filter-gene-and-contig-coverage-based-on-detection))
 - sample-contig-tax-out.tsv (contig-level taxonomic classifications from [Step 8f](#8f-format-contig-level-output-with-awk-and-sed))
 
-
 **Output data:**
 
 - **sample-contig-coverage-and-tax_GLmetagenomics.tsv** (table with combined contig coverage and taxonomy info)
@@ -1753,7 +1751,6 @@ rm sample*tmp sample-contig-coverages.tsv sample-contig-tax-out.tsv
 
 #### 13a. Generate Gene-level Coverage Summary Tables
 
-
 ```bash
 bit-GL-combine-KO-and-tax-tables *-gene-coverage-annotation-and-tax_GLmetagenomics.tsv \
                                  -o Combined
@@ -1767,9 +1764,7 @@ mv "Combined-gene-level-taxonomy-coverages.tsv Combined-gene-level-taxonomy-cove
 **Parameter Definitions:**  
 
 - `*-gene-coverage-annotation-and-tax_GLmetagenomics.tsv` - Positional arguments specifying the input tsv files, can be provided as a space-delimited list of files, or with wildcards like above.
-
 - `-o` – Specifies the output file prefix.
-
 
 **Input data:**
 
@@ -1782,7 +1777,6 @@ mv "Combined-gene-level-taxonomy-coverages.tsv Combined-gene-level-taxonomy-cove
 - **Combined-gene-level-KO-function-coverages_GLmetagenomics.tsv** (table with all samples combined based on KO annotations)
 - **Combined-gene-level-taxonomy-coverages_GLmetagenomics.tsv** (table with all samples combined based on gene-level taxonomic classifications)
 
-
 #### 13b. Generate Contig-level Coverage Summary Tables
 
 ```bash
@@ -1794,15 +1788,14 @@ bit-GL-combine-contig-tax-tables *-contig-coverage-and-tax_GLmetagenomics.tsv -o
 - `*-contig-coverage-and-tax_GLmetagenomics.tsv` - Positional arguments specifying the input tsv files, can be provided as a space-delimited list of files, or with wildcards like above.
 - `-o` – Specifies the output file prefix.
 
-
 **Input data:**
 
-* *-contig-coverage-annotation-and-tax_GLmetagenomics.tsv (tables with combined contig coverage, annotation, and taxonomy info generated for individual samples from [Step 12](#12-combine-contig-level-coverage-and-taxonomy-for-each-sample))
+- *-contig-coverage-annotation-and-tax_GLmetagenomics.tsv (tables with combined contig coverage, annotation, and taxonomy info generated for individual samples from [Step 12](#12-combine-contig-level-coverage-and-taxonomy-for-each-sample))
 
 **Output data:**
 
-* **Combined-contig-level-taxonomy-coverages-CPM_GLmetagenomics.tsv** (table with all samples combined based on contig-level taxonomic classifications; normalized to coverage per million genes covered)
-* **Combined-contig-level-taxonomy-coverages_GLmetagenomics.tsv** (table with all samples combined based on contig-level taxonomic classifications)
+- **Combined-contig-level-taxonomy-coverages-CPM_GLmetagenomics.tsv** (table with all samples combined based on contig-level taxonomic classifications; normalized to coverage per million genes covered)
+- **Combined-contig-level-taxonomy-coverages_GLmetagenomics.tsv** (table with all samples combined based on contig-level taxonomic classifications)
 
 <br>
 
@@ -1845,7 +1838,6 @@ zip -r sample-bins_GLmetagenomics.zip sample-bins
 -  `--outFile` - Specifies the prefix of the identified bins output files.
 -  `--abdFile` - The depth file generated by the previous `jgi_summarize_bam_contig_depths` command.
 -  `-t` - Number of parallel processing threads to use.
-
 
 **Input data:**
 
@@ -1922,7 +1914,6 @@ done
 - MAGs/\*.fasta (directory holding high-quality MAGs)
 - **\*-MAGs_GLmetagenomics.zip** (zip files containing directories of high-quality MAGs)
 
-
 #### 14d. MAG taxonomic classification
 > Uses default `gtdbtk` database setup with program's `download.sh` command.
 
@@ -1943,11 +1934,11 @@ gtdbtk classify_wf --genome_dir MAGs/ \
 
 **Input data:**
 
-* MAGs/\*.fasta (directory holding high-quality MAGs from [Step 14c](#14c-filter-mags))
+- MAGs/\*.fasta (directory holding high-quality MAGs from [Step 14c](#14c-filter-mags))
 
 **Output data:**
 
-* gtdbtk-output-dir/gtdbtk.\*.summary.tsv (files with assigned taxonomy and info)
+- gtdbtk-output-dir/gtdbtk.\*.summary.tsv (files with assigned taxonomy and info)
 
 #### 14e. Generate Overview Table Of All MAGs
 
@@ -1996,7 +1987,7 @@ cat MAGs-overview-header.tmp MAGs-overview-sorted.tmp \
 
 **Output data:**
 
-* **MAGs-overview_GLmetagenomics.tsv** (a tab-delimited overview of all recovered MAGs)
+- **MAGs-overview_GLmetagenomics.tsv** (a tab-delimited overview of all recovered MAGs)
 
 <br>
 
@@ -2039,8 +2030,7 @@ done
 
 **Output data:**
 
-* **MAG-level-KO-annotations_GLmetagenomics.tsv** (tab-delimited table holding MAGs and their KO annotations)
-
+- **MAG-level-KO-annotations_GLmetagenomics.tsv** (tab-delimited table holding MAGs and their KO annotations)
 
 #### 15b. Summarize KO annotations with KEGG-Decoder
 
@@ -2142,7 +2132,6 @@ table2write <- get_abundant_features(feature_table, cpm_threshold=threshold) %>%
                rownames_to_column(feature_name)
 
 write_tsv(x = table2write, file = "Combined-gene-level-taxonomy_filtered_GLmetagenomics.tsv")
-
 
 make_heatmap(metadata_table_file = metadata_table, 
              feature_table_file = "Combined-gene-level-taxonomy_filtered_GLmetagenomics.tsv", 
@@ -2336,7 +2325,6 @@ make_heatmap(metadata_table_file = metadata_table,
                          species/functions as the first column and samples as other columns.
 - `assembly_summary` - path to a tab-separated file containing statistics on assemblies created for each sample
 
-
 **Input data:**
 
 - assembly-summaries_GLmetagenomics.tsv (table of assembly summary statistics, output from [Step 5b](#5b-summarize-assemblies))
@@ -2470,7 +2458,6 @@ rm nr_euk/kaiju_db_nr_euk.bwt nr_euk/kaiju_db_nr_euk.sa
 - kaiju-db/names.dmp (taxonomy names file from the NCBI Taxonomy database that maps taxonomic IDs to their scientific names)
 - kaiju-db/merged.dmp (merged taxonomy IDs file from the NCBI Taxonomy database that maps deprecated taxonomic IDs to current ones)
 
-
 #### 18b. Kaiju Taxonomic Classification
 
 ```bash
@@ -2478,8 +2465,8 @@ kaiju -f kaiju-db/nr_euk/kaiju_db_nr_euk.fmi \
       -t kaiju-db/nodes.dmp \
       -z NumberOfThreads \
       -E 1e-05 \
-      -i /path/to/sample1_R1_filtered_GLmetagenomics.fastq.gz \
-      -j /path/to/sample1_R2_filtered_GLmetagenomics.fastq.gz \
+      -i /path/to/sample_R1_filtered_GLmetagenomics.fastq.gz \
+      -j /path/to/sample_R2_filtered_GLmetagenomics.fastq.gz \
       -o sample_kaiju.out
 ```
 
@@ -2498,7 +2485,6 @@ kaiju -f kaiju-db/nr_euk/kaiju_db_nr_euk.fmi \
 - kaiju-db/nr_euk/kaiju_db_nr_euk.fmi (FM-index file containing the main Kaiju database index, output from [Step 18a](#18a-build-kaiju-database))
 - kaiju-db/nodes.dmp (kaiju taxonomy hierarchy nodes file, output from [Step 18a](#18a-build-kaiju-database))
 - *_R[12]_filtered_GLmetagenomics.fastq.gz (filtered/trimmed reads from [Step 2b](#2b-trim-polyg) above)
-
 
 **Output Data:**
 
@@ -2643,7 +2629,6 @@ write_tsv(x = table2write, file = "kaiju_species_table_GLmetagenomics.tsv")
 
 - **kaiju_species_table_GLmetagenomics.tsv** (kaiju species count table in tsv format)
 
-
 #### 18g. Filter Kaiju Species Count Table
 
 ```R
@@ -2730,7 +2715,6 @@ make_barplot(metadata_file = metadata_file, feature_table_file = filtered_specie
 - `kaiju_filtered_species_table_GLmetagenomics.tsv` (a file containing the filtered species count table, output from [Step 18g](#18g-filter-kaiju-species-count-table))
 - `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
-
 **Output Data:**
 
 - kaiju_unfiltered_species_barplot_GLmetagenomics.png (taxonomy barplot without filtering)
@@ -2803,7 +2787,7 @@ kraken2 --db kraken2-db/ \
         --use-names \
         --output sample-kraken2-output.txt \
         --report sample-kraken2-report.tsv \
-        /path/to/sample1_R1_filtered_GLmetagenomics.fastq.gz /path/to/sample1_R2_filtered_GLmetagenomics.fastq.gz
+        /path/to/sample_R1_filtered_GLmetagenomics.fastq.gz /path/to/sample_R2_filtered_GLmetagenomics.fastq.gz
 ```
 
 **Parameter Definitions:**
@@ -2814,21 +2798,18 @@ kraken2 --db kraken2-db/ \
 - `--use-names` - Specifies to add taxa names in addition to taxids.
 - `--output` - Specifies the name of the kraken2 read-based output file.
 - `--report` - Specifies the name of the kraken2 report output file.
-- `sample1_R1_filtered_GLmetagenomics.fastq.gz` - Positional argument specifying the forward read input file.
-- `sample1_R2_filtered_GLmetagenomics.fastq.gz` - Positional argument specifying the reverse read input file.
-
+- `sample_R1_filtered_GLmetagenomics.fastq.gz` - Positional argument specifying the forward read input file.
+- `sample_R2_filtered_GLmetagenomics.fastq.gz` - Positional argument specifying the reverse read input file.
 
 **Input Data:**
 
 - kraken2-db/ (a directory containing kraken2 database files, output from [Step 19a](#19a-download-kraken2-database))
 - *_R[12]_filtered_GLmetagenomics.fastq.gz (filtered/trimmed reads from [Step 2b](#2b-trim-polyg) above)
 
-
 **Output Data:**
 
 - sample-kraken2-output.txt (kraken2 read-based output file (one line per read))
 - sample-kraken2-report.tsv (kraken2 report output file (one line per taxa, with number of reads assigned to it))
-
 
 #### 19c. Compile Kraken2 Taxonomy Results
 
@@ -2883,7 +2864,6 @@ multiqc --zip-data-dir \
 - **kraken2_multiqc_GLmetagenomics.html** (multiqc output html summary)
 - **kraken2_multiqc_GLmetagenomics_data.zip** (zip archive containing multiqc output data)
 
-
 #### 19d. Convert Kraken2 Output to Krona Format
 
 ```bash
@@ -2903,7 +2883,6 @@ kreport2krona.py --report-file sample-kraken2-report.tsv  \
 **Output Data:**
 
 - sample.krona (krona formatted kraken2 output)
-
 
 #### 19e. Compile Kraken2 Krona Reports
 
@@ -2953,7 +2932,6 @@ ktImportText -o kraken2-report_GLmetagenomics.html ${KTEXT_FILES[*]}
 - krona_files.txt (sorted list of all *.krona files)
 - sample_names.txt (sorted list of all sample names)
 - **kraken2-report_GLmetagenomics.html** (compiled krona html report containing all samples)
-
 
 #### 19f. Filter Kraken2 Species Count Table
 
@@ -3075,8 +3053,7 @@ metaphlan --install
 
 **Output Data**
 
-`/path/to/humann3-db` (the installed MetaPhlan databases)
-
+- /path/to/humann3-db (the installed MetaPhlan databases)
 
 #### 20b. HUMAnN/MetaPhlAn Taxonomic Classification
 ```bash
