@@ -7,8 +7,9 @@ c_reset = "\033[0m";
 
 include { PARSE_ANNOTATION_TABLE } from './modules/PARSE_ANNOTATION_TABLE.nf'
 include { VV_AGILE1CH } from './modules/VV_AGILE1CH.nf'
-include { AGILE1CH } from './modules/AGILE1CH.nf'
+include { PROCESS_AGILE1CH } from './modules/PROCESS_AGILE1CH.nf'
 include { RUNSHEET_FROM_GLDS } from './modules/RUNSHEET_FROM_GLDS.nf'
+include { RUNSHEET_FROM_ISA } from './modules/RUNSHEET_FROM_ISA.nf'
 include { GENERATE_SOFTWARE_TABLE } from './modules/GENERATE_SOFTWARE_TABLE'
 include { DUMP_META } from './modules/DUMP_META'
 
@@ -35,7 +36,7 @@ if (params.help) {
   println("  --runsheetPath        Use a local runsheet instead one automatically generated from a GLDS ISA archive.")
   println("  --skipVV              Skip automated V&V. Default: false")
   println("  --skipDE              Skip DE. Default: false")
-  println("  --outputDir           Directory to save staged raw files and processed files. Default: <launch directory>")
+  println("  --resultsDir           Directory to save staged raw files and processed files. Default: <launch directory>")
   exit 0
   }
 
@@ -45,9 +46,7 @@ println "\n"
 /**************************************************
 * CHECK REQUIRED PARAMS AND LOAD  *****************
 **************************************************/
-// Get all params sourced data into channels
-// Set up channel containing glds accession number
-if ( !params.outputDir ) {  params.outputDir = "$workflow.launchDir" }
+println("Resolved output directory: ${ params.resultsDir }")
 
 /**************************************************
 * WORKFLOW SPECIFIC PRINTOUTS  ********************
@@ -55,15 +54,26 @@ if ( !params.outputDir ) {  params.outputDir = "$workflow.launchDir" }
 
 workflow {
 	main:
-    if ( !params.runsheetPath ) {
+    if ( !params.runsheetPath && !params.isaArchivePath) {
         RUNSHEET_FROM_GLDS( 
           params.osdAccession,
           params.gldsAccession,
           "${ projectDir }/bin/dp_tools__agilent_1_channel" // dp_tools plugin
         ) 
         RUNSHEET_FROM_GLDS.out.runsheet | set{ ch_runsheet }
-    } else {
+    } else if ( !params.runsheetPath && params.isaArchivePath ) {
+        RUNSHEET_FROM_ISA( 
+          params.osdAccession,
+          params.gldsAccession,
+          params.isaArchivePath,
+          "${ projectDir }/bin/dp_tools__agilent_1_channel" // dp_tools plugin
+        )
+        RUNSHEET_FROM_ISA.out.runsheet | set{ ch_runsheet }
+    } else if ( params.runsheetPath && !params.isaArchivePath ) {
         ch_runsheet = channel.fromPath( params.runsheetPath )
+    } else if ( params.runsheetPath && params.isaArchivePath ) {
+        System.err.println("Error: User supplied both runsheetPath and isaArchivePath.  Only one or neither is allowed to be supplied!") // Print error message to System.err
+        System.exit(1) // Exit with error code 1
     }
 
 
@@ -74,7 +84,7 @@ workflow {
         ch_meta | map { it.organism }
     )
 
-    AGILE1CH(
+    PROCESS_AGILE1CH(
       channel.fromPath( "${ projectDir }/bin/Agile1CMP.qmd" ),
       ch_runsheet,
       PARSE_ANNOTATION_TABLE.out.annotations_db_url,
@@ -85,7 +95,7 @@ workflow {
 
     VV_AGILE1CH( 
       ch_runsheet, 
-      AGILE1CH.out.de,
+      PROCESS_AGILE1CH.out.de,
       params.skipVV,
       "${ projectDir }/bin/${ params.skipDE ? 'dp_tools__agilent_1_channel_skipDE' : 'dp_tools__agilent_1_channel' }" // dp_tools plugin
       )
@@ -98,7 +108,7 @@ workflow {
   workflow task: N/A
 """)
     ch_software_versions = Channel.value(nf_version)
-    AGILE1CH.out.versions | map{ it -> it.text } | mix(ch_software_versions) | set{ch_software_versions}
+    PROCESS_AGILE1CH.out.versions | map{ it -> it.text } | mix(ch_software_versions) | set{ch_software_versions}
     VV_AGILE1CH.out.versions | map{ it -> it.text } | mix(ch_software_versions) | set{ch_software_versions}
 
     GENERATE_SOFTWARE_TABLE(
@@ -119,8 +129,8 @@ workflow.onComplete {
     println "${c_bright_green}Pipeline completed at: $workflow.complete"
     println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
     if ( workflow.success ) {
-      println "Raw and Processed data location: ${ params.outputDir }/${ params.gldsAccession }"
-      println "V&V logs location: ${ params.outputDir }/${ params.gldsAccession }/VV_Logs"
-      println "Pipeline tracing/visualization files location:  ${ params.outputDir }/${ params.gldsAccession }/Resource_Usage${c_reset}"
+      println "Raw and Processed data location: ${ params.resultsDir }"
+      println "V&V logs location: ${ params.resultsDir }/VV_Logs"
+      println "Pipeline tracing/visualization files location:  ${ params.resultsDir }/Resource_Usage${c_reset}"
     }
 }

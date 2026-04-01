@@ -60,6 +60,37 @@ dir.create(DIR_DGE)
 ``` {r load-runsheet-and-annotation-table-link}
 #| message = FALSE
 print("Loading Runsheet...") # NON_DPPD
+
+# Utility function to improve robustness of function calls
+# Used to remedy intermittent internet issues during runtime 
+retry_with_delay <- function(func, ...) {
+  max_attempts = 5
+  initial_delay = 10
+  delay_increase = 30
+  attempt <- 1
+  current_delay <- initial_delay
+  while (attempt <= max_attempts) {
+    result <- tryCatch(
+      expr = func(...),
+      error = function(e) e
+    )
+    
+    if (!inherits(result, "error")) {
+      return(result)
+    } else {
+      if (attempt < max_attempts) {
+        message(paste("Retry attempt", attempt, "failed for function with name <", deparse(substitute(func)) ,">. Retrying in", current_delay, "second(s)..."))
+        Sys.sleep(current_delay)
+        current_delay <- current_delay + delay_increase
+      } else {
+        stop(paste("Max retry attempts reached. Last error:", result$message))
+      }
+    }
+    
+    attempt <- attempt + 1
+  }
+}
+
 # fileEncoding removes strange characters from the column names
 df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM')
 
@@ -100,9 +131,9 @@ download_files_from_runsheet <- function(df_runsheet) {
 
 if ( runsheet_paths_are_URIs(df_rs) ) {
   print("Determined Raw Data Locations are URIS")
-  local_paths <- download_files_from_runsheet(df_rs)
+  local_paths <- retry_with_delay(download_files_from_runsheet, df_rs)
 } else {
-  print("Or Determined Raw Data Locations are local paths")
+  print("Determined Raw Data Locations are local paths")
   local_paths <- df_rs$`Array Data File Path`
 }
 
@@ -463,11 +494,12 @@ if (organism %in% c("athaliana")) {
   ensembl_genomes_portal = "plants"
   print(glue::glue("Using ensembl genomes ftp to get specific version of probe id mapping table. Ensembl genomes portal: {ensembl_genomes_portal}, version: {ENSEMBL_VERSION}"))
   expected_attribute_name <- get_biomart_attribute(df_rs)
-  df_mapping <- get_ensembl_genomes_mappings_from_ftp(
-    organism = organism,
-    ensembl_genomes_portal = ensembl_genomes_portal,
-    ensembl_genomes_version = ENSEMBL_VERSION,
-    biomart_attribute = expected_attribute_name
+  df_mapping <- retry_with_delay(
+      get_ensembl_genomes_mappings_from_ftp,
+      organism = organism,
+      ensembl_genomes_portal = ensembl_genomes_portal,
+      ensembl_genomes_version = ENSEMBL_VERSION,
+      biomart_attribute = expected_attribute_name
     )
 
   # TAIR from the mapping tables tend to be in the format 'AT1G01010.1' but the raw data has 'AT1G01010'
@@ -888,15 +920,10 @@ df_interim <- df_interim %>% dplyr::bind_cols(norm_data$E)
 unique_groups <- unique(design_data$group$group)
 for ( i in seq_along(unique_groups) ) {
   current_group <- unique_groups[i]
-  current_samples <- design_data$group %>% 
-                      dplyr::group_by(group) %>%
-                      dplyr::summarize(
-                        samples = sort(unique(sample))
-                      ) %>%
-                      dplyr::filter(
-                        group == current_group
-                      ) %>% 
-                      dplyr::pull()
+  current_samples <- design_data$group %>%
+                      dplyr::filter(group == current_group) %>%
+                      dplyr::pull(sample) %>%
+                      sort()
                     
   print(glue::glue("Computing mean and standard deviation for Group {i} of {length(unique_groups)}"))
   print(glue::glue("Group: {current_group}"))
@@ -1031,6 +1058,14 @@ get_versions <- function() {
     glue::glue("  homepage: https://www.r-project.org/"),
     glue::glue("  workflow task: PROCESS_AGILE1CH")
     ), sep = "\n") 
+  # Add Bioconductor explicitly as a transitive dependency not captured by sessionInfo()
+  versions_buffer <- glue::glue_collapse(c(
+    versions_buffer,
+    glue::glue("- name: Bioconductor"),
+    glue::glue("  version: {packageVersion('BiocVersion')}"),
+    glue::glue("  homepage: https://bioconductor.org"),
+    glue::glue("  workflow task: PROCESS_AGILE1CH")
+    ), sep = "\n")
   # Get 'other attached packages'
   for (software in session_info[["otherPkgs"]]) {
     versions_buffer <- glue::glue_collapse(c(
@@ -1063,7 +1098,7 @@ if (organism %in% c("athaliana") || use_custom_annot) {
     versions_buffer,
     glue::glue("- name: biomaRt"),
     glue::glue("  version: (Not used for this dataset)"),
-    glue::glue("  homepage: https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html"),
+    glue::glue("  homepage: https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html"),
     glue::glue("  workflow task: PROCESS_AGILE1CH")
     ), sep = "\n")
 }

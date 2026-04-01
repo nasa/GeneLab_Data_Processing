@@ -8,9 +8,11 @@ import pandas as pd
 
 AGILENT_SOFTWARE_DPPD = [
     "R",
+    "Bioconductor",
     "DT",
     "dplyr",
     "stringr",
+    "purrr",
     "R.utils",
     "limma",
     "glue",
@@ -36,7 +38,7 @@ ASSUMED_SOFTWARE = [{
 ## Used when the R library metadata doesn't encode any URLS
 HOMEPAGE_MAP = {
     "statmod":"https://cran.r-project.org/web/packages/statmod/index.html",
-    "biomaRt":"https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html", # UPDATE ON biomaRt version update
+    "biomaRt":"https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html", # UPDATE ON biomaRt version update
 }
 
 @click.command()
@@ -58,6 +60,7 @@ def yamlToMarkdown(input_yaml: Path, filename: str, skip_de: bool):
     if skip_de:
         AGILENT_SOFTWARE_DPPD.remove('matrixstats')
         AGILENT_SOFTWARE_DPPD.remove('statmod')
+        AGILENT_SOFTWARE_DPPD.remove('matrixstats')
 
     # Filter to direct software used (i.e. exclude dependencies of the software)
     df = df.loc[df["name"].str.lower().isin(AGILENT_SOFTWARE_DPPD)]

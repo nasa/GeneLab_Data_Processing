@@ -5,24 +5,24 @@
 
 ---
 
-**Date:** March XX, 2025
-**Revision:** -A
+**Date:** May XX, 2026  
+**Revision:** -A  
 **Document Number:** GL-DPPD-7112-A
 
 **Submitted by:**  
-Crystal Han (GeneLab Data Processing Team)
+Crystal Han and Jihan Yehia (GeneLab Data Processing Team)
 
 **Approved by:**  
-Samrawit Gebre (OSDR Project Manager)
-Lauren Sanders (OSDR Project Scientist)
-Amanda Saravia-Butler (GeneLab Science Lead)
-Barbara Novak (GeneLab Data Processing Lead)
+Jonathan Galazka (OSDR Project Manager)  
+Danielle Lopez (OSDR Deputy Project Manager)   
+Amanda Saravia-Butler (OSDR Subject Matter Expert)  
+Barbara Novak (GeneLab Data Processing Lead) 
 
 ---
 
 ## Updates from previous version
 
-Updated [Ensembl Reference Files](../../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) to the following releases:
+Updated [Ensembl Reference Files](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) to the following releases:
 - Animals: Ensembl release 112
 - Plants: Ensembl plants release 59
 - Bacteria: Ensembl bacteria release 59
@@ -32,21 +32,27 @@ Software Updates:
 | Program | Previous Version | New Version    |
 |:--------|:-----------------|:---------------|
 |R|4.1.3|4.4.2|
+|R.utils|2.12.2|2.12.3|
 |DT|0.26|0.33|
 |dplyr|1.0.10|1.1.4|
-|stringr|1.5.0|1.5.1|
-|R.utils|2.12.2|2.12.3|
-|limma|3.50.3|3.62.2|
-|glue|1.6.2|1.8.0|
 |ggplot2|3.4.0|3.5.1|
+|glue|1.6.2|1.8.0|
+|stringr|1.5.0|1.5.1|
+|purrr|1.0.1|1.0.2|
+|Bioconductor|3.14|3.20|
+|limma|3.50.3|3.62.2|
 |biomaRt|2.50.0|2.62.0|
 |matrixStats|0.63.0|1.5.0|
 |dp_tools|1.3.4|1.3.5|
 |Quarto|1.2.313|1.6.40|
 
-Custom Annotations
+Code changes:
 
-- Added ability to use custom gene annotations when annotations are not available in Biomart or Ensembl FTP for *Arabidopsis thaliana*, see [Step 7](#7-probe-annotations)
+- Updated [`fetch_organism_specific_annotation_table()`](#fetch_organism_specific_annotation_table), that is used in [Step 2d](#2d-load-annotation-metadata), to convert figshare ndownloader URLs to direct API endpoints, as ndownloader URLs require redirect handling that is not supported in all programmatic download contexts
+
+- Added ability to use custom gene annotations when annotations are not available in Biomart or Ensembl FTP, see [Step 7](#7-probe-annotations)
+
+- Simplified group sample retrieval in [Step 8c](#8c-add-annotation-and-stats-columns-and-format-de-table) to use a more concise `filter/pull/sort` chain instead of `group_by/summarize/filter/pull`, addressing the deprecation warning in dplyr >= 1.1.0 where returning more than 1 row per `summarise()` group is deprecated
 
 ---
 
@@ -89,17 +95,19 @@ Custom Annotations
 |Program|Version|Relevant Links|
 |:------|:------:|:-------------|
 |R|4.4.2|[https://www.r-project.org/](https://www.r-project.org/)|
+|R.utils|2.12.3|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
 |DT|0.33|[https://github.com/rstudio/DT](https://github.com/rstudio/DT)|
 |dplyr|1.1.4|[https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)|
-|stringr|1.5.1|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
-|R.utils|2.12.3|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
-|limma|3.62.2|[https://bioconductor.org/packages/3.14/bioc/html/limma.html](https://bioconductor.org/packages/3.14/bioc/html/limma.html)|
-|glue|1.8.0|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
 |ggplot2|3.5.1|[https://ggplot2.tidyverse.org](https://ggplot2.tidyverse.org)|
-|biomaRt|2.62.0|[https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html)|
+|glue|1.8.0|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
+|stringr|1.5.1|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
+|purrr|1.0.2|[https://purrr.tidyverse.org](https://purrr.tidyverse.org)|
+|Bioconductor|3.20|[https://bioconductor.org](https://bioconductor.org)|
+|limma|3.62.2|[https://bioconductor.org/packages/3.20/bioc/html/limma.html](https://bioconductor.org/packages/3.20/bioc/html/limma.html)|
+|biomaRt|2.62.0|[https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html)|
 |matrixStats|1.5.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
 |statmod|1.5.0|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
-|dp_tools|1.3.5|[https://github.com/J-81/dp_tools](https://github.com/J-81/dp_tools)|
+|dp_tools|1.3.5|[https://github.com/torres-alexis/dp_tools](https://github.com/torres-alexis/dp_tools)|
 |singularity|3.9|[https://sylabs.io](https://sylabs.io)|
 |Quarto|1.6.40|[https://quarto.org](https://quarto.org)|
 
@@ -127,17 +135,15 @@ dpt-get-isa-archive \
 ### Parse the metadata from the *ISA.zip file to create a sample runsheet ###
 
 dpt-isa-to-runsheet --accession OSD-### \
- --config-type microarray \
- --config-version Latest \
+ --plugin-dir /path/to/dp_tools__microarray_plugin \
  --isa-archive *ISA.zip
 ```
 
 **Parameter Definitions:**
 
 - `--accession OSD-###` - OSD accession ID (replace ### with the OSD number being processed), used to retrieve the urls for the ISA archive and raw expression files hosted on the GeneLab Repository
-- `--config-type` - Instructs the script to extract the metadata required for `microarray` processing from the ISA archive
-- `--config-version` - Specifies the `dp-tools` configuration version to use, a value of `Latest` will specify the most recent version
-- `--isa-archive` - Specifies the *ISA.zip file for the respective GLDS dataset, downloaded in the `dpt-get-isa-archive` command
+- `--plugin-dir /path/to/dp_tools__microarray_plugin` - specifies the path to the plugin directory defining the dp-tools configuration for the desired assay type. A plugin for both the Agilent 1-channel microarray assay is provided in the [Workflow_Documentation](../Workflow_Documentation/NF_MAAgilent1ch/workflow_code/bin/dp_tools__agilent_1_channel/) folder
+- `--isa-archive` - Specifies the *ISA.zip file for the respective OSD dataset, downloaded in the `dpt-get-isa-archive` command
 
 
 **Input Data:**
@@ -165,29 +171,24 @@ dpt-isa-to-runsheet --accession OSD-### \
 ```R
 ### Install R packages if not already installed ###
 
-install.packages("tidyverse")
 install.packages("R.utils")
+install.packages("dplyr")
+install.packages("stringr")
+install.packages("ggplot2")
+install.packages("purrr")
 install.packages("glue")
 install.packages("matrixStats")
 install.packages("statmod")
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install(version = "3.14")
+BiocManager::install(version = "3.20")
 BiocManager::install("limma")
 BiocManager::install("biomaRt")
 
 
-### Import libraries ###
-
-library(tidyverse)
-library(dplyr)
-library(stringr)
-library(R.utils)
-library(glue)
-library(matrixStats)
-library(limma)
-library(biomaRt)
-library(statmod)
+## Note: Only dplyr is explicitly loaded. Other library functions are called with explicit namespace (e.g. LIBRARYNAME::FUNCTION)
+library(dplyr) # Ensure infix operator is available, methods should still reference dplyr namespace otherwise
+options(dplyr.summarise.inform = FALSE) # Don't print out '`summarise()` has grouped output by 'group'. You can override using the `.groups` argument.'
 
 
 # Define path to runsheet
@@ -209,6 +210,47 @@ dir.create(DIR_DGE)
 
 ### 2b. Define Custom Functions
 
+#### retry_with_delay()
+<details>
+  <summary>utility function to improve robustness of function calls; used to remedy intermittent internet issues during runtime</summary>
+
+  ```R
+  retry_with_delay <- function(func, ...) {
+    max_attempts = 5
+    initial_delay = 10
+    delay_increase = 30
+    attempt <- 1
+    current_delay <- initial_delay
+    while (attempt <= max_attempts) {
+      result <- tryCatch(
+        expr = func(...),
+        error = function(e) e
+      )
+
+      if (!inherits(result, "error")) {
+        return(result)
+      } else {
+        if (attempt < max_attempts) {
+          message(paste("Retry attempt", attempt, "failed for function with name <", deparse(substitute(func)) ,">. Retrying in", current_delay, "second(s)..."))
+          Sys.sleep(current_delay)
+          current_delay <- current_delay + delay_increase
+        } else {
+          stop(paste("Max retry attempts reached. Last error:", result$message))
+        }
+      }
+
+      attempt <- attempt + 1
+    }
+  }
+  ```
+
+  **Function Parameter Definitions:**
+  - `func=` - specifies the function to wrap
+  - `...` - other arguments passed on to the `func`
+
+  **Returns:** the output of the wrapped function
+</details>
+
 #### all_true()
 <details>
   <summary>wraps R <code>base::all()</code> function; overrides default behavior for empty input vector</summary>
@@ -225,7 +267,7 @@ dir.create(DIR_DGE)
   **Function Parameter Definitions:**
   - `i_vector=` - a vector of logical values
 
-  **Returns:** a logical of length 1; `TRUE` if all values are true, `FALSE` otherwise; stops and returns an error if input vector is empty
+  **Returns:** a logical vector of length 1; `TRUE` if all values are true, `FALSE` otherwise; stops and returns an error if input vector is empty
 </details>
 
 #### runsheet_paths_are_URIs()
@@ -244,7 +286,7 @@ dir.create(DIR_DGE)
   **Function Parameter Definitions:**
   - `df_runsheet=` - a dataframe containing the sample runsheet information
 
-  **Returns:** a logical of length 1; `TRUE` if all values in the `Array Data File Path` of the runsheet start with "https", `FALSE` otherwise; stops and returns an error if input vector is empty
+  **Returns:** a logical vector of length 1; `TRUE` if all values in the `Array Data File Path` of the runsheet start with "https", `FALSE` otherwise; stops and returns an error if input vector is empty
 </details>
 
 #### download_files_from_runsheet()
@@ -294,13 +336,20 @@ dir.create(DIR_DGE)
       stop(glue::glue("Organism supplied '{organism}' is not supported. See the following url for supported organisms: {annotation_table_link}.  Supported organisms will correspond to a row based on the 'species' column and include a url in the 'genelab_annots_link' column of that row and a version number in the 'ensemblVersion' column."))
     }
 
+    # Convert figshare ndownloader URL to API endpoint
+    annotation_table$genelab_annots_link <- ifelse(
+        grepl('figshare.com/ndownloader/files/', annotation_table$genelab_annots_link),
+        sub('.*/files/([0-9]+).*', 'https://api.figshare.com/v2/file/download/\\1', annotation_table$genelab_annots_link),
+        annotation_table$genelab_annots_link
+    )
+
     return(annotation_table)
   }
   ```
 
   **Function Parameter Definitions:**
   - `organism=` - a string containing the name of the organism (as found in the species column of the GeneLab annotation table)
-  - `annotation_table_link=` - a string specifying the URL or path to latest GeneLab Annotations file, see [GL-DPPD-7110-A_annotations.csv](../../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
+  - `annotation_table_link=` - a string specifying the URL or path to latest GeneLab Annotations file, see [GL-DPPD-7110-A_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
 
   **Returns:** a dataframe containing all rows in the GeneLab annotations file that match the specified organism
 </details>
@@ -632,9 +681,9 @@ df_rs <- read.csv(runsheet, check.names = FALSE, fileEncoding = 'UTF-8-BOM')
 
 if ( runsheet_paths_are_URIs(df_rs) ) {
   print("Determined Raw Data Locations are URIS")
-  local_paths <- download_files_from_runsheet(df_rs)
+  local_paths <- retry_with_delay(download_files_from_runsheet, df_rs)
 } else {
-  print("Or Determined Raw Data Locations are local paths")
+  print("Determined Raw Data Locations are local paths")
   local_paths <- df_rs$`Array Data File Path`
 }
 
@@ -665,7 +714,7 @@ raw_data <- limma::read.maimages(df_local_paths$`Local Paths`,
 # Handle raw data which lacks certain replaceable column data
 
 ## This likely arises as Agilent Feature Extraction (the process that generates the raw data files on OSDR) 
-##   gives some user flexibilty in what probe column to ouput
+##   gives some user flexibilty in what probe column to output
 
 ## Missing ProbeUID "Unique integer for each unique probe in a design"
 ### Source: https://www.agilent.com/cs/library/usermanuals/public/GEN-MAN-G4460-90057.pdf Page 178
@@ -684,6 +733,7 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 
 **Custom Functions Used:**
 
+- [retry_with_delay()](#retry_with_delay)
 - [all_true()](#all_true)
 - [runsheet_paths_are_URIs()](#runsheet_paths_are_URIs)
 - [download_files_from_runsheet()](#download_files_from_runsheet)
@@ -710,7 +760,7 @@ annotation_config_path <- NULL # <path/to/config_file>
 
 annotation_table_link <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/GL_RefAnnotTable-A_1.1.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
 
-annotation_table <- fetch_organism_specific_annotation_table(unique(df_rs$organism))
+annotation_table <- retry_with_delay(fetch_organism_specific_annotation_table, unique(df_rs$organism), annotation_table_link)
 
 annotation_file_path <- annotation_table$genelab_annots_link
 ensembl_version <- as.character(annotation_table$ensemblVersion)
@@ -718,6 +768,7 @@ ensembl_version <- as.character(annotation_table$ensemblVersion)
 
 **Custom Functions Used:**
 
+- [retry_with_delay()](#retry_with_delay)
 - [fetch_organism_specific_annotation_table()](#fetch_organism_specific_annotation_table)
 
 **Input Data:**
@@ -731,7 +782,7 @@ ensembl_version <- as.character(annotation_table$ensemblVersion)
     > Note: If not using custom annotations, leave `annotation_config_path` as `NULL`.
 
 - `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
-- `annotation_table_link` (URL or path to latest GeneLab Annotations file, see [GL-DPPD-7110-A_annotations.csv](../../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv))
+- `annotation_table_link` (URL or path to latest GeneLab Annotations file, see [GL-DPPD-7110-A_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv))
 
 **Output Data:**
 
@@ -1017,11 +1068,12 @@ if (organism %in% c("athaliana")) {
   ensembl_genomes_portal = "plants"
   print(glue::glue("Using ensembl genomes ftp to get specific version of probe id mapping table. Ensembl genomes portal: {ensembl_genomes_portal}, version: {ENSEMBL_VERSION}"))
   expected_attribute_name <- get_biomart_attribute(df_rs)
-  df_mapping <- get_ensembl_genomes_mappings_from_ftp(
-    organism = organism,
-    ensembl_genomes_portal = ensembl_genomes_portal,
-    ensembl_genomes_version = ENSEMBL_VERSION,
-    biomart_attribute = expected_attribute_name
+  df_mapping <- retry_with_delay(
+      get_ensembl_genomes_mappings_from_ftp,
+      organism = organism,
+      ensembl_genomes_portal = ensembl_genomes_portal,
+      ensembl_genomes_version = ENSEMBL_VERSION,
+      biomart_attribute = expected_attribute_name
     )
 
   # TAIR from the mapping tables tend to be in the format 'AT1G01010.1' but the raw data has 'AT1G01010'
@@ -1177,6 +1229,7 @@ norm_data$genes <- norm_data$genes %>%
 
 **Custom Functions Used:**
 
+- [retry_with_delay()](#retry_with_delay)
 - [shortened_organism_name()](#shortened_organism_name)
 - [get_biomart_attribute()](#get_biomart_attribute)
 - [get_ensembl_genomes_mappings_from_ftp()](#get_ensembl_genomes_mappings_from_ftp)
@@ -1192,14 +1245,14 @@ norm_data$genes <- norm_data$genes %>%
 - `local_annotation_dir` (path to local annotation directory if using custom annotations, output from [Step 2d](#2d-load-annotation-metadata))
 - `annotation_config_path` (URL or path to annotation config file if using custom annotations, output from [Step 2d](#2d-load-annotation-metadata))
 
-  > Note: See [Agilent_array_annotations.csv](../Array_Annotations/Agilent_array_annotations.csv) for the latest config file used at GeneLab. This file can also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAgilent1ch/examples/annotations/README.md).
+  > Note: See [config.csv](../Workflow_Documentation/NF_MAAgilent1ch/examples/annotations/config.csv) for the latest config file used at GeneLab. This file can also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAgilent1ch/examples/annotations/README.md).
 
 - `norm_data$genes` (Manufacturer's probe metadata, including probe IDs and sequence position gene annotations associated with the `norm_data` R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
 
 **Output Data:**
 
 - `unique_probe_ids` (R object containing probe ID to gene annotation mappings)
-- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html) or custom annotations)
+- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html) or custom annotations)
 
 <br>
 
@@ -1229,7 +1282,7 @@ print(glue::glue("Unique Mapping Count: {slices[['Unique Mapping']]}"))
 
 **Input Data:**
 
-- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html) or custom annotations, output from [Step 7a](#7a-get-probe-annotations) above)
+- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html) or custom annotations, output from [Step 7a](#7a-get-probe-annotations) above)
 
 **Output Data:**
 
@@ -1417,15 +1470,10 @@ df_interim <- df_interim %>% dplyr::bind_cols(norm_data$E)
 unique_groups <- unique(design_data$group$group)
 for ( i in seq_along(unique_groups) ) {
   current_group <- unique_groups[i]
-  current_samples <- design_data$group %>% 
-                      dplyr::group_by(group) %>%
-                      dplyr::summarize(
-                        samples = sort(unique(sample))
-                      ) %>%
-                      dplyr::filter(
-                        group == current_group
-                      ) %>% 
-                      dplyr::pull()
+  current_samples <- design_data$group %>%
+                      dplyr::filter(group == current_group) %>%
+                      dplyr::pull(sample) %>%
+                      sort()
                     
   print(glue::glue("Computing mean and standard deviation for Group {i} of {length(unique_groups)}"))
   print(glue::glue("Group: {current_group}"))

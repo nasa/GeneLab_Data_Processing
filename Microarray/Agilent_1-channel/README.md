@@ -20,9 +20,6 @@
 
   - Contains instructions for installing and running the GeneLab MAAgilent1ch workflow
 
-* [**Array_Annotations**](Array_Annotations)
-
-  - Contains the custom annotations table used in the GeneLab NF_MAAgilent1ch
 
 ---
 **Developed by:**  

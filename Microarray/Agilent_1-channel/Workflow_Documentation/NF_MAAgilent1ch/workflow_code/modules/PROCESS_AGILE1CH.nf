@@ -1,5 +1,5 @@
-process AGILE1CH {
-  publishDir "${ params.outputDir }/${ params.gldsAccession }/GeneLab",
+process PROCESS_AGILE1CH {
+  publishDir "${ params.resultsDir }/GeneLab",
     pattern: "NF_MAAgilent1ch_v${workflow.manifest.version}_GLmicroarray.html",
     mode: params.publish_dir_mode
   stageInMode 'copy'

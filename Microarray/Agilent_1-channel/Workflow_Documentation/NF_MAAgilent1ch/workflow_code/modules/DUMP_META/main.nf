@@ -1,5 +1,5 @@
 process DUMP_META {
-  publishDir "${ params.outputDir }/${ params.gldsAccession }/GeneLab",
+  publishDir "${ params.resultsDir }/GeneLab",
     mode: params.publish_dir_mode
   
   input:

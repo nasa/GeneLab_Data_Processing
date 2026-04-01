@@ -53,6 +53,7 @@ Below is a description of each subworkflow and the additional output files gener
 - [3. Run the Workflow](#3-run-the-workflow)
   - [3a. Approach 1: Run the workflow on a GeneLab Agilent 1 Channel Microarray dataset](#3a-approach-1-run-the-workflow-on-a-genelab-agilent-1-channel-microarray-dataset)
   - [3b. Approach 2: Run the workflow on a non-GLDS dataset using a user-created runsheet](#3b-approach-2-run-the-workflow-on-a-non-glds-dataset-using-a-user-created-runsheet)
+  - [3c. Approach 3: Run the workflow using an ISA Archive](#3c-approach-3-run-the-workflow-using-an-isa-archive)
 - [4. Additional Output Files](#4-additional-output-files)
 
 <br>
@@ -132,6 +133,20 @@ nextflow run NF_MAAgilent1ch_1.0.5/main.nf \
 
 <br>
 
+#### 3c. Approach 3: Run the workflow using an ISA Archive
+
+> Note: Specifications for the ISA Tab Archive format can be found [here](https://isa-specs.readthedocs.io/en/latest/isatab.html).
+
+```bash
+nextflow run NF_MAAgilent1ch_1.0.5/main.nf \ 
+   -profile singularity \
+   --osdAccession OSD-548 \
+   --gldsAccession GLDS-548 \
+   --isaArchivePath </path/to/isaArchive> 
+```
+
+<br>
+
 **Required Parameters For All Approaches:**
 
 * `NF_MAAgilent1ch_1.0.5/main.nf` - Instructs Nextflow to run the NF_MAAgilent1ch workflow 
@@ -155,11 +170,23 @@ nextflow run NF_MAAgilent1ch_1.0.5/main.nf \
 
 <br>
 
+**Additional Required Parameters For [Approach 3](#3c-approach-3-run-the-workflow-using-an-isa-archive):**
+
+* `--osdAccession OSD-###` – specifies the OSD ID to process through the NF_MAAgilent1ch workflow (replace ### with the OSD number)
+
+* `--gldsAccession GLDS-###` – specifies the GLDS ID to process through the NF_MAAgilent1ch workflow (replace ### with the GLDS number) 
+
+* `--isaArchivePath` - specifies a local or URL path to an *ISA.zip (Default: *ISA.zip is automatically fetched from the GeneLab Repository for the GLDS dataset being processed) 
+
+<br>
+
 **Optional Parameters:**
 
 * `--skipVV` - skip the automated V&V processes (Default: the automated V&V processes are active) 
 
-* `--outputDir` - specifies the directory to save the raw and processed data files (Default: files are saved in the launch directory)  
+* `--skipDE` - skip the differential expression analysis (Default: the differential expression analysis is performed)
+
+* `--resultsDir` - specifies the output directory for all files produced by the workflow (Default: <OSD-NNN_GLDS-NNN> if OSD and GLDS accessions are specified.  Otherwise, the workflow launch directory.)  
 
 <br>
 
@@ -187,6 +214,7 @@ The outputs from the Analysis Staging and V&V Pipeline Subworkflows are describe
 > Note: The outputs from the Agilent 1 Channel Microarray Processing Subworkflow are documented in the [GL-DPPD-7112-A.md](../../../Pipeline_GL-DPPD-7112_Versions/GL-DPPD-7112-A.md) processing protocol.
 
 **Analysis Staging Subworkflow**
+> Note: only applicable for [Approach 1](#3a-approach-1-run-the-workflow-on-a-genelab-agilent-1-channel-microarray-dataset) and [Approach 3](#3c-approach-3-run-the-workflow-using-an-isa-archive)
 
    - Output:
      - \*_microarray_v1_runsheet.csv (table containing metadata required for processing, including the raw reads files location)
