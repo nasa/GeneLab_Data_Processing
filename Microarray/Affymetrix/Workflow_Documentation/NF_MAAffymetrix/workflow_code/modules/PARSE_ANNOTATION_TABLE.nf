@@ -26,6 +26,12 @@ process PARSE_ANNOTATION_TABLE {
     ensemblVersion = organisms[organism_key][3]
     ensemblSource = organisms[organism_key][4]
 
+    // Convert figshare ndownloader URL to API endpoint
+    if (annotations_db_url != null && annotations_db_url.contains('figshare.com/ndownloader/files/')) {
+      file_id = (annotations_db_url =~ /.*\/files\/([a-zA-Z0-9]+).*/)[0][1]
+      annotations_db_url = "https://api.figshare.com/v2/file/download/${file_id}"
+    }
+
     println "PARSE_ANNOTATION_TABLE:"
     println "Values parsed for '${organism_key}' using process:"
     println "--------------------------------------------------"

@@ -3,8 +3,7 @@
 ## Description
 
 * If using custom gene annotations when processing Affymetrix datasets through GeneLab's Affymetrix processing pipeline, a csv config file must be provided as specified below.
-* See [Affymetrix_array_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/tree/master/Microarray/Affymetrix/Array_Annotations/Affymetrix_array_annotations.csv)
- for the latest config file used at GeneLab.
+* See [config.csv](config.csv) for the latest config file used at GeneLab.
 
 
 ## Example

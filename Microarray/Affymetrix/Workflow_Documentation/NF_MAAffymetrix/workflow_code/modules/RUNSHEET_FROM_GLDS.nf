@@ -2,6 +2,10 @@ process RUNSHEET_FROM_GLDS {
   // Downloads isa Archive and creates runsheet using GeneLab API
   tag "${ gldsAccession }"
   publishDir "${ params.resultsDir }/Metadata",
+    pattern: "*.csv",
+    mode: params.publish_dir_mode
+    
+  publishDir "${ params.resultsDir }/Metadata",
     pattern: "*.zip",
     mode: params.publish_dir_mode
 

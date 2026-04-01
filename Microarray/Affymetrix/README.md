@@ -20,10 +20,6 @@
 
   - Contains instructions for installing and running the GeneLab NF_MAAffymetrix workflow
 
-* [**Array_Annotations**](Array_Annotations)
-
-  - Contains the custom annotations table used in the GeneLab NF_MAAffymetrix
-
 ---
 **Developed by:**  
 Jonathan Oribello  

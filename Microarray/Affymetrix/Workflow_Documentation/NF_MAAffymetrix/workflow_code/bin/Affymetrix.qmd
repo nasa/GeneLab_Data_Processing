@@ -155,7 +155,7 @@ if ( runsheet_paths_are_URIs(df_rs) ) {
   print("Determined Raw Data Locations are URIS")
   local_paths <- retry_with_delay(download_files_from_runsheet, df_rs)
 } else {
-  print("Or Determined Raw Data Locations are local paths")
+  print("Determined Raw Data Locations are local paths")
   local_paths <- df_rs$`Array Data File Path`
 }
 
@@ -1029,15 +1029,10 @@ df_interim <- df_interim %>% dplyr::rename_with(reformat_names, .cols = matches(
 unique_groups <- unique(design_data$group$group)
 for ( i in seq_along(unique_groups) ) {
   current_group <- unique_groups[i]
-  current_samples <- design_data$group %>% 
-                      dplyr::group_by(group) %>%
-                      dplyr::summarize(
-                        samples = sort(unique(sample))
-                      ) %>%
-                      dplyr::filter(
-                        group == current_group
-                      ) %>% 
-                      dplyr::pull()
+  current_samples <- design_data$group %>%
+                      dplyr::filter(group == current_group) %>%
+                      dplyr::pull(sample) %>%
+                      sort()
                     
   print(glue::glue("Computing mean and standard deviation for Group {i} of {length(unique_groups)}"))
   print(glue::glue("Group: {current_group}"))
@@ -1185,6 +1180,14 @@ get_versions <- function() {
     glue::glue("  homepage: https://www.r-project.org/"),
     glue::glue("  workflow task: PROCESS_AFFYMETRIX")
     ), sep = "\n") 
+  # Add Bioconductor explicitly as a transitive dependency not captured by sessionInfo()
+  versions_buffer <- glue::glue_collapse(c(
+    versions_buffer,
+    glue::glue("- name: Bioconductor"),
+    glue::glue("  version: {packageVersion('BiocVersion')}"),
+    glue::glue("  homepage: https://bioconductor.org"),
+    glue::glue("  workflow task: PROCESS_AFFYMETRIX")
+    ), sep = "\n")
   # Get 'other attached packages'
   for (software in session_info[["otherPkgs"]]) {
     versions_buffer <- glue::glue_collapse(c(
@@ -1216,7 +1219,7 @@ if (organism %in% c("athaliana") || use_custom_annot) {
     versions_buffer,
     glue::glue("- name: biomaRt"),
     glue::glue("  version: (Not used for this dataset)"),
-    glue::glue("  homepage: https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html"),
+    glue::glue("  homepage: https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html"),
     glue::glue("  workflow task: PROCESS_AFFYMETRIX")
     ), sep = "\n")
 }

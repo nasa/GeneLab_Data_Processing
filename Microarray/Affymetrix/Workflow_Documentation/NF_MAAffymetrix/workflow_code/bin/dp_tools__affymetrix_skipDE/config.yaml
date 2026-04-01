@@ -1,6 +1,6 @@
 # TOP LEVEL
 NAME: "microarray"
-VERSION: "0"
+VERSION: "1"
 
 # anchors for reuse
 _anchors:
@@ -179,7 +179,7 @@ data assets:
   runsheet:
     processed location: 
       - "Metadata"
-      - "{dataset}_microarray_v0_runsheet.csv"
+      - "{dataset}_microarray_v1_runsheet.csv"
 
     tags:
       - raw

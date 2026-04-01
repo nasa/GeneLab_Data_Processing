@@ -8,10 +8,12 @@ import pandas as pd
 
 AFFYMETRIX_SOFTWARE_DPPD = [
     "R",
+    "Bioconductor",
     "DT",
     "dplyr",
     "tibble",
     "stringr",
+    "purrr",
     "R.utils",
     "oligo",
     "limma",
@@ -37,8 +39,8 @@ ASSUMED_SOFTWARE = [{
 ## Used when the R library metadata doesn't encode any URLS
 HOMEPAGE_MAP = {
     "statmod":"https://cran.r-project.org/web/packages/statmod/index.html",
-    "biomaRt":"https://bioconductor.org/packages/3.14/bioc/html/biomaRt.html", # UPDATE ON biomaRt version update
-    "oligo":"https://www.bioconductor.org/packages/3.14/bioc/html/oligo.html", # UPDATE ON biomaRt version update
+    "biomaRt":"https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html", # UPDATE ON biomaRt version update
+    "oligo":"https://www.bioconductor.org/packages/3.20/bioc/html/oligo.html", # UPDATE ON biomaRt version update
 }
 
 @click.command()
@@ -60,6 +62,7 @@ def yamlToMarkdown(input_yaml: Path, filename: str, skip_de: bool):
     if skip_de:
         AFFYMETRIX_SOFTWARE_DPPD.remove('limma')
         AFFYMETRIX_SOFTWARE_DPPD.remove('statmod')
+        AFFYMETRIX_SOFTWARE_DPPD.remove('matrixstats')
 
     # Filter to direct software used (i.e. exclude dependencies of the software)
     df = df.loc[df["name"].str.lower().isin(AFFYMETRIX_SOFTWARE_DPPD)]

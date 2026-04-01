@@ -143,6 +143,8 @@ nextflow run NF_MAAffymetrix_1.0.5/main.nf \
 ```bash
 nextflow run NF_MAAffymetrix_1.0.5/main.nf \ 
    -profile singularity \
+   --osdAccession OSD-266 \
+   --gldsAccession GLDS-266 \
    --isaArchivePath </path/to/isaArchive> 
 ```
 
@@ -157,7 +159,7 @@ nextflow run NF_MAAffymetrix_1.0.5/main.nf \
 
 <br>
 
-**Additional Required Parameters For [Approach 1](#3a-approach-1-run-the-workflow-on-a-genelab-agilent-1-channel-microarray-dataset):**
+**Additional Required Parameters For [Approach 1](#3a-approach-1-run-the-workflow-on-a-genelab-affymetrix-microarray-dataset):**
 
 * `--osdAccession OSD-###` – specifies the OSD ID to process through the NF_MAAffymetrix workflow (replace ### with the OSD number)
 
@@ -171,9 +173,21 @@ nextflow run NF_MAAffymetrix_1.0.5/main.nf \
 
 <br>
 
+**Additional Required Parameters For [Approach 3](#3c-approach-3-run-the-workflow-using-an-isa-archive):**
+
+* `--osdAccession OSD-###` – specifies the OSD ID to process through the NF_MAAffymetrix workflow (replace ### with the OSD number)
+
+* `--gldsAccession GLDS-###` – specifies the GLDS ID to process through the NF_MAAffymetrix workflow (replace ### with the GLDS number) 
+
+* `--isaArchivePath` - specifies the path to a previously-downloaded *ISA.zip (Default: an *ISA.zip is automatically fetched from the GeneLab Repository for the GLDS dataset being processed) 
+
+<br>
+
 **Optional Parameters:**
 
 * `--skipVV` - skip the automated V&V processes (Default: the automated V&V processes are active) 
+
+* `--skipDE` - skip the differential expression analysis (Default: the differential expression analysis is performed)
 
 * `--resultsDir` - specifies the output directory for all files produced by the workflow (Default: <OSD-NNN_GLDS-NNN> if OSD and GLDS accessions are specified.  Otherwise, the workflow launch directory.) 
 
@@ -203,7 +217,7 @@ The outputs from the Analysis Staging and V&V Pipeline Subworkflows are describe
 > Note: The outputs from the Affymetrix Microarray Processing Subworkflow are documented in the [GL-DPPD-7114-A.md](../../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114-A.md) processing protocol.
 
 **Analysis Staging Subworkflow**
-
+> Note: only applicable for [Approach 1](#3a-approach-1-run-the-workflow-on-a-genelab-affymetrix-microarray-dataset) and [Approach 3](#3c-approach-3-run-the-workflow-using-an-isa-archive)
    - Output:
      - \*_microarray_v1_runsheet.csv (table containing metadata required for processing, including the raw reads files location)
      - \*-ISA.zip (the ISA archive of the GLDS datasets to be processed, downloaded from the GeneLab Data Repository)

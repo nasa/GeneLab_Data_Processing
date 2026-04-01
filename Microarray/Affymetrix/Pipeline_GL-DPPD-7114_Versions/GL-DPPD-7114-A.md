@@ -6,18 +6,17 @@
 
 ---
 
-**Date:** May XX, 2025  
+**Date:** May XX, 2026  
 **Revision:** -A  
 **Document Number:** GL-DPPD-7114-A   
 
 **Submitted by:**  
-Crystal Han (GeneLab Data Processing Team)  
+Crystal Han and Jihan Yehia (GeneLab Data Processing Team)  
 
 **Approved by:**  
-Samrawit Gebre (OSDR Project Manager)  
-Danielle Lopez (OSDR Deputy Project Manager)
-Jonathan Galazka (OSDR Project Scientist)  
-Amanda Saravia-Butler (GeneLab Science Lead)  
+Jonathan Galazka (OSDR Project Manager)  
+Danielle Lopez (OSDR Deputy Project Manager)   
+Amanda Saravia-Butler (OSDR Subject Matter Expert)  
 Barbara Novak (GeneLab Data Processing Lead)  
 
 ---
@@ -34,28 +33,30 @@ Software Updates:
 | Program | Previous Version | New Version    |
 |:--------|:-----------------|:---------------|
 |R|4.1.3|4.4.2|
+|R.utils|2.12.2|2.12.3|
 |DT|0.26|0.33|
 |dplyr|1.0.10|1.1.4|
+|glue|1.6.2|1.8.0|
 |tibble|3.1.8|3.2.1|
 |stringr|1.5.0|1.5.1|
-|R.utils|2.12.2|2.12.3|
+|purrr|1.0.1|1.0.2|
+|Bioconductor|3.14|3.20|
 |oligo|1.58.0|1.70.0|
 |limma|3.50.3|3.62.2|
-|glue|1.6.2|1.8.0|
 |biomaRt|2.50.0|2.62.0|
 |matrixStats|0.63.0|1.5.0|
 |dp_tools|1.3.4|1.3.5|
 |Quarto|1.2.313|1.6.40|
-|Bioconductor|3.14|3.20|
-|tidyverse|1.3.1|2.0.0|
 
-MA Plots
+Code Changes:
 
-- Added support for plotting HTAFeatureSet data
+- Updated [`fetch_organism_specific_annotation_table()`](#fetch_organism_specific_annotation_table), that is used in [Step 2d](#2d-load-annotation-metadata), to convert figshare ndownloader URLs to direct API endpoints, as ndownloader URLs require redirect handling that is not supported in all programmatic download contexts
 
-Custom Annotations
+- Added support for plotting HTAFeatureSet data in MA plots, see [Step 3c](#3c-ma-plots)
 
 - Added ability to use custom gene annotations when annotations are not available in Biomart or Ensembl FTP, see [Step 8](#8-probeset-annotations)
+
+- Simplified group sample retrieval in [Step 9c](#9c-add-annotation-and-stats-columns-and-format-de-table) to use a more concise `filter/pull/sort` chain instead of `group_by/summarize/filter/pull`, addressing the deprecation warning in dplyr >= 1.1.0 where returning more than 1 row per `summarise()` group is deprecated
 
 ---
 
@@ -98,16 +99,16 @@ Custom Annotations
 |Program|Version|Relevant Links|
 |:------|:------:|:-------------|
 |R|4.4.2|[https://www.r-project.org/](https://www.r-project.org/)|
-|Bioconductor|3.20|[https://bioconductor.org](https://bioconductor.org)|
-|tidyverse|2.0.0|[https://www.tidyverse.org](https://www.tidyverse.org)
+|R.utils|2.12.3|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
 |DT|0.33|[https://github.com/rstudio/DT](https://github.com/rstudio/DT)|
 |dplyr|1.1.4|[https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)|
+|glue|1.8.0|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
 |tibble|3.2.1|[https://tibble.tidyverse.org](https://tibble.tidyverse.org)|
 |stringr|1.5.1|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
-|R.utils|2.12.3|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
+|purrr|1.0.2|[https://purrr.tidyverse.org](https://purrr.tidyverse.org)|
+|Bioconductor|3.20|[https://bioconductor.org](https://bioconductor.org)|
 |oligo|1.70.0|[https://bioconductor.org/packages/3.20/bioc/html/oligo.html](https://bioconductor.org/packages/3.20/bioc/html/oligo.html)|
 |limma|3.62.2|[https://bioconductor.org/packages/3.20/bioc/html/limma.html](https://bioconductor.org/packages/3.20/bioc/html/limma.html)|
-|glue|1.8.0|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
 |biomaRt|2.62.0|[https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html)|
 |matrixStats|1.5.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
 |statmod|1.5.0|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
@@ -126,7 +127,7 @@ Custom Annotations
 > Notes: 
 > - Rather than running the commands below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAffymetrix/examples/runsheet/README.md).
 > 
-> - These command line tools are part of the [dp_tools](https://github.com/J-81/dp_tools) program.
+> - These command line tools are part of the [dp_tools](https://github.com/torres-alexis/dp_tools) program.
 
 ```bash
 ### Download the *ISA.zip file from the GeneLab Repository ###
@@ -136,7 +137,7 @@ dpt-get-isa-archive \
 
 ### Parse the metadata from the *ISA.zip file to create a sample runsheet ###
 
-dpt-isa-to-runsheet --accession GLDS-### \
+dpt-isa-to-runsheet --accession OSD-### \
   --plugin-dir /path/to/dp_tools__microarray_plugin \
   --isa-archive *ISA.zip
 ```
@@ -145,7 +146,7 @@ dpt-isa-to-runsheet --accession GLDS-### \
 
 - `--accession OSD-###` - OSD accession ID (replace ### with the OSD number being processed), used to retrieve the urls for the ISA archive and raw expression files hosted on the GeneLab Repository
 - `--plugin-dir /path/to/dp_tools__microarray_plugin` - specifies the path to the plugin directory defining the dp-tools configuration for the desired assay type. A plugin for both the Affymetrix microarray assay is provided in the [Workflow_Documentation](../Workflow_Documentation/NF_MAAffymetrix/workflow_code/bin/dp_tools__affymetrix/) folder
-- `--isa-archive` - Specifies the *ISA.zip file for the respective GLDS dataset, downloaded in the `dpt-get-isa-archive` command
+- `--isa-archive` - Specifies the *ISA.zip file for the respective OSD dataset, downloaded in the `dpt-get-isa-archive` command
 
 
 **Input Data:**
@@ -173,8 +174,11 @@ dpt-isa-to-runsheet --accession GLDS-### \
 ```R
 ### Install R packages if not already installed ###
 
-install.packages("tidyverse")
 install.packages("R.utils")
+install.packages("dplyr")
+install.packages("tibble")
+install.packages("stringr")
+install.packages("purrr")
 install.packages("glue")
 install.packages("matrixStats")
 install.packages("statmod")
@@ -342,6 +346,13 @@ options(timeout=1000) # ensure enough time for data downloads
     if (nrow(annotation_table) == 0 || annotation_table$genelab_annots_link == "" || is.na(annotation_table$ensemblVersion)) {
       stop(glue::glue("Organism supplied '{organism}' is not supported. See the following url for supported organisms: {annotation_table_link}.  Supported organisms will correspond to a row based on the 'species' column and include a url in the 'genelab_annots_link' column of that row and a version number in the 'ensemblVersion' column."))
     }
+
+    # Convert figshare ndownloader URL to API endpoint
+    annotation_table$genelab_annots_link <- ifelse(
+        grepl('figshare.com/ndownloader/files/', annotation_table$genelab_annots_link),
+        sub('.*/files/([0-9]+).*', 'https://api.figshare.com/v2/file/download/\\1', annotation_table$genelab_annots_link),
+        annotation_table$genelab_annots_link
+    )
 
     return(annotation_table)
   }
@@ -626,7 +637,7 @@ if ( runsheet_paths_are_URIs(df_rs) ) {
   print("Determined Raw Data Locations are URIS")
   local_paths <- retry_with_delay(download_files_from_runsheet, df_rs)
 } else {
-  print("Or Determined Raw Data Locations are local paths")
+  print("Determined Raw Data Locations are local paths")
   local_paths <- df_rs$`Array Data File Path`
 }
 
@@ -1270,7 +1281,7 @@ probeset_expression_matrix.gene_mapped <- probeset_expression_matrix %>%
 - `local_annotation_dir` (path to local annotation directory if using custom annotations, output from [Step 2d](#2d-load-annotation-metadata))
 - `annotation_config_path` (URL or path to annotation config file if using custom annotations, output from [Step 2d](#2d-load-annotation-metadata))
 
-  > Note: See [Affymetrix_array_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/tree/master/Microarray/Affymetrix/Array_Annotations/Affymetrix_array_annotations.csv) for the latest config file used at GeneLab. This file can also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAffymetrix/examples/annotations/README.md).
+  > Note: See [config.csv](../Workflow_Documentation/NF_MAAffymetrix/examples/annotations/config.csv) for the latest annotation config file used at GeneLab. This file can also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAffymetrix/examples/annotations/README.md).
 
 - `probeset_level_data` (R object containing probeset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-probeset-summarization))
 
@@ -1504,15 +1515,10 @@ df_interim <- df_interim %>% dplyr::rename_with(reformat_names, .cols = matches(
 unique_groups <- unique(design_data$group$group)
 for ( i in seq_along(unique_groups) ) {
   current_group <- unique_groups[i]
-  current_samples <- design_data$group %>% 
-                      dplyr::group_by(group) %>%
-                      dplyr::summarize(
-                        samples = sort(unique(sample))
-                      ) %>%
-                      dplyr::filter(
-                        group == current_group
-                      ) %>% 
-                      dplyr::pull()
+  current_samples <- design_data$group %>%
+                      dplyr::filter(group == current_group) %>%
+                      dplyr::pull(sample) %>%
+                      sort()
                     
   print(glue::glue("Computing mean and standard deviation for Group {i} of {length(unique_groups)}"))
   print(glue::glue("Group: {current_group}"))
