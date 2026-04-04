@@ -1616,7 +1616,7 @@ samtools sort --threads NumberOfThreads \
 #### 10a. Filter Coverage Levels Based On Detection
 
 ```bash
-# pileup.sh comes from the bbduk.sh package
+# pileup.sh comes from the BBTools package
 pileup.sh -in sample_GLmetagenomics.bam \
           fastaorf=sample-genes_GLmetagenomics.fasta \
           outorf=sample-gene-cov-and-det.tmp \

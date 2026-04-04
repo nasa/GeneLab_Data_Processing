@@ -3605,7 +3605,7 @@ Filtering based on detection is one way of helping to mitigate non-specific read
 #### 20a. Filter Coverage Levels Based On Detection
 
 ```bash
-# pileup.sh comes from the bbduk.sh package
+# pileup.sh comes from the BBTools package
 pileup.sh -in sample_GLlblMetag.bam \
           fastaorf=sample-genes_GLlblMetag.fasta \
           outorf=sample-gene-cov-and-det.tmp \
