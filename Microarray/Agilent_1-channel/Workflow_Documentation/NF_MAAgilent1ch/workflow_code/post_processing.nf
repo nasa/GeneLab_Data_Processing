@@ -38,16 +38,26 @@ workflow {
     ch_runsheet = Channel.fromPath("${ params.resultsDir }/Metadata/*_runsheet.csv", checkIfExists: true)
     ch_software_versions = Channel.fromPath("${ params.resultsDir }/GeneLab/software_versions_GLmicroarray.md", checkIfExists: true)
     ch_processing_meta = Channel.fromPath("${ params.resultsDir }/GeneLab/meta.sh", checkIfExists: true)
+    
     GENERATE_MD5SUMS(      
       ch_processed_directory, 
       ch_runsheet,       
       "${ projectDir }/bin/${ params.skipDE ? 'dp_tools__agilent_1_channel_skipDE' : 'dp_tools__agilent_1_channel' }" // dp_tools plugin
     )
-    UPDATE_ISA_TABLES(
-      ch_processed_directory, 
-      ch_runsheet,       
-      "${ projectDir }/bin/${ params.skipDE ? 'dp_tools__agilent_1_channel_skipDE' : 'dp_tools__agilent_1_channel' }" // dp_tools plugin
-    )
+
+    def isa_file = file("${ params.resultsDir }/Metadata/*ISA*.zip")
+    if ( isa_file ) {
+      ch_isa = Channel.fromPath("${ params.resultsDir }/Metadata/*ISA*.zip")
+      UPDATE_ISA_TABLES(
+        ch_processed_directory, 
+        ch_runsheet,
+        ch_isa,
+        "${ projectDir }/bin/${ params.skipDE ? 'dp_tools__agilent_1_channel_skipDE' : 'dp_tools__agilent_1_channel' }"
+      )
+    } else {
+      println "${ c_back_bright_red }WARNING: No ISA archive found in ${ params.resultsDir }/Metadata/ -- skipping UPDATE_ISA_TABLES${ c_reset }"
+    }
+    
     GENERATE_PROTOCOL(
       ch_software_versions,
       ch_processing_meta,
