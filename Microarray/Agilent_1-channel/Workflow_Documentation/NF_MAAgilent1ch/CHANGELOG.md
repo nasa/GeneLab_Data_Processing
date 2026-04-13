@@ -13,10 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add option to skip differential expression analysis (`--skipDE`) ([#104](https://github.com/nasa/GeneLab_Data_Processing/issues/104))
 - Add a retry wrapper for functions that utilize internet resources, syncing with [NF_MAAffymetrix_1.0.3](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_MAAffymetrix_1.0.3/Microarray/Affymetrix/Workflow_Documentation/NF_MAAffymetrix)
 - Workflow can now be run using an ISA archive by supplying parameter: 'isaArchivePath' (as either a local path or public web uri), syncing with [NF_MAAffymetrix_1.0.2](https://github.com/asaravia-butler/GeneLab_Data_Processing/tree/NF_MAAffymetrix_1.0.2/Microarray/Affymetrix/Workflow_Documentation/NF_MAAffymetrix)
+- Add conditional execution of UPDATE_ISA_TABLES that is not expected to run in runsheet mode
 
 ### Changed
 
 - Publish directory behavior reworked to use the OSD accession as part of the default name. Now uses `resultsDir` instead of `outputDir` as the parameter name when a user does control the published files directory. Syncing with [NF_MAAffymetrix_1.0.2](https://github.com/asaravia-butler/GeneLab_Data_Processing/tree/NF_MAAffymetrix_1.0.2/Microarray/Affymetrix/Workflow_Documentation/NF_MAAffymetrix)
+- Bump gl-microarray image from version 1.0.0 to 1.1.0
 - Small bug fixes in `Agile1CMP.qmd`
   - Update the custom `fetch_organism_specific_annotation_table()` function, used when loading organism-specific annotation metadata, to convert figshare ndownloader URLs to direct API endpoints, as ndownloader URLs require redirect handling that is not supported in all programmatic download contexts
   - Simplify group sample retrieval during differential expression group-wise statistics computation to use a more concise `filter/pull/sort` chain instead of `group_by/summarize/filter/pull`, addressing the deprecation warning in dplyr >= 1.1.0 where returning more than 1 row per `summarise()` group is deprecated

@@ -31,20 +31,21 @@ Software Updates:
 
 | Program | Previous Version | New Version    |
 |:--------|:-----------------|:---------------|
-|R|4.1.3|4.4.2|
-|R.utils|2.12.2|2.12.3|
-|DT|0.26|0.33|
-|dplyr|1.0.10|1.1.4|
-|ggplot2|3.4.0|3.5.1|
+|R|4.1.3|4.5.3|
+|R.utils|2.12.2|2.13.0|
+|DT|0.26|0.34.0|
+|dplyr|1.0.10|1.2.0|
+|ggplot2|3.4.0|4.0.2|
 |glue|1.6.2|1.8.0|
-|stringr|1.5.0|1.5.1|
-|purrr|1.0.1|1.0.2|
-|Bioconductor|3.14|3.20|
-|limma|3.50.3|3.62.2|
-|biomaRt|2.50.0|2.62.0|
+|stringr|1.5.0|1.6.0|
+|purrr|1.0.1|1.2.1|
+|Bioconductor|3.14|3.22|
+|limma|3.50.3|3.66.0|
+|biomaRt|2.50.0|2.66.0|
 |matrixStats|0.63.0|1.5.0|
+|statmod|1.5.0|1.5.1|
 |dp_tools|1.3.4|1.3.5|
-|Quarto|1.2.313|1.6.40|
+|Quarto|1.2.313|1.9.36|
 
 Code changes:
 
@@ -94,22 +95,22 @@ Code changes:
 
 |Program|Version|Relevant Links|
 |:------|:------:|:-------------|
-|R|4.4.2|[https://www.r-project.org/](https://www.r-project.org/)|
-|R.utils|2.12.3|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
-|DT|0.33|[https://github.com/rstudio/DT](https://github.com/rstudio/DT)|
-|dplyr|1.1.4|[https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)|
-|ggplot2|3.5.1|[https://ggplot2.tidyverse.org](https://ggplot2.tidyverse.org)|
+|R|4.5.3|[https://www.r-project.org/](https://www.r-project.org/)|
+|R.utils|2.13.0|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
+|DT|0.34.0|[https://github.com/rstudio/DT](https://github.com/rstudio/DT)|
+|dplyr|1.2.0|[https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)|
+|ggplot2|4.0.2|[https://ggplot2.tidyverse.org](https://ggplot2.tidyverse.org)|
 |glue|1.8.0|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
-|stringr|1.5.1|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
-|purrr|1.0.2|[https://purrr.tidyverse.org](https://purrr.tidyverse.org)|
-|Bioconductor|3.20|[https://bioconductor.org](https://bioconductor.org)|
-|limma|3.62.2|[https://bioconductor.org/packages/3.20/bioc/html/limma.html](https://bioconductor.org/packages/3.20/bioc/html/limma.html)|
-|biomaRt|2.62.0|[https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html)|
+|stringr|1.6.0|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
+|purrr|1.2.1|[https://purrr.tidyverse.org](https://purrr.tidyverse.org)|
+|Bioconductor|3.22|[https://bioconductor.org](https://bioconductor.org)|
+|limma|3.66.0|[https://bioconductor.org/packages/3.22/bioc/html/limma.html](https://bioconductor.org/packages/3.22/bioc/html/limma.html)|
+|biomaRt|2.66.0|[https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html)|
 |matrixStats|1.5.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
-|statmod|1.5.0|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
+|statmod|1.5.1|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
 |dp_tools|1.3.5|[https://github.com/torres-alexis/dp_tools](https://github.com/torres-alexis/dp_tools)|
 |singularity|3.9|[https://sylabs.io](https://sylabs.io)|
-|Quarto|1.6.40|[https://quarto.org](https://quarto.org)|
+|Quarto|1.9.36|[https://quarto.org](https://quarto.org)|
 
 ---
 
@@ -181,7 +182,7 @@ install.packages("matrixStats")
 install.packages("statmod")
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install(version = "3.20")
+BiocManager::install(version = "3.22")
 BiocManager::install("limma")
 BiocManager::install("biomaRt")
 
@@ -1252,7 +1253,7 @@ norm_data$genes <- norm_data$genes %>%
 **Output Data:**
 
 - `unique_probe_ids` (R object containing probe ID to gene annotation mappings)
-- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html) or custom annotations)
+- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html) or custom annotations)
 
 <br>
 
@@ -1282,7 +1283,7 @@ print(glue::glue("Unique Mapping Count: {slices[['Unique Mapping']]}"))
 
 **Input Data:**
 
-- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html) or custom annotations, output from [Step 7a](#7a-get-probe-annotations) above)
+- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html) or custom annotations, output from [Step 7a](#7a-get-probe-annotations) above)
 
 **Output Data:**
 

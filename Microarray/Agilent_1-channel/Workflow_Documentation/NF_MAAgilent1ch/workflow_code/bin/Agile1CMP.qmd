@@ -1098,7 +1098,7 @@ if (organism %in% c("athaliana") || use_custom_annot) {
     versions_buffer,
     glue::glue("- name: biomaRt"),
     glue::glue("  version: (Not used for this dataset)"),
-    glue::glue("  homepage: https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html"),
+    glue::glue("  homepage: https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html"),
     glue::glue("  workflow task: PROCESS_AGILE1CH")
     ), sep = "\n")
 }
