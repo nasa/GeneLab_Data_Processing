@@ -32,21 +32,22 @@ Software Updates:
 
 | Program | Previous Version | New Version    |
 |:--------|:-----------------|:---------------|
-|R|4.1.3|4.4.2|
-|R.utils|2.12.2|2.12.3|
-|DT|0.26|0.33|
-|dplyr|1.0.10|1.1.4|
+|R|4.1.3|4.5.3|
+|R.utils|2.12.2|2.13.0|
+|DT|0.26|0.34.0|
+|dplyr|1.0.10|1.2.0|
 |glue|1.6.2|1.8.0|
-|tibble|3.1.8|3.2.1|
-|stringr|1.5.0|1.5.1|
-|purrr|1.0.1|1.0.2|
-|Bioconductor|3.14|3.20|
-|oligo|1.58.0|1.70.0|
-|limma|3.50.3|3.62.2|
-|biomaRt|2.50.0|2.62.0|
+|tibble|3.1.8|3.3.1|
+|stringr|1.5.0|1.6.0|
+|purrr|1.0.1|1.2.1|
+|Bioconductor|3.14|3.22|
+|oligo|1.58.0|1.74.0|
+|limma|3.50.3|3.66.0|
+|biomaRt|2.50.0|2.66.0|
 |matrixStats|0.63.0|1.5.0|
+|statmod|1.5.0|1.5.1|
 |dp_tools|1.3.4|1.3.5|
-|Quarto|1.2.313|1.6.40|
+|Quarto|1.2.313|1.9.36|
 
 Code Changes:
 
@@ -98,22 +99,22 @@ Code Changes:
 
 |Program|Version|Relevant Links|
 |:------|:------:|:-------------|
-|R|4.4.2|[https://www.r-project.org/](https://www.r-project.org/)|
-|R.utils|2.12.3|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
-|DT|0.33|[https://github.com/rstudio/DT](https://github.com/rstudio/DT)|
-|dplyr|1.1.4|[https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)|
+|R|4.5.3|[https://www.r-project.org/](https://www.r-project.org/)|
+|R.utils|2.13.0|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
+|DT|0.34.0|[https://github.com/rstudio/DT](https://github.com/rstudio/DT)|
+|dplyr|1.2.0|[https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)|
 |glue|1.8.0|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
-|tibble|3.2.1|[https://tibble.tidyverse.org](https://tibble.tidyverse.org)|
-|stringr|1.5.1|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
-|purrr|1.0.2|[https://purrr.tidyverse.org](https://purrr.tidyverse.org)|
-|Bioconductor|3.20|[https://bioconductor.org](https://bioconductor.org)|
-|oligo|1.70.0|[https://bioconductor.org/packages/3.20/bioc/html/oligo.html](https://bioconductor.org/packages/3.20/bioc/html/oligo.html)|
-|limma|3.62.2|[https://bioconductor.org/packages/3.20/bioc/html/limma.html](https://bioconductor.org/packages/3.20/bioc/html/limma.html)|
-|biomaRt|2.62.0|[https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html)|
+|tibble|3.3.1|[https://tibble.tidyverse.org](https://tibble.tidyverse.org)|
+|stringr|1.6.0|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
+|purrr|1.2.1|[https://purrr.tidyverse.org](https://purrr.tidyverse.org)|
+|Bioconductor|3.22|[https://bioconductor.org](https://bioconductor.org)|
+|oligo|1.74.0|[https://bioconductor.org/packages/3.22/bioc/html/oligo.html](https://bioconductor.org/packages/3.22/bioc/html/oligo.html)|
+|limma|3.66.0|[https://bioconductor.org/packages/3.22/bioc/html/limma.html](https://bioconductor.org/packages/3.22/bioc/html/limma.html)|
+|biomaRt|2.66.0|[https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html)|
 |matrixStats|1.5.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
-|statmod|1.5.0|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
+|statmod|1.5.1|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
 |dp_tools|1.3.5|[https://github.com/torres-alexis/dp_tools](https://github.com/torres-alexis/dp_tools)|
-|Quarto|1.6.40|[https://quarto.org](https://quarto.org)|
+|Quarto|1.9.36|[https://quarto.org](https://quarto.org)|
 ---
 
 # General processing overview with example commands  
@@ -184,7 +185,7 @@ install.packages("matrixStats")
 install.packages("statmod")
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install(version = "3.20")
+BiocManager::install(version = "3.22")
 BiocManager::install("limma")
 BiocManager::install("biomaRt")
 BiocManager::install("oligo")
@@ -1288,7 +1289,7 @@ probeset_expression_matrix.gene_mapped <- probeset_expression_matrix %>%
 **Output Data:**
 
 - `unique_probe_ids` (R object containing probeset ID to gene annotation mappings)
-- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html) or custom annotations)
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html) or custom annotations)
 
 <br>
 
@@ -1315,7 +1316,7 @@ print(glue::glue("Unique Mapping Count: {slices[['Unique Mapping']]}"))
 
 **Input Data:**
 
-- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
 
 **Output Data:**
 
@@ -1410,7 +1411,7 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 
 - `df_rs` (R dataframe containing information from the runsheet, output from [Step 2c](#2c-load-metadata-and-raw-data))
 - `annot_key` (keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL', defined in [Step 8a](#8a-get-probeset-annotations))
-- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
 - `background_corrected_data` (R object containing background-corrected microarray data, output from [Step 4](#4-background-correction))
 - `norm_data` (R object containing background-corrected and normalized microarray data, output from [Step 5](#5-between-array-normalization))
 - `unique_probe_ids` (R object containing probeset ID to gene annotation mappings, output from [Step 8a](#8a-get-probeset-annotations))
@@ -1613,7 +1614,7 @@ write.csv(df_interim, file.path(DIR_DGE, "differential_expression_GLmicroarray.c
 
 - `design_data` (a list of R objects containing the sample information and metadata, output from [Step 9a](#9a-generate-design-matrix) above)
 - INTERIM.csv (statistical values from individual probeset level DE analysis, output from [Step 9b](#9b-perform-individual-probeset-level-de) above)
-- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
 
 **Output Data:**
 

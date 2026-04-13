@@ -39,8 +39,8 @@ ASSUMED_SOFTWARE = [{
 ## Used when the R library metadata doesn't encode any URLS
 HOMEPAGE_MAP = {
     "statmod":"https://cran.r-project.org/web/packages/statmod/index.html",
-    "biomaRt":"https://bioconductor.org/packages/3.20/bioc/html/biomaRt.html", # UPDATE ON biomaRt version update
-    "oligo":"https://www.bioconductor.org/packages/3.20/bioc/html/oligo.html", # UPDATE ON biomaRt version update
+    "biomaRt":"https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html", # UPDATE ON biomaRt version update
+    "oligo":"https://www.bioconductor.org/packages/3.22/bioc/html/oligo.html", # UPDATE ON biomaRt version update
 }
 
 @click.command()

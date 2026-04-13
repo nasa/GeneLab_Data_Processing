@@ -11,9 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for custom annotations, see [specification](examples/annotations/README.md) ([#113](https://github.com/nasa/GeneLab_Data_Processing/issues/113))
 - Add option to skip differential expression analysis (`--skipDE`) ([#104](https://github.com/nasa/GeneLab_Data_Processing/issues/104))
+- Add conditional execution of UPDATE_ISA_TABLES that is not expected to run in runsheet mode
 
 ### Changed
 
+- Bump gl-microarray image from version 1.0.0 to 1.1.0
+- Update software table generation to exclude `R.utils` from table if data files are not compressed ([#99](https://github.com/nasa/GeneLab_Data_Processing/issues/99))
+- Update processed data protocol to auto-populate workflow version from `nextflow.config` and add Caenorhabditis elegans, Saccharomyces cerevisiae, Escherichia coli, and Pseudomonas aeruginosa to supported organisms ([#98](https://github.com/nasa/GeneLab_Data_Processing/issues/98))
 - Small bug fixes in `Affymetrix.qmd`
   - Check if `getBM()` returned results before concatenating it to dataframe to avoid error in `bind_rows()` ([#96](https://github.com/nasa/GeneLab_Data_Processing/issues/96))
   - When renaming column names, specify which columns to rename to avoid unintentional renaming ([#97](https://github.com/nasa/GeneLab_Data_Processing/issues/97))
@@ -23,8 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Decrease legend size when sample names are long to prevent it from covering plot ([#107](https://github.com/nasa/GeneLab_Data_Processing/issues/107))
   - Update the custom `fetch_organism_specific_annotation_table()` function, used when loading organism-specific annotation metadata, to convert figshare ndownloader URLs to direct API endpoints, as ndownloader URLs require redirect handling that is not supported in all programmatic download contexts
   - Simplify group sample retrieval during differential expression group-wise statistics computation to use a more concise `filter/pull/sort` chain instead of `group_by/summarize/filter/pull`, addressing the deprecation warning in dplyr >= 1.1.0 where returning more than 1 row per `summarise()` group is deprecated
-- Update processed data protocol to auto-populate workflow version from `nextflow.config` and add Caenorhabditis elegans, Saccharomyces cerevisiae, Escherichia coli, and Pseudomonas aeruginosa to supported organisms ([#98](https://github.com/nasa/GeneLab_Data_Processing/issues/98))
-- Update software table generation to exclude `R.utils` from table if data files are not compressed ([#99](https://github.com/nasa/GeneLab_Data_Processing/issues/99))
 
 ## [1.0.4](https://github.com/nasa/GeneLab_Data_Processing/tree/NF_MAAffymetrix_1.0.4/Microarray/Affymetrix/Workflow_Documentation/NF_MAAffymetrix) - 2024-05-17
 
