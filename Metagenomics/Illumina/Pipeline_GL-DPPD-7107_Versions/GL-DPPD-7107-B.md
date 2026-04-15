@@ -44,8 +44,10 @@ Software Updates and Changes:
 | dplyr        |       N/A        |    1.2.0    |
 | ggplot2      |       N/A        |    4.0.2    |
 | glue         |       N/A        |    1.8.0    |
+| magrittr     |       N/A        |    2.0.5    |
 | purrr        |       N/A        |    1.2.1    |
 | readr        |       N/A        |    2.2.0    |
+| scales       |       N/A        |    1.4.0    |
 | stringr      |       N/A        |    1.6.0    |
 | tibble       |       N/A        |    3.3.1    |
 | tidyr        |       N/A        |    1.3.2    |
@@ -213,8 +215,8 @@ Software Updates and Changes:
 | readr        |  2.2.0  | [https://readr.tidyverse.org](https://readr.tidyverse.org)                                                                                         |
 | scales       |  1.4.0  | [https://scales.r-lib.org](https://scales.r-lib.org)                                                                                               |
 | stringr      |  1.6.0  | [https://stringr.tidyverse.org](https://stringr.tidyverse.org)                                                                                     |
-| tibble       |  3.3.1  | [https://tibble.tidyverse.org](https://tibble.tidyverse.orgtext)                                                                                   |
-| tidyr        |  1.3.2  | [https://tidyr.tidyverse.org](https://tidyr.tidyverse.orgtext)                                                                                     |
+| tibble       |  3.3.1  | [https://tibble.tidyverse.org](https://tibble.tidyverse.org)                                                                                       |
+| tidyr        |  1.3.2  | [https://tidyr.tidyverse.org](https://tidyr.tidyverse.org)                                                                                         |
 > **Note:** pavian R package requires R version 4.0.5
 
 ---
