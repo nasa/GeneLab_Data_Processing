@@ -2,7 +2,7 @@
 
 > **Documents [`GL-DPPD-7116`](Pipeline_GL-DPPD-7116_Versions/GL-DPPD-7116.md) and [`GL-DPPD-7117.md`](Pipeline_GL-DPPD-7117_Versions/GL-DPPD-7117.md) contain overview and example commands for how GeneLab processes low-biomass metagenomics datasets for long- and short-read data, respectively. See the [Repository Links](#repository-links) descriptions below for more information. Processed data output files and a GeneLab data processing summary are provided for each GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).**  
 
-> Note: The exact processing commands and Metagenomics workflow version used for specific GLDS datasets can be found in the *_processing_info.zip file under "Files" for each respective GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/). 
+> Note: The exact processing commands and MetagenomeSeq workflow version used for specific GLDS datasets can be found in the *_processing_info.zip file under "Files" for each respective GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/). 
 
 ---
 ## Repository Links
@@ -17,7 +17,7 @@
 
 * [**Workflow_Documentation**](Workflow_Documentation)
 
-  - Contains instructions for installing and running the GeneLab MGIllumina workflow
+  - Contains instructions for installing and running the GeneLab MetagenomeSeq workflow
 
 ---
 **Developed by:**  
