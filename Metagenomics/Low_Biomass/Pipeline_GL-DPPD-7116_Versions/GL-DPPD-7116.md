@@ -190,8 +190,8 @@ Barbara Novak (GeneLab Data Processing Lead)
 | readr        |  2.2.0  | [https://readr.tidyverse.org](https://readr.tidyverse.org)                                                                                         |
 | scales       |  1.4.0  | [https://scales.r-lib.org](https://scales.r-lib.org)                                                                                               |
 | stringr      |  1.6.0  | [https://stringr.tidyverse.org](https://stringr.tidyverse.org)                                                                                     |
-| tibble       |  3.3.1  | [https://tibble.tidyverse.org](https://tibble.tidyverse.orgtext)                                                                                   |
-| tidyr        |  1.3.2  | [https://tidyr.tidyverse.org](https://tidyr.tidyverse.orgtext)                                                                                     |
+| tibble       |  3.3.1  | [https://tibble.tidyverse.org](https://tibble.tidyverse.org)                                                                                       |
+| tidyr        |  1.3.2  | [https://tidyr.tidyverse.org](https://tidyr.tidyverse.org)                                                                                         |
 > **Note:** pavian R package requires R version 4.0.5
 ---
 
