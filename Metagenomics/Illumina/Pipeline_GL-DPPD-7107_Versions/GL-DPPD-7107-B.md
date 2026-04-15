@@ -4,7 +4,7 @@
 
 ---
 
-**Date:** April MM, 2026  
+**Date:** April 3, 2026  
 **Revision:** B  
 **Document Number:** GL-DPPD-7107  
 
@@ -177,39 +177,41 @@ Software Updates and Changes:
 
 | Program      | Version | Relevant Links                                                                                                                                     |
 | :----------- | :-----: | :------------------------------------------------------------------------------------------------------------------------------------------------- |
-| BBTools      |  39.80  | [https://bbmap.org/](https://bbmap.org/)                                                                                                           |
+| BBTools      |  39.81  | [https://bbmap.org/](https://bbmap.org/)                                                                                                           |
 | bit          | 1.13.15 | [https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit](https://github.com/AstrobioMike/bioinf_tools#bioinformatics-tools-bit)     |
 | bowtie2      |  2.5.5  | [https://bowtie-bio.sourceforge.net/bowtie2/index.shtml](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml)                                   |
-| CAT          |  5.2.3  | [https://github.com/MGXlab/CAT_pack](https://github.com/MGXlab/CAT_pack)                                                                           |
-| CheckM       |  1.1.3  | [https://github.com/Ecogenomics/CheckM](https://github.com/Ecogenomics/CheckM)                                                                     |
+| CAT          |   5.3   | [https://github.com/MGXlab/CAT_pack](https://github.com/MGXlab/CAT_pack)                                                                           |
+| CheckM       |  1.2.5  | [https://github.com/Ecogenomics/CheckM](https://github.com/Ecogenomics/CheckM)                                                                     |
 | fastp        |  1.3.1  | [https://github.com/OpenGene/fastp](https://github.com/OpenGene/fastp)                                                                             |
 | FastQC       | 0.12.1  | [https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)                           |
-| GTDB-Tk      |  2.4.0  | [https://github.com/Ecogenomics/GTDBTk](https://github.com/Ecogenomics/GTDBTk)                                                                     |
+| GTDB-Tk      |  2.6.1  | [https://github.com/Ecogenomics/GTDBTk](https://github.com/Ecogenomics/GTDBTk)                                                                     |
 | HUMAnN       |   3.9   | [https://github.com/biobakery/humann](https://github.com/biobakery/humann)                                                                         |
 | Kaiju        | 1.10.1  | [https://bioinformatics-centre.github.io/kaiju/](https://bioinformatics-centre.github.io/kaiju/)                                                   |
-| KEGG-Decoder |  1.2.2  | [https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder](https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder) |
+| KEGG-Decoder |   1.3   | [https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder](https://github.com/bjtully/BioData/tree/master/KEGGDecoder#kegg-decoder) |
 | KOFamScan    |  1.3.0  | [https://github.com/takaram/kofam_scan#kofamscan](https://github.com/takaram/kofam_scan#kofamscan)                                                 |
-| Kraken2      |  2.1.6  | [https://github.com/DerrickWood/kraken2](https://github.com/DerrickWood/kraken2)                                                                   |
-| KrakenTools  |   1.2   | [https://ccb.jhu.edu/software/krakentools/](https://ccb.jhu.edu/software/krakentools/)                                                             |
+| Kraken2      | 2.17.1  | [https://github.com/DerrickWood/kraken2](https://github.com/DerrickWood/kraken2)                                                                   |
+| KrakenTools  |  1.2.1  | [https://ccb.jhu.edu/software/krakentools/](https://ccb.jhu.edu/software/krakentools/)                                                             |
 | Krona        |  2.8.1  | [https://github.com/marbl/Krona/wiki](https://github.com/marbl/Krona/wiki)                                                                         |
 | MEGAHIT      |  1.2.9  | [https://github.com/voutcn/megahit#megahit](https://github.com/voutcn/megahit#megahit)                                                             |
-| MetaBAT      |  2.15   | [https://bitbucket.org/berkeleylab/metabat/src/master/](https://bitbucket.org/berkeleylab/metabat/src/master/)                                     |
+| MetaBAT      |  2.18   | [https://bitbucket.org/berkeleylab/metabat/src/master/](https://bitbucket.org/berkeleylab/metabat/src/master/)                                     |
 | MetaPhlAn    |  4.1.0  | [https://github.com/biobakery/MetaPhlAn](https://github.com/biobakery/MetaPhlAn)                                                                   |
 | MultiQC      | 1.27.1  | [https://multiqc.info/](https://multiqc.info/)                                                                                                     |
 | Prodigal     |  2.6.3  | [https://github.com/hyattpd/Prodigal#prodigal](https://github.com/hyattpd/Prodigal#prodigal)                                                       |
-| samtools     | 1.22.1  | [https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)                                                     |
+| samtools     | 1.23.1  | [https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)                                                     |
+| SPAdes       |  4.2.0  | [https://github.com/ablab/spades](https://github.com/ablab/spades)                                                                                 |
 | R            |  4.5.3  | [https://www.r-project.org](https://www.r-project.org)                                                                                             |
-| decontam     | 1.28.0  | [https://www.bioconductor.org/packages/release/bioc/html/decontam.html](https://www.bioconductor.org/packages/release/bioc/html/decontam.html)     |
 | dplyr        |  1.2.0  | [https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)                                                                                         |
 | ggplot2      |  4.0.2  | [https://ggplot2.tidyverse.org](https://ggplot2.tidyverse.org)                                                                                     |
-| htmlwidgets  |  1.6.4  | [http://www.htmlwidgets.org](http://www.htmlwidgets.org)                                                                                           |
 | glue         |  1.8.0  | [https://glue.tidyverse.org](https://glue.tidyverse.org)                                                                                           |
-| pavian       |  1.2.0* | [https://github.com/fbreitwieser/pavian](https://github.com/fbreitwieser/pavian)                                                                   |
+| htmlwidgets  |  1.6.4  | [http://www.htmlwidgets.org](http://www.htmlwidgets.org)                                                                                           |
+| magrittr     |  2.0.5  | [https://magrittr.tidyverse.org](https://magrittr.tidyverse.org)                                                                                   |
+| pavian       | 1.2.0*  | [https://github.com/fbreitwieser/pavian](https://github.com/fbreitwieser/pavian)                                                                   |
 | pheatmap     | 1.0.13  | [https://cran.r-project.org/package=pheatmap](https://cran.r-project.org/package=pheatmap)                                                         |
 | phyloseq     | 1.54.0  | [https://www.bioconductor.org/packages/release/bioc/html/phyloseq.html](https://www.bioconductor.org/packages/release/bioc/html/phyloseq.html)     |
 | plotly       | 4.12.0  | [https://plotly-r.com](https://plotly-r.com)                                                                                                       |
 | purrr        |  1.2.1  | [https://purrr.tidyverse.org](https://purrr.tidyverse.org)                                                                                         |
 | readr        |  2.2.0  | [https://readr.tidyverse.org](https://readr.tidyverse.org)                                                                                         |
+| scales       |  1.4.0  | [https://scales.r-lib.org](https://scales.r-lib.org)                                                                                               |
 | stringr      |  1.6.0  | [https://stringr.tidyverse.org](https://stringr.tidyverse.org)                                                                                     |
 | tibble       |  3.3.1  | [https://tibble.tidyverse.org](https://tibble.tidyverse.orgtext)                                                                                   |
 | tidyr        |  1.3.2  | [https://tidyr.tidyverse.org](https://tidyr.tidyverse.orgtext)                                                                                     |
@@ -411,13 +413,24 @@ multiqc --zip-data-dir \
 #### 3a. Load libraries
 
 ```R
-library(glue)
+# load libraries
 library(htmlwidgets)
 library(pavian)
 library(pheatmap)
 library(phyloseq)
+
+# load tidyverse libraries
+library(dplyr)
+library(ggplot2)
+library(glue)
+library(magrittr)
 library(plotly)
-library(tidyverse)
+library(purrr)
+library(readr)
+library(scales)
+library(stringr)
+library(tibble)
+library(tidyr)
 ```
 
 #### 3b. Define Custom Functions
