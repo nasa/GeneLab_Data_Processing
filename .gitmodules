@@ -1,11 +1,11 @@
 [submodule "Amplicon/Illumina/Workflow_Documentation/NF_AmpIllumina"]
 	path = Amplicon/Illumina/Workflow_Documentation/NF_AmpIllumina
 	url = https://github.com/nasa/GeneLab_AmpliconSeq_Workflow
-[submodule "Metagenomics/Low_Biomass/Workflow_Documentation/NF_Metagenomics"]
-	path = Metagenomics/Low_Biomass/Workflow_Documentation/NF_Metagenomics
+[submodule "Metagenomics/Low_Biomass/Workflow_Documentation/NF_MetagenomeSeq"]
+	path = Metagenomics/Low_Biomass/Workflow_Documentation/NF_MetagenomeSeq
 	url = https://github.com/nasa/GeneLab_Metagenomics_Workflow/
 	branch = DEV
-[submodule "Metagenomics/Illumina/Workflow_Documentation/NF_Metagenomics"]
-	path = Metagenomics/Illumina/Workflow_Documentation/NF_Metagenomics
+[submodule "Metagenomics/Illumina/Workflow_Documentation/NF_MetagenomeSeq"]
+	path = Metagenomics/Illumina/Workflow_Documentation/NF_MetagenomeSeq
 	url = https://github.com/nasa/GeneLab_Metagenomics_Workflow/
 	branch = DEV
