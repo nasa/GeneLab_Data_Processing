@@ -6,8 +6,8 @@
 
 |Pipeline Version|Current Workflow Version (for respective pipeline version)|Nextflow Version| 
 |:---------------|:---------------------------------------------------------|:---------------|
-|*[GL-DPPD-7116.md](../Pipeline_GL_DPPD_7116_Versions/GL-DPPD-7116.md)|[NF_MetagenomeSeq_1.0.0](https://github.com/nasa/GeneLab_Metagenomics_Workflow)|24.04.4|
-|*[GL-DPPD-7117.md](../Pipeline_GL_DPPD_7117_Versions/GL-DPPD-7117.md)|[NF_MetagenomeSeq_1.0.0](https://github.com/nasa/GeneLab_Metagenomics_Workflow)|24.04.4|
+|*[GL-DPPD-7116.md](../Pipeline_GL-DPPD-7116_Versions/GL-DPPD-7116.md)|[NF_MetagenomeSeq_1.0.0](https://github.com/nasa/GeneLab_Metagenomics_Workflow)|24.04.4|
+|*[GL-DPPD-7117.md](../Pipeline_GL-DPPD-7117_Versions/GL-DPPD-7117.md)|[NF_MetagenomeSeq_1.0.0](https://github.com/nasa/GeneLab_Metagenomics_Workflow)|24.04.4|
 
 
 *Current GeneLab Pipeline/Workflow Implementation
