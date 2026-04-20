@@ -68,10 +68,10 @@ Software Updates and Changes:
   - SILVA SSU r138: "SILVA\_SSU\_r138\_2\_2024.RData"
   - PR2 v4.13: "PR2\_v4\_13\_March2021.RData"
 - Added persistent reference links to DECIPHER databases on Figshare and replaced reference links to 
-  DECIPHER [website](https://www2.decipher.codes/data/Downloads/TrainingSets/)  
-  - [SILVA SSU r138](https://figshare.com/ndownloader/files/52846199)
-  - [UNITE v2024](https://figshare.com/ndownloader/files/52846346)
-  - [PR2 v4.13](https://figshare.com/ndownloader/files/46241917)
+  DECIPHER [website](https://decipher.codes/Downloads.html)  
+  - [SILVA SSU r138](https://doi.org/10.6084/m9.figshare.28550993)
+  - [UNITE v2024](https://doi.org/10.6084/m9.figshare.28551041)
+  - [PR2 v4.13](https://doi.org/10.6084/m9.figshare.25797019)
 
 ---
 
@@ -113,7 +113,7 @@ Software Updates and Changes:
   - [**10. Differential Abundance Testing**](#10-differential-abundance-testing)
     - [10a. ANCOMBC 1](#10a-ancombc-1)
     - [10b. ANCOMBC 2](#10b-ancombc-2)
-    - [10c. DESeq2 ](#10c-deseq2)
+    - [10c. DESeq2](#10c-deseq2)
 
 ---
 
@@ -153,11 +153,13 @@ Software Updates and Changes:
 # Reference databases used
 <update figshare links once the updated DBs are downloaded>
   
-|Program used|Database|DECIPHER Link|GeneLab Figshare Link|GeneLab Download Date|
-|:-----------|:------:|:------------|--------------------:|--------------------:|
-|DECIPHER| SILVA SSU r138_2 | [https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData) |[SILVA_SSU_r138_2_2024.RData](https://figshare.com/ndownloader/files/52846199)| 03/06/2025 |
-|DECIPHER| UNITE v2024 | [https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData) | [UNITE_v2024_April2024.RData](https://figshare.com/ndownloader/files/52846346)| 03/06/2025 |
-|DECIPHER| PR2 v4.13 | [https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData](https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData) | [PR2_v4_13_March2021.RData](https://figshare.com/ndownloader/files/46241917)| 05/10/2024 |
+|Program used|Database|GeneLab Figshare Link|GeneLab Download Date|Original DECIPHER Download Link|
+|:-----------|:-------|:--------------------|:-------------------:|:------------|
+|DECIPHER| SILVA SSU r138_2 | [SILVA_SSU_r138_2_2024.RData](https://doi.org/10.6084/m9.figshare.28550993)| 03/06/2025 | https://www2.decipher.codes/data/Downloads/TrainingSets/SILVA_SSU_r138_2_2024.RData |
+|DECIPHER| UNITE&nbsp;v2024 | [UNITE_v2024_April2024.RData](https://doi.org/10.6084/m9.figshare.28551041)| 03/06/2025 |  https://www2.decipher.codes/data/Downloads/TrainingSets/UNITE_v2024_April2024.RData |
+|DECIPHER| PR2&nbsp;v4.13 | [PR2_v4_13_March2021.RData](https://doi.org/10.6084/m9.figshare.25797019)| 05/10/2024 | https://www2.decipher.codes/data/Downloads/TrainingSets/PR2_v4_13_March2021.RData |
+
+
 ---
 
 # General processing overview with example commands  
