@@ -49,8 +49,8 @@ process VV_AFFYMETRIX {
     # Export versions
     cat >> versions.yml <<END_OF_VERSIONS
     - name: dp_tools
-      version: \$(python -c "import dp_tools; print(dp_tools.__version__)")
-      homepage: https://github.com/J-81/dp_tools
+      version: \$(pip show dp_tools | grep Version | sed 's/Version: //')
+      homepage: https://github.com/torres-alexis/dp_tools
       workflow task: ${task.process}
     END_OF_VERSIONS
     """

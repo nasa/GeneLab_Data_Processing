@@ -4,7 +4,7 @@
 
 ### Implementation Tools <!-- omit in toc -->
 
-The current GeneLab Affymetrix Microarray consensus processing pipeline (NF_MAAffymetrix), [GL-DPPD-7114](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) to run all tools in containers. This workflow (NF_MAAffymetrix) is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow.   
+The current GeneLab Affymetrix Microarray consensus processing pipeline (NF_MAAffymetrix), [GL-DPPD-7114-A](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114-A.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) to run all tools in containers. This workflow (NF_MAAffymetrix) is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow.   
 
 ### Workflow & Subworkflows <!-- omit in toc -->
 
@@ -14,8 +14,8 @@ The current GeneLab Affymetrix Microarray consensus processing pipeline (NF_MAAf
 
 ---
 The NF_MAAffymetrix workflow is composed of three subworkflows as shown in the image above.
-Below is a description of each subworkflow and the additional output files generated that are not already indicated in the [GL-DPPD-7114 pipeline 
-document](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114.md):
+Below is a description of each subworkflow and the additional output files generated that are not already indicated in the [GL-DPPD-7114-A pipeline 
+document](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114-A.md):
 
 1. **Analysis Staging Subworkflow**
 
@@ -26,7 +26,7 @@ document](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114.md):
 2. **Affymetrix Microarray Processing Subworkflow**
 
    - Description:
-     - This subworkflow uses the staged raw data and metadata parameters from the Analysis Staging Subworkflow to generate processed data using the [GL-DPPD-7114 pipeline](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114.md).
+     - This subworkflow uses the staged raw data and metadata parameters from the Analysis Staging Subworkflow to generate processed data using the [GL-DPPD-7114-A pipeline](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114-A.md).
 
 1. **V&V Pipeline Subworkflow**
 
@@ -143,6 +143,8 @@ nextflow run NF_MAAffymetrix_1.0.5/main.nf \
 ```bash
 nextflow run NF_MAAffymetrix_1.0.5/main.nf \ 
    -profile singularity \
+   --osdAccession OSD-266 \
+   --gldsAccession GLDS-266 \
    --isaArchivePath </path/to/isaArchive> 
 ```
 
@@ -157,7 +159,7 @@ nextflow run NF_MAAffymetrix_1.0.5/main.nf \
 
 <br>
 
-**Additional Required Parameters For [Approach 1](#3a-approach-1-run-the-workflow-on-a-genelab-agilent-1-channel-microarray-dataset):**
+**Additional Required Parameters For [Approach 1](#3a-approach-1-run-the-workflow-on-a-genelab-affymetrix-microarray-dataset):**
 
 * `--osdAccession OSD-###` – specifies the OSD ID to process through the NF_MAAffymetrix workflow (replace ### with the OSD number)
 
@@ -171,9 +173,21 @@ nextflow run NF_MAAffymetrix_1.0.5/main.nf \
 
 <br>
 
+**Additional Required Parameters For [Approach 3](#3c-approach-3-run-the-workflow-using-an-isa-archive):**
+
+* `--osdAccession OSD-###` – specifies the OSD ID to process through the NF_MAAffymetrix workflow (replace ### with the OSD number)
+
+* `--gldsAccession GLDS-###` – specifies the GLDS ID to process through the NF_MAAffymetrix workflow (replace ### with the GLDS number) 
+
+* `--isaArchivePath` - specifies the path to a previously-downloaded *ISA.zip (Default: an *ISA.zip is automatically fetched from the GeneLab Repository for the GLDS dataset being processed) 
+
+<br>
+
 **Optional Parameters:**
 
 * `--skipVV` - skip the automated V&V processes (Default: the automated V&V processes are active) 
+
+* `--skipDE` - skip the differential expression analysis (Default: the differential expression analysis is performed)
 
 * `--resultsDir` - specifies the output directory for all files produced by the workflow (Default: <OSD-NNN_GLDS-NNN> if OSD and GLDS accessions are specified.  Otherwise, the workflow launch directory.) 
 
@@ -200,10 +214,10 @@ All R code steps and output are rendered within a Quarto document yielding the f
   
 
 The outputs from the Analysis Staging and V&V Pipeline Subworkflows are described below:
-> Note: The outputs from the Affymetrix Microarray Processing Subworkflow are documented in the [GL-DPPD-7114.md](../../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114.md) processing protocol.
+> Note: The outputs from the Affymetrix Microarray Processing Subworkflow are documented in the [GL-DPPD-7114-A.md](../../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114-A.md) processing protocol.
 
 **Analysis Staging Subworkflow**
-
+> Note: only applicable for [Approach 1](#3a-approach-1-run-the-workflow-on-a-genelab-affymetrix-microarray-dataset) and [Approach 3](#3c-approach-3-run-the-workflow-using-an-isa-archive)
    - Output:
      - \*_microarray_v1_runsheet.csv (table containing metadata required for processing, including the raw reads files location)
      - \*-ISA.zip (the ISA archive of the GLDS datasets to be processed, downloaded from the GeneLab Data Repository)
@@ -212,7 +226,7 @@ The outputs from the Analysis Staging and V&V Pipeline Subworkflows are describe
 **V&V Pipeline Subworkflow**
 
    - Output:
-     - VV_log_VV_AGILE1CH.tsv.MANUAL_CHECKS_PENDING (table containing V&V flags for all checks performed. Also contains rows indicating suggested manual checks focusing on QA plots embedded in the html report)
+     - VV_log_VV_AFFYMETRIX_GLmicroarray.tsv.MANUAL_CHECKS_PENDING (table containing V&V flags for all checks performed. Also contains rows indicating suggested manual checks focusing on QA plots embedded in the html report)
 
 <br>
 

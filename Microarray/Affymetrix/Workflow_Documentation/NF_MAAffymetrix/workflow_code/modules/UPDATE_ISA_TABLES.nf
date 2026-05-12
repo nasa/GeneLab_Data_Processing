@@ -7,6 +7,7 @@ process UPDATE_ISA_TABLES {
   input:
     path(data_dir)
     path(runsheet)
+    path(isa_archive)
     path(dp_tools__affymetrix)
 
   output:
@@ -16,8 +17,8 @@ process UPDATE_ISA_TABLES {
     """
     update_curation_table.py  --root-path ${ data_dir } \\
                               --runsheet-path ${ runsheet } \\
-                              --plug-in-dir ${ dp_tools__affymetrix } \\
-                              --isa-path ${ data_dir }/Metadata/*ISA*.zip
+                                --plug-in-dir ${ dp_tools__affymetrix } \\
+                                --isa-path ${ isa_archive }
 
     # Update assay table with gldsAccession
     sed -i 's/${ params.osdAccession }/${ params.gldsAccession }/g' updated_curation_tables/a*.txt
