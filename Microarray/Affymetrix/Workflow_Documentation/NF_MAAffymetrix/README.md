@@ -226,7 +226,7 @@ The outputs from the Analysis Staging and V&V Pipeline Subworkflows are describe
 **V&V Pipeline Subworkflow**
 
    - Output:
-     - VV_log_VV_AGILE1CH.tsv.MANUAL_CHECKS_PENDING (table containing V&V flags for all checks performed. Also contains rows indicating suggested manual checks focusing on QA plots embedded in the html report)
+     - VV_log_VV_AFFYMETRIX_GLmicroarray.tsv.MANUAL_CHECKS_PENDING (table containing V&V flags for all checks performed. Also contains rows indicating suggested manual checks focusing on QA plots embedded in the html report)
 
 <br>
 
