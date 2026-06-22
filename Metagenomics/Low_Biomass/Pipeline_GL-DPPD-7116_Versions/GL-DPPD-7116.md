@@ -171,13 +171,13 @@ Barbara Novak (GeneLab Data Processing Lead)
 | MetaPhlAn    |  4.1.0  | [https://github.com/biobakery/MetaPhlAn](https://github.com/biobakery/MetaPhlAn)                                                                   |
 | Minimap2     |  2.30   | [https://github.com/lh3/minimap2](https://github.com/lh3/minimap2)                                                                                 |
 | MultiQC      | 1.27.1  | [https://multiqc.info/](https://multiqc.info/)                                                                                                     |
-| NanoPlot     | 1.45.2  | [https://github.com/wdecoster/NanoPlot](https://github.com/wdecoster/NanoPlot)                                                                     |
+| NanoPlot     | 1.46.2  | [https://github.com/wdecoster/NanoPlot](https://github.com/wdecoster/NanoPlot)                                                                     |
 | Porechop     |  0.2.4  | [https://github.com/rrwick/Porechop](https://github.com/rrwick/Porechop)                                                                           |
 | Prodigal     |  2.6.3  | [https://github.com/hyattpd/Prodigal#prodigal](https://github.com/hyattpd/Prodigal#prodigal)                                                       |
 | samtools     | 1.23.1  | [https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)                                                     |
 | R            |  4.5.3  | [https://www.r-project.org](https://www.r-project.org)                                                                                             |
 | decontam     | 1.30.0  | [https://www.bioconductor.org/packages/release/bioc/html/decontam.html](https://www.bioconductor.org/packages/release/bioc/html/decontam.html)     |
-| dplyr        |  1.2.0  | [https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)                                                                                         |
+| dplyr        |  1.2.1  | [https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)                                                                                         |
 | ggplot2      |  4.0.2  | [https://ggplot2.tidyverse.org](https://ggplot2.tidyverse.org)                                                                                     |
 | glue         |  1.8.0  | [https://glue.tidyverse.org](https://glue.tidyverse.org)                                                                                           |
 | htmlwidgets  |  1.6.4  | [http://www.htmlwidgets.org](http://www.htmlwidgets.org)                                                                                           |
@@ -1630,7 +1630,6 @@ library(tidyr)
           )
         )
       sub_metadata[, freq_col] <- as.numeric(sub_metadata[, freq_col])
-      sub_metadata[, prev_col] <- tolower(sub_metadata[, prev_col])
 
     }
 
@@ -1696,14 +1695,44 @@ library(tidyr)
     feature_table <- feature_table[, -1]  %>% as.matrix()
 
     # Prepare metadata
-    metadata <- read_delim(metadata_file) %>% as.data.frame
+    metadata <- read_delim(metadata_file)
+    if (!is.null(prevalence_column) && prevalence_column %in% colnames(metadata)) {
+      metadata <- metadata %>%
+                  mutate(!!prevalence_column := as.character(!!sym(prevalence_column)) %>%
+                  tolower()) %>%
+                  as.data.frame()
+    } else {
+      metadata <- metadata %>% as.data.frame()
+    }
     row.names(metadata) <- metadata[, samples_column]
 
+    samples <- intersect(colnames(feature_table), rownames(metadata))
+    metadata <- metadata[samples, ]
+    feature_table <- feature_table[, samples]
+
+    if (classification_method == "gene-function")  {
+
+      name <- "Combined-gene-level-KO-function"
+
+    } else if (classification_method == "gene-taxonomy") {
+
+      name <- "Combined-gene-level-taxonomy"
+
+    } else if (classification_method == "contig-taxonomy") {
+
+      name <- "Combined-contig-level-taxonomy"
+
+    } else {
+
+      name <- classification_method
+
+    }
+
     # Run decontam
-    # Assign prev and freq column names to NULL if the values in the supplied columns aren't unique
-    if( length(unique(metadata[, prev_col])) == 1) prev_col <- NULL
-    if( length(unique(metadata[, freq_col])) == 1) freq_col <- NULL
-    contamdf <- run_decontam(feature_table, metadata, threshold, prev_col, freq_col, ntc_name) 
+    # Assign prevalence and frequency_column column names to NULL if the values in the supplied columns aren't unique
+    if( length(unique(metadata[, prevalence_column])) == 1) prevalence_column <- NULL
+    if( length(unique(metadata[, frequency_column])) == 1) frequency_column <- NULL
+    contamdf <- run_decontam(feature_table, metadata, threshold, prevalence_column, frequency_column, ntc_name) 
 
     contamdf <- as.data.frame(contamdf) %>% rownames_to_column(feature_column)
 
@@ -1711,8 +1740,10 @@ library(tidyr)
     if (classification_method == 'gene-function') { type <- "KO" }
 
     # Write decontaminated feature table and decontam's primary results
-    outfile <- glue("{output_prefix}_decontam_results{assay_suffix}.tsv")
+    outfile <- glue("{output_prefix}{name}_decontam_results{assay_suffix}.tsv")
     write_tsv(x = contamdf, file = outfile)
+
+    taxonomy_methods <- c("kaiju", "kraken2", "metaphlan", "gene-taxonomy", "contig-taxonomy")
 
     # Get the list of contaminants identified by decontam
     contaminants <- contamdf %>%
@@ -1732,9 +1763,13 @@ library(tidyr)
                           negate = TRUE))
 
       rownames(decontaminated_table) <- decontaminated_table[[feature_column]]
-      decontaminated_table <- decontaminated_table[,-1] %>% as.matrix
 
-      outfile <- glue("{output_prefix}_decontam_{type}_table{assay_suffix}.tsv")
+      # Add _species string to output file name if it is a taxonomy method
+      if (any(grep(pattern = classification_method, x = taxonomy_methods))) {
+        outfile <- glue("{output_prefix}{name}_decontam_species_table{assay_suffix}.tsv")
+      } else {
+        outfile <- glue("{output_prefix}{name}_decontam_table{assay_suffix}.tsv")
+      }
       write_tsv(x = decontaminated_table, file = outfile)
 
       return(decontaminated_table)
@@ -1891,9 +1926,8 @@ library(tidyr)
   get_samples <- function(assembly_table_df, sample_names, end_col='species') {
     # Get common samples 
     cols <- colnames(df)
-    index <- grep(end_col, cols)
     start <- grep(end_col, cols) + 1
-    end <- (length(cols) - index)
+    end <- length(cols)
     df_samples <- cols[start:end]
     sample_names <- intersect(df_samples, sample_names)
 
@@ -3036,7 +3070,7 @@ feature_decontam(metadata_file = metadata_table,
                 assay_suffix = "_GLlblMetag")
 
 make_heatmap(metadata_table_file = metadata_table, 
-             feature_table_file = "Gene-families-uniref_decontam_species_table_GLlblMetag.tsv", 
+             feature_table_file = "Gene-families-uniref_decontam_table_GLlblMetag.tsv", 
              samples_column="sample_id", group_column = "group", 
              output_prefix = "Gene-families-uniref_decontam", 
              assay_suffix = "_GLlblMetag", 
@@ -3056,7 +3090,7 @@ feature_decontam(metadata_file = metadata_table,
                 assay_suffix = "_GLlblMetag")
 
 make_heatmap(metadata_table_file = metadata_table, 
-             feature_table_file = "Gene-families-KO_decontam_species_table_GLlblMetag.tsv", 
+             feature_table_file = "Gene-families-KO_decontam_table_GLlblMetag.tsv", 
              samples_column="sample_id", group_column = "group", 
              output_prefix = "Gene-families-KO_decontam", 
              assay_suffix = "_GLlblMetag", 
@@ -3076,7 +3110,7 @@ feature_decontam(metadata_file = metadata_table,
                 assay_suffix = "_GLlblMetag")
 
 make_heatmap(metadata_table_file = metadata_table, 
-             feature_table_file = "Pathway-abundances_decontam_species_table_GLlblMetag.tsv", 
+             feature_table_file = "Pathway-abundances_decontam_table_GLlblMetag.tsv", 
              samples_column="sample_id", group_column = "group", 
              output_prefix = "Pathway-abundances_decontam", 
              assay_suffix = "_GLlblMetag", 
@@ -3102,15 +3136,15 @@ make_heatmap(metadata_table_file = metadata_table,
 
 **Output Data:**
 
-- **Gene-family-uniref_decontam_results_GLlblMetag.tsv** (decontam's result table for gene-family abundances, output from [feature_decontam()](#feature_decontam))
-- **Gene-family-uniref_decontam_species_table_GLlblMetag.tsv** (decontaminated gene-family abundances table, output from [feature_decontam()](#feature_decontam))
-- **Gene-family-uniref_decontam_species_heatmap_GLlblMetag.png** (heatmap of decontaminated gene-family abundances, output from [make_heatmap()](#make_heatmap))
-- **Gene-family-KO_decontam_results_GLlblMetag.tsv** (decontam's result table KO term abundances, output from [feature_decontam()](#feature_decontam))
-- **Gene-family-KO_decontam_species_table_GLlblMetag.tsv** (decontaminated KO term abundances table, output from [feature_decontam()](#feature_decontam))
-- **Gene-family-KO_decontam_species_heatmap_GLlblMetag.png** (heatmap of decontaminated KO term abundances, output from [make_heatmap()](#make_heatmap))
+- **Gene-families-uniref_decontam_results_GLlblMetag.tsv** (decontam's result table for gene-family abundances, output from [feature_decontam()](#feature_decontam))
+- **Gene-families-uniref_decontam_table_GLlblMetag.tsv** (decontaminated gene-family abundances table, output from [feature_decontam()](#feature_decontam))
+- **Gene-families-uniref_decontam_heatmap_GLlblMetag.png** (heatmap of decontaminated gene-family abundances, output from [make_heatmap()](#make_heatmap))
+- **Gene-families-KO_decontam_results_GLlblMetag.tsv** (decontam's result table KO term abundances, output from [feature_decontam()](#feature_decontam))
+- **Gene-families-KO_decontam_table_GLlblMetag.tsv** (decontaminated KO term abundances table, output from [feature_decontam()](#feature_decontam))
+- **Gene-families-KO_decontam_heatmap_GLlblMetag.png** (heatmap of decontaminated KO term abundances, output from [make_heatmap()](#make_heatmap))
 - **Pathway-abundances_decontam_results_GLlblMetag.tsv** (decontam's result table, output from [feature_decontam()](#feature_decontam))
-- **Pathway-abundances_decontam_species_table_GLlblMetag.tsv** (decontaminated species table, output from [feature_decontam()](#feature_decontam))
-- **Pathway-abundances_decontam_species_heatmap_GLlblMetag.png** (barplot after filtering out contaminants, output from [make_heatmap()](#make_heatmap))
+- **Pathway-abundances_decontam_table_GLlblMetag.tsv** (decontaminated species table, output from [feature_decontam()](#feature_decontam))
+- **Pathway-abundances_decontam_heatmap_GLlblMetag.png** (barplot after filtering out contaminants, output from [make_heatmap()](#make_heatmap))
 
 <br>
 
@@ -4359,7 +4393,7 @@ make_heatmap(metadata_table_file = metadata_table,
 > Note: species_table and heatmaps are only generated if 1 or more contaminants were detected
 
 ```R
-feature_table_file <- "genes-KO-functions_table.tsv"
+feature_table_file <- "Combined-gene-level-KO-function_unfiltered_GLlblMetag.tsv"
 metadata_table <- "/path/to/sample/metadata"
 
 # Prepare metadata
@@ -4380,7 +4414,7 @@ decontaminated_table <- feature_decontam(metadata_file = metadata_table,
                                          assay_suffix = "_GLlblMetag")
 
 make_heatmap(metadata_table_file = metadata_table, 
-             feature_table_file = "Combined-gene-level-KO-function_decontam_KO_table_GLlblMetag.tsv", 
+             feature_table_file = "Combined-gene-level-KO-function_decontam_table_GLlblMetag.tsv", 
              samples_column = "sample_id", group_column = "group", 
              output_prefix = "Combined-gene-level-KO-function_decontam", 
              assay_suffix = "_GLlblMetag",
@@ -4405,7 +4439,7 @@ make_heatmap(metadata_table_file = metadata_table,
 **Output Data:**
 
 - **Combined-gene-level-KO-function_decontam_results_GLlblMetag.tsv** (decontam results table, output from [feature_decontam()](#feature_decontam))
-- **Combined-gene-level-KO-function_decontam_KO_table_GLlblMetag.tsv** (decontaminated gene-level KO functions table, output from [feature_decontam()](#feature_decontam))
+- **Combined-gene-level-KO-function_decontam_table_GLlblMetag.tsv** (decontaminated gene-level KO functions table, output from [feature_decontam()](#feature_decontam))
 - **Combined-gene-level-KO-function_decontam_heatmap_GLlblMetag.png** (heatmap of all gene-level KO function assignments after filtering out contaminants, output from [make_heatmap()](#make_heatmap))
 - **Combined-gene-level-KO-function_decontam_top_50_heatmap_GLlblMetag.png** (heatmap of the top 50 gene-level KO function assignments after filtering out contaminants, output from [make_heatmap()](#make_heatmap))
 
@@ -4463,7 +4497,7 @@ make_heatmap(metadata_table_file = metadata_table,
 **Input data:**
 - assembly-summaries_GLlblMetag.tsv (table of assembly summary statistics, output from [Step 15b](#15b-summarize-assemblies))
 - Combined-contig-level-taxonomy-coverages-CPM_GLlblMetag.tsv (table with all samples combined based on contig-level 
-  taxonomic classifications, output from [Step 22](#22-combine-contig-level-coverage-and-taxonomy-for-each-sample))
+  taxonomic classifications, output from [Step 23b](#23b-generate-contig-level-coverage-summary-tables))
 
 **Output data:**
 - Combined-contig-level-taxonomy_unfiltered_GLlblMetag.tsv (aggregated contig-level taxonomy table with samples in columns and species in rows)
