@@ -543,7 +543,7 @@ if (organism %in% c("athaliana")) {
     probe_ids <- unique(norm_data$genes$ProbeName)
 
     # DEBUG:START
-    if ( is.integer(params$DEBUG_limit_biomart_query) ) {
+    if ( is.integer(params$DEBUG_limit_biomart_query) && params$DEBUG_limit_biomart_query > 0 && params$DEBUG_limit_biomart_query < length(probe_ids) ) {
       warning(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
       message(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
       probe_ids <- probe_ids[1:params$DEBUG_limit_biomart_query]
@@ -553,7 +553,7 @@ if (organism %in% c("athaliana")) {
     # Create probe map
     # Run Biomart Queries in chunks to prevent request timeouts
     #   Note: If timeout is occurring (possibly due to larger load on biomart), reduce chunk size
-    CHUNK_SIZE= 1500
+    CHUNK_SIZE= 500
     probe_id_chunks <- split(probe_ids, ceiling(seq_along(probe_ids) / CHUNK_SIZE))
     df_mapping <- data.frame()
     for (i in seq_along(probe_id_chunks)) {
@@ -592,27 +592,37 @@ if (organism %in% c("athaliana")) {
       warning("Need to provide both local_annotation_dir and annotation_config_path to use custom annotation.")
     }
     if (annot_type == 'agilent') {
-      message(glue::glue("Using Agilent Ensembl transcript annotation to retrieve Ensembl Gene IDs from BioMart"))
       print(ensembl)
 
       # read in AllAnnotations file and strip version off of Ensembl Transcript ID
       agilent_table <- read.delim(
           file.path(local_annotation_dir, annot_config$annot_filename[[1]]),
           header = TRUE, na.strings = c('NA', '')
-        )[c('ProbeID', 'EnsemblID')] %>%
+        )[c('ProbeID', 'EnsemblID')] %>% dplyr::filter(!is.na(EnsemblID)) %>%
         dplyr::mutate(EnsemblID = stringr::str_split_i(EnsemblID, "\\.", 1))
 
       stopifnot(nrow(agilent_table) == length(unique(agilent_table$ProbeID)))
 
+      # DEBUG:START
+      if ( is.integer(params$DEBUG_limit_biomart_query) && params$DEBUG_limit_biomart_query > 0 && params$DEBUG_limit_biomart_query < nrow(agilent_table) ) {
+        warning(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
+        message(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
+        transcript_ids <- agilent_table$EnsemblID[1:params$DEBUG_limit_biomart_query]
+      } else {
+        transcript_ids <- agilent_table$EnsemblID
+      }
+      # DEBUG:END
+
       # Map Ensembl Transcript IDs to Ensembl Gene IDs using BioMart
       # Run BioMart Queries in chunks to prevent request timeouts
       #   Note: If timeout is occurring (possibly due to larger load on BioMart), reduce chunk size
-      CHUNK_SIZE= 1500
-      transcript_id_chunks <- split(agilent_table$EnsemblID, ceiling(seq_along(agilent_table$EnsemblID) / CHUNK_SIZE))
+      CHUNK_SIZE= 500
+      transcript_id_chunks <- split(transcript_ids, ceiling(seq_along(transcript_ids) / CHUNK_SIZE))
       id_map <- data.frame()
       for (i in seq_along(transcript_id_chunks)) {
         transcript_id_chunk <- transcript_id_chunks[[i]]
         print(glue::glue("Running BioMart query chunk {i} of {length(transcript_id_chunks)}. Total transcript IDS in query ({length(transcript_id_chunk)})"))
+        message(glue::glue("Running BioMart query chunk {i} of {length(transcript_id_chunks)}. Total transcript IDS in query ({length(transcript_id_chunk)})"))
         chunk_results <- biomaRt::getBM(
             attributes = c(
                 "ensembl_transcript_id",
@@ -625,7 +635,6 @@ if (organism %in% c("athaliana")) {
         if (nrow(chunk_results) > 0) {
           id_map <- id_map %>% dplyr::bind_rows(chunk_results)
         }
-        
         Sys.sleep(10) # Slight break between requests to prevent back-to-back requests
       }
 
