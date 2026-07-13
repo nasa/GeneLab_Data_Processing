@@ -141,12 +141,12 @@ if ( runsheet_paths_are_URIs(df_rs) ) {
 # uncompress files if needed
 if ( all_true(stringr::str_ends(local_paths, ".gz")) ) {
   print("Determined these files are gzip compressed... uncompressing now")
-  # This does the uncompression
+  # This does the decompression
   lapply(local_paths, R.utils::gunzip, remove = FALSE, overwrite = TRUE)
   # This removes the .gz extension to get the uncompressed filenames
   local_paths <- vapply(local_paths, 
                         stringr::str_replace, # Run this function against each item in 'local_paths'
-                        FUN.VALUE = character(1),  # Execpt an character vector as a return
+                        FUN.VALUE = character(1),  # Except an character vector as a return
                         USE.NAMES = FALSE,  # Don't use the input to assign names for the returned list
                         pattern = ".gz$", # first argument for applied function
                         replacement = ""  # second argument for applied function
@@ -170,7 +170,7 @@ raw_data <- limma::read.maimages(df_local_paths$`Local Paths`,
 # Handle raw data which lacks certain replaceable column data
 
 ## This likely arises as Agilent Feature Extraction (the process that generates the raw data files on OSDR) 
-##   gives some user flexibilty in what probe column to ouput
+##   gives some user flexibility in what probe column to output
 
 ## Missing ProbeUID "Unique integer for each unique probe in a design"
 ### Source: https://www.agilent.com/cs/library/usermanuals/public/GEN-MAN-G4460-90057.pdf Page 178
@@ -494,7 +494,7 @@ if (organism %in% c("athaliana")) {
   ensembl_genomes_portal = "plants"
   print(glue::glue("Using ensembl genomes ftp to get specific version of probe id mapping table. Ensembl genomes portal: {ensembl_genomes_portal}, version: {ENSEMBL_VERSION}"))
   expected_attribute_name <- get_biomart_attribute(df_rs)
-  df_mapping <- retry_with_delay(
+  unique_probe_ids <- retry_with_delay(
       get_ensembl_genomes_mappings_from_ftp,
       organism = organism,
       ensembl_genomes_portal = ensembl_genomes_portal,
@@ -537,15 +537,13 @@ if (organism %in% c("athaliana")) {
     }
   }
 
-  if (use_custom_annot) {
-    unloadNamespace("biomaRt")
-  } else {
+  if (!use_custom_annot) {
     print(ensembl)
 
     probe_ids <- unique(norm_data$genes$ProbeName)
 
     # DEBUG:START
-    if ( is.integer(params$DEBUG_limit_biomart_query) ) {
+    if ( is.integer(params$DEBUG_limit_biomart_query) && params$DEBUG_limit_biomart_query > 0 && params$DEBUG_limit_biomart_query < length(probe_ids) ) {
       warning(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
       message(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
       probe_ids <- probe_ids[1:params$DEBUG_limit_biomart_query]
@@ -554,8 +552,8 @@ if (organism %in% c("athaliana")) {
 
     # Create probe map
     # Run Biomart Queries in chunks to prevent request timeouts
-    #   Note: If timeout is occuring (possibly due to larger load on biomart), reduce chunk size
-    CHUNK_SIZE= 1500
+    #   Note: If timeout is occurring (possibly due to larger load on biomart), reduce chunk size
+    CHUNK_SIZE= 500
     probe_id_chunks <- split(probe_ids, ceiling(seq_along(probe_ids) / CHUNK_SIZE))
     df_mapping <- data.frame()
     for (i in seq_along(probe_id_chunks)) {
@@ -577,66 +575,91 @@ if (organism %in% c("athaliana")) {
       
       Sys.sleep(10) # Slight break between requests to prevent back-to-back requests
     }
+  } else {
+    print(glue::glue("Using custom probe annotation for organism: {unique(df_rs$organism)}"))
+    expected_attribute_name <- 'ProbeName'
+
+    annot_type <- 'NO_CUSTOM_ANNOT'
+    if (!is.null(local_annotation_dir) && !is.null(annotation_config_path)) {
+      config_df <- read.csv(annotation_config_path, row.names=1)
+      if (unique(df_rs$`biomart_attribute`) %in% row.names(config_df)) {
+        annot_config <- config_df[unique(df_rs$`biomart_attribute`), ]
+        annot_type <- annot_config$annot_type[[1]]
+      } else {
+        warning(paste0("No entry for '", unique(df_rs$`biomart_attribute`), "' in provided config file: ", annotation_config_path))
+      }
+    } else {
+      warning("Need to provide both local_annotation_dir and annotation_config_path to use custom annotation.")
+    }
+    if (annot_type == 'agilent') {
+      print(ensembl)
+
+      # read in AllAnnotations file and strip version off of Ensembl Transcript ID
+      agilent_table <- read.delim(
+          file.path(local_annotation_dir, annot_config$annot_filename[[1]]),
+          header = TRUE, na.strings = c('NA', '')
+        )[c('ProbeID', 'EnsemblID')] %>% dplyr::filter(!is.na(EnsemblID)) %>%
+        dplyr::mutate(EnsemblID = stringr::str_split_i(EnsemblID, "\\.", 1))
+
+      stopifnot(nrow(agilent_table) == length(unique(agilent_table$ProbeID)))
+
+      # DEBUG:START
+      if ( is.integer(params$DEBUG_limit_biomart_query) && params$DEBUG_limit_biomart_query > 0 && params$DEBUG_limit_biomart_query < nrow(agilent_table) ) {
+        warning(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
+        message(paste("DEBUG MODE: Limiting query to", params$DEBUG_limit_biomart_query, "entries"))
+        transcript_ids <- agilent_table$EnsemblID[1:params$DEBUG_limit_biomart_query]
+      } else {
+        transcript_ids <- agilent_table$EnsemblID
+      }
+      # DEBUG:END
+
+      # Map Ensembl Transcript IDs to Ensembl Gene IDs using BioMart
+      # Run BioMart Queries in chunks to prevent request timeouts
+      #   Note: If timeout is occurring (possibly due to larger load on BioMart), reduce chunk size
+      CHUNK_SIZE= 500
+      transcript_id_chunks <- split(transcript_ids, ceiling(seq_along(transcript_ids) / CHUNK_SIZE))
+      id_map <- data.frame()
+      for (i in seq_along(transcript_id_chunks)) {
+        transcript_id_chunk <- transcript_id_chunks[[i]]
+        print(glue::glue("Running BioMart query chunk {i} of {length(transcript_id_chunks)}. Total transcript IDS in query ({length(transcript_id_chunk)})"))
+        message(glue::glue("Running BioMart query chunk {i} of {length(transcript_id_chunks)}. Total transcript IDS in query ({length(transcript_id_chunk)})"))
+        chunk_results <- biomaRt::getBM(
+            attributes = c(
+                "ensembl_transcript_id",
+                "ensembl_gene_id"
+                ), 
+                filters = "ensembl_transcript_id", 
+                values = transcript_id_chunk, 
+                mart = ensembl)
+
+        if (nrow(chunk_results) > 0) {
+          id_map <- id_map %>% dplyr::bind_rows(chunk_results)
+        }
+        Sys.sleep(10) # Slight break between requests to prevent back-to-back requests
+      }
+
+      df_mapping <- 
+        dplyr::left_join(agilent_table, id_map, dplyr::join_by(EnsemblID == ensembl_transcript_id)) %>%
+        dplyr::select(ProbeID, ensembl_gene_id)
+
+      names(df_mapping) <- c('ProbeName', 'ensembl_gene_id')
+
+    } else if (annot_type == 'custom') {
+      unique_probe_ids <- read.csv(
+        file.path(local_annotation_dir, annot_config$annot_filename[[1]]),
+        header = TRUE, na.strings = c('NA', '')
+      )
+    } else {
+      annot_cols <- c('ProbeName', 'ENTREZID', 'SYMBOL', 'GENENAME', 'ENSEMBL', 'REFSEQ', 'GOSLIM_IDS', 'STRING_id', 'count_gene_mappings', 'gene_mapping_source')
+      unique_probe_ids <- setNames(data.frame(matrix(NA_character_, nrow = 1, ncol = length(annot_cols))), annot_cols)
+    }
   }
 }
 
 # At this point, we have df_mapping from either the biomart live service or the ensembl genomes ftp archive depending on the organism
 # If no df_mapping obtained (e.g., not supported in biomart), use custom annotations; otherwise, merge in-house annotations to df_mapping
 
-if (use_custom_annot) {
-  expected_attribute_name <- 'ProbeName'
-
-  annot_type <- 'NO_CUSTOM_ANNOT'
-  if (!is.null(local_annotation_dir) && !is.null(annotation_config_path)) {
-    config_df <- read.csv(annotation_config_path, row.names=1)
-    if (unique(df_rs$`biomart_attribute`) %in% row.names(config_df)) {
-      annot_config <- config_df[unique(df_rs$`biomart_attribute`), ]
-      annot_type <- annot_config$annot_type[[1]]
-    } else {
-      warning(paste0("No entry for '", unique(df_rs$`biomart_attribute`), "' in provided config file: ", annotation_config_path))
-    }
-  } else {
-    warning("Need to provide both local_annotation_dir and annotation_config_path to use custom annotation.")
-  }
-
-  if (annot_type == 'agilent') {
-    unique_probe_ids <- read.delim(
-      file.path(local_annotation_dir, annot_config$annot_filename[[1]]),
-      header = TRUE, na.strings = c('NA', '')
-    )[c('ProbeID', 'EnsemblID', 'GeneSymbol', 'GeneName', 'RefSeqAccession', 'EntrezGeneID', 'GO')]
-
-    stopifnot(nrow(unique_probe_ids) == length(unique(unique_probe_ids$ProbeID)))
-
-    # Clean columns
-    unique_probe_ids$GO <- purrr::map_chr(stringr::str_extract_all(unique_probe_ids$GO, 'GO:\\d{7}'), ~paste0(unique(.), collapse = '|')) %>% stringr::str_replace('^$', NA_character_)
-
-    names(unique_probe_ids) <- c('ProbeName', 'ENSEMBL', 'SYMBOL', 'GENENAME', 'REFSEQ', 'ENTREZID', 'GOSLIM_IDS')
-
-    unique_probe_ids$STRING_id <- NA_character_
-
-    gene_col <- 'ENSEMBL'
-    if (sum(!is.na(unique_probe_ids$ENTREZID)) > sum(!is.na(unique_probe_ids$ENSEMBL))) {
-      gene_col <- 'ENTREZID'
-    }
-    if (sum(!is.na(unique_probe_ids$SYMBOL)) > max(sum(!is.na(unique_probe_ids$ENTREZID)), sum(!is.na(unique_probe_ids$ENSEMBL)))) {
-      gene_col <- 'SYMBOL'
-    }
-
-    unique_probe_ids <- unique_probe_ids %>%
-                        dplyr::mutate( 
-                          count_gene_mappings = 1 + stringr::str_count(get(gene_col), stringr::fixed("|")),
-                          gene_mapping_source = gene_col
-                        )
-  } else if (annot_type == 'custom') {
-    unique_probe_ids <- read.csv(
-      file.path(local_annotation_dir, annot_config$annot_filename[[1]]),
-      header = TRUE, na.strings = c('NA', '')
-    )
-  } else {
-    annot_cols <- c('ProbeName', 'ENTREZID', 'SYMBOL', 'GENENAME', 'ENSEMBL', 'REFSEQ', 'GOSLIM_IDS', 'STRING_id', 'count_gene_mappings', 'gene_mapping_source')
-    unique_probe_ids <- setNames(data.frame(matrix(NA_character_, nrow = 1, ncol = length(annot_cols))), annot_cols)
-  }
-} else {
+if (!use_custom_annot || annot_type == 'agilent') {
   annot <- read.table(
       as.character(annotation_file_path),
       sep = "\t",
@@ -646,18 +669,18 @@ if (use_custom_annot) {
   )
 
   unique_probe_ids <- df_mapping %>% 
-                        # note: '!!sym(VAR)' syntax allows usage of variable 'VAR' in dplyr functions due to NSE. ref: https://dplyr.tidyverse.org/articles/programming.html # NON_DPPD
-                        dplyr::mutate(dplyr::across(!!sym(expected_attribute_name), as.character)) %>% # Ensure probe ids treated as character type
-                        dplyr::group_by(!!sym(expected_attribute_name)) %>% 
-                        dplyr::summarise(
-                          ENSEMBL = list_to_unique_piped_string(ensembl_gene_id)
-                          ) %>%
-                        # Count number of ensembl IDS mapped
-                        dplyr::mutate( 
-                          count_gene_mappings = 1 + stringr::str_count(ENSEMBL, stringr::fixed("|")),
-                          gene_mapping_source = annot_key
-                        ) %>%
-                        dplyr::left_join(annot, by = c("ENSEMBL" = annot_key))
+    # note: '!!sym(VAR)' syntax allows usage of variable 'VAR' in dplyr functions due to NSE. ref: https://dplyr.tidyverse.org/articles/programming.html # NON_DPPD
+    dplyr::mutate(dplyr::across(!!sym(expected_attribute_name), as.character)) %>% # Ensure probe ids treated as character type
+    dplyr::group_by(!!sym(expected_attribute_name)) %>% 
+    dplyr::summarise(
+      ENSEMBL = list_to_unique_piped_string(ensembl_gene_id)
+      ) %>%
+    # Count number of ensembl IDS mapped
+    dplyr::mutate( 
+      count_gene_mappings = 1 + stringr::str_count(ENSEMBL, stringr::fixed("|")),
+      gene_mapping_source = annot_key
+    ) %>%
+    dplyr::left_join(annot, by = c("ENSEMBL" = annot_key))
 }
 ```
 
@@ -780,7 +803,7 @@ runsheet_to_design_matrix <- function(runsheet_path) {
         group<-study[,1]
     }
     group_names <- paste0("(",group,")",sep = "") # human readable group names
-    group <- sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", group))) # group naming compatible with R models, this maintains the default behaviour of make.names with the exception that 'X' is never prepended to group namesnames(group) <- group_names
+    group <- sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", group))) # group naming compatible with R models, this maintains the default behavior of make.names with the exception that 'X' is never prepended to group names
     names(group) <- group_names
 
     # Format contrasts table, defining pairwise comparisons for all groups
@@ -1022,6 +1045,12 @@ write.csv(df_interim, file.path(DIR_DGE, "differential_expression_GLmicroarray.c
 ## Version Reporting <!-- non DPPD -->
 
 ```{r version-reporting}
+
+# remove biomaRt from session info if not used for this dataset to avoid confusion in version reporting
+if (organism %in% c("athaliana") || (use_custom_annot && annot_type != 'agilent')) {
+  unloadNamespace("biomaRt")
+}
+
 get_versions <- function() {
   clean_url_field <- function(url_vector) {
     # URL field can include multiple entries and newline characters
@@ -1093,7 +1122,7 @@ get_versions <- function() {
 ## Note Libraries that were NOT used during processing
 versions_buffer <- get_versions()
 
-if (organism %in% c("athaliana") || use_custom_annot) {
+if (organism %in% c("athaliana") || (use_custom_annot && annot_type != 'agilent')) {
   versions_buffer <- glue::glue_collapse(c(
     versions_buffer,
     glue::glue("- name: biomaRt"),

@@ -4,7 +4,7 @@
 
 ### Implementation Tools <!-- omit in toc -->
 
-The current GeneLab Agilent 1 Channel Microarray consensus processing pipeline (NF_MAAgilent1ch), [GL-DPPD-7112-A](../../Pipeline_GL-DPPD-7112_Versions/GL-DPPD-7112-A.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) to run all tools in containers. This workflow (NF_MAAgilent1ch) is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow.   
+The current GeneLab Agilent 1 Channel Microarray consensus processing pipeline (NF_MAAgilent1ch), [GL-DPPD-7112-A](../../Pipeline_GL-DPPD-7112_Versions/GL-DPPD-7112-A.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) or [Docker](https://docs.docker.com/get-started/) containers to run all tools. This workflow (NF_MAAgilent1ch) is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://docs.seqera.io/nextflow/) is a useful resource for users who want to modify and/or extend this workflow.   
 
 ### Workflow & Subworkflows <!-- omit in toc -->
 
@@ -33,13 +33,13 @@ Below is a description of each subworkflow and the additional output files gener
      - This subworkflow performs validation and verification (V&V) on the raw and processed data files.  It performs a series of checks on the output files generated and flags the results, using the flag codes indicated in the table below, which are outputted into a log file.  
        **V&V Flags**:
 
-       |Flag Codes|Flag Name|Interpretation|
-       |:---------|:--------|:-------------|
-       | 2    | MANUAL   | Special flag that indicates a manual check that is advised. Often used to advise what assess in QA plots. |
-       | 20    | GREEN   | Indicates the check passed all validation conditions |
-       | 30    | YELLOW  | Indicates the check was flagged for minor issues (e.g. slight outliers) |
-       | 50    | RED     | Indicates the check was flagged for moderate issues (e.g. major outliers) |
-       | 80    | HALT    | Indicates the check was flagged for severe issues that trigger a processing halt (e.g. missing data) |
+       | Flag Codes | Flag Name | Interpretation                                                                                            |
+       | :--------- | :-------- | :-------------------------------------------------------------------------------------------------------- |
+       | 2          | MANUAL    | Special flag that indicates a manual check that is advised. Often used to advise what assess in QA plots. |
+       | 20         | GREEN     | Indicates the check passed all validation conditions                                                      |
+       | 30         | YELLOW    | Indicates the check was flagged for minor issues (e.g. slight outliers)                                   |
+       | 50         | RED       | Indicates the check was flagged for moderate issues (e.g. major outliers)                                 |
+       | 80         | HALT      | Indicates the check was flagged for severe issues that trigger a processing halt (e.g. missing data)      |
 
 <br>
 
@@ -64,9 +64,11 @@ Below is a description of each subworkflow and the additional output files gener
 
 #### 1a. Install Nextflow
 
-Nextflow can be installed either through [Anaconda](https://anaconda.org/bioconda/nextflow) or as documented on the [Nextflow documentation page](https://www.nextflow.io/docs/latest/getstarted.html).
+Nextflow can be installed either through the [Anaconda bioconda channel](https://anaconda.org/bioconda/nextflow) or as documented in the [Nextflow installation documentation](https://docs.seqera.io/nextflow/install).
 
-> Note: If you want to install Anaconda, we recommend installing a Miniconda, Python3 version appropriate for your system, as instructed by [Happy Belly Bioinformatics](https://astrobiomike.github.io/unix/conda-intro#getting-and-installing-conda).  
+
+> [!TIP]
+> If you wish to install Conda, we recommend installing a Miniforge version appropriate for your system, as documented on the [conda-forge website](https://conda-forge.org/download/), where you can find basic binaries for most systems. More detailed miniforge documentation is available in the [miniforge github repository](https://github.com/conda-forge/miniforge).
 > 
 > Once conda is installed on your system, you can install the latest version of Nextflow by running the following commands:
 > 
@@ -83,7 +85,9 @@ Singularity is a container platform that allows usage of containerized software.
 
 We recommend installing Singularity on a system wide level as per the associated [documentation](https://docs.sylabs.io/guides/3.10/admin-guide/admin_quickstart.html).
 
-> Note: Singularity is also available through [Anaconda](https://anaconda.org/conda-forge/singularity).
+> [!TIP]
+> - Singularity is also available through the [Anaconda conda-forge channel](https://anaconda.org/conda-forge/singularity). 
+> - Alternatively, Docker can be used in place of Singularity. To get started with Docker, see the [Docker CE installation documentation](https://docs.docker.com/engine/install/).
 
 <br>
 
@@ -106,7 +110,8 @@ unzip NF_MAAgilent1ch_1.0.5.zip
 ### 3. Run the Workflow
 
 While in the location containing the `NF_MAAgilent1ch_1.0.5` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are three examples of how to run the NF_MAAgilent1ch workflow:
-> Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --ensemblVersion) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
+> [!NOTE]
+> Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --ensemblVersion) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
 
 <br>
 
@@ -196,7 +201,7 @@ All parameters listed above and additional optional arguments for the NF_MAAgile
 nextflow run NF_MAAgilent1ch_1.0.5/main.nf --help
 ```
 
-See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details common to all nextflow workflows.
+See `nextflow run -h` and [Nextflow's CLI run command documentation](https://docs.seqera.io/nextflow/cli) for more options and details common to all nextflow workflows.
 
 <br>
 
@@ -211,7 +216,7 @@ All R code steps and output are rendered within a Quarto document yielding the f
   
 
 The outputs from the Analysis Staging and V&V Pipeline Subworkflows are described below:
-> Note: The outputs from the Agilent 1 Channel Microarray Processing Subworkflow are documented in the [GL-DPPD-7112-A.md](../../../Pipeline_GL-DPPD-7112_Versions/GL-DPPD-7112-A.md) processing protocol.
+> Note: The outputs from the Agilent 1 Channel Microarray Processing Subworkflow are documented in the [GL-DPPD-7112-A.md](../../Pipeline_GL-DPPD-7112_Versions/GL-DPPD-7112-A.md) processing protocol.
 
 **Analysis Staging Subworkflow**
 > Note: only applicable for [Approach 1](#3a-approach-1-run-the-workflow-on-a-genelab-agilent-1-channel-microarray-dataset) and [Approach 3](#3c-approach-3-run-the-workflow-using-an-isa-archive)
@@ -229,7 +234,7 @@ The outputs from the Analysis Staging and V&V Pipeline Subworkflows are describe
 <br>
 
 Standard Nextflow resource usage logs are also produced as follows:
-> Further details about these logs can also found within [this Nextflow documentation page](https://www.nextflow.io/docs/latest/tracing.html#execution-report).
+> Further details about these logs can also found in the [Nextflow Report Documentation](https://docs.seqera.io/nextflow/reports).
 
 **Nextflow Resource Usage Logs**
    - Output:

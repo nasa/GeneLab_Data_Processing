@@ -16,8 +16,8 @@
 | Column Name | Type | Description | Example |
 |:------------|:-----|:------------|:--------|
 | array_design | string | A bioMart attribute identifier denoting the microarray probe/probeset attribute used for annotation mapping. | AGILENT SurePrint G3 GE 8x60k v3 |
-| annot_type | string | Used to determine how the custom annotations are parsed before merging to the data. Currently, only the below are supported: <ul><li>`agilent`: Annotations file is expected to be in the AA (All Annotations) format by [Agilent](https://earray.chem.agilent.com/earray/)</li><li>`custom`: Annotations file is merged as is, expected to have the following columns: `ProbesetID`, `ENTREZID`, `SYMBOL`, `GENENAME`, `ENSEMBL`, `REFSEQ`, `GOSLIM_IDS`, `STRING_id`, `count_gene_mappings`, `gene_mapping_source`</li></ul> | agilent |
-| annot_filename | string | Name of the custom annotations file. This is the AllAnnotations file downloaded from Agilent's eArray web portal. | 072363_D_AA_20240521.txt |
+| annot_type | string | Used to determine how the custom annotations are parsed before merging to the data. Currently, only the below are supported: <ul><li>`agilent`: Annotations file is expected to be in the AA (All Annotations) format created by [Agilent](https://earray.chem.agilent.com/earray/) for catalog arrays. The Ensembl Transcript Stable IDs in the file are used to map to Ensembl Gene Stable IDs after which the standard GeneLab annotation process is used.</li><li>`custom`: Annotations file is merged as-is and expected to have the following columns: `ProbeName`, `ENTREZID`, `SYMBOL`, `GENENAME`, `ENSEMBL`, `REFSEQ`, `GOSLIM_IDS`, `STRING_id`, `count_gene_mappings`, `gene_mapping_source`, where `ENSEMBL` is the Ensembl Gene Stable ID, not the Transcript ID</li></ul> | agilent |
+| annot_filename | string | Name of the custom annotations file. | 072363_D_AA_20240521.txt |
 
 ## Optional columns 
 If the file was downloaded from a website, provide the download link used and date 

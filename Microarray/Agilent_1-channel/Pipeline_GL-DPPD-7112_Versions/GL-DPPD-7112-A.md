@@ -29,29 +29,28 @@ Updated [Ensembl Reference Files](https://github.com/nasa/GeneLab_Data_Processin
 
 Software Updates:
 
-| Program | Previous Version | New Version    |
-|:--------|:-----------------|:---------------|
-|R|4.1.3|4.5.3|
-|R.utils|2.12.2|2.13.0|
-|DT|0.26|0.34.0|
-|dplyr|1.0.10|1.2.0|
-|ggplot2|3.4.0|4.0.2|
-|glue|1.6.2|1.8.0|
-|stringr|1.5.0|1.6.0|
-|purrr|1.0.1|1.2.1|
-|Bioconductor|3.14|3.22|
-|limma|3.50.3|3.66.0|
-|biomaRt|2.50.0|2.66.0|
-|matrixStats|0.63.0|1.5.0|
-|statmod|1.5.0|1.5.1|
-|dp_tools|1.3.4|1.3.5|
-|Quarto|1.2.313|1.9.36|
+| Program      | Previous Version | New Version |
+| :----------- | :--------------- | :---------- |
+| R            | 4.1.3            | 4.5.3       |
+| R.utils      | 2.12.2           | 2.13.0      |
+| dplyr        | 1.0.10           | 1.2.0       |
+| ggplot2      | 3.4.0            | 4.0.2       |
+| glue         | 1.6.2            | 1.8.0       |
+| stringr      | 1.5.0            | 1.6.0       |
+| purrr        | 1.0.1            | 1.2.1       |
+| Bioconductor | 3.14             | 3.22        |
+| limma        | 3.50.3           | 3.66.0      |
+| biomaRt      | 2.50.0           | 2.66.0      |
+| matrixStats  | 0.63.0           | 1.5.0       |
+| statmod      | 1.5.0            | 1.5.1       |
+| dp_tools     | 1.3.4            | 1.3.11      |
+| Quarto       | 1.2.313          | 1.9.36      |
 
 Code changes:
 
 - Updated [`fetch_organism_specific_annotation_table()`](#fetch_organism_specific_annotation_table), that is used in [Step 2d](#2d-load-annotation-metadata), to convert figshare ndownloader URLs to direct API endpoints, as ndownloader URLs require redirect handling that is not supported in all programmatic download contexts
 
-- Added ability to use custom gene annotations when annotations are not available in Biomart or Ensembl FTP, see [Step 7](#7-probe-annotations)
+- Added ability to use custom gene annotations when annotations are not available in BioMart or Ensembl FTP, see [Step 7](#7-probe-annotations)
 
 - Simplified group sample retrieval in [Step 8c](#8c-add-annotation-and-stats-columns-and-format-de-table) to use a more concise `filter/pull/sort` chain instead of `group_by/summarize/filter/pull`, addressing the deprecation warning in dplyr >= 1.1.0 where returning more than 1 row per `summarise()` group is deprecated
 
@@ -61,71 +60,70 @@ Code changes:
 
 - [Software used](#software-used)
 - [General processing overview with example commands](#general-processing-overview-with-example-commands)
-    - [1. Create Sample RunSheet](#1-create-sample-runsheet)
-    - [2. Load Data](#2-load-data)
-      - [2a. Load Libraries and Define Input Parameters](#2a-load-libraries-and-define-input-parameters)
-      - [2b. Define Custom Functions](#2b-define-custom-functions)
-      - [2c. Load Metadata and Raw Data](#2c-load-metadata-and-raw-data)
-      - [2d. Load Annotation Metadata](#2d-load-annotation-metadata)
-    - [3. Raw Data Quality Assessment](#3-raw-data-quality-assessment)
-      - [3a. Density Plot](#3a-density-plot)
-      - [3b. Pseudo Image Plots](#3b-pseudo-image-plots)
-      - [3c. MA Plots](#3c-ma-plots)
-      - [3d. Foreground-Background Plots](#3d-foreground-background-plots)
-      - [3e. Boxplots](#3e-boxplots)
-    - [4. Background Correction](#4-background-correction)
-    - [5. Between Array Normalization](#5-between-array-normalization)
-    - [6. Normalized Data Quality Assessment](#6-normalized-data-quality-assessment)
-      - [6a. Density Plot](#6a-density-plot)
-      - [6b. Pseudo Image Plots](#6b-pseudo-image-plots)
-      - [6c. MA Plots](#6c-ma-plots)
-      - [6d. Boxplots](#6d-boxplots)
-    - [7. Probe Annotations](#7-probe-annotations)
-      - [7a. Get Probe Annotations](#7a-get-probe-annotations)
-      - [7b. Summarize Gene Mapping](#7b-summarize-gene-mapping)
-      - [7c. Generate Annotated Raw and Normalized Expression Tables](#7c-generate-annotated-raw-and-normalized-expression-tables)
-    - [8. Perform Probe Differential Expression (DE)](#8-perform-probe-differential-expression-de)
-      - [8a. Generate Design Matrix](#8a-generate-design-matrix)
-      - [8b. Perform Individual Probe Level DE](#8b-perform-individual-probe-level-de)
-      - [8c. Add Annotation and Stats Columns and Format DE Table](#8c-add-annotation-and-stats-columns-and-format-de-table)
+  - [1. Create Sample RunSheet](#1-create-sample-runsheet)
+  - [2. Load Data](#2-load-data)
+    - [2a. Load Libraries and Define Input Parameters](#2a-load-libraries-and-define-input-parameters)
+    - [2b. Define Custom Functions](#2b-define-custom-functions)
+    - [2c. Load Metadata and Raw Data](#2c-load-metadata-and-raw-data)
+    - [2d. Load Annotation Metadata](#2d-load-annotation-metadata)
+  - [3. Raw Data Quality Assessment](#3-raw-data-quality-assessment)
+    - [3a. Density Plot](#3a-density-plot)
+    - [3b. Pseudo Image Plots](#3b-pseudo-image-plots)
+    - [3c. MA Plots](#3c-ma-plots)
+    - [3d. Foreground-Background Plots](#3d-foreground-background-plots)
+    - [3e. Boxplots](#3e-boxplots)
+  - [4. Background Correction](#4-background-correction)
+  - [5. Between Array Normalization](#5-between-array-normalization)
+  - [6. Normalized Data Quality Assessment](#6-normalized-data-quality-assessment)
+    - [6a. Density Plot](#6a-density-plot)
+    - [6b. Pseudo Image Plots](#6b-pseudo-image-plots)
+    - [6c. MA Plots](#6c-ma-plots)
+    - [6d. Boxplots](#6d-boxplots)
+  - [7. Probe Annotations](#7-probe-annotations)
+    - [7a. Get Probe Annotations](#7a-get-probe-annotations)
+    - [7b. Summarize Gene Mapping](#7b-summarize-gene-mapping)
+    - [7c. Generate Annotated Raw and Normalized Expression Tables](#7c-generate-annotated-raw-and-normalized-expression-tables)
+  - [8. Probe Differential Expression (DE)](#8-probe-differential-expression-de)
+    - [8a. Generate Design Matrix](#8a-generate-design-matrix)
+    - [8b. Perform Individual Probe Level DE](#8b-perform-individual-probe-level-de)
+    - [8c. Add Annotation and Stats Columns and Format DE Table](#8c-add-annotation-and-stats-columns-and-format-de-table)
 
 ---
 
 # Software used  
 
-|Program|Version|Relevant Links|
-|:------|:------:|:-------------|
-|R|4.5.3|[https://www.r-project.org/](https://www.r-project.org/)|
-|R.utils|2.13.0|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
-|DT|0.34.0|[https://github.com/rstudio/DT](https://github.com/rstudio/DT)|
-|dplyr|1.2.0|[https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)|
-|ggplot2|4.0.2|[https://ggplot2.tidyverse.org](https://ggplot2.tidyverse.org)|
-|glue|1.8.0|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
-|stringr|1.6.0|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
-|purrr|1.2.1|[https://purrr.tidyverse.org](https://purrr.tidyverse.org)|
-|Bioconductor|3.22|[https://bioconductor.org](https://bioconductor.org)|
-|limma|3.66.0|[https://bioconductor.org/packages/3.22/bioc/html/limma.html](https://bioconductor.org/packages/3.22/bioc/html/limma.html)|
-|biomaRt|2.66.0|[https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html)|
-|matrixStats|1.5.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
-|statmod|1.5.1|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
-|dp_tools|1.3.5|[https://github.com/torres-alexis/dp_tools](https://github.com/torres-alexis/dp_tools)|
-|singularity|3.9|[https://sylabs.io](https://sylabs.io)|
-|Quarto|1.9.36|[https://quarto.org](https://quarto.org)|
+| Program      | Version | Relevant Links                                                                                                                 |
+| :----------- | :-----: | :----------------------------------------------------------------------------------------------------------------------------- |
+| R            |  4.5.3  | [https://www.r-project.org/](https://www.r-project.org/)                                                                       |
+| R.utils      | 2.13.0  | [https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)                                       |
+| dplyr        |  1.2.0  | [https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)                                                                     |
+| ggplot2      |  4.0.2  | [https://ggplot2.tidyverse.org](https://ggplot2.tidyverse.org)                                                                 |
+| glue         |  1.8.0  | [https://glue.tidyverse.org](https://glue.tidyverse.org)                                                                       |
+| stringr      |  1.6.0  | [https://stringr.tidyverse.org](https://stringr.tidyverse.org)                                                                 |
+| purrr        |  1.2.1  | [https://purrr.tidyverse.org](https://purrr.tidyverse.org)                                                                     |
+| Bioconductor |  3.22   | [https://bioconductor.org](https://bioconductor.org)                                                                           |
+| limma        | 3.66.0  | [https://bioconductor.org/packages/3.22/bioc/html/limma.html](https://bioconductor.org/packages/3.22/bioc/html/limma.html)     |
+| biomaRt      | 2.66.0  | [https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html) |
+| matrixStats  |  1.5.0  | [https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)                               |
+| statmod      |  1.5.1  | [https://github.com/cran/statmod](https://github.com/cran/statmod)                                                             |
+| dp_tools     | 1.3.11  | [https://github.com/torres-alexis/dp_tools](https://github.com/torres-alexis/dp_tools)                                         |
+| Quarto       | 1.9.36  | [https://quarto.org](https://quarto.org)                                                                                       |
 
 ---
 
 # General processing overview with example commands  
 
+> [!IMPORTANT] 
 > Exact processing commands and output files listed in **bold** below are included with each Microarray processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 
 ---
 
 ## 1. Create Sample RunSheet
 
-> Notes: 
+> [!TIP] 
 > - Rather than running the commands below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAgilent1ch/examples/runsheet/README.md).
 > 
-> - These command line tools are part of the [dp_tools](https://github.com/J-81/dp_tools) program.
+> - These command line tools are part of the [dp_tools](https://github.com/torres-alexis/dp_tools) program.
 
 ```bash
 ### Download the *ISA.zip file from the GeneLab Repository ###
@@ -163,7 +161,8 @@ dpt-isa-to-runsheet --accession OSD-### \
 
 ## 2. Load Data
 
-> Note: Steps 2 - 8 are done in R
+> [!NOTE] 
+> Steps 2 - 8 are done in R
 
 <br>
 
@@ -189,7 +188,7 @@ BiocManager::install("biomaRt")
 
 ## Note: Only dplyr is explicitly loaded. Other library functions are called with explicit namespace (e.g. LIBRARYNAME::FUNCTION)
 library(dplyr) # Ensure infix operator is available, methods should still reference dplyr namespace otherwise
-options(dplyr.summarise.inform = FALSE) # Don't print out '`summarise()` has grouped output by 'group'. You can override using the `.groups` argument.'
+options(dplyr.summarise.inform = FALSE) # Don't print out message informing how the result will be grouped
 
 
 # Define path to runsheet
@@ -211,7 +210,7 @@ dir.create(DIR_DGE)
 
 ### 2b. Define Custom Functions
 
-#### retry_with_delay()
+#### retry_with_delay() <!-- omit in toc -->
 <details>
   <summary>utility function to improve robustness of function calls; used to remedy intermittent internet issues during runtime</summary>
 
@@ -252,7 +251,7 @@ dir.create(DIR_DGE)
   **Returns:** the output of the wrapped function
 </details>
 
-#### all_true()
+#### all_true() <!-- omit in toc -->
 <details>
   <summary>wraps R <code>base::all()</code> function; overrides default behavior for empty input vector</summary>
 
@@ -271,7 +270,7 @@ dir.create(DIR_DGE)
   **Returns:** a logical vector of length 1; `TRUE` if all values are true, `FALSE` otherwise; stops and returns an error if input vector is empty
 </details>
 
-#### runsheet_paths_are_URIs()
+#### runsheet_paths_are_URIs() <!-- omit in toc -->
 <details>
   <summary>tests if paths provided in runsheet dataframe are URIs</summary>
 
@@ -290,7 +289,7 @@ dir.create(DIR_DGE)
   **Returns:** a logical vector of length 1; `TRUE` if all values in the `Array Data File Path` of the runsheet start with "https", `FALSE` otherwise; stops and returns an error if input vector is empty
 </details>
 
-#### download_files_from_runsheet()
+#### download_files_from_runsheet() <!-- omit in toc -->
 <details>
   <summary>downloads the raw data files</summary>
 
@@ -318,7 +317,7 @@ dir.create(DIR_DGE)
   **Returns:** a list of filenames that were downloaded; same as the `Array Data File Name` in the sample runsheet
 </details>
 
-#### fetch_organism_specific_annotation_table()
+#### fetch_organism_specific_annotation_table() <!-- omit in toc -->
 <details>
   <summary>determines the organism specific annotation file to use based on the provided organism name</summary>
 
@@ -355,7 +354,7 @@ dir.create(DIR_DGE)
   **Returns:** a dataframe containing all rows in the GeneLab annotations file that match the specified organism
 </details>
 
-#### agilent_image_plot()
+#### agilent_image_plot() <!-- omit in toc -->
 <details>
   <summary>plots pseudo images of each array</summary>
 
@@ -387,7 +386,7 @@ dir.create(DIR_DGE)
   **Returns:** pseudo images of each array
 </details>
 
-#### boxplot_expression_safe_margin()
+#### boxplot_expression_safe_margin() <!-- omit in toc -->
 <details>
   <summary>plots boxplot of expression data for each array</summary>
 
@@ -410,7 +409,7 @@ dir.create(DIR_DGE)
   **Returns:** boxplot of expression data for each array
 </details>
 
-#### shortened_organism_name()
+#### shortened_organism_name() <!-- omit in toc -->
 <details>
   <summary>shortens organism names, for example 'Homo Sapiens' to 'hsapiens'</summary>
 
@@ -434,9 +433,9 @@ dir.create(DIR_DGE)
   **Returns:** a string containing the short name of the organism
 </details>
 
-#### get_biomart_attribute()
+#### get_biomart_attribute() <!-- omit in toc -->
 <details>
-  <summary>retrieves resolved biomart attribute source from runsheet dataframe</summary>
+  <summary>retrieves resolved BioMart attribute source from runsheet dataframe</summary>
 
   ```R
   get_biomart_attribute <- function(df_rs) {
@@ -460,9 +459,9 @@ dir.create(DIR_DGE)
   **Returns:** a string containing the formatted value from the `biomart_attribute` column of the runsheet, with all spaces converted to underscores and uppercase converted to lowercase; if no `biomart_attribute` exists in the runsheet, stop and return an error
 </details>
 
-#### get_ensembl_genomes_mappings_from_ftp()
+#### get_ensembl_genomes_mappings_from_ftp() <!-- omit in toc -->
 <details>
-  <summary>obtains mapping table directly from ftp; useful when biomart live service no longer exists for desired version</summary>
+  <summary>obtains mapping table directly from ftp; useful when BioMart live service no longer exists for desired version</summary>
 
   ```R
   get_ensembl_genomes_mappings_from_ftp <- function(organism, ensembl_genomes_portal, ensembl_genomes_version, biomart_attribute) {
@@ -503,12 +502,12 @@ dir.create(DIR_DGE)
   - `organism=` - a string containing the name of the organism (formatted using `shortened_organism_name()`)
   - `ensembl_genomes_portal=` - a string containing the name of the genomes portal, for example 'plants'
   - `ensembl_genomes_version=` - a string containing the version of Ensembl to use
-  - `biomart_attribute=` - a string containing the biomart attribute (formatted using `get_biomart_attribute()`)
+  - `biomart_attribute=` - a string containing the BioMart attribute (formatted using `get_biomart_attribute()`)
 
   **Returns:** a dataframe containing the mapping between Ensembl ID and probe ID, as obtained via FTP
 </details>
 
-#### list_to_unique_piped_string()
+#### list_to_unique_piped_string() <!-- omit in toc -->
 <details>
   <summary>converts character vector into string denoting unique elements separated by '|' characters</summary>
 
@@ -526,7 +525,7 @@ dir.create(DIR_DGE)
   **Returns:** a string containing the unique elements from `str_list` concatenated together, separated by '|' characters
 </details>
 
-#### runsheet_to_design_matrix()
+#### runsheet_to_design_matrix() <!-- omit in toc -->
 <details>
   <summary>loads the GeneLab runsheet into a list of dataframes</summary>
 
@@ -553,7 +552,7 @@ dir.create(DIR_DGE)
           group<-study[,1]
       }
       group_names <- paste0("(",group,")",sep = "") # human readable group names
-      group <- sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", group))) # group naming compatible with R models, this maintains the default behaviour of make.names with the exception that 'X' is never prepended to group namesnames(group) <- group_names
+      group <- sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", group))) # group naming compatible with R models, this maintains the default behavior of make.names with the exception that 'X' is never prepended to group names
       names(group) <- group_names
 
       # Format contrasts table, defining pairwise comparisons for all groups
@@ -584,7 +583,7 @@ dir.create(DIR_DGE)
   - `design_data$contrasts` - a matrix of all pairwise comparisons of the groups
 </details>
 
-#### lm_fit_pairwise()
+#### lm_fit_pairwise() <!-- omit in toc -->
 <details>
   <summary>performs all pairwise comparisons using <code>limma::lmFit()</code></summary>
 
@@ -612,7 +611,7 @@ dir.create(DIR_DGE)
   **Returns:** an R object of class `MArrayLM`
 </details>
 
-#### reformat_names()
+#### reformat_names() <!-- omit in toc -->
 <details>
   <summary>reformats column names for consistency across DE analyses tables within GeneLab</summary>
 
@@ -645,7 +644,7 @@ dir.create(DIR_DGE)
   **Returns:** a character vector containing the formatted column names
 </details>
 
-#### generate_prefixed_column_order()
+#### generate_prefixed_column_order() <!-- omit in toc -->
 <details>
   <summary>creates a vector of column names based on subject and given prefixes; used for both contrasts and groups column name generation</summary>
 
@@ -691,12 +690,12 @@ if ( runsheet_paths_are_URIs(df_rs) ) {
 # uncompress files if needed
 if ( all_true(stringr::str_ends(local_paths, ".gz")) ) {
   print("Determined these files are gzip compressed... uncompressing now")
-  # This does the uncompression
+  # This does the decompression
   lapply(local_paths, R.utils::gunzip, remove = FALSE, overwrite = TRUE)
   # This removes the .gz extension to get the uncompressed filenames
   local_paths <- vapply(local_paths, 
                         stringr::str_replace, # Run this function against each item in 'local_paths'
-                        FUN.VALUE = character(1),  # Execpt an character vector as a return
+                        FUN.VALUE = character(1),  # Except an character vector as a return
                         USE.NAMES = FALSE,  # Don't use the input to assign names for the returned list
                         pattern = ".gz$", # first argument for applied function
                         replacement = ""  # second argument for applied function
@@ -715,7 +714,7 @@ raw_data <- limma::read.maimages(df_local_paths$`Local Paths`,
 # Handle raw data which lacks certain replaceable column data
 
 ## This likely arises as Agilent Feature Extraction (the process that generates the raw data files on OSDR) 
-##   gives some user flexibilty in what probe column to output
+##   gives some user flexibility in what probe column to output
 
 ## Missing ProbeUID "Unique integer for each unique probe in a design"
 ### Source: https://www.agilent.com/cs/library/usermanuals/public/GEN-MAN-G4460-90057.pdf Page 178
@@ -736,7 +735,7 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 
 - [retry_with_delay()](#retry_with_delay)
 - [all_true()](#all_true)
-- [runsheet_paths_are_URIs()](#runsheet_paths_are_URIs)
+- [runsheet_paths_are_URIs()](#runsheet_paths_are_uris)
 - [download_files_from_runsheet()](#download_files_from_runsheet)
 
 **Input Data:**
@@ -748,7 +747,8 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 - `df_rs` (R dataframe containing information from the runsheet)
 - `raw_data` (R object containing raw microarray data)
 
-    > Note: The raw data R object will be used to generate quality assessment (QA) plots in the next step.
+    > [!NOTE] 
+    > The raw data R object will be used to generate quality assessment (QA) plots in the next step.
 
 <br>
 
@@ -776,11 +776,13 @@ ensembl_version <- as.character(annotation_table$ensemblVersion)
 
 - `local_annotation_dir` (Path to local annotation directory if using custom annotations, see [Step 7a](#7a-get-probe-annotations))
 
-    > Note: If not using custom annotations, leave `local_annotation_dir` as `NULL`.
+    > [!TIP] 
+    > If not using custom annotations, leave `local_annotation_dir` as `NULL`.
 
 - `annotation_config_path` (URL or path to annotation config file if using custom annotations, see [Step 7a](#7a-get-probe-annotations))
 
-    > Note: If not using custom annotations, leave `annotation_config_path` as `NULL`.
+    > [!TIP] 
+    > If not using custom annotations, leave `annotation_config_path` as `NULL`.
 
 - `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - `annotation_table_link` (URL or path to latest GeneLab Annotations file, see [GL-DPPD-7110-A_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv))
@@ -923,8 +925,8 @@ background_corrected_data <- limma::backgroundCorrect(raw_data, method = "normex
 
 - `background_corrected_data` (R object containing background-corrected microarray data)
 
-  >   
-  > Note: Background correction was performed using the `normexp` method as recommended by [Ritchie, M.E., et al.](http://bioinformatics.oxfordjournals.org/content/23/20/2700), which performs background correction and quantile normalization using the control probes by utilizing the `normexp.fit.control` function to estimate the parameters required by normal+exponential(normexp) convolution model with the help of negative control probes, followed by the `normexp.signal` function to perform the background correction.
+  > [!NOTE] 
+  > Background correction was performed using the `normexp` method as recommended by [Ritchie, M.E., et al.](http://bioinformatics.oxfordjournals.org/content/23/20/2700), which performs background correction and quantile normalization using the control probes by utilizing the `normexp.fit.control` function to estimate the parameters required by normal+exponential(normexp) convolution model with the help of negative control probes, followed by the `normexp.signal` function to perform the background correction.
 
 <br>
 
@@ -949,8 +951,8 @@ print(paste0("Number of Probes: ", dim(norm_data)[1]))
 
 - `norm_data` (R object containing background-corrected and normalized microarray data)
  
-  >   
-  > Note: Normalization was performed using the `quantile` method, which forces the entire empirical distribution of all arrays to be identical
+  > [!NOTE] 
+  > Normalization was performed using the `quantile` method, which forces the entire empirical distribution of all arrays to be identical
 
 <br>
 
@@ -994,9 +996,10 @@ legend("topright", legend = colnames(norm_data),
 ### 6b. Pseudo Image Plots
 
 ```R
+# Compute as log2 of normalized expression after adding a +1 offset to prevent negative values in the pseudoimage
 agilent_image_plot(norm_data, 
-                 transform_func = function(expression_matrix) log2(2**expression_matrix + 1) # Compute as log2 of normalized expression after adding a +1 offset to prevent negative values in the pseudoimage
-                 )
+                   transform_func = function(expression_matrix) log2(2**expression_matrix + 1) 
+                  )
 ```
 
 **Custom Functions Used:**
@@ -1018,7 +1021,12 @@ agilent_image_plot(norm_data,
 ```R
 for ( array_i in seq(colnames(norm_data$E)) ) {
   sample_name <- rownames(norm_data$targets)[array_i]
-  limma::plotMA(norm_data,array=array_i,xlab="Average log-expression",ylab="Expression log-ratio (this sample vs. others)", main = sample_name, status=norm_data$genes$ControlType)
+  limma::plotMA(norm_data,
+                array = array_i,
+                xlab = "Average log-expression",
+                ylab = "Expression log-ratio (this sample vs. others)", 
+                main = sample_name, status=norm_data$genes$ControlType
+               )
 }
 ```
 
@@ -1083,7 +1091,7 @@ if (organism %in% c("athaliana")) {
 
   use_custom_annot <- FALSE
 } else {
-  # Use biomart from main Ensembl website which archives keep each release on the live service
+  # Use BioMart from main Ensembl website which archives keep each release on the live service
   # locate dataset
   expected_dataset_name <- shortened_organism_name(unique(df_rs$organism)) %>% stringr::str_c("_gene_ensembl")
   print(paste0("Expected dataset name: '", expected_dataset_name, "'"))
@@ -1096,7 +1104,7 @@ if (organism %in% c("athaliana")) {
 
   print(glue::glue("Using Ensembl biomart to get specific version of mapping table. Ensembl version: {ENSEMBL_VERSION}"))
 
-  # Check if organism/array design is supported in biomart
+  # Check if organism/array design is supported in BioMart
   use_custom_annot <- TRUE
 
   ensembl <- biomaRt::useEnsembl(biomart = "genes", version = ENSEMBL_VERSION)
@@ -1109,22 +1117,20 @@ if (organism %in% c("athaliana")) {
     }
   }
 
-  if (use_custom_annot) {
-    unloadNamespace("biomaRt")
-  } else {
+  if (!use_custom_annot) {
     print(ensembl)
 
     probe_ids <- unique(norm_data$genes$ProbeName)
 
     # Create probe map
-    # Run Biomart Queries in chunks to prevent request timeouts
-    #   Note: If timeout is occuring (possibly due to larger load on biomart), reduce chunk size
+    # Run BioMart Queries in chunks to prevent request timeouts
+    #   Note: If timeout is occurring (possibly due to larger load on BioMart), reduce chunk size
     CHUNK_SIZE= 1500
     probe_id_chunks <- split(probe_ids, ceiling(seq_along(probe_ids) / CHUNK_SIZE))
     df_mapping <- data.frame()
     for (i in seq_along(probe_id_chunks)) {
       probe_id_chunk <- probe_id_chunks[[i]]
-      print(glue::glue("Running biomart query chunk {i} of {length(probe_id_chunks)}. Total probes IDS in query ({length(probe_id_chunk)})"))
+      print(glue::glue("Running BioMart query chunk {i} of {length(probe_id_chunks)}. Total probes IDS in query ({length(probe_id_chunk)})"))
       chunk_results <- biomaRt::getBM(
           attributes = c(
               expected_attribute_name,
@@ -1140,66 +1146,85 @@ if (organism %in% c("athaliana")) {
       
       Sys.sleep(10) # Slight break between requests to prevent back-to-back requests
     }
+  } else {
+    print(glue::glue("Using custom probe annotation for organism: {unique(df_rs$organism)}"))
+    expected_attribute_name <- 'ProbeName'
+
+    annot_type <- 'NO_CUSTOM_ANNOT'
+    if (!is.null(local_annotation_dir) && !is.null(annotation_config_path)) {
+      config_df <- read.csv(annotation_config_path, row.names=1)
+      if (unique(df_rs$`biomart_attribute`) %in% row.names(config_df)) {
+        annot_config <- config_df[unique(df_rs$`biomart_attribute`), ]
+        annot_type <- annot_config$annot_type[[1]]
+      } else {
+        warning(paste0("No entry for '", unique(df_rs$`biomart_attribute`), "' in provided config file: ", annotation_config_path))
+      }
+    } else {
+      warning("Need to provide both local_annotation_dir and annotation_config_path to use custom annotation.")
+    }
+
+    if (annot_type == 'agilent') {
+      print(glue::glue("Using Agilent Ensembl transcript annotation to retrieve Ensembl Gene IDs from BioMart"))
+      print(ensembl)
+
+      # read in AllAnnotations file and strip version off of Ensembl Transcript ID
+      agilent_table <- read.delim(
+          file.path(local_annotation_dir, annot_config$annot_filename[[1]]),
+          header = TRUE, na.strings = c('NA', '')
+        )[c('ProbeID', 'EnsemblID')] %>%
+        dplyr::mutate(EnsemblID = stringr::str_split_i(EnsemblID, "\\.", 1))
+
+      stopifnot(nrow(agilent_table) == length(unique(agilent_table$ProbeID)))
+
+      # Map Ensembl Transcript IDs to Ensembl Gene IDs using BioMart
+      # Run BioMart Queries in chunks to prevent request timeouts
+      #   Note: If timeout is occurring (possibly due to larger load on BioMart), reduce chunk size
+      CHUNK_SIZE= 1500
+      transcript_id_chunks <- split(agilent_table$EnsemblID, ceiling(seq_along(agilent_table$EnsemblID) / CHUNK_SIZE))
+      id_map <- data.frame()
+      for (i in seq_along(transcript_id_chunks)) {
+        transcript_id_chunk <- transcript_id_chunks[[i]]
+        print(glue::glue("Running BioMart query chunk {i} of {length(transcript_id_chunks)}. Total transcript IDS in query ({length(transcript_id_chunk)})"))
+        chunk_results <- biomaRt::getBM(
+            attributes = c(
+                "ensembl_transcript_id",
+                "ensembl_gene_id"
+                ), 
+                filters = "ensembl_transcript_id", 
+                values = transcript_id_chunk, 
+                mart = ensembl)
+
+        if (nrow(chunk_results) > 0) {
+          id_map <- id_map %>% dplyr::bind_rows(chunk_results)
+        }
+
+        Sys.sleep(10) # Slight break between requests to prevent back-to-back requests
+      }
+
+      df_mapping <- 
+        dplyr::left_join(agilent_table, id_map, dplyr::join_by(EnsemblID == ensembl_transcript_id)) %>%
+        dplyr::select(ProbeID, ensembl_gene_id)
+
+      names(df_mapping) <- c('ProbeName', 'ensembl_gene_id')
+
+    } else if (annot_type == 'custom') {
+      unique_probe_ids <- read.csv(
+        file.path(local_annotation_dir, annot_config$annot_filename[[1]]),
+        header = TRUE, na.strings = c('NA', '')
+      )
+    } else {
+      annot_cols <- c('ProbeName', 'ENTREZID', 'SYMBOL', 'GENENAME', 'ENSEMBL', 'REFSEQ', 'GOSLIM_IDS', 'STRING_id', 'count_gene_mappings', 'gene_mapping_source')
+      unique_probe_ids <- setNames(data.frame(matrix(NA_character_, nrow = 1, ncol = length(annot_cols))), annot_cols)
+    }
   }
 }
 
-# At this point, we have df_mapping from either the biomart live service or the ensembl genomes ftp archive depending on the organism
-# If no df_mapping obtained (e.g., not supported in biomart), use custom annotations; otherwise, merge in-house annotations to df_mapping
+# At this point, we have df_mapping from either the BioMart live service directly or via Agilent probe 
+# annotation or the ensembl genomes ftp archive depending on the organism and presence of BioMart probe 
+# annotation. If no df_mapping obtained (e.g., not supported in BioMart or lacking Ensembl transcript 
+# IDs), use custom annotations; otherwise, merge in-house annotations to df_mapping
 
-if (use_custom_annot) {
-  expected_attribute_name <- 'ProbeName'
-
-  annot_type <- 'NO_CUSTOM_ANNOT'
-  if (!is.null(local_annotation_dir) && !is.null(annotation_config_path)) {
-    config_df <- read.csv(annotation_config_path, row.names=1)
-    if (unique(df_rs$`biomart_attribute`) %in% row.names(config_df)) {
-      annot_config <- config_df[unique(df_rs$`biomart_attribute`), ]
-      annot_type <- annot_config$annot_type[[1]]
-    } else {
-      warning(paste0("No entry for '", unique(df_rs$`biomart_attribute`), "' in provided config file: ", annotation_config_path))
-    }
-  } else {
-    warning("Need to provide both local_annotation_dir and annotation_config_path to use custom annotation.")
-  }
-
-  if (annot_type == 'agilent') {
-    unique_probe_ids <- read.delim(
-      file.path(local_annotation_dir, annot_config$annot_filename[[1]]),
-      header = TRUE, na.strings = c('NA', '')
-    )[c('ProbeID', 'EnsemblID', 'GeneSymbol', 'GeneName', 'RefSeqAccession', 'EntrezGeneID', 'GO')]
-
-    stopifnot(nrow(unique_probe_ids) == length(unique(unique_probe_ids$ProbeID)))
-
-    # Clean columns
-    unique_probe_ids$GO <- purrr::map_chr(stringr::str_extract_all(unique_probe_ids$GO, 'GO:\\d{7}'), ~paste0(unique(.), collapse = '|')) %>% stringr::str_replace('^$', NA_character_)
-
-    names(unique_probe_ids) <- c('ProbeName', 'ENSEMBL', 'SYMBOL', 'GENENAME', 'REFSEQ', 'ENTREZID', 'GOSLIM_IDS')
-
-    unique_probe_ids$STRING_id <- NA_character_
-
-    gene_col <- 'ENSEMBL'
-    if (sum(!is.na(unique_probe_ids$ENTREZID)) > sum(!is.na(unique_probe_ids$ENSEMBL))) {
-      gene_col <- 'ENTREZID'
-    }
-    if (sum(!is.na(unique_probe_ids$SYMBOL)) > max(sum(!is.na(unique_probe_ids$ENTREZID)), sum(!is.na(unique_probe_ids$ENSEMBL)))) {
-      gene_col <- 'SYMBOL'
-    }
-
-    unique_probe_ids <- unique_probe_ids %>%
-                        dplyr::mutate( 
-                          count_gene_mappings = 1 + stringr::str_count(get(gene_col), stringr::fixed("|")),
-                          gene_mapping_source = gene_col
-                        )
-  } else if (annot_type == 'custom') {
-    unique_probe_ids <- read.csv(
-      file.path(local_annotation_dir, annot_config$annot_filename[[1]]),
-      header = TRUE, na.strings = c('NA', '')
-    )
-  } else {
-    annot_cols <- c('ProbeName', 'ENTREZID', 'SYMBOL', 'GENENAME', 'ENSEMBL', 'REFSEQ', 'GOSLIM_IDS', 'STRING_id', 'count_gene_mappings', 'gene_mapping_source')
-    unique_probe_ids <- setNames(data.frame(matrix(NA_character_, nrow = 1, ncol = length(annot_cols))), annot_cols)
-  }
-} else {
+if (!use_custom_annot || annot_type == 'agilent') {
   annot <- read.table(
       as.character(annotation_file_path),
       sep = "\t",
@@ -1209,19 +1234,20 @@ if (use_custom_annot) {
   )
 
   unique_probe_ids <- df_mapping %>% 
-                        dplyr::mutate(dplyr::across(!!sym(expected_attribute_name), as.character)) %>% # Ensure probe ids treated as character type
-                        dplyr::group_by(!!sym(expected_attribute_name)) %>% 
-                        dplyr::summarise(
-                          ENSEMBL = list_to_unique_piped_string(ensembl_gene_id)
-                          ) %>%
-                        # Count number of ensembl IDS mapped
-                        dplyr::mutate( 
-                          count_gene_mappings = 1 + stringr::str_count(ENSEMBL, stringr::fixed("|")),
-                          gene_mapping_source = annot_key
-                        ) %>%
-                        dplyr::left_join(annot, by = c("ENSEMBL" = annot_key))
+    dplyr::mutate(dplyr::across(!!sym(expected_attribute_name), as.character)) %>% # Ensure probe ids treated as character type
+    dplyr::group_by(!!sym(expected_attribute_name)) %>% 
+    dplyr::summarise(
+      ENSEMBL = list_to_unique_piped_string(ensembl_gene_id)
+      ) %>%
+    # Count number of ensembl IDS mapped
+    dplyr::mutate( 
+      count_gene_mappings = 1 + stringr::str_count(ENSEMBL, stringr::fixed("|")),
+      gene_mapping_source = annot_key
+    ) %>%
+    dplyr::left_join(annot, by = c("ENSEMBL" = annot_key))
 }
 
+# reformat merged probe annotations
 norm_data$genes <- norm_data$genes %>% 
   dplyr::left_join(unique_probe_ids, by = c("ProbeName" = expected_attribute_name ) ) %>%
   dplyr::mutate( count_gene_mappings := ifelse(is.na(count_gene_mappings), 0, count_gene_mappings) ) %>%
@@ -1239,21 +1265,22 @@ norm_data$genes <- norm_data$genes %>%
 **Input Data:**
 
 - `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
-- `df_rs$biomart_attribute` (array design biomart identifier specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
+- `df_rs$biomart_attribute` (array design BioMart identifier specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
 - `annotation_file_path` (reference organism annotation file url indicated in the 'genelab_annots_link' column of the GeneLab Annotations file provided in `annotation_table_link`, output from [Step 2d](#2d-load-annotation-metadata))
 - `ensembl_version` (reference organism Ensembl version indicated in the 'ensemblVersion' column of the GeneLab Annotations file provided in `annotation_table_link`, output from [Step 2d](#2d-load-annotation-metadata))
 - `annot_key` (keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL')
 - `local_annotation_dir` (path to local annotation directory if using custom annotations, output from [Step 2d](#2d-load-annotation-metadata))
 - `annotation_config_path` (URL or path to annotation config file if using custom annotations, output from [Step 2d](#2d-load-annotation-metadata))
 
-  > Note: See [config.csv](../Workflow_Documentation/NF_MAAgilent1ch/examples/annotations/config.csv) for the latest config file used at GeneLab. This file can also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAgilent1ch/examples/annotations/README.md).
+  > [!TIP]
+  > See [config.csv](../Workflow_Documentation/NF_MAAgilent1ch/examples/annotations/config.csv) for the latest config file used by GeneLab. This file can also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAgilent1ch/examples/annotations/README.md).
 
 - `norm_data$genes` (Manufacturer's probe metadata, including probe IDs and sequence position gene annotations associated with the `norm_data` R object containing background-corrected and normalized microarray data created in [Step 5](#5-between-array-normalization))
 
 **Output Data:**
 
 - `unique_probe_ids` (R object containing probe ID to gene annotation mappings)
-- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html) or custom annotations)
+- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [BioMart](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html) or custom annotations)
 
 <br>
 
@@ -1283,7 +1310,7 @@ print(glue::glue("Unique Mapping Count: {slices[['Unique Mapping']]}"))
 
 **Input Data:**
 
-- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [Biomart](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html) or custom annotations, output from [Step 7a](#7a-get-probe-annotations) above)
+- `norm_data$genes` (Probe metadata, updated to include gene annotations specified by [BioMart](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html) or custom annotations, output from [Step 7a](#7a-get-probe-annotations) above)
 
 **Output Data:**
 
@@ -1361,9 +1388,10 @@ write.csv(norm_data_matrix, file.path(DIR_NORMALIZED_EXPRESSION, "normalized_exp
 - **raw_intensities_GLmicroarray.csv** (table containing the background corrected unnormalized intensity values for each sample including gene annotations)
 - **normalized_expression_GLmicroarray.csv** (table containing the background corrected, normalized intensity values for each sample including gene annotations)
 
-## 8. Perform Probe Differential Expression (DE)
+## 8. Probe Differential Expression (DE)
 
-> Note: Run differential expression analysis only if there are at least 2 replicates per factor group.
+> [!WARNING]
+> Run differential expression analysis only if there are at least 2 replicates per factor group.
 
 <br>
 
@@ -1560,5 +1588,9 @@ write.csv(df_interim, file.path(DIR_DGE, "differential_expression_GLmicroarray.c
 
 - **differential_expression_GLmicroarray.csv** (table containing normalized expression for each sample, group statistics, Limma probe DE results for each pairwise comparison, and gene annotations)
 
+<br>
 
+---
+
+> [!IMPORTANT]
 > All steps of the Microarray pipeline are performed using R markdown and the completed R markdown is rendered (via Quarto) as an html file (**NF_MAAgilent1ch_v\*_GLmicroarray.html**) and published in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/) for the respective dataset.
