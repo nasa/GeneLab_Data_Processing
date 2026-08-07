@@ -1,9 +1,10 @@
 process GENERATE_SOFTWARE_TABLE {
-  publishDir "${ params.resultsDir }/GeneLab",
+  publishDir "${ publishdir }/GeneLab",
     pattern: "software_versions_GLmicroarray.md",
     mode: params.publish_dir_mode
 
   input:
+    val(publishdir)
     path("software_versions.yaml")
     val(filename)
     val(skipDE)

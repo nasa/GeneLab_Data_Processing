@@ -1,26 +1,27 @@
 process VV_AFFYMETRIX {
   // Log publishing
-  publishDir "${ params.resultsDir }",
+  publishDir "${ publishdir }",
     pattern:  "VV_report_GLmicroarray.tsv.MANUAL_CHECKS_PENDING" ,
     mode: params.publish_dir_mode,
     saveAs: { "VV_Logs/VV_log_${ task.process.replace(":","-") }_GLmicroarray.tsv.MANUAL_CHECKS_PENDING" }
   // V&V'ed data publishing
-  publishDir "${ params.resultsDir }",
+  publishDir "${ publishdir }",
     pattern: '00-RawData/**',
     mode: params.publish_dir_mode
-  publishDir "${ params.resultsDir }",
+  publishDir "${ publishdir }",
     pattern: '01-oligo_NormExp/**',
     mode: params.publish_dir_mode
-  publishDir "${ params.resultsDir }",
+  publishDir "${ publishdir }",
     pattern: '02-limma_DGE/**',
     mode: params.publish_dir_mode
-  publishDir "${ params.resultsDir }",
+  publishDir "${ publishdir }",
     pattern: 'Metadata/**',
     mode: params.publish_dir_mode
 
   label 'VV'
 
   input:
+    val(publishdir)
     path("VV_INPUT/Metadata/*") // While files from processing are staged, we instead want to use the files located in the publishDir for QC
     path("VV_INPUT/*") // "While files from processing are staged, we instead want to use the files located in the publishDir for QC
     val(skipVV) // Skips running V&V but will still publish the files

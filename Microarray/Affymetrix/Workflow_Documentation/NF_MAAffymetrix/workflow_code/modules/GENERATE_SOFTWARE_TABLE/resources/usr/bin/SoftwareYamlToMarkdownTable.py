@@ -14,11 +14,9 @@ AFFYMETRIX_SOFTWARE_DPPD = [
     "tibble",
     "stringr",
     "purrr",
-    "R.utils",
     "oligo",
     "limma",
     "glue",
-    "biomaRt",
     "matrixStats",
     "statmod",
     "dp_tools",
@@ -39,9 +37,11 @@ ASSUMED_SOFTWARE = [{
 ## Used when the R library metadata doesn't encode any URLS
 HOMEPAGE_MAP = {
     "statmod":"https://cran.r-project.org/web/packages/statmod/index.html",
-    "biomaRt":"https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html", # UPDATE ON biomaRt version update
-    "oligo":"https://www.bioconductor.org/packages/3.22/bioc/html/oligo.html", # UPDATE ON biomaRt version update
+    "oligo":"https://www.bioconductor.org/packages/3.22/bioc/html/oligo.html", # UPDATE ON bioconductor version update
 }
+
+## Used when certain packages are conditionally used, and therefore dropped from the software table
+NOT_USED_SENTINEL = "(Not used for this dataset)"
 
 @click.command()
 @click.argument("input_yaml", type=click.Path(exists=True))
@@ -55,14 +55,19 @@ def yamlToMarkdown(input_yaml: Path, filename: str, skip_de: bool):
     data.extend(ASSUMED_SOFTWARE)
     df = pd.DataFrame(data)
 
-    # If data files are not compressed, won't use R.utils to unzip them during processing
-    if not filename.endswith('.gz'):
-        AFFYMETRIX_SOFTWARE_DPPD.remove('r.utils')
-
     if skip_de:
         AFFYMETRIX_SOFTWARE_DPPD.remove('limma')
         AFFYMETRIX_SOFTWARE_DPPD.remove('statmod')
         AFFYMETRIX_SOFTWARE_DPPD.remove('matrixstats')
+
+    # Drop software explicitly marked as unused for this dataset (e.g. purrr, only invoked on the 3prime-IVT custom-annotation branch) 
+    # and remove them from the software table too, so the completeness assert below doesn't demand software that legitimately never ran
+    unused_mask = df["version"].astype(str) == NOT_USED_SENTINEL
+    unused_software = set(df.loc[unused_mask, "name"].str.lower())
+    for name in unused_software:
+        if name in AFFYMETRIX_SOFTWARE_DPPD:
+            AFFYMETRIX_SOFTWARE_DPPD.remove(name)
+    df = df.loc[~unused_mask]
 
     # Filter to direct software used (i.e. exclude dependencies of the software)
     df = df.loc[df["name"].str.lower().isin(AFFYMETRIX_SOFTWARE_DPPD)]
