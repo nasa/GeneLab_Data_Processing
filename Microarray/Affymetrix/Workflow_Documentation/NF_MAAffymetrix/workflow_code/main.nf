@@ -5,12 +5,12 @@ include { validateParameters } from 'plugin/nf-schema'
 include { paramsSummaryLog } from 'plugin/nf-schema'
 
 include { STAGE_ANALYSIS } from './subworkflows/stage_analysis.nf'
-include { PARSE_ANNOTATION_TABLE } from './modules/PARSE_ANNOTATION_TABLE.nf'
-include { VV_AFFYMETRIX } from './modules/VV_AFFYMETRIX.nf'
-include { PROCESS_AFFYMETRIX } from './modules/PROCESS_AFFYMETRIX.nf'
-include { GENERATE_SOFTWARE_TABLE } from './modules/GENERATE_SOFTWARE_TABLE'
-include { DUMP_META } from './modules/DUMP_META'
-include { GENERATE_PROTOCOL } from './modules/POST_PROCESSING/GENERATE_PROTOCOL'
+include { PARSE_ANNOTATION_TABLE } from './modules/parse_annotation_table.nf'
+include { VV_AFFYMETRIX } from './modules/vv_affymetrix.nf'
+include { PROCESS_AFFYMETRIX } from './modules/process_affymetrix.nf'
+include { GENERATE_SOFTWARE_TABLE } from './modules/generate_software_table.nf'
+include { DUMP_META } from './modules/dump_meta.nf'
+include { GENERATE_PROTOCOL } from './modules/generate_protocol.nf'
 
 ch_dp_tools_plugin = params.dp_tools_plugin ? 
   channel.value(file(params.dp_tools_plugin)) 

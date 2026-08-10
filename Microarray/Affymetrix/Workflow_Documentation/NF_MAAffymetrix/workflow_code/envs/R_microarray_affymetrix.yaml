@@ -1,4 +1,4 @@
-name: R_microarray_agilent
+name: R_microarray_affymetrix
 channels:
   - conda-forge
   - bioconda

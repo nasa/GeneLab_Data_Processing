@@ -4,8 +4,8 @@ include { validateParameters } from 'plugin/nf-schema'
 include { paramsSummaryLog } from 'plugin/nf-schema'
 
 include { PURGE_PROCESSING_INFO } from './modules/purge_processing_info.nf'
-include { GENERATE_MD5SUMS } from './modules/GENERATE_MD5SUMS.nf'
-include { UPDATE_ISA_TABLES } from './modules/UPDATE_ISA_TABLES.nf'
+include { GENERATE_MD5SUMS } from './modules/generate_md5sums.nf'
+include { UPDATE_ASSAY_TABLE } from './modules/update_assay_table.nf'
 
 /**************************************************
 * WORKFLOW SPECIFIC PRINTOUTS  ********************
@@ -89,14 +89,14 @@ workflow {
     def isa_file = file("${ processed_dir }/Metadata/*ISA*.zip")
     if ( isa_file ) {
       ch_isa = channel.fromPath("${ processed_dir }/Metadata/*ISA*.zip")
-      UPDATE_ISA_TABLES(
+      UPDATE_ASSAY_TABLE(
         processed_dir,
         ch_runsheet,
         ch_isa,
         ch_glds_accession
       )
     } else {
-      println "${ c_back_bright_red }WARNING: No ISA archive found in ${ processed_dir }/Metadata/ -- skipping UPDATE_ISA_TABLES${ c_reset }"
+      println "${ c_back_bright_red }WARNING: No ISA archive found in ${ processed_dir }/Metadata/ -- skipping UPDATE_ASSAY_TABLE${ c_reset }"
     }
     
 }
