@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com///nextflow_schema.json",
+  "title": "GeneLab NF_MAAffymetrix parameters",
+  "description": "NASA GeneLab Affymetrix Microarray Workflow for Pipeline Document GL-DPPD-7114-A",
+  "type": "object",
+    "$defs": {
+        "basic_options": {
+            "title": "Basic options",
+            "type": "object",
+            "fa_icon": "fas fa-cogs",
+            "description": "Basic options for the pipeline, typically set on the command line.",
+            "help_text": "",
+            "properties": {
+                "accession": {
+                    "type": "string",
+                    "description": "Input OSD or GLDS identifier as 'OSD-#' or 'GLDS-#' if processing an OSDR dataset.",
+                    "pattern": "^(OSD|GLDS)-[0-9]+$"
+                },
+                "runsheetPath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "path to runsheet"
+                },
+                "skipDE": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "skip Differential Expression steps"
+                },
+                "skipVV": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "skip Validation and Verification steps"
+                },
+                "outdir": {
+                    "type": "string",
+                    "default": "${launchDir}",
+                    "description": "The output directory where the results will be saved. Absolute paths are required when running on cloud infrastructure."
+                },
+                "help": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "display help message and exit"
+                }
+            }
+        },
+        "advanced_options": {
+            "title": "Advanced options",
+            "type": "object",
+            "fa_icon": "fas fa-cogs",
+            "description": "Advanced options for the pipeline, typically set in a config file.",
+            "help_text": "",
+            "properties": {
+                "referenceStorePath": {
+                    "type": "string",
+                    "default": "./References",
+                    "description": "path to custom annotation references"
+                },
+                "biomart_attribute": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Manually sets a value for the biomart_attribute column in the runsheet if the 'Array design REF' column is not present in the ISA file."
+                },
+                "isaArchivePath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "path to ISA archive (alternative to automatically downloading from OSDR). '--accession' must also be used."
+                },
+                "annotation_file_path": {
+                    "type": "string",
+                    "default": "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/GL_RefAnnotTable-A_1.1.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv",
+                    "description": "path to GeneLab annotation reference file linking organisms to annotation files"
+                },
+                "array_annot_path": {
+                    "type": "string",
+                    "default": "../../examples/annotations/design_info.csv",
+                    "description": "custom array annotation design info file"
+                },
+                "max_flag_code": {
+                    "type": "integer",
+                    "default": 80,
+                    "description": "Maximum flag value allowed, exceeding this value during V&V will cause the workflow to halt"
+                }
+            }
+        },
+        "workflow_configuration": {
+            "title": "Workflow configuration",
+            "type": "object",
+            "fa_icon": "fas fa-file-import",
+            "description": "Less common options for the pipeline, typically set in a config file.",
+            "help_text": "",
+            "properties": {
+                "publish_dir_mode": {
+                    "type": "string",
+                    "default": "link",
+                    "description": "Nextflow publishDir mode for handling output files",
+                    "enum": ["copy", "link", "symlink", "move"],
+                    "hidden": true
+                },
+                "api_url": {
+                    "type": "string",
+                    "default": "https://visualization.osdr.nasa.gov/biodata/api/v2/dataset/*/",
+                    "hidden": true
+                },
+                "dp_tools_plugin": {
+                    "type": "string",
+                    "description": "Alternative dp_tools plugin."
+                }
+            }
+        }
+  },
+  "allOf": [
+    {
+      "$ref": "#/$defs/basic_options"
+    },
+    {
+      "$ref": "#/$defs/advanced_options"
+    },
+    {
+      "$ref": "#/$defs/workflow_configuration"
+    }
+  ]
+}

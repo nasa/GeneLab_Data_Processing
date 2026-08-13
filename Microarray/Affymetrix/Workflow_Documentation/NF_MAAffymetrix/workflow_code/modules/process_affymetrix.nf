@@ -1,15 +1,18 @@
 process PROCESS_AFFYMETRIX {
-  publishDir "${ params.resultsDir }/GeneLab",
+  publishDir "${ publishdir }/GeneLab",
     pattern: "NF_MAAffymetrix_v${workflow.manifest.version}_GLmicroarray.html",
     mode: params.publish_dir_mode
   stageInMode 'copy'
 
   input:
+    val(publishdir)
     path(qmd) // quarto qmd file to render
     path(runsheet_csv) // runsheet to supply as parameter
+    path(array_data_files) // staged, locally-named, decompressed raw array data files
     path(annotation_file_path)
     tuple val(ensemblVersion), val(ensemblSource)
-    val(limit_biomart_query) // DEBUG option, limits biomart queries to the number specified if not set to false
+    path(referenceStorePath) // path to custom annotation references
+    path(array_annot_path) // path to custom array design info file
     val(skipDE) // whether to skip DE
 
   output:
@@ -22,17 +25,17 @@ process PROCESS_AFFYMETRIX {
     path("versions.yml"), emit: versions 
 
   script:
-    def limit_biomart_query_parameter = limit_biomart_query ? "-P DEBUG_limit_biomart_query:${limit_biomart_query}" : ''
     def run_DE = skipDE ? "-P run_DE:'false'" : ''
     """
         export HOME=\$PWD;
 
         quarto render \$PWD/${qmd} \
+            -P 'workflow_version:${workflow.manifest.version}' \
             -P 'runsheet:${runsheet_csv}' \
             -P 'annotation_file_path:${annotation_file_path}' \
             -P 'ensembl_version:${ensemblVersion}' \
-            -P 'local_annotation_dir:${params.referenceStorePath}' \
-            ${limit_biomart_query_parameter} \
+            -P 'local_annotation_dir:${referenceStorePath}' \
+            -P 'array_annot_path:${array_annot_path}' \
             ${run_DE}
 
         # Rename report
