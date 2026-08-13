@@ -30,32 +30,33 @@ Updated [Ensembl Reference Files](https://github.com/nasa/GeneLab_Data_Processin
 
 Software Updates:
 
-| Program | Previous Version | New Version    |
-|:--------|:-----------------|:---------------|
-|R|4.1.3|4.5.3|
-|R.utils|2.12.2|2.13.0|
-|DT|0.26|0.34.0|
-|dplyr|1.0.10|1.2.0|
-|glue|1.6.2|1.8.0|
-|tibble|3.1.8|3.3.1|
-|stringr|1.5.0|1.6.0|
-|purrr|1.0.1|1.2.1|
-|Bioconductor|3.14|3.22|
-|oligo|1.58.0|1.74.0|
-|limma|3.50.3|3.66.0|
-|biomaRt|2.50.0|2.66.0|
-|matrixStats|0.63.0|1.5.0|
-|statmod|1.5.0|1.5.1|
-|dp_tools|1.3.4|1.3.5|
-|Quarto|1.2.313|1.9.36|
+| Program      | Previous Version | New Version |
+| :----------- | :--------------- | :---------- |
+| R            | 4.1.3            | 4.5.3       |
+| DT           | 0.26             | 0.34.0      |
+| dplyr        | 1.0.10           | 1.2.0       |
+| glue         | 1.6.2            | 1.8.0       |
+| tibble       | 3.1.8            | 3.3.1       |
+| stringr      | 1.5.0            | 1.6.0       |
+| purrr        | 1.0.1            | 1.2.1       |
+| Bioconductor | 3.14             | 3.22        |
+| oligo        | 1.58.0           | 1.74.0      |
+| limma        | 3.50.3           | 3.66.0      |
+| matrixStats  | 0.63.0           | 1.5.0       |
+| statmod      | 1.5.0            | 1.5.1       |
+| dp_tools     | 1.3.4            | 1.3.8       |
+| Quarto       | 1.2.313          | 1.9.36      |
+
+- Packages `R.utils` and `biomaRt` were removed from the pipeline as they are no longer used in the processing code.
 
 Code Changes:
 
-- Updated [`fetch_organism_specific_annotation_table()`](#fetch_organism_specific_annotation_table), that is used in [Step 2d](#2d-load-annotation-metadata), to convert figshare ndownloader URLs to direct API endpoints, as ndownloader URLs require redirect handling that is not supported in all programmatic download contexts
-
 - Added support for plotting HTAFeatureSet data in MA plots, see [Step 3c](#3c-ma-plots)
 
-- Added ability to use custom gene annotations when annotations are not available in Biomart or Ensembl FTP, see [Step 8](#8-probeset-annotations)
+- Added ability to use custom gene annotations when annotations are not available in Ensembl FTP, see [Step 8](#8-probeset-annotations)
+
+- Replaced biomaRt's live Ensembl query with a static Ensembl FTP download for probe-to-gene mapping in [Step 8](#8a-probeset-annotations), to avoid issues with biomaRt's live Ensembl query being down or unavailable
+  - Gene/transcript ID column position is not stable across organisms in the Ensembl FTP mart dump. Columns are therefore detected by content pattern (matching unversioned Ensembl stable IDs) rather than hardcoded position, making this function organism-agnostic.
 
 - Simplified group sample retrieval in [Step 9c](#9c-add-annotation-and-stats-columns-and-format-de-table) to use a more concise `filter/pull/sort` chain instead of `group_by/summarize/filter/pull`, addressing the deprecation warning in dplyr >= 1.1.0 where returning more than 1 row per `summarise()` group is deprecated
 
@@ -70,7 +71,6 @@ Code Changes:
     - [2a. Load Libraries and Define Input Parameters](#2a-load-libraries-and-define-input-parameters)
     - [2b. Define Custom Functions](#2b-define-custom-functions)
     - [2c. Load Metadata and Raw Data](#2c-load-metadata-and-raw-data)
-    - [2d. Load Annotation Metadata](#2d-load-annotation-metadata)
   - [3. Raw Data Quality Assessment](#3-raw-data-quality-assessment)
     - [3a. Density Plot](#3a-density-plot)
     - [3b. Pseudo Image Plots](#3b-pseudo-image-plots)
@@ -88,7 +88,7 @@ Code Changes:
     - [8a. Get Probeset Annotations](#8a-get-probeset-annotations)
     - [8b. Summarize Gene Mapping](#8b-summarize-gene-mapping)
     - [8c. Generate Annotated Raw and Normalized Expression Tables](#8c-generate-annotated-raw-and-normalized-expression-tables)
-  - [9. Perform Probeset Differential Expression (DE)](#9-perform-probeset-differential-expression-de)
+  - [9. Probeset Differential Expression (DE)](#9-probeset-differential-expression-de)
     - [9a. Generate Design Matrix](#9a-generate-design-matrix)
     - [9b. Perform Individual Probeset Level DE](#9b-perform-individual-probeset-level-de)
     - [9c. Add Annotation and Stats Columns and Format DE Table](#9c-add-annotation-and-stats-columns-and-format-de-table)
@@ -97,35 +97,34 @@ Code Changes:
 
 # Software used  
 
-|Program|Version|Relevant Links|
-|:------|:------:|:-------------|
-|R|4.5.3|[https://www.r-project.org/](https://www.r-project.org/)|
-|R.utils|2.13.0|[https://github.com/HenrikBengtsson/R.utils](https://github.com/HenrikBengtsson/R.utils)|
-|DT|0.34.0|[https://github.com/rstudio/DT](https://github.com/rstudio/DT)|
-|dplyr|1.2.0|[https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)|
-|glue|1.8.0|[https://glue.tidyverse.org](https://glue.tidyverse.org)|
-|tibble|3.3.1|[https://tibble.tidyverse.org](https://tibble.tidyverse.org)|
-|stringr|1.6.0|[https://stringr.tidyverse.org](https://stringr.tidyverse.org)|
-|purrr|1.2.1|[https://purrr.tidyverse.org](https://purrr.tidyverse.org)|
-|Bioconductor|3.22|[https://bioconductor.org](https://bioconductor.org)|
-|oligo|1.74.0|[https://bioconductor.org/packages/3.22/bioc/html/oligo.html](https://bioconductor.org/packages/3.22/bioc/html/oligo.html)|
-|limma|3.66.0|[https://bioconductor.org/packages/3.22/bioc/html/limma.html](https://bioconductor.org/packages/3.22/bioc/html/limma.html)|
-|biomaRt|2.66.0|[https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html)|
-|matrixStats|1.5.0|[https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)|
-|statmod|1.5.1|[https://github.com/cran/statmod](https://github.com/cran/statmod)|
-|dp_tools|1.3.5|[https://github.com/torres-alexis/dp_tools](https://github.com/torres-alexis/dp_tools)|
-|Quarto|1.9.36|[https://quarto.org](https://quarto.org)|
+| Program      | Version | Relevant Links                                                                                                             |
+| :----------- | :-----: | :------------------------------------------------------------------------------------------------------------------------- |
+| R            | 4.5.3   | [https://www.r-project.org/](https://www.r-project.org/)                                                                   |
+| DT           | 0.34.0  | [https://github.com/rstudio/DT](https://github.com/rstudio/DT)                                                             |
+| dplyr        | 1.2.0   | [https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)                                                                 |
+| glue         | 1.8.0   | [https://glue.tidyverse.org](https://glue.tidyverse.org)                                                                   |
+| tibble       | 3.3.1   | [https://tibble.tidyverse.org](https://tibble.tidyverse.org)                                                               |
+| stringr      | 1.6.0   | [https://stringr.tidyverse.org](https://stringr.tidyverse.org)                                                             |
+| purrr        | 1.2.1   | [https://purrr.tidyverse.org](https://purrr.tidyverse.org)                                                                 |
+| Bioconductor | 3.22    | [https://bioconductor.org](https://bioconductor.org)                                                                       |
+| oligo        | 1.74.0  | [https://bioconductor.org/packages/3.22/bioc/html/oligo.html](https://bioconductor.org/packages/3.22/bioc/html/oligo.html) |
+| limma        | 3.66.0  | [https://bioconductor.org/packages/3.22/bioc/html/limma.html](https://bioconductor.org/packages/3.22/bioc/html/limma.html) |
+| matrixStats  | 1.5.0   | [https://github.com/HenrikBengtsson/matrixStats](https://github.com/HenrikBengtsson/matrixStats)                           |
+| statmod      | 1.5.1   | [https://github.com/cran/statmod](https://github.com/cran/statmod)                                                         |
+| dp_tools     | 1.3.8   | [https://github.com/torres-alexis/dp_tools](https://github.com/torres-alexis/dp_tools)                                     |
+| Quarto       | 1.9.36  | [https://quarto.org](https://quarto.org)                                                                                   |
 ---
 
 # General processing overview with example commands  
 
+> [!IMPORTANT]
 > Exact processing commands and output files listed in **bold** below are included with each Microarray processed dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 
 ---
 
 ## 1. Create Sample RunSheet
 
-> Notes: 
+> [!TIP] 
 > - Rather than running the commands below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAffymetrix/examples/runsheet/README.md).
 > 
 > - These command line tools are part of the [dp_tools](https://github.com/torres-alexis/dp_tools) program.
@@ -166,7 +165,8 @@ dpt-isa-to-runsheet --accession OSD-### \
 
 ## 2. Load Data
 
-> Note: Steps 2 - 9 are done in R
+> [!NOTE]
+> Steps 2 - 9 are done in R
 
 <br>
 
@@ -175,7 +175,6 @@ dpt-isa-to-runsheet --accession OSD-### \
 ```R
 ### Install R packages if not already installed ###
 
-install.packages("R.utils")
 install.packages("dplyr")
 install.packages("tibble")
 install.packages("stringr")
@@ -187,13 +186,12 @@ if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install(version = "3.22")
 BiocManager::install("limma")
-BiocManager::install("biomaRt")
 BiocManager::install("oligo")
 
 
 ## Note: Only dplyr is explicitly loaded. Other library functions are called with explicit namespace (e.g. LIBRARYNAME::FUNCTION)
 library(dplyr) # Ensure infix operator is available, methods should still reference dplyr namespace otherwise
-options(dplyr.summarise.inform = FALSE) # Don't print out '`summarise()` has grouped output by 'group'. You can override using the `.groups` argument.'
+options(dplyr.summarise.inform = FALSE) # Don't print out message informing how the result will be grouped
 
 # Define path to runsheet
 runsheet <- "/path/to/runsheet/{OSD-Accession-ID}_microarray_v{version}_runsheet.csv"
@@ -222,7 +220,7 @@ options(timeout=1000) # ensure enough time for data downloads
 
 ### 2b. Define Custom Functions
 
-#### retry_with_delay()
+#### retry_with_delay() <!-- omit in toc -->
 <details>
   <summary>utility function to improve robustness of function calls; used to remedy intermittent internet issues during runtime</summary>
 
@@ -263,110 +261,7 @@ options(timeout=1000) # ensure enough time for data downloads
   **Returns:** the output of the wrapped function
 </details>
 
-#### all_true()
-<details>
-  <summary>wraps R <code>base::all()</code> function; overrides default behavior for empty input vector</summary>
-
-  ```R
-  all_true <- function(i_vector) {
-    if ( length(i_vector) == 0 ) {
-      stop(paste("Input vector is length zero"))
-    }
-    all(i_vector)
-  }
-  ```
-
-  **Function Parameter Definitions:**
-  - `i_vector=` - a vector of logical values
-
-  **Returns:** a logical vector of length 1; `TRUE` if all values are true, `FALSE` otherwise; stops and returns an error if input vector is empty
-</details>
-
-#### runsheet_paths_are_URIs()
-<details>
-  <summary>tests if paths provided in runsheet dataframe are URIs</summary>
-
-  ```R
-  runsheet_paths_are_URIs <- function(df_runsheet) {
-    all_true(stringr::str_starts(df_runsheet$`Array Data File Path`, "https"))
-  }
-  ```
-
-  **Custom Functions Used:**
-  - [all_true()](#all_true)
-
-  **Function Parameter Definitions:**
-  - `df_runsheet=` - a dataframe containing the sample runsheet information
-
-  **Returns:** a logical vector of length 1; `TRUE` if all values in the `Array Data File Path` of the runsheet start with "https", `FALSE` otherwise; stops and returns an error if input vector is empty
-</details>
-
-#### download_files_from_runsheet()
-<details>
-  <summary>downloads the raw data files</summary>
-
-  ```R
-  download_files_from_runsheet <- function(df_runsheet) {
-    urls <- df_runsheet$`Array Data File Path`
-    destinationFiles <- df_runsheet$`Array Data File Name`
-
-    mapply(function(url, destinationFile) {
-      print(paste0("Downloading from '", url, "' TO '", destinationFile, "'"))
-      if ( file.exists(destinationFile ) ) {
-        warning(paste( "Using Existing File:", destinationFile ))
-      } else {
-        download.file(url, destinationFile)
-      }
-    }, urls, destinationFiles)
-
-    destinationFiles # Return these paths
-  }
-  ```
-
-  **Function Parameter Definitions:**
-  - `df_runsheet=` - a dataframe containing the sample runsheet information
-
-  **Returns:** a list of filenames that were downloaded; same as the `Array Data File Name` in the sample runsheet
-</details>
-
-#### fetch_organism_specific_annotation_table()
-<details>
-  <summary>determines the organism specific annotation file to use based on the provided organism name</summary>
-
-  ```R
-  fetch_organism_specific_annotation_table <- function(organism, annotation_table_link) {
-    # Uses the latest GeneLab annotations table to find the organism specific annotation file path and ensembl version
-    # Raises an exception if the organism does not have an associated annotation file or ensembl version yet
-
-    all_organism_table <- read.csv(annotation_table_link)
-
-    annotation_table <- all_organism_table %>% dplyr::filter(species == organism)
-
-    # Guard clause: Ensure annotation_table populated
-    # Else: raise exception for unsupported organism
-    if (nrow(annotation_table) == 0 || annotation_table$genelab_annots_link == "" || is.na(annotation_table$ensemblVersion)) {
-      stop(glue::glue("Organism supplied '{organism}' is not supported. See the following url for supported organisms: {annotation_table_link}.  Supported organisms will correspond to a row based on the 'species' column and include a url in the 'genelab_annots_link' column of that row and a version number in the 'ensemblVersion' column."))
-    }
-
-    # Convert figshare ndownloader URL to API endpoint
-    annotation_table$genelab_annots_link <- ifelse(
-        grepl('figshare.com/ndownloader/files/', annotation_table$genelab_annots_link),
-        sub('.*/files/([0-9]+).*', 'https://api.figshare.com/v2/file/download/\\1', annotation_table$genelab_annots_link),
-        annotation_table$genelab_annots_link
-    )
-
-    return(annotation_table)
-  }
-  ```
-
-  **Function Parameter Definitions:**
-  - `organism=` - a string containing the name of the organism (as found in the species column of the GeneLab annotation table)
-  - `annotation_table_link=` - a string specifying the URL or path to latest GeneLab Annotations file, see [GL-DPPD-7110-A_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv)
-
-  **Returns:** a dataframe containing all rows in the GeneLab annotations file that match the specified organism
-</details>
-
-#### shortened_organism_name()
+#### shortened_organism_name() <!-- omit in toc -->
 <details>
   <summary>shortens organism names, for example 'Homo Sapiens' to 'hsapiens'</summary>
 
@@ -389,9 +284,9 @@ options(timeout=1000) # ensure enough time for data downloads
   **Returns:** a string containing the short name of the organism
 </details>
 
-#### get_biomart_attribute()
+#### get_biomart_attribute() <!-- omit in toc -->
 <details>
-  <summary>retrieves resolved biomart attribute source from runsheet dataframe</summary>
+  <summary>retrieves resolved BioMart attribute source from runsheet dataframe</summary>
 
   ```R
   get_biomart_attribute <- function(df_rs) {
@@ -415,55 +310,152 @@ options(timeout=1000) # ensure enough time for data downloads
   **Returns:** a string containing the formatted value from the `biomart_attribute` column of the runsheet, with all spaces converted to underscores and uppercase converted to lowercase; if no `biomart_attribute` exists in the runsheet, stop and return an error
 </details>
 
-#### get_ensembl_genomes_mappings_from_ftp()
+#### resolve_mart_ftp_base() <!-- omit in toc -->
 <details>
-  <summary>obtains mapping table directly from ftp; useful when biomart live service no longer exists for desired version</summary>
+  <summary>resolves the FTP mart directory and per-species dataset prefix for either the main Ensembl release or an Ensembl Genomes division</summary>
 
   ```R
-  get_ensembl_genomes_mappings_from_ftp <- function(organism, ensembl_genomes_portal, ensembl_genomes_version, biomart_attribute) {    
-    request_url <- glue::glue("https://ftp.ebi.ac.uk/ensemblgenomes/pub/{ensembl_genomes_portal}/release-{ensembl_genomes_version}/mysql/{ensembl_genomes_portal}_mart_{ensembl_genomes_version}/{organism}_eg_gene__efg_{biomart_attribute}__dm.txt.gz")
+  resolve_mart_ftp_base <- function(division, organism, ensembl_version, ensembl_genomes_portal = NULL) {
+    if (division == "genomes") {
+      list(
+        ftp_dir        = glue::glue("https://ftp.ebi.ac.uk/ensemblgenomes/pub/{ensembl_genomes_portal}/release-{ensembl_version}/mysql/{ensembl_genomes_portal}_mart_{ensembl_version}"),
+        dataset_prefix = glue::glue("{organism}_eg_gene")
+      )
+    } else {
+      list(
+        ftp_dir        = glue::glue("https://ftp.ebi.ac.uk/pub/ensembl/release-{ensembl_version}/mysql/ensembl_mart_{ensembl_version}"),
+        dataset_prefix = glue::glue("{organism}_gene_ensembl")
+      )
+    }
+  }
+  ```
 
-    print(glue::glue("Mappings file URL: {request_url}"))
+  **Function Parameter Definitions:**
+  - `division=` - a string containing the Ensembl division, either 'ensembl' for the main Ensembl release or 'genomes' for an Ensembl Genomes division
+  - `organism=` - a string containing the name of the organism (formatted using `shortened_organism_name()`)
+  - `ensembl_version=` - a string containing the version of Ensembl to use
+  - `ensembl_genomes_portal=` - a string containing the name of the genomes portal, for example 'plants'; required only when division = "genomes"
 
-    # Create a temporary file name
+  **Returns:** a list containing the resolved `ftp_dir` (the FTP directory URL for this release/division) and `dataset_prefix` (the per-organism dataset filename prefix)
+</details>
+
+#### download_mart_dump() <!-- omit in toc -->
+<details>
+  <summary>downloads and loads a single gzipped, tab-separated, headerless Ensembl "mart dump" table</summary>
+
+  ```R
+  download_mart_dump <- function(url, col_names = NULL) {
+    options(timeout = 300) # Can be further increased for downloading large files
+    print(glue::glue("Mart dump URL: {url}"))
+
+    # Download the file to a temporary location and read it in
     temp_file <- tempfile(fileext = ".gz")
+    download.file(url = url, destfile = temp_file, method = "libcurl") # libcurl needed for ftp(s) URLs
 
-    # Download the gzipped table file using the download.file function
-    download.file(url = request_url, destfile = temp_file, method = "libcurl") # Use 'libcurl' to support ftps
-
-    # Uncompress the file
-    uncompressed_temp_file <- tempfile()
-    gzcon <- gzfile(temp_file, "rt")
-    content <- readLines(gzcon)
-    writeLines(content, uncompressed_temp_file)
-    close(gzcon)
-
-
-    # Load the data into a dataframe
-    mapping <- read.table(uncompressed_temp_file, # Read the uncompressed file
-                          # Add column names as follows: MAPID, TAIR, PROBESETID
-                          col.names = c("MAPID", "ensembl_gene_id", biomart_attribute),
-                          header = FALSE, # No header in original table
-                          sep = "\t") # Tab separated
-
-    # Clean up temporary files
+    # Read the gzipped file into a dataframe, optionally assigning column names to the leading columns
+    mapping <- read.table(gzfile(temp_file), header = FALSE, sep = "\t", quote = "", comment.char = "")
+    if (!is.null(col_names)) colnames(mapping)[seq_along(col_names)] <- col_names
     unlink(temp_file)
-    unlink(uncompressed_temp_file)
-
     return(mapping)
   }
   ```
 
   **Function Parameter Definitions:**
-  - `organism=` - a string containing the name of the organism (formatted using `shortened_organism_name()`)
-  - `ensembl_genomes_portal=` - a string containing the name of the genomes portal, for example 'plants'
-  - `ensembl_genomes_version=` - a string containing the version of Ensembl to use
-  - `biomart_attribute=` - a string containing the biomart attribute (formatted using `get_biomart_attribute()`)
+  - `url=` - a string containing the URL of the Ensembl "mart dump" file to download
+  - `col_names=` - an optional character vector of column names to assign to the leading columns of the loaded table
 
-  **Returns:** a dataframe containing the mapping between Ensembl ID and probeset ID, as obtained via FTP
+  **Returns:** a dataframe containing the contents of the downloaded "mart dump" table, with column names assigned as specified
 </details>
 
-#### list_to_unique_piped_string()
+#### get_transcript_to_gene_mapping_from_ftp <!-- omit in toc -->
+<details>
+  <summary>obtains a transcript-to-gene mapping table directly from the Ensembl FTP "transcript main" mart dump</summary>
+
+  ```R
+  get_transcript_to_gene_mapping_from_ftp <- function(division, organism, ensembl_version, ensembl_genomes_portal = NULL) {
+    # Download the transcript main table from Ensembl FTP and extract the columns containing Ensembl gene and transcript IDs
+    loc <- resolve_mart_ftp_base(division, organism, ensembl_version, ensembl_genomes_portal)
+    url <- glue::glue("{loc$ftp_dir}/{loc$dataset_prefix}__transcript__main.txt.gz")
+    raw <- retry_with_delay(download_mart_dump, url)
+
+    # Identify the columns containing Ensembl gene and transcript IDs by matching their content patterns
+    gene_col_idx <- which(sapply(raw, function(col) any(grepl("^ENS[A-Z]*G[0-9]+$", col))))
+    transcript_col_idx <- which(sapply(raw, function(col) any(grepl("^ENS[A-Z]*T[0-9]+$", col))))
+
+    stopifnot(
+      "Could not uniquely identify gene ID column in transcript main table" = length(gene_col_idx) == 1,
+      "Could not uniquely identify transcript ID column in transcript main table" = length(transcript_col_idx) == 1
+    )
+
+    # Extract only the identified gene and transcript ID columns, ensuring uniqueness
+    raw %>%
+      dplyr::transmute(
+        ensembl_transcript_id = .data[[paste0("V", transcript_col_idx)]],
+        ensembl_gene_id = .data[[paste0("V", gene_col_idx)]]
+      ) %>%
+      dplyr::distinct()
+  }
+  ```
+
+  **Function Parameter Definitions:**
+  - `division=` - a string containing the Ensembl division ("main" for the main Ensembl release; Ensembl Genomes divisions map probe to gene directly and never call this function)
+  - `organism=` - a string containing the name of the organism (formatted using `shortened_organism_name()`)
+  - `ensembl_version=` - a string containing the version of Ensembl to use
+  - `biomart_attribute=` - a string containing the BioMart attribute (formatted using `get_biomart_attribute()`)
+  - `ensembl_genomes_portal=` - unused for division = "main"; present for signature consistency with resolve_mart_ftp_base()
+
+  **Returns:** a dataframe mapping Ensembl transcript IDs to Ensembl gene IDs, as obtained via FTP
+</details>
+
+#### get_probe_to_gene_mapping_from_ftp <!-- omit in toc -->
+<details>
+  <summary>obtains a probe-to-gene mapping table directly from Ensembl FTP mart dumps, for either main Ensembl or an Ensembl Genomes division</summary>
+
+  ```R
+  get_probe_to_gene_mapping_from_ftp <- function(division, organism, ensembl_version, biomart_attribute, ensembl_genomes_portal = NULL) {
+    # Download the probe mapping table from Ensembl FTP and extract the columns containing Ensembl gene IDs and the specified BioMart attribute
+    loc <- resolve_mart_ftp_base(division, organism, ensembl_version, ensembl_genomes_portal)
+    dm_url <- glue::glue("{loc$ftp_dir}/{loc$dataset_prefix}__efg_{biomart_attribute}__dm.txt.gz")
+
+    probe_dm <- tryCatch(
+      if (division == "genomes") {
+        download_mart_dump(dm_url, col_names = c("MAPID", "ensembl_gene_id", biomart_attribute))
+      } else {
+        download_mart_dump(dm_url, col_names = c("MAPID", "ensembl_transcript_id", biomart_attribute))
+      },
+      error = function(e) {
+        message(glue::glue("Probe mapping file not available for attribute '{biomart_attribute}' ({e$message}); falling back to custom annotation"))
+        NULL
+      }
+    )
+
+    if (is.null(probe_dm)) return(NULL)
+
+    # If the division is "genomes", the probe mapping table already contains Ensembl gene IDs, return it directly
+    if (division == "genomes") {
+      return(probe_dm %>% dplyr::select(!!sym(biomart_attribute), ensembl_gene_id))
+    }
+
+    # If the division is "main", join the probe mapping table with the transcript-to-gene mapping table to get Ensembl gene IDs
+    transcript_to_gene <- get_transcript_to_gene_mapping_from_ftp(division, organism, ensembl_version, ensembl_genomes_portal)
+
+    probe_dm %>%
+      dplyr::left_join(transcript_to_gene, by = "ensembl_transcript_id") %>%
+      dplyr::select(!!sym(biomart_attribute), ensembl_gene_id)
+  }
+  ```
+
+  **Function Parameter Definitions:**
+  - `division=` - a string containing the Ensembl division, either 'ensembl' for the main Ensembl release or 'genomes' for an Ensembl Genomes division
+  - `organism=` - a string containing the name of the organism (formatted using `shortened_organism_name()`)
+  - `ensembl_version=` - a string containing the version of Ensembl to use
+  - `biomart_attribute=` - a string containing the BioMart attribute (formatted using `get_biomart_attribute()`)
+  - `ensembl_genomes_portal=` - a string containing the name of the genomes portal, for example 'plants'; required only when division = "genomes"
+
+  **Returns:** a dataframe mapping the probe attribute column to ensembl_gene_id; NULL if the array design's attribute-specific dm file is not available on Ensembl FTP
+</details>
+
+#### list_to_unique_piped_string() <!-- omit in toc -->
 <details>
   <summary>converts character vector into string denoting unique elements separated by '|' characters</summary>
 
@@ -481,7 +473,7 @@ options(timeout=1000) # ensure enough time for data downloads
   **Returns:** a string containing the unique elements from `str_list` concatenated together, separated by '|' characters
 </details>
 
-#### runsheet_to_design_matrix()
+#### runsheet_to_design_matrix() <!-- omit in toc -->
 <details>
   <summary>loads the GeneLab runsheet into a list of dataframes</summary>
 
@@ -508,7 +500,7 @@ options(timeout=1000) # ensure enough time for data downloads
           group<-study[,1]
       }
       group_names <- paste0("(",group,")",sep = "") # human readable group names
-      group <- sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", group))) # group naming compatible with R models, this maintains the default behaviour of make.names with the exception that 'X' is never prepended to group namesnames(group) <- group_names
+      group <- sub("^BLOCKER_", "",  make.names(paste0("BLOCKER_", group))) # group naming compatible with R models, this maintains the default behavior of make.names with the exception that 'X' is never prepended to group names
       names(group) <- group_names
 
       # Format contrasts table, defining pairwise comparisons for all groups
@@ -539,7 +531,7 @@ options(timeout=1000) # ensure enough time for data downloads
   - `design_data$contrasts` - a matrix of all pairwise comparisons of the groups
 </details>
 
-#### lm_fit_pairwise()
+#### lm_fit_pairwise() <!-- omit in toc -->
 <details>
   <summary>performs all pairwise comparisons using <code>limma::lmFit()</code></summary>
 
@@ -567,7 +559,7 @@ options(timeout=1000) # ensure enough time for data downloads
   **Returns:** an R object of class `MArrayLM`
 </details>
 
-#### reformat_names()
+#### reformat_names() <!-- omit in toc -->
 <details>
   <summary>reformats column names for consistency across DE analyses tables within GeneLab</summary>
 
@@ -599,7 +591,7 @@ options(timeout=1000) # ensure enough time for data downloads
   **Returns:** a character vector containing the formatted column names
 </details>
 
-#### generate_prefixed_column_order()
+#### generate_prefixed_column_order() <!-- omit in toc -->
 <details>
   <summary>creates a vector of column names based on subject and given prefixes; used for both contrasts and groups column name generation</summary>
 
@@ -634,28 +626,12 @@ options(timeout=1000) # ensure enough time for data downloads
 df_rs <- read.csv(runsheet, check.names = FALSE) %>% 
           dplyr::mutate_all(function(x) iconv(x, "latin1", "ASCII", sub="")) # Convert all characters to ascii, when not possible, remove the character
 
-if ( runsheet_paths_are_URIs(df_rs) ) {
-  print("Determined Raw Data Locations are URIS")
-  local_paths <- retry_with_delay(download_files_from_runsheet, df_rs)
-} else {
-  print("Determined Raw Data Locations are local paths")
-  local_paths <- df_rs$`Array Data File Path`
-}
-
-# uncompress files if needed
-if ( all_true(stringr::str_ends(local_paths, ".gz")) ) {
-  print("Determined these files are gzip compressed... uncompressing now")
-  # This does the uncompression
-  lapply(local_paths, R.utils::gunzip, remove = FALSE, overwrite = TRUE)
-  # This removes the .gz extension to get the uncompressed filenames
-  local_paths <- vapply(local_paths, 
-                        stringr::str_replace, # Run this function against each item in 'local_paths'
-                        FUN.VALUE = character(1),  # Execpt an character vector as a return
-                        USE.NAMES = FALSE,  # Don't use the input to assign names for the returned list
-                        pattern = ".gz$", # first argument for applied function
-                        replacement = ""  # second argument for applied function
-                        )
-}
+# Determine expected local filename per sample (Array Data File Path is only checked for ".gz", never used to locate files)
+local_paths <- ifelse(
+  stringr::str_detect(df_rs$`Array Data File Path`, "\\.gz$"),
+  stringr::str_remove(df_rs$`Array Data File Name`, "\\.gz$"),
+  df_rs$`Array Data File Name`
+)
 
 df_local_paths <- data.frame(`Sample Name` = df_rs$`Sample Name`, `Local Paths` = local_paths, check.names = FALSE)
 
@@ -675,60 +651,19 @@ print(paste0("Number of Probes: ", dim(raw_data)[1]))
 **Custom Functions Used:**
 
 - [retry_with_delay()](#retry_with_delay)
-- [all_true()](#all_true)
-- [runsheet_paths_are_URIs()](#runsheet_paths_are_uris)
-- [download_files_from_runsheet()](#download_files_from_runsheet)
 
 **Input Data:**
 
 - `runsheet` (Path to runsheet, output from [Step 1](#1-create-sample-runsheet))
+- Raw array data files listed in the runsheet's `Array Data File Name` column, decompressed (if applicable) and placed in the current working directory
 
 **Output Data:**
 
 - `df_rs` (R dataframe containing information from the runsheet)
 - `raw_data` (R object containing raw microarray data)
 
-    > Note: The raw data R object will be used to generate quality assessment (QA) plots in the next step.
-
-<br>
-
-### 2d. Load Annotation Metadata
-
-```R
-# If using custom annotation, local_annotation_dir is path to directory containing annotation file and annotation_config_path is path/url to config file
-local_annotation_dir <- NULL # <path/to/custom_annotation>
-annotation_config_path <- NULL # <path/to/config_file>
-
-annotation_table_link <- "https://raw.githubusercontent.com/nasa/GeneLab_Data_Processing/GL_RefAnnotTable-A_1.1.0/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv"
-
-annotation_table <- retry_with_delay(fetch_organism_specific_annotation_table, unique(df_rs$organism), annotation_table_link)
-
-annotation_file_path <- annotation_table$genelab_annots_link
-ensembl_version <- as.character(annotation_table$ensemblVersion)
-```
-
-**Custom Functions Used:**
-
-- [retry_with_delay()](#retry_with_delay)
-- [fetch_organism_specific_annotation_table()](#fetch_organism_specific_annotation_table)
-
-**Input Data:**
-
-- `local_annotation_dir` (Path to local annotation directory if using custom annotations, see [Step 8a](#8a-get-probeset-annotations))
-
-    > Note: If not using custom annotations, leave `local_annotation_dir` as `NULL`.
-
-- `annotation_config_path` (URL or path to annotation config file if using custom annotations, see [Step 8a](#8a-get-probeset-annotations))
-
-    > Note: If not using custom annotations, leave `annotation_config_path` as `NULL`.
-
-- `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
-- `annotation_table_link` (URL or path to latest GeneLab Annotations file, see [GL-DPPD-7110-A_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv))
-
-**Output Data:**
-
-- `annotation_file_path` (reference organism annotation file url indicated in the 'genelab_annots_link' column of the GeneLab Annotations file provided in `annotation_table_link`)
-- `ensembl_version` (reference organism Ensembl version indicated in the 'ensemblVersion' column of the GeneLab Annotations file provided in `annotation_table_link`)
+    > [!NOTE]
+    > The raw data R object will be used to generate quality assessment (QA) plots in the next step.
 
 <br>
 
@@ -887,9 +822,9 @@ background_corrected_data <- raw_data %>% oligo::backgroundCorrect(method="rma")
 **Output Data:**
 
 - `background_corrected_data` (R object containing background-corrected microarray data)
-
-  >   
-  > Note: Background correction was performed using the oligo `rma` method, specifically "Convolution Background Correction"
+ 
+  > [!NOTE]
+  > Background correction was performed using the oligo `rma` method, specifically "Convolution Background Correction"
 
 <br>
 
@@ -917,8 +852,8 @@ print(paste0("Number of Probes: ", dim(norm_data)[1]))
 
 - `norm_data` (R object containing background-corrected and normalized microarray data)
  
-  >   
-  > Note: Normalization was performed using the `quantile` method, which forces the entire empirical distribution of all arrays to be identical
+  > [!NOTE]  
+  > Normalization was performed using the `quantile` method, which forces the entire empirical distribution of all arrays to be identical
 
 <br>
 
@@ -1075,115 +1010,83 @@ print(paste0("Number of Probesets: ", dim(unique(oligo::getProbeInfo(probeset_le
 ### 8a. Get Probeset Annotations
 
 ```R
+# If using custom annotation, local_annotation_dir is path to directory containing annotation file and and array_annot_path is path/url to file containing design information for the array
+local_annotation_dir <- NULL # <path/to/custom_annotation>
+array_annot_path <- NULL # <path/to/array_annotation_file>
+
+ENSEMBL_VERSION <- ensembl_version
+expected_attribute_name <- get_biomart_attribute(df_rs)
+
 organism <- shortened_organism_name(unique(df_rs$organism))
 annot_key <- ifelse(organism %in% c("athaliana"), 'TAIR', 'ENSEMBL')
 
 if (organism %in% c("athaliana")) {
-  ENSEMBL_VERSION = ensembl_version
   ensembl_genomes_portal = "plants"
-  print(glue::glue("Using ensembl genomes ftp to get specific version of probeset id mapping table. Ensembl genomes portal: {ensembl_genomes_portal}, version: {ENSEMBL_VERSION}"))
-  expected_attribute_name <- get_biomart_attribute(df_rs)
-  df_mapping <- retry_with_delay(
-      get_ensembl_genomes_mappings_from_ftp,
+  print(glue::glue("Using Ensembl Genomes FTP to get probe mapping table. Portal: {ensembl_genomes_portal}, version: {ENSEMBL_VERSION}"))
+  
+  df_mapping <- get_probe_to_gene_mapping_from_ftp(
+      division = "genomes",
       organism = organism,
-      ensembl_genomes_portal = ensembl_genomes_portal,
-      ensembl_genomes_version = ENSEMBL_VERSION,
-      biomart_attribute = expected_attribute_name
+      ensembl_version = ENSEMBL_VERSION,
+      biomart_attribute = expected_attribute_name,
+      ensembl_genomes_portal = ensembl_genomes_portal
     )
 
-  # TAIR from the mapping tables tend to be in the format 'AT1G01010.1' but the raw data has 'AT1G01010'
+  # TAIR IDs in the mapping tables tend to be in the format 'AT1G01010.1' but the raw data has 'AT1G01010'
   # So here we remove the '.NNN' from the mapping table where .NNN is any number
   df_mapping$ensembl_gene_id <- stringr::str_replace_all(df_mapping$ensembl_gene_id, "\\.\\d+$", "")
 
   use_custom_annot <- FALSE
 } else {
-  # Use biomart from main Ensembl website which archives keep each release on the live service
-  # locate dataset
-  expected_dataset_name <- shortened_organism_name(unique(df_rs$organism)) %>% stringr::str_c("_gene_ensembl")
-  print(paste0("Expected dataset name: '", expected_dataset_name, "'"))
+  expected_dataset_name <- glue::glue("{organism}_gene_ensembl")
+  print(glue::glue("Expected dataset name: '{expected_dataset_name}'"))
+  print(glue::glue("Expected attribute name: '{expected_attribute_name}'"))
+  print(glue::glue("Searching for Ensembl Version: {ENSEMBL_VERSION}"))
 
-  expected_attribute_name <- get_biomart_attribute(df_rs)
-  print(paste0("Expected attribute name: '", expected_attribute_name, "'"))
-
-  # Specify Ensembl version used in current GeneLab reference annotations
-  ENSEMBL_VERSION <- ensembl_version
-
-  print(glue::glue("Using Ensembl biomart to get specific version of mapping table. Ensembl version: {ENSEMBL_VERSION}"))
-
-  # Check if organism/array design is supported in biomart
-  use_custom_annot <- TRUE
-
-  ensembl <- biomaRt::useEnsembl(biomart = "genes", version = ENSEMBL_VERSION)
-  ensembl_datasets <- biomaRt::listDatasets(ensembl)
-  if (expected_dataset_name %in% ensembl_datasets$dataset) {
-    ensembl <- biomaRt::useEnsembl(biomart = "genes", dataset = expected_dataset_name, version = ENSEMBL_VERSION)
-    ensembl_attributes <- biomaRt::listAttributes(ensembl)
-    if (expected_attribute_name %in% ensembl_attributes$name) {
-      use_custom_annot <- FALSE
-    }
+  # Some probe_ids for affy_hta_2_0 may end in .hg.1 instead of .hg (how it is in biomaRt), leading to 0 results returned
+  if (expected_attribute_name == 'affy_hta_2_0') {
+    rownames(probeset_level_data) <- stringr::str_replace(rownames(probeset_level_data), '\\.hg\\.1$', '.hg')
   }
 
-  if (use_custom_annot) {
-    unloadNamespace("biomaRt")
+  probe_ids <- rownames(probeset_level_data)
+
+  print(glue::glue("Using Ensembl biomart to get specific version of mapping table. Ensembl version: {ENSEMBL_VERSION}"))
+  print(glue::glue("Attempting Ensembl FTP probe mapping table. Version: {ENSEMBL_VERSION}"))
+  df_mapping <- get_probe_to_gene_mapping_from_ftp(
+    division = "main",
+    organism = organism,
+    ensembl_version = ENSEMBL_VERSION,
+    biomart_attribute = expected_attribute_name
+  )
+
+  if (!is.null(df_mapping)) {
+    use_custom_annot <- FALSE
+    # FTP has no server-side filter equivalent to getBM(filters=, values=)
+    # the full mart-dump file is always downloaded in full, then filtered
+    # client-side down to just this experiment's probes.
+    df_mapping <- df_mapping %>% dplyr::filter(!!sym(expected_attribute_name) %in% probe_ids)
   } else {
-
-    ensembl <- biomaRt::useEnsembl(biomart = "genes", 
-                                  dataset = expected_dataset_name,
-                                  version = ENSEMBL_VERSION)
-    print(ensembl)
-
-    # Some probe_ids for affy_hta_2_0 may end in .hg.1 instead of .hg (how it is in biomaRt), leading to 0 results returned
-    if (expected_attribute_name == 'affy_hta_2_0') {
-      rownames(probeset_level_data) <- stringr::str_replace(rownames(probeset_level_data), '\\.hg\\.1$', '.hg')
-    }
-
-    probe_ids <- rownames(probeset_level_data)
-
-    # Create probe map
-    # Run Biomart Queries in chunks to prevent request timeouts
-    #   Note: If timeout is occuring (possibly due to larger load on biomart), reduce chunk size
-    CHUNK_SIZE= 1500
-    probe_id_chunks <- split(probe_ids, ceiling(seq_along(probe_ids) / CHUNK_SIZE))
-    df_mapping <- data.frame()
-    for (i in seq_along(probe_id_chunks)) {
-      probe_id_chunk <- probe_id_chunks[[i]]
-      print(glue::glue("Running biomart query chunk {i} of {length(probe_id_chunks)}. Total probes IDS in query ({length(probe_id_chunk)})"))
-      chunk_results <- biomaRt::getBM(
-          attributes = c(
-              expected_attribute_name,
-              "ensembl_gene_id"
-              ), 
-              filters = expected_attribute_name, 
-              values = probe_id_chunk, 
-              mart = ensembl)
-
-      if (nrow(chunk_results) > 0) {
-        df_mapping <- df_mapping %>% dplyr::bind_rows(chunk_results)
-      }
-      
-      Sys.sleep(10) # Slight break between requests to prevent back-to-back requests
-    }
-
+    use_custom_annot <- TRUE
   }
 }
 
-# At this point, we have df_mapping from either the biomart live service or the ensembl genomes ftp archive depending on the organism
+# At this point, we have df_mapping from either the Ensembl FTP mart dumps (main or Ensembl Genomes) depending on the organism
 # If no df_mapping obtained (e.g., organism not supported in biomart), use custom annotations; otherwise, merge in-house annotations to df_mapping
 
 if (use_custom_annot) {
   expected_attribute_name <- 'ProbesetID'
-
   annot_type <- 'NO_CUSTOM_ANNOT'
-  if (!is.null(local_annotation_dir) && !is.null(annotation_config_path)) {
-    config_df <- read.csv(annotation_config_path, row.names=1)
-    if (unique(df_rs$`biomart_attribute`) %in% row.names(config_df)) {
-      annot_config <- config_df[unique(df_rs$`biomart_attribute`), ]
+
+  if (!is.null(local_annotation_dir) && !is.null(array_annot_path)) {
+    probe_annot_df <- read.csv(array_annot_path, row.names=1)
+    if (unique(df_rs$`biomart_attribute`) %in% row.names(probe_annot_df)) {
+      annot_config <- probe_annot_df[unique(df_rs$`biomart_attribute`), ]
       annot_type <- annot_config$annot_type[[1]]
     } else {
-      warning(paste0("No entry for '", unique(df_rs$`biomart_attribute`), "' in provided config file: ", annotation_config_path))
+      warning(paste0("No entry for '", unique(df_rs$`biomart_attribute`), "' in provided custom probe annotation file: ", array_annot_path))
     }
   } else {
-    warning("Need to provide both local_annotation_dir and annotation_config_path to use custom annotation.")
+    warning("Need to provide both local_annotation_dir and array_annot_path to use custom annotation.")
   }
 
   if (annot_type == '3prime-IVT') {
@@ -1266,30 +1169,38 @@ probeset_expression_matrix.gene_mapped <- probeset_expression_matrix %>%
 
 **Custom Functions Used:**
 
+- [resolve_mart_ftp_base()](#resolve_mart_ftp_base)
+- [download_mart_dump()](#download_mart_dump)
+- [get_transcript_to_gene_mapping_from_ftp()](#get_transcript_to_gene_mapping_from_ftp)
+- [get_probe_to_gene_mapping_from_ftp()](#get_probe_to_gene_mapping_from_ftp)
 - [retry_with_delay()](#retry_with_delay)
 - [shortened_organism_name()](#shortened_organism_name)
 - [get_biomart_attribute()](#get_biomart_attribute)
-- [get_ensembl_genomes_mappings_from_ftp()](#get_ensembl_genomes_mappings_from_ftp)
 - [list_to_unique_piped_string()](#list_to_unique_piped_string)
 
 **Input Data:**
 
 - `df_rs$organism` (organism specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
-- `df_rs$biomart_attribute` (array design biomart identifier specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
-- `annotation_file_path` (reference organism annotation file url indicated in the 'genelab_annots_link' column of the GeneLab Annotations file provided in `annotation_table_link`, output from [Step 2d](#2d-load-annotation-metadata))
-- `ensembl_version` (reference organism Ensembl version indicated in the 'ensemblVersion' column of the GeneLab Annotations file provided in `annotation_table_link`, output from [Step 2d](#2d-load-annotation-metadata))
+- `df_rs$biomart_attribute` (array design BioMart identifier specified in the runsheet created in [Step 1](#1-create-sample-runsheet))
+- `annotation_file_path` (reference organism annotation file url indicated in the 'genelab_annots_link' column of the [GL-DPPD-7110-A_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
+- `ensembl_version` (reference organism Ensembl version indicated in the 'ensemblVersion' column of the [GL-DPPD-7110-A_annotations.csv](https://github.com/nasa/GeneLab_Data_Processing/blob/master/GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
 - `annot_key` (keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL')
-- `local_annotation_dir` (path to local annotation directory if using custom annotations, output from [Step 2d](#2d-load-annotation-metadata))
-- `annotation_config_path` (URL or path to annotation config file if using custom annotations, output from [Step 2d](#2d-load-annotation-metadata))
+- `local_annotation_dir` (Path to local annotation directory if using custom annotations)
+    > [!TIP] 
+    > If not using custom annotations, leave `local_annotation_dir` as `NULL`.
+- `array_annot_path` (URL or path to array design info file if using custom annotations)
+    > [!TIP] 
+    > If not using custom annotations, leave `array_annot_path` as `NULL`.
 
-  > Note: See [config.csv](../Workflow_Documentation/NF_MAAffymetrix/examples/annotations/config.csv) for the latest annotation config file used at GeneLab. This file can also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAffymetrix/examples/annotations/README.md).
+  > [!TIP]
+  > See [design_info.csv](../Workflow_Documentation/NF_MAAffymetrix/examples/annotations/design_info.csv) for the latest array design info file used at GeneLab. This file can also be created manually by following the [file specification](../Workflow_Documentation/NF_MAAffymetrix/examples/annotations/README.md).
 
 - `probeset_level_data` (R object containing probeset level expression values after summarization of normalized probeset level data, output from [Step 7](#7-probeset-summarization))
 
 **Output Data:**
 
 - `unique_probe_ids` (R object containing probeset ID to gene annotation mappings)
-- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html) or custom annotations)
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by Ensembl FTP mart dumps or custom annotations)
 
 <br>
 
@@ -1316,7 +1227,7 @@ print(glue::glue("Unique Mapping Count: {slices[['Unique Mapping']]}"))
 
 **Input Data:**
 
-- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by Ensembl FTP mart dumps or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
 
 **Output Data:**
 
@@ -1377,7 +1288,7 @@ background_corrected_data_annotated <- oligo::exprs(background_corrected_data) %
   dplyr::right_join(oligo::getProbeInfo(background_corrected_data), by = "fid") %>% # Add 'man_fsetid' via mapping based on fid
   dplyr::rename( ProbesetID = man_fsetid ) %>% # Rename from getProbeInfo name to ProbesetID
   dplyr::rename( ProbeID = fid ) %>% # Rename from getProbeInfo name to ProbeID
-  dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>% # Join with biomaRt ENSEMBL mappings
+  dplyr::left_join(unique_probe_ids, by = c("ProbesetID" = expected_attribute_name ) ) %>% # Join with ENSEMBL mappings
   dplyr::mutate( count_gene_mappings := ifelse(is.na(count_gene_mappings), 0, count_gene_mappings) ) %>% # Convert NA mapping to 0
   dplyr::mutate( gene_mapping_source := unique(unique_probe_ids$gene_mapping_source) ) %>%
   dplyr::rename( !!annot_key := ENSEMBL )
@@ -1411,7 +1322,7 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 
 - `df_rs` (R dataframe containing information from the runsheet, output from [Step 2c](#2c-load-metadata-and-raw-data))
 - `annot_key` (keytype to join annotation table and microarray probes, dependent on organism, e.g. mus musculus uses 'ENSEMBL', defined in [Step 8a](#8a-get-probeset-annotations))
-- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by Ensembl FTP mart dumps or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
 - `background_corrected_data` (R object containing background-corrected microarray data, output from [Step 4](#4-background-correction))
 - `norm_data` (R object containing background-corrected and normalized microarray data, output from [Step 5](#5-between-array-normalization))
 - `unique_probe_ids` (R object containing probeset ID to gene annotation mappings, output from [Step 8a](#8a-get-probeset-annotations))
@@ -1422,9 +1333,10 @@ write.csv(norm_data_matrix_annotated, file.path(DIR_NORMALIZED_EXPRESSION, "norm
 - **raw_intensities_probe_GLmicroarray.csv** (table containing the background corrected, unnormalized probe intensity values for each sample including gene annotations. The ProbeID is the unique index column.)
 - **normalized_intensities_probe_GLmicroarray.csv** (table containing the background corrected, normalized probe intensity values for each sample including gene annotations.  The ProbeID is the unique index column.)
 
-## 9. Perform Probeset Differential Expression (DE)
+## 9. Probeset Differential Expression (DE)
 
-> Note: Run differential expression analysis only if there are at least 2 replicates per factor group.
+> [!WARNING]
+> Run differential expression analysis only if there are at least 2 replicates per factor group.
 
 <br>
 
@@ -1614,10 +1526,15 @@ write.csv(df_interim, file.path(DIR_DGE, "differential_expression_GLmicroarray.c
 
 - `design_data` (a list of R objects containing the sample information and metadata, output from [Step 9a](#9a-generate-design-matrix) above)
 - INTERIM.csv (statistical values from individual probeset level DE analysis, output from [Step 9b](#9b-perform-individual-probeset-level-de) above)
-- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by [Biomart](https://bioconductor.org/packages/3.22/bioc/html/biomaRt.html) or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
+- `probeset_expression_matrix.gene_mapped` (R object containing probeset level expression values after summarization of normalized probeset level data combined with gene annotations specified by Ensembl FTP mart dumps or custom annotations, output from [Step 8a](#8a-get-probeset-annotations) above)
 
 **Output Data:**
 
 - **differential_expression_GLmicroarray.csv** (table containing normalized probeset expression values for each sample, group statistics, Limma probeset DE results for each pairwise comparison, and gene annotations. The ProbesetID is the unique index column.)
 
+<br>
+
+---
+
+> [!IMPORTANT]
 > All steps of the Microarray pipeline are performed using R markdown and the completed R markdown is rendered (via Quarto) as an html file (**NF_MAAffymetrix_v\*_GLmicroarray.html**) and published in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/) for the respective dataset.

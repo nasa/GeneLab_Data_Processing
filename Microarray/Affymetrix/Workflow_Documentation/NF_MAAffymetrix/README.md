@@ -4,7 +4,7 @@
 
 ### Implementation Tools <!-- omit in toc -->
 
-The current GeneLab Affymetrix Microarray consensus processing pipeline (NF_MAAffymetrix), [GL-DPPD-7114-A](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114-A.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) to run all tools in containers. This workflow (NF_MAAffymetrix) is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://nextflow.io/docs/latest/index.html) is a useful resource for users who want to modify and/or extend this workflow.   
+The current GeneLab Affymetrix Microarray consensus processing pipeline (NF_MAAffymetrix), [GL-DPPD-7114-A](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114-A.md), is implemented as a [Nextflow](https://nextflow.io/) DSL2 workflow and utilizes [Singularity](https://docs.sylabs.io/guides/3.10/user-guide/introduction.html) or [Docker](https://docs.docker.com/get-started/) containers to run all tools. This workflow (NF_MAAffymetrix) is run using the command line interface (CLI) of any unix-based system.  While knowledge of creating workflows in Nextflow is not required to run the workflow as is, [the Nextflow documentation](https://docs.seqera.io/nextflow/) is a useful resource for users who want to modify and/or extend this workflow.   
 
 ### Workflow & Subworkflows <!-- omit in toc -->
 
@@ -34,13 +34,13 @@ document](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114-A.md):
      - This subworkflow performs validation and verification (V&V) on the raw and processed data files.  It performs a series of checks on the output files generated and flags the results, using the flag codes indicated in the table below, which are outputted into a log file.  
        **V&V Flags**:
 
-       |Flag Codes|Flag Name|Interpretation|
-       |:---------|:--------|:-------------|
-       | 2    | MANUAL   | Special flag that indicates a manual check that is advised. Often used to advise what should be visually assessed in QA plots. |
-       | 20    | GREEN   | Indicates the check passed all validation conditions |
-       | 30    | YELLOW  | Indicates the check was flagged for minor issues (e.g. slight outliers) |
-       | 50    | RED     | Indicates the check was flagged for moderate issues (e.g. major outliers) |
-       | 80    | HALT    | Indicates the check was flagged for severe issues that trigger a processing halt (e.g. missing data) |
+       | Flag Codes | Flag Name | Interpretation                                                                                                                 |
+       | :--------- | :-------- | :----------------------------------------------------------------------------------------------------------------------------- |
+       | 2          | MANUAL    | Special flag that indicates a manual check that is advised. Often used to advise what should be visually assessed in QA plots. |
+       | 20         | GREEN     | Indicates the check passed all validation conditions                                                                           |
+       | 30         | YELLOW    | Indicates the check was flagged for minor issues (e.g. slight outliers)                                                        |
+       | 50         | RED       | Indicates the check was flagged for moderate issues (e.g. major outliers)                                                      |
+       | 80         | HALT      | Indicates the check was flagged for severe issues that trigger a processing halt (e.g. missing data)                           |
 
 <br>
 
@@ -66,9 +66,10 @@ document](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114-A.md):
 
 #### 1a. Install Nextflow
 
-Nextflow can be installed either through [Anaconda](https://anaconda.org/bioconda/nextflow) or as documented on the [Nextflow documentation page](https://www.nextflow.io/docs/latest/getstarted.html).
+Nextflow can be installed either through the [Anaconda bioconda channel](https://anaconda.org/bioconda/nextflow) or as documented in the [Nextflow installation documentation](https://docs.seqera.io/nextflow/install).
 
-> Note: If you want to install Anaconda, we recommend installing a Miniconda, Python3 version appropriate for your system, as instructed by [Happy Belly Bioinformatics](https://astrobiomike.github.io/unix/conda-intro#getting-and-installing-conda).  
+> [!TIP]
+> If you wish to install Anaconda, we recommend installing a Miniforge version appropriate for your system, as documented on the [conda-forge website](https://conda-forge.org/download/), where you can find basic binaries for most systems. More detailed miniforge documentation is available in the [miniforge github repository](https://github.com/conda-forge/miniforge).  
 > 
 > Once conda is installed on your system, you can install the latest version of Nextflow by running the following commands:
 > 
@@ -85,7 +86,9 @@ Singularity is a container platform that allows usage of containerized software.
 
 We recommend installing Singularity on a system wide level as per the associated [documentation](https://docs.sylabs.io/guides/3.10/admin-guide/admin_quickstart.html).
 
-> Note: Singularity is also available through [Anaconda](https://anaconda.org/conda-forge/singularity).
+> [!TIP] 
+> - Singularity is also available through the [Anaconda conda-forge channel](https://anaconda.org/conda-forge/singularity). 
+> - Alternatively, Docker can be used in place of Singularity. To get started with Docker, see the [Docker CE installation documentation](https://docs.docker.com/engine/install/).
 
 <br>
 
@@ -109,7 +112,8 @@ unzip NF_MAAffymetrix_1.0.5.zip
 ### 3. Run the Workflow
 
 While in the location containing the `NF_MAAffymetrix_1.0.5` directory that was downloaded in [step 2](#2-download-the-workflow-files), you are now able to run the workflow. Below are three examples of how to run the NF_MAAffymetrix workflow:
-> Note: Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --ensemblVersion) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
+> [!NOTE] 
+> Nextflow commands use both single hyphen arguments (e.g. -help) that denote general nextflow arguments and double hyphen arguments (e.g. --ensemblVersion) that denote workflow specific parameters. Take care to use the proper number of hyphens for each argument.
 
 <br>
 
@@ -118,15 +122,15 @@ While in the location containing the `NF_MAAffymetrix_1.0.5` directory that was 
 ```bash
 nextflow run NF_MAAffymetrix_1.0.5/main.nf \ 
    -profile singularity \
-   --osdAccession OSD-266 \
-   --gldsAccession GLDS-266 
+   --accession OSD-266 
 ```
 
 <br>
 
 #### 3b. Approach 2: Run the workflow on a non-GLDS dataset using a user-created runsheet
 
-> Note: Specifications for creating a runsheet manually are described [here](examples/runsheet/README.md).
+> [!NOTE] 
+> Specifications for creating a runsheet manually are described [here](examples/runsheet/README.md).
 
 ```bash
 nextflow run NF_MAAffymetrix_1.0.5/main.nf \ 
@@ -138,13 +142,13 @@ nextflow run NF_MAAffymetrix_1.0.5/main.nf \
 
 #### 3c. Approach 3: Run the workflow using an ISA Archive
 
-> Note: Specifications for the ISA Tab Archive format can be found [here](https://isa-specs.readthedocs.io/en/latest/isatab.html).
+> [!NOTE]
+> Specifications for the ISA Tab Archive format can be found [here](https://isa-specs.readthedocs.io/en/latest/isatab.html).
 
 ```bash
 nextflow run NF_MAAffymetrix_1.0.5/main.nf \ 
    -profile singularity \
-   --osdAccession OSD-266 \
-   --gldsAccession GLDS-266 \
+   --accession OSD-266 \
    --isaArchivePath </path/to/isaArchive> 
 ```
 
@@ -161,9 +165,7 @@ nextflow run NF_MAAffymetrix_1.0.5/main.nf \
 
 **Additional Required Parameters For [Approach 1](#3a-approach-1-run-the-workflow-on-a-genelab-affymetrix-microarray-dataset):**
 
-* `--osdAccession OSD-###` – specifies the OSD ID to process through the NF_MAAffymetrix workflow (replace ### with the OSD number)
-
-* `--gldsAccession GLDS-###` – specifies the GLDS ID to process through the NF_MAAffymetrix workflow (replace ### with the GLDS number)  
+* `--accession` – The OSD or GLDS ID for the dataset to be processed, eg. `OSD-266` or `GLDS-266`
 
 <br>
 
@@ -175,9 +177,7 @@ nextflow run NF_MAAffymetrix_1.0.5/main.nf \
 
 **Additional Required Parameters For [Approach 3](#3c-approach-3-run-the-workflow-using-an-isa-archive):**
 
-* `--osdAccession OSD-###` – specifies the OSD ID to process through the NF_MAAffymetrix workflow (replace ### with the OSD number)
-
-* `--gldsAccession GLDS-###` – specifies the GLDS ID to process through the NF_MAAffymetrix workflow (replace ### with the GLDS number) 
+* `--accession` – The OSD or GLDS ID for the dataset to be processed, eg. `OSD-266` or `GLDS-266`
 
 * `--isaArchivePath` - specifies the path to a previously-downloaded *ISA.zip (Default: an *ISA.zip is automatically fetched from the GeneLab Repository for the GLDS dataset being processed) 
 
@@ -189,7 +189,7 @@ nextflow run NF_MAAffymetrix_1.0.5/main.nf \
 
 * `--skipDE` - skip the differential expression analysis (Default: the differential expression analysis is performed)
 
-* `--resultsDir` - specifies the output directory for all files produced by the workflow (Default: <OSD-NNN_GLDS-NNN> if OSD and GLDS accessions are specified.  Otherwise, the workflow launch directory.) 
+* `--outdir` - specifies the base directory where the output directory will be created (Default: "${launchDir}") 
 
 <br>
 
@@ -199,7 +199,7 @@ All parameters listed above and additional optional arguments for the NF_MAAffym
 nextflow run NF_MAAffymetrix_1.0.5/main.nf --help
 ```
 
-See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details common to all nextflow workflows.
+See `nextflow run -h` and [Nextflow's CLI run command documentation](https://docs.seqera.io/nextflow/cli) for more options and details common to all nextflow workflows.
 
 <br>
 
@@ -207,17 +207,22 @@ See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nex
 
 ### 4. Additional Output Files
 
-All R code steps and output are rendered within a Quarto document yielding the following:
+> [!NOTE]
+> The outputs from the Affymetrix Microarray Processing Subworkflow are documented in the [GL-DPPD-7114-A.md](../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114-A.md) processing protocol.
+
+Additional outputs are described below:
 
    - Output:
-     - NF_MAAffymetrix_1.0.5.html (html report containing executed code and output including QA plots)
+     - NF_MAAffymetrix_1.0.5_GLmicroarray.html (html report containing executed R code and output including QA plots rendered by Quarto)
+     - protocol_GLmicroarray.txt  (text file describing the processing methods used by the workflow)
+     - software_versions_GLmicroarray.md (version capturing file for all tools and packages used in the workflow)
   
 
 The outputs from the Analysis Staging and V&V Pipeline Subworkflows are described below:
-> Note: The outputs from the Affymetrix Microarray Processing Subworkflow are documented in the [GL-DPPD-7114-A.md](../../../Pipeline_GL-DPPD-7114_Versions/GL-DPPD-7114-A.md) processing protocol.
 
 **Analysis Staging Subworkflow**
-> Note: only applicable for [Approach 1](#3a-approach-1-run-the-workflow-on-a-genelab-affymetrix-microarray-dataset) and [Approach 3](#3c-approach-3-run-the-workflow-using-an-isa-archive)
+> [!NOTE]
+> only applicable for [Approach 1](#3a-approach-1-run-the-workflow-on-a-genelab-affymetrix-microarray-dataset) and [Approach 3](#3c-approach-3-run-the-workflow-using-an-isa-archive)
    - Output:
      - \*_microarray_v1_runsheet.csv (table containing metadata required for processing, including the raw reads files location)
      - \*-ISA.zip (the ISA archive of the GLDS datasets to be processed, downloaded from the GeneLab Data Repository)
@@ -231,7 +236,7 @@ The outputs from the Analysis Staging and V&V Pipeline Subworkflows are describe
 <br>
 
 Standard Nextflow resource usage logs are also produced as follows:
-> Further details about these logs can also found within [this Nextflow documentation page](https://www.nextflow.io/docs/latest/tracing.html#execution-report).
+> Further details about these logs can also be found in the [Nextflow Report Documentation](https://docs.seqera.io/nextflow/reports).
 
 **Nextflow Resource Usage Logs**
    - Output:
