@@ -6,7 +6,8 @@
 
 |Pipeline Version|Current Workflow Version (for respective pipeline version)|
 |:---------------|:---------------------------------------------------------|
-|*[GL-DPPD-7104-C.md](../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-C.md)|[NF_AmpIllumina_1.0.0](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow)|
+|*[GL-DPPD-7104-D.md](../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-D.md)|[NF_AmpIllumina_1.0.9](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow)|
+|[GL-DPPD-7104-C.md](../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-C.md)|[NF_AmpIllumina_1.0.8](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow/tree/v1.0.8)|
 |[GL-DPPD-7104-B.md](../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-B.md)|[SW_AmpIllumina-B_1.2.3](SW_AmpIllumina-B)|
 |[GL-DPPD-7104-A.md](../Pipeline_GL-DPPD-7104_Versions/GL-DPPD-7104-A.md)|[SW_AmpIllumina-A_1.1.1](SW_AmpIllumina-A)|
 
