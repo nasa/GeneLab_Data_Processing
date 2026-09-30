@@ -1800,7 +1800,10 @@ library(tidyr)
   - `assay_suffix` - a character string specifying the GeneLab assay suffix (default: "_GLlblMetag")
 
   **Output Data:**
-  - {output_prefix}_decontam_{species|KO}_table_GLlblMetag.tsv - decontaminated feature table file
+  - {output_prefix}_decontam_{species_table|table}_GLlblMetag.tsv - decontaminated feature table file, for 
+                                                                    taxonomy classification methods the filename 
+                                                                    includes the "species" keyword, other classification 
+                                                                    methods omit the "species" keyword
   - {output_prefix}_decontam_results_GLlblMetag.tsv - Decontam results file
 
   **Returns:** dataframe, `decontaminated_table`, containing the decontaminated feature table
@@ -4507,7 +4510,7 @@ make_heatmap(metadata_table_file = metadata_table,
 #### 26h. Contig-level Feature Filtering
 
 ```R
-feature_table_file <- "Combined-contig-level-taxonomy_GLlblMetag.tsv"
+feature_table_file <- "Combined-contig-level-taxonomy_unfiltered_GLlblMetag.tsv"
 metadata_table <- "/path/to/sample/metadata"
 threshold <- 1000
 
@@ -4597,7 +4600,7 @@ make_heatmap(metadata_table_file = metadata_table,
 
 **Input Data:**
 
-- `Combined-contig-level-taxonomy_GLlblMetag.tsv`(aggregated contig taxonomy table with samples in columns and species in rows, from [Step 26g](#26g-contig-level-heatmaps))
+- `Combined-contig-level-taxonomy_unfiltered_GLlblMetag.tsv`(aggregated contig taxonomy table with samples in columns and species in rows, from [Step 26g](#26g-contig-level-heatmaps))
 - `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 **Output Data:**

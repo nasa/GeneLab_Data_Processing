@@ -1434,7 +1434,10 @@ library(tidyr)
   - `assay_suffix` - a character string specifying the GeneLab assay suffix (default: "_GLlbsMetag")
 
   **Output Data:**
-  - {output_prefix}_decontam_{species|KO}_table_GLlbsMetag.tsv - decontaminated feature table file
+  - {output_prefix}_decontam_{species_table|table}_GLlblMetag.tsv - decontaminated feature table file, for
+                                                                    taxonomy classification methods the filename 
+                                                                    includes the "species" keyword, other classification 
+                                                                    methods omit the "species" keyword
   - {output_prefix}_decontam_results_GLlbsMetag.tsv - Decontam results file
 
   **Returns:** dataframe, `decontaminated_table`, containing the decontaminated feature table
@@ -4092,7 +4095,7 @@ make_heatmap(metadata_table_file = metadata_table,
 > Note: species_table and heatmaps are only generated if 1 or more contaminants were detected
 
 ```R
-feature_table_file <- "Combined-gene-level-taxonomy_GLlbsMetag.tsv"
+feature_table_file <- "Combined-gene-level-taxonomy_unfiltered_GLlbsMetag.tsv"
 metadata_table <- "/path/to/sample/metadata"
 
 decontaminated_table <- feature_decontam(metadata_file = metadata_table, 
@@ -4128,7 +4131,7 @@ make_heatmap(metadata_table_file = metadata_table,
 
 **Input Data:**
 
-- `Combined-gene-level-taxonomy_GLlbsMetag.tsv`(aggregated gene taxonomy table with samples in columns and species in rows, from [Step 21a](#21a-gene-level-taxonomy-heatmaps))
+- `Combined-gene-level-taxonomy_unfiltered_GLlbsMetag.tsv`(aggregated gene taxonomy table with samples in columns and species in rows, from [Step 21a](#21a-gene-level-taxonomy-heatmaps))
 - `/path/to/sample/metadata` (a file containing sample-wise metadata, mapping sample names to group metadata)
 
 **Output Data:**
