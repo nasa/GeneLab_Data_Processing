@@ -3236,7 +3236,7 @@ humann_renorm_table -o Gene-families-KO-cpm_GLmetagenomics.tsv --update-snames
 #### 20g. Combine MetaPhlan Taxonomy Tables
 
 ```bash
-merge_metaphlan_tables.py *-humann3-out-dir/*_humann_temp/*_metaphlan_bugs_list.tsv > Metaphlan-taxonomy_GLmetagenomics.tsv
+merge_metaphlan_tables.py *-humann3-out-dir/*_humann_temp/*_metaphlan_bugs_list.tsv > metaphlan-taxonomy_GLmetagenomics.tsv
 ```
 
 **Parameter Definitions:**  
@@ -3253,7 +3253,7 @@ merge_metaphlan_tables.py *-humann3-out-dir/*_humann_temp/*_metaphlan_bugs_list.
 
 **Output data:**
 
-- **Metaphlan-taxonomy_GLmetagenomics.tsv** (MetaPhlan estimated taxonomic relative abundances)
+- **metaphlan-taxonomy_GLmetagenomics.tsv** (MetaPhlan estimated taxonomic relative abundances)
 
 #### 20h. Create MetaPhlan Species Count Table
 
