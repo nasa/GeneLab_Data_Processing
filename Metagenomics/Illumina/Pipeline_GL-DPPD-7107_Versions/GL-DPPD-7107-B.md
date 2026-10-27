@@ -202,7 +202,7 @@ Software Updates and Changes:
 | samtools     | 1.23.1  | [https://github.com/samtools/samtools#samtools](https://github.com/samtools/samtools#samtools)                                                     |
 | SPAdes       |  4.2.0  | [https://github.com/ablab/spades](https://github.com/ablab/spades)                                                                                 |
 | R            |  4.5.3  | [https://www.r-project.org](https://www.r-project.org)                                                                                             |
-| dplyr        |  1.2.0  | [https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)                                                                                         |
+| dplyr        |  1.2.1  | [https://dplyr.tidyverse.org](https://dplyr.tidyverse.org)                                                                                         |
 | ggplot2      |  4.0.2  | [https://ggplot2.tidyverse.org](https://ggplot2.tidyverse.org)                                                                                     |
 | glue         |  1.8.0  | [https://glue.tidyverse.org](https://glue.tidyverse.org)                                                                                           |
 | htmlwidgets  |  1.6.4  | [http://www.htmlwidgets.org](http://www.htmlwidgets.org)                                                                                           |
@@ -1112,7 +1112,7 @@ library(tidyr)
     cols <- colnames(df)
     index <- grep(end_col, cols)
     start <- grep(end_col, cols) + 1
-    end <- (length(cols) - index)
+    end <- length(cols)
     df_samples <- cols[start:end]
     sample_names <- intersect(df_samples, sample_names)
 
@@ -3236,7 +3236,7 @@ humann_renorm_table -o Gene-families-KO-cpm_GLmetagenomics.tsv --update-snames
 #### 20g. Combine MetaPhlan Taxonomy Tables
 
 ```bash
-merge_metaphlan_tables.py *-humann3-out-dir/*_humann_temp/*_metaphlan_bugs_list.tsv > Metaphlan-taxonomy_GLmetagenomics.tsv
+merge_metaphlan_tables.py *-humann3-out-dir/*_humann_temp/*_metaphlan_bugs_list.tsv > metaphlan-taxonomy_GLmetagenomics.tsv
 ```
 
 **Parameter Definitions:**  
@@ -3253,7 +3253,7 @@ merge_metaphlan_tables.py *-humann3-out-dir/*_humann_temp/*_metaphlan_bugs_list.
 
 **Output data:**
 
-- **Metaphlan-taxonomy_GLmetagenomics.tsv** (MetaPhlan estimated taxonomic relative abundances)
+- **metaphlan-taxonomy_GLmetagenomics.tsv** (MetaPhlan estimated taxonomic relative abundances)
 
 #### 20h. Create MetaPhlan Species Count Table
 
@@ -3496,7 +3496,7 @@ write_tsv(x = table2write, file = "Pathway-abundances_filtered_GLmetagenomics.ts
 - Pathway-abundances_unfiltered_GLmetagenomics.tsv (pathway abundances normalized to copies-per-million, with cleaned headers)
 - **Gene-families-KO_filtered_GLmetagenomics.tsv** (KO term abundances filtered for features with less than 500 CPM across samples) 
 - **Gene-families-uniref_filtered_GLmetagenomics.tsv** (gene-family abundances filtered for features with less than 500 CPM across samples) 
-- **Gene-families-KO_filtered_GLmetagenomics.tsv** (Pathway abundances filtered for features with less than 500 CPM across samples) 
+- **Pathway-abundances_filtered_GLmetagenomics.tsv** (Pathway abundances filtered for features with less than 500 CPM across samples) 
 
 #### 20l. Create Humann Function Heatmaps
 
