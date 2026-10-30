@@ -45,7 +45,7 @@ Software Updates and Changes:
 | hexbin       | N/A              | 1.28.3        |
 | mia          | N/A              | 1.14.0        |
 | phyloseq     | N/A              | 1.50.0        |
-| rcolorbrewer | N/A              | 1.1.3         |
+| RColorBrewer | N/A              | 1.1.3         |
 | taxize       | N/A              | 0.10.0        |
 | tidyverse    | N/A              | 2.0.0         |
 | vegan        | N/A              | 2.6-10        |
@@ -53,7 +53,7 @@ Software Updates and Changes:
 | patchwork    | N/A              | 1.3.0         |
 | rstatix      | N/A              | 0.7.2         |
 | multcompView | N/A              | 0.1-10        |
-| scales       | N/A              | 1.4.0         |
+| scales       | N/A              | 1.3.0         |
 | dendextend   | N/A              | 1.19.0        |
 
 - Added new processing steps in R to generate processed data outputs for alpha and beta diversity, taxonomic summary plots, and differential abundance:
@@ -63,7 +63,7 @@ Software Updates and Changes:
   - Differential Abundance Testing ([Step 10](#9-differential-abundance-analysis)) with 
     ANCOMBC 1 ([Step 10a](#10a-ancombc-1)), ANCOMBC 2 ([Step 10b](#10b-ancombc-2)), and Deseq2 ([Step 10c](#10c-deseq2))
 - Assay-specific suffixes were added where needed for OSDR ("_GLAmpSeq")
-- Updated [DECIPHER](https://www2.decipher.codes/data/Downloads/TrainingSets/) reference files to the following:
+- Updated [DECIPHER](https://decipher.codes/Downloads.html) reference files to the following:
   - ITS UNITE: "UNITE\_v2024\_April2024.RData" 
   - SILVA SSU r138: "SILVA\_SSU\_r138\_2\_2024.RData"
   - PR2 v4.13: "PR2\_v4\_13\_March2021.RData"
@@ -128,6 +128,7 @@ Software Updates and Changes:
 |DADA2|1.34.0|[https://www.bioconductor.org/packages/release/bioc/html/dada2.html](https://www.bioconductor.org/packages/release/bioc/html/dada2.html)|
 |DECIPHER|3.2.0|[https://bioconductor.org/packages/release/bioc/html/DECIPHER.html](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html)|
 |biomformat|1.34.0|[https://github.com/joey711/biomformat](https://github.com/joey711/biomformat)|
+|dp_tools|1.3.8|[https://github.com/torres-alexis/dp_tools](https://github.com/torres-alexis/dp_tools)|
 |ANCOMBC|2.8.0|[https://github.com/FrederickHuangLin/ANCOMBC](https://github.com/FrederickHuangLin/ANCOMBC)|
 |broom|1.0.7|[https://CRAN.R-project.org/package=broom](https://CRAN.R-project.org/package=broom)|
 |DescTools|0.99.59|[https://andrisignorell.github.io/DescTools/](https://andrisignorell.github.io/DescTools/)|
@@ -139,7 +140,7 @@ Software Updates and Changes:
 |hexbin|1.28.3|[https://CRAN.R-project.org/package=hexbin](https://CRAN.R-project.org/package=hexbin)|
 |mia|1.14.0|[https://github.com/microbiome/mia](https://github.com/microbiome/mia)|
 |phyloseq|1.50.0|[https://bioconductor.org/packages/release/bioc/html/phyloseq.html](https://bioconductor.org/packages/release/bioc/html/phyloseq.html)|
-|rcolorbrewer|1.1.3|[https://CRAN.R-project.org/package=RColorBrewer](https://CRAN.R-project.org/package=RColorBrewer)|
+|RColorBrewer|1.1.3|[https://CRAN.R-project.org/package=RColorBrewer](https://CRAN.R-project.org/package=RColorBrewer)|
 |taxize|0.10.0|[https://docs.ropensci.org/taxize/](https://docs.ropensci.org/taxize/)|
 |tidyverse|2.0.0|[https://CRAN.R-project.org/package=tidyverse](https://CRAN.R-project.org/package=tidyverse)|
 |vegan|2.6-10|[https://cran.r-project.org/package=vegan](https://cran.r-project.org/package=vegan)|
@@ -147,7 +148,7 @@ Software Updates and Changes:
 |patchwork|1.3.0|[https://CRAN.R-project.org/package=patchwork](https://CRAN.R-project.org/package=patchwork)|
 |rstatix|0.7.2|[https://CRAN.R-project.org/package=rstatix](https://CRAN.R-project.org/package=rstatix)|
 |multcompView|0.1-10|[https://CRAN.R-project.org/package=multcompView](https://CRAN.R-project.org/package=multcompView)|
-|scales|1.4.0|[https://CRAN.R-project.org/package=scales](https://CRAN.R-project.org/package=scales)|
+|scales|1.3.0|[https://CRAN.R-project.org/package=scales](https://CRAN.R-project.org/package=scales)|
 |dendextend|1.19.0|[https://CRAN.R-project.org/package=dendextend](https://CRAN.R-project.org/package=dendextend)|
 
 # Reference databases used
@@ -205,12 +206,17 @@ multiqc --interactive -n raw_multiqc_GLAmpSeq -o /path/to/raw_multiqc/output/raw
 zip -r raw_multiqc_GLAmpSeq_report.zip raw_multiqc_GLAmpSeq_report
 ```
 
-**Parameter Definitions:**
-
+**Parameter Definitions:**  
+**multiqc**
 - `--interactive` – force reports to use interactive plots
 - `-n` – prefix name for output files
 - `-o` – the output directory to store results
 - `/path/to/directory/containing/raw_fastqc/files` – the directory holding the output data from the FastQC run, provided as a positional argument
+
+**zip**
+- `-r` - recurse into directories
+- `raw_multiqc_GLAmpSeq_report.zip` – positional argument naming the zip output file
+- `raw_multiqc_GLAmpSeq_report` – positional argument naming the input folder to package
 
 **Input Data:**
 
@@ -347,12 +353,17 @@ multiqc --interactive -n filtered_multiqc_GLAmpSeq -o /path/to/filtered_multiqc/
 zip -r filtered_multiqc_GLAmpSeq_report.zip filtered_multiqc_GLAmpSeq_report
 ```
 
-**Parameter Definitions:**
-
+**Parameter Definitions:**  
+**multiqc**
 - `--interactive` – force reports to use interactive plots
 - `-n` – prefix name for output files
 - `-o` – the output directory to store results
 - `/path/to/directory/containing/filtered_fastqc/files` – the directory holding the output data from the FastQC run, provided as a positional argument
+
+**zip**
+- `-r` - recurse into directories
+- `filtered_multiqc_GLAmpSeq_report.zip` – positional argument naming the zip output file
+- `filtered_multiqc_GLAmpSeq_report` – positional argument naming the input folder to package
 
 **Input Data:**
 
@@ -371,7 +382,7 @@ zip -r filtered_multiqc_GLAmpSeq_report.zip filtered_multiqc_GLAmpSeq_report
 ## 5. Calculate Error Mdel, Apply DADA2 Algorithm, Assign Taxonomy, and Create Output Tables
 > The following is run in an R environment.  
 
-These example commands as written assume paired-end data, with notes included on what would be different if working with single-end data. The taxonomy reference database used below is an example only, suitable for the example 16S dataset ([GLDS-200](https://osdr.nasa.gov/bio/repo/data/studies/OSD-200)) used here. Other taxonomy references databases designed for DECIPHER can be found here: [https://www2.decipher.codes/data/Downloads/TrainingSets/](https://www2.decipher.codes/data/Downloads/TrainingSets/)  
+These example commands as written assume paired-end data, with notes included on what would be different if working with single-end data. The taxonomy reference database used below is an example only, suitable for the example 16S dataset ([GLDS-200](https://osdr.nasa.gov/bio/repo/data/studies/OSD-200)) used here. Other taxonomy references databases designed for DECIPHER can be found here: [https://decipher.codes/Downloads.html](https://decipher.codes/Downloads.html)  
 
 <br>
 
@@ -507,7 +518,7 @@ seqtab.nochim <- removeBimeraDenovo(unqs=seqtab, method="consensus", multithread
 dna <- DNAStringSet(getSequences(seqtab.nochim))
 
 ## Downloading the reference R taxonomy object: ##
-download.file(url = "https://figshare.com/ndownloader/files/52846199", 
+download.file(url = "https://api.figshare.com/v2/file/download/52846199", 
              destfile = "SILVA_SSU_r138_2_2024.RData", 
              method = "libcurl", 
              headers = c("User-Agent" = "Mozilla/5.0"))
@@ -517,6 +528,7 @@ load("SILVA_SSU_r138_2_2024.RData")
 
 ## Classifying sequences:
 tax_info <- IdTaxa(test=dna, trainingSet=trainingSet, strand="both", processors=NULL)
+```
 
 **Parameter Definitions:** 
 
@@ -584,6 +596,16 @@ write_biom(biom_object, "taxonomy-and-counts_GLAmpSeq.biom")
 tax_and_count_tab <- merge(tax_tab, asv_tab)
 write.table(tax_and_count_tab, "taxonomy-and-counts_GLAmpSeq.tsv", sep="\t", quote=FALSE, row.names=FALSE)
 ```
+```bash
+zip -j -q taxonomy-and-counts_GLAmpSeq.biom.zip taxonomy-and-counts_GLAmpSeq.biom
+```
+
+**Parameter Definitions:**  
+**zip**
+- `-j` - junk (don't record) directory names
+- `-q` – quiet operation
+- `taxonomy-and-counts_GLAmpSeq.biom.zip` – positional argument naming the zip output file
+- `taxonomy-and-counts_GLAmpSeq.biom` – positional argument naming the input folder to package
 
 **Input Data:**
 
@@ -596,7 +618,8 @@ write.table(tax_and_count_tab, "taxonomy-and-counts_GLAmpSeq.tsv", sep="\t", quo
 * **counts_GLAmpSeq.tsv** (a tab-separated file containing the sample feature count table)
 * **taxonomy_GLAmpSeq.tsv** (a tab-separated file containing the taxonomy table)
 * **taxonomy-and-counts_GLAmpSeq.tsv** (a tab-separated file containing the combined taxonomy and count table)
-* **taxonomy-and-counts_GLAmpSeq.biom** (a biom-formatted file containing the count and taxonomy table)
+* **taxonomy-and-counts_GLAmpSeq.biom.zip** (a zip package containing the biom-formatted file)
+  * taxonomy-and-counts_GLAmpSeq.biom (a biom-formatted file containing the count and taxonomy table)
 * **read-count-tracking_GLAmpSeq.tsv** (a tab-separated file containing the read counts at each processing step)
 
 <br>
