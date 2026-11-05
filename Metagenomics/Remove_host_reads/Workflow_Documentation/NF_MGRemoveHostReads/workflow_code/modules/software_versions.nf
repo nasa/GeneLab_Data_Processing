@@ -1,7 +1,6 @@
 process SOFTWARE_VERSIONS {
 
     tag "Writing out software versions..."
-    publishDir "${params.outdir}/processing_info"
 
     input:
         path(software_versions)

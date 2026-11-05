@@ -65,7 +65,7 @@ We recommend installing Singularity on a system wide level as per the associated
 
 ### 2. Download the Workflow Files
 
-All files required for utilizing the NF_MGRemoveHostReads GeneLab workflow for removing host reads from metagenomics sequencing data are in the [workflow_code](workflow_code) directory. To get a copy of the latest *NF_MGRemoveHostReads* version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
+All files required for utilizing the NF_MGRemoveHostReads GeneLab workflow for removing human or host reads from metagenomics sequencing data are in the [workflow_code](workflow_code) directory. To get a copy of the latest *NF_MGRemoveHostReads* version on to your system, the code can be downloaded as a zip file from the release page then unzipped after downloading by running the following commands: 
 
 ```bash
 wget <insert URL here>
@@ -109,11 +109,16 @@ export NXF_SINGULARITY_CACHEDIR=$(pwd)/singularity
 
 This workflow can be run by providing the path to a text file containing a single-column list of unique sample identifiers, an example of which is shown [here](workflow_code/unique-sample-IDs.txt), along with the path to input data (raw reads of samples). 
 
-It also requires setting the root directory for where kraken2 reference databases are (or will be) stored. The workflow assumes databases follow the naming convention `kraken2-<host>-db`. If a database for a specified host is not found in the provided root directory, the workflow automatically builds one from scratch and saves it in the same directory using that name convention. 
+It also requires setting the root directory for where kraken2 reference databases are (or will be) stored. The workflow assumes databases follow the naming convention `kraken2-<host>-db` and determines how to obtain the database in the following order:
 
-In cases where the workflow is to build kraken2 database from scratch, it is important to ensure that the host organism's details are present in hosts.csv table [here](workflow_code/assets/hosts.csv). If not, they should be appended to the table in the following format: `name,species,refseq_ID,genome_build,FASTA_URL`. 
+1. **Database already exists** in the provided root directory: the workflow reuses it directly, skipping the build step entirely.
+2. **Pre-built database URL**: the workflow downloads and unpacks the database into the root directory. An example is available in the [reference database info page](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Metagenomics/Remove_host_reads/Workflow_Documentation/NF_MGRemoveHostReads/reference-database-info.md), which describes how the human database was generated for a previous version of this workflow and how to obtain it for reuse.
+3. **Custom FASTA file**: the workflow builds a database from scratch using the provided FASTA file (local path or URL).
+4. **hosts.csv lookup**: the workflow parses the hosts table [here](workflow_code/assets/hosts.csv) to retrieve the FASTA URL and build the database from scratch.
 
-Alternatively, a pre-built database can be manually downloaded and unpacked into the root directory, provided it follows the same naming convention. An example of which is available in the [reference database info page](https://github.com/nasa/GeneLab_Data_Processing/blob/master/Metagenomics/Remove_host_reads/Workflow_Documentation/SW_MGRemoveHumanReads-A/reference-database-info.md), which describes how the human database was generated for a previous version of this workflow and how to obtain it for reuse.  
+For options 2 and 3, it is recommended that the user provide host genome assembly name and accession number as parameters for protocol documentation purposes. For option 4, if the host entry in hosts.csv has no FASTA URL specified, the workflow uses Kraken's `k2 download-library` to download sequences directly from NCBI, automatically capturing assembly details, and, therefore, no additional parameters are needed. If a FASTA URL is present in hosts.csv, the assembly name and accession are also picked up from the same table entry for protocol documentation.
+
+In all cases where the database is built from scratch, it is saved in the root directory using the `kraken2-<host>-db` naming convention for reuse in subsequent runs.
 
 > Note: Nextflow commands use both single hyphen arguments (e.g. -profile) that denote general Nextflow arguments and double hyphen arguments (e.g. --osd) that denote workflow specific parameters.  Take care to use the proper number of hyphens for each argument.
 
@@ -125,7 +130,7 @@ Alternatively, a pre-built database can be manually downloaded and unpacked into
 nextflow run main.nf \
    -resume \
    -profile singularity \
-   --ref_dbs_Dir <Path to kraken2 reference database> \
+   --ref_dbs_dir <Path to kraken2 reference database> \
    --sample_id_list unique_sample_ids.txt \
    --reads_dir <Path to reads directory>
 ```
@@ -145,7 +150,7 @@ nextflow run main.nf \
       * `mamba` - instructs Nextflow to use conda environments via the mamba package manager 
    * Other option (can be combined with the software environment option above using a comma, e.g. `-profile slurm,singularity`):
       * `slurm` - instructs Nextflow to use the [Slurm cluster management and job scheduling system](https://slurm.schedmd.com/overview.html) to schedule and run the jobs on a Slurm HPC cluster
-* `--ref_dbs_Dir` - Specifies the path to the directory where kraken2 databases are or will be stored
+* `--ref_dbs_dir` - Specifies the path to the directory where kraken2 databases are or will be stored (type: string, default: "./kraken2DBs")
 * `--sample_id_list` -  path to a single-column file with unique sample identifiers (type: string, default: null)
   > *Note: An example of this file is provided in the [workflow_code](workflow_code) directory [here](workflow_code/unique-sample-IDs.txt).*
 * `--reads_dir` -  path to raw reads directory (type: string, default: null)
@@ -159,10 +164,22 @@ nextflow run main.nf \
 * `--single_suffix` - raw reads suffix that follows the unique part of sample names  (type: string, default: "_raw.fastq.gz")
 * `--R1_suffix` - raw forward reads suffix that follows the unique part of sample names  (type: string, default: "_R1_raw.fastq.gz")
 * `--R2_suffix` - raw reverse reads suffix that follows the unique part of sample names  (type: string, default: "_R2_raw.fastq.gz")
-* `--single_out_suffix` - host-removed reads suffix that follows the unique part of sample names  (type: string, default: "_HRremoved_raw.fastq.gz")
-* `--R1_out_suffix` - host-removed forward reads suffix that follows the unique part of sample names  (type: string, default: "_R1_HRremoved_raw.fastq.gz")
-* `--R2_out_suffix` - host-removed reverse reads suffix that follows the unique part of sample names  (type: string, default: "_R2_HRremoved_raw.fastq.gz")
+* `--out_suffix` - human- or host-removed reads suffix that follows the unique part of sample names  (type: string, default: "_HRrm" for human-removed, or "_HostRm" for host-removed)
 * `--host` - host organism, should match the entry provided under `name` column in [hosts.csv](workflow_code/assets/hosts.csv) (type: string, default: "human")
+* `--db_url` - URL to download a pre-built Kraken2 database (type: string, default: ""). If provided, `--ref_fasta` is not required.
+* `--ref_fasta` - local path or URL of a custom reference genome FASTA file to build a Kraken2 database from (type: string, default: ""). If provided, `--assembly_name` and `--assembly_acc` are also recommended.
+* `--assembly_name` - assembly name for the host reference genome, e.g. `GRCh38.p14` (type: string, default: ""). Required when using `--db_url` or `--ref_fasta` for protocol documentation.
+* `--assembly_acc` - assembly accession number for the host reference genome, e.g. `GCF_000001405.40` (type: string, default: ""). Required when using `--db_url` or `--ref_fasta` for protocol documentation.
+
+
+These parameters and additional optional arguments for the NF_MGRemoveHostReads workflow, including options that may not be immediately useful for most users, can be viewed by running the following command:
+
+```bash
+nextflow run NF_MGRemoveHostReads_1.0.0/main.nf --help
+```
+
+See `nextflow run -h` and [Nextflow's CLI run command documentation](https://nextflow.io/docs/latest/cli.html#run) for more options and details common to all nextflow workflows.
+
 
 <br>
 
