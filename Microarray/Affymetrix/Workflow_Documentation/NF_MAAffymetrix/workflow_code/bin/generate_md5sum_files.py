@@ -1,63 +1,101 @@
-#! /usr/bin/env python
+#!/usr/bin/env python3
+
+import os
+import sys
+import hashlib
 import argparse
-from pathlib import Path
 
-from dp_tools.core.loaders import load_data
-from dp_tools.core.post_processing import generate_md5sum_table
-from dp_tools.plugin_api import load_plugin
-
-
-##############################################################
-# Utility Functions To Handle Logging, Config and CLI Arguments
-##############################################################
-def _parse_args():
-    """Parse command line args."""
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("--root-path", required=True, help="Root data path")
-
-    parser.add_argument("--runsheet-path", required=True, help="Runsheet path")
-
-    parser.add_argument("--plug-in-dir", required=True, help="Plugin path")
-
-    args = parser.parse_args()
-    return args
-
-
-def main(root_dir: Path, runsheet_path: Path, plug_in_dir: Path):
-    plugin = load_plugin(Path(plug_in_dir))
+def calculate_md5(filepath):
+    """Calculate MD5 hash for a file."""
+    md5_hash = hashlib.md5()
     
-    ds = load_data(
-        config=plugin.config,
-        root_path=(root_dir),
-        runsheet_path=runsheet_path,
-    )
+    # Follow symlinks to get the actual file
+    actual_path = os.path.realpath(filepath) if os.path.islink(filepath) else filepath
+    
+    try:
+        with open(actual_path, "rb") as f:
+            # Read in chunks in case of large files
+            for chunk in iter(lambda: f.read(4096), b""):
+                md5_hash.update(chunk)
+        return md5_hash.hexdigest()
+    except Exception as e:
+        sys.stderr.write(f"Error calculating MD5 for {filepath}: {str(e)}\n")
+        return "ERROR"
 
-    df = generate_md5sum_table(
-        ds.dataset,
-        config=plugin.config,
-        include_tags=True,
-    )
+def should_include(filepath):
+    """Check if file should be included in MD5 calculation."""
+    # Skip files in GeneLab except for HTML report, software_versions, and purged processing_info.txt
+    allowed_files = [
+        "NF_MAAffymetrix_v" + args.workflow_version + "_GLmicroarray.html",
+        "software_versions_GLmicroarray.md",
+        "nextflow_processing_info_GLmicroarray.txt"
+    ]
+    if "/GeneLab/" in filepath and not any(filepath.endswith(f) for f in allowed_files):
+        return False
+    
+    # Skip ISA.zip
+    if filepath.endswith("ISA.zip"):
+        return False
 
-    unique_tags = set(df["tags"].sum())
-    for tag in unique_tags:
-        df_subset = df.loc[df["tags"].apply(lambda l: tag in l)].drop(
-            "tags", axis="columns"
-        )
-        df_subset.to_csv(f"{tag}_md5sum_GLmicroarray.tsv", sep="\t", index=False)
+    # Skip VV logs
+    if "/VV_Logs/" in filepath:
+        return False
+    
+    return True
 
-    # Log missing files
-    print(df.columns)
-    missing_files = df.loc[df['md5sum'] == "USER MUST ADD MANUALLY!"]["filename"].to_list()
-    if missing_files:
-        with open("Missing_md5sum_files_GLmicroarray.txt", "w") as f:
-            for missing in missing_files:
-                f.write(missing+"\n")
+def main():
+    parser = argparse.ArgumentParser(description='Generate MD5 sum files for GeneLab data.')
+    parser.add_argument('--outdir', required=True, help='Output directory containing files to process')
+    parser.add_argument('--workflow_version', default='', help='Version of the NF_MAAffymetrix workflow manifest')
+    
+    global args
+    args = parser.parse_args()
+    
+    # Make sure outdir is absolute path
+    outdir = os.path.abspath(args.outdir)
+    
+    # Create output files and initialize them without headers
+    processed_md5_file = f"processed_md5sum_GLmicroarray.tsv"
+    with open(processed_md5_file, 'w') as f:
+        f.write("File Name\tmd5sum\n")
+    
+    
+    # Track processed files for reporting
+    processed_count = 0
+    
+    # Walk through all files recursively
+    print(f"Scanning directory: {outdir}")
+    for root, _, files in os.walk(outdir):
+        for filename in files:
+            filepath = os.path.join(root, filename)
+            
+            # Skip files that shouldn't be included
+            if not should_include(filepath):
+                continue
+            
+            # Get just the filename (basename)
+            basename = os.path.basename(filepath)
+                      
+            md5sum = calculate_md5(filepath)
+            with open(processed_md5_file, 'a') as f:
+                f.write(f"{basename}\t{md5sum}\n")
+            processed_count += 1
+    
+    print(f"Added {processed_count} files to {processed_md5_file}")
+
+    def dedup_file(filename):
+        seen = set()
+        lines = []
+        with open(filename, 'r') as f:
+            for line in f:
+                key = line.split('\t', 1)[0]  # dedup by basename
+                if key not in seen:
+                    seen.add(key)
+                    lines.append(line)
+        with open(filename, 'w') as f:
+            f.writelines(lines)
+
+    dedup_file(processed_md5_file)
 
 if __name__ == "__main__":
-    import logging
-
-    logging.basicConfig(level=logging.DEBUG)
-    log = logging.getLogger(__name__)
-    args = _parse_args()
-    main(Path(args.root_path), runsheet_path=Path(args.runsheet_path), plug_in_dir=args.plug_in_dir)
+    main()

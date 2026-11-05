@@ -1,0 +1,11 @@
+name: dp_tools
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - python=3.10
+  - pip
+  - setuptools=81.0.0
+  - pip:
+    - git+https://github.com/torres-alexis/dp_tools.git@v1.3.8
