@@ -576,7 +576,7 @@ samtools sort -m 3G \
 
 **Output Data:**
 
-- **\*_GLbulkRNAseq_Aligned.sortedByCoord_sorted.out.bam** (samtools sorted genome aligned bam file)
+- **\*_GLbulkRNAseq_Aligned.sortedByCoord_sorted.out.bam** (samtools-sorted genome-aligned bam file)
 
 <br>
 
