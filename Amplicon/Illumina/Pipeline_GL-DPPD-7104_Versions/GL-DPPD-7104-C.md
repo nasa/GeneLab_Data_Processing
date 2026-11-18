@@ -204,7 +204,7 @@ fastqc -o raw_fastqc_output *.fastq.gz
 
 ```bash
 multiqc --interactive -n raw_multiqc_<tech_type>_GLAmpSeq \
- -o /path/to/raw_multiqc/output/raw_multiqc_<tech_type>_GLAmpSeq_report \
+ -o raw_multiqc_<tech_type>_GLAmpSeq_report \
  /path/to/directory/containing/raw_fastqc/files
 
 zip -q -r raw_multiqc_<tech_type>_GLAmpSeq_report.zip raw_multiqc_<tech_type>_GLAmpSeq_report
@@ -296,7 +296,7 @@ The following is an example from a [GLDS-200](https://osdr.nasa.gov/bio/repo/dat
 filtered_out <- filterAndTrim(fwd="sample1_<tech_type>_GLAmpSeq_R1_trimmed.fastq.gz",
                               filt="sample1_<tech_type>_GLAmpSeq_R1_filtered.fastq.gz",
                               rev="sample1_<tech_type>_GLAmpSeq_R2_trimmed.fastq.gz", 
-                              filt.rev="sample1_<tech_type>_GLAmpSeq_R1_filtered.fastq.gz",
+                              filt.rev="sample1_<tech_type>_GLAmpSeq_R2_filtered.fastq.gz",
                               truncLen=c(220, 160), maxN=0, maxEE=c(2,2),
                               truncQ=2, rm.phix=TRUE, compress=TRUE, multithread=TRUE)
 ```
@@ -358,7 +358,7 @@ fastqc -o filtered_fastqc_output/ *filtered.fastq.gz
 ### 4b. Compile Filtered Data QC
 ```bash
 multiqc --interactive -n filtered_multiqc_<tech_type>_GLAmpSeq \
- -o /path/to/filtered_multiqc/output/filtered_multiqc_<tech_type>_GLAmpSeq_report \
+ -o filtered_multiqc_<tech_type>_GLAmpSeq_report \
  /path/to/directory/containing/filtered_fastqc/files
 
 zip -q -r filtered_multiqc_<tech_type>_GLAmpSeq_report.zip filtered_multiqc_<tech_type>_GLAmpSeq_report
@@ -617,7 +617,7 @@ zip -j -q taxonomy-and-counts_<tech_type>_GLAmpSeq.biom.zip taxonomy-and-counts_
 - `-j` - junk (don't record) directory names
 - `-q` – quiet operation
 - `taxonomy-and-counts_<tech_type>_GLAmpSeq.biom.zip` – positional argument naming the zip output file
-- `taxonomy-and-counts_<tech_type>_GLAmpSeq.biom` – positional argument naming the input folder to package
+- `taxonomy-and-counts_<tech_type>_GLAmpSeq.biom` – positional argument naming the input file to package
 
 **Input Data:**
 
@@ -787,7 +787,7 @@ library(hexbin)
     # insufficient for diversity analysis
     if(max(seq_per_sample) < 100){
       
-      warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure{assay_suffix}.txt")
+      warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure_<tech_type>{assay_suffix}.txt")
       writeLines(
         text = glue("The maximum sequence count per sample ({max(seq_per_sample)}) is less than 100.
 Therefore, beta diversity analysis with rarefaction cannot be performed. Check VST method normalization instead."),
@@ -809,7 +809,7 @@ Therefore, beta diversity analysis with rarefaction cannot be performed. Check V
       # Error if the depth that ends up being used is also less than 100
     if(depth < 100){
       
-      warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure{assay_suffix}.txt")
+      warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure_<tech_type>{assay_suffix}.txt")
       writeLines(
         text = glue("The rarefaction depth being used in the analysis ({depth}) is less than 100.
 Therefore, beta diversity analysis with rarefaction cannot be performed. Check VST method normalization instead."),
@@ -836,7 +836,7 @@ Beta diversity results may be unreliable."))
     remaining_groups <- unique(metadata[rownames(metadata) %in% survived_samples, groups_colname])
     
     if(length(remaining_groups) < 2){
-      warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure{assay_suffix}.txt")
+      warning_file <- glue("{beta_diversity_out_dir}{output_prefix}beta_diversity_failure_<tech_type>{assay_suffix}.txt")
       writeLines(
         text = glue("Not enough groups remain after rarefaction at {depth} (only {length(remaining_groups)}). Skipping beta diversity with rarefaction."),
         con = warning_file
@@ -845,7 +845,7 @@ Beta diversity results may be unreliable."))
     }
 
     # Write rarefaction depth used into file
-    depth_file <- glue("{beta_diversity_out_dir}{output_prefix}rarefaction_depth{assay_suffix}.txt")
+    depth_file <- glue("{beta_diversity_out_dir}{output_prefix}rarefaction_depth_<tech_type>{assay_suffix}.txt")
     writeLines(
       text = as.character(depth),
       con = depth_file
@@ -2233,7 +2233,7 @@ if (is.null(ps)) {
           title = element_text(face = "bold", size = 14))
   
   # Save VSD validation plot
-  ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}vsd_validation_plot_<tech_type>{assay.suffix}.png"),
+  ggsave(filename = glue("{beta_diversity_out_dir}/{output_prefix}vsd_validation_plot_<tech_type>{assay_suffix}.png"),
          plot = mead_sd_plot, width = 14, height = 10, 
          dpi = 300, units = "in", limitsize = FALSE)
   }
@@ -2510,9 +2510,9 @@ walk2(.x = group_relAbundance_tbs, .y = taxon_levels,
                            })
 ```
 ```bash
-zip -q sample_taxonomy_plots_<tech_type>_GLAmpSeq.zip samples_<tech_type>_GLAmpSeq.png
+zip -q sample_taxonomy_plots_<tech_type>_GLAmpSeq.zip samples_*_<tech_type>_GLAmpSeq.png
 
-zip -q group_taxonomy_plots_<tech_type>_GLAmpSeq.zip groups_<tech_type>_GLAmpSeq.png
+zip -q group_taxonomy_plots_<tech_type>_GLAmpSeq.zip groups_*_<tech_type>_GLAmpSeq.png
 ```
 
 **Custom Functions Used in R**
@@ -2820,7 +2820,7 @@ volcano_plots <- map(comp_names, function(comparison){
     theme(legend.position="top", legend.key = element_rect(colour=NA),
           plot.caption = element_text(face = 'bold.italic'))
   # Save plot
-  file_name <- glue("{output_prefix}{comparison %>% str_replace_all('[:space:]+','_')}_volcano_<tech_type>{assay.suffix}.png")
+  file_name <- glue("{output_prefix}{comparison %>% str_replace_all('[:space:]+','_')}_volcano_<tech_type>{assay_suffix}.png")
   ggsave(filename = file_name,
          plot = p, device = "png", width = plot_width_inches,
          height = plot_height_inches, units = "in",
@@ -3349,7 +3349,7 @@ volcano_plots <- map(uniq_comps, function(comparison){
           plot.caption = element_text(face = 'bold.italic'))
 
   # Save plot
-  file_name <-  glue("{output_prefix}{comparison %>% str_replace_all('[:space:]+','_')}_volcano<_tech_type>{assay.suffix}.png")
+  file_name <-  glue("{output_prefix}{comparison %>% str_replace_all('[:space:]+','_')}_volcano_<tech_type>{assay_suffix}.png")
   ggsave(filename = file_name,
          plot = p, device = "png",
          width = plot_width_inches,
@@ -3515,7 +3515,7 @@ deseq_modeled <- tryCatch({
 
 # Make ASV Sparsity plot
 sparsity_plot <- plotSparsity(deseq_modeled) 
-ggsave(filename = glue("{diff_abund_out_dir}/{output_prefix}asv_sparsity_plot_<tech_type>{assay.suffix}.png"),
+ggsave(filename = glue("{diff_abund_out_dir}/{output_prefix}asv_sparsity_plot_<tech_type>{assay_suffix}.png"),
        plot = sparsity_plot, width = 14, height = 10, dpi = 300, units = "in")
 
 # Get unique group comparison as a matrix
