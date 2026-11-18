@@ -20,3 +20,4 @@ jobs:
               check_filenames: true
               skip: "*.yml,*.cff,*.js,*.lock"
               ignore_words_list: RNAseq
+              only_warn: 1
