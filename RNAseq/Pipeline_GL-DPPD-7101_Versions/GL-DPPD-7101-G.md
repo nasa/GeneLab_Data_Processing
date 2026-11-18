@@ -443,7 +443,7 @@ gzip *_unmapped.fastq
 - `--sjdbScore` – additional alignment score for alignments that cross database junctions
 - `--readFilesCommand` – specifies command needed to interpret input files; the `zcat` option indicates input files are compressed with gzip and zcat will be used to uncompress the gzipped input files
 - `--runThreadN` – indicates the number of threads to be used for STAR alignment and should be set to the number of available cores on the server node
-- `--outSAMtype` – specifies desired output format; `BAM Unsorted` writes the genome alignments in BAM format without coordinate sorting.
+- `--outSAMtype` – specifies the output format. `BAM Unsorted` keeps all alignments for the same read together, with mates adjacent for each paired-end alignment.
 - `--quantMode` – specifies the type(s) of quantification desired; the `TranscriptomeSAM` option instructs STAR to output a separate sam/bam file containing alignments to the transcriptome and the `GeneCounts` option instructs STAR to output a tab delimited file containing the number of reads per gene
 - `--outFileNamePrefix` – specifies the path to and prefix for the output file names; for GeneLab the prefix is the sample id
 - `outReadsUnmapped` - specifies how to output unmapped and partially mapped reads (where only one mate of a paired-end read is mapped); the `Fastx` option outputs unmapped reads in separate fastq files 
@@ -457,8 +457,8 @@ gzip *_unmapped.fastq
 
 **Output Data:**
 
-- *Aligned.out.bam (unsorted alignments to the genome)
-- **\*_GLbulkRNAseq_Aligned.toTranscriptome.out.bam** (unsorted alignments to the transcriptome)
+- *Aligned.out.bam (unsorted mapping to genome)
+- **\*_GLbulkRNAseq_Aligned.toTranscriptome.out.bam** (unsorted mapping to transcriptome)
 - **\*_GLbulkRNAseq_Log.final.out** (log file containing alignment info/stats such as reads mapped, etc)
 - *ReadsPerGene.out.tab (tab delimitated file containing STAR read counts per gene with 4 columns that correspond to different strandedness options: column 1 = gene ID, column 2 = counts for unstranded RNAseq, column 3 = counts for 1st read strand aligned with RNA, column 4 = counts for 2nd read strand aligned with RNA)
 - *Log.out (main log file containing detailed info about the STAR run)
@@ -572,11 +572,11 @@ samtools sort -m 3G \
 
 **Input Data:**
 
-- *Aligned.out.bam (unsorted alignments to the genome, output from [Step 4a](#4a-align-reads-to-reference-genome-with-star))
+- *Aligned.out.bam (unsorted mapping to genome file, output from [Step 4a](#4a-align-reads-to-reference-genome-with-star))
 
 **Output Data:**
 
-- **\*_GLbulkRNAseq_Aligned.sortedByCoord_sorted.out.bam** (samtools-sorted genome-aligned bam file)
+- **\*_GLbulkRNAseq_Aligned.sortedByCoord_sorted.out.bam** (samtools sorted genome aligned bam file)
 
 <br>
 
@@ -593,11 +593,11 @@ samtools index -@ NumberOfThreads /path/to/*Aligned.sortedByCoord_sorted.out.bam
 
 **Input Data:**
 
-- *Aligned.sortedByCoord_sorted.out.bam (sorted alignments to the genome, output from [Step 4d](#4d-sort-aligned-reads))
+- *Aligned.sortedByCoord_sorted.out.bam (sorted mapping to genome file, output from [Step 4d](#4d-sort-aligned-reads))
 
 **Output Data:**
 
-- **\*_GLbulkRNAseq_Aligned.sortedByCoord_sorted.out.bam.bai** (index of sorted alignments to the genome)
+- **\*_GLbulkRNAseq_Aligned.sortedByCoord_sorted.out.bam.bai** (index of sorted mapping to genome file)
 
 <br>
 
@@ -679,8 +679,8 @@ infer_experiment.py -r /path/to/annotation/BED/file \
 **Input Data:**
 
 - *.bed (genome annotation in BED format, output from [Step 5b](#5b-convert-genepred-to-bed-file))
-- *Aligned.sortedByCoord_sorted.out.bam (sorted alignments to the genome, output from [Step 4d](#4d-sort-aligned-reads))
-- *Aligned.sortedByCoord_sorted.out.bam.bai (index of sorted alignments to the genome, output from [Step 4e](#4e-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*Aligned.sortedByCoord_sorted.out.bam file)
+- *Aligned.sortedByCoord_sorted.out.bam (sorted mapping to genome file, output from [Step 4d](#4d-sort-aligned-reads))
+- *Aligned.sortedByCoord_sorted.out.bam.bai (index of sorted mapping to genome file, output from [Step 4e](#4e-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*Aligned.sortedByCoord_sorted.out.bam file)
 
 **Output Data:**
 
@@ -732,8 +732,8 @@ geneBody_coverage.py -r /path/to/annotation/BED/file \
 **Input Data:**
 
 - *.bed (genome annotation in BED format, output from [Step 5b](#5b-convert-genepred-to-bed-file))
-- *Aligned.sortedByCoord_sorted.out.bam (sorted alignments to the genome, output from [Step 4d](#4d-sort-aligned-reads))
-- *Aligned.sortedByCoord_sorted.out.bam.bai (index of sorted alignments to the genome, output from [Step 4e](#4e-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*Aligned.sortedByCoord_sorted.out.bam file)
+- *Aligned.sortedByCoord_sorted.out.bam (sorted mapping to genome file, output from [Step 4d](#4d-sort-aligned-reads))
+- *Aligned.sortedByCoord_sorted.out.bam.bai (index of sorted mapping to genome file, output from [Step 4e](#4e-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*Aligned.sortedByCoord_sorted.out.bam file)
 
 **Output Data:**
 
@@ -792,8 +792,8 @@ inner_distance.py -r /path/to/annotation/BED/file \
 **Input Data:**
 
 - *.bed (genome annotation in BED format, output from [Step 5b](#5b-convert-genepred-to-bed-file))
-- *Aligned.sortedByCoord_sorted.out.bam (sorted alignments to the genome, output from [Step 4d](#4d-sort-aligned-reads))
-- *Aligned.sortedByCoord_sorted.out.bam.bai (index of sorted alignments to the genome, output from [Step 4e](#4e-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*Aligned.sortedByCoord_sorted.out.bam file)
+- *Aligned.sortedByCoord_sorted.out.bam (sorted mapping to genome file, output from [Step 4d](#4d-sort-aligned-reads))
+- *Aligned.sortedByCoord_sorted.out.bam.bai (index of sorted mapping to genome file, output from [Step 4e](#4e-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*Aligned.sortedByCoord_sorted.out.bam file)
 
 **Output Data:**
 
@@ -847,8 +847,8 @@ read_distribution.py -r /path/to/annotation/BED/file \
 **Input Data:**
 
 - *.bed (genome annotation in BED format, output from [Step 5b](#5b-convert-genepred-to-bed-file))
-- *Aligned.sortedByCoord_sorted.out.bam (sorted alignments to the genome, output from [Step 4d](#4d-sort-aligned-reads))
-- *Aligned.sortedByCoord_sorted.out.bam.bai (index of sorted alignments to the genome, output from [Step 4e](#4e-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*Aligned.sortedByCoord_sorted.out.bam file)
+- *Aligned.sortedByCoord_sorted.out.bam (sorted mapping to genome file, output from [Step 4d](#4d-sort-aligned-reads))
+- *Aligned.sortedByCoord_sorted.out.bam.bai (index of sorted mapping to genome file, output from [Step 4e](#4e-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*Aligned.sortedByCoord_sorted.out.bam file)
 
 **Output Data:**
 
@@ -958,7 +958,7 @@ rsem-calculate-expression --num-threads NumberOfThreads \
 **Input Data:**
 
 - RSEM genome reference (output from [Step 7](#7-build-rsem-reference))
-- *Aligned.toTranscriptome.out.bam (unsorted alignments to the transcriptome, output from [Step 4a](#4a-align-reads-to-reference-genome-with-star))
+- *Aligned.toTranscriptome.out.bam (unsorted mapping to transcriptome, output from [Step 4a](#4a-align-reads-to-reference-genome-with-star))
 
 **Output Data:**
 
@@ -1108,7 +1108,7 @@ echo "*: ${rRNA_count} rRNA entries removed." > *_rRNA_counts.txt
 
 ### 9a. Create Sample RunSheet
 
-> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_RCP/examples/runsheet/README.md). A user-supplied runsheet needs an `ERCC_mix` column (`Mix 1` or `Mix 2`) when `has_ERCC` is true.
+> Note: Rather than running the command below to create the runsheet needed for processing, the runsheet may also be created manually by following the [file specification](../Workflow_Documentation/NF_RCP/examples/runsheet/README.md).
 
 ```bash
 ### Download the *ISA.zip file from the Open Science Data Repository ###
@@ -1141,7 +1141,7 @@ dpt-isa-to-runsheet --accession GLDS-### \
 
 - *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, used to define sample groups - the *ISA.zip file is located in the [OSDR repository](https://osdr.nasa.gov/bio/repo/) under 'Files' -> 'Study Metadata Files')
 
-- **{GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv** (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive). Generated runsheets for ERCC datasets include an `ERCC_mix` column copied from the ISA assay `Parameter Value[Spike-in Mix Number]`; values are `Mix 1` or `Mix 2`. The column is omitted when `has_ERCC` is false.
+- **{GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv** (table containing metadata required for processing, version denotes the dp_tools schema used to specify the metadata to extract from the ISA archive)
 
 <br>
 
@@ -1740,7 +1740,7 @@ import matplotlib.pyplot as plt
 
 ### Get and parse data and metadata
 
-# Read the runsheet created in Step 9a. Each sample's spike-in mix is read from the ERCC_mix column (Mix 1 or Mix 2).
+# Each sample's spike-in mix is read from the ERCC_mix column (Mix 1 or Mix 2).
 
 accession = 'GLDS-NNN' # Replace Ns with GLDS number
 runsheetPath = '/path/to/GLDS-NNN_bulkRNASeq_v{version}_runsheet.csv' # Replace with path to the runsheet from Step 9a
@@ -2169,7 +2169,7 @@ ERCCcounts.to_csv('ERCC_analysis/ERCCcounts_GLbulkRNAseq.csv')
 
 **Input Data:**
 
-- {GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv (runsheet, output from [Step 9a](#9a-create-sample-runsheet); each sample's spike-in mix is read from the `ERCC_mix` column)
+- {GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv (runsheet, output from [Step 9a](#9a-create-sample-runsheet))
 - RSEM_Unnormalized_Counts.csv (RSEM raw counts table, output from [Step 9](#ERCCspikeOut))
 
 **Output Data:**
