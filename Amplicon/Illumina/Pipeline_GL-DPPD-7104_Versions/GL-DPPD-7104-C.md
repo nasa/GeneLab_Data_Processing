@@ -61,7 +61,7 @@ Software Updates and Changes:
   - Alpha Diversity Analysis ([Step 7](#7-alpha-diversity-analysis))
   - Beta Diversity Analysis ([Step 8](#8-beta-diversity-analysis))
   - Group-wise and Sample-wise Taxonomic Summary Plots ([Step 9](#9-taxonomy-plots))
-  - Differential Abundance Testing ([Step 10](#9-differential-abundance-analysis)) with 
+  - Differential Abundance Testing ([Step 10](#10-differential-abundance-testing)) with 
     ANCOMBC 1 ([Step 10a](#10a-ancombc-1)), ANCOMBC 2 ([Step 10b](#10b-ancombc-2)), and Deseq2 ([Step 10c](#10c-deseq2))
 - Assay-specific suffixes were added where needed for OSDR ("_GLAmpSeq")
 - Updated [DECIPHER](https://www2.decipher.codes/data/Downloads/TrainingSets/) reference files to the following:
@@ -92,7 +92,7 @@ Software Updates and Changes:
   - [**5. Calculate Error model, Apply DADA2 Algorithm, Assign Taxonomy, and Create Output Tables**](#5-calculate-error-model-apply-dada2-algorithm-assign-taxonomy-and-create-output-tables)
     - [5a. Learning the Error Rates](#5a-learning-the-error-rates)
     - [5b. Inferring Sequences](#5b-inferring-sequences)
-    - [5c. Merging Forward and Reverse Reads; Not Needed if Data are Single-End](#5c-merging-forward-and-reverse-reads-not-needed-if-data-are-single-end)
+    - [5c. Merging Forward and Reverse Reads; Not Needed if Data are Single-End](#5c-merging-forward-and-reverse-reads-skip-if-data-are-single-end)
     - [5d. Generating Sequence Table with Counts per Sample](#5d-generating-sequence-table-with-counts-per-sample)
     - [5e. Removing Putative Chimeras](#5e-removing-putative-chimeras)
     - [5f. Assigning Taxonomy](#5f-assigning-taxonomy)
@@ -119,7 +119,7 @@ Software Updates and Changes:
 
 ---
 
-# Software used  
+# Software used
 
 |Program|Version|Relevant Links|
 |:------|:-----:|:-------------|
@@ -164,7 +164,7 @@ Software Updates and Changes:
 
 ---
 
-# General processing overview with example commands  
+# General processing overview with example commands
 
 > Exact processing commands for specific datasets are available in the [GLDS_Processing_Scripts](../GLDS_Processing_Scripts) sub-directory of this repository, and/or are provided with their processed data in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/).
 >
@@ -177,11 +177,11 @@ Software Updates and Changes:
 
 ---
 
-## 1. Raw Data QC  
+## 1. Raw Data QC
 
 <br>
 
-### 1a. Raw Data QC  
+### 1a. Raw Data QC
 
 ```bash
 fastqc -o raw_fastqc_output *.fastq.gz
@@ -204,7 +204,7 @@ fastqc -o raw_fastqc_output *.fastq.gz
 
 <br>  
 
-### 1b. Compile Raw Data QC  
+### 1b. Compile Raw Data QC
 
 ```bash
 multiqc --interactive -n raw_multiqc_<tech_type>_GLAmpSeq \
@@ -241,7 +241,7 @@ zip -q -r raw_multiqc_<tech_type>_GLAmpSeq_report.zip raw_multiqc_<tech_type>_GL
 
 ---
 
-## 2. Trim Primers  
+## 2. Trim Primers
 
 The location and orientation of primers in the data is important to understand in deciding how to do this step. `cutadapt` has many options for primer identification and removal, which are described in detail in the [cutadapt adapter type documentation](https://cutadapt.readthedocs.io/en/stable/guide.html#adapter-types).  
 
@@ -395,7 +395,7 @@ zip -q -r filtered_multiqc_<tech_type>_GLAmpSeq_report.zip filtered_multiqc_<tec
 
 ---
 
-## 5. Calculate Error Mdel, Apply DADA2 Algorithm, Assign Taxonomy, and Create Output Tables
+## 5. Calculate Error Model, Apply DADA2 Algorithm, Assign Taxonomy, and Create Output Tables
 > The following is run in an R environment.  
 
 These example commands as written assume paired-end data, with notes included on what would be different if working with single-end data. The taxonomy reference database used below is an example only, suitable for the example 16S dataset ([GLDS-200](https://osdr.nasa.gov/bio/repo/data/studies/OSD-200)) used here. Other taxonomy references databases designed for DECIPHER can be found here: [https://www2.decipher.codes/data/Downloads/TrainingSets/](https://www2.decipher.codes/data/Downloads/TrainingSets/)  
@@ -642,7 +642,7 @@ zip -j -q taxonomy-and-counts_<tech_type>_GLAmpSeq.biom.zip taxonomy-and-counts_
 
 ---
 
-## 6. Amplicon Seq Data Analysis Set Up  
+## 6. Amplicon Seq Data Analysis Set Up
   
 <br>
 
@@ -3060,7 +3060,7 @@ output <- ancombc2(data = tse,
                    lme_control = NULL, trend_control = NULL)
 
 # diff_robust_ must be matched before diff_
-rename_ancombc_columns <- function(col_names, group, ref_group) {
+rename_ancombc_columns <- function(col_names, group, ref_group, is_two_group = FALSE) {
   prefixes <- c(
     "^lfc_" = "Lnfc_",
     "^se_" = "Lnfc-SE_",
@@ -3073,6 +3073,14 @@ rename_ancombc_columns <- function(col_names, group, ref_group) {
   )
   map_chr(col_names, function(colname) {
     if (colname == "taxon") return(colname)
+    if (is_two_group) {
+      # Strip only the leading statistic and grouping field from the full label.
+      group_prefixes <- paste0(substring(names(prefixes), 2L), group)
+      i <- which(startsWith(colname, group_prefixes))[1]
+      if (is.na(i)) return(colname)
+      level <- substring(colname, nchar(group_prefixes[i]) + 1L)
+      return(paste0(prefixes[[i]], "(", level, ")v(", ref_group, ")"))
+    }
     n_group <- str_count(colname, fixed(group))
     renamed <- if (n_group == 1) {
       str_replace(
@@ -3109,7 +3117,7 @@ tryCatch({
       stop("Could not identify group-specific column for 2-group comparison")
     }
     stats_cols <- c("taxon", group_cols)
-    new_colnames <- rename_ancombc_columns(stats_cols, groups_colname, ref_group)
+    new_colnames <- rename_ancombc_columns(stats_cols, groups_colname, ref_group, is_two_group = TRUE)
   } else {
     stats_cols <- colnames(output$res_pair)
     new_colnames <- rename_ancombc_columns(stats_cols, groups_colname, ref_group)
@@ -3694,7 +3702,7 @@ zip -q deseq2_volcano_plots_<tech_type>_GLAmpSeq.zip *_volcano_<tech_type>_GLAmp
 * [get_ncbi_ids()](#get_ncbi_ids)
 * [fix_names()](#fix_names)
 * [gm_mean()](#gm_mean)
-* [plotSparsity()](#plotSparsity)
+* [plotSparsity()](#plotsparsity)
 
 **Parameter Definitions:**
 
