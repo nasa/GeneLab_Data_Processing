@@ -51,7 +51,7 @@ Differences from the [eukaryotic pipeline, GL-DPPD-7101-G](../Pipeline_GL-DPPD-7
     - [4b. Compile Alignment Logs](#4b-compile-alignment-logs)
     - [4c. Convert SAM to BAM](#4c-convert-sam-to-bam)
     - [4d. Sort Aligned Reads](#4d-sort-aligned-reads)
-    - [4e. Index Sorted Aligned Reads](#4d-index-sorted-aligned-reads)
+    - [4e. Index Sorted Aligned Reads](#4e-index-sorted-aligned-reads)
   - [**5. Create Reference BED File**](#5-create-reference-bed-file)
     - [5a. Convert GTF to genePred File](#5a-convert-gtf-to-genePred-file)
     - [5b. Convert genePred to BED File](#5b-convert-genePred-to-bed-file)
@@ -427,7 +427,7 @@ samtools sort -m 3G \
 - `-m` – memory available per thread, `3G` indicates 3 gigabytes, this can be changed based on user resources
 - `--threads` – number of threads available on server node to sort genome alignment files
 - `-o` – output file name (sorted BAM)
-- `/path/to/*.sam` – path to the SAM file(s), provided as a positional argument
+- `/path/to/*.bam` – path to the BAM file(s) from Step 4c, provided as a positional argument
 
 **Input Data:**
 
@@ -452,7 +452,7 @@ samtools index -@ NumberOfThreads /path/to/*_sorted.bam
 
 **Input Data:**
 
-- *_sorted.bam (sorted mapping to genome file, output from [Step 4c](#4c-sort-aligned-reads))
+- *_sorted.bam (sorted mapping to genome file, output from [Step 4d](#4d-sort-aligned-reads))
 
 **Output Data:**
 
@@ -591,8 +591,8 @@ geneBody_coverage.py -r /path/to/annotation/BED/file \
 **Input Data:**
 
 - *.bed (genome annotation in BED format, output from [Step 5b](#5b-convert-genepred-to-bed-file))
-- *_sorted.bam (sorted mapping to genome file, output from [Step 4c](#4c-sort-aligned-reads))
-- *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4d](#4d-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
+- *_sorted.bam (sorted mapping to genome file, output from [Step 4d](#4d-sort-aligned-reads))
+- *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4e](#4e-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
 
 **Output Data:**
 
@@ -651,8 +651,8 @@ inner_distance.py -r /path/to/annotation/BED/file \
 **Input Data:**
 
 - *.bed (genome annotation in BED format, output from [Step 5b](#5b-convert-genepred-to-bed-file))
-- *_sorted.bam (sorted mapping to genome file, output from [Step 4c](#4c-sort-aligned-reads))
-- *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4d](#4d-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
+- *_sorted.bam (sorted mapping to genome file, output from [Step 4d](#4d-sort-aligned-reads))
+- *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4e](#4e-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
 
 **Output Data:**
 
@@ -706,8 +706,8 @@ read_distribution.py -r /path/to/annotation/BED/file \
 **Input Data:**
 
 - *.bed (genome annotation in BED format, output from [Step 5b](#5b-convert-genepred-to-bed-file))
-- *_sorted.bam (sorted mapping to genome file, output from [Step 4c](#4c-sort-aligned-reads))
-- *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4d](#4d-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
+- *_sorted.bam (sorted mapping to genome file, output from [Step 4d](#4d-sort-aligned-reads))
+- *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4e](#4e-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
 
 **Output Data:**
 
@@ -790,8 +790,8 @@ featureCounts -p \
 **Input Data:**
 
 - *.gtf (genome annotation, this pipeline version uses the gtf file indicated in the `gtf` column of the [GL-DPPD-7110-A_annotations.csv](../../GeneLab_Reference_Annotations/Pipeline_GL-DPPD-7110_Versions/GL-DPPD-7110-A/GL-DPPD-7110-A_annotations.csv) GeneLab Annotations file)
-- *_sorted.bam (sorted mapping to genome file, output from [Step 4c](#4c-sort-aligned-reads))
-- *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4d](#4d-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
+- *_sorted.bam (sorted mapping to genome file, output from [Step 4d](#4d-sort-aligned-reads))
+- *_sorted.bam.bai (index of sorted mapping to genome file, output from [Step 4e](#4e-index-sorted-aligned-reads), although not indicated in the command, this file must be present in the same directory as the respective \*_sorted.bam file)
 
 **Output Data:**
 
@@ -1322,7 +1322,7 @@ VSTCounts <- tryCatch({
 normCounts <- normCounts + 1
 
 ### Calculate LRT statistics ###
-dds_lrt <- DESeq(dds, test = "LRT", reduced = ~1)
+dds_lrt <- DESeq(dds, test = "LRT", reduced = ~1, parallel = TRUE, BPPARAM = BPPARAM)
 res_lrt <- results(dds_lrt)
 
 ```
