@@ -396,7 +396,6 @@ STAR genome reference, which consists of the following files:
 
 ```bash
 STAR --twopassMode Basic \
- --limitBAMsortRAM 65000000000 \
  --genomeDir /path/to/STAR/genome/directory \
  --outSAMunmapped Within \
  --outFilterType BySJout \
@@ -412,9 +411,8 @@ STAR --twopassMode Basic \
  --sjdbScore 1 \
  --readFilesCommand zcat \
  --runThreadN NumberOfThreads \
- --outSAMtype BAM SortedByCoordinate \
+ --outSAMtype BAM Unsorted \
  --quantMode TranscriptomeSAM GeneCounts \
- --outSAMheaderHD @HD VN:1.4 SO:coordinate \
  --outFileNamePrefix /path/to/STAR/output/directory/<sample_id> \
  --outReadsUnmapped Fastx \
  --genomeLoad NoSharedMemory \
@@ -430,7 +428,6 @@ gzip *_unmapped.fastq
 **Parameter Definitions:**
 
 - `--twopassMode` – specifies 2-pass mapping mode; the `Basic` option instructs STAR to perform the 1st pass mapping, then automatically extract junctions, insert them into the genome index, and re-map all reads in the 2nd mapping pass
-- `--limitBAMsortRAM` – maximum RAM available (in bytes) to sort the bam files, the example above indicates 65GB
 - `--genomeDir` – specifies the path to the directory where the STAR reference is stored
 - `--outSAMunmapped` – specifies output of unmapped reads in the sam format; the `Within` option instructs STAR to output the unmapped reads within the main sam file
 - `--outFilterType` – specifies the type of filtering; the `BySJout` option instructs STAR to keep only those reads that contain junctions that passed filtering in the SJ.out.tab output file
@@ -446,9 +443,8 @@ gzip *_unmapped.fastq
 - `--sjdbScore` – additional alignment score for alignments that cross database junctions
 - `--readFilesCommand` – specifies command needed to interpret input files; the `zcat` option indicates input files are compressed with gzip and zcat will be used to uncompress the gzipped input files
 - `--runThreadN` – indicates the number of threads to be used for STAR alignment and should be set to the number of available cores on the server node
-- `--outSAMtype` – specifies desired output format; the `BAM SortedByCoordinate` options specify that the output file will be sorted by coordinate and be in the bam format
+- `--outSAMtype` – specifies the output format. `BAM Unsorted` keeps all alignments for the same read together, with mates adjacent for each paired-end alignment.
 - `--quantMode` – specifies the type(s) of quantification desired; the `TranscriptomeSAM` option instructs STAR to output a separate sam/bam file containing alignments to the transcriptome and the `GeneCounts` option instructs STAR to output a tab delimited file containing the number of reads per gene
-- `--outSAMheaderHD` – indicates a header line for the sam/bam file
 - `--outFileNamePrefix` – specifies the path to and prefix for the output file names; for GeneLab the prefix is the sample id
 - `outReadsUnmapped` - specifies how to output unmapped and partially mapped reads (where only one mate of a paired-end read is mapped); the `Fastx` option outputs unmapped reads in separate fastq files 
 - `--genomeLoad` – controls how the genome index is loaded into memory; `NoSharedMemory` specifies that each job will have its own private copy of the genome rather than using shared memory. This is the only option compatible with `--twopassMode Basic`.
@@ -461,8 +457,8 @@ gzip *_unmapped.fastq
 
 **Output Data:**
 
-- *Aligned.sortedByCoord.out.bam (sorted mapping to genome)
-- **\*_GLbulkRNAseq_Aligned.toTranscriptome.out.bam** (sorted mapping to transcriptome)
+- *Aligned.out.bam (unsorted mapping to genome)
+- **\*_GLbulkRNAseq_Aligned.toTranscriptome.out.bam** (unsorted mapping to transcriptome)
 - **\*_GLbulkRNAseq_Log.final.out** (log file containing alignment info/stats such as reads mapped, etc)
 - *ReadsPerGene.out.tab (tab delimitated file containing STAR read counts per gene with 4 columns that correspond to different strandedness options: column 1 = gene ID, column 2 = counts for unstranded RNAseq, column 3 = counts for 1st read strand aligned with RNA, column 4 = counts for 2nd read strand aligned with RNA)
 - *Log.out (main log file containing detailed info about the STAR run)
@@ -565,18 +561,18 @@ sessionInfo()
 samtools sort -m 3G \
   --threads NumberOfThreads \
   -o /path/to/*Aligned.sortedByCoord_sorted.out.bam \
-  /path/to/*Aligned.sortedByCoord.out.bam
+  /path/to/*Aligned.out.bam
 ```
 
 **Parameter Definitions:**
 
 - `-m` – memory available per thread, `3G` indicates 3 gigabytes, this can be changed based on user resources
 - `--threads` – number of threads available on server node to sort genome alignment files
-- `/path/to/*Aligned.sortedByCoord.out.bam` – path to the *Aligned.sortedByCoord.out.bam output files from the [STAR alignment step](#4a-align-reads-to-reference-genome-with-star), provided as a positional argument
+- `/path/to/*Aligned.out.bam` – path to the *Aligned.out.bam output files from the [STAR alignment step](#4a-align-reads-to-reference-genome-with-star), provided as a positional argument
 
 **Input Data:**
 
-- *Aligned.sortedByCoord.out.bam (sorted mapping to genome file, output from [Step 4a](#4a-align-reads-to-reference-genome-with-star))
+- *Aligned.out.bam (unsorted mapping to genome file, output from [Step 4a](#4a-align-reads-to-reference-genome-with-star))
 
 **Output Data:**
 
@@ -962,7 +958,7 @@ rsem-calculate-expression --num-threads NumberOfThreads \
 **Input Data:**
 
 - RSEM genome reference (output from [Step 7](#7-build-rsem-reference))
-- *Aligned.toTranscriptome.out.bam (sorted mapping to transcriptome, output from [Step 4a](#4a-align-reads-to-reference-genome-with-star))
+- *Aligned.toTranscriptome.out.bam (unsorted mapping to transcriptome, output from [Step 4a](#4a-align-reads-to-reference-genome-with-star))
 
 **Output Data:**
 
@@ -1105,6 +1101,8 @@ echo "*: ${rRNA_count} rRNA entries removed." > *_rRNA_counts.txt
 > Note: DGE Analysis is performed twice with different sets of input files:
 > 1. Using RSEM genes.results files (*genes.results, output from [Step 8a](#8a-count-aligned-reads-with-rsem))
 > 2. Using rRNA-removed RSEM genes.results files (*rRNArm.genes.results, output from [Step 8dii](#8dii-filter-rrna-genes-from-rsem-genes-results))
+
+> Note: If the runsheet has a `Factor Value[organism part]` column, Steps 9b–9g are performed separately for each organism part, and output file names include the organism part, e.g. `Normalized_Counts_roots_GLbulkRNAseq.csv`.
 
 <br>
 
@@ -1500,7 +1498,7 @@ VSTCounts <- tryCatch({
 normCounts <- normCounts + 1
 
 ### Calculate LRT statistics ###
-dds_lrt <- DESeq(dds, test = "LRT", reduced = ~1)
+dds_lrt <- DESeq(dds, test = "LRT", reduced = ~1, parallel = TRUE, BPPARAM = BPPARAM)
 res_lrt <- results(dds_lrt)
 
 ```
@@ -1735,7 +1733,6 @@ pd.set_option('mode.chained_assignment', None) # suppress chained indexing warni
 import numpy as np
 from json import loads
 from re import search
-import zipfile
 import seaborn as sns
 from scipy.stats import linregress
 import matplotlib.pyplot as plt
@@ -1743,39 +1740,17 @@ import matplotlib.pyplot as plt
 
 ### Get and parse data and metadata
 
-# Get and unzip ISA.zip to extract metadata.
+# Each sample's spike-in mix is read from the ERCC_mix column (Mix 1 or Mix 2).
 
 accession = 'GLDS-NNN' # Replace Ns with GLDS number
-isaPath = '/path/to/GLDS-NNN_metadata_GLDS-NNN-ISA.zip' # Replace with path to ISA archive file
-zip_file_object =  zipfile.ZipFile(isaPath, "r")
-list_of_ISA_files = zip_file_object.namelist() # Print contents of zip file. Pick relevant one from list
+runsheetPath = '/path/to/GLDS-NNN_bulkRNASeq_v{version}_runsheet.csv' # Replace with path to the runsheet from Step 9a
 UnnormalizedCountsPath = '/path/to/GLDS-NNN_rna_seq_RSEM_Unnormalized_Counts_GLbulkRNAseq.csv'
 
 GENE_ID_PREFIX = "ENSMU" # change according to a common prefix for all Gene IDs associated with the subject organism
 
-# Print contents of ISA zip file to view file order
-list_of_ISA_files
-
-# There are datasets that have multiple assays (including microarray), so the RNAseq ISA files from the above output must be selected. 
-# Txt files outputted above are indexed as 0, 1, 2, etc. Fill in the indexed number corresponding to the sample (s_*txt) and assay files for RNAseq (a_*_(RNA-Seq).txt) in the code block below.
-
-# Extract metadata from the sample file (s_*txt)
-sample_file = list_of_ISA_files[2] # replace [2] with index corresponding to the (s_*txt) file
-file = zip_file_object.open(sample_file)
-sample_table = pd.read_csv(zip_file_object.open(sample_file), sep='\t')
-
-# Extract metadata from the assay (a_*_(RNA-Seq).txt) file
-assay_file = list_of_ISA_files[0] # replace [0] with index corresponding to the (a_*_(RNA-Seq).txt) file
-file = zip_file_object.open(assay_file)
-assay_table = pd.read_csv(zip_file_object.open(assay_file), sep='\t')
-
-# Check the sample table
-pd.set_option('display.max_columns', None)
-print(sample_table.head(n=3))
-
-# Check the assay table
-pd.set_option('display.max_columns', None)
-assay_table.head(n=3)
+runsheet = pd.read_csv(runsheetPath, dtype=str)
+runsheet['ERCC_mix'] = runsheet['ERCC_mix'].str.strip()
+print(runsheet[['Sample Name', 'ERCC_mix']])
 
 ### Get raw counts table
 
@@ -1811,16 +1786,14 @@ meltERCC['log2 Count'] = np.log2(meltERCC['log2 Count'])
 meltERCC = meltERCC.rename(columns={'variable':'Sample Name', 'value':'Count'})
 print(meltERCC.head(n=3))
 
-### Build Mix dictionary to link sample name to mix added and read depth using the assay table
+### Build Mix dictionary to link sample name to mix added (runsheet ERCC_mix) and total reads (each sample's column sum in the unnormalized counts table)
 
-mix_dict = assay_table.filter(['Sample Name','Parameter Value[Spike-in Mix Number]', 
-                       'Parameter Value[Read Depth]'])
-mix_dict = mix_dict.rename(columns={'Parameter Value[Spike-in Mix Number]':'Mix',
-                                    'Parameter Value[Read Depth]':
-                                    'Total Reads'})
+mix_dict = runsheet.filter(['Sample Name', 'ERCC_mix']).rename(columns={'ERCC_mix': 'Mix'})
+total_reads = raw_counts_table.sum()
+mix_dict['Total Reads'] = mix_dict['Sample Name'].map(total_reads)
 print(mix_dict.head(n=3))
 
-### Make combined ercc counts and assay table
+### Make combined ercc counts and mix dictionary
 
 merged_ercc = meltERCC.merge(mix_dict, on='Sample Name')
 print(merged_ercc)
@@ -1836,7 +1809,7 @@ groupD = ercc_table.loc[ercc_table['subgroup'] == 'D']['ERCC ID']
 
 group_dict = dict(zip(ercc_table['ERCC ID'], ercc_table['subgroup']))
 
-### Calculate ERCC counts per million and log(2) counts per million
+### Calculate ERCC counts per million and log(2) counts per million from each sample's column sum in the unnormalized counts table
 
 merged_ercc['Count per million'] = merged_ercc['Count'] / (merged_ercc['Total Reads'] / 1000000.0)
 merged_ercc['log2 Count per million'] = np.log2(merged_ercc['Count per million']+1)
@@ -1987,15 +1960,10 @@ print(ercc_table.head(n=3))
 mix1_conc_dict = dict(zip(ercc_table['ERCC ID'], ercc_table['concentration in Mix 1 (attomoles/ul)']))
 mix2_conc_dict = dict(zip(ercc_table['ERCC ID'], ercc_table['concentration in Mix 2 (attomoles/ul)']))
 
-# Check assay_table header to identify the 'Sample Name' column and the column title indicating the 'Spike-in Mix Nmber' if it's indicated in the metadata.
+# Get samples that use mix 1 and mix 2 from the runsheet ERCC_mix column
 
-pd.set_option('display.max_columns', None)
-print(assay_table.head(n=3))
-
-# Get samples that use mix 1 and mix 2
-
-mix1_samples = assay_table[assay_table['Parameter Value[Spike-in Mix Number]'] == 'Mix 1']['Sample Name']
-mix2_samples = assay_table[assay_table['Parameter Value[Spike-in Mix Number]'] == 'Mix 2']['Sample Name']
+mix1_samples = runsheet.loc[runsheet['ERCC_mix'] == 'Mix 1', 'Sample Name']
+mix2_samples = runsheet.loc[runsheet['ERCC_mix'] == 'Mix 2', 'Sample Name']
 
 # Get ERCC counts for all samples
 
@@ -2178,20 +2146,11 @@ stats.filter(items = ['Samples', 'R']).to_csv(f'ERCC_analysis/ERCC_rsq_{accessio
 
 # ERCC Mix 1 and Mix 2 are distributed so that half the samples receive Mix 1 spike-in and half receive Mix 2 spike-in. Transcripts in Mix 1 and Mix 2 are present at a known ratio, so we can determine how well these patterns are revealed in the dataset.
 
-# Get sample table
+# Create metadata table containing samples and their respective ERCC spike-in Mix number from the runsheet ERCC_mix column
 
-combined = sample_table.merge(assay_table, on='Sample Name')
-combined = combined.set_index(combined['Sample Name'])
-pd.set_option('display.max_columns', None)
-print(combined)
-
-# Create metadata table containing samples and their respective ERCC spike-in Mix number
-# Sometimes Number in [Spike-in Mix Number] is spelled 'number' and this could cause error in mismatch search 
-
-ERCCmetadata = combined[['Parameter Value[Spike-in Mix Number]']]
+ERCCmetadata = runsheet.set_index('Sample Name')[['ERCC_mix']]
 ERCCmetadata.index = ERCCmetadata.index.str.replace('-','_')
 ERCCmetadata.columns = ['Mix']
-#ERCCmetadata = ERCCmetadata.rename(columns={'Parameter Value[Spike-in Mix Number]':'Mix'})
 print(ERCCmetadata)
 
 # Export ERCC sample metadata
@@ -2210,7 +2169,7 @@ ERCCcounts.to_csv('ERCC_analysis/ERCCcounts_GLbulkRNAseq.csv')
 
 **Input Data:**
 
-- *ISA.zip (compressed ISA directory containing Investigation, Study, and Assay (ISA) metadata files for the respective GLDS dataset, output from [Step 9a](#9a-create-sample-runsheet))
+- {GLDS-Accession-ID}_bulkRNASeq_v{version}_runsheet.csv (runsheet, output from [Step 9a](#9a-create-sample-runsheet))
 - RSEM_Unnormalized_Counts.csv (RSEM raw counts table, output from [Step 9](#ERCCspikeOut))
 
 **Output Data:**
