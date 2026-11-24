@@ -5,6 +5,13 @@
 > Note: The exact processing commands and MetagenomeSeq workflow version used for specific GLDS datasets can be found in the *_processing_info.zip file under "Files" for each respective GLDS dataset in the [Open Science Data Repository (OSDR)](https://osdr.nasa.gov/bio/repo/). 
 
 ---
+
+<p align="center">
+<a href="../images/GL-metagenomics-subwayplot.png"><img src="../images/GL-metagenomics-subwayplot.png"></a>
+</p>
+
+---
+
 ## Repository Links
 
 * [**Pipeline_GL-DPPD-7116_Versions**](Pipeline_GL-DPPD-7116_Versions)

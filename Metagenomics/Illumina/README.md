@@ -8,7 +8,7 @@
 ---
 
 <p align="center">
-<a href="../images/GL-Illumina-metagenomics-overview.pdf"><img src="../images/GL-Illumina-metagenomics-overview.png"></a>
+<a href="../images/GL-metagenomics-subwayplot.png"><img src="../images/GL-metagenomics-subwayplot.png"></a>
 </p>
 
 ---
