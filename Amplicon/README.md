@@ -24,7 +24,7 @@ The software for the Amplicon Seq pipelines is released under the [NASA Open Sou
 
 ### 3rd Party Software Licenses
 
-Licenses for the 3rd party open source software utilized in the Amplicon Seq pipelines can be found in the [3rd_Party_Licenses sub-directory](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow/tree/main/License/3rd_Party_Licenses/README.md) on the GeneLab_Data_Processing GitHub repository landing page. 
+Licenses for the 3rd party open source software utilized in the Amplicon Seq pipelines can be found in the [3rd_Party_Licenses sub-directory](https://github.com/nasa/GeneLab_AmpliconSeq_Workflow/tree/main/License/3rd_Party_Licenses/README.md) in the GeneLab_AmpliconSeq_Workflow GitHub repository. 
 
 <br>
 

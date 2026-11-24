@@ -15,12 +15,12 @@
 
 ## Licenses
 
-The software for the Metagenomics pipelines is released under the [NASA Open Source Agreement (NOSA) Version 1.3](../Licenses/Metagenomics_NOSA_License.pdf).
+The software for the Metagenomics pipelines is released under the [NASA Open Source Agreement (NOSA) Version 1.3](https://github.com/nasa/GeneLab_Metagenomics_Workflow/blob/main/License/Metagenomics_NOSA_License.pdf).
 
 
 ### 3rd Party Software Licenses
 
-Licenses for the 3rd party open source software utilized in the Metagenomics pipelines can be found in the [3rd_Party_Licenses sub-directory](../3rd_Party_Licenses/Metagenomics_3rd_Party_Software.md) on the GeneLab_Data_Processing GitHub repository landing page. 
+Licenses for the 3rd party open source software utilized in the Metagenomics pipelines can be found in the [3rd_Party_Licenses sub-directory](https://github.com/nasa/GeneLab_Metagenomics_Workflow/blob/main/License/3rd_Party_Software_Licenses/README.md) in the GeneLab_Metagenomics_Workflow GitHub repository. 
 
 <br>
 
